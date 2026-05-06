@@ -1,3 +1,21 @@
-*.odt
-.~lock*
-*.mm
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+.env
+*.sqlite3
+*.db
+
+# Node
+node_modules/
+dist/
+
+# Expo / React Native
+.expo/
+.expo-shared/
+
+# OS
+.DS_Store
+Thumbs.db

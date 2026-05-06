@@ -1,0 +1,14 @@
+{
+  "name": "swingby-mobile",
+  "version": "1.0.0",
+  "private": true,
+  "main": "expo/AppEntry.js",
+  "scripts": {
+    "start": "expo start"
+  },
+  "dependencies": {
+    "expo": "*",
+    "react-native": "*",
+    "react-navigation": "*"
+  }
+}
