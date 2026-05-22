@@ -2,6 +2,38 @@
   "expo": {
     "name": "SwingBy",
     "slug": "swingby",
-    "version": "1.0.0"
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0a0c0b"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.swingby.app",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "SwingBy uses your location to show nearby service providers.",
+        "NSLocationAlwaysUsageDescription": "SwingBy uses your location to show nearby service providers."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0a0c0b"
+      },
+      "package": "com.swingby.app",
+      "permissions": ["ACCESS_FINE_LOCATION", "ACCESS_COARSE_LOCATION"]
+    },
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "SwingBy uses your location to show nearby service providers."
+        }
+      ]
+    ]
   }
 }

@@ -1,0 +1,9 @@
+name = "swingby-waitlist"
+main = "index.js"
+compatibility_date = "2024-11-01"
+account_id = "4877404e65143359d52e1056bfd8099c"
+workers_dev = false
+
+routes = [
+  { pattern = "api.swingbyy.com/waitlist*", zone_name = "swingbyy.com" }
+]
