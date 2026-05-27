@@ -24,8 +24,12 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#0a0c0b"
       },
+      "googleMapsApiKey": "GOOGLE_MAPS_API_KEY_PLACEHOLDER",
       "package": "com.swingby.app",
-      "permissions": ["ACCESS_FINE_LOCATION", "ACCESS_COARSE_LOCATION"]
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION"
+      ]
     },
     "plugins": [
       [
@@ -33,7 +37,9 @@
         {
           "locationWhenInUsePermission": "SwingBy uses your location to show nearby service providers."
         }
-      ]
+      ],
+      "expo-font",
+      "expo-secure-store"
     ]
   }
 }

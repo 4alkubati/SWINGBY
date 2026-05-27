@@ -14,7 +14,7 @@ class SignupRequest(BaseModel):
     password: str = Field(..., min_length=8, max_length=100)
     first_name: str = Field(..., min_length=1, max_length=100)
     last_name: str = Field(..., min_length=1, max_length=100)
-    phone: str = Field(..., min_length=5, max_length=30)
+    phone: Optional[str] = Field(None, min_length=5, max_length=30)
     role: str
 
     @field_validator("role")
@@ -69,17 +69,28 @@ def signup(data: SignupRequest):
 
         user_id = res.user.id
 
-        # 2. Insert into our users table
-        supabase.table("users").insert({
+        # 2. Upsert into our users table.
+        # handle_new_user() trigger may have already inserted a bare row (id only).
+        # upsert overwrites it with the full profile — no duplicate-key error.
+        row = {
             "id": user_id,
             "first_name": data.first_name,
             "last_name": data.last_name,
             "email": str(data.email),
-            "phone": data.phone,
             "role": data.role,
-        }).execute()
+        }
+        if data.phone:
+            row["phone"] = data.phone
+        supabase.table("users").upsert(row).execute()
 
-        return {"message": "Account created — check your email to confirm", "user_id": user_id}
+        # If email confirmation is OFF, Supabase returns a live session immediately.
+        # Return the token so the mobile app can auto-login.
+        access_token = res.session.access_token if res.session else None
+        return {
+            "message": "Account created" if access_token else "Account created — check your email to confirm",
+            "user_id": user_id,
+            "access_token": access_token,
+        }
 
     except HTTPException:
         raise
