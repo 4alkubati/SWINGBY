@@ -10,6 +10,10 @@ import { BookingProvider } from './src/context/BookingContext';
 import AuthNavigator from './src/navigation/AuthNavigator';
 import ClientNavigator from './src/navigation/ClientNavigator';
 import BusinessNavigator from './src/navigation/BusinessNavigator';
+import { configureNotificationHandlers } from './src/services/notifications';
+
+// Configure push notification display behavior once at module load time.
+configureNotificationHandlers();
 
 function RootNavigator() {
   const { user, isLoading } = useAuth();

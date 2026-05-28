@@ -1,8 +1,13 @@
+import logging
+
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel, Field
 from typing import Optional
 from app.deps import get_current_user
 from app.supabase_client import supabase
+from app.services.push import send_push_to_user
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -49,7 +54,40 @@ def express_interest(data: InterestCreate, current_user: dict = Depends(get_curr
             "quoted_price": data.quoted_price,
             "status": "pending",
         }).execute()
-        return {"message": "Interest expressed", "interest": res.data[0]}
+        interest = res.data[0]
+
+        # Notify the post owner (client) — best-effort
+        try:
+            post_owner_res = (
+                supabase.table("service_posts")
+                .select("client_id")
+                .eq("id", data.post_id)
+                .single()
+                .execute()
+            )
+            biz_name_res = (
+                supabase.table("businesses")
+                .select("business_name")
+                .eq("id", business_id)
+                .single()
+                .execute()
+            )
+            client_id = post_owner_res.data["client_id"] if post_owner_res.data else None
+            biz_name = (
+                biz_name_res.data["business_name"] if biz_name_res.data else "A business"
+            )
+            if client_id:
+                send_push_to_user(
+                    client_id,
+                    "New quote on your job",
+                    f"{biz_name} is interested",
+                )
+        except Exception:
+            pass  # push failure must not break the request
+
+        return {"message": "Interest expressed", "interest": interest}
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -141,6 +179,35 @@ def accept_interest(interest_id: str, current_user: dict = Depends(get_current_u
             "platform_cut": platform_fee,
             "status": "partial",
         }).execute()
+
+        # Notify the business owner — best-effort
+        try:
+            biz_owner_res = (
+                supabase.table("businesses")
+                .select("owner_id")
+                .eq("id", interest["business_id"])
+                .single()
+                .execute()
+            )
+            post_title_res = (
+                supabase.table("service_posts")
+                .select("title")
+                .eq("id", post["id"])
+                .single()
+                .execute()
+            )
+            biz_owner_id = biz_owner_res.data["owner_id"] if biz_owner_res.data else None
+            post_title = (
+                post_title_res.data["title"] if post_title_res.data else "your quote"
+            )
+            if biz_owner_id:
+                send_push_to_user(
+                    biz_owner_id,
+                    "Your quote was accepted",
+                    post_title,
+                )
+        except Exception:
+            pass  # push failure must not break the request
 
         return {
             "message": "Interest accepted — booking and payment created",

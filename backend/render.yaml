@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: swingby-api
+    env: docker
+    plan: free
+    branch: main
+    rootDir: backend
+    autoDeploy: true
+    healthCheckPath: /healthz
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_KEY
+        sync: false
+      - key: SECRET_KEY
+        sync: false
+      - key: SWINGBY_ALLOWED_ORIGINS
+        sync: false

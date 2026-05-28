@@ -1,7 +1,12 @@
+import logging
+
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel, Field, field_validator
 from app.deps import get_current_user
 from app.supabase_client import supabase
+from app.services.push import send_push_to_user
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -64,7 +69,39 @@ def send_message(data: MessageSend, current_user: dict = Depends(get_current_use
             "sender_id": current_user["id"],
             "content": data.content,
         }).execute()
+
+        # Notify the other participant — best-effort
+        try:
+            sender_id = current_user["id"]
+            # If sender is the client, recipient is the business owner; otherwise recipient is client
+            if booking["client_id"] == sender_id:
+                # Sender is client → notify business owner
+                biz_owner_res = (
+                    supabase.table("businesses")
+                    .select("owner_id")
+                    .eq("id", booking["business_id"])
+                    .single()
+                    .execute()
+                )
+                recipient_id = (
+                    biz_owner_res.data["owner_id"] if biz_owner_res.data else None
+                )
+            else:
+                # Sender is business side → notify client
+                recipient_id = booking["client_id"]
+
+            if recipient_id and recipient_id != sender_id:
+                send_push_to_user(
+                    recipient_id,
+                    "New message",
+                    data.content[:100],
+                )
+        except Exception:
+            pass  # push failure must not break the request
+
         return {"message": "Sent", "data": res.data[0]}
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 

@@ -1,9 +1,14 @@
+import logging
+
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime, timezone
 from app.deps import get_current_user
 from app.supabase_client import supabase
+from app.services.push import send_push_to_user
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -184,7 +189,44 @@ def confirm_date(
             "confirmed_date": data.confirmed_date,
             "status": "in_progress",
         }).eq("id", booking_id).execute()
-        return {"message": "Date confirmed — booking is now in progress", "booking": res.data[0]}
+        updated_booking = res.data[0]
+
+        # Notify both client and business owner — best-effort
+        try:
+            full_booking = (
+                supabase.table("bookings")
+                .select("client_id, business_id")
+                .eq("id", booking_id)
+                .single()
+                .execute()
+            )
+            if full_booking.data:
+                client_uid = full_booking.data["client_id"]
+                biz_id = full_booking.data["business_id"]
+
+                # Notify client
+                if client_uid:
+                    send_push_to_user(client_uid, "Booking confirmed", "Your booking date is confirmed")
+
+                # Look up business owner user_id
+                biz_owner_res = (
+                    supabase.table("businesses")
+                    .select("owner_id")
+                    .eq("id", biz_id)
+                    .single()
+                    .execute()
+                )
+                biz_owner_id = (
+                    biz_owner_res.data["owner_id"] if biz_owner_res.data else None
+                )
+                if biz_owner_id:
+                    send_push_to_user(biz_owner_id, "Booking confirmed", "A booking date has been confirmed")
+        except Exception:
+            pass  # push failure must not break the request
+
+        return {"message": "Date confirmed — booking is now in progress", "booking": updated_booking}
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 

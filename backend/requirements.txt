@@ -7,3 +7,4 @@ supabase
 python-multipart
 email-validator
 notion-client
+httpx

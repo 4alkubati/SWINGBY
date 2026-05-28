@@ -55,6 +55,9 @@ app.include_router(reviews_router, prefix="/reviews", tags=["reviews"])
 from app.api.messages import router as messages_router
 app.include_router(messages_router, prefix="/messages", tags=["messages"])
 
+from app.api.push_tokens import router as push_tokens_router
+app.include_router(push_tokens_router, prefix="/push-tokens", tags=["push-tokens"])
+
 
 @app.get("/health")
 def health_check():
@@ -64,3 +67,9 @@ def health_check():
         return {"status": "ok", "database": "connected"}
     except Exception as e:
         return {"status": "error", "detail": str(e)}
+
+
+@app.get("/healthz")
+def healthz():
+    """Lightweight liveness probe for Render — no database call."""
+    return {"status": "ok"}

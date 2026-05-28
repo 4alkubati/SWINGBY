@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { setAuthToken, setUnauthorizedHandler } from '../services/api';
 import { login as svcLogin, signup as svcSignup, getStoredToken, clearToken, getMe } from '../services/auth';
+import { registerForPushAsync } from '../services/notifications';
 
 const AuthContext = createContext(null);
 
@@ -35,6 +36,7 @@ export function AuthProvider({ children }) {
     const me = await getMe();
     setToken(t);
     setUser(me);
+    try { await registerForPushAsync(); } catch { /* non-fatal */ }
     return me;
   }
 
@@ -50,6 +52,7 @@ export function AuthProvider({ children }) {
     const me = await getMe();
     setToken(result.token);
     setUser(me);
+    try { await registerForPushAsync(); } catch { /* non-fatal */ }
     return { requiresConfirmation: false, user: me };
   }
 
