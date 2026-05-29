@@ -1,8 +1,12 @@
+import logging
+
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel, Field, EmailStr, field_validator
 from typing import Optional
 from app.deps import get_current_user
 from app.supabase_client import supabase
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -10,13 +14,13 @@ router = APIRouter()
 # ── Schemas ───────────────────────────────────────────────────────────────────
 
 class EmployeeCreate(BaseModel):
-    email: EmailStr
-    password: str = Field(..., min_length=8, max_length=100)
-    first_name: str = Field(..., min_length=1, max_length=100)
-    last_name: str = Field(..., min_length=1, max_length=100)
-    phone: Optional[str] = Field(None, max_length=30)
-    role_title: Optional[str] = Field(None, max_length=100)
-    avatar_url: Optional[str] = Field(None, max_length=500)
+    email: EmailStr = Field(..., max_length=320)
+    password: str = Field(..., min_length=8, max_length=128)
+    first_name: str = Field(..., min_length=1, max_length=80)
+    last_name: str = Field(..., min_length=1, max_length=80)
+    phone: Optional[str] = Field(None, max_length=20)
+    role_title: Optional[str] = Field(None, max_length=120)
+    avatar_url: Optional[str] = Field(None, max_length=2048)
 
     @field_validator("first_name", "last_name", mode="before")
     @classmethod
@@ -75,8 +79,9 @@ def create_employee(data: EmployeeCreate, current_user: dict = Depends(get_curre
 
     except HTTPException:
         raise
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    except Exception:
+        logger.exception("Could not create employee")
+        raise HTTPException(status_code=400, detail="Could not create employee")
 
 
 @router.get("/")
@@ -95,8 +100,9 @@ def list_employees(current_user: dict = Depends(get_current_user)):
             .execute()
         )
         return res.data
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    except Exception:
+        logger.exception("Could not list employees")
+        raise HTTPException(status_code=400, detail="Could not list employees")
 
 
 @router.patch("/{employee_id}/deactivate")
@@ -119,8 +125,9 @@ def deactivate_employee(employee_id: str, current_user: dict = Depends(get_curre
     try:
         res = supabase.table("employees").update({"is_active": False}).eq("id", employee_id).execute()
         return {"message": "Employee deactivated", "employee": res.data[0]}
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    except Exception:
+        logger.exception("Could not deactivate employee")
+        raise HTTPException(status_code=400, detail="Could not deactivate employee")
 
 
 @router.patch("/{employee_id}/reactivate")
@@ -143,5 +150,6 @@ def reactivate_employee(employee_id: str, current_user: dict = Depends(get_curre
     try:
         res = supabase.table("employees").update({"is_active": True}).eq("id", employee_id).execute()
         return {"message": "Employee reactivated", "employee": res.data[0]}
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    except Exception:
+        logger.exception("Could not reactivate employee")
+        raise HTTPException(status_code=400, detail="Could not reactivate employee")

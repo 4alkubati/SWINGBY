@@ -12,6 +12,17 @@ import ChatScreen from '../screens/ChatScreen';
 import EmployeeManagementScreen from '../screens/EmployeeManagementScreen';
 import EmployeeProfileScreen from '../screens/EmployeeProfileScreen';
 import NotificationsScreen from '../screens/NotificationsScreen';
+import EarningsScreen from '../screens/EarningsScreen';
+import BusinessAnalyticsScreen from '../screens/BusinessAnalyticsScreen';
+import SettingsScreen from '../screens/SettingsScreen';
+import PrivacyPolicyScreen from '../screens/PrivacyPolicyScreen';
+import TermsOfServiceScreen from '../screens/TermsOfServiceScreen';
+import HelpFAQScreen from '../screens/HelpFAQScreen';
+import NotificationsCenterScreen from '../screens/NotificationsCenterScreen';
+import BookingDetailsScreen from '../screens/BookingDetailsScreen';
+import MessageThreadScreen from '../screens/MessageThreadScreen';
+import PaymentMethodScreen from '../screens/PaymentMethodScreen';
+import DisputeFlowScreen from '../screens/DisputeFlowScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -46,6 +57,17 @@ export default function BusinessNavigator() {
       <Stack.Screen name="EmployeeManagement" component={EmployeeManagementScreen} />
       <Stack.Screen name="EmployeeProfile" component={EmployeeProfileScreen} />
       <Stack.Screen name="Notifications" component={NotificationsScreen} />
+      <Stack.Screen name="Earnings" component={EarningsScreen} />
+      <Stack.Screen name="BusinessAnalytics" component={BusinessAnalyticsScreen} />
+      <Stack.Screen name="Settings" component={SettingsScreen} />
+      <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} />
+      <Stack.Screen name="TermsOfService" component={TermsOfServiceScreen} />
+      <Stack.Screen name="HelpFAQ" component={HelpFAQScreen} />
+      <Stack.Screen name="NotificationsCenter" component={NotificationsCenterScreen} />
+      <Stack.Screen name="BookingDetails" component={BookingDetailsScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="MessageThread" component={MessageThreadScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="PaymentMethod" component={PaymentMethodScreen} />
+      <Stack.Screen name="DisputeFlow" component={DisputeFlowScreen} />
     </Stack.Navigator>
   );
 }

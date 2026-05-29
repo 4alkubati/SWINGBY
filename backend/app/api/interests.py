@@ -15,7 +15,7 @@ router = APIRouter()
 # ── Schemas ───────────────────────────────────────────────────────────────────
 
 class InterestCreate(BaseModel):
-    post_id: str = Field(..., min_length=1)
+    post_id: str = Field(..., min_length=1, max_length=64)
     quoted_price: Optional[float] = Field(None, gt=0, le=1_000_000)
 
 
@@ -88,8 +88,9 @@ def express_interest(data: InterestCreate, current_user: dict = Depends(get_curr
         return {"message": "Interest expressed", "interest": interest}
     except HTTPException:
         raise
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    except Exception:
+        logger.exception("Could not express interest")
+        raise HTTPException(status_code=400, detail="Could not express interest")
 
 
 @router.get("/post/{post_id}")
@@ -112,8 +113,9 @@ def list_interests_on_post(post_id: str, current_user: dict = Depends(get_curren
             .execute()
         )
         return res.data
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    except Exception:
+        logger.exception("Could not list interests on post")
+        raise HTTPException(status_code=400, detail="Could not list interests")
 
 
 @router.patch("/{interest_id}/accept")
@@ -216,8 +218,9 @@ def accept_interest(interest_id: str, current_user: dict = Depends(get_current_u
         }
     except HTTPException:
         raise
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    except Exception:
+        logger.exception("Could not accept interest")
+        raise HTTPException(status_code=400, detail="Could not accept interest")
 
 
 @router.patch("/{interest_id}/reject")
@@ -238,5 +241,6 @@ def reject_interest(interest_id: str, current_user: dict = Depends(get_current_u
     try:
         supabase.table("interests").update({"status": "rejected"}).eq("id", interest_id).execute()
         return {"message": "Interest rejected"}
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    except Exception:
+        logger.exception("Could not reject interest")
+        raise HTTPException(status_code=400, detail="Could not reject interest")

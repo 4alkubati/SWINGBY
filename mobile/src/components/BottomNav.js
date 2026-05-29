@@ -1,5 +1,6 @@
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useUnread } from '../context/UnreadContext';
 
 const CLIENT_TABS = [
   { name: 'Home',     icon: '🏠' },
@@ -18,12 +19,16 @@ const BUSINESS_TABS = [
 export default function BottomNav({ state, navigation, tabs }) {
   const insets = useSafeAreaInsets();
   const tabConfig = tabs || CLIENT_TABS;
+  const { totalUnread } = useUnread();
 
   return (
     <View style={[styles.container, { paddingBottom: Math.max(insets.bottom, 16) }]}>
       {state.routes.map((route, index) => {
         const isActive = state.index === index;
         const config = tabConfig.find((t) => t.name === route.name) || { icon: '●' };
+        const isMessages = route.name === 'Messages';
+        const showBadge = isMessages && totalUnread > 0;
+        const badgeLabel = totalUnread > 9 ? '9+' : String(totalUnread);
 
         return (
           <TouchableOpacity
@@ -32,9 +37,16 @@ export default function BottomNav({ state, navigation, tabs }) {
             onPress={() => navigation.navigate(route.name)}
             activeOpacity={0.7}
           >
-            <Text style={[styles.icon, isActive && styles.iconActive]}>
-              {config.icon}
-            </Text>
+            <View style={styles.iconWrapper}>
+              <Text style={[styles.icon, isActive && styles.iconActive]}>
+                {config.icon}
+              </Text>
+              {showBadge && (
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>{badgeLabel}</Text>
+                </View>
+              )}
+            </View>
             <Text style={[styles.label, isActive && styles.labelActive]}>
               {route.name}
             </Text>
@@ -59,6 +71,29 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 3,
     minWidth: 56,
+  },
+  iconWrapper: {
+    position: 'relative',
+  },
+  badge: {
+    position: 'absolute',
+    top: -4,
+    right: -8,
+    minWidth: 16,
+    height: 16,
+    backgroundColor: '#FF5C00',
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 3,
+    borderWidth: 1.5,
+    borderColor: '#07080a',
+  },
+  badgeText: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: '#ffffff',
+    lineHeight: 11,
   },
   icon: {
     fontSize: 22,

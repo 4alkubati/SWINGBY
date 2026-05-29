@@ -1,8 +1,12 @@
+import logging
+
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel, Field, field_validator
 from typing import Optional
 from app.deps import get_current_user
 from app.supabase_client import supabase
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -91,8 +95,9 @@ def create_review(data: ReviewCreate, current_user: dict = Depends(get_current_u
         return {"message": "Review submitted", "review": res.data[0]}
     except HTTPException:
         raise
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    except Exception:
+        logger.exception("Could not submit review")
+        raise HTTPException(status_code=400, detail="Could not submit review")
 
 
 @router.get("/business/{business_id}")
@@ -107,8 +112,9 @@ def get_business_reviews(business_id: str, current_user: dict = Depends(get_curr
             .execute()
         )
         return res.data
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    except Exception:
+        logger.exception("Could not retrieve business reviews")
+        raise HTTPException(status_code=400, detail="Could not retrieve reviews")
 
 
 @router.get("/client/{client_id}")
@@ -123,5 +129,6 @@ def get_client_reviews(client_id: str, current_user: dict = Depends(get_current_
             .execute()
         )
         return res.data
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    except Exception:
+        logger.exception("Could not retrieve client reviews")
+        raise HTTPException(status_code=400, detail="Could not retrieve reviews")

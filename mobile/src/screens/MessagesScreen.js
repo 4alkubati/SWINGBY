@@ -80,7 +80,7 @@ export default function MessagesScreen({ navigation }) {
           keyExtractor={(b) => b.id}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.list}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor="#FF5C00" />}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor="#FF5C00" colors={['#FF5C00']} progressBackgroundColor="#0d0f10" />}
           renderItem={({ item }) => {
             const otherParty = getOtherParty(item);
             return (

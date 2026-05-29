@@ -10,14 +10,20 @@ const CATEGORIES = [
   { id: 'carpentry', label: 'Carpentry', emoji: '🪚' },
 ];
 
-export default function CategoryScroll({ activeCategory, onSelect }) {
+const ALL_CATEGORY = { id: 'all', label: 'All', emoji: '🔍' };
+
+// prependAll — when true, inserts an "All" chip before the 7 categories.
+// Used by SearchScreen and NearbyMapScreen.
+export default function CategoryScroll({ activeCategory, onSelect, prependAll = false }) {
+  const items = prependAll ? [ALL_CATEGORY, ...CATEGORIES] : CATEGORIES;
+
   return (
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
       contentContainerStyle={styles.container}
     >
-      {CATEGORIES.map((cat) => (
+      {items.map((cat) => (
         <TouchableOpacity
           key={cat.id}
           style={[styles.cat, activeCategory === cat.id && styles.catActive]}

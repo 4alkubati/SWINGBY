@@ -1,6 +1,10 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import axios from 'axios'
 import styles from './ComingSoon.module.css'
+import HeroLottie from '../components/HeroLottie'
+import Testimonials from '../components/Testimonials'
+import Footer from '../components/Footer'
 
 const API = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000'
 
@@ -125,11 +129,17 @@ export default function ComingSoon() {
       {/* ── Nav ── */}
       <nav className={styles.nav}>
         <span className={styles.logo}>SwingBy</span>
-        <span className={styles.navBadge}>Calgary, AB</span>
+        <div className={styles.navRight}>
+          <span className={styles.navBadge}>Calgary, AB</span>
+          <Link to="/login" className={styles.navLoginBtn}>Log in</Link>
+          <Link to="/signup" className={styles.navSignupBtn}>Sign up</Link>
+        </div>
       </nav>
 
       {/* ── Hero ── */}
       <section className={styles.hero}>
+        <HeroLottie />
+
         <div className={styles.eyebrow}>
           <span className={styles.dot} />
           Coming Soon
@@ -327,11 +337,11 @@ export default function ComingSoon() {
         </div>
       </section>
 
+      {/* ── Testimonials ── */}
+      <Testimonials />
+
       {/* ── Footer ── */}
-      <footer className={styles.footer}>
-        <span className={styles.footerLogo}>SwingBy</span>
-        <span className={styles.footerText}>© 2026 SwingBy. Calgary, Canada.</span>
-      </footer>
+      <Footer />
 
     </div>
   )

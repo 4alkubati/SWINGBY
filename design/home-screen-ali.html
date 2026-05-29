@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>SwingBy — Ali Home Screen Wireframe v3</title>
+<style>
+  /* === DESIGN TOKENS (match pre-launch site exactly) ===
+     --bg:        #08090a
+     --bg2:       #0f1112
+     --bg3:       #161a1c
+     --border:    rgba(255,255,255,0.07)
+     --text:      #f0ede8
+     --muted:     #6b7280
+     --accent:    #FF5C00
+     --accent2:   #FF8C42
+     --green:     #22c55e
+     Font heads:  Space Grotesk 700
+     Font body:   Inter 400/500/600
+  */
+  body{margin:0;background:#07080a;display:flex;justify-content:center;padding:2rem;font-family:'Inter',system-ui,sans-serif;}
+  .phone{width:340px;background:#07080a;border-radius:44px;border:1.5px solid #1e1e1e;overflow:hidden;color:#f0ede8;}
+  /* --- status bar --- */
+  .sb{display:flex;justify-content:space-between;padding:12px 22px 4px;font-size:12px;color:#777;font-weight:500;}
+  /* --- header --- */
+  .hdr{display:flex;align-items:center;justify-content:space-between;padding:8px 22px 0;}
+  .logo{font-family:'Space Grotesk',system-ui,sans-serif;font-size:24px;font-weight:700;letter-spacing:-1px;color:#fff;}
+  .logo-dot{color:#FF5C00;}
+  .loc-pill{display:flex;align-items:center;gap:5px;background:rgba(255,92,0,0.1);border:1px solid rgba(255,92,0,0.25);border-radius:20px;padding:5px 12px;font-size:12px;color:#FF8C42;font-weight:600;}
+  /* --- greeting --- */
+  .greet{padding:16px 22px 0;}
+  .greet-sub{font-size:14px;color:#9ca3af;font-weight:500;}
+  .greet-name{font-family:'Space Grotesk',system-ui,sans-serif;font-size:26px;font-weight:700;color:#fff;letter-spacing:-0.5px;}
+  .greet-accent{color:#FF5C00;}
+  /* --- mode switcher --- */
+  .mode-sw{display:flex;margin:14px 22px 0;background:#0d0f10;border-radius:14px;padding:4px;border:1px solid #1a1d1f;}
+  .mode-btn{flex:1;padding:10px 0;border-radius:11px;font-size:14px;font-weight:600;text-align:center;color:#666;background:transparent;border:none;}
+  .mode-btn.active{background:linear-gradient(135deg,#FF5C00,#FF8C42);color:#fff;box-shadow:0 4px 16px rgba(255,92,0,0.35);}
+  /* --- search --- */
+  .search{display:flex;align-items:center;gap:10px;background:#0d0f10;border:1px solid #2a2e33;border-radius:14px;padding:11px 14px;margin:12px 22px 0;}
+  .search-placeholder{font-size:14px;color:#3a424c;}
+  /* --- section header --- */
+  .sec{display:flex;justify-content:space-between;align-items:center;padding:16px 22px 10px;}
+  .sec-title{font-size:13px;font-weight:700;color:#9ca3af;letter-spacing:1.2px;text-transform:uppercase;}
+  .sec-more{font-size:13px;color:#FF5C00;font-weight:600;}
+  /* --- category pills --- */
+  .cats{display:flex;gap:10px;padding:0 22px;overflow-x:auto;}
+  .cat{background:#0d0f10;border:1px solid #1a1d1f;border-radius:16px;padding:12px 14px;display:flex;flex-direction:column;align-items:center;gap:7px;min-width:70px;}
+  .cat.active{background:rgba(255,92,0,0.1);border-color:rgba(255,92,0,0.35);}
+  .cat-label{font-size:11px;color:#9ca3af;font-weight:600;}
+  .cat.active .cat-label{color:#FF8C42;}
+  /* --- featured card (top rated) --- */
+  .feat{background:#0f1214;border:1px solid #1e2226;border-radius:20px;padding:14px;display:flex;gap:12px;align-items:center;margin:0 22px;}
+  .feat-badge{font-size:10px;color:#FF8C42;font-weight:700;background:rgba(255,92,0,0.15);border:1px solid rgba(255,92,0,0.3);border-radius:20px;padding:3px 9px;}
+  .feat-av{width:54px;height:54px;border-radius:16px;background:linear-gradient(135deg,#FF5C00,#FF3D00);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;color:#fff;flex-shrink:0;}
+  .feat-name{font-family:'Space Grotesk',system-ui,sans-serif;font-size:15px;font-weight:700;color:#fff;margin-bottom:4px;}
+  .feat-meta{font-size:12px;color:#9ca3af;font-weight:500;}
+  .feat-star{color:#FF5C00;font-weight:700;}
+  .tags{display:flex;gap:6px;margin-top:8px;}
+  .tag{background:#131618;border:1px solid #2a2e33;border-radius:20px;padding:3px 9px;font-size:10px;color:#9ca3af;font-weight:600;}
+  .tag.verified{background:rgba(34,197,94,0.08);border-color:rgba(34,197,94,0.25);color:#4ade80;}
+  /* --- nearby cards --- */
+  .nearby-list{padding:10px 22px 0;display:flex;flex-direction:column;gap:10px;}
+  .nc{background:#0d0f10;border:1px solid #1a1d1f;border-radius:18px;padding:13px;display:flex;gap:12px;align-items:center;}
+  .nc-av{width:46px;height:46px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0;}
+  .nc-av-green{background:linear-gradient(135deg,#1a3a2a,#0f2a1a);color:#4ade80;border:1px solid rgba(34,197,94,0.2);}
+  .nc-av-blue{background:linear-gradient(135deg,#1a2a3a,#0f1a2a);color:#60a5fa;border:1px solid rgba(59,130,246,0.2);}
+  .nc-name{font-size:14px;font-weight:600;color:#fff;margin-bottom:3px;}
+  .nc-meta{font-size:12px;color:#9ca3af;font-weight:500;}
+  .nc-dist{background:#131618;border:1px solid #2a2e33;border-radius:20px;padding:4px 10px;font-size:11px;color:#9ca3af;font-weight:600;}
+  /* --- bottom nav --- */
+  .bnav{display:flex;justify-content:space-around;padding:12px 0 18px;border-top:1px solid #111315;margin-top:14px;}
+  .ni{display:flex;flex-direction:column;align-items:center;gap:3px;}
+  .ni-label{font-size:10px;color:#3a424c;font-weight:600;}
+  .ni-label.active{color:#FF5C00;}
+  /* === POST A JOB SCREEN === */
+  .post-form{padding:14px 22px 22px;display:flex;flex-direction:column;gap:11px;}
+  .field-label{font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.8px;font-weight:700;margin-bottom:6px;}
+  .field-input{background:#0d0f10;border:1px solid #2a2e33;border-radius:12px;padding:12px 14px;font-size:14px;color:#f0ede8;width:100%;box-sizing:border-box;}
+  .field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .photo-box{background:#0d0f10;border:1.5px dashed rgba(255,92,0,0.3);border-radius:14px;padding:20px;text-align:center;}
+  .photo-label{font-size:13px;color:#d1d5db;font-weight:600;}
+  .photo-sub{font-size:11px;color:#6b7280;margin-top:3px;}
+  .post-btn{background:linear-gradient(135deg,#FF5C00,#FF3D00);color:#fff;border:none;border-radius:14px;padding:15px;font-size:15px;font-weight:700;font-family:'Space Grotesk',system-ui,sans-serif;}
+</style>
+</head>
+<body>
+
+<!--
+  ============================================================
+  SWINGBY — ALI HOME SCREEN WIREFRAME v3
+  ============================================================
+  SCREEN: Client Home (Ali's POV)
+  STATUS: Approved design direction ✅
+
+  TWO MODES:
+  1. Browse — discover nearby businesses by category
+  2. Post a Job — submit a job with photo, budget, date/time
+
+  DESIGN TOKENS:
+  - Dark bg: #07080a / #0d0f10 / #0f1214
+  - Accent orange: #FF5C00 / #FF8C42
+  - Text primary: #ffffff / #f0ede8
+  - Text secondary: #9ca3af
+  - Text muted: #6b7280 / #4b5563
+  - Green accent: #4ade80 (verified, lawn)
+  - Blue accent: #60a5fa (plumbing, etc.)
+  - Border: #1a1d1f / #2a2e33
+
+  KEY UX DECISIONS (locked):
+  - Mode switcher top-center, like Uber tab toggle
+  - Browse shows: search bar → categories (scrollable) → top rated card → nearby list
+  - Post a Job shows: description → budget+category → date+time → photo upload → post CTA
+  - Photo upload note: "Businesses see this before quoting" — sets expectations
+  - Bottom nav: Home · My Jobs · Messages · Profile
+  - Notification dot on bell icon (unread state)
+  - Top Rated card has orange glow accent + badge
+  - Distance pill on nearby cards (map pin + km)
+  - Verified badge in green on trusted businesses
+
+  COMPONENTS TO BUILD (React Native):
+  - <ModeSwitch> — Browse / Post a Job toggle
+  - <CategoryScroll> — horizontal scroll, active state with orange border
+  - <FeaturedCard> — top-rated business with glow effect
+  - <NearbyCard> — compact business row with avatar + dist pill
+  - <PostJobForm> — multi-field form with photo upload
+  - <BottomNav> — 4-tab nav with active dot indicator
+  ============================================================
+-->
+
+<div class="phone">
+
+  <!-- STATUS BAR -->
+  <div class="sb">
+    <span>9:41</span>
+    <span>●●● WiFi 🔋</span>
+  </div>
+
+  <!-- HEADER -->
+  <div class="hdr">
+    <div class="logo">Swing<span class="logo-dot">By</span></div>
+    <div style="display:flex;gap:10px;align-items:center;">
+      <div class="loc-pill">📍 Calgary, AB</div>
+      <div style="width:34px;height:34px;background:#111315;border:1px solid #2a2e33;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;position:relative;">
+        🔔
+        <div style="position:absolute;top:6px;right:6px;width:6px;height:6px;background:#FF5C00;border-radius:50%;border:1.5px solid #07080a;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GREETING -->
+  <div class="greet">
+    <div class="greet-sub">Good morning</div>
+    <div class="greet-name">Ali <span class="greet-accent">.</span></div>
+  </div>
+
+  <!-- MODE SWITCHER -->
+  <div class="mode-sw">
+    <div class="mode-btn active">🧭 Browse</div>
+    <div class="mode-btn">＋ Post a Job</div>
+  </div>
+
+  <!-- ===================== BROWSE MODE ===================== -->
+  <!-- SEARCH -->
+  <div class="search">
+    <span style="font-size:16px;color:#4b5563;">🔍</span>
+    <span class="search-placeholder">Search services…</span>
+    <span style="font-size:16px;color:#6b7280;margin-left:auto;">⚙</span>
+  </div>
+
+  <!-- CATEGORIES -->
+  <div class="sec">
+    <span class="sec-title">Categories</span>
+    <span class="sec-more">See all</span>
+  </div>
+  <div class="cats">
+    <div class="cat active"><div style="font-size:18px;">✨</div><div class="cat-label">Cleaning</div></div>
+    <div class="cat"><div style="font-size:18px;">🔧</div><div class="cat-label">Plumbing</div></div>
+    <div class="cat"><div style="font-size:18px;">🚚</div><div class="cat-label">Moving</div></div>
+    <div class="cat"><div style="font-size:18px;">⚡</div><div class="cat-label">Electric</div></div>
+    <div class="cat"><div style="font-size:18px;">🌿</div><div class="cat-label">Lawn</div></div>
+  </div>
+
+  <!-- TOP RATED -->
+  <div class="sec" style="padding-top:14px;">
+    <span class="sec-title">Top Rated</span>
+  </div>
+  <div class="feat">
+    <div class="feat-av">AC</div>
+    <div style="flex:1;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px;">
+        <div class="feat-name">Ahmed's Cleaning Co.</div>
+        <div class="feat-badge">TOP RATED</div>
+      </div>
+      <div class="feat-meta"><span class="feat-star">★ 4.9</span> · 142 jobs · 2.1 km</div>
+      <div class="tags">
+        <span class="tag verified">✓ Verified</span>
+        <span class="tag">Cleaning</span>
+        <span class="tag">Same-day</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- NEARBY -->
+  <div class="sec" style="padding-top:14px;">
+    <span class="sec-title">Nearby</span>
+    <span class="sec-more">Map view</span>
+  </div>
+  <div class="nearby-list">
+    <div class="nc">
+      <div class="nc-av nc-av-green">GS</div>
+      <div style="flex:1;">
+        <div class="nc-name">GreenScape Lawn Care</div>
+        <div class="nc-meta"><span style="color:#FF5C00;font-weight:700;">★ 4.7</span> · 89 jobs</div>
+      </div>
+      <div class="nc-dist">📍 3.4 km</div>
+    </div>
+    <div class="nc">
+      <div class="nc-av nc-av-blue">PF</div>
+      <div style="flex:1;">
+        <div class="nc-name">ProFix Plumbing</div>
+        <div class="nc-meta"><span style="color:#FF5C00;font-weight:700;">★ 4.8</span> · 211 jobs</div>
+      </div>
+      <div class="nc-dist">📍 4.1 km</div>
+    </div>
+  </div>
+
+  <!-- ===================== POST A JOB MODE ===================== -->
+  <!-- NOTE: This section shown below Browse for reference.
+       In the actual app, this replaces Browse when tab is active. -->
+  <div style="margin:20px 22px 0;padding:12px;background:#0d0f10;border:1px dashed #2a2e33;border-radius:12px;">
+    <div style="font-size:11px;color:#FF5C00;font-weight:700;letter-spacing:1px;margin-bottom:6px;">POST A JOB MODE (tab 2)</div>
+    <div class="post-form" style="padding:0;">
+      <div>
+        <div class="field-label">What do you need?</div>
+        <div class="field-input" style="color:#3a424c;">e.g. Deep clean of 2-bedroom apartment…</div>
+      </div>
+      <div class="field-row">
+        <div><div class="field-label">Budget</div><div class="field-input" style="color:#3a424c;">$ 150</div></div>
+        <div><div class="field-label">Category</div><div class="field-input" style="color:#3a424c;">Cleaning</div></div>
+      </div>
+      <div class="field-row">
+        <div><div class="field-label">Date</div><div class="field-input" style="color:#3a424c;">May 28</div></div>
+        <div><div class="field-label">Time</div><div class="field-input" style="color:#3a424c;">10:00 AM</div></div>
+      </div>
+      <div>
+        <div class="field-label">Photo of the space</div>
+        <div class="photo-box">
+          <div style="font-size:24px;color:#FF5C00;margin-bottom:6px;">📷</div>
+          <div class="photo-label">Upload a photo</div>
+          <div class="photo-sub">Businesses see this before quoting</div>
+        </div>
+      </div>
+      <div class="post-btn" style="text-align:center;">Post job →</div>
+    </div>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <div class="bnav">
+    <div class="ni"><div style="font-size:22px;color:#FF5C00;">🏠</div><div class="ni-label active">Home</div><div style="width:4px;height:4px;background:#FF5C00;border-radius:50%;margin-top:1px;"></div></div>
+    <div class="ni"><div style="font-size:22px;color:#2a2e33;">📄</div><div class="ni-label">My Jobs</div></div>
+    <div class="ni"><div style="font-size:22px;color:#2a2e33;">💬</div><div class="ni-label">Messages</div></div>
+    <div class="ni"><div style="font-size:22px;color:#2a2e33;">👤</div><div class="ni-label">Profile</div></div>
+  </div>
+
+</div>
+</body>
+</html>

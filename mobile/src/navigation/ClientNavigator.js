@@ -16,6 +16,21 @@ import ChatScreen from '../screens/ChatScreen';
 import ReviewScreen from '../screens/ReviewScreen';
 import MapScreen from '../screens/MapScreen';
 import NotificationsScreen from '../screens/NotificationsScreen';
+import SearchScreen from '../screens/SearchScreen';
+import FavoritesScreen from '../screens/FavoritesScreen';
+import NearbyMapScreen from '../screens/NearbyMapScreen';
+import ProfileEditScreen from '../screens/ProfileEditScreen';
+import SettingsScreen from '../screens/SettingsScreen';
+import PrivacyPolicyScreen from '../screens/PrivacyPolicyScreen';
+import TermsOfServiceScreen from '../screens/TermsOfServiceScreen';
+import HelpFAQScreen from '../screens/HelpFAQScreen';
+import ReferralScreen from '../screens/ReferralScreen';
+import NotificationsCenterScreen from '../screens/NotificationsCenterScreen';
+import BookingDetailsScreen from '../screens/BookingDetailsScreen';
+import MessageThreadScreen from '../screens/MessageThreadScreen';
+import CancellationFlowScreen from '../screens/CancellationFlowScreen';
+import PaymentMethodScreen from '../screens/PaymentMethodScreen';
+import DisputeFlowScreen from '../screens/DisputeFlowScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -47,6 +62,21 @@ export default function ClientNavigator() {
       <Stack.Screen name="Review" component={ReviewScreen} />
       <Stack.Screen name="Map" component={MapScreen} />
       <Stack.Screen name="Notifications" component={NotificationsScreen} />
+      <Stack.Screen name="Search" component={SearchScreen} />
+      <Stack.Screen name="Favorites" component={FavoritesScreen} />
+      <Stack.Screen name="NearbyMap" component={NearbyMapScreen} />
+      <Stack.Screen name="ProfileEdit" component={ProfileEditScreen} />
+      <Stack.Screen name="Settings" component={SettingsScreen} />
+      <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} />
+      <Stack.Screen name="TermsOfService" component={TermsOfServiceScreen} />
+      <Stack.Screen name="HelpFAQ" component={HelpFAQScreen} />
+      <Stack.Screen name="ReferralScreen" component={ReferralScreen} />
+      <Stack.Screen name="NotificationsCenter" component={NotificationsCenterScreen} />
+      <Stack.Screen name="BookingDetails" component={BookingDetailsScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="MessageThread" component={MessageThreadScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="CancellationFlow" component={CancellationFlowScreen} />
+      <Stack.Screen name="PaymentMethod" component={PaymentMethodScreen} />
+      <Stack.Screen name="DisputeFlow" component={DisputeFlowScreen} />
     </Stack.Navigator>
   );
 }

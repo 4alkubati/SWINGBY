@@ -1,7 +1,7 @@
 import logging
 
-from fastapi import APIRouter, HTTPException, Depends
-from pydantic import BaseModel
+from fastapi import APIRouter, HTTPException, Depends, Query
+from pydantic import BaseModel, Field
 from typing import Optional
 from datetime import datetime, timezone
 from app.deps import get_current_user
@@ -16,18 +16,18 @@ router = APIRouter()
 # ── Schemas ───────────────────────────────────────────────────────────────────
 
 class AssignEmployee(BaseModel):
-    employee_id: str
-    proposed_date_1: Optional[str] = None   # ISO-8601 strings
-    proposed_date_2: Optional[str] = None
-    proposed_date_3: Optional[str] = None
+    employee_id: str = Field(..., min_length=1, max_length=500)
+    proposed_date_1: Optional[str] = Field(None, max_length=500)   # ISO-8601 strings
+    proposed_date_2: Optional[str] = Field(None, max_length=500)
+    proposed_date_3: Optional[str] = Field(None, max_length=500)
 
 
 class ConfirmDate(BaseModel):
-    confirmed_date: str   # client picks one of the proposed dates
+    confirmed_date: str = Field(..., max_length=500)   # client picks one of the proposed dates
 
 
 class CancelBooking(BaseModel):
-    reason: Optional[str] = None
+    reason: Optional[str] = Field(None, max_length=2000)
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -56,7 +56,11 @@ def _assert_booking_access(booking: dict, current_user: dict):
 # ── Endpoints ─────────────────────────────────────────────────────────────────
 
 @router.get("/")
-def list_my_bookings(current_user: dict = Depends(get_current_user)):
+def list_my_bookings(
+    limit: int = Query(20, ge=1, le=100, description="Max results to return"),
+    offset: int = Query(0, ge=0, description="Number of results to skip"),
+    current_user: dict = Depends(get_current_user),
+):
     """Returns bookings relevant to the current user (client / owner / employee)."""
     role = current_user["role"]
     uid = current_user["id"]
@@ -68,36 +72,42 @@ def list_my_bookings(current_user: dict = Depends(get_current_user)):
                 .select("*, businesses(business_name, category), employees(role_title, avatar_url, users(first_name, last_name))")
                 .eq("client_id", uid)
                 .order("created_at", desc=True)
+                .range(offset, offset + limit - 1)
                 .execute()
             )
         elif role == "business_owner":
             biz = supabase.table("businesses").select("id").eq("owner_id", uid).single().execute()
             if not biz.data:
-                return []
+                return {"items": [], "limit": limit, "offset": offset, "next_offset": None}
             res = (
                 supabase.table("bookings")
                 .select("*, users(first_name, last_name), employees(role_title)")
                 .eq("business_id", biz.data["id"])
                 .order("created_at", desc=True)
+                .range(offset, offset + limit - 1)
                 .execute()
             )
         elif role == "employee":
             emp = supabase.table("employees").select("id").eq("user_id", uid).single().execute()
             if not emp.data:
-                return []
+                return {"items": [], "limit": limit, "offset": offset, "next_offset": None}
             res = (
                 supabase.table("bookings")
                 .select("*, users(first_name, last_name), businesses(business_name)")
                 .eq("employee_id", emp.data["id"])
                 .order("created_at", desc=True)
+                .range(offset, offset + limit - 1)
                 .execute()
             )
         else:
-            return []
+            return {"items": [], "limit": limit, "offset": offset, "next_offset": None}
 
-        return res.data
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        items = res.data or []
+        next_offset = offset + limit if len(items) == limit else None
+        return {"items": items, "limit": limit, "offset": offset, "next_offset": next_offset}
+    except Exception:
+        logger.exception("Could not list bookings")
+        raise HTTPException(status_code=400, detail="Could not list bookings")
 
 
 @router.get("/{booking_id}")
@@ -162,8 +172,9 @@ def assign_employee(
     try:
         res = supabase.table("bookings").update(update_payload).eq("id", booking_id).execute()
         return {"message": "Employee assigned", "booking": res.data[0]}
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    except Exception:
+        logger.exception("Could not assign employee to booking")
+        raise HTTPException(status_code=400, detail="Could not assign employee")
 
 
 @router.patch("/{booking_id}/confirm-date")
@@ -227,8 +238,9 @@ def confirm_date(
         return {"message": "Date confirmed — booking is now in progress", "booking": updated_booking}
     except HTTPException:
         raise
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    except Exception:
+        logger.exception("Could not confirm booking date")
+        raise HTTPException(status_code=400, detail="Could not confirm booking date")
 
 
 @router.patch("/{booking_id}/complete")
@@ -285,8 +297,9 @@ def complete_booking(booking_id: str, current_user: dict = Depends(get_current_u
         return {"message": "Booking completed — full payment released (minus platform fee)"}
     except HTTPException:
         raise
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    except Exception:
+        logger.exception("Could not complete booking")
+        raise HTTPException(status_code=400, detail="Could not complete booking")
 
 
 @router.patch("/{booking_id}/cancel")
@@ -354,5 +367,6 @@ def cancel_booking(
         }
     except HTTPException:
         raise
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    except Exception:
+        logger.exception("Could not cancel booking")
+        raise HTTPException(status_code=400, detail="Could not cancel booking")

@@ -1,9 +1,13 @@
+import logging
 import math
+
 from fastapi import APIRouter, HTTPException, Depends, Query
 from pydantic import BaseModel, Field, field_validator
 from typing import Optional
 from app.deps import get_current_user
 from app.supabase_client import supabase
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -23,11 +27,11 @@ def _haversine_km(lat1: float, lng1: float, lat2: float, lng2: float) -> float:
 # ── Schemas ───────────────────────────────────────────────────────────────────
 
 class BusinessCreate(BaseModel):
-    business_name: str = Field(..., min_length=1, max_length=200)
-    category: str = Field(..., min_length=1, max_length=100)
-    custom_category: Optional[str] = Field(None, max_length=100)
+    business_name: str = Field(..., min_length=1, max_length=120)
+    category: str = Field(..., min_length=1, max_length=120)
+    custom_category: Optional[str] = Field(None, max_length=120)
     description: Optional[str] = Field(None, max_length=2000)
-    license_number: Optional[str] = Field(None, max_length=100)
+    license_number: Optional[str] = Field(None, max_length=500)
     lat: Optional[float] = Field(None, ge=-90.0, le=90.0)
     lng: Optional[float] = Field(None, ge=-180.0, le=180.0)
     service_radius_km: Optional[float] = Field(25.0, ge=1.0, le=500.0)
@@ -39,11 +43,11 @@ class BusinessCreate(BaseModel):
 
 
 class BusinessUpdate(BaseModel):
-    business_name: Optional[str] = Field(None, min_length=1, max_length=200)
-    category: Optional[str] = Field(None, min_length=1, max_length=100)
-    custom_category: Optional[str] = Field(None, max_length=100)
+    business_name: Optional[str] = Field(None, min_length=1, max_length=120)
+    category: Optional[str] = Field(None, min_length=1, max_length=120)
+    custom_category: Optional[str] = Field(None, max_length=120)
     description: Optional[str] = Field(None, max_length=2000)
-    license_number: Optional[str] = Field(None, max_length=100)
+    license_number: Optional[str] = Field(None, max_length=500)
     lat: Optional[float] = Field(None, ge=-90.0, le=90.0)
     lng: Optional[float] = Field(None, ge=-180.0, le=180.0)
     service_radius_km: Optional[float] = Field(None, ge=1.0, le=500.0)
@@ -64,8 +68,9 @@ def create_business(data: BusinessCreate, current_user: dict = Depends(get_curre
         payload = {"owner_id": current_user["id"], **data.model_dump(exclude_none=True)}
         res = supabase.table("businesses").insert(payload).execute()
         return {"message": "Business created", "business": res.data[0]}
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    except Exception:
+        logger.exception("Could not create business")
+        raise HTTPException(status_code=400, detail="Could not create business")
 
 
 @router.get("/nearby")
@@ -73,14 +78,16 @@ def get_nearby_businesses(
     lat: float = Query(..., ge=-90.0, le=90.0, description="Caller latitude"),
     lng: float = Query(..., ge=-180.0, le=180.0, description="Caller longitude"),
     radius_km: float = Query(25.0, ge=1.0, le=200.0, description="Search radius in km"),
-    category: Optional[str] = Query(None, max_length=100),
+    category: Optional[str] = Query(None, max_length=120),
+    limit: int = Query(20, ge=1, le=100, description="Max results to return"),
+    offset: int = Query(0, ge=0, description="Number of results to skip"),
     current_user: dict = Depends(get_current_user),
 ):
     """
     Geo-browse: return businesses whose service area covers the caller's location.
 
     Uses a bounding-box pre-filter in the query, then Haversine exact filtering
-    in Python (no PostGIS required).
+    in Python (no PostGIS required). Supports pagination via limit/offset.
     """
     # Rough degree offsets for the bounding box (1° lat ≈ 111 km)
     lat_delta = radius_km / 111.0
@@ -114,10 +121,16 @@ def get_nearby_businesses(
 
         # Sort closest first
         nearby.sort(key=lambda b: b["distance_km"])
-        return nearby
 
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        # Apply pagination on the sorted result
+        page = nearby[offset: offset + limit]
+        next_offset = offset + limit if len(page) == limit else None
+
+        return {"items": page, "limit": limit, "offset": offset, "next_offset": next_offset}
+
+    except Exception:
+        logger.exception("Could not fetch nearby businesses")
+        raise HTTPException(status_code=400, detail="Could not fetch nearby businesses")
 
 
 @router.get("/me")
@@ -133,17 +146,22 @@ def get_my_business(current_user: dict = Depends(get_current_user)):
 
 @router.get("/")
 def list_businesses(
-    category: Optional[str] = Query(None, max_length=100),
+    category: Optional[str] = Query(None, max_length=120),
+    limit: int = Query(20, ge=1, le=100, description="Max results to return"),
+    offset: int = Query(0, ge=0, description="Number of results to skip"),
     current_user: dict = Depends(get_current_user),
 ):
     try:
         query = supabase.table("businesses").select("*")
         if category:
             query = query.eq("category", category.strip())
-        res = query.execute()
-        return res.data
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        res = query.range(offset, offset + limit - 1).execute()
+        items = res.data or []
+        next_offset = offset + limit if len(items) == limit else None
+        return {"items": items, "limit": limit, "offset": offset, "next_offset": next_offset}
+    except Exception:
+        logger.exception("Could not list businesses")
+        raise HTTPException(status_code=400, detail="Could not list businesses")
 
 
 @router.get("/{business_id}")
@@ -177,5 +195,6 @@ def update_business(
     try:
         res = supabase.table("businesses").update(update_data).eq("id", business_id).execute()
         return {"message": "Business updated", "business": res.data[0]}
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    except Exception:
+        logger.exception("Could not update business")
+        raise HTTPException(status_code=400, detail="Could not update business")

@@ -3,13 +3,14 @@
     "name": "SwingBy",
     "slug": "swingby",
     "version": "1.0.0",
+    "scheme": "swingby",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#0a0c0b"
+      "backgroundColor": "#07080a"
     },
     "ios": {
       "supportsTablet": false,
@@ -22,14 +23,17 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#0a0c0b"
+        "backgroundColor": "#07080a"
       },
-      "googleMapsApiKey": "GOOGLE_MAPS_API_KEY_PLACEHOLDER",
+      "googleMapsApiKey": "AIzaSyDW2h2noMJ_PyVCwub17DIwi8xb8BAnyJw",
       "package": "com.swingby.app",
       "permissions": [
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION"
       ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
     },
     "plugins": [
       [

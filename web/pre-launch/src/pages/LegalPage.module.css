@@ -1,0 +1,126 @@
+.page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  padding: 24px 48px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.logo {
+  font-family: var(--font-head);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.5px;
+  text-decoration: none;
+  transition: opacity 0.2s;
+}
+.logo:hover {
+  opacity: 0.8;
+}
+
+.main {
+  flex: 1;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 64px 48px 80px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.docTitle {
+  font-family: var(--font-head);
+  font-size: 36px;
+  font-weight: 700;
+  letter-spacing: -0.75px;
+  color: var(--text);
+}
+
+.docMeta {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: -12px;
+}
+
+.docIntro {
+  font-size: 16px;
+  color: #9ca3af;
+  line-height: 1.7;
+}
+
+.section {
+  background: #0d0f10;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sectionHeading {
+  font-family: var(--font-head);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.3px;
+}
+
+.sectionBody {
+  font-size: 15px;
+  color: #d1cdc7;
+  line-height: 1.75;
+  white-space: pre-line;
+}
+
+.contactCard {
+  background: rgba(255,92,0,0.04);
+  border: 1px solid rgba(255,92,0,0.15);
+  border-radius: 16px;
+  padding: 24px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.contactTitle {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.contactBody {
+  font-size: 14px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.contactLink {
+  color: var(--accent2);
+  font-weight: 600;
+  text-decoration: none;
+  transition: opacity 0.2s;
+}
+.contactLink:hover {
+  opacity: 0.8;
+}
+
+@media (max-width: 768px) {
+  .nav {
+    padding: 20px 24px;
+  }
+  .main {
+    padding: 48px 24px 64px;
+  }
+  .docTitle {
+    font-size: 28px;
+  }
+}

@@ -1,7 +1,8 @@
 import logging
 
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Query
 from pydantic import BaseModel, Field, field_validator
+from typing import Optional
 from app.deps import get_current_user
 from app.supabase_client import supabase
 from app.services.push import send_push_to_user
@@ -14,7 +15,7 @@ router = APIRouter()
 # ── Schemas ───────────────────────────────────────────────────────────────────
 
 class MessageSend(BaseModel):
-    booking_id: str = Field(..., min_length=1)
+    booking_id: str = Field(..., min_length=1, max_length=500)
     content: str = Field(..., min_length=1, max_length=2000)
 
     @field_validator("content", mode="before")
@@ -102,12 +103,18 @@ def send_message(data: MessageSend, current_user: dict = Depends(get_current_use
         return {"message": "Sent", "data": res.data[0]}
     except HTTPException:
         raise
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    except Exception:
+        logger.exception("Could not send message")
+        raise HTTPException(status_code=400, detail="Could not send message")
 
 
 @router.get("/{booking_id}")
-def get_messages(booking_id: str, current_user: dict = Depends(get_current_user)):
+def get_messages(
+    booking_id: str,
+    limit: int = Query(50, ge=1, le=200, description="Max messages to return"),
+    before: Optional[str] = Query(None, description="ISO-8601 timestamp — return messages sent before this time"),
+    current_user: dict = Depends(get_current_user),
+):
     booking_res = supabase.table("bookings").select("*").eq("id", booking_id).single().execute()
     if not booking_res.data:
         raise HTTPException(status_code=404, detail="Booking not found")
@@ -115,13 +122,19 @@ def get_messages(booking_id: str, current_user: dict = Depends(get_current_user)
     _assert_message_access(booking_res.data, current_user)
 
     try:
-        res = (
+        query = (
             supabase.table("messages")
             .select("*, users(first_name, last_name)")
             .eq("booking_id", booking_id)
-            .order("sent_at")
-            .execute()
         )
-        return res.data
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        if before:
+            query = query.lt("sent_at", before)
+
+        query = query.order("sent_at", desc=True).limit(limit)
+        res = query.execute()
+        items = res.data or []
+        next_before = items[-1]["sent_at"] if items else None
+        return {"items": items, "limit": limit, "before": before, "next_before": next_before}
+    except Exception:
+        logger.exception("Could not retrieve messages")
+        raise HTTPException(status_code=400, detail="Could not retrieve messages")

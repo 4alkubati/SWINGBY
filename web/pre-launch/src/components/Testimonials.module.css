@@ -1,0 +1,86 @@
+.section {
+  position: relative;
+  z-index: 10;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 80px 48px;
+  text-align: center;
+}
+
+.heading {
+  font-family: var(--font-head);
+  font-size: 36px;
+  font-weight: 700;
+  letter-spacing: -0.75px;
+  color: var(--text);
+  margin-bottom: 48px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  text-align: left;
+}
+
+.card {
+  background: #0d0f10;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  transition: border-color 0.2s;
+}
+.card:hover {
+  border-color: rgba(255,92,0,0.25);
+}
+
+.quoteMark {
+  font-family: var(--font-head);
+  font-size: 48px;
+  line-height: 1;
+  color: var(--accent);
+  font-weight: 700;
+  flex-shrink: 0;
+  display: block;
+  height: 32px;
+  margin-bottom: -4px;
+}
+
+.body {
+  font-size: 16px;
+  color: var(--text);
+  line-height: 1.65;
+  flex: 1;
+}
+
+.attribution {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+.name {
+  font-weight: 600;
+  color: var(--text);
+}
+.sep {
+  color: var(--muted);
+}
+.role {
+  color: var(--muted);
+}
+
+@media (max-width: 768px) {
+  .section {
+    padding: 64px 24px;
+  }
+  .heading {
+    font-size: 28px;
+  }
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}

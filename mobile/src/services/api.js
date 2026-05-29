@@ -27,6 +27,43 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// ─── T40: Retry interceptor (BEFORE the 401 handler) ─────────────────────────
+// Retries on 5xx and network errors with exponential backoff: 300ms, 800ms, 2000ms.
+// Only retries GET requests unless config._retryNonGet === true.
+// Does not retry on 4xx except 408 (Request Timeout).
+const RETRY_DELAYS = [300, 800, 2000];
+
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const config = error.config;
+
+    if (!config) return Promise.reject(error);
+
+    const status = error.response?.status;
+    const isNetworkError = !error.response;
+    const is5xx = status >= 500;
+    const is408 = status === 408;
+    const shouldRetry = isNetworkError || is5xx || is408;
+
+    const isGet = config.method?.toUpperCase() === 'GET';
+    const allowedToRetry = isGet || config._retryNonGet === true;
+
+    config._retryCount = config._retryCount || 0;
+
+    if (shouldRetry && allowedToRetry && config._retryCount < RETRY_DELAYS.length) {
+      const delay = RETRY_DELAYS[config._retryCount];
+      config._retryCount += 1;
+
+      await new Promise((resolve) => setTimeout(resolve, delay));
+      return api(config);
+    }
+
+    return Promise.reject(error);
+  }
+);
+
+// ─── Existing 401 handler + response unwrap ───────────────────────────────────
 api.interceptors.response.use(
   (response) => response.data,
   (error) => {

@@ -1,6 +1,6 @@
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, RefreshControl } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import ModeSwitch from '../components/ModeSwitch';
 import CategoryScroll from '../components/CategoryScroll';
@@ -40,42 +40,41 @@ export default function HomeScreen({ navigation }) {
   const [businesses, setBusinesses] = useState([]);
   const [loadingBusinesses, setLoadingBusinesses] = useState(true);
   const [businessError, setBusinessError] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    async function fetchNearby() {
-      setLoadingBusinesses(true);
-      setBusinessError(null);
+  const fetchNearby = useCallback(async () => {
+    setBusinessError(null);
+    try {
+      let coords;
       try {
-        let coords;
-        try {
-          coords = await getUserLocation();
-        } catch {
-          coords = CALGARY_FALLBACK;
-        }
-
-        const data = await api.get('/businesses/nearby', {
-          params: { lat: coords.lat, lng: coords.lng, radius_km: 25 },
-        });
-
-        if (!cancelled) {
-          const list = Array.isArray(data) ? data : (data?.businesses ?? []);
-          setBusinesses(list.map((b) => ({
-            ...b,
-            _distance: computeDistance(coords.lat, coords.lng, b.lat, b.lng),
-          })));
-        }
-      } catch (err) {
-        if (!cancelled) setBusinessError(err.message || 'Failed to load nearby businesses');
-      } finally {
-        if (!cancelled) setLoadingBusinesses(false);
+        coords = await getUserLocation();
+      } catch {
+        coords = CALGARY_FALLBACK;
       }
-    }
 
-    fetchNearby();
-    return () => { cancelled = true; };
+      const data = await api.get('/businesses/nearby', {
+        params: { lat: coords.lat, lng: coords.lng, radius_km: 25 },
+      });
+
+      const list = Array.isArray(data) ? data : (data?.businesses ?? []);
+      setBusinesses(list.map((b) => ({
+        ...b,
+        _distance: computeDistance(coords.lat, coords.lng, b.lat, b.lng),
+      })));
+    } catch (err) {
+      setBusinessError(err.message || 'Failed to load nearby businesses');
+    } finally {
+      setLoadingBusinesses(false);
+      setRefreshing(false);
+    }
   }, []);
+
+  useEffect(() => { fetchNearby(); }, [fetchNearby]);
+
+  const handleRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchNearby();
+  }, [fetchNearby]);
 
   const filteredBusinesses = activeCategory === 'all'
     ? businesses
@@ -122,6 +121,15 @@ export default function HomeScreen({ navigation }) {
           style={styles.scroll}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              tintColor="#FF5C00"
+              colors={['#FF5C00']}
+              progressBackgroundColor="#0d0f10"
+            />
+          }
         >
           {/* Search bar */}
           <View style={styles.searchBar}>
