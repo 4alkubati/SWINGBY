@@ -4,14 +4,17 @@ permissions:
   contents: read
 
 on:
+  workflow_dispatch:
   pull_request:
     paths:
       - 'mobile/**'
+      - '.github/workflows/mobile.yml'
   push:
     branches:
       - main
     paths:
       - 'mobile/**'
+      - '.github/workflows/mobile.yml'
 
 concurrency:
   group: mobile-${{ github.ref }}
