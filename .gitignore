@@ -16,6 +16,9 @@ dist/
 .expo/
 .expo-shared/
 
+# Claude Code worktrees (transient agent workspaces — never commit)
+.claude/worktrees/
+
 # OS
 .DS_Store
 Thumbs.db
