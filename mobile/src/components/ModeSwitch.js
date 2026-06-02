@@ -2,23 +2,29 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 
 export default function ModeSwitch({ mode, onModeChange }) {
   return (
-    <View style={styles.container}>
+    <View style={styles.container} accessibilityRole="tablist">
       <TouchableOpacity
         style={[styles.btn, mode === 'browse' && styles.btnActive]}
         onPress={() => onModeChange('browse')}
         activeOpacity={0.8}
+        accessibilityRole="tab"
+        accessibilityLabel="Browse services"
+        accessibilityState={{ selected: mode === 'browse' }}
       >
-        <Text style={[styles.btnText, mode === 'browse' && styles.btnTextActive]}>
-          🧭 Browse
+        <Text style={[styles.btnText, mode === 'browse' && styles.btnTextActive]} allowFontScaling={true} maxFontSizeMultiplier={1.3}>
+          Browse
         </Text>
       </TouchableOpacity>
       <TouchableOpacity
         style={[styles.btn, mode === 'post' && styles.btnActive]}
         onPress={() => onModeChange('post')}
         activeOpacity={0.8}
+        accessibilityRole="tab"
+        accessibilityLabel="Post a job"
+        accessibilityState={{ selected: mode === 'post' }}
       >
-        <Text style={[styles.btnText, mode === 'post' && styles.btnTextActive]}>
-          ＋ Post a Job
+        <Text style={[styles.btnText, mode === 'post' && styles.btnTextActive]} allowFontScaling={true} maxFontSizeMultiplier={1.3}>
+          Post a Job
         </Text>
       </TouchableOpacity>
     </View>

@@ -1,7 +1,7 @@
-// T63 — SettingsScreen
+// T51 — SettingsScreen (UX polish pass)
 import React, { useState, useEffect } from 'react';
 import {
-  View, Text, TouchableOpacity, ScrollView, StyleSheet,
+  View, ScrollView, StyleSheet,
   Switch, Alert, Share, ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -14,44 +14,18 @@ import { api } from '../services/api';
 import { show as showToast } from '../services/toast';
 import LanguageSelector from '../components/LanguageSelector';
 import i18n from '../i18n';
+import { colors, spacing, radius } from '../theme/tokens';
+import Text from '../components/Text';
+import Stack from '../components/Stack';
+import Surface from '../components/Surface';
+import Button from '../components/Button';
+import ListItem from '../components/ListItem';
 
 const APP_VERSION =
   Constants.expoConfig?.version ??
   Constants.manifest?.version ??
   Constants.manifest2?.extra?.expoClient?.version ??
   '1.0.0';
-
-function SettingsRow({ icon, label, onPress, rightEl, destructive, disabled }) {
-  return (
-    <TouchableOpacity
-      style={[styles.row, disabled && styles.rowDisabled]}
-      onPress={onPress}
-      activeOpacity={disabled ? 1 : 0.7}
-      disabled={disabled}
-    >
-      {icon && (
-        <View style={styles.rowIcon}>
-          <Feather name={icon} size={16} color={destructive ? '#ef4444' : '#9ca3af'} />
-        </View>
-      )}
-      <Text style={[styles.rowLabel, destructive && styles.rowLabelDestructive]}>
-        {label}
-      </Text>
-      <View style={styles.rowRight}>
-        {rightEl ?? <Feather name="chevron-right" size={16} color="#3a424c" />}
-      </View>
-    </TouchableOpacity>
-  );
-}
-
-function SectionCard({ title, children }) {
-  return (
-    <View style={styles.card}>
-      <Text style={styles.sectionTitle}>{title}</Text>
-      {children}
-    </View>
-  );
-}
 
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
@@ -132,11 +106,30 @@ export default function SettingsScreen() {
     ]);
   }
 
+  // Locale chip displayed as the right slot on the Language row
+  const localeChip = (
+    <View style={styles.localeChip}>
+      <Text variant="caption" style={styles.localeChipText}>
+        {currentLocale === 'fr-CA' ? 'FR' : 'EN'}
+      </Text>
+    </View>
+  );
+
+  // Notifications toggle as the right slot (hides the default chevron)
+  const notifSwitch = (
+    <Switch
+      value={notifEnabled}
+      onValueChange={toggleNotifications}
+      trackColor={{ false: colors.border, true: colors.accentMuted }}
+      thumbColor={notifEnabled ? colors.accent : colors.textSecondary}
+    />
+  );
+
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Settings</Text>
+        <Text variant="display3">Settings</Text>
       </View>
 
       <ScrollView
@@ -144,110 +137,123 @@ export default function SettingsScreen() {
         contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 32 }]}
         showsVerticalScrollIndicator={false}
       >
-        {/* ACCOUNT */}
-        <SectionCard title="ACCOUNT">
-          <SettingsRow
-            icon="user"
-            label="Edit profile"
-            onPress={() => navigation.navigate('ProfileEdit')}
-          />
-          <View style={styles.divider} />
-          <SettingsRow
-            icon="globe"
-            label="Language"
-            onPress={() => setLangVisible(true)}
-            rightEl={
-              <View style={styles.localeChip}>
-                <Text style={styles.localeChipText}>
-                  {currentLocale === 'fr-CA' ? 'FR' : 'EN'}
-                </Text>
-              </View>
-            }
-          />
-          <View style={styles.divider} />
-          <View style={styles.row}>
-            <View style={styles.rowIcon}>
-              <Feather name="bell" size={16} color="#9ca3af" />
-            </View>
-            <Text style={styles.rowLabel}>Notifications</Text>
-            <View style={styles.rowRight}>
-              <Switch
-                value={notifEnabled}
-                onValueChange={toggleNotifications}
-                trackColor={{ false: '#2a2e33', true: 'rgba(255,92,0,0.4)' }}
-                thumbColor={notifEnabled ? '#FF5C00' : '#6b7280'}
+        <Stack spacing="base">
+          {/* ── ACCOUNT ── */}
+          <Surface elevation="subtle" padding={0} style={styles.section}>
+            <Text variant="label" color="secondary" style={styles.sectionLabel}>
+              ACCOUNT
+            </Text>
+            <Stack spacing={0}>
+              <ListItem
+                left={<Feather name="user" size={18} color={colors.textSecondary} />}
+                title="Edit profile"
+                onPress={() => navigation.navigate('ProfileEdit')}
+                style={styles.listItemFlush}
               />
-            </View>
-          </View>
-        </SectionCard>
+              <View style={styles.divider} />
+              <ListItem
+                left={<Feather name="globe" size={18} color={colors.textSecondary} />}
+                title="Language"
+                onPress={() => setLangVisible(true)}
+                right={localeChip}
+                showChevron={false}
+                style={styles.listItemFlush}
+              />
+              <View style={styles.divider} />
+              <ListItem
+                left={<Feather name="bell" size={18} color={colors.textSecondary} />}
+                title="Notifications"
+                right={notifSwitch}
+                showChevron={false}
+                style={styles.listItemFlush}
+              />
+            </Stack>
+          </Surface>
 
-        {/* PRIVACY & LEGAL */}
-        <SectionCard title="PRIVACY & LEGAL">
-          <SettingsRow
-            icon="shield"
-            label="Privacy Policy"
-            onPress={() => navigation.navigate('PrivacyPolicy')}
-          />
-          <View style={styles.divider} />
-          <SettingsRow
-            icon="file-text"
-            label="Terms of Service"
-            onPress={() => navigation.navigate('TermsOfService')}
-          />
-          <View style={styles.divider} />
-          <SettingsRow
-            icon="download"
-            label="Export my data"
-            onPress={handleExportData}
-            disabled={exportLoading}
-            rightEl={
-              exportLoading
-                ? <ActivityIndicator size="small" color="#FF5C00" />
-                : <Feather name="chevron-right" size={16} color="#3a424c" />
-            }
-          />
-          <View style={styles.divider} />
-          <SettingsRow
-            icon="trash-2"
-            label={deleteLoading ? 'Deleting…' : 'Delete my account'}
-            onPress={handleDeleteAccount}
-            destructive
-            disabled={deleteLoading}
-            rightEl={
-              deleteLoading
-                ? <ActivityIndicator size="small" color="#ef4444" />
-                : null
-            }
-          />
-        </SectionCard>
+          {/* ── PRIVACY & LEGAL ── */}
+          <Surface elevation="subtle" padding={0} style={styles.section}>
+            <Text variant="label" color="secondary" style={styles.sectionLabel}>
+              PRIVACY {'&'} LEGAL
+            </Text>
+            <Stack spacing={0}>
+              <ListItem
+                left={<Feather name="shield" size={18} color={colors.textSecondary} />}
+                title="Privacy Policy"
+                onPress={() => navigation.navigate('PrivacyPolicy')}
+                style={styles.listItemFlush}
+              />
+              <View style={styles.divider} />
+              <ListItem
+                left={<Feather name="file-text" size={18} color={colors.textSecondary} />}
+                title="Terms of Service"
+                onPress={() => navigation.navigate('TermsOfService')}
+                style={styles.listItemFlush}
+              />
+              <View style={styles.divider} />
+              <ListItem
+                left={<Feather name="download" size={18} color={colors.textSecondary} />}
+                title="Export my data"
+                onPress={exportLoading ? undefined : handleExportData}
+                right={
+                  exportLoading
+                    ? <ActivityIndicator size="small" color={colors.accent} />
+                    : undefined
+                }
+                showChevron={!exportLoading}
+                style={[styles.listItemFlush, exportLoading && styles.rowDisabled]}
+              />
+              <View style={styles.divider} />
+              <ListItem
+                left={<Feather name="trash-2" size={18} color={colors.danger} />}
+                title="Delete my account"
+                onPress={deleteLoading ? undefined : handleDeleteAccount}
+                right={
+                  deleteLoading
+                    ? <ActivityIndicator size="small" color={colors.danger} />
+                    : undefined
+                }
+                showChevron={!deleteLoading}
+                style={[styles.listItemFlush, deleteLoading && styles.rowDisabled]}
+                titleStyle={{ color: colors.danger }}
+              />
+            </Stack>
+          </Surface>
 
-        {/* SUPPORT */}
-        <SectionCard title="SUPPORT">
-          <SettingsRow
-            icon="help-circle"
-            label="Help & FAQ"
-            onPress={() => navigation.navigate('HelpFAQ')}
-          />
-          <View style={styles.divider} />
-          <SettingsRow
-            icon="mail"
-            label="Contact us"
-            onPress={handleContactUs}
-          />
-        </SectionCard>
+          {/* ── SUPPORT ── */}
+          <Surface elevation="subtle" padding={0} style={styles.section}>
+            <Text variant="label" color="secondary" style={styles.sectionLabel}>
+              SUPPORT
+            </Text>
+            <Stack spacing={0}>
+              <ListItem
+                left={<Feather name="help-circle" size={18} color={colors.textSecondary} />}
+                title="Help & FAQ"
+                onPress={() => navigation.navigate('HelpFAQ')}
+                style={styles.listItemFlush}
+              />
+              <View style={styles.divider} />
+              <ListItem
+                left={<Feather name="mail" size={18} color={colors.textSecondary} />}
+                title="Contact us"
+                onPress={handleContactUs}
+                style={styles.listItemFlush}
+              />
+            </Stack>
+          </Surface>
 
-        {/* Sign out */}
-        <TouchableOpacity
-          style={styles.signOutBtn}
-          onPress={handleSignOut}
-          activeOpacity={0.85}
-        >
-          <Feather name="log-out" size={16} color="#ef4444" style={{ marginRight: 8 }} />
-          <Text style={styles.signOutText}>Sign Out</Text>
-        </TouchableOpacity>
+          {/* ── Sign out ── */}
+          <Button
+            variant="danger"
+            label="Sign Out"
+            onPress={handleSignOut}
+            icon={<Feather name="log-out" size={16} color={colors.textPrimary} />}
+          />
 
-        {/* Version footer */}
-        <Text style={styles.versionText}>SwingBy v{APP_VERSION}</Text>
+          {/* Version footer */}
+          <Text variant="caption" color="secondary" style={styles.versionText}>
+            SwingBy v{APP_VERSION}
+          </Text>
+        </Stack>
       </ScrollView>
 
       <LanguageSelector
@@ -265,110 +271,61 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#07080a',
+    backgroundColor: colors.bg,
   },
   header: {
-    paddingHorizontal: 22,
-    paddingTop: 8,
-    paddingBottom: 16,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.base,
     borderBottomWidth: 1,
-    borderBottomColor: '#1a1d1f',
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#ffffff',
-    letterSpacing: -0.5,
+    borderBottomColor: colors.border,
   },
   scroll: {
     flex: 1,
   },
   content: {
-    paddingHorizontal: 16,
-    paddingTop: 20,
-    gap: 16,
+    paddingHorizontal: spacing.base,
+    paddingTop: spacing.lg,
   },
-  card: {
-    backgroundColor: '#0d0f10',
-    borderWidth: 1,
-    borderColor: '#1a1d1f',
-    borderRadius: 18,
+  // Section card — Surface with no padding; label + rows rendered inside
+  section: {
     overflow: 'hidden',
   },
-  sectionTitle: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#6b7280',
+  sectionLabel: {
     letterSpacing: 1.0,
     textTransform: 'uppercase',
-    paddingHorizontal: 16,
-    paddingTop: 14,
-    paddingBottom: 10,
+    paddingHorizontal: spacing.base,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
   },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    minHeight: 56,
+  // Strip the ListItem's own card styling so rows sit flush inside Surface
+  listItemFlush: {
+    borderWidth: 0,
+    borderRadius: 0,
+    backgroundColor: 'transparent',
+    paddingHorizontal: spacing.base,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: colors.border,
+    marginLeft: spacing.base,
   },
   rowDisabled: {
     opacity: 0.5,
   },
-  rowIcon: {
-    width: 28,
-    alignItems: 'flex-start',
-  },
-  rowLabel: {
-    flex: 1,
-    fontSize: 15,
-    color: '#f0ede8',
-    fontWeight: '500',
-  },
-  rowLabelDestructive: {
-    color: '#ef4444',
-  },
-  rowRight: {
-    alignItems: 'flex-end',
-  },
-  divider: {
-    height: 1,
-    backgroundColor: '#1a1d1f',
-    marginLeft: 16,
-  },
   localeChip: {
-    backgroundColor: 'rgba(255,92,0,0.10)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,92,0,0.25)',
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
+    backgroundColor: colors.accentMuted,
+    borderRadius: radius.chip,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
   },
   localeChipText: {
-    fontSize: 11,
     fontWeight: '700',
-    color: '#FF8C42',
+    color: colors.accent,
     letterSpacing: 0.5,
-  },
-  signOutBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#0d0f10',
-    borderWidth: 1,
-    borderColor: 'rgba(239,68,68,0.25)',
-    borderRadius: 14,
-    paddingVertical: 16,
-    minHeight: 54,
-  },
-  signOutText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#ef4444',
   },
   versionText: {
     textAlign: 'center',
-    fontSize: 12,
-    color: '#3a424c',
-    marginTop: 4,
+    paddingBottom: spacing.sm,
   },
 });

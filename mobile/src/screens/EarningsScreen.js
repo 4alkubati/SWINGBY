@@ -20,27 +20,9 @@ import {
 } from 'victory-native';
 import { api } from '../services/api';
 import { SkeletonBox } from '../components/Skeleton';
+import { colors } from '../theme/tokens';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
-
-// ─── Design tokens ────────────────────────────────────────────────────────────
-const C = {
-  bg: '#07080a',
-  card: '#0d0f10',
-  card2: '#0f1214',
-  subtle: '#131618',
-  borderSoft: '#1a1d1f',
-  borderMid: '#2a2e33',
-  orange: '#FF5C00',
-  orangeLight: '#FF8C42',
-  orangeBg: 'rgba(255,92,0,0.10)',
-  orangeBorder: 'rgba(255,92,0,0.25)',
-  textPrimary: '#ffffff',
-  textSecondary: '#9ca3af',
-  textMuted: '#6b7280',
-  gridLine: '#1a1d1f',
-  chartBg: '#07080a',
-};
 
 // ─── Time ranges ──────────────────────────────────────────────────────────────
 const RANGES = [
@@ -134,8 +116,8 @@ function EarningsChart({ data, range }) {
           tickCount={tickCount}
           tickFormat={(t) => formatAxisDate(range, t)}
           style={{
-            axis: { stroke: C.borderSoft },
-            tickLabels: { fill: C.textMuted, fontSize: 9, fontWeight: '600' },
+            axis: { stroke: colors.border },
+            tickLabels: { fill: colors.textSecondary, fontSize: 9, fontWeight: '600' },
             grid: { stroke: 'transparent' },
             ticks: { stroke: 'transparent' },
           }}
@@ -145,8 +127,8 @@ function EarningsChart({ data, range }) {
           tickFormat={(t) => (t >= 1000 ? `$${(t / 1000).toFixed(1)}k` : `$${t}`)}
           style={{
             axis: { stroke: 'transparent' },
-            tickLabels: { fill: C.textMuted, fontSize: 9, fontWeight: '600' },
-            grid: { stroke: C.gridLine, strokeDasharray: '4,6' },
+            tickLabels: { fill: colors.textSecondary, fontSize: 9, fontWeight: '600' },
+            grid: { stroke: colors.border, strokeDasharray: '4,6' },
             ticks: { stroke: 'transparent' },
           }}
         />
@@ -154,7 +136,7 @@ function EarningsChart({ data, range }) {
           data={displayData}
           style={{
             data: {
-              fill: 'rgba(255,92,0,0.10)',
+              fill: colors.accent + '1A', // ~10% opacity area fill
               stroke: 'transparent',
             },
           }}
@@ -164,7 +146,7 @@ function EarningsChart({ data, range }) {
           data={displayData}
           style={{
             data: {
-              stroke: C.orange,
+              stroke: colors.accent,
               strokeWidth: 2,
             },
           }}
@@ -180,7 +162,7 @@ function StatCard({ label, value, accent }) {
   return (
     <View style={styles.statCard}>
       <Text style={styles.statLabel}>{label}</Text>
-      <Text style={[styles.statValue, accent && { color: C.orange }]}>{value}</Text>
+      <Text style={[styles.statValue, accent && { color: colors.accent }]}>{value}</Text>
     </View>
   );
 }
@@ -325,7 +307,7 @@ export default function EarningsScreen({ navigation }) {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: C.bg },
+  container: { flex: 1, backgroundColor: colors.bg },
   scroll: { paddingBottom: 40 },
 
   // Header
@@ -337,12 +319,12 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     paddingBottom: 10,
   },
-  backBtn: { fontSize: 24, color: '#9ca3af', width: 40 },
-  headerTitle: { fontSize: 20, fontWeight: '700', color: C.textPrimary, letterSpacing: -0.5 },
+  backBtn: { fontSize: 24, color: colors.textSecondary, width: 40 },
+  headerTitle: { fontSize: 20, fontWeight: '700', color: colors.textPrimary, letterSpacing: -0.5 },
   exportBtn: {
-    backgroundColor: C.subtle,
+    backgroundColor: colors.surfaceAlt,
     borderWidth: 1,
-    borderColor: C.borderMid,
+    borderColor: colors.border,
     borderRadius: 20,
     paddingHorizontal: 14,
     paddingVertical: 7,
@@ -350,7 +332,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  exportText: { fontSize: 12, fontWeight: '700', color: C.textSecondary },
+  exportText: { fontSize: 12, fontWeight: '700', color: colors.textSecondary },
 
   // Hero
   hero: { alignItems: 'center', paddingTop: 24, paddingBottom: 8 },
@@ -358,10 +340,10 @@ const styles = StyleSheet.create({
   heroAmount: {
     fontSize: 48,
     fontWeight: '700',
-    color: C.orange,
+    color: colors.accent,
     letterSpacing: -1.5,
   },
-  heroSub: { fontSize: 14, color: C.textMuted, marginTop: 4 },
+  heroSub: { fontSize: 14, color: colors.textSecondary, marginTop: 4 },
 
   // Chips
   chipRow: {
@@ -372,7 +354,7 @@ const styles = StyleSheet.create({
   chip: {
     backgroundColor: 'transparent',
     borderWidth: 1,
-    borderColor: C.borderMid,
+    borderColor: colors.border,
     borderRadius: 20,
     paddingHorizontal: 16,
     paddingVertical: 9,
@@ -381,40 +363,40 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   chipActive: {
-    backgroundColor: C.orange,
-    borderColor: C.orange,
+    backgroundColor: colors.accent,
+    borderColor: colors.accent,
   },
-  chipText: { fontSize: 13, fontWeight: '600', color: C.textSecondary },
-  chipTextActive: { color: '#ffffff' },
+  chipText: { fontSize: 13, fontWeight: '600', color: colors.textSecondary },
+  chipTextActive: { color: colors.textPrimary },
 
   // Chart
   chartCard: {
     marginHorizontal: 22,
-    backgroundColor: C.chartBg,
+    backgroundColor: colors.bg,
     borderWidth: 1,
-    borderColor: C.borderSoft,
+    borderColor: colors.border,
     borderRadius: 18,
     overflow: 'hidden',
     marginBottom: 16,
   },
-  chartWrap: { backgroundColor: C.chartBg },
+  chartWrap: { backgroundColor: colors.bg },
   chartLoadingWrap: { padding: 20, alignItems: 'center' },
   chartEmpty: {
     height: 200,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: C.chartBg,
+    backgroundColor: colors.bg,
   },
-  chartEmptyText: { fontSize: 14, color: C.textMuted },
+  chartEmptyText: { fontSize: 14, color: colors.textSecondary },
 
   // Stats grid
   statsGrid: { paddingHorizontal: 22, gap: 10 },
   statsRow: { flexDirection: 'row', gap: 10 },
   statCard: {
     flex: 1,
-    backgroundColor: C.card,
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: C.borderSoft,
+    borderColor: colors.border,
     borderRadius: 16,
     padding: 16,
     gap: 6,
@@ -422,14 +404,14 @@ const styles = StyleSheet.create({
   statLabel: {
     fontSize: 11,
     fontWeight: '700',
-    color: C.textSecondary,
+    color: colors.textSecondary,
     textTransform: 'uppercase',
     letterSpacing: 0.8,
   },
   statValue: {
     fontSize: 20,
     fontWeight: '700',
-    color: C.textPrimary,
+    color: colors.textPrimary,
     letterSpacing: -0.5,
   },
 });

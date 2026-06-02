@@ -1,25 +1,162 @@
 import {
-  View, Text, ScrollView, TouchableOpacity, StyleSheet,
-  ActivityIndicator, RefreshControl,
+  View,
+  ScrollView,
+  TouchableOpacity,
+  StyleSheet,
+  RefreshControl,
+  Animated,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { api } from '../services/api';
+import { colors, spacing, radius, shadows } from '../theme/tokens';
+import Text from '../components/Text';
+import Avatar from '../components/Avatar';
+import Surface from '../components/Surface';
+import Stack from '../components/Stack';
+import Inline from '../components/Inline';
+import Badge from '../components/Badge';
+import Button from '../components/Button';
+import { SkeletonBox } from '../components/Skeleton';
 
-function initials(name = '') {
-  return name.split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2);
+// ─── helpers ─────────────────────────────────────────────────────────────────
+
+function starString(rating) {
+  const r = Math.round(Math.max(0, Math.min(5, rating)));
+  return '★'.repeat(r) + '☆'.repeat(5 - r);
 }
+
+// ─── Skeleton ─────────────────────────────────────────────────────────────────
+
+function ProfileSkeleton({ insets }) {
+  return (
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      {/* fake header */}
+      <View style={styles.header}>
+        <SkeletonBox width={32} height={32} borderRadius={radius.chip} />
+        <SkeletonBox width={80} height={18} borderRadius={6} />
+        <View style={{ width: 32 }} />
+      </View>
+
+      <ScrollView
+        contentContainerStyle={[styles.content, { paddingBottom: spacing['2xl'] }]}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* identity card skeleton */}
+        <Surface style={[styles.identityCard, { alignItems: 'center', gap: spacing.sm }]}>
+          <SkeletonBox width={96} height={96} borderRadius={radius.avatar} />
+          <SkeletonBox width={160} height={22} borderRadius={6} />
+          <SkeletonBox width={100} height={16} borderRadius={6} />
+          <SkeletonBox width={120} height={14} borderRadius={6} />
+          {/* stats row skeleton */}
+          <View style={[styles.statsRow, { marginTop: spacing.sm }]}>
+            {[0, 1, 2].map((i) => (
+              <View key={i} style={styles.statBox}>
+                <SkeletonBox width={36} height={22} borderRadius={6} />
+                <SkeletonBox width={44} height={11} borderRadius={4} style={{ marginTop: 4 }} />
+              </View>
+            ))}
+          </View>
+        </Surface>
+
+        {/* reviews skeleton */}
+        <View style={styles.sectionHeader}>
+          <SkeletonBox width={80} height={13} borderRadius={4} />
+        </View>
+
+        <Stack spacing="sm" style={{ paddingHorizontal: spacing.lg }}>
+          {[0, 1, 2].map((i) => (
+            <Surface key={i} padding="base" rounded="card" style={{ gap: spacing.sm }}>
+              <Inline justify="space-between">
+                <SkeletonBox width={80} height={13} borderRadius={4} />
+                <SkeletonBox width={72} height={12} borderRadius={4} />
+              </Inline>
+              <SkeletonBox width="100%" height={13} borderRadius={4} />
+              <SkeletonBox width="70%" height={13} borderRadius={4} />
+            </Surface>
+          ))}
+        </Stack>
+      </ScrollView>
+    </View>
+  );
+}
+
+// ─── Stat counter with fade-in micro-interaction ───────────────────────────────
+
+function StatItem({ value, label, isFirst }) {
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const translateY = useRef(new Animated.Value(8)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 400,
+        delay: isFirst ? 0 : isFirst === false ? 120 : 240,
+        useNativeDriver: true,
+      }),
+      Animated.timing(translateY, {
+        toValue: 0,
+        duration: 400,
+        delay: isFirst ? 0 : isFirst === false ? 120 : 240,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [fadeAnim, translateY, isFirst]);
+
+  return (
+    <Animated.View
+      style={[styles.statBox, { opacity: fadeAnim, transform: [{ translateY }] }]}
+    >
+      <Text variant="display3" color="primary" style={{ textAlign: 'center' }}>
+        {value}
+      </Text>
+      <Text variant="label" color="secondary" style={{ textAlign: 'center' }}>
+        {label}
+      </Text>
+    </Animated.View>
+  );
+}
+
+// ─── Review card ──────────────────────────────────────────────────────────────
+
+function ReviewCard({ review }) {
+  return (
+    <Surface padding="base" rounded="card">
+      <Stack spacing="xs">
+        <Inline justify="space-between">
+          <Text variant="smallMedium" color="primary">
+            {review.reviewer?.first_name || 'Client'}
+          </Text>
+          <Text variant="caption" style={{ color: colors.warning }}>
+            {starString(review.rating)}
+          </Text>
+        </Inline>
+        {!!review.comment && (
+          <Text variant="small" color="secondary" style={{ lineHeight: 20 }}>
+            {review.comment}
+          </Text>
+        )}
+      </Stack>
+    </Surface>
+  );
+}
+
+// ─── Main screen ──────────────────────────────────────────────────────────────
 
 export default function EmployeeProfileScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
   const { employeeId, businessId } = route.params || {};
+
   const [employee, setEmployee] = useState(null);
   const [business, setBusiness] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState(false);
 
   const load = useCallback(async () => {
+    setError(false);
     try {
       const calls = [
         api.get('/employees/'),
@@ -32,7 +169,7 @@ export default function EmployeeProfileScreen({ navigation, route }) {
       setReviews(revs || []);
       setBusiness(biz || null);
     } catch {
-      // keep stale
+      setError(true);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -41,10 +178,36 @@ export default function EmployeeProfileScreen({ navigation, route }) {
 
   useEffect(() => { load(); }, [load]);
 
+  // ─── Loading skeleton ───────────────────────────────────────────────────────
   if (loading) {
+    return <ProfileSkeleton insets={insets} />;
+  }
+
+  // ─── Error with retry ──────────────────────────────────────────────────────
+  if (error) {
     return (
-      <View style={[styles.loader, { paddingTop: insets.top }]}>
-        <ActivityIndicator color="#FF5C00" size="large" />
+      <View style={[styles.container, { paddingTop: insets.top }]}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={8}>
+            <Text variant="display3" color="secondary">←</Text>
+          </TouchableOpacity>
+          <Text variant="bodyMedium">Profile</Text>
+          <View style={{ width: 32 }} />
+        </View>
+        <View style={styles.centeredState}>
+          <Surface padding="lg" rounded="card" style={{ alignItems: 'center', gap: spacing.base }}>
+            <Text variant="h1" style={{ textAlign: 'center' }}>Could not load profile</Text>
+            <Text variant="small" color="secondary" style={{ textAlign: 'center' }}>
+              Check your connection and try again.
+            </Text>
+            <Button
+              variant="primary"
+              label="Retry"
+              onPress={() => { setLoading(true); load(); }}
+              style={{ alignSelf: 'stretch' }}
+            />
+          </Surface>
+        </View>
       </View>
     );
   }
@@ -53,127 +216,198 @@ export default function EmployeeProfileScreen({ navigation, route }) {
     ? `${employee.user.first_name} ${employee.user.last_name}`
     : 'Team member';
 
+  const avgRating =
+    reviews.length > 0
+      ? (reviews.reduce((s, r) => s + (r.rating || 0), 0) / reviews.length).toFixed(1)
+      : null;
+
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
+      {/* ── Nav header ──────────────────────────────────────────────────── */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.backBtn}>←</Text>
+        <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={8}>
+          <Text variant="display3" color="secondary">←</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Profile</Text>
+        <Text variant="bodyMedium">Profile</Text>
         <View style={{ width: 32 }} />
       </View>
 
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.content}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor="#FF5C00" />}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => { setRefreshing(true); load(); }}
+            tintColor={colors.accent}
+          />
+        }
       >
-        {/* Identity */}
-        <View style={styles.identityCard}>
-          <View style={styles.bigAvatar}>
-            <Text style={styles.bigAvatarText}>{initials(fullName)}</Text>
-          </View>
-          <Text style={styles.name}>{fullName}</Text>
-          {employee?.role_title && <Text style={styles.roleTitle}>{employee.role_title}</Text>}
+        {/* ── Identity card ──────────────────────────────────────────────── */}
+        <Surface
+          elevation="subtle"
+          background="default"
+          rounded="card"
+          padding="lg"
+          style={[styles.identityCard, shadows.subtle]}
+        >
+          <Stack spacing="sm" style={{ alignItems: 'center' }}>
+            {/* xl avatar */}
+            <Avatar name={fullName} size="xl" />
 
-          {businessId && business?.business_name && (
-            <TouchableOpacity
-              onPress={() => navigation.navigate('BusinessProfile', { businessId })}
-              style={styles.companyRow}
-            >
-              <Text style={styles.companyText}>{business.business_name} →</Text>
-            </TouchableOpacity>
-          )}
+            {/* name + role */}
+            <Stack spacing="xs" style={{ alignItems: 'center' }}>
+              <Text variant="display3" color="primary" style={{ textAlign: 'center' }}>
+                {fullName}
+              </Text>
+              {employee?.role_title ? (
+                <Text variant="small" color="secondary" style={{ textAlign: 'center' }}>
+                  {employee.role_title}
+                </Text>
+              ) : null}
+            </Stack>
 
-          <View style={styles.statsRow}>
-            <View style={styles.statBox}>
-              <Text style={styles.statValue}>—</Text>
-              <Text style={styles.statLabel}>Rating</Text>
-            </View>
-            <View style={styles.statDivider} />
-            <View style={styles.statBox}>
-              <Text style={styles.statValue}>—</Text>
-              <Text style={styles.statLabel}>Jobs</Text>
-            </View>
-            <View style={styles.statDivider} />
-            <View style={styles.statBox}>
-              <Text style={styles.statValue}>{reviews.length}</Text>
-              <Text style={styles.statLabel}>Reviews</Text>
-            </View>
-          </View>
-        </View>
+            {/* company link */}
+            {businessId && business?.business_name ? (
+              <TouchableOpacity
+                onPress={() => navigation.navigate('BusinessProfile', { businessId })}
+                activeOpacity={0.7}
+                style={styles.companyLink}
+              >
+                <Inline spacing="xs">
+                  <Text variant="caption" color="accent">
+                    {business.business_name}
+                  </Text>
+                  <Text variant="caption" color="accent">→</Text>
+                </Inline>
+              </TouchableOpacity>
+            ) : null}
 
-        {/* Reviews */}
+            {/* divider */}
+            <View style={styles.divider} />
+
+            {/* stats row with fade-in counter animation */}
+            <View style={styles.statsRow}>
+              <StatItem
+                value={avgRating ?? '—'}
+                label="Rating"
+                isFirst={true}
+              />
+              <View style={styles.statDivider} />
+              <StatItem
+                value={employee?.completed_jobs ?? '—'}
+                label="Jobs"
+                isFirst={false}
+              />
+              <View style={styles.statDivider} />
+              <StatItem
+                value={reviews.length}
+                label="Reviews"
+                isFirst={null}
+              />
+            </View>
+          </Stack>
+        </Surface>
+
+        {/* ── Reviews section ────────────────────────────────────────────── */}
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Reviews</Text>
+          <Inline justify="space-between">
+            <Text variant="label" color="secondary">Reviews</Text>
+            {reviews.length > 0 && (
+              <Badge count={reviews.length} color="accent" />
+            )}
+          </Inline>
         </View>
 
         {reviews.length === 0 ? (
-          <View style={styles.emptyCard}>
-            <Text style={styles.emptyText}>No reviews yet</Text>
-          </View>
+          /* Empty state */
+          <Surface
+            padding="lg"
+            rounded="card"
+            style={styles.emptyCard}
+          >
+            <Stack spacing="sm" style={{ alignItems: 'center' }}>
+              <Text variant="h1" style={{ textAlign: 'center' }}>No reviews yet</Text>
+              <Text variant="small" color="secondary" style={{ textAlign: 'center' }}>
+                Reviews from completed jobs will appear here.
+              </Text>
+            </Stack>
+          </Surface>
         ) : (
-          <View style={styles.reviewsList}>
+          <Stack spacing="sm" style={{ paddingHorizontal: spacing.lg }}>
             {reviews.map((rev) => (
-              <View key={rev.id} style={styles.reviewCard}>
-                <View style={styles.reviewHeader}>
-                  <Text style={styles.reviewerName}>{rev.reviewer?.first_name || 'Client'}</Text>
-                  <Text style={styles.reviewStars}>{'★'.repeat(rev.rating)}{'☆'.repeat(5 - rev.rating)}</Text>
-                </View>
-                {rev.comment ? <Text style={styles.reviewComment}>{rev.comment}</Text> : null}
-              </View>
+              <ReviewCard key={rev.id} review={rev} />
             ))}
-          </View>
+          </Stack>
         )}
       </ScrollView>
     </View>
   );
 }
 
+// ─── Styles ───────────────────────────────────────────────────────────────────
+
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#07080a' },
-  loader: { flex: 1, backgroundColor: '#07080a', alignItems: 'center', justifyContent: 'center' },
+  container: {
+    flex: 1,
+    backgroundColor: colors.bg,
+  },
   header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 22, paddingTop: 12, paddingBottom: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
   },
-  backBtn: { fontSize: 24, color: '#9ca3af', width: 32 },
-  headerTitle: { fontSize: 17, fontWeight: '700', color: '#ffffff' },
-  content: { paddingBottom: 40, gap: 4 },
+  content: {
+    paddingBottom: spacing['2xl'],
+    gap: spacing.xs,
+  },
   identityCard: {
-    backgroundColor: '#0f1214', borderWidth: 1, borderColor: '#1e2226',
-    borderRadius: 20, padding: 20, marginHorizontal: 22, marginTop: 8,
-    alignItems: 'center', gap: 8,
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.sm,
   },
-  bigAvatar: {
-    width: 80, height: 80, borderRadius: 40, backgroundColor: '#FF5C00',
-    alignItems: 'center', justifyContent: 'center',
-    shadowColor: '#FF5C00', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 10, elevation: 6,
+  companyLink: {
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    backgroundColor: colors.accentMuted,
+    borderRadius: radius.chip,
   },
-  bigAvatarText: { fontSize: 28, fontWeight: '700', color: '#fff' },
-  name: { fontSize: 22, fontWeight: '700', color: '#ffffff', letterSpacing: -0.5 },
-  roleTitle: { fontSize: 14, color: '#9ca3af' },
-  companyRow: { paddingVertical: 4 },
-  companyText: { fontSize: 13, color: '#FF8C42', fontWeight: '600' },
-  statsRow: { flexDirection: 'row', alignItems: 'center', marginTop: 8 },
-  statBox: { flex: 1, alignItems: 'center', gap: 2 },
-  statValue: { fontSize: 18, fontWeight: '700', color: '#ffffff' },
-  statLabel: { fontSize: 11, color: '#9ca3af', fontWeight: '600' },
-  statDivider: { width: 1, height: 32, backgroundColor: '#1a1d1f' },
-  sectionHeader: { paddingHorizontal: 22, paddingTop: 20, paddingBottom: 10 },
-  sectionTitle: { fontSize: 13, fontWeight: '700', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: 1.2 },
-  reviewsList: { paddingHorizontal: 22, gap: 10 },
-  reviewCard: {
-    backgroundColor: '#0d0f10', borderWidth: 1, borderColor: '#1a1d1f',
-    borderRadius: 14, padding: 14, gap: 6,
+  divider: {
+    width: '100%',
+    height: 1,
+    backgroundColor: colors.border,
+    marginVertical: spacing.xs,
   },
-  reviewHeader: { flexDirection: 'row', justifyContent: 'space-between' },
-  reviewerName: { fontSize: 13, fontWeight: '600', color: '#ffffff' },
-  reviewStars: { fontSize: 12, color: '#FF5C00' },
-  reviewComment: { fontSize: 13, color: '#9ca3af', lineHeight: 18 },
+  statsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
+  },
+  statBox: {
+    flex: 1,
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingVertical: spacing.sm,
+  },
+  statDivider: {
+    width: 1,
+    height: 36,
+    backgroundColor: colors.border,
+  },
+  sectionHeader: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.xl,
+    paddingBottom: spacing.sm,
+  },
   emptyCard: {
-    marginHorizontal: 22, backgroundColor: '#0d0f10', borderWidth: 1,
-    borderColor: '#1a1d1f', borderRadius: 14, padding: 20, alignItems: 'center',
+    marginHorizontal: spacing.lg,
   },
-  emptyText: { fontSize: 14, color: '#6b7280' },
+  centeredState: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.lg,
+  },
 });

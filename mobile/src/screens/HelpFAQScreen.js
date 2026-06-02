@@ -1,12 +1,24 @@
-// T66 — HelpFAQScreen (accordion)
-import React, { useState, useRef } from 'react';
-import {
-  View, Text, TouchableOpacity, ScrollView, StyleSheet, Animated,
-} from 'react-native';
+// T54 — HelpFAQScreen (accordion, reanimated, token-only)
+import React, { useState } from 'react';
+import { Pressable, ScrollView, Linking, View } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  withSpring,
+  Easing,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
 
+import { colors, spacing, radius, motion } from '../theme/tokens';
+import Text from '../components/Text';
+import Stack from '../components/Stack';
+import Inline from '../components/Inline';
+import Surface from '../components/Surface';
+
+// ─── data ──────────────────────────────────────────────────────────────────
 const FAQS = [
   {
     id: '1',
@@ -46,63 +58,116 @@ const FAQS = [
   },
 ];
 
+// ─── animated primitives ────────────────────────────────────────────────────
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
+// ─── AccordionItem ──────────────────────────────────────────────────────────
 function AccordionItem({ item, isOpen, onToggle }) {
-  const animHeight = useRef(new Animated.Value(0)).current;
-  const animOpacity = useRef(new Animated.Value(0)).current;
-  const animRotate = useRef(new Animated.Value(0)).current;
+  // chevron rotation
+  const rotation = useSharedValue(isOpen ? 90 : 0);
+
+  // answer visibility: opacity + translateY
+  const answerOpacity = useSharedValue(isOpen ? 1 : 0);
+  const answerTranslateY = useSharedValue(isOpen ? 0 : -6);
+
+  // card press scale
+  const scale = useSharedValue(1);
 
   React.useEffect(() => {
-    Animated.parallel([
-      Animated.timing(animHeight, {
-        toValue: isOpen ? 1 : 0,
-        duration: 200,
-        useNativeDriver: false,
-      }),
-      Animated.timing(animOpacity, {
-        toValue: isOpen ? 1 : 0,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-      Animated.timing(animRotate, {
-        toValue: isOpen ? 1 : 0,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-    ]).start();
+    const timingConfig = {
+      duration: isOpen ? motion.entryDuration : motion.exitDuration,
+      easing: Easing.out(Easing.cubic),
+    };
+
+    rotation.value = withTiming(isOpen ? 90 : 0, timingConfig);
+    answerOpacity.value = withTiming(isOpen ? 1 : 0, timingConfig);
+    answerTranslateY.value = withTiming(isOpen ? 0 : -6, timingConfig);
   }, [isOpen]);
 
-  const maxHeight = animHeight.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, 400],
-  });
+  const chevronStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${rotation.value}deg` }],
+  }));
 
-  const rotate = animRotate.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '90deg'],
-  });
+  const answerStyle = useAnimatedStyle(() => ({
+    opacity: answerOpacity.value,
+    transform: [{ translateY: answerTranslateY.value }],
+  }));
+
+  const cardStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  function handlePressIn() {
+    scale.value = withSpring(0.98, {
+      stiffness: motion.spring.stiffness,
+      damping: motion.spring.damping,
+    });
+  }
+
+  function handlePressOut() {
+    scale.value = withSpring(1, {
+      stiffness: motion.spring.stiffness,
+      damping: motion.spring.damping,
+    });
+  }
 
   return (
-    <View style={styles.accordionCard}>
-      <TouchableOpacity
-        style={styles.accordionHeader}
-        onPress={onToggle}
-        activeOpacity={0.75}
+    <AnimatedPressable
+      onPress={onToggle}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      style={cardStyle}
+    >
+      <Surface
+        elevation="subtle"
+        padding={0}
+        style={{ overflow: 'hidden', borderRadius: radius.card }}
       >
-        <Text style={styles.accordionQuestion}>{item.question}</Text>
-        <Animated.View style={{ transform: [{ rotate }] }}>
-          <Feather name="chevron-right" size={16} color="#6b7280" />
-        </Animated.View>
-      </TouchableOpacity>
+        {/* Question row */}
+        <Inline
+          spacing="md"
+          align="center"
+          justify="space-between"
+          style={{
+            paddingHorizontal: spacing.base,
+            paddingVertical: spacing.base,
+            minHeight: 56,
+          }}
+        >
+          <Text
+            variant="bodyMedium"
+            style={{ flex: 1, lineHeight: 22 }}
+          >
+            {item.question}
+          </Text>
 
-      <Animated.View style={[styles.accordionBody, { maxHeight }]}>
-        <Animated.Text style={[styles.accordionAnswer, { opacity: animOpacity }]}>
-          {item.answer}
-        </Animated.Text>
-      </Animated.View>
-    </View>
+          <Animated.View style={chevronStyle}>
+            <Feather name="chevron-right" size={16} color={colors.textSecondary} />
+          </Animated.View>
+        </Inline>
+
+        {/* Answer — display toggled, animated in/out */}
+        {isOpen && (
+          <Animated.View style={answerStyle}>
+            <Text
+              variant="small"
+              color="secondary"
+              style={{
+                paddingHorizontal: spacing.base,
+                paddingBottom: spacing.base,
+                lineHeight: 22,
+              }}
+            >
+              {item.answer}
+            </Text>
+          </Animated.View>
+        )}
+      </Surface>
+    </AnimatedPressable>
   );
 }
 
+// ─── Screen ─────────────────────────────────────────────────────────────────
 export default function HelpFAQScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
@@ -113,41 +178,65 @@ export default function HelpFAQScreen() {
   }
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
+    <View
+      style={{
+        flex: 1,
+        backgroundColor: colors.bg,
+        paddingTop: insets.top,
+      }}
+    >
+      {/* ── Header ── */}
+      <Inline
+        justify="space-between"
+        align="center"
+        style={{
+          paddingHorizontal: spacing.base,
+          paddingBottom: spacing.md,
+          borderBottomWidth: 1,
+          borderBottomColor: colors.border,
+        }}
+      >
+        <Pressable
           onPress={() => navigation.goBack()}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          style={styles.backBtn}
+          style={{ width: 40, height: 40, alignItems: 'center', justifyContent: 'center' }}
         >
-          <Feather name="arrow-left" size={22} color="#f0ede8" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Help & FAQ</Text>
-        <View style={styles.backBtn} />
-      </View>
+          <Feather name="arrow-left" size={22} color={colors.textPrimary} />
+        </Pressable>
 
+        <Text variant="h2">Help & FAQ</Text>
+
+        {/* spacer to keep title centered */}
+        <View style={{ width: 40 }} />
+      </Inline>
+
+      {/* ── Content ── */}
       <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 32 }]}
+        style={{ flex: 1 }}
+        contentContainerStyle={{
+          paddingHorizontal: spacing.base,
+          paddingTop: spacing.lg,
+          paddingBottom: insets.bottom + spacing.xl,
+          gap: spacing.base,
+        }}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.pageTitle}>Frequently asked questions</Text>
-        <Text style={styles.pageSub}>
-          Can't find what you need?{' '}
-          <Text
-            style={styles.contactLink}
-            onPress={() => {
-              import('react-native').then(({ Linking }) =>
-                Linking.openURL('mailto:4alkubati@gmail.com')
-              );
-            }}
-          >
-            Contact us
+        <Stack spacing="xs" style={{ paddingHorizontal: spacing.xs }}>
+          <Text variant="display3">Frequently asked questions</Text>
+          <Text variant="body" color="secondary">
+            {"Can't find what you need? "}
+            <Text
+              variant="body"
+              color="accent"
+              onPress={() => Linking.openURL('mailto:4alkubati@gmail.com')}
+              style={{ fontWeight: '600' }}
+            >
+              Contact us
+            </Text>
           </Text>
-        </Text>
+        </Stack>
 
-        <View style={styles.list}>
+        <Stack spacing="sm">
           {FAQS.map((faq) => (
             <AccordionItem
               key={faq.id}
@@ -156,96 +245,8 @@ export default function HelpFAQScreen() {
               onToggle={() => toggle(faq.id)}
             />
           ))}
-        </View>
+        </Stack>
       </ScrollView>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#07080a',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#1a1d1f',
-  },
-  backBtn: {
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: '#ffffff',
-    letterSpacing: -0.3,
-  },
-  scroll: {
-    flex: 1,
-  },
-  content: {
-    paddingHorizontal: 16,
-    paddingTop: 24,
-    gap: 16,
-  },
-  pageTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#ffffff',
-    letterSpacing: -0.5,
-    paddingHorizontal: 6,
-  },
-  pageSub: {
-    fontSize: 14,
-    color: '#6b7280',
-    paddingHorizontal: 6,
-    marginTop: -8,
-  },
-  contactLink: {
-    color: '#FF8C42',
-    fontWeight: '600',
-  },
-  list: {
-    gap: 8,
-  },
-  accordionCard: {
-    backgroundColor: '#0d0f10',
-    borderWidth: 1,
-    borderColor: '#1a1d1f',
-    borderRadius: 16,
-    overflow: 'hidden',
-  },
-  accordionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    minHeight: 56,
-    gap: 12,
-  },
-  accordionQuestion: {
-    flex: 1,
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#f0ede8',
-    lineHeight: 22,
-  },
-  accordionBody: {
-    overflow: 'hidden',
-  },
-  accordionAnswer: {
-    fontSize: 14,
-    color: '#9ca3af',
-    lineHeight: 22,
-    paddingHorizontal: 16,
-    paddingBottom: 16,
-  },
-});

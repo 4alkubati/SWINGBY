@@ -1,0 +1,563 @@
+/* ── Login Split Layout ── */
+
+/* Mount animation */
+@keyframes formFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── Root wrapper ── */
+.page {
+  display: flex;
+  min-height: 100vh;
+  background: var(--color-bg);
+}
+
+/* ── Left panel (brand/visual) ── */
+.leftPanel {
+  position: relative;
+  width: 50%;
+  background: var(--color-surface);
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-lg) var(--space-2xl);
+  overflow: hidden;
+}
+
+/* Decorative glow orb */
+.leftPanel::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 480px;
+  height: 480px;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--color-accent) 15%, transparent) 0%,
+    transparent 70%
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Additional corner glow */
+.leftPanel::after {
+  content: '';
+  position: absolute;
+  bottom: -120px;
+  right: -120px;
+  width: 360px;
+  height: 360px;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--color-accent) 8%, transparent) 0%,
+    transparent 70%
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+.leftLogo {
+  position: relative;
+  z-index: 1;
+  font-family: var(--font-head);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  text-decoration: none;
+  letter-spacing: -0.5px;
+  flex-shrink: 0;
+}
+
+.leftContent {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  gap: var(--space-md);
+  padding: var(--space-2xl) 0;
+}
+
+.leftHeadline {
+  font-family: var(--font-head);
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.5px;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.leftSubtitle {
+  font-size: 16px;
+  color: var(--color-text-secondary);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Decorative feature pills */
+.featurePills {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  margin-top: var(--space-lg);
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-accent) 20%, transparent);
+  border-radius: var(--radius-pill);
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  width: fit-content;
+}
+
+.pillDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  flex-shrink: 0;
+}
+
+/* Testimonial at bottom */
+.testimonial {
+  position: relative;
+  z-index: 1;
+  padding: var(--space-base);
+  background: color-mix(in srgb, var(--color-surface-alt) 80%, transparent);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  flex-shrink: 0;
+}
+
+.testimonialQuote {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+  margin: 0 0 var(--space-sm) 0;
+  font-style: italic;
+}
+
+.testimonialAuthor {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  letter-spacing: 0.3px;
+  margin: 0;
+}
+
+/* ── Right panel (form) ── */
+.rightPanel {
+  width: 50%;
+  background: var(--color-bg);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.rightTopBar {
+  display: flex;
+  justify-content: flex-end;
+  padding: var(--space-lg) var(--space-2xl);
+}
+
+.signupLink {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  transition: color var(--duration-exit) var(--ease-exit);
+}
+.signupLink:hover {
+  color: var(--color-text-primary);
+}
+
+.rightContent {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-xl) var(--space-2xl) var(--space-2xl);
+}
+
+/* ── Form card ── */
+.formCard {
+  width: 100%;
+  max-width: 420px;
+  animation: formFadeIn 400ms ease-out forwards;
+}
+
+.formHeading {
+  font-family: var(--font-head);
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.4px;
+  color: var(--color-text-primary);
+  margin: 0 0 var(--space-xs) 0;
+}
+
+.formSubtitle {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  margin: 0 0 var(--space-xl) 0;
+  line-height: 1.5;
+}
+
+/* ── Magic link section ── */
+.sectionLabel {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  margin-bottom: var(--space-sm);
+  display: block;
+}
+
+.magicRow {
+  display: flex;
+  gap: var(--space-sm);
+  align-items: stretch;
+}
+
+.magicInput {
+  flex: 1;
+  background: var(--color-surface-alt);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  padding: 13px var(--space-base);
+  border-radius: var(--radius-input);
+  transition: border-color var(--duration-exit) var(--ease-exit),
+              box-shadow var(--duration-exit) var(--ease-exit);
+  outline: none;
+  min-width: 0;
+}
+.magicInput::placeholder {
+  color: var(--color-text-secondary);
+}
+.magicInput:focus {
+  border-color: color-mix(in srgb, var(--color-accent) 50%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 8%, transparent);
+}
+
+/* Magic link state feedback */
+.magicInput.magicSent {
+  border-color: color-mix(in srgb, var(--color-success) 50%, transparent);
+}
+
+.sendLinkBtn {
+  background: transparent;
+  border: 1px solid var(--color-border);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 0 var(--space-base);
+  border-radius: var(--radius-button);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color var(--duration-exit) var(--ease-exit),
+              background var(--duration-exit) var(--ease-exit),
+              color var(--duration-exit) var(--ease-exit);
+  flex-shrink: 0;
+}
+.sendLinkBtn:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--color-accent) 50%, transparent);
+  background: color-mix(in srgb, var(--color-accent) 8%, transparent);
+  color: var(--color-accent-text);
+}
+.sendLinkBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Magic sent success message */
+.magicSuccess {
+  font-size: 12px;
+  color: var(--color-success);
+  margin-top: var(--space-xs);
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+/* ── Divider ── */
+.divider {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  margin: var(--space-xl) 0;
+}
+.dividerLine {
+  flex: 1;
+  height: 1px;
+  background: var(--color-border);
+}
+.dividerText {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  font-weight: 500;
+  letter-spacing: 0.3px;
+  flex-shrink: 0;
+}
+
+/* ── Form fields ── */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-base);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+.field label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+}
+.field input {
+  background: var(--color-surface-alt);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  padding: 13px var(--space-base);
+  border-radius: var(--radius-input);
+  transition: border-color var(--duration-exit) var(--ease-exit),
+              box-shadow var(--duration-exit) var(--ease-exit);
+  width: 100%;
+  outline: none;
+}
+.field input::placeholder {
+  color: var(--color-text-secondary);
+}
+.field input:focus {
+  border-color: color-mix(in srgb, var(--color-accent) 50%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 8%, transparent);
+}
+
+/* ── Error message ── */
+.errorMsg {
+  font-size: 13px;
+  color: var(--color-danger);
+  background: color-mix(in srgb, var(--color-danger) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-danger) 20%, transparent);
+  padding: var(--space-md) var(--space-base);
+  border-radius: var(--radius-chip);
+  line-height: 1.5;
+}
+
+/* ── Social buttons ── */
+.socialGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  margin-top: var(--space-sm);
+}
+
+.socialBtn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  width: 100%;
+  padding: 13px var(--space-base);
+  background: var(--color-surface-alt);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-button);
+  color: var(--color-text-secondary);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: not-allowed;
+  transition: border-color var(--duration-exit) var(--ease-exit);
+  opacity: 0.7;
+}
+.socialBtn:hover {
+  border-color: color-mix(in srgb, var(--color-accent) 30%, transparent);
+}
+
+.socialIcon {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.comingSoonTag {
+  position: absolute;
+  right: var(--space-md);
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  padding: 2px var(--space-sm);
+  border-radius: var(--radius-pill);
+}
+
+/* ── Submit button ── */
+.submitBtn {
+  width: 100%;
+  background: var(--color-accent);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  font-weight: 600;
+  padding: var(--space-base) var(--space-xl);
+  border-radius: var(--radius-button);
+  border: none;
+  cursor: pointer;
+  transition: opacity var(--duration-exit) var(--ease-exit),
+              transform var(--duration-exit) var(--ease-exit),
+              box-shadow var(--duration-exit) var(--ease-exit);
+  letter-spacing: 0.2px;
+  margin-top: var(--space-sm);
+}
+.submitBtn:hover:not(:disabled) {
+  opacity: 0.9;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 32px color-mix(in srgb, var(--color-accent) 30%, transparent);
+}
+.submitBtn:active:not(:disabled) {
+  transform: translateY(0);
+}
+.submitBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── Footer ── */
+.formFooter {
+  display: flex;
+  justify-content: center;
+  margin-top: var(--space-base);
+}
+
+.forgotLink {
+  font-size: 13px;
+  color: var(--color-accent-text);
+  text-decoration: none;
+  transition: opacity var(--duration-exit) var(--ease-exit);
+}
+.forgotLink:hover {
+  opacity: 0.8;
+}
+
+/* ── Focus-visible ── */
+.sendLinkBtn:focus-visible,
+.submitBtn:focus-visible,
+.socialBtn:focus-visible,
+.signupLink:focus-visible,
+.forgotLink:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* ── Responsive: tablet (768px – 1024px) ── */
+@media (max-width: 1024px) {
+  .leftPanel {
+    width: 40%;
+    padding: var(--space-lg) var(--space-xl);
+  }
+
+  .rightPanel {
+    width: 60%;
+  }
+
+  .rightTopBar {
+    padding: var(--space-base) var(--space-xl);
+  }
+
+  .rightContent {
+    padding: var(--space-lg) var(--space-xl) var(--space-2xl);
+  }
+}
+
+/* ── Responsive: mobile (≤768px) ── */
+@media (max-width: 768px) {
+  .page {
+    flex-direction: column;
+  }
+
+  .leftPanel {
+    display: none;
+  }
+
+  .rightPanel {
+    width: 100%;
+    min-height: 100vh;
+  }
+
+  .rightTopBar {
+    padding: var(--space-base) var(--space-base);
+  }
+
+  .rightContent {
+    padding: var(--space-base) var(--space-base) var(--space-2xl);
+    align-items: flex-start;
+  }
+
+  .formCard {
+    max-width: 100%;
+  }
+
+  /* Touch targets */
+  .sendLinkBtn,
+  .submitBtn {
+    min-height: 44px;
+  }
+
+  .magicInput {
+    min-height: 44px;
+  }
+}
+
+/* ── Responsive: small mobile (≤400px) ── */
+@media (max-width: 400px) {
+  .rightTopBar {
+    padding: var(--space-sm) var(--space-base);
+  }
+
+  .rightContent {
+    padding: var(--space-sm) var(--space-base) var(--space-xl);
+  }
+
+  .formHeading {
+    font-size: 20px;
+  }
+
+  .magicRow {
+    flex-direction: column;
+  }
+
+  .sendLinkBtn {
+    width: 100%;
+    padding: var(--space-sm) var(--space-base);
+  }
+}

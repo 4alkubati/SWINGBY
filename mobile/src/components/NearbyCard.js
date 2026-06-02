@@ -4,21 +4,28 @@ export default function NearbyCard({ name, initials, rating, jobs, distance, ava
   const isGreen = avatarStyle === 'green';
 
   return (
-    <TouchableOpacity style={styles.container} onPress={onPress} activeOpacity={onPress ? 0.8 : 1}>
-      <View style={[styles.avatar, isGreen ? styles.avatarGreen : styles.avatarBlue]}>
-        <Text style={[styles.avatarText, isGreen ? styles.avatarTextGreen : styles.avatarTextBlue]}>
+    <TouchableOpacity
+      style={styles.container}
+      onPress={onPress}
+      activeOpacity={onPress ? 0.8 : 1}
+      accessibilityRole="button"
+      accessibilityLabel={`${name}, rated ${rating} stars, ${jobs} jobs, ${distance} away`}
+      accessibilityHint="Opens business profile"
+    >
+      <View style={[styles.avatar, isGreen ? styles.avatarGreen : styles.avatarBlue]} accessible={false}>
+        <Text style={[styles.avatarText, isGreen ? styles.avatarTextGreen : styles.avatarTextBlue]} accessibilityElementsHidden={true} importantForAccessibility="no">
           {initials}
         </Text>
       </View>
       <View style={styles.info}>
-        <Text style={styles.name}>{name}</Text>
-        <Text style={styles.meta}>
+        <Text style={styles.name} allowFontScaling={true}>{name}</Text>
+        <Text style={styles.meta} allowFontScaling={true} maxFontSizeMultiplier={1.3} accessibilityElementsHidden={true} importantForAccessibility="no">
           <Text style={styles.star}>★ {rating}</Text>
           <Text>{` · ${jobs} jobs`}</Text>
         </Text>
       </View>
       <View style={styles.distPill}>
-        <Text style={styles.distText}>📍 {distance}</Text>
+        <Text style={styles.distText} allowFontScaling={true} maxFontSizeMultiplier={1.2} accessibilityElementsHidden={true} importantForAccessibility="no">{distance}</Text>
       </View>
     </TouchableOpacity>
   );

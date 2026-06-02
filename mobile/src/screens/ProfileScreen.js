@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { updateMe } from '../services/auth';
+import { colors } from '../theme/tokens';
 
 function initials(user) {
   if (!user) return '?';
@@ -79,15 +80,24 @@ export default function ProfileScreen({ navigation }) {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Profile</Text>
+        <Text style={styles.headerTitle} accessibilityRole="header" maxFontSizeMultiplier={1.4}>Profile</Text>
         <View style={styles.headerRight}>
           {!editMode && (
-            <TouchableOpacity onPress={startEdit} style={styles.editBtn}>
-              <Text style={styles.editBtnText}>Edit</Text>
+            <TouchableOpacity
+              onPress={startEdit}
+              style={styles.editBtn}
+              accessibilityRole="button"
+              accessibilityLabel="Edit profile"
+            >
+              <Text style={styles.editBtnText} allowFontScaling={true} maxFontSizeMultiplier={1.3}>Edit</Text>
             </TouchableOpacity>
           )}
-          <TouchableOpacity onPress={() => navigation.navigate('Notifications')}>
-            <Text style={styles.bellIcon}>🔔</Text>
+          <TouchableOpacity
+            onPress={() => navigation.navigate('Notifications')}
+            accessibilityRole="button"
+            accessibilityLabel="Notifications"
+          >
+            <Text style={styles.bellIcon} accessibilityElementsHidden={true} importantForAccessibility="no">🔔</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -109,7 +119,7 @@ export default function ProfileScreen({ navigation }) {
                     value={firstName}
                     onChangeText={setFirstName}
                     placeholder="First"
-                    placeholderTextColor="#3a424c"
+                    placeholderTextColor={colors.textSecondary}
                   />
                 </View>
                 <View style={styles.editHalf}>
@@ -119,7 +129,7 @@ export default function ProfileScreen({ navigation }) {
                     value={lastName}
                     onChangeText={setLastName}
                     placeholder="Last"
-                    placeholderTextColor="#3a424c"
+                    placeholderTextColor={colors.textSecondary}
                   />
                 </View>
               </View>
@@ -129,14 +139,14 @@ export default function ProfileScreen({ navigation }) {
                 value={phone}
                 onChangeText={setPhone}
                 placeholder="+1 403 555 0100"
-                placeholderTextColor="#3a424c"
+                placeholderTextColor={colors.textSecondary}
                 keyboardType="phone-pad"
               />
             </View>
           ) : (
             <>
-              <Text style={styles.name}>{user?.first_name} {user?.last_name}</Text>
-              <Text style={styles.email}>{user?.email}</Text>
+              <Text style={styles.name} maxFontSizeMultiplier={1.4}>{user?.first_name} {user?.last_name}</Text>
+              <Text style={styles.email} maxFontSizeMultiplier={1.4}>{user?.email}</Text>
             </>
           )}
 
@@ -150,17 +160,22 @@ export default function ProfileScreen({ navigation }) {
             <TouchableOpacity
               style={styles.cancelBtn}
               onPress={() => setEditMode(false)}
+              accessibilityRole="button"
+              accessibilityLabel="Cancel editing profile"
             >
-              <Text style={styles.cancelBtnText}>Cancel</Text>
+              <Text style={styles.cancelBtnText} maxFontSizeMultiplier={1.4}>Cancel</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.saveBtn, saving && styles.saveBtnDisabled]}
               onPress={handleSave}
               disabled={saving}
+              accessibilityRole="button"
+              accessibilityLabel="Save profile changes"
+              accessibilityState={{ disabled: saving, busy: saving }}
             >
               {saving
-                ? <ActivityIndicator color="#fff" size="small" />
-                : <Text style={styles.saveBtnText}>Save changes</Text>
+                ? <ActivityIndicator color={colors.textPrimary} size="small" />
+                : <Text style={styles.saveBtnText} maxFontSizeMultiplier={1.4}>Save changes</Text>
               }
             </TouchableOpacity>
           </View>
@@ -202,10 +217,13 @@ export default function ProfileScreen({ navigation }) {
               onPress={confirmLogout}
               activeOpacity={0.8}
               disabled={loggingOut}
+              accessibilityRole="button"
+              accessibilityLabel="Log out"
+              accessibilityState={{ disabled: loggingOut, busy: loggingOut }}
             >
               {loggingOut
-                ? <ActivityIndicator color="#f87171" />
-                : <Text style={styles.logoutText}>Log out</Text>
+                ? <ActivityIndicator color={colors.danger} />
+                : <Text style={styles.logoutText} maxFontSizeMultiplier={1.4}>Log out</Text>
               }
             </TouchableOpacity>
           </>
@@ -216,72 +234,73 @@ export default function ProfileScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#07080a' },
+  container: { flex: 1, backgroundColor: colors.bg },
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 22, paddingTop: 12, paddingBottom: 8,
   },
-  headerTitle: { fontSize: 22, fontWeight: '700', color: '#ffffff', letterSpacing: -0.5 },
+  headerTitle: { fontSize: 22, fontWeight: '700', color: colors.textPrimary, letterSpacing: -0.5 },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   editBtn: {
-    backgroundColor: 'rgba(255,92,0,0.1)', borderWidth: 1, borderColor: 'rgba(255,92,0,0.3)',
+    backgroundColor: colors.accentMuted, borderWidth: 1, borderColor: colors.accentMuted,
     borderRadius: 10, paddingHorizontal: 12, paddingVertical: 6,
   },
-  editBtnText: { fontSize: 13, color: '#FF8C42', fontWeight: '600' },
+  editBtnText: { fontSize: 13, color: colors.accent, fontWeight: '600' },
   bellIcon: { fontSize: 22 },
   content: { paddingHorizontal: 22, paddingTop: 8, paddingBottom: 40, gap: 14 },
   identityCard: {
-    backgroundColor: '#0f1214', borderWidth: 1, borderColor: '#1e2226',
+    backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border,
     borderRadius: 20, padding: 24, alignItems: 'center', gap: 8,
   },
   avatar: {
-    width: 72, height: 72, borderRadius: 36, backgroundColor: '#FF5C00',
+    width: 72, height: 72, borderRadius: 36, backgroundColor: colors.accent,
     alignItems: 'center', justifyContent: 'center',
-    shadowColor: '#FF5C00', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 10, elevation: 6,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 10, elevation: 6,
   },
-  avatarText: { fontSize: 26, fontWeight: '700', color: '#ffffff' },
-  name: { fontSize: 20, fontWeight: '700', color: '#ffffff' },
-  email: { fontSize: 14, color: '#9ca3af' },
+  avatarText: { fontSize: 26, fontWeight: '700', color: colors.textPrimary },
+  name: { fontSize: 20, fontWeight: '700', color: colors.textPrimary },
+  email: { fontSize: 14, color: colors.textSecondary },
   rolePill: {
-    backgroundColor: 'rgba(255,92,0,0.1)', borderWidth: 1, borderColor: 'rgba(255,92,0,0.25)',
+    backgroundColor: colors.accentMuted, borderWidth: 1, borderColor: colors.accentMuted,
     borderRadius: 20, paddingHorizontal: 12, paddingVertical: 4,
   },
-  roleText: { fontSize: 12, color: '#FF8C42', fontWeight: '600' },
+  roleText: { fontSize: 12, color: colors.accent, fontWeight: '600' },
   editFields: { width: '100%', gap: 10 },
   editRow: { flexDirection: 'row', gap: 10 },
   editHalf: { flex: 1, gap: 5 },
-  editLabel: { fontSize: 10, color: '#9ca3af', fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.8 },
+  editLabel: { fontSize: 10, color: colors.textSecondary, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.8 },
   editInput: {
-    backgroundColor: '#131618', borderWidth: 1, borderColor: '#2a2e33',
-    borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: '#f0ede8',
+    backgroundColor: colors.surfaceAlt, borderWidth: 1, borderColor: colors.border,
+    borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: colors.textPrimary,
   },
   editActions: { flexDirection: 'row', gap: 10 },
   cancelBtn: {
-    flex: 1, backgroundColor: '#0d0f10', borderWidth: 1, borderColor: '#2a2e33',
+    flex: 1, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border,
     borderRadius: 14, paddingVertical: 14, alignItems: 'center',
   },
-  cancelBtnText: { fontSize: 15, fontWeight: '600', color: '#9ca3af' },
+  cancelBtnText: { fontSize: 15, fontWeight: '600', color: colors.textSecondary },
   saveBtn: {
-    flex: 2, backgroundColor: '#FF5C00', borderRadius: 14,
+    flex: 2, backgroundColor: colors.accent, borderRadius: 14,
     paddingVertical: 14, alignItems: 'center',
   },
   saveBtnDisabled: { opacity: 0.6 },
-  saveBtnText: { fontSize: 15, fontWeight: '700', color: '#fff' },
+  saveBtnText: { fontSize: 15, fontWeight: '700', color: colors.textPrimary },
   infoCard: {
-    backgroundColor: '#0d0f10', borderWidth: 1, borderColor: '#1a1d1f', borderRadius: 16,
+    backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: 16,
   },
   infoRow: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     paddingHorizontal: 16, paddingVertical: 13,
-    borderBottomWidth: 1, borderBottomColor: '#111315',
+    borderBottomWidth: 1, borderBottomColor: colors.border,
   },
-  infoLabel: { fontSize: 14, color: '#9ca3af' },
-  infoValue: { fontSize: 14, fontWeight: '500', color: '#ffffff' },
+  infoLabel: { fontSize: 14, color: colors.textSecondary },
+  infoValue: { fontSize: 14, fontWeight: '500', color: colors.textPrimary },
   logoutBtn: {
-    borderWidth: 1, borderColor: 'rgba(248,113,113,0.3)',
-    backgroundColor: 'rgba(248,113,113,0.08)', borderRadius: 14,
+    borderWidth: 1, borderColor: colors.danger,
+    backgroundColor: colors.surface, borderRadius: 14,
     paddingVertical: 15, alignItems: 'center', marginTop: 8,
+    opacity: 0.85,
   },
   logoutBtnDisabled: { opacity: 0.6 },
-  logoutText: { fontSize: 15, fontWeight: '700', color: '#f87171' },
+  logoutText: { fontSize: 15, fontWeight: '700', color: colors.danger },
 });

@@ -25,6 +25,8 @@ import OfflineBanner from './src/components/OfflineBanner';
 import Toast from 'react-native-toast-message';
 import { toastConfig } from './src/services/toast';
 import { linkingConfig } from './src/services/linking';
+import { ThemeProvider } from './src/theme/ThemeProvider';
+import { colors } from './src/theme/tokens';
 
 // Configure push notification display behavior once at module load time.
 configureNotificationHandlers();
@@ -34,8 +36,8 @@ function RootNavigator() {
 
   if (isLoading) {
     return (
-      <View style={{ flex: 1, backgroundColor: '#07080a', alignItems: 'center', justifyContent: 'center' }}>
-        <ActivityIndicator color="#FF5C00" size="large" />
+      <View style={{ flex: 1, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center' }}>
+        <ActivityIndicator color={colors.accent} size="large" />
       </View>
     );
   }
@@ -57,18 +59,20 @@ function App() {
 
   return (
     <SafeAreaProvider>
-      <StatusBar style="light" />
-      <OfflineBanner />
-      <AuthProvider>
-        <BookingProvider>
-          <UnreadProvider>
-            <NavigationContainer linking={linkingConfig}>
-              <RootNavigator />
-            </NavigationContainer>
-          </UnreadProvider>
-        </BookingProvider>
-      </AuthProvider>
-      <Toast config={toastConfig} />
+      <ThemeProvider>
+        <StatusBar style="light" />
+        <OfflineBanner />
+        <AuthProvider>
+          <BookingProvider>
+            <UnreadProvider>
+              <NavigationContainer linking={linkingConfig}>
+                <RootNavigator />
+              </NavigationContainer>
+            </UnreadProvider>
+          </BookingProvider>
+        </AuthProvider>
+        <Toast config={toastConfig} />
+      </ThemeProvider>
     </SafeAreaProvider>
   );
 }

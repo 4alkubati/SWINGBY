@@ -29,9 +29,12 @@ export default function CategoryScroll({ activeCategory, onSelect, prependAll = 
           style={[styles.cat, activeCategory === cat.id && styles.catActive]}
           onPress={() => onSelect(cat.id)}
           activeOpacity={0.8}
+          accessibilityRole="button"
+          accessibilityLabel={cat.label}
+          accessibilityState={{ selected: activeCategory === cat.id }}
         >
-          <Text style={styles.emoji}>{cat.emoji}</Text>
-          <Text style={[styles.label, activeCategory === cat.id && styles.labelActive]}>
+          <Text style={styles.emoji} accessibilityElementsHidden={true} importantForAccessibility="no">{cat.emoji}</Text>
+          <Text style={[styles.label, activeCategory === cat.id && styles.labelActive]} allowFontScaling={true} maxFontSizeMultiplier={1.3}>
             {cat.label}
           </Text>
         </TouchableOpacity>

@@ -19,30 +19,9 @@ import {
 import { api } from '../services/api';
 import { SkeletonBox } from '../components/Skeleton';
 import { RatingStarsDisplay } from '../components/RatingStars';
+import { colors } from '../theme/tokens';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
-
-// ─── Design tokens ────────────────────────────────────────────────────────────
-const C = {
-  bg: '#07080a',
-  card: '#0d0f10',
-  card2: '#0f1214',
-  subtle: '#131618',
-  borderSoft: '#1a1d1f',
-  borderMid: '#2a2e33',
-  orange: '#FF5C00',
-  orangeLight: '#FF8C42',
-  orangeBg: 'rgba(255,92,0,0.10)',
-  orangeBorder: 'rgba(255,92,0,0.25)',
-  textPrimary: '#ffffff',
-  textBody: '#f0ede8',
-  textSecondary: '#9ca3af',
-  textMuted: '#6b7280',
-  gridLine: '#1a1d1f',
-  green: '#4ade80',
-  greenBg: 'rgba(34,197,94,0.08)',
-  greenBorder: 'rgba(34,197,94,0.25)',
-};
 
 // ─── Placeholder data ─────────────────────────────────────────────────────────
 const PLACEHOLDER_CATEGORIES = [
@@ -138,8 +117,8 @@ function CategoryChart({ data }) {
       >
         <VictoryAxis
           style={{
-            axis: { stroke: C.borderSoft },
-            tickLabels: { fill: C.textMuted, fontSize: 9, fontWeight: '600' },
+            axis: { stroke: colors.border },
+            tickLabels: { fill: colors.textSecondary, fontSize: 9, fontWeight: '600' },
             grid: { stroke: 'transparent' },
             ticks: { stroke: 'transparent' },
           }}
@@ -148,8 +127,8 @@ function CategoryChart({ data }) {
           dependentAxis
           style={{
             axis: { stroke: 'transparent' },
-            tickLabels: { fill: C.textMuted, fontSize: 9 },
-            grid: { stroke: C.gridLine, strokeDasharray: '4,6' },
+            tickLabels: { fill: colors.textSecondary, fontSize: 9 },
+            grid: { stroke: colors.border, strokeDasharray: '4,6' },
             ticks: { stroke: 'transparent' },
           }}
         />
@@ -157,11 +136,11 @@ function CategoryChart({ data }) {
           data={chartData}
           style={{
             data: {
-              fill: C.orange,
+              fill: colors.accent,
               borderRadius: 4,
             },
             labels: {
-              fill: C.textPrimary,
+              fill: colors.textPrimary,
               fontSize: 9,
               fontWeight: '700',
             },
@@ -416,7 +395,7 @@ export default function BusinessAnalyticsScreen({ navigation, route }) {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: C.bg },
+  container: { flex: 1, backgroundColor: colors.bg },
   scroll: { paddingBottom: 40 },
 
   // Header
@@ -428,8 +407,8 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     paddingBottom: 10,
   },
-  backBtn: { fontSize: 24, color: '#9ca3af', width: 40 },
-  headerTitle: { fontSize: 20, fontWeight: '700', color: C.textPrimary, letterSpacing: -0.5 },
+  backBtn: { fontSize: 24, color: colors.textSecondary, width: 40 },
+  headerTitle: { fontSize: 20, fontWeight: '700', color: colors.textPrimary, letterSpacing: -0.5 },
 
   // Hero
   hero: {
@@ -442,16 +421,16 @@ const styles = StyleSheet.create({
   heroRating: {
     fontSize: 48,
     fontWeight: '700',
-    color: C.textPrimary,
+    color: colors.textPrimary,
     letterSpacing: -1.5,
   },
-  heroSub: { fontSize: 13, color: C.textMuted, marginTop: 4 },
+  heroSub: { fontSize: 13, color: colors.textSecondary, marginTop: 4 },
 
   // Section title
   sectionTitle: {
     fontSize: 11,
     fontWeight: '700',
-    color: C.textSecondary,
+    color: colors.textSecondary,
     textTransform: 'uppercase',
     letterSpacing: 1.2,
     paddingHorizontal: 22,
@@ -466,9 +445,9 @@ const styles = StyleSheet.create({
     paddingBottom: 4,
   },
   metricCard: {
-    backgroundColor: C.card,
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: C.borderSoft,
+    borderColor: colors.border,
     borderRadius: 18,
     padding: 16,
     width: 152,
@@ -477,48 +456,48 @@ const styles = StyleSheet.create({
   metricLabel: {
     fontSize: 11,
     fontWeight: '700',
-    color: C.textSecondary,
+    color: colors.textSecondary,
     textTransform: 'uppercase',
     letterSpacing: 0.8,
   },
   metricValue: {
     fontSize: 28,
     fontWeight: '700',
-    color: C.textPrimary,
+    color: colors.textPrimary,
     letterSpacing: -0.5,
   },
-  metricSub: { fontSize: 11, color: C.textMuted },
+  metricSub: { fontSize: 11, color: colors.textSecondary },
   progressTrack: {
     height: 4,
-    backgroundColor: C.borderMid,
+    backgroundColor: colors.border,
     borderRadius: 2,
     marginTop: 4,
     overflow: 'hidden',
   },
   progressFill: {
     height: 4,
-    backgroundColor: C.orange,
+    backgroundColor: colors.accent,
     borderRadius: 2,
   },
 
   // Chart
   chartCard: {
     marginHorizontal: 22,
-    backgroundColor: C.bg,
+    backgroundColor: colors.bg,
     borderWidth: 1,
-    borderColor: C.borderSoft,
+    borderColor: colors.border,
     borderRadius: 18,
     overflow: 'hidden',
     marginBottom: 4,
   },
-  barChartWrap: { backgroundColor: C.bg },
+  barChartWrap: { backgroundColor: colors.bg },
   chartLoadingWrap: { padding: 20, alignItems: 'center' },
   chartEmpty: {
     height: 180,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  chartEmptyText: { fontSize: 14, color: C.textMuted },
+  chartEmptyText: { fontSize: 14, color: colors.textSecondary },
 
   // Reviews
   reviewsLoading: { paddingHorizontal: 22 },
@@ -528,11 +507,11 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
     alignItems: 'center',
   },
-  reviewEmptyText: { fontSize: 14, color: C.textMuted },
+  reviewEmptyText: { fontSize: 14, color: colors.textSecondary },
   reviewCard: {
-    backgroundColor: C.card,
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: C.borderSoft,
+    borderColor: colors.border,
     borderRadius: 16,
     padding: 14,
     gap: 10,
@@ -546,17 +525,17 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 10,
-    backgroundColor: '#1a2a3a',
+    backgroundColor: colors.accentMuted,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  reviewAvatarText: { fontSize: 14, fontWeight: '700', color: '#60a5fa' },
+  reviewAvatarText: { fontSize: 14, fontWeight: '700', color: colors.accent },
   reviewMeta: { flex: 1 },
-  reviewName: { fontSize: 14, fontWeight: '600', color: C.textPrimary },
-  reviewDate: { fontSize: 11, color: C.textMuted },
+  reviewName: { fontSize: 14, fontWeight: '600', color: colors.textPrimary },
+  reviewDate: { fontSize: 11, color: colors.textSecondary },
   reviewComment: {
     fontSize: 13,
-    color: C.textBody,
+    color: colors.textPrimary,
     lineHeight: 19,
   },
 
@@ -569,10 +548,10 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   emptyIcon: { fontSize: 48, marginBottom: 4 },
-  emptyTitle: { fontSize: 18, fontWeight: '700', color: C.textPrimary, textAlign: 'center' },
+  emptyTitle: { fontSize: 18, fontWeight: '700', color: colors.textPrimary, textAlign: 'center' },
   emptySub: {
     fontSize: 14,
-    color: C.textSecondary,
+    color: colors.textSecondary,
     textAlign: 'center',
     lineHeight: 22,
   },

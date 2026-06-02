@@ -83,6 +83,39 @@ const HOW_IT_WORKS = {
   },
 }
 
+const FAQ_ITEMS = [
+  {
+    question: 'How does SwingBy work?',
+    answer:
+      'SwingBy connects you with local service businesses in minutes. Post a job describing what you need — plumbing fix, house cleaning, lawn care, etc. — and set your preferred date. Nearby businesses will send you quotes. You review them side-by-side and accept the best one. Payment is handled securely through the app, and released to the business only after the job is completed.',
+  },
+  {
+    question: 'How do quotes get accepted?',
+    answer:
+      'After posting a job, you\'ll receive quotes from interested businesses in the Quotes tab. Each quote shows the business name, star rating, jobs completed, and their price. Tap "Select" on the one you want. A booking is created instantly, and both you and the business receive a confirmation. Chat opens only after a booking is confirmed.',
+  },
+  {
+    question: 'When does payment happen?',
+    answer:
+      'When you accept a quote, your payment is placed in escrow — it\'s charged to your card but held securely. The business never receives the money until the job is completed and photo proof is submitted. Once you confirm the job is done (or after an automatic 24-hour window), the payment is released to the business. This protects both sides.',
+  },
+  {
+    question: 'What if a job goes wrong?',
+    answer:
+      'If there\'s an issue with a job, tap "Report a problem" on the booking screen. Our support team will review the case, including messages and photos submitted by both parties. Payment can be held in escrow during the investigation. We aim to resolve disputes within 48 hours. You can also reach us directly at 4alkubati@gmail.com.',
+  },
+  {
+    question: 'How do I become a business on SwingBy?',
+    answer:
+      'Sign up and select "I offer services" on the onboarding screen. You\'ll be asked for your business name, category, and service area. Once your profile is set up, you can start responding to job posts from clients in your area. For verified status (the green badge), submit your business license — our team reviews it manually within 1–2 business days.',
+  },
+  {
+    question: 'How do I delete my account?',
+    answer:
+      'Go to Settings → Delete my account. You\'ll be asked to confirm. Your account and all personal data will be permanently deleted within 30 days, except where retention is required by law. If you have an active booking, please complete or cancel it before deleting. Need help? Contact us at 4alkubati@gmail.com.',
+  },
+]
+
 export default function ComingSoon() {
   const [form, setForm]       = useState({ name: '', email: '', role: '', city: '', message: '' })
   const [status, setStatus]   = useState('idle') // idle | loading | success | error
@@ -122,9 +155,8 @@ export default function ComingSoon() {
   return (
     <div className={styles.page}>
 
-      {/* ── Background glow orbs ── */}
-      <div className={styles.orb1} />
-      <div className={styles.orb2} />
+      {/* ── Animated gradient background ── */}
+      <div className={styles.gradientBg} aria-hidden="true" />
 
       {/* ── Nav ── */}
       <nav className={styles.nav}>
@@ -137,7 +169,7 @@ export default function ComingSoon() {
       </nav>
 
       {/* ── Hero ── */}
-      <section className={styles.hero}>
+      <section className={styles.hero} id="main-content">
         <HeroLottie />
 
         <div className={styles.eyebrow}>
@@ -154,6 +186,12 @@ export default function ComingSoon() {
           SwingBy connects you with trusted local service providers — or helps your business
           find clients. No middlemen. No hassle. Just results.
         </p>
+
+        {/* ── Dual CTA ── */}
+        <div className={styles.heroCtas}>
+          <a href="#waitlist" className={styles.ctaPrimary}>Join the waitlist</a>
+          <Link to="/login" className={styles.ctaSecondary}>Log in</Link>
+        </div>
 
         {/* ── Role pills ── */}
         <div className={styles.pills}>
@@ -272,34 +310,38 @@ export default function ComingSoon() {
 
         <div className={styles.toggleWrap}>
           {/* Level 1 — role toggle */}
-          <div className={styles.toggle}>
+          <div className={styles.toggle} role="group" aria-label="View type">
             <button
               className={`${styles.toggleBtn} ${view === 'client' ? styles.toggleActive : ''}`}
               onClick={() => switchView('client')}
+              aria-pressed={view === 'client'}
             >
-              🔍 I need a service
+              I need a service
             </button>
             <button
               className={`${styles.toggleBtn} ${view === 'business' ? styles.toggleActive : ''}`}
               onClick={() => switchView('business')}
+              aria-pressed={view === 'business'}
             >
-              💼 I offer services
+              I offer services
             </button>
           </div>
 
           {/* Level 2 — flow toggle (sits below, reacts to level 1) */}
-          <div className={styles.flowToggle}>
+          <div className={styles.flowToggle} role="group" aria-label="Flow type">
             {view === 'client' ? (
               <>
                 <button
                   className={`${styles.flowBtn} ${flow === 'post' ? styles.flowActive : ''}`}
                   onClick={() => setFlow('post')}
+                  aria-pressed={flow === 'post'}
                 >
                   Post a job
                 </button>
                 <button
                   className={`${styles.flowBtn} ${flow === 'browse' ? styles.flowActive : ''}`}
                   onClick={() => setFlow('browse')}
+                  aria-pressed={flow === 'browse'}
                 >
                   Browse nearby
                 </button>
@@ -309,12 +351,14 @@ export default function ComingSoon() {
                 <button
                   className={`${styles.flowBtn} ${flow === 'respond' ? styles.flowActive : ''}`}
                   onClick={() => setFlow('respond')}
+                  aria-pressed={flow === 'respond'}
                 >
                   Respond to posts
                 </button>
                 <button
                   className={`${styles.flowBtn} ${flow === 'discover' ? styles.flowActive : ''}`}
                   onClick={() => setFlow('discover')}
+                  aria-pressed={flow === 'discover'}
                 >
                   Get discovered
                 </button>
@@ -339,6 +383,24 @@ export default function ComingSoon() {
 
       {/* ── Testimonials ── */}
       <Testimonials />
+
+      {/* ── FAQ Accordion ── */}
+      <section className={styles.faqSection}>
+        <h2 className={styles.sectionTitle}>Frequently asked questions</h2>
+        <div className={styles.faqList}>
+          {FAQ_ITEMS.map((item, i) => (
+            <details className={styles.faqItem} key={i}>
+              <summary className={styles.faqQuestion}>
+                <span>{item.question}</span>
+                <span className={styles.faqChevron} aria-hidden="true" />
+              </summary>
+              <div className={styles.faqAnswer}>
+                <p>{item.answer}</p>
+              </div>
+            </details>
+          ))}
+        </div>
+      </section>
 
       {/* ── Footer ── */}
       <Footer />

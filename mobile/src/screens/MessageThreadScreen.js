@@ -27,6 +27,7 @@ import { api } from '../services/api';
 import * as toast from '../services/toast';
 import * as haptics from '../services/haptics';
 import EmptyState from '../components/EmptyState';
+import { colors } from '../theme/tokens';
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 function msgTime(iso) {
@@ -42,11 +43,11 @@ function toInitials(name) {
 
 function statusChipStyle(status) {
   switch ((status || '').toLowerCase()) {
-    case 'on_the_way':  return { bg: 'rgba(255,92,0,0.15)', text: '#FF8C42' };
-    case 'in_progress': return { bg: 'rgba(255,92,0,0.15)', text: '#FF8C42' };
-    case 'completed':   return { bg: 'rgba(74,222,128,0.12)', text: '#4ade80' };
-    case 'cancelled':   return { bg: 'rgba(239,68,68,0.12)', text: '#ef4444' };
-    default:            return { bg: 'rgba(96,165,250,0.12)', text: '#60a5fa' };
+    case 'on_the_way':  return { bg: colors.accentMuted, text: colors.accent };
+    case 'in_progress': return { bg: colors.accentMuted, text: colors.accent };
+    case 'completed':   return { bg: colors.accentMuted, text: colors.success }; // success tint
+    case 'cancelled':   return { bg: colors.accentMuted, text: colors.danger };
+    default:            return { bg: colors.accentMuted, text: colors.accent };
   }
 }
 
@@ -226,7 +227,7 @@ export default function MessageThreadScreen({ route, navigation }) {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Feather name="arrow-left" size={22} color="#ffffff" />
+          <Feather name="arrow-left" size={22} color={colors.textPrimary} />
         </TouchableOpacity>
 
         <View style={styles.headerMeta}>
@@ -254,7 +255,7 @@ export default function MessageThreadScreen({ route, navigation }) {
         {/* Message list */}
         {loading ? (
           <View style={styles.loadingWrap}>
-            <ActivityIndicator color="#FF5C00" />
+            <ActivityIndicator color={colors.accent} />
           </View>
         ) : (
           <FlatList
@@ -275,7 +276,7 @@ export default function MessageThreadScreen({ route, navigation }) {
             ListHeaderComponent={
               loadingMore ? (
                 <View style={styles.loadMoreWrap}>
-                  <ActivityIndicator color="#FF5C00" size="small" />
+                  <ActivityIndicator color={colors.accent} size="small" />
                 </View>
               ) : null
             }
@@ -295,7 +296,7 @@ export default function MessageThreadScreen({ route, navigation }) {
           <TextInput
             style={styles.textInput}
             placeholder="Type a message…"
-            placeholderTextColor="#3a424c"
+            placeholderTextColor={colors.textSecondary}
             value={inputText}
             onChangeText={setInputText}
             multiline
@@ -310,8 +311,8 @@ export default function MessageThreadScreen({ route, navigation }) {
             activeOpacity={0.8}
           >
             {sending
-              ? <ActivityIndicator color="#ffffff" size="small" />
-              : <Feather name="send" size={18} color="#ffffff" />
+              ? <ActivityIndicator color={colors.textPrimary} size="small" />
+              : <Feather name="send" size={18} color={colors.textPrimary} />
             }
           </TouchableOpacity>
         </View>
@@ -321,7 +322,7 @@ export default function MessageThreadScreen({ route, navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#07080a' },
+  container: { flex: 1, backgroundColor: colors.bg },
   flex: { flex: 1 },
   header: {
     flexDirection: 'row',
@@ -330,7 +331,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#1a1d1f',
+    borderBottomColor: colors.border,
   },
   backBtn: { width: 36, height: 44, alignItems: 'center', justifyContent: 'center' },
   headerMeta: { flexDirection: 'row', alignItems: 'center', gap: 10 },
@@ -338,12 +339,12 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: '#FF5C00',
+    backgroundColor: colors.accent,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  headerAvatarText: { fontSize: 13, fontWeight: '700', color: '#ffffff' },
-  headerName: { fontSize: 15, fontWeight: '700', color: '#ffffff', letterSpacing: -0.3 },
+  headerAvatarText: { fontSize: 13, fontWeight: '700', color: colors.textPrimary },
+  headerName: { fontSize: 15, fontWeight: '700', color: colors.textPrimary, letterSpacing: -0.3 },
   statusChip: {
     alignSelf: 'flex-start',
     borderRadius: 6,
@@ -369,21 +370,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
   },
   bubbleMe: {
-    // --grad-orange
-    backgroundColor: '#FF5C00',
+    backgroundColor: colors.accent,
     borderBottomRightRadius: 4,
   },
   bubbleThem: {
-    backgroundColor: '#0d0f10',
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: '#1a1d1f',
+    borderColor: colors.border,
     borderBottomLeftRadius: 4,
   },
   bubbleText: { fontSize: 15, lineHeight: 21 },
-  bubbleTextMe: { color: '#ffffff' },
-  bubbleTextThem: { color: '#f0ede8' },
+  bubbleTextMe: { color: colors.textPrimary },
+  bubbleTextThem: { color: colors.textPrimary },
 
-  msgTime: { fontSize: 11, color: '#6b7280', marginTop: 3 },
+  msgTime: { fontSize: 11, color: colors.textSecondary, marginTop: 3 },
   msgTimeRight: { textAlign: 'right' },
   msgTimeLeft: { textAlign: 'left' },
 
@@ -392,9 +392,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'flex-start',
-    backgroundColor: '#0d0f10',
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: '#1a1d1f',
+    borderColor: colors.border,
     borderRadius: 18,
     borderBottomLeftRadius: 4,
     paddingVertical: 10,
@@ -407,7 +407,7 @@ const styles = StyleSheet.create({
     width: 7,
     height: 7,
     borderRadius: 3.5,
-    backgroundColor: '#9ca3af',
+    backgroundColor: colors.textSecondary,
   },
 
   inputBar: {
@@ -417,32 +417,32 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingTop: 10,
     borderTopWidth: 1,
-    borderTopColor: '#1a1d1f',
-    backgroundColor: '#07080a',
+    borderTopColor: colors.border,
+    backgroundColor: colors.bg,
   },
   textInput: {
     flex: 1,
-    backgroundColor: '#0d0f10',
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: '#2a2e33',
+    borderColor: colors.border,
     borderRadius: 18,
     paddingHorizontal: 14,
     paddingTop: 11,
     paddingBottom: 11,
     fontSize: 15,
-    color: '#f0ede8',
+    color: colors.textPrimary,
     minHeight: 44,
   },
   sendBtn: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#FF5C00',
+    backgroundColor: colors.accent,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: 'rgba(255,92,0,0.35)',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 1,
+    shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 5,
     flexShrink: 0,

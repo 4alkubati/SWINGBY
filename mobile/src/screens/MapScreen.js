@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react';
 import MapView, { Marker, Callout } from 'react-native-maps';
 import { getCurrentLocation } from '../services/location';
 import { api } from '../services/api';
+import { colors } from '../theme/tokens';
 
 const CALGARY_DEFAULT = { latitude: 51.0447, longitude: -114.0719, latitudeDelta: 0.15, longitudeDelta: 0.15 };
 
@@ -52,7 +53,7 @@ export default function MapScreen({ navigation }) {
 
       {loading ? (
         <View style={styles.loaderOverlay}>
-          <ActivityIndicator color="#FF5C00" size="large" />
+          <ActivityIndicator color={colors.accent} size="large" />
         </View>
       ) : (
         <MapView
@@ -93,46 +94,46 @@ export default function MapScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#07080a' },
+  container: { flex: 1, backgroundColor: colors.bg },
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 22, paddingTop: 12, paddingBottom: 12,
-    backgroundColor: '#07080a', zIndex: 10,
+    backgroundColor: colors.bg, zIndex: 10,
   },
   backBtn: {},
-  backText: { fontSize: 14, color: '#FF8C42', fontWeight: '600' },
-  headerTitle: { fontSize: 17, fontWeight: '700', color: '#ffffff' },
+  backText: { fontSize: 14, color: colors.accent, fontWeight: '600' },
+  headerTitle: { fontSize: 17, fontWeight: '700', color: colors.textPrimary },
   map: { flex: 1 },
   loaderOverlay: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   pin: {
     width: 36, height: 36, borderRadius: 18,
-    backgroundColor: '#FF5C00', alignItems: 'center', justifyContent: 'center',
-    borderWidth: 2, borderColor: '#ffffff',
-    shadowColor: '#FF5C00', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.4, shadowRadius: 4, elevation: 4,
+    backgroundColor: colors.accent, alignItems: 'center', justifyContent: 'center',
+    borderWidth: 2, borderColor: colors.textPrimary,
+    shadowColor: colors.accent, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.4, shadowRadius: 4, elevation: 4,
   },
   pinSelected: { width: 44, height: 44, borderRadius: 22 },
-  pinText: { fontSize: 14, fontWeight: '700', color: '#ffffff' },
+  pinText: { fontSize: 14, fontWeight: '700', color: colors.textPrimary },
   callout: {
-    backgroundColor: '#0f1214', borderWidth: 1, borderColor: '#1e2226',
+    backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border,
     borderRadius: 14, padding: 12, minWidth: 160, gap: 4,
   },
-  calloutName: { fontSize: 14, fontWeight: '700', color: '#ffffff' },
-  calloutMeta: { fontSize: 12, color: '#9ca3af' },
-  calloutLink: { fontSize: 12, color: '#FF5C00', fontWeight: '600' },
+  calloutName: { fontSize: 14, fontWeight: '700', color: colors.textPrimary },
+  calloutMeta: { fontSize: 12, color: colors.textSecondary },
+  calloutLink: { fontSize: 12, color: colors.accent, fontWeight: '600' },
   emptyOverlay: {
     position: 'absolute', bottom: 40, left: 22, right: 22,
-    backgroundColor: '#0f1214', borderRadius: 14, padding: 16, alignItems: 'center',
+    backgroundColor: colors.surface, borderRadius: 14, padding: 16, alignItems: 'center',
   },
-  emptyText: { fontSize: 14, color: '#9ca3af' },
+  emptyText: { fontSize: 14, color: colors.textSecondary },
 });
 
 // Minimal dark map style for react-native-maps
 const DARK_MAP_STYLE = [
-  { elementType: 'geometry', stylers: [{ color: '#0f1214' }] },
-  { elementType: 'labels.text.fill', stylers: [{ color: '#9ca3af' }] },
-  { elementType: 'labels.text.stroke', stylers: [{ color: '#07080a' }] },
-  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#1a1d1f' }] },
-  { featureType: 'road', elementType: 'geometry.stroke', stylers: [{ color: '#111315' }] },
+  { elementType: 'geometry', stylers: [{ color: colors.surface }] },
+  { elementType: 'labels.text.fill', stylers: [{ color: colors.textSecondary }] },
+  { elementType: 'labels.text.stroke', stylers: [{ color: colors.bg }] },
+  { featureType: 'road', elementType: 'geometry', stylers: [{ color: colors.border }] },
+  { featureType: 'road', elementType: 'geometry.stroke', stylers: [{ color: colors.border }] },
   { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#0a0f14' }] },
   { featureType: 'poi', stylers: [{ visibility: 'off' }] },
   { featureType: 'transit', stylers: [{ visibility: 'off' }] },

@@ -1,0 +1,13 @@
+{
+  "baseline": "2026-06-01",
+  "viewport_sizes": ["1440x900", "768x1024", "375x812"],
+  "pages": [
+    {"name": "ComingSoon", "path": "/", "states": ["default", "faq-expanded", "scroll-bottom"]},
+    {"name": "Login", "path": "/login", "states": ["default", "magic-link-sent", "error", "loading"]},
+    {"name": "Signup", "path": "/signup", "states": ["step-1-role", "step-1-selected", "step-2-form", "step-2-error", "step-3-success"]},
+    {"name": "Dashboard", "path": "/dashboard", "states": ["loading-skeleton", "loaded", "empty-activity"]},
+    {"name": "Privacy", "path": "/privacy", "states": ["default", "scroll-to-section"]},
+    {"name": "Terms", "path": "/terms", "states": ["default"]},
+    {"name": "NotFound", "path": "/404", "states": ["default"]}
+  ]
+}

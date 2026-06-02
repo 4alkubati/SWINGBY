@@ -12,18 +12,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Toast from 'react-native-toast-message';
-
-// ─── Design tokens ────────────────────────────────────────────────────────────
-const COLORS = {
-  card: '#0d0f10',
-  border: '#2a2e33',
-  white: '#ffffff',
-  secondary: '#9ca3af',
-  success: '#4ade80',
-  error: '#ef4444',
-  info: '#60a5fa',
-  warning: '#FF5C00',
-};
+import { colors, radius, spacing } from '../theme/tokens';
 
 // ─── Custom toast inner component ─────────────────────────────────────────────
 function SwingByToast({ text1, text2, accentColor }) {
@@ -41,21 +30,21 @@ function SwingByToast({ text1, text2, accentColor }) {
 // ─── Config export ────────────────────────────────────────────────────────────
 export const toastConfig = {
   success: ({ text1, text2 }) => (
-    <SwingByToast text1={text1} text2={text2} accentColor={COLORS.success} />
+    <SwingByToast text1={text1} text2={text2} accentColor={colors.success} />
   ),
   error: ({ text1, text2 }) => (
-    <SwingByToast text1={text1} text2={text2} accentColor={COLORS.error} />
+    <SwingByToast text1={text1} text2={text2} accentColor={colors.danger} />
   ),
   info: ({ text1, text2 }) => (
-    <SwingByToast text1={text1} text2={text2} accentColor={COLORS.info} />
+    <SwingByToast text1={text1} text2={text2} accentColor={colors.accent} />
   ),
   warning: ({ text1, text2 }) => (
-    <SwingByToast text1={text1} text2={text2} accentColor={COLORS.warning} />
+    <SwingByToast text1={text1} text2={text2} accentColor={colors.warning} />
   ),
 };
 
 // ─── Show helper ──────────────────────────────────────────────────────────────
-export function show({ type = 'info', text1, text2, duration = 3500 } = {}) {
+export function show({ type = 'info', text1, text2, duration = 4000 } = {}) {
   Toast.show({
     type,
     text1,
@@ -71,9 +60,9 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'stretch',
-    backgroundColor: COLORS.card,
-    borderRadius: 14,
-    marginHorizontal: 16,
+    backgroundColor: colors.surface,
+    borderRadius: radius.card,
+    marginHorizontal: spacing.base,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.4,
@@ -82,7 +71,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     minHeight: 52,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: colors.border,
   },
   accentBar: {
     width: 4,
@@ -90,20 +79,20 @@ const styles = StyleSheet.create({
   },
   textBlock: {
     flex: 1,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.md,
     justifyContent: 'center',
   },
   title: {
     fontFamily: 'Inter_600SemiBold',
     fontSize: 14,
-    color: COLORS.white,
+    color: colors.textPrimary,
     lineHeight: 20,
   },
   body: {
     fontFamily: 'Inter_400Regular',
     fontSize: 12,
-    color: COLORS.secondary,
+    color: colors.textSecondary,
     marginTop: 2,
     lineHeight: 17,
   },

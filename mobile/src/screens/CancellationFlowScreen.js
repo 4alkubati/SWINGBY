@@ -18,6 +18,7 @@ import { Feather } from '@expo/vector-icons';
 import { api } from '../services/api';
 import * as toast from '../services/toast';
 import * as haptics from '../services/haptics';
+import { colors } from '../theme/tokens';
 
 const REASONS = [
   'Schedule conflict',
@@ -74,7 +75,7 @@ export default function CancellationFlowScreen({ route, navigation }) {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Feather name="arrow-left" size={22} color="#ffffff" />
+          <Feather name="arrow-left" size={22} color={colors.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Cancel Booking</Text>
         <View style={{ width: 36 }} />
@@ -92,7 +93,7 @@ export default function CancellationFlowScreen({ route, navigation }) {
           {/* Warning icon + headline */}
           <View style={styles.warningRow}>
             <View style={styles.warningIconWrap}>
-              <Feather name="alert-triangle" size={28} color="#FF5C00" />
+              <Feather name="alert-triangle" size={28} color={colors.accent} />
             </View>
           </View>
           <Text style={styles.headline}>Cancel this booking?</Text>
@@ -110,7 +111,7 @@ export default function CancellationFlowScreen({ route, navigation }) {
               {pct >= 0.5 ? ' (within 48h of scheduled date)' : ''}.
             </Text>
             <View style={styles.penaltyTip}>
-              <Feather name="info" size={13} color="#60a5fa" />
+              <Feather name="info" size={13} color={colors.accent} />
               <Text style={styles.penaltyTipText}>
                 {pct >= 0.5
                   ? 'Within 48h of your booking — 50% fee applies.'
@@ -142,7 +143,7 @@ export default function CancellationFlowScreen({ route, navigation }) {
             <TextInput
               style={styles.otherInput}
               placeholder="Please describe…"
-              placeholderTextColor="#3a424c"
+              placeholderTextColor={colors.textSecondary}
               value={otherText}
               onChangeText={setOtherText}
               multiline
@@ -163,7 +164,7 @@ export default function CancellationFlowScreen({ route, navigation }) {
             activeOpacity={0.85}
           >
             {submitting
-              ? <ActivityIndicator color="#ffffff" />
+              ? <ActivityIndicator color={colors.textPrimary} />
               : (
                 <Text style={styles.confirmBtnText}>
                   Cancel booking and pay ${amount.toFixed(2)} fee
@@ -185,7 +186,7 @@ export default function CancellationFlowScreen({ route, navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#07080a' },
+  container: { flex: 1, backgroundColor: colors.bg },
   flex: { flex: 1 },
   header: {
     flexDirection: 'row',
@@ -194,10 +195,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#1a1d1f',
+    borderBottomColor: colors.border,
   },
   backBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { fontSize: 16, fontWeight: '700', color: '#ffffff', letterSpacing: -0.3 },
+  headerTitle: { fontSize: 16, fontWeight: '700', color: colors.textPrimary, letterSpacing: -0.3 },
 
   scroll: { paddingHorizontal: 22, paddingTop: 28, gap: 16 },
 
@@ -206,32 +207,32 @@ const styles = StyleSheet.create({
     width: 68,
     height: 68,
     borderRadius: 22,
-    backgroundColor: 'rgba(255,92,0,0.10)',
+    backgroundColor: colors.accent + '1A', // ~10% opacity
     borderWidth: 1,
-    borderColor: 'rgba(255,92,0,0.25)',
+    borderColor: colors.accent + '40', // ~25% opacity
     alignItems: 'center',
     justifyContent: 'center',
   },
   headline: {
     fontSize: 22,
     fontWeight: '700',
-    color: '#ffffff',
+    color: colors.textPrimary,
     letterSpacing: -0.5,
     textAlign: 'center',
     marginTop: 12,
   },
   subheadline: {
     fontSize: 14,
-    color: '#9ca3af',
+    color: colors.textSecondary,
     textAlign: 'center',
     marginTop: 4,
   },
 
   // Penalty card — dominant focal
   penaltyCard: {
-    backgroundColor: '#0d0f10',
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: 'rgba(239,68,68,0.25)',
+    borderColor: colors.danger + '40', // ~25% opacity
     borderRadius: 18,
     padding: 20,
     marginTop: 8,
@@ -241,20 +242,20 @@ const styles = StyleSheet.create({
   penaltyLabel: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#ef4444',
+    color: colors.danger,
     textTransform: 'uppercase',
     letterSpacing: 1.0,
   },
   penaltyAmount: {
     fontSize: 46,
     fontWeight: '700',
-    color: '#ffffff',
+    color: colors.textPrimary,
     letterSpacing: -1.5,
     marginTop: 4,
   },
   penaltyDesc: {
     fontSize: 13,
-    color: '#9ca3af',
+    color: colors.textSecondary,
     textAlign: 'center',
     lineHeight: 20,
     marginTop: 4,
@@ -263,20 +264,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: 'rgba(96,165,250,0.10)',
+    backgroundColor: colors.accentMuted,
     borderRadius: 10,
     paddingHorizontal: 10,
     paddingVertical: 7,
     marginTop: 6,
     borderWidth: 1,
-    borderColor: 'rgba(96,165,250,0.20)',
+    borderColor: colors.accent + '33', // ~20% opacity
   },
-  penaltyTipText: { fontSize: 12, color: '#60a5fa', flex: 1, lineHeight: 17 },
+  penaltyTipText: { fontSize: 12, color: colors.accent, flex: 1, lineHeight: 17 },
 
   sectionLabel: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#9ca3af',
+    color: colors.textSecondary,
     textTransform: 'uppercase',
     letterSpacing: 0.8,
     marginTop: 8,
@@ -286,46 +287,46 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    backgroundColor: '#0d0f10',
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: '#2a2e33',
+    borderColor: colors.border,
     borderRadius: 12,
     paddingVertical: 14,
     paddingHorizontal: 14,
     minHeight: 50,
   },
   reasonRowActive: {
-    backgroundColor: 'rgba(255,92,0,0.08)',
-    borderColor: 'rgba(255,92,0,0.35)',
+    backgroundColor: colors.accent + '14', // ~8% opacity
+    borderColor: colors.accent + '59', // ~35% opacity
   },
   radio: {
     width: 20,
     height: 20,
     borderRadius: 10,
     borderWidth: 2,
-    borderColor: '#2a2e33',
+    borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
   },
-  radioActive: { borderColor: '#FF5C00' },
+  radioActive: { borderColor: colors.accent },
   radioDot: {
     width: 9,
     height: 9,
     borderRadius: 4.5,
-    backgroundColor: '#FF5C00',
+    backgroundColor: colors.accent,
   },
-  reasonText: { fontSize: 14, color: '#9ca3af', fontWeight: '500' },
-  reasonTextActive: { color: '#ffffff', fontWeight: '600' },
+  reasonText: { fontSize: 14, color: colors.textSecondary, fontWeight: '500' },
+  reasonTextActive: { color: colors.textPrimary, fontWeight: '600' },
 
   otherInput: {
-    backgroundColor: '#0d0f10',
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: '#2a2e33',
+    borderColor: colors.border,
     borderRadius: 12,
     padding: 14,
     fontSize: 14,
-    color: '#f0ede8',
+    color: colors.textPrimary,
     minHeight: 80,
     marginTop: 4,
   },
@@ -334,24 +335,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#1a1d1f',
-    backgroundColor: '#07080a',
+    borderTopColor: colors.border,
+    backgroundColor: colors.bg,
     gap: 8,
   },
   confirmBtn: {
-    backgroundColor: '#ef4444',
+    backgroundColor: colors.danger,
     borderRadius: 14,
     paddingVertical: 15,
     alignItems: 'center',
     minHeight: 50,
-    shadowColor: 'rgba(239,68,68,0.35)',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 1,
     shadowRadius: 10,
     elevation: 6,
   },
   confirmBtnDisabled: { opacity: 0.45 },
-  confirmBtnText: { fontSize: 15, fontWeight: '700', color: '#ffffff' },
+  confirmBtnText: { fontSize: 15, fontWeight: '700', color: colors.textPrimary },
   backLink: { alignItems: 'center', paddingVertical: 10, minHeight: 44, justifyContent: 'center' },
-  backLinkText: { fontSize: 14, fontWeight: '600', color: '#9ca3af' },
+  backLinkText: { fontSize: 14, fontWeight: '600', color: colors.textSecondary },
 });

@@ -1,26 +1,33 @@
-// T61 — NearbyMapScreen
+// T61 — NearbyMapScreen  (T60 UX polish)
 // Full-screen MapView centered on user location.
-// Custom dark map style matching #07080a bg.
-// Business pins with orange dot + initials avatar.
+// Custom dark map style matching bg token.
+// Business pins with accent dot + initials avatar.
 // Tap pin → bottom sheet with card + "View profile" CTA.
 // Top-right: category filter modal.
 // Offline / map-unavailable fallback via EmptyState.
 import {
   View,
-  Text,
-  TouchableOpacity,
+  Pressable,
   Modal,
-  StyleSheet,
-  ActivityIndicator,
   Platform,
+  Animated,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
+import AnimatedRN from 'react-native-reanimated';
 import { api } from '../services/api';
 import { getUserLocation } from '../services/location';
 import EmptyState from '../components/EmptyState';
 import CategoryScroll from '../components/CategoryScroll';
+import { SkeletonBox } from '../components/Skeleton';
+import Text from '../components/Text';
+import Button from '../components/Button';
+import Avatar from '../components/Avatar';
+import Stack from '../components/Stack';
+import Inline from '../components/Inline';
 import { Feather } from '@expo/vector-icons';
+import { colors, spacing, radius, shadows, motion } from '../theme/tokens';
 
 // react-native-maps — already in package.json (v1.20.1)
 let MapView, Marker, PROVIDER_GOOGLE;
@@ -40,8 +47,8 @@ const CALGARY_FALLBACK = { lat: 51.0447, lng: -114.0719 };
 // ─── Dark map style — mutes default colors to match app bg ───────────────────
 const DARK_MAP_STYLE = [
   { elementType: 'geometry', stylers: [{ color: '#0a0c0e' }] },
-  { elementType: 'labels.text.fill', stylers: [{ color: '#6b7280' }] },
-  { elementType: 'labels.text.stroke', stylers: [{ color: '#07080a' }] },
+  { elementType: 'labels.text.fill', stylers: [{ color: colors.textSecondary }] },
+  { elementType: 'labels.text.stroke', stylers: [{ color: colors.bg }] },
   {
     featureType: 'administrative',
     elementType: 'geometry',
@@ -54,12 +61,12 @@ const DARK_MAP_STYLE = [
   {
     featureType: 'road',
     elementType: 'geometry',
-    stylers: [{ color: '#1a1d1f' }],
+    stylers: [{ color: colors.border }],
   },
   {
     featureType: 'road',
     elementType: 'geometry.stroke',
-    stylers: [{ color: '#111315' }],
+    stylers: [{ color: colors.border }],
   },
   {
     featureType: 'road.highway',
@@ -73,7 +80,7 @@ const DARK_MAP_STYLE = [
   {
     featureType: 'water',
     elementType: 'geometry',
-    stylers: [{ color: '#0d0f10' }],
+    stylers: [{ color: colors.surface }],
   },
   {
     featureType: 'landscape',
@@ -87,211 +94,150 @@ const DARK_MAP_STYLE = [
   },
 ];
 
-function toInitials(name) {
-  return (name || '').slice(0, 2).toUpperCase();
-}
+// ─── AnimatedPressable for map overlay buttons ────────────────────────────────
+const AnimatedPressable = AnimatedRN.createAnimatedComponent(Pressable);
 
 // ─── Custom pin marker ────────────────────────────────────────────────────────
 function BusinessPin({ name }) {
   return (
-    <View style={pinStyles.wrapper}>
-      <View style={pinStyles.avatar}>
-        <Text style={pinStyles.initials}>{toInitials(name)}</Text>
+    <View style={{ alignItems: 'center' }}>
+      <View
+        style={{
+          width: 36,
+          height: 36,
+          borderRadius: radius.chip,
+          backgroundColor: colors.surfaceAlt,
+          borderWidth: 2,
+          borderColor: colors.accent,
+          alignItems: 'center',
+          justifyContent: 'center',
+          shadowColor: colors.accent,
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.45,
+          shadowRadius: 6,
+          elevation: 5,
+        }}
+      >
+        <Text
+          variant="caption"
+          style={{ fontSize: 11, fontWeight: '700', color: colors.accent }}
+        >
+          {(name || '').slice(0, 2).toUpperCase()}
+        </Text>
       </View>
-      <View style={pinStyles.dot} />
+      <View
+        style={{
+          width: 8,
+          height: 8,
+          borderRadius: radius.pill,
+          backgroundColor: colors.accent,
+          marginTop: 2,
+          shadowColor: colors.accent,
+          shadowOffset: { width: 0, height: 1 },
+          shadowOpacity: 0.6,
+          shadowRadius: 4,
+          elevation: 3,
+        }}
+      />
     </View>
   );
 }
-
-const pinStyles = StyleSheet.create({
-  wrapper: {
-    alignItems: 'center',
-  },
-  avatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: '#131618',
-    borderWidth: 2,
-    borderColor: '#FF5C00',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#FF5C00',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.45,
-    shadowRadius: 6,
-    elevation: 5,
-  },
-  initials: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#FF8C42',
-  },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#FF5C00',
-    marginTop: 2,
-    shadowColor: '#FF5C00',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.6,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-});
 
 // ─── Bottom sheet (selected business card) ────────────────────────────────────
 function BusinessSheet({ business, onClose, onViewProfile }) {
   if (!business) return null;
 
   return (
-    <View style={sheetStyles.container}>
-      <View style={sheetStyles.handle} />
-      <View style={sheetStyles.row}>
-        <View style={sheetStyles.avatar}>
-          <Text style={sheetStyles.initials}>{toInitials(business.business_name)}</Text>
-        </View>
-        <View style={sheetStyles.info}>
-          <Text style={sheetStyles.name} numberOfLines={1}>
+    <View
+      style={{
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        backgroundColor: colors.surface,
+        borderTopLeftRadius: radius.sheet,
+        borderTopRightRadius: radius.sheet,
+        borderTopWidth: 1,
+        borderColor: colors.border,
+        padding: spacing.base,
+        paddingBottom: spacing.lg + spacing.sm,
+        ...shadows.modal,
+      }}
+    >
+      {/* Drag handle */}
+      <View
+        style={{
+          width: 36,
+          height: 4,
+          backgroundColor: colors.border,
+          borderRadius: radius.pill,
+          alignSelf: 'center',
+          marginBottom: spacing.md + 2,
+        }}
+      />
+
+      {/* Info row */}
+      <Inline spacing="md" align="center" style={{ marginBottom: spacing.md + 2 }}>
+        <Avatar name={business.business_name} size="md" />
+
+        <Stack spacing="xs" style={{ flex: 1 }}>
+          <Text variant="bodyMedium" numberOfLines={1}>
             {business.business_name}
           </Text>
-          <Text style={sheetStyles.meta}>
-            <Text style={sheetStyles.star}>★ {business.avg_rating?.toFixed(1) ?? '—'}</Text>
+          <Text variant="small" color="secondary">
+            <Text variant="smallMedium" color="accent">
+              {'★ '}
+              {business.avg_rating?.toFixed(1) ?? '—'}
+            </Text>
             {'  ·  '}
             {business.review_count ?? 0} jobs
           </Text>
           {business.category ? (
-            <View style={sheetStyles.catPill}>
-              <Text style={sheetStyles.catText}>{business.category}</Text>
+            <View
+              style={{
+                alignSelf: 'flex-start',
+                backgroundColor: colors.surfaceAlt,
+                borderRadius: radius.chip,
+                paddingHorizontal: spacing.sm,
+                paddingVertical: spacing.xs - 1,
+                marginTop: 2,
+              }}
+            >
+              <Text
+                variant="caption"
+                style={{
+                  textTransform: 'uppercase',
+                  letterSpacing: 0.8,
+                  color: colors.textSecondary,
+                }}
+              >
+                {business.category}
+              </Text>
             </View>
           ) : null}
-        </View>
-        <TouchableOpacity
-          style={sheetStyles.closeBtn}
+        </Stack>
+
+        {/* Close button */}
+        <Pressable
           onPress={onClose}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          style={{
+            width: 32,
+            height: 32,
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
+          }}
         >
-          <Feather name="x" size={18} color="#6b7280" />
-        </TouchableOpacity>
-      </View>
+          <Feather name="x" size={18} color={colors.textSecondary} />
+        </Pressable>
+      </Inline>
 
-      <TouchableOpacity style={sheetStyles.ctaBtn} onPress={onViewProfile} activeOpacity={0.85}>
-        <Text style={sheetStyles.ctaText}>View profile →</Text>
-      </TouchableOpacity>
+      {/* CTA */}
+      <Button variant="primary" label="View profile" onPress={onViewProfile} />
     </View>
   );
 }
-
-const sheetStyles = StyleSheet.create({
-  container: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: '#0d0f10',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    borderTopWidth: 1,
-    borderColor: '#2a2e33',
-    padding: 16,
-    paddingBottom: 28,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-    elevation: 10,
-  },
-  handle: {
-    width: 36,
-    height: 4,
-    backgroundColor: '#2a2e33',
-    borderRadius: 2,
-    alignSelf: 'center',
-    marginBottom: 14,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    marginBottom: 14,
-  },
-  avatar: {
-    width: 46,
-    height: 46,
-    borderRadius: 14,
-    backgroundColor: '#0f2a1a',
-    borderWidth: 1,
-    borderColor: 'rgba(34,197,94,0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-  initials: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#4ade80',
-  },
-  info: {
-    flex: 1,
-    gap: 3,
-  },
-  name: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#ffffff',
-    letterSpacing: -0.3,
-  },
-  meta: {
-    fontSize: 12,
-    color: '#9ca3af',
-    fontWeight: '500',
-  },
-  star: {
-    color: '#FF5C00',
-    fontWeight: '700',
-  },
-  catPill: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#131618',
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    marginTop: 2,
-  },
-  catText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: '#6b7280',
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-  },
-  closeBtn: {
-    width: 32,
-    height: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-  ctaBtn: {
-    backgroundColor: '#FF5C00',
-    borderRadius: 14,
-    paddingVertical: 14,
-    alignItems: 'center',
-    shadowColor: '#FF5C00',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 8,
-    elevation: 8,
-    minHeight: 48,
-    justifyContent: 'center',
-  },
-  ctaText: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#ffffff',
-  },
-});
 
 // ─── Category filter modal ────────────────────────────────────────────────────
 function CategoryModal({ visible, activeCategory, onSelect, onClose }) {
@@ -302,70 +248,122 @@ function CategoryModal({ visible, activeCategory, onSelect, onClose }) {
       animationType="slide"
       onRequestClose={onClose}
     >
-      <TouchableOpacity style={modalStyles.backdrop} onPress={onClose} activeOpacity={1}>
-        <View style={modalStyles.sheet}>
-          <View style={modalStyles.handle} />
-          <Text style={modalStyles.title}>Filter by category</Text>
-          <CategoryScroll activeCategory={activeCategory} onSelect={(c) => { onSelect(c); onClose(); }} prependAll />
-          <TouchableOpacity style={modalStyles.closeBtn} onPress={onClose} activeOpacity={0.8}>
-            <Text style={modalStyles.closeBtnText}>Done</Text>
-          </TouchableOpacity>
-        </View>
-      </TouchableOpacity>
+      <Pressable
+        style={{
+          flex: 1,
+          backgroundColor: 'rgba(0,0,0,0.7)',
+          justifyContent: 'flex-end',
+        }}
+        onPress={onClose}
+      >
+        {/* Sheet — stop propagation so tapping inside doesn't dismiss */}
+        <Pressable
+          onPress={(e) => e.stopPropagation()}
+          style={{
+            backgroundColor: colors.surface,
+            borderTopLeftRadius: radius.sheet,
+            borderTopRightRadius: radius.sheet,
+            borderTopWidth: 1,
+            borderColor: colors.border,
+            paddingVertical: spacing.base + spacing.xs,
+            paddingBottom: spacing.xl + spacing.xs,
+          }}
+        >
+          {/* Handle */}
+          <View
+            style={{
+              width: 36,
+              height: 4,
+              backgroundColor: colors.border,
+              borderRadius: radius.pill,
+              alignSelf: 'center',
+              marginBottom: spacing.base,
+            }}
+          />
+
+          {/* Title */}
+          <Text
+            variant="label"
+            style={{
+              textTransform: 'uppercase',
+              letterSpacing: 1.2,
+              color: colors.textSecondary,
+              paddingHorizontal: spacing.base,
+              marginBottom: spacing.md,
+            }}
+          >
+            Filter by category
+          </Text>
+
+          <CategoryScroll
+            activeCategory={activeCategory}
+            onSelect={(c) => { onSelect(c); onClose(); }}
+            prependAll
+          />
+
+          {/* Done button */}
+          <Button
+            variant="secondary"
+            label="Done"
+            onPress={onClose}
+            style={{
+              marginHorizontal: spacing.base,
+              marginTop: spacing.lg,
+            }}
+          />
+        </Pressable>
+      </Pressable>
     </Modal>
   );
 }
 
-const modalStyles = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.7)',
-    justifyContent: 'flex-end',
-  },
-  sheet: {
-    backgroundColor: '#0d0f10',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    borderTopWidth: 1,
-    borderColor: '#2a2e33',
-    paddingVertical: 20,
-    paddingBottom: 36,
-  },
-  handle: {
-    width: 36,
-    height: 4,
-    backgroundColor: '#2a2e33',
-    borderRadius: 2,
-    alignSelf: 'center',
-    marginBottom: 16,
-  },
-  title: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#9ca3af',
-    textTransform: 'uppercase',
-    letterSpacing: 1.2,
-    paddingHorizontal: 16,
-    marginBottom: 12,
-  },
-  closeBtn: {
-    marginHorizontal: 16,
-    marginTop: 20,
-    backgroundColor: '#131618',
-    borderWidth: 1,
-    borderColor: '#2a2e33',
-    borderRadius: 12,
-    paddingVertical: 13,
-    alignItems: 'center',
-    minHeight: 44,
-    justifyContent: 'center',
-  },
-  closeBtnText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#9ca3af',
-  },
-});
+// ─── Map overlay button with spring scale micro-interaction ───────────────────
+function MapOverlayButton({ onPress, active, children, hitSlop }) {
+  const scale = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const handlePressIn = () => {
+    scale.value = withSpring(0.95, {
+      stiffness: motion.spring.stiffness,
+      damping: motion.spring.damping,
+    });
+  };
+
+  const handlePressOut = () => {
+    scale.value = withSpring(1, {
+      stiffness: motion.spring.stiffness,
+      damping: motion.spring.damping,
+    });
+  };
+
+  return (
+    <AnimatedPressable
+      onPress={onPress}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      hitSlop={hitSlop}
+      style={[
+        {
+          width: 44,
+          height: 44,
+          backgroundColor: active ? colors.accentMuted : colors.surface,
+          borderWidth: 1,
+          borderColor: active ? colors.accent : colors.border,
+          borderRadius: radius.pill,
+          alignItems: 'center',
+          justifyContent: 'center',
+          ...shadows.subtle,
+        },
+        animatedStyle,
+      ]}
+    >
+      {children}
+    </AnimatedPressable>
+  );
+}
 
 // ─── Main screen ──────────────────────────────────────────────────────────────
 export default function NearbyMapScreen({ navigation }) {
@@ -430,7 +428,13 @@ export default function NearbyMapScreen({ navigation }) {
   // ─── Fallback if maps library failed to load ──────────────────────────────
   if (!mapsAvailable) {
     return (
-      <View style={[styles.container, { paddingTop: insets.top }]}>
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: colors.bg,
+          paddingTop: insets.top,
+        }}
+      >
         <EmptyState
           icon="map"
           title="Map unavailable"
@@ -442,16 +446,19 @@ export default function NearbyMapScreen({ navigation }) {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={{ flex: 1, backgroundColor: colors.bg }}>
       {/* ── Full-screen MapView (dominant focal point) ─────────────────── */}
       {loading || !coords ? (
-        <View style={styles.loadingOverlay}>
-          <ActivityIndicator color="#FF5C00" size="large" />
-        </View>
+        <SkeletonBox
+          width="100%"
+          height="100%"
+          borderRadius={0}
+          style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+        />
       ) : (
         <MapView
           ref={mapRef}
-          style={styles.map}
+          style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
           provider={PROVIDER_GOOGLE}
           customMapStyle={DARK_MAP_STYLE}
           initialRegion={{
@@ -481,30 +488,37 @@ export default function NearbyMapScreen({ navigation }) {
 
       {/* ── Overlay controls ─────────────────────────────────────────────── */}
       <View
-        style={[styles.topBar, { top: insets.top + 12 }]}
+        style={{
+          position: 'absolute',
+          top: insets.top + spacing.md,
+          left: spacing.base,
+          right: spacing.base,
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+        }}
         pointerEvents="box-none"
       >
         {/* Back button — top-left */}
-        <TouchableOpacity
-          style={styles.mapBtn}
+        <MapOverlayButton
           onPress={() => navigation.goBack()}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          <Feather name="arrow-left" size={20} color="#ffffff" />
-        </TouchableOpacity>
+          <Feather name="arrow-left" size={20} color={colors.textPrimary} />
+        </MapOverlayButton>
 
         {/* Filter button — top-right */}
-        <TouchableOpacity
-          style={[styles.mapBtn, activeCategory !== 'all' && styles.mapBtnActive]}
+        <MapOverlayButton
           onPress={() => setFilterVisible(true)}
+          active={activeCategory !== 'all'}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
           <Feather
             name="filter"
             size={18}
-            color={activeCategory !== 'all' ? '#FF5C00' : '#ffffff'}
+            color={activeCategory !== 'all' ? colors.accent : colors.textPrimary}
           />
-        </TouchableOpacity>
+        </MapOverlayButton>
       </View>
 
       {/* ── Business bottom sheet ─────────────────────────────────────────── */}
@@ -524,47 +538,3 @@ export default function NearbyMapScreen({ navigation }) {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#07080a',
-  },
-  map: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  loadingOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#07080a',
-  },
-  // ── Top overlay bar ────────────────────────────────────────────────────────
-  topBar: {
-    position: 'absolute',
-    left: 16,
-    right: 16,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  mapBtn: {
-    width: 44,
-    height: 44,
-    backgroundColor: 'rgba(13,15,16,0.9)',
-    borderWidth: 1,
-    borderColor: '#2a2e33',
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.4,
-    shadowRadius: 6,
-    elevation: 5,
-  },
-  mapBtnActive: {
-    backgroundColor: 'rgba(255,92,0,0.15)',
-    borderColor: '#FF5C00',
-  },
-});

@@ -1,0 +1,13 @@
+{
+  "baseline": "2026-06-01",
+  "viewport_sizes": ["1440x900", "1024x768", "768x1024"],
+  "pages": [
+    {"name": "Login", "path": "/login", "states": ["default", "error", "loading"]},
+    {"name": "Dashboard", "path": "/", "states": ["loading-skeleton", "loaded", "empty"]},
+    {"name": "Users", "path": "/users", "states": ["loading", "loaded", "empty", "search-active", "drawer-open"]},
+    {"name": "Businesses", "path": "/businesses", "states": ["loading", "loaded", "empty", "drawer-open", "verify-action"]},
+    {"name": "Bookings", "path": "/bookings", "states": ["loading", "loaded", "empty", "drawer-open", "force-complete"]},
+    {"name": "AuditLog", "path": "/audit-log", "states": ["loading", "loaded", "placeholder", "drawer-open"]},
+    {"name": "CommandPalette", "path": "/", "states": ["open-default", "search-results", "keyboard-nav"]}
+  ]
+}

@@ -1,0 +1,197 @@
+/* ── Page shell ── */
+.page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  background: var(--color-bg);
+}
+
+/* ── Glow orbs ── */
+.orb1 {
+  position: fixed;
+  top: -200px;
+  right: -200px;
+  width: 700px;
+  height: 700px;
+  background: radial-gradient(circle, color-mix(in srgb, var(--color-accent) 18%, transparent) 0%, transparent 65%);
+  pointer-events: none;
+  z-index: 0;
+}
+.orb2 {
+  position: fixed;
+  bottom: -300px;
+  left: -200px;
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, color-mix(in srgb, var(--color-accent) 10%, transparent) 0%, transparent 65%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── Nav ── */
+.nav {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  padding: var(--space-lg) var(--space-2xl);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.logo {
+  font-family: var(--font-head);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  letter-spacing: -0.5px;
+  text-decoration: none;
+  transition: opacity 0.2s;
+}
+.logo:hover {
+  opacity: 0.8;
+}
+
+/* ── Main centered area ── */
+.main {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-3xl) var(--space-lg);
+}
+
+/* ── 404 watermark ── */
+.watermark {
+  position: absolute;
+  font-family: var(--font-head);
+  font-size: 240px;
+  font-weight: 900;
+  line-height: 1;
+  color: var(--color-text-primary);
+  opacity: 0.04;
+  user-select: none;
+  pointer-events: none;
+  letter-spacing: -8px;
+  z-index: 0;
+}
+
+/* ── Content card ── */
+.content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--space-lg);
+  animation: fadeUp var(--duration-entry) var(--ease-entry) both;
+  animation-duration: 400ms;
+}
+
+/* ── Fade-up entry animation ── */
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── Icon circle ── */
+.iconWrap {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: var(--color-accent-muted);
+  border: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon {
+  font-size: 36px;
+  line-height: 1;
+}
+
+/* ── Heading ── */
+.heading {
+  font-family: var(--font-head);
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  letter-spacing: -0.5px;
+  margin: 0;
+}
+
+/* ── Body text ── */
+.body {
+  font-family: var(--font-sans);
+  font-size: 16px;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+  margin: 0;
+  max-width: 360px;
+}
+
+/* ── CTA button ── */
+.cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-sans);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  background: var(--color-accent);
+  text-decoration: none;
+  padding: 14px 28px;
+  border-radius: var(--radius-button);
+  margin-top: var(--space-sm);
+  transition: transform 240ms var(--ease-entry), box-shadow 240ms var(--ease-entry), opacity 200ms;
+}
+
+.cta:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--color-accent) 40%, transparent);
+  opacity: 0.92;
+}
+
+.cta:active {
+  transform: translateY(0);
+  box-shadow: none;
+  opacity: 1;
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .nav {
+    padding: var(--space-base) var(--space-lg);
+  }
+
+  .watermark {
+    font-size: 140px;
+    letter-spacing: -4px;
+  }
+
+  .heading {
+    font-size: 24px;
+  }
+
+  .body {
+    font-size: 15px;
+  }
+}
+
+@media (max-width: 400px) {
+  .watermark {
+    font-size: 100px;
+  }
+}

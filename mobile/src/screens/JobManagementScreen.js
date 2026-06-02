@@ -1,28 +1,183 @@
 import {
-  View, Text, ScrollView, TouchableOpacity, StyleSheet,
+  View, ScrollView, TouchableOpacity, StyleSheet,
   ActivityIndicator, Alert, RefreshControl, Modal, FlatList,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useState, useEffect, useCallback } from 'react';
+import Animated, {
+  useSharedValue, useAnimatedStyle, withSpring, withTiming,
+  FadeIn, FadeOut, Layout,
+} from 'react-native-reanimated';
 import { api } from '../services/api';
 import StatusTracker from '../components/StatusTracker';
+import Text from '../components/Text';
+import Tabs from '../components/Tabs';
+import Chip from '../components/Chip';
+import Surface from '../components/Surface';
+import Stack from '../components/Stack';
+import Inline from '../components/Inline';
+import Badge from '../components/Badge';
+import Button from '../components/Button';
+import ListItem from '../components/ListItem';
+import { SkeletonBox } from '../components/Skeleton';
+import { colors, spacing, radius, shadows, motion } from '../theme/tokens';
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function initials(name = '') {
   return name.split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2);
 }
 
+const STATUS_LABELS = {
+  pending: 'Pending',
+  confirmed: 'Confirmed',
+  on_the_way: 'On the Way',
+  in_progress: 'In Progress',
+  completed: 'Completed',
+  cancelled: 'Cancelled',
+};
+
+const STATUS_COLORS = {
+  pending: colors.warning,
+  confirmed: colors.accent,
+  on_the_way: colors.accent,
+  in_progress: colors.success,
+  completed: colors.success,
+  cancelled: colors.danger,
+};
+
+// ─── Loading Skeleton ─────────────────────────────────────────────────────────
+
+function JobSkeleton() {
+  return (
+    <Stack spacing="md" style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.base }}>
+      {/* Status tracker placeholder */}
+      <SkeletonBox height={90} borderRadius={radius.card} style={{ width: '100%' }} />
+      {/* Cards */}
+      {[1, 2].map((k) => (
+        <View key={k} style={skeletonStyles.card}>
+          <SkeletonBox height={11} width={80} borderRadius={6} />
+          <SkeletonBox height={16} width={160} borderRadius={6} style={{ marginTop: spacing.sm }} />
+          <SkeletonBox height={13} width={120} borderRadius={6} style={{ marginTop: spacing.xs }} />
+        </View>
+      ))}
+      {/* Chat button placeholder */}
+      <SkeletonBox height={50} borderRadius={radius.button} style={{ width: '100%' }} />
+    </Stack>
+  );
+}
+
+const skeletonStyles = StyleSheet.create({
+  card: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.card,
+    padding: spacing.base,
+  },
+});
+
+// ─── Avatar circle ────────────────────────────────────────────────────────────
+
+function AvatarCircle({ name, isActive }) {
+  return (
+    <View style={[
+      avatarStyles.circle,
+      isActive && avatarStyles.circleActive,
+    ]}>
+      <Text variant="smallMedium" color="accent">{initials(name)}</Text>
+    </View>
+  );
+}
+
+const avatarStyles = StyleSheet.create({
+  circle: {
+    width: 42,
+    height: 42,
+    borderRadius: radius.avatar,
+    backgroundColor: colors.accentMuted,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  circleActive: {
+    borderColor: colors.accent,
+    borderWidth: 1.5,
+  },
+});
+
+// ─── Job detail sections ───────────────────────────────────────────────────────
+
+function SectionLabel({ children }) {
+  return (
+    <Text variant="label" color="secondary" style={{ marginBottom: spacing.xs }}>
+      {children}
+    </Text>
+  );
+}
+
+/** Appends a 2-char hex alpha to a 6-char hex token color string. */
+function withAlpha(hexColor, alpha) {
+  return hexColor + alpha;
+}
+
+function StatusChip({ status }) {
+  const color = STATUS_COLORS[status] || colors.textSecondary;
+  return (
+    <View style={[chipStyles.wrap, {
+      borderColor: withAlpha(color, '55'),
+      backgroundColor: withAlpha(color, '18'),
+    }]}>
+      <View style={[chipStyles.dot, { backgroundColor: color }]} />
+      <Text variant="caption" style={{ color }}>{STATUS_LABELS[status] || status}</Text>
+    </View>
+  );
+}
+
+const chipStyles = StyleSheet.create({
+  wrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+  },
+  dot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+});
+
+// ─── Main Screen ──────────────────────────────────────────────────────────────
+
 export default function JobManagementScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
   const { bookingId } = route.params || {};
+
+  // Data state
   const [booking, setBooking] = useState(null);
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const [advancing, setAdvancing] = useState(false);
   const [assignPickerVisible, setAssignPickerVisible] = useState(false);
   const [assigning, setAssigning] = useState(false);
 
+  // View state
+  const [activeTab, setActiveTab] = useState(0); // 0 = Details, 1 = Status
+  const [activeFilter, setActiveFilter] = useState('all');
+
+  // Spring animation for tab content
+  const contentOpacity = useSharedValue(1);
+  const contentTranslate = useSharedValue(0);
+
   const load = useCallback(async () => {
+    setError(null);
     try {
       const [bData, eData] = await Promise.all([
         api.get(`/bookings/${bookingId}`),
@@ -30,8 +185,8 @@ export default function JobManagementScreen({ navigation, route }) {
       ]);
       setBooking(bData);
       setEmployees((eData || []).filter((e) => e.is_active));
-    } catch {
-      // keep stale
+    } catch (err) {
+      setError(err?.message || 'Could not load job details.');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -39,6 +194,22 @@ export default function JobManagementScreen({ navigation, route }) {
   }, [bookingId]);
 
   useEffect(() => { load(); }, [load]);
+
+  // Tab switch animation
+  function handleTabChange(index) {
+    contentOpacity.value = withTiming(0, { duration: 80 }, () => {
+      contentOpacity.value = withTiming(1, { duration: motion.entryDuration });
+    });
+    contentTranslate.value = withSpring(0, {
+      stiffness: motion.spring.stiffness,
+      damping: motion.spring.damping,
+    });
+    setActiveTab(index);
+  }
+
+  const contentStyle = useAnimatedStyle(() => ({
+    opacity: contentOpacity.value,
+  }));
 
   async function handleAdvance(stage) {
     setAdvancing(true);
@@ -71,21 +242,52 @@ export default function JobManagementScreen({ navigation, route }) {
     }
   }
 
+  // ── Loading ──────────────────────────────────────────────────────────────────
+
   if (loading) {
     return (
-      <View style={[styles.loader, { paddingTop: insets.top }]}>
-        <ActivityIndicator color="#FF5C00" size="large" />
+      <View style={[styles.screen, { paddingTop: insets.top }]}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={8}>
+            <Text variant="h2" color="secondary">←</Text>
+          </TouchableOpacity>
+          <SkeletonBox width={140} height={18} borderRadius={6} />
+          <View style={{ width: 32 }} />
+        </View>
+        <JobSkeleton />
       </View>
     );
   }
 
+  // ── Error ────────────────────────────────────────────────────────────────────
+
+  if (error && !booking) {
+    return (
+      <View style={[styles.screen, styles.center, { paddingTop: insets.top }]}>
+        <Stack spacing="md" align="center">
+          <Text style={styles.errorIcon}>⚠️</Text>
+          <Text variant="bodyMedium" color="secondary">{error}</Text>
+          <Button variant="primary" label="Retry" onPress={load} style={{ minWidth: 120 }} />
+          <Button
+            variant="ghost"
+            label="← Go back"
+            onPress={() => navigation.goBack()}
+          />
+        </Stack>
+      </View>
+    );
+  }
+
+  // ── Not found ────────────────────────────────────────────────────────────────
+
   if (!booking) {
     return (
-      <View style={[styles.loader, { paddingTop: insets.top }]}>
-        <Text style={styles.errorText}>Booking not found.</Text>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.backLink}>← Go back</Text>
-        </TouchableOpacity>
+      <View style={[styles.screen, styles.center, { paddingTop: insets.top }]}>
+        <Stack spacing="md" align="center">
+          <Text variant="display3">📋</Text>
+          <Text variant="bodyMedium" color="secondary">Booking not found.</Text>
+          <Button variant="ghost" label="← Go back" onPress={() => navigation.goBack()} />
+        </Stack>
       </View>
     );
   }
@@ -98,103 +300,218 @@ export default function JobManagementScreen({ navigation, route }) {
 
   const isDone = booking.status === 'completed';
 
+  const FILTERS = ['all', 'pending', 'in_progress', 'completed'];
+  const filterLabel = { all: 'All', pending: 'Pending', in_progress: 'In Progress', completed: 'Done' };
+
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      {/* Header */}
+    <View style={[styles.screen, { paddingTop: insets.top }]}>
+      {/* ── Header ─────────────────────────────────────────────────────────── */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.backBtn}>←</Text>
+        <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={8}>
+          <Text variant="h2" color="secondary">←</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle} numberOfLines={1}>
+        <Text variant="bodyMedium" numberOfLines={1} style={{ flex: 1, textAlign: 'center' }}>
           {booking.service_type || 'Job'}
         </Text>
-        <View style={{ width: 32 }} />
+        <StatusChip status={booking.status} />
       </View>
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.content}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor="#FF5C00" />}
-      >
-        {/* Status tracker */}
-        <StatusTracker bookingStatus={booking.status} onAdvance={handleAdvance} />
-        {advancing && (
-          <View style={styles.advancingRow}>
-            <ActivityIndicator color="#FF5C00" size="small" />
-            <Text style={styles.advancingText}>Updating status…</Text>
-          </View>
-        )}
+      {/* ── Tab toggle ─────────────────────────────────────────────────────── */}
+      <View style={styles.tabsRow}>
+        <Tabs
+          tabs={['Details', 'Status']}
+          activeIndex={activeTab}
+          onChange={handleTabChange}
+          style={{ flex: 1 }}
+        />
+      </View>
 
-        {/* Client info */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Client</Text>
-          <Text style={styles.cardValue}>{booking.client_name || 'Client'}</Text>
-          {booking.address && <Text style={styles.cardMeta}>{booking.address}</Text>}
-          {date && <Text style={styles.cardMeta}>{date}{booking.scheduled_time ? ` · ${booking.scheduled_time}` : ''}</Text>}
-          {booking.total_amount && (
-            <Text style={[styles.cardMeta, styles.priceText]}>
-              ${booking.total_amount} total
-            </Text>
-          )}
-        </View>
+      {/* ── Status filters (shown on Details tab) ──────────────────────────── */}
+      {activeTab === 0 && (
+        <Animated.View entering={FadeIn.duration(200)} style={styles.filtersRow}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filtersScroll}>
+            {FILTERS.map((f) => (
+              <Chip
+                key={f}
+                label={filterLabel[f]}
+                selected={activeFilter === f}
+                onPress={() => setActiveFilter(f)}
+              />
+            ))}
+          </ScrollView>
+        </Animated.View>
+      )}
 
-        {/* Employee assignment */}
-        <View style={styles.card}>
-          <View style={styles.cardRow}>
-            <Text style={styles.cardTitle}>Assigned Employee</Text>
-            {!isDone && (
-              <TouchableOpacity
-                style={styles.assignBtn}
-                onPress={() => setAssignPickerVisible(true)}
-                disabled={assigning}
-              >
-                {assigning
-                  ? <ActivityIndicator color="#FF5C00" size="small" />
-                  : <Text style={styles.assignBtnText}>
-                      {booking.employee_id ? 'Reassign' : '+ Assign'}
-                    </Text>
-                }
-              </TouchableOpacity>
-            )}
-          </View>
-          {booking.employee_id ? (
-            <>
-              <Text style={styles.cardValue}>{booking.employee_name || 'Assigned'}</Text>
-              {booking.employee_role && <Text style={styles.cardMeta}>{booking.employee_role}</Text>}
-            </>
-          ) : (
-            <Text style={styles.cardMeta}>No employee assigned yet</Text>
-          )}
-        </View>
-
-        {/* Photo proof — shown when done */}
-        {isDone && (
-          <View style={styles.proofBox}>
-            <Text style={styles.proofIcon}>📷</Text>
-            <Text style={styles.proofTitle}>Upload proof of work</Text>
-            <Text style={styles.proofSub}>Required to release final payment</Text>
-            <TouchableOpacity style={styles.proofBtn} activeOpacity={0.8}>
-              <Text style={styles.proofBtnText}>Choose photos</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-
-        {/* Chat button */}
-        <TouchableOpacity
-          style={styles.chatBtn}
-          onPress={() =>
-            navigation.navigate('Chat', {
-              bookingId: booking.id,
-              otherPartyName: booking.client_name || 'Client',
-            })
+      {/* ── Main content ───────────────────────────────────────────────────── */}
+      <Animated.View style={[{ flex: 1 }, contentStyle]}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.content}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={() => { setRefreshing(true); load(); }}
+              tintColor={colors.accent}
+            />
           }
-          activeOpacity={0.8}
         >
-          <Text style={styles.chatBtnText}>💬  Message client</Text>
-        </TouchableOpacity>
-      </ScrollView>
+          {/* ── TAB 0: Details ─────────────────────────────────────────────── */}
+          {activeTab === 0 && (
+            <Stack spacing="md">
+              {/* Advancing indicator */}
+              {advancing && (
+                <Inline justify="center" spacing="sm">
+                  <ActivityIndicator color={colors.accent} size="small" />
+                  <Text variant="small" color="secondary">Updating status…</Text>
+                </Inline>
+              )}
 
-      {/* Employee picker modal */}
+              {/* Client card */}
+              <Surface elevation="subtle" rounded="card" padding="base" style={styles.cardMargin}>
+                <Stack spacing="xs">
+                  <SectionLabel>Client</SectionLabel>
+                  <Text variant="bodyMedium">{booking.client_name || 'Client'}</Text>
+                  {booking.address && (
+                    <Text variant="small" color="secondary">{booking.address}</Text>
+                  )}
+                  {date && (
+                    <Text variant="small" color="secondary">
+                      {date}{booking.scheduled_time ? ` · ${booking.scheduled_time}` : ''}
+                    </Text>
+                  )}
+                  {booking.total_amount && (
+                    <Text variant="smallMedium" color="accent">
+                      ${booking.total_amount} total
+                    </Text>
+                  )}
+                </Stack>
+              </Surface>
+
+              {/* Employee assignment card */}
+              <Surface elevation="subtle" rounded="card" padding="base" style={styles.cardMargin}>
+                <Inline justify="space-between" style={{ marginBottom: spacing.sm }}>
+                  <SectionLabel>Assigned Employee</SectionLabel>
+                  {!isDone && (
+                    <Button
+                      variant="ghost"
+                      label={booking.employee_id ? 'Reassign' : '+ Assign'}
+                      loading={assigning}
+                      onPress={() => setAssignPickerVisible(true)}
+                      style={styles.assignBtnInline}
+                    />
+                  )}
+                </Inline>
+                {booking.employee_id ? (
+                  <Inline spacing="md">
+                    <AvatarCircle name={booking.employee_name || 'E'} isActive />
+                    <Stack spacing={2} style={{ flex: 1 }}>
+                      <Text variant="bodyMedium">{booking.employee_name || 'Assigned'}</Text>
+                      {booking.employee_role && (
+                        <Text variant="caption" color="secondary">{booking.employee_role}</Text>
+                      )}
+                    </Stack>
+                    <Badge dot color="success" />
+                  </Inline>
+                ) : (
+                  <Text variant="small" color="secondary">No employee assigned yet</Text>
+                )}
+              </Surface>
+
+              {/* Photo proof — shown when done */}
+              {isDone && (
+                <Animated.View
+                  entering={FadeIn.duration(300)}
+                  style={styles.cardMargin}
+                >
+                  <Surface
+                    elevation="none"
+                    rounded="card"
+                    padding="lg"
+                    style={styles.proofSurface}
+                  >
+                    <Stack spacing="sm" align="center">
+                      <Text style={styles.proofIcon}>📷</Text>
+                      <Text variant="bodyMedium">Upload proof of work</Text>
+                      <Text variant="small" color="secondary">Required to release final payment</Text>
+                      <Button
+                        variant="primary"
+                        label="Choose photos"
+                        style={{ marginTop: spacing.xs, alignSelf: 'center', minWidth: 160 }}
+                      />
+                    </Stack>
+                  </Surface>
+                </Animated.View>
+              )}
+
+              {/* Message client */}
+              <View style={styles.cardMargin}>
+                <Button
+                  variant="secondary"
+                  label="💬  Message client"
+                  onPress={() =>
+                    navigation.navigate('Chat', {
+                      bookingId: booking.id,
+                      otherPartyName: booking.client_name || 'Client',
+                    })
+                  }
+                />
+              </View>
+            </Stack>
+          )}
+
+          {/* ── TAB 1: Status ──────────────────────────────────────────────── */}
+          {activeTab === 1 && (
+            <Stack spacing="md">
+              <View style={styles.cardMargin}>
+                <StatusTracker bookingStatus={booking.status} onAdvance={handleAdvance} />
+              </View>
+              {advancing && (
+                <Inline justify="center" spacing="sm">
+                  <ActivityIndicator color={colors.accent} size="small" />
+                  <Text variant="small" color="secondary">Updating status…</Text>
+                </Inline>
+              )}
+
+              {/* Quick-action list items */}
+              <Stack spacing="xs" style={styles.cardMargin}>
+                <SectionLabel>Actions</SectionLabel>
+                {!isDone && (
+                  <>
+                    <ListItem
+                      title="Advance status"
+                      subtitle="Move job to the next stage"
+                      left={<Text style={{ fontSize: 18 }}>▶</Text>}
+                      onPress={() => handleAdvance(booking.status === 'in_progress' ? 'completed' : 'on_the_way')}
+                      showChevron
+                    />
+                    <ListItem
+                      title="Reassign employee"
+                      subtitle={booking.employee_id ? booking.employee_name : 'Not assigned yet'}
+                      left={<Text style={{ fontSize: 18 }}>👤</Text>}
+                      onPress={() => setAssignPickerVisible(true)}
+                      showChevron
+                    />
+                  </>
+                )}
+                <ListItem
+                  title="Message client"
+                  subtitle="Open the chat"
+                  left={<Text style={{ fontSize: 18 }}>💬</Text>}
+                  onPress={() =>
+                    navigation.navigate('Chat', {
+                      bookingId: booking.id,
+                      otherPartyName: booking.client_name || 'Client',
+                    })
+                  }
+                  showChevron
+                />
+              </Stack>
+            </Stack>
+          )}
+        </ScrollView>
+      </Animated.View>
+
+      {/* ── Employee picker modal ───────────────────────────────────────────── */}
       <Modal
         visible={assignPickerVisible}
         transparent
@@ -208,9 +525,13 @@ export default function JobManagementScreen({ navigation, route }) {
         />
         <View style={[styles.modalSheet, { paddingBottom: Math.max(insets.bottom, 24) }]}>
           <View style={styles.modalHandle} />
-          <Text style={styles.modalTitle}>Assign Employee</Text>
+          <Text variant="bodyMedium" style={{ marginBottom: spacing.base }}>Assign Employee</Text>
+
           {employees.length === 0 ? (
-            <Text style={styles.modalEmpty}>No active employees found.</Text>
+            <Stack spacing="sm" align="center" style={{ paddingVertical: spacing.xl }}>
+              <Text style={{ fontSize: 28 }}>👥</Text>
+              <Text variant="small" color="secondary">No active employees found.</Text>
+            </Stack>
           ) : (
             <FlatList
               data={employees}
@@ -227,14 +548,14 @@ export default function JobManagementScreen({ navigation, route }) {
                     onPress={() => handleAssign(item.id)}
                     activeOpacity={0.8}
                   >
-                    <View style={styles.empAvatar}>
-                      <Text style={styles.empAvatarText}>{initials(fullName)}</Text>
-                    </View>
-                    <View style={styles.empInfo}>
-                      <Text style={styles.empName}>{fullName}</Text>
-                      <Text style={styles.empRole}>{item.role_title || 'Staff'}</Text>
-                    </View>
-                    {isCurrent && <Text style={styles.empCheck}>✓</Text>}
+                    <AvatarCircle name={fullName} isActive={isCurrent} />
+                    <Stack spacing={2} style={{ flex: 1 }}>
+                      <Text variant="smallMedium">{fullName}</Text>
+                      <Text variant="caption" color="secondary">{item.role_title || 'Staff'}</Text>
+                    </Stack>
+                    {isCurrent && (
+                      <Text style={[styles.empCheck, { color: colors.success }]}>✓</Text>
+                    )}
                   </TouchableOpacity>
                 );
               }}
@@ -246,83 +567,95 @@ export default function JobManagementScreen({ navigation, route }) {
   );
 }
 
+// ─── Styles ───────────────────────────────────────────────────────────────────
+
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#07080a' },
-  loader: { flex: 1, backgroundColor: '#07080a', alignItems: 'center', justifyContent: 'center', gap: 12 },
-  errorText: { fontSize: 16, color: '#9ca3af' },
-  backLink: { fontSize: 15, color: '#FF5C00', fontWeight: '600' },
+  screen: { flex: 1, backgroundColor: colors.bg },
+  center: { alignItems: 'center', justifyContent: 'center' },
+
   header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 22, paddingTop: 12, paddingBottom: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
+    gap: spacing.sm,
   },
-  backBtn: { fontSize: 24, color: '#9ca3af', width: 32 },
-  headerTitle: { fontSize: 17, fontWeight: '700', color: '#ffffff', flex: 1, textAlign: 'center' },
-  content: { paddingTop: 16, paddingBottom: 40, gap: 14 },
-  advancingRow: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingHorizontal: 22,
+
+  tabsRow: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.xs,
+    paddingBottom: spacing.sm,
   },
-  advancingText: { fontSize: 13, color: '#9ca3af' },
-  card: {
-    backgroundColor: '#0d0f10', borderWidth: 1, borderColor: '#1a1d1f',
-    borderRadius: 16, padding: 16, marginHorizontal: 22, gap: 4,
+
+  filtersRow: {
+    paddingBottom: spacing.sm,
   },
-  cardRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 },
-  cardTitle: { fontSize: 11, color: '#9ca3af', fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.8 },
-  cardValue: { fontSize: 16, fontWeight: '600', color: '#ffffff' },
-  cardMeta: { fontSize: 13, color: '#9ca3af' },
-  priceText: { color: '#FF8C42', fontWeight: '600' },
-  assignBtn: {
-    backgroundColor: 'rgba(255,92,0,0.1)', borderWidth: 1,
-    borderColor: 'rgba(255,92,0,0.3)', borderRadius: 10,
-    paddingHorizontal: 12, paddingVertical: 6,
+  filtersScroll: {
+    paddingHorizontal: spacing.lg,
+    gap: spacing.sm,
   },
-  assignBtnText: { fontSize: 12, fontWeight: '700', color: '#FF8C42' },
-  proofBox: {
-    marginHorizontal: 22, backgroundColor: '#0d0f10', borderWidth: 1.5,
-    borderStyle: 'dashed', borderColor: 'rgba(255,92,0,0.3)', borderRadius: 16,
-    padding: 20, alignItems: 'center', gap: 6,
+
+  content: {
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.xl * 2,
+    gap: spacing.md,
+  },
+
+  cardMargin: {
+    marginHorizontal: spacing.lg,
+  },
+
+  assignBtnInline: {
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    minHeight: 0,
+  },
+
+  proofSurface: {
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    borderColor: colors.border,
   },
   proofIcon: { fontSize: 28 },
-  proofTitle: { fontSize: 14, fontWeight: '600', color: '#d1d5db' },
-  proofSub: { fontSize: 12, color: '#6b7280' },
-  proofBtn: {
-    backgroundColor: '#FF5C00', borderRadius: 12, paddingHorizontal: 20, paddingVertical: 10, marginTop: 6,
-  },
-  proofBtnText: { fontSize: 14, fontWeight: '700', color: '#ffffff' },
-  chatBtn: {
-    marginHorizontal: 22, backgroundColor: '#0d0f10', borderWidth: 1,
-    borderColor: 'rgba(255,92,0,0.3)', borderRadius: 14, paddingVertical: 14, alignItems: 'center',
-  },
-  chatBtnText: { fontSize: 15, fontWeight: '700', color: '#FF5C00' },
+
+  errorIcon: { fontSize: 36 },
+
   // Modal
-  modalBackdrop: {
-    flex: 1, backgroundColor: 'rgba(0,0,0,0.7)',
-  },
+  modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)' },
   modalSheet: {
-    position: 'absolute', bottom: 0, left: 0, right: 0,
-    backgroundColor: '#0f1214', borderTopLeftRadius: 24, borderTopRightRadius: 24,
-    borderTopWidth: 1, borderColor: '#1e2226',
-    padding: 24, maxHeight: '70%',
+    position: 'absolute',
+    bottom: 0, left: 0, right: 0,
+    backgroundColor: colors.surface,
+    borderTopLeftRadius: radius.sheet,
+    borderTopRightRadius: radius.sheet,
+    borderTopWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.lg,
+    maxHeight: '70%',
+    ...shadows.modal,
   },
   modalHandle: {
-    width: 36, height: 4, backgroundColor: '#2a2e33', borderRadius: 2,
-    alignSelf: 'center', marginBottom: 16,
+    width: 36, height: 4,
+    backgroundColor: colors.border,
+    borderRadius: 2,
+    alignSelf: 'center',
+    marginBottom: spacing.base,
   },
-  modalTitle: { fontSize: 16, fontWeight: '700', color: '#ffffff', marginBottom: 16 },
-  modalEmpty: { fontSize: 14, color: '#6b7280', textAlign: 'center', paddingVertical: 20 },
+
   empRow: {
-    flexDirection: 'row', alignItems: 'center', gap: 12,
-    paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#1a1d1f',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
   },
-  empRowActive: { backgroundColor: 'rgba(255,92,0,0.05)', borderRadius: 12, paddingHorizontal: 4 },
-  empAvatar: {
-    width: 40, height: 40, borderRadius: 20, backgroundColor: '#1a2a3a',
-    borderWidth: 1, borderColor: 'rgba(59,130,246,0.2)',
-    alignItems: 'center', justifyContent: 'center',
+  empRowActive: {
+    backgroundColor: colors.accentMuted,
+    borderRadius: radius.input,
+    paddingHorizontal: spacing.sm,
   },
-  empAvatarText: { fontSize: 13, fontWeight: '700', color: '#60a5fa' },
-  empInfo: { flex: 1 },
-  empName: { fontSize: 14, fontWeight: '600', color: '#ffffff' },
-  empRole: { fontSize: 12, color: '#9ca3af' },
-  empCheck: { fontSize: 18, color: '#4ade80' },
+  empCheck: { fontSize: 18 },
 });

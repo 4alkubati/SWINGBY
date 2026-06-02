@@ -3,6 +3,7 @@
 import React from 'react';
 import { Image } from 'expo-image';
 import { StyleSheet } from 'react-native';
+import { colors } from '../theme/tokens';
 
 /**
  * SwImage — drop-in replacement for React Native Image.
@@ -14,6 +15,9 @@ import { StyleSheet } from 'react-native';
  *  - contentFit      default "cover"
  *  - transition      default 200ms
  *  - cachePolicy     default "memory-disk"
+ *  - accessibilityLabel  Describe the image content for screen readers.
+ *                        Pass an empty string "" for purely decorative images
+ *                        (sets accessible={false} automatically).
  */
 export default function SwImage({
   source,
@@ -22,8 +26,11 @@ export default function SwImage({
   contentFit = 'cover',
   transition = 200,
   cachePolicy = 'memory-disk',
+  accessibilityLabel,
   ...rest
 }) {
+  const isDecorative = accessibilityLabel === '' || accessibilityLabel === undefined;
+
   return (
     <Image
       source={source}
@@ -32,6 +39,8 @@ export default function SwImage({
       transition={transition}
       cachePolicy={cachePolicy}
       style={[styles.base, style]}
+      accessible={!isDecorative}
+      accessibilityLabel={isDecorative ? undefined : accessibilityLabel}
       {...rest}
     />
   );
@@ -39,6 +48,6 @@ export default function SwImage({
 
 const styles = StyleSheet.create({
   base: {
-    backgroundColor: '#131618', // subtle bg while loading — matches skeleton bg
+    backgroundColor: colors.surface,
   },
 });

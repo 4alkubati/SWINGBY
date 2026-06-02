@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SwingBy — Component Catalog</title>
+  <style>
+    /* ── Token Palette ── */
+    :root {
+      --color-bg:            #07080a;
+      --color-surface:       #0F1115;
+      --color-surface-alt:   #161A21;
+      --color-border:        #1F232B;
+      --color-text-primary:  #F4F6FA;
+      --color-text-secondary:#8B92A0;
+      --color-accent:        #6E56F7;
+      --color-accent-muted:  #2A2247;
+      --color-success:       #2EBD85;
+      --color-warning:       #F6B23B;
+      --color-danger:        #FF5C5C;
+
+      --space-xs:   4px;
+      --space-sm:   8px;
+      --space-md:   12px;
+      --space-base: 16px;
+      --space-lg:   24px;
+      --space-xl:   32px;
+      --space-2xl:  48px;
+
+      --radius-chip:   8px;
+      --radius-input:  12px;
+      --radius-button: 12px;
+      --radius-card:   20px;
+      --radius-pill:   999px;
+      --radius-avatar: 999px;
+
+      --shadow-subtle: 0 4px 8px rgba(0,0,0,0.16);
+      --shadow-modal:  0 8px 24px rgba(0,0,0,0.32);
+    }
+
+    /* ── Base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--color-bg);
+      color: var(--color-text-primary);
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+      padding: var(--space-2xl);
+    }
+
+    /* ── Page Header ── */
+    .page-title {
+      font-family: 'Space Grotesk', system-ui, sans-serif;
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--color-text-primary);
+      margin-bottom: var(--space-xs);
+    }
+    .page-subtitle {
+      color: var(--color-text-secondary);
+      font-size: 13px;
+      margin-bottom: var(--space-2xl);
+    }
+
+    /* ── Section ── */
+    .section {
+      margin-bottom: var(--space-2xl);
+    }
+    .section-title {
+      font-family: 'Space Grotesk', system-ui, sans-serif;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--color-text-secondary);
+      margin-bottom: var(--space-base);
+      padding-bottom: var(--space-sm);
+      border-bottom: 1px solid var(--color-border);
+    }
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: var(--space-md);
+    }
+    .col {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-sm);
+    }
+
+    /* ── Buttons ── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-sm);
+      padding: 10px var(--space-lg);
+      border-radius: var(--radius-button);
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    .btn-primary {
+      background: var(--color-accent);
+      color: #fff;
+    }
+    .btn-secondary {
+      background: var(--color-surface-alt);
+      color: var(--color-text-primary);
+      border: 1px solid var(--color-border);
+    }
+    .btn-ghost {
+      background: transparent;
+      color: var(--color-text-secondary);
+      border: 1px solid var(--color-border);
+    }
+    .btn-danger {
+      background: var(--color-danger);
+      color: #fff;
+    }
+    .btn-sm {
+      padding: 6px var(--space-md);
+      font-size: 13px;
+      border-radius: var(--radius-chip);
+    }
+    .btn-icon {
+      width: 36px;
+      height: 36px;
+      padding: 0;
+      border-radius: var(--radius-chip);
+    }
+
+    /* ── TextFields ── */
+    .field-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-xs);
+      width: 260px;
+    }
+    .field-label {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--color-text-secondary);
+    }
+    .field-input {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-input);
+      color: var(--color-text-primary);
+      font-family: inherit;
+      font-size: 14px;
+      padding: 10px var(--space-md);
+      outline: none;
+      width: 100%;
+    }
+    .field-input::placeholder { color: var(--color-text-secondary); }
+    .field-input.focused {
+      border-color: var(--color-accent);
+      box-shadow: 0 0 0 3px rgba(110,86,247,0.18);
+    }
+    .field-input.error {
+      border-color: var(--color-danger);
+      box-shadow: 0 0 0 3px rgba(255,92,92,0.14);
+    }
+    .field-hint {
+      font-size: 11px;
+      color: var(--color-text-secondary);
+    }
+    .field-hint.error { color: var(--color-danger); }
+
+    /* ── Card ── */
+    .card {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-card);
+      padding: var(--space-lg);
+      box-shadow: var(--shadow-subtle);
+    }
+    .card-title {
+      font-family: 'Space Grotesk', system-ui, sans-serif;
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--color-text-primary);
+      margin-bottom: var(--space-sm);
+    }
+    .card-body {
+      color: var(--color-text-secondary);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+    .card-footer {
+      margin-top: var(--space-base);
+      padding-top: var(--space-base);
+      border-top: 1px solid var(--color-border);
+      display: flex;
+      gap: var(--space-sm);
+    }
+
+    /* ── Avatar ── */
+    .avatar {
+      border-radius: var(--radius-avatar);
+      background: var(--color-accent-muted);
+      color: var(--color-accent);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-family: 'Space Grotesk', system-ui, sans-serif;
+      flex-shrink: 0;
+    }
+    .avatar-xs  { width: 20px; height: 20px; font-size: 8px; }
+    .avatar-sm  { width: 28px; height: 28px; font-size: 11px; }
+    .avatar-md  { width: 36px; height: 36px; font-size: 13px; }
+    .avatar-lg  { width: 48px; height: 48px; font-size: 16px; }
+    .avatar-xl  { width: 64px; height: 64px; font-size: 22px; }
+    .avatar-img { object-fit: cover; }
+
+    /* ── Badge ── */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: var(--radius-pill);
+      font-size: 11px;
+      font-weight: 700;
+      line-height: 1;
+      padding: 2px 7px;
+      min-width: 18px;
+      height: 18px;
+    }
+    .badge-accent  { background: var(--color-accent);  color: #fff; }
+    .badge-success { background: var(--color-success); color: #fff; }
+    .badge-warning { background: var(--color-warning); color: #07080a; }
+    .badge-danger  { background: var(--color-danger);  color: #fff; }
+    .badge-dot {
+      width: 8px;
+      height: 8px;
+      min-width: 0;
+      padding: 0;
+      border-radius: 50%;
+    }
+    .badge-dot-accent   { background: var(--color-accent); }
+    .badge-dot-success  { background: var(--color-success); }
+    .badge-dot-warning  { background: var(--color-warning); }
+    .badge-dot-danger   { background: var(--color-danger); }
+    .badge-wrapper {
+      position: relative;
+      display: inline-flex;
+    }
+    .badge-overlay {
+      position: absolute;
+      top: -4px;
+      right: -4px;
+    }
+
+    /* ── Tabs ── */
+    .tabs {
+      display: flex;
+      gap: 2px;
+      background: var(--color-surface-alt);
+      border-radius: var(--radius-chip);
+      padding: 3px;
+      border: 1px solid var(--color-border);
+    }
+    .tab {
+      padding: 6px var(--space-md);
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--color-text-secondary);
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      white-space: nowrap;
+    }
+    .tab.active {
+      background: var(--color-surface);
+      color: var(--color-text-primary);
+      box-shadow: var(--shadow-subtle);
+    }
+
+    /* ── Chip ── */
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-xs);
+      padding: 5px var(--space-md);
+      border-radius: var(--radius-pill);
+      font-size: 13px;
+      font-weight: 500;
+      border: 1px solid var(--color-border);
+      background: var(--color-surface-alt);
+      color: var(--color-text-secondary);
+      cursor: pointer;
+    }
+    .chip.selected {
+      background: var(--color-accent-muted);
+      border-color: var(--color-accent);
+      color: var(--color-accent);
+    }
+
+    /* ── ListItem ── */
+    .list {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-card);
+      overflow: hidden;
+      width: 360px;
+    }
+    .list-item {
+      display: flex;
+      align-items: center;
+      gap: var(--space-md);
+      padding: var(--space-md) var(--space-base);
+      border-bottom: 1px solid var(--color-border);
+    }
+    .list-item:last-child { border-bottom: none; }
+    .list-item-content { flex: 1; min-width: 0; }
+    .list-item-title {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--color-text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .list-item-sub {
+      font-size: 12px;
+      color: var(--color-text-secondary);
+    }
+    .list-item-meta {
+      font-size: 12px;
+      color: var(--color-text-secondary);
+      flex-shrink: 0;
+    }
+
+    /* ── SearchField ── */
+    .search-wrapper {
+      position: relative;
+      width: 280px;
+    }
+    .search-icon {
+      position: absolute;
+      left: var(--space-md);
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--color-text-secondary);
+      font-size: 14px;
+      pointer-events: none;
+    }
+    .search-input {
+      background: var(--color-surface-alt);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-pill);
+      color: var(--color-text-primary);
+      font-family: inherit;
+      font-size: 14px;
+      padding: 9px var(--space-md) 9px 36px;
+      outline: none;
+      width: 100%;
+    }
+    .search-input::placeholder { color: var(--color-text-secondary); }
+    .search-input.focused {
+      border-color: var(--color-accent);
+      box-shadow: 0 0 0 3px rgba(110,86,247,0.18);
+    }
+
+    /* ── Dialog ── */
+    .dialog-backdrop {
+      background: rgba(7,8,10,0.72);
+      border-radius: var(--radius-card);
+      padding: var(--space-lg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 420px;
+    }
+    .dialog {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sheet);
+      padding: var(--space-lg);
+      box-shadow: var(--shadow-modal);
+      width: 100%;
+    }
+    .dialog-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: var(--space-md);
+    }
+    .dialog-title {
+      font-family: 'Space Grotesk', system-ui, sans-serif;
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--color-text-primary);
+    }
+    .dialog-close {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--color-surface-alt);
+      border: 1px solid var(--color-border);
+      color: var(--color-text-secondary);
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+    .dialog-body {
+      color: var(--color-text-secondary);
+      font-size: 14px;
+      line-height: 1.6;
+      margin-bottom: var(--space-lg);
+    }
+    .dialog-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: var(--space-sm);
+    }
+
+    /* ── Divider ── */
+    .divider {
+      height: 1px;
+      background: var(--color-border);
+      margin: var(--space-base) 0;
+    }
+
+    /* ── Token swatch grid ── */
+    .swatch-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-md);
+    }
+    .swatch {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--space-xs);
+    }
+    .swatch-color {
+      width: 48px;
+      height: 48px;
+      border-radius: var(--radius-chip);
+      border: 1px solid var(--color-border);
+    }
+    .swatch-name {
+      font-size: 10px;
+      color: var(--color-text-secondary);
+      text-align: center;
+    }
+
+    /* ── Label tag ── */
+    .variant-label {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--color-text-secondary);
+      margin-top: var(--space-xs);
+    }
+    .variant-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--space-xs);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="page-title">SwingBy · Component Catalog</div>
+  <div class="page-subtitle">Visual reference for designer handoff — all token-driven, dark theme</div>
+
+  <!-- ── COLOR TOKENS ─────────────────────────────────── -->
+  <div class="section">
+    <div class="section-title">Color Tokens</div>
+    <div class="swatch-grid">
+      <div class="swatch">
+        <div class="swatch-color" style="background:#07080a;"></div>
+        <div class="swatch-name">bg<br>#07080a</div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#0F1115;"></div>
+        <div class="swatch-name">surface<br>#0F1115</div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#161A21;"></div>
+        <div class="swatch-name">surface-alt<br>#161A21</div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#1F232B;"></div>
+        <div class="swatch-name">border<br>#1F232B</div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#F4F6FA;"></div>
+        <div class="swatch-name">text-primary<br>#F4F6FA</div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#8B92A0;"></div>
+        <div class="swatch-name">text-secondary<br>#8B92A0</div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#6E56F7;"></div>
+        <div class="swatch-name">accent<br>#6E56F7</div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#2A2247;"></div>
+        <div class="swatch-name">accent-muted<br>#2A2247</div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#2EBD85;"></div>
+        <div class="swatch-name">success<br>#2EBD85</div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#F6B23B;"></div>
+        <div class="swatch-name">warning<br>#F6B23B</div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#FF5C5C;"></div>
+        <div class="swatch-name">danger<br>#FF5C5C</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── BUTTON ────────────────────────────────────────── -->
+  <div class="section">
+    <div class="section-title">Button</div>
+    <div class="row" style="margin-bottom:var(--space-md);">
+      <div class="variant-col">
+        <button class="btn btn-primary">Primary</button>
+        <div class="variant-label">Primary</div>
+      </div>
+      <div class="variant-col">
+        <button class="btn btn-secondary">Secondary</button>
+        <div class="variant-label">Secondary</div>
+      </div>
+      <div class="variant-col">
+        <button class="btn btn-ghost">Ghost</button>
+        <div class="variant-label">Ghost</div>
+      </div>
+      <div class="variant-col">
+        <button class="btn btn-danger">Danger</button>
+        <div class="variant-label">Danger</div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="variant-col">
+        <button class="btn btn-primary btn-sm">Primary SM</button>
+        <div class="variant-label">Primary · sm</div>
+      </div>
+      <div class="variant-col">
+        <button class="btn btn-secondary btn-sm">Secondary SM</button>
+        <div class="variant-label">Secondary · sm</div>
+      </div>
+      <div class="variant-col">
+        <button class="btn btn-ghost btn-sm">Ghost SM</button>
+        <div class="variant-label">Ghost · sm</div>
+      </div>
+      <div class="variant-col">
+        <button class="btn btn-primary" style="opacity:0.4;cursor:not-allowed;">Disabled</button>
+        <div class="variant-label">Disabled</div>
+      </div>
+      <div class="variant-col">
+        <button class="btn btn-primary btn-icon">＋</button>
+        <div class="variant-label">Icon-only</div>
+      </div>
+      <div class="variant-col">
+        <button class="btn btn-primary">
+          <span>✦</span> With Icon
+        </button>
+        <div class="variant-label">Leading icon</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TEXTFIELD ─────────────────────────────────────── -->
+  <div class="section">
+    <div class="section-title">TextField</div>
+    <div class="row" style="align-items:flex-start;">
+      <div class="field-wrapper">
+        <label class="field-label">Email address</label>
+        <input class="field-input" type="text" placeholder="name@company.com" value="" />
+        <span class="field-hint">We'll never share your email.</span>
+      </div>
+      <div class="field-wrapper">
+        <label class="field-label">Username (focused)</label>
+        <input class="field-input focused" type="text" value="amr_basem" />
+        <span class="field-hint">Letters, numbers, underscores only.</span>
+      </div>
+      <div class="field-wrapper">
+        <label class="field-label">Password (error)</label>
+        <input class="field-input error" type="password" value="short" />
+        <span class="field-hint error">Minimum 8 characters required.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── CARD ──────────────────────────────────────────── -->
+  <div class="section">
+    <div class="section-title">Card</div>
+    <div class="row" style="align-items:flex-start;">
+      <div class="card" style="width:300px;">
+        <div class="card-title">Basic Card</div>
+        <div class="card-body">A contained surface for grouping related content with a subtle shadow and border.</div>
+      </div>
+      <div class="card" style="width:300px;">
+        <div class="card-title">Card with Footer</div>
+        <div class="card-body">Use the footer area for actions like confirm or dismiss.</div>
+        <div class="card-footer">
+          <button class="btn btn-primary btn-sm">Confirm</button>
+          <button class="btn btn-ghost btn-sm">Cancel</button>
+        </div>
+      </div>
+      <div class="card" style="width:300px;">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+          <div class="avatar avatar-md">AB</div>
+          <div>
+            <div class="card-title" style="margin-bottom:0;">Amr Basem</div>
+            <div style="font-size:12px;color:var(--color-text-secondary);">Admin</div>
+          </div>
+        </div>
+        <div class="card-body">Card with leading avatar and role label for user profile snapshots.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── AVATAR ─────────────────────────────────────────── -->
+  <div class="section">
+    <div class="section-title">Avatar</div>
+    <div class="row">
+      <div class="variant-col">
+        <div class="avatar avatar-xs">A</div>
+        <div class="variant-label">xs · 20px</div>
+      </div>
+      <div class="variant-col">
+        <div class="avatar avatar-sm">AB</div>
+        <div class="variant-label">sm · 28px</div>
+      </div>
+      <div class="variant-col">
+        <div class="avatar avatar-md">AB</div>
+        <div class="variant-label">md · 36px</div>
+      </div>
+      <div class="variant-col">
+        <div class="avatar avatar-lg">AB</div>
+        <div class="variant-label">lg · 48px</div>
+      </div>
+      <div class="variant-col">
+        <div class="avatar avatar-xl">AB</div>
+        <div class="variant-label">xl · 64px</div>
+      </div>
+      <div class="variant-col">
+        <div class="avatar avatar-md" style="background:var(--color-surface-alt);color:var(--color-success);">✓</div>
+        <div class="variant-label">Status · ok</div>
+      </div>
+      <div class="variant-col">
+        <!-- Avatar + numeric badge -->
+        <div class="badge-wrapper">
+          <div class="avatar avatar-md">AB</div>
+          <span class="badge badge-danger badge-overlay">3</span>
+        </div>
+        <div class="variant-label">With badge</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── BADGE ──────────────────────────────────────────── -->
+  <div class="section">
+    <div class="section-title">Badge</div>
+    <div style="margin-bottom:var(--space-md);">
+      <div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:var(--space-sm);">Numeric</div>
+      <div class="row">
+        <div class="variant-col">
+          <span class="badge badge-accent">1</span>
+          <div class="variant-label">Accent</div>
+        </div>
+        <div class="variant-col">
+          <span class="badge badge-accent">42</span>
+          <div class="variant-label">Double digit</div>
+        </div>
+        <div class="variant-col">
+          <span class="badge badge-success">8</span>
+          <div class="variant-label">Success</div>
+        </div>
+        <div class="variant-col">
+          <span class="badge badge-warning">5</span>
+          <div class="variant-label">Warning</div>
+        </div>
+        <div class="variant-col">
+          <span class="badge badge-danger">!</span>
+          <div class="variant-label">Danger</div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:var(--space-sm);">Dot indicator</div>
+      <div class="row">
+        <div class="variant-col">
+          <span class="badge badge-dot badge-dot-accent"></span>
+          <div class="variant-label">Accent</div>
+        </div>
+        <div class="variant-col">
+          <span class="badge badge-dot badge-dot-success"></span>
+          <div class="variant-label">Online</div>
+        </div>
+        <div class="variant-col">
+          <span class="badge badge-dot badge-dot-warning"></span>
+          <div class="variant-label">Away</div>
+        </div>
+        <div class="variant-col">
+          <span class="badge badge-dot badge-dot-danger"></span>
+          <div class="variant-label">Offline</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TABS ───────────────────────────────────────────── -->
+  <div class="section">
+    <div class="section-title">Tabs</div>
+    <div class="col">
+      <div class="tabs" style="width:fit-content;">
+        <button class="tab active">Overview</button>
+        <button class="tab">Analytics</button>
+        <button class="tab">Settings</button>
+      </div>
+      <div class="tabs" style="width:fit-content;">
+        <button class="tab">All</button>
+        <button class="tab active">Active</button>
+        <button class="tab">Pending</button>
+        <button class="tab">Archived</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── CHIP ───────────────────────────────────────────── -->
+  <div class="section">
+    <div class="section-title">Chip</div>
+    <div class="row">
+      <div class="variant-col">
+        <span class="chip">Yoga</span>
+        <div class="variant-label">Unselected</div>
+      </div>
+      <div class="variant-col">
+        <span class="chip selected">Yoga</span>
+        <div class="variant-label">Selected</div>
+      </div>
+      <div class="variant-col">
+        <span class="chip">Pilates</span>
+        <div class="variant-label">Unselected</div>
+      </div>
+      <div class="variant-col">
+        <span class="chip selected">Pilates</span>
+        <div class="variant-label">Selected</div>
+      </div>
+      <div class="variant-col">
+        <span class="chip">✦ Featured</span>
+        <div class="variant-label">With icon</div>
+      </div>
+      <div class="variant-col">
+        <span class="chip selected">✦ Featured</span>
+        <div class="variant-label">With icon · sel</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── LIST ITEM ──────────────────────────────────────── -->
+  <div class="section">
+    <div class="section-title">ListItem</div>
+    <div class="list">
+      <div class="list-item">
+        <div class="avatar avatar-sm">AM</div>
+        <div class="list-item-content">
+          <div class="list-item-title">Amr Basem</div>
+          <div class="list-item-sub">amr@swingby.com · Admin</div>
+        </div>
+        <span class="badge badge-success">Active</span>
+      </div>
+      <div class="list-item">
+        <div class="avatar avatar-sm" style="background:var(--color-surface-alt);color:var(--color-warning);">LK</div>
+        <div class="list-item-content">
+          <div class="list-item-title">Layla Khalid</div>
+          <div class="list-item-sub">layla@swingby.com · Manager</div>
+        </div>
+        <span class="badge badge-warning">Pending</span>
+      </div>
+      <div class="list-item">
+        <div class="avatar avatar-sm" style="background:var(--color-surface-alt);color:var(--color-danger);">MO</div>
+        <div class="list-item-content">
+          <div class="list-item-title">Mohamed Omar</div>
+          <div class="list-item-sub">m.omar@swingby.com · Viewer</div>
+        </div>
+        <span class="badge badge-danger">Suspended</span>
+      </div>
+      <div class="list-item">
+        <div class="avatar avatar-sm" style="background:var(--color-accent-muted);color:var(--color-accent);">SR</div>
+        <div class="list-item-content">
+          <div class="list-item-title">Sara Rashid</div>
+          <div class="list-item-sub">sara@swingby.com · Staff</div>
+        </div>
+        <span class="list-item-meta">2h ago</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SEARCH FIELD ───────────────────────────────────── -->
+  <div class="section">
+    <div class="section-title">SearchField</div>
+    <div class="row" style="align-items:flex-start;">
+      <div class="variant-col">
+        <div class="search-wrapper">
+          <span class="search-icon">⌕</span>
+          <input class="search-input" type="text" placeholder="Search users…" />
+        </div>
+        <div class="variant-label">Default</div>
+      </div>
+      <div class="variant-col">
+        <div class="search-wrapper">
+          <span class="search-icon">⌕</span>
+          <input class="search-input focused" type="text" value="yoga studio" />
+        </div>
+        <div class="variant-label">Focused · filled</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── DIALOG ─────────────────────────────────────────── -->
+  <div class="section">
+    <div class="section-title">Dialog</div>
+    <div class="row" style="align-items:flex-start;flex-wrap:wrap;gap:var(--space-lg);">
+
+      <!-- Confirmation dialog -->
+      <div>
+        <div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:var(--space-sm);">Confirmation</div>
+        <div class="dialog-backdrop">
+          <div class="dialog">
+            <div class="dialog-header">
+              <div class="dialog-title">Delete booking?</div>
+              <div class="dialog-close">✕</div>
+            </div>
+            <div class="dialog-body">
+              This will permanently remove the booking for <strong style="color:var(--color-text-primary);">Amr Basem</strong> on June 12. This action cannot be undone.
+            </div>
+            <div class="dialog-footer">
+              <button class="btn btn-ghost btn-sm">Cancel</button>
+              <button class="btn btn-danger btn-sm">Delete</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Info dialog -->
+      <div>
+        <div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:var(--space-sm);">Info / Form</div>
+        <div class="dialog-backdrop">
+          <div class="dialog">
+            <div class="dialog-header">
+              <div class="dialog-title">Invite member</div>
+              <div class="dialog-close">✕</div>
+            </div>
+            <div class="dialog-body">
+              <div class="field-wrapper" style="width:100%;margin-bottom:var(--space-md);">
+                <label class="field-label">Email address</label>
+                <input class="field-input" type="text" placeholder="colleague@company.com" />
+              </div>
+              <div class="field-wrapper" style="width:100%;">
+                <label class="field-label">Role</label>
+                <input class="field-input" type="text" value="Viewer" />
+              </div>
+            </div>
+            <div class="dialog-footer">
+              <button class="btn btn-ghost btn-sm">Cancel</button>
+              <button class="btn btn-primary btn-sm">Send invite</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</body>
+</html>

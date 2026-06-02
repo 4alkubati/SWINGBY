@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '@/services/api'
 import { setToken, setUser, logout } from '@/services/auth'
+import styles from './LoginPage.module.css'
 
 export default function LoginPage() {
   const navigate = useNavigate()
@@ -45,17 +46,27 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="login-page">
-      <div className="login-card">
-        <h1>SwingBy Admin</h1>
-        <p className="sub">Sign in to the admin console</p>
+    <div className={styles.page}>
+      {/* Ambient glow orb */}
+      <div className={styles.orb} aria-hidden="true" />
 
-        {error && <div className="form-error">{error}</div>}
+      <div className={styles.card}>
+        <h1 className={styles.heading}>SwingBy Admin</h1>
+        <p className={styles.subheading}>Sign in to the admin console</p>
 
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label htmlFor="email">Email</label>
+        {error && (
+          <div className={styles.errorBanner} role="alert">
+            {error}
+          </div>
+        )}
+
+        <form className={styles.form} onSubmit={handleSubmit} noValidate>
+          <div className={styles.field}>
+            <label className={styles.label} htmlFor="email">
+              Email
+            </label>
             <input
+              className={styles.input}
               id="email"
               type="email"
               placeholder="admin@swingby.com"
@@ -63,12 +74,16 @@ export default function LoginPage() {
               onChange={(e) => setEmail(e.target.value)}
               required
               autoComplete="email"
+              autoFocus
             />
           </div>
 
-          <div className="form-group">
-            <label htmlFor="password">Password</label>
+          <div className={styles.field}>
+            <label className={styles.label} htmlFor="password">
+              Password
+            </label>
             <input
+              className={styles.input}
               id="password"
               type="password"
               placeholder="••••••••"
@@ -81,11 +96,11 @@ export default function LoginPage() {
 
           <button
             type="submit"
-            className="btn btn-primary"
-            style={{ width: '100%', marginTop: 8 }}
+            className={styles.submitBtn}
             disabled={loading}
           >
-            {loading ? 'Signing in…' : 'Sign in →'}
+            {loading && <span className={styles.spinner} aria-hidden="true" />}
+            {loading ? 'Signing in…' : 'Sign in'}
           </button>
         </form>
       </div>

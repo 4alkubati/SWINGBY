@@ -1,24 +1,209 @@
 import {
-  View, Text, ScrollView, TouchableOpacity, StyleSheet,
-  ActivityIndicator, Switch, RefreshControl, Alert, TextInput,
+  View, ScrollView, StyleSheet, RefreshControl, Alert,
+  TextInput, Switch, FlatList, Animated as RNAnimated,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import Animated, {
+  useSharedValue, useAnimatedStyle, withSpring, interpolate,
+  useAnimatedScrollHandler, Extrapolation,
+} from 'react-native-reanimated';
+import { Feather } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
+import { colors, spacing, radius, shadows, motion } from '../theme/tokens';
+import Text from '../components/Text';
+import Button from '../components/Button';
+import Avatar from '../components/Avatar';
+import Badge from '../components/Badge';
+import Chip from '../components/Chip';
+import Surface from '../components/Surface';
+import Stack from '../components/Stack';
+import Inline from '../components/Inline';
+import Card from '../components/Card';
+import { SkeletonBox, SkeletonCard } from '../components/Skeleton';
+import { RatingStarsDisplay } from '../components/RatingStars';
 
+const AnimatedScrollView = Animated.createAnimatedComponent(ScrollView);
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 function initials(name = '') {
   return name.split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2);
 }
 
+// ─── Loading skeleton ─────────────────────────────────────────────────────────
+function BusinessProfileSkeleton() {
+  return (
+    <Stack spacing="base" style={{ paddingTop: spacing.base, paddingHorizontal: spacing.lg }}>
+      {/* Hero */}
+      <View style={{ alignItems: 'center', gap: spacing.md, paddingVertical: spacing.lg }}>
+        <SkeletonBox width={96} height={96} borderRadius={radius.avatar} />
+        <SkeletonBox width={180} height={22} />
+        <SkeletonBox width={120} height={16} />
+        <SkeletonBox width={160} height={16} />
+      </View>
+      {/* Chips row */}
+      <Inline spacing="sm" wrap>
+        <SkeletonBox width={70} height={32} borderRadius={radius.chip} />
+        <SkeletonBox width={90} height={32} borderRadius={radius.chip} />
+        <SkeletonBox width={60} height={32} borderRadius={radius.chip} />
+      </Inline>
+      {/* Team grid */}
+      <SkeletonBox height={14} width={60} borderRadius={6} />
+      <Inline spacing="md">
+        <SkeletonBox width="47%" height={110} borderRadius={radius.card} />
+        <SkeletonBox width="47%" height={110} borderRadius={radius.card} />
+      </Inline>
+      {/* Reviews */}
+      <SkeletonBox height={14} width={70} borderRadius={6} />
+      <SkeletonCard />
+      <SkeletonCard />
+    </Stack>
+  );
+}
+
+// ─── Full-screen error ────────────────────────────────────────────────────────
+function ProfileError({ onRetry, onBack }) {
+  return (
+    <View style={styles.centered}>
+      <View style={[styles.iconWrap, { backgroundColor: colors.danger + '1A', borderColor: colors.danger + '33' }]}>
+        <Feather name="alert-circle" size={32} color={colors.danger} />
+      </View>
+      <Text variant="h1" style={styles.emptyTitle}>Could not load profile</Text>
+      <Text variant="small" color="secondary" style={styles.emptyBody}>
+        Something went wrong. Please try again.
+      </Text>
+      <Inline spacing="md" style={{ marginTop: spacing.lg }}>
+        <Button variant="secondary" label="Go back" onPress={onBack} />
+        <Button label="Retry" onPress={onRetry} />
+      </Inline>
+    </View>
+  );
+}
+
+// ─── No-reviews empty state ───────────────────────────────────────────────────
+function NoReviews() {
+  return (
+    <Surface background="alt" style={styles.noReviews}>
+      <Stack spacing="sm" align="center">
+        <Feather name="star" size={24} color={colors.textSecondary} />
+        <Text variant="small" color="secondary">No reviews yet</Text>
+        <Text variant="caption" color="secondary" style={{ textAlign: 'center' }}>
+          Reviews will appear here after completed bookings.
+        </Text>
+      </Stack>
+    </Surface>
+  );
+}
+
+// ─── Section header ───────────────────────────────────────────────────────────
+function SectionHeader({ title }) {
+  return (
+    <View style={styles.sectionHeader}>
+      <Text variant="label" color="secondary">{title}</Text>
+    </View>
+  );
+}
+
+// ─── Review card ──────────────────────────────────────────────────────────────
+function ReviewCard({ review }) {
+  return (
+    <Surface elevation="subtle" style={styles.reviewCard}>
+      <Inline justify="space-between" style={{ marginBottom: spacing.sm }}>
+        <Text variant="smallMedium">{review.reviewer?.first_name || 'Client'}</Text>
+        <RatingStarsDisplay rating={review.rating || 0} size={12} color={colors.accent} />
+      </Inline>
+      {review.comment ? (
+        <Text variant="small" color="secondary" style={{ lineHeight: 20 }}>
+          {review.comment}
+        </Text>
+      ) : null}
+    </Surface>
+  );
+}
+
+// ─── Employee card (2-column grid) ────────────────────────────────────────────
+function EmployeeCard({ emp, editMode, onToggle, onPress }) {
+  const scale = useSharedValue(1);
+  const animStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const empName = [emp.user?.first_name, emp.user?.last_name].filter(Boolean).join(' ') || 'Employee';
+
+  return (
+    <Animated.View style={[styles.empCard, animStyle]}>
+      <Animated.View
+        onTouchStart={() => {
+          scale.value = withSpring(0.97, { stiffness: motion.spring.stiffness, damping: motion.spring.damping });
+        }}
+        onTouchEnd={() => {
+          scale.value = withSpring(1, { stiffness: motion.spring.stiffness, damping: motion.spring.damping });
+          onPress?.();
+        }}
+      >
+        <Surface elevation="subtle" style={styles.empCardInner}>
+          <Stack spacing="sm" align="center">
+            <Avatar name={empName} size="md" showStatus online={emp.is_active} />
+            <Stack spacing={2} align="center">
+              <Text variant="smallMedium" numberOfLines={1}>{emp.user?.first_name || 'Employee'}</Text>
+              <Text variant="caption" color="secondary" numberOfLines={1}>{emp.role_title || 'Staff'}</Text>
+            </Stack>
+            {editMode ? (
+              <Switch
+                value={emp.is_active}
+                onValueChange={onToggle}
+                thumbColor={emp.is_active ? colors.accent : colors.textSecondary}
+                trackColor={{ false: colors.border, true: colors.accentMuted }}
+              />
+            ) : !emp.is_active ? (
+              <View style={styles.inactivePill}>
+                <Text variant="caption" color="secondary">Inactive</Text>
+              </View>
+            ) : null}
+          </Stack>
+        </Surface>
+      </Animated.View>
+    </Animated.View>
+  );
+}
+
+// ─── Photo item (horizontal carousel) ────────────────────────────────────────
+function PhotoItem({ uri }) {
+  return (
+    <View style={styles.photoItem}>
+      <Surface
+        elevation="subtle"
+        padding={0}
+        style={[styles.photoSurface, { backgroundColor: colors.surfaceAlt }]}
+      >
+        {uri ? (
+          <Animated.Image
+            source={{ uri }}
+            style={styles.photoImage}
+            resizeMode="cover"
+          />
+        ) : (
+          <View style={styles.photoPlaceholder}>
+            <Feather name="image" size={24} color={colors.textSecondary} />
+          </View>
+        )}
+      </Surface>
+    </View>
+  );
+}
+
+// ─── Main screen ──────────────────────────────────────────────────────────────
 export default function BusinessProfileScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
   const { user, logout } = useAuth();
   const { businessId, editMode: initialEditMode } = route.params || {};
+
   const [business, setBusiness] = useState(null);
   const [employees, setEmployees] = useState([]);
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [editMode, setEditMode] = useState(!!initialEditMode);
 
@@ -29,10 +214,14 @@ export default function BusinessProfileScreen({ navigation, route }) {
   const [saving, setSaving] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
 
+  // Scroll-based header animation
+  const scrollY = useSharedValue(0);
+
   const resolvedId = businessId || user?.business_id;
 
   const load = useCallback(async () => {
     if (!resolvedId) { setLoading(false); return; }
+    setError(false);
     try {
       const [biz, emps, revs] = await Promise.all([
         api.get(`/businesses/${resolvedId}`),
@@ -46,7 +235,7 @@ export default function BusinessProfileScreen({ navigation, route }) {
       setEditCategory(biz.category || '');
       setEditRadius(String(biz.service_radius_km || 25));
     } catch {
-      // keep stale
+      setError(true);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -100,285 +289,382 @@ export default function BusinessProfileScreen({ navigation, route }) {
     }
   }
 
-  if (loading) {
-    return (
-      <View style={[styles.loader, { paddingTop: insets.top }]}>
-        <ActivityIndicator color="#FF5C00" size="large" />
-      </View>
-    );
-  }
-
   const isOwner = user?.role === 'business_owner';
 
+  // ─── Scroll-based header shrink animation ──────────────────────────────────
+  const scrollHandler = useAnimatedScrollHandler((event) => {
+    scrollY.value = event.contentOffset.y;
+  });
+
+  const headerOpacity = useAnimatedStyle(() => ({
+    opacity: interpolate(scrollY.value, [0, 60], [0, 1], Extrapolation.CLAMP),
+  }));
+
+  const heroScale = useAnimatedStyle(() => ({
+    transform: [{
+      scale: interpolate(scrollY.value, [0, 80], [1, 0.92], Extrapolation.CLAMP),
+    }],
+    opacity: interpolate(scrollY.value, [0, 80], [1, 0.8], Extrapolation.CLAMP),
+  }));
+
+  // ─── Render ────────────────────────────────────────────────────────────────
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.backBtn}>←</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Business Profile</Text>
+
+      {/* ── Animated sticky header (appears on scroll) ── */}
+      <Animated.View style={[styles.stickyHeader, headerOpacity]}>
+        <Text variant="bodyMedium" numberOfLines={1}>
+          {business?.business_name || 'Business Profile'}
+        </Text>
+      </Animated.View>
+
+      {/* ── Top nav bar ── */}
+      <Inline justify="space-between" style={styles.navBar}>
+        <Button
+          variant="ghost"
+          label=""
+          icon={<Feather name="arrow-left" size={20} color={colors.textSecondary} />}
+          onPress={() => navigation.goBack()}
+          style={styles.iconBtn}
+        />
         {isOwner && !editMode && (
-          <TouchableOpacity onPress={() => setEditMode(true)}>
-            <Text style={styles.editLink}>Edit</Text>
-          </TouchableOpacity>
+          <Button
+            variant="ghost"
+            label="Edit"
+            onPress={() => setEditMode(true)}
+            style={styles.editBtn}
+          />
         )}
         {editMode && (
-          <TouchableOpacity onPress={() => setEditMode(false)}>
-            <Text style={styles.cancelLink}>Cancel</Text>
-          </TouchableOpacity>
+          <Button
+            variant="ghost"
+            label="Cancel"
+            onPress={() => setEditMode(false)}
+            style={styles.editBtn}
+          />
         )}
-      </View>
+      </Inline>
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.content}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor="#FF5C00" />}
-      >
-        {/* Identity */}
-        <View style={styles.identityCard}>
-          <View style={styles.bigAvatar}>
-            <Text style={styles.bigAvatarText}>{initials(business?.business_name || '')}</Text>
-          </View>
+      {/* ── Loading ── */}
+      {loading && <BusinessProfileSkeleton />}
 
-          {editMode ? (
-            <View style={styles.editFields}>
-              <Text style={styles.fieldLabel}>Business name</Text>
-              <TextInput
-                style={styles.editInput}
-                value={editName}
-                onChangeText={setEditName}
-                placeholder="Business name"
-                placeholderTextColor="#3a424c"
+      {/* ── Error ── */}
+      {!loading && error && (
+        <ProfileError
+          onBack={() => navigation.goBack()}
+          onRetry={() => { setLoading(true); load(); }}
+        />
+      )}
+
+      {/* ── Content ── */}
+      {!loading && !error && (
+        <AnimatedScrollView
+          showsVerticalScrollIndicator={false}
+          onScroll={scrollHandler}
+          scrollEventThrottle={16}
+          contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 100 }]}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={() => { setRefreshing(true); load(); }}
+              tintColor={colors.accent}
+            />
+          }
+        >
+          {/* ── Hero section ── */}
+          <Animated.View style={[styles.heroSection, heroScale]}>
+            <Stack spacing="md" align="center">
+              <Avatar
+                name={business?.business_name || ''}
+                size="xl"
               />
-              <Text style={styles.fieldLabel}>Category</Text>
-              <TextInput
-                style={styles.editInput}
-                value={editCategory}
-                onChangeText={setEditCategory}
-                placeholder="e.g. Cleaning"
-                placeholderTextColor="#3a424c"
-              />
-              <Text style={styles.fieldLabel}>Service radius (km)</Text>
-              <TextInput
-                style={styles.editInput}
-                value={editRadius}
-                onChangeText={setEditRadius}
-                placeholder="25"
-                placeholderTextColor="#3a424c"
-                keyboardType="numeric"
-              />
-            </View>
-          ) : (
-            <>
-              <Text style={styles.bizName}>{business?.business_name || '—'}</Text>
-              {business?.license_status === 'verified' && (
-                <View style={styles.verifiedBadge}>
-                  <Text style={styles.verifiedText}>✓ Verified</Text>
-                </View>
+
+              {editMode ? (
+                /* ── Edit fields ── */
+                <Stack spacing="sm" style={styles.editBlock}>
+                  <Text variant="label" color="secondary">Business name</Text>
+                  <TextInput
+                    style={styles.editInput}
+                    value={editName}
+                    onChangeText={setEditName}
+                    placeholder="Business name"
+                    placeholderTextColor={colors.textSecondary}
+                  />
+                  <Text variant="label" color="secondary">Category</Text>
+                  <TextInput
+                    style={styles.editInput}
+                    value={editCategory}
+                    onChangeText={setEditCategory}
+                    placeholder="e.g. Cleaning"
+                    placeholderTextColor={colors.textSecondary}
+                  />
+                  <Text variant="label" color="secondary">Service radius (km)</Text>
+                  <TextInput
+                    style={styles.editInput}
+                    value={editRadius}
+                    onChangeText={setEditRadius}
+                    placeholder="25"
+                    placeholderTextColor={colors.textSecondary}
+                    keyboardType="numeric"
+                  />
+                </Stack>
+              ) : (
+                /* ── View mode ── */
+                <Stack spacing="sm" align="center">
+                  <Text variant="display3" style={{ textAlign: 'center' }}>
+                    {business?.business_name || '—'}
+                  </Text>
+
+                  {/* Verified badge */}
+                  {business?.license_status === 'verified' && (
+                    <Inline spacing="xs">
+                      <Feather name="check-circle" size={14} color={colors.success} />
+                      <Text variant="smallMedium" color="success">Verified</Text>
+                    </Inline>
+                  )}
+
+                  {/* Rating + review count */}
+                  <Inline spacing="md">
+                    {business?.avg_rating != null && (
+                      <Inline spacing="xs">
+                        <RatingStarsDisplay rating={Number(business.avg_rating)} size={14} color={colors.accent} />
+                        <Text variant="smallMedium">{Number(business.avg_rating).toFixed(1)}</Text>
+                      </Inline>
+                    )}
+                    {business?.review_count != null && (
+                      <Text variant="small" color="secondary">
+                        {business.review_count} {business.review_count === 1 ? 'review' : 'reviews'}
+                      </Text>
+                    )}
+                  </Inline>
+
+                  {/* Category chip */}
+                  {business?.category && (
+                    <Chip label={business.category} selected={false} />
+                  )}
+
+                  {/* Service radius */}
+                  {business?.service_radius_km && (
+                    <Inline spacing="xs">
+                      <Feather name="map-pin" size={12} color={colors.textSecondary} />
+                      <Text variant="caption" color="secondary">
+                        {business.service_radius_km} km radius
+                      </Text>
+                    </Inline>
+                  )}
+                </Stack>
               )}
-              <View style={styles.statsRow}>
-                <Text style={styles.stat}>
-                  <Text style={styles.star}>★</Text> {business?.avg_rating?.toFixed(1) || '—'}
-                </Text>
-                <Text style={styles.statMuted}>{business?.review_count || 0} reviews</Text>
-                <View style={styles.catTag}>
-                  <Text style={styles.catTagText}>{business?.category || 'General'}</Text>
-                </View>
-              </View>
+            </Stack>
+          </Animated.View>
+
+          {/* ── Services / Tags chips row ── */}
+          {!editMode && business?.services && business.services.length > 0 && (
+            <>
+              <SectionHeader title="Services" />
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.chipsRow}
+              >
+                {business.services.map((svc, i) => (
+                  <Chip key={i} label={svc} />
+                ))}
+              </ScrollView>
             </>
           )}
 
-          {!editMode && !businessId && (
-            <TouchableOpacity style={styles.bookBtn} activeOpacity={0.85}>
-              <Text style={styles.bookBtnText}>Book directly →</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-
-        {/* Team */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Team</Text>
-        </View>
-
-        <View style={styles.teamGrid}>
-          {employees.map((emp) => (
-            <TouchableOpacity
-              key={emp.id}
-              style={styles.empCard}
-              onPress={() => navigation.navigate('EmployeeProfile', { employeeId: emp.id, businessId: resolvedId })}
-              activeOpacity={0.8}
-            >
-              <View style={styles.empAvatar}>
-                <Text style={styles.empAvatarText}>{initials(emp.user?.first_name + ' ' + emp.user?.last_name || 'E')}</Text>
-              </View>
-              <Text style={styles.empName} numberOfLines={1}>
-                {emp.user?.first_name || 'Employee'}
-              </Text>
-              <Text style={styles.empRole} numberOfLines={1}>{emp.role_title || 'Staff'}</Text>
-              {editMode && (
-                <Switch
-                  value={emp.is_active}
-                  onValueChange={() => toggleEmployee(emp)}
-                  thumbColor={emp.is_active ? '#FF5C00' : '#6b7280'}
-                  trackColor={{ false: '#2a2e33', true: 'rgba(255,92,0,0.3)' }}
+          {/* ── Team section ── */}
+          <SectionHeader title="Team" />
+          {employees.length === 0 ? (
+            <Surface background="alt" style={[styles.emptyCard, styles.hPad]}>
+              <Text variant="small" color="secondary">No team members yet</Text>
+            </Surface>
+          ) : (
+            <View style={styles.teamGrid}>
+              {employees.map((emp) => (
+                <EmployeeCard
+                  key={emp.id}
+                  emp={emp}
+                  editMode={editMode}
+                  onToggle={() => toggleEmployee(emp)}
+                  onPress={() => navigation.navigate('EmployeeProfile', { employeeId: emp.id, businessId: resolvedId })}
                 />
-              )}
-              {!editMode && !emp.is_active && (
-                <Text style={styles.inactiveTag}>Inactive</Text>
-              )}
-            </TouchableOpacity>
-          ))}
-        </View>
+              ))}
+            </View>
+          )}
 
-        {/* Reviews */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Reviews</Text>
-        </View>
+          {/* ── Photos carousel ── */}
+          {business?.photos && business.photos.length > 0 && (
+            <>
+              <SectionHeader title="Photos" />
+              <FlatList
+                horizontal
+                data={business.photos}
+                keyExtractor={(item, i) => String(i)}
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.photosRow}
+                renderItem={({ item }) => <PhotoItem uri={item} />}
+              />
+            </>
+          )}
 
-        {reviews.length === 0 ? (
-          <View style={styles.emptyCard}>
-            <Text style={styles.emptyText}>No reviews yet</Text>
+          {/* ── Reviews section ── */}
+          <SectionHeader title="Reviews" />
+          {reviews.length === 0 ? (
+            <View style={styles.hPad}>
+              <NoReviews />
+            </View>
+          ) : (
+            <Stack spacing="sm" style={styles.hPad}>
+              {reviews.map((rev) => (
+                <ReviewCard key={rev.id} review={rev} />
+              ))}
+            </Stack>
+          )}
+
+          {/* ── Save button (edit mode) ── */}
+          {editMode && (
+            <View style={styles.hPad}>
+              <Button
+                label="Save changes"
+                onPress={handleSave}
+                loading={saving}
+                disabled={saving}
+                style={{ marginTop: spacing.md }}
+              />
+            </View>
+          )}
+
+          {/* ── Logout ── */}
+          <View style={[styles.hPad, { marginTop: spacing.lg, marginBottom: spacing.sm }]}>
+            <Button
+              variant="secondary"
+              label={loggingOut ? 'Logging out…' : 'Log out'}
+              onPress={handleLogout}
+              disabled={loggingOut}
+              loading={loggingOut}
+              style={styles.logoutBtn}
+            />
           </View>
-        ) : (
-          <View style={styles.reviewsList}>
-            {reviews.map((rev) => (
-              <View key={rev.id} style={styles.reviewCard}>
-                <View style={styles.reviewHeader}>
-                  <Text style={styles.reviewerName}>{rev.reviewer?.first_name || 'Client'}</Text>
-                  <Text style={styles.reviewStars}>{'★'.repeat(rev.rating)}{'☆'.repeat(5 - rev.rating)}</Text>
-                </View>
-                {rev.comment ? <Text style={styles.reviewComment}>{rev.comment}</Text> : null}
-              </View>
-            ))}
-          </View>
-        )}
+        </AnimatedScrollView>
+      )}
 
-        {editMode && (
-          <TouchableOpacity
-            style={[styles.saveBtn, saving && styles.saveBtnDisabled]}
-            onPress={handleSave}
-            activeOpacity={0.85}
-            disabled={saving}
-          >
-            {saving
-              ? <ActivityIndicator color="#fff" />
-              : <Text style={styles.saveBtnText}>Save changes</Text>
-            }
-          </TouchableOpacity>
-        )}
-
-        {/* Logout */}
-        <TouchableOpacity
-          style={[styles.logoutBtn, loggingOut && styles.saveBtnDisabled]}
-          onPress={handleLogout}
-          activeOpacity={0.8}
-          disabled={loggingOut}
-        >
-          {loggingOut
-            ? <ActivityIndicator color="#f87171" />
-            : <Text style={styles.logoutBtnText}>Log out</Text>
-          }
-        </TouchableOpacity>
-      </ScrollView>
+      {/* ── Sticky "Book" button (visitor view) ── */}
+      {!loading && !error && !editMode && businessId && businessId !== user?.business_id && (
+        <View style={[styles.bookBar, { paddingBottom: Math.max(insets.bottom, spacing.base) }]}>
+          <Button
+            label="Book now"
+            onPress={() => navigation.navigate('BookingCreate', { businessId: resolvedId })}
+            style={styles.bookBtn}
+          />
+        </View>
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#07080a' },
-  loader: { flex: 1, backgroundColor: '#07080a', alignItems: 'center', justifyContent: 'center' },
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 22, paddingTop: 12, paddingBottom: 8,
+  container:    { flex: 1, backgroundColor: colors.bg },
+
+  // Sticky animated header title
+  stickyHeader: {
+    position: 'absolute', top: 0, left: 0, right: 0,
+    zIndex: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.sm,
+    backgroundColor: colors.bg + 'DD',
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+    // Account for insets via paddingTop applied to container
   },
-  backBtn: { fontSize: 24, color: '#9ca3af', width: 32 },
-  headerTitle: { fontSize: 17, fontWeight: '700', color: '#ffffff' },
-  editLink: { fontSize: 14, color: '#FF5C00', fontWeight: '600' },
-  cancelLink: { fontSize: 14, color: '#9ca3af', fontWeight: '600' },
-  content: { paddingBottom: 40, gap: 4 },
-  identityCard: {
-    backgroundColor: '#0f1214', borderWidth: 1, borderColor: '#1e2226',
-    borderRadius: 20, padding: 20, marginHorizontal: 22, marginTop: 8,
-    alignItems: 'center', gap: 10,
+
+  navBar:       { paddingHorizontal: spacing.lg, paddingVertical: spacing.sm },
+  iconBtn:      { paddingVertical: 0, paddingHorizontal: 0, width: 44, justifyContent: 'center' },
+  editBtn:      { paddingVertical: spacing.sm, paddingHorizontal: spacing.sm },
+
+  content:      { paddingTop: spacing.sm, gap: 0 },
+  hPad:         { marginHorizontal: spacing.lg },
+
+  // Hero
+  heroSection:  {
+    alignItems: 'center',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.lg,
   },
-  bigAvatar: {
-    width: 72, height: 72, borderRadius: 22, backgroundColor: '#FF5C00',
+  editBlock:    { width: '100%' },
+  editInput:    {
+    backgroundColor: colors.surfaceAlt,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.input,
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.md,
+    fontSize: 15,
+    color: colors.textPrimary,
+    fontFamily: 'Inter_400Regular',
+  },
+
+  // Section header
+  sectionHeader: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.sm,
+  },
+
+  // Chips
+  chipsRow:     { paddingHorizontal: spacing.lg, gap: spacing.sm, paddingBottom: spacing.sm },
+
+  // Team grid
+  teamGrid:     {
+    flexDirection: 'row', flexWrap: 'wrap',
+    paddingHorizontal: spacing.lg, gap: spacing.md,
+  },
+  empCard:      { width: '47%' },
+  empCardInner: { alignItems: 'center' },
+  inactivePill: {
+    backgroundColor: colors.surfaceAlt,
+    borderRadius: radius.pill,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+  },
+
+  // Photos
+  photosRow:    { paddingHorizontal: spacing.lg, gap: spacing.md, paddingBottom: spacing.sm },
+  photoItem:    { width: 160 },
+  photoSurface: { borderRadius: radius.card, overflow: 'hidden' },
+  photoImage:   { width: 160, height: 120 },
+  photoPlaceholder: {
+    width: 160, height: 120,
+    alignItems: 'center', justifyContent: 'center',
+    backgroundColor: colors.surfaceAlt,
+  },
+
+  // Reviews
+  reviewCard:   { marginBottom: 0 },
+  noReviews:    { alignItems: 'center', padding: spacing.xl },
+
+  // Empty card
+  emptyCard:    { padding: spacing.lg, alignItems: 'center' },
+
+  // Centered state (error)
+  centered:     { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.xl },
+  iconWrap:     {
+    width: 68, height: 68, borderRadius: 22,
     alignItems: 'center', justifyContent: 'center',
   },
-  bigAvatarText: { fontSize: 24, fontWeight: '700', color: '#fff' },
-  bizName: { fontSize: 22, fontWeight: '700', color: '#ffffff', letterSpacing: -0.5, textAlign: 'center' },
-  verifiedBadge: {
-    backgroundColor: 'rgba(34,197,94,0.1)', borderWidth: 1, borderColor: 'rgba(34,197,94,0.25)',
-    borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4,
+  emptyTitle:   { marginTop: spacing.lg, textAlign: 'center' },
+  emptyBody:    { marginTop: spacing.sm, textAlign: 'center', maxWidth: 280 },
+
+  // Logout
+  logoutBtn:    { borderColor: colors.danger + '4D' },
+
+  // Sticky book bar
+  bookBar:      {
+    position: 'absolute', bottom: 0, left: 0, right: 0,
+    paddingHorizontal: spacing.lg, paddingTop: spacing.md,
+    borderTopWidth: 1, borderTopColor: colors.border,
+    backgroundColor: colors.bg,
   },
-  verifiedText: { fontSize: 12, color: '#4ade80', fontWeight: '700' },
-  statsRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  stat: { fontSize: 15, color: '#ffffff', fontWeight: '700' },
-  star: { color: '#FF5C00' },
-  statMuted: { fontSize: 13, color: '#9ca3af' },
-  catTag: {
-    backgroundColor: '#131618', borderWidth: 1, borderColor: '#2a2e33',
-    borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4,
-  },
-  catTagText: { fontSize: 11, color: '#9ca3af', fontWeight: '600' },
-  bookBtn: {
-    backgroundColor: '#FF5C00', borderRadius: 14, paddingVertical: 12,
-    paddingHorizontal: 28, marginTop: 4,
-  },
-  bookBtnText: { fontSize: 14, fontWeight: '700', color: '#fff' },
-  editFields: { width: '100%', gap: 8 },
-  fieldLabel: { fontSize: 11, color: '#9ca3af', fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.8 },
-  editInput: {
-    backgroundColor: '#0d0f10', borderWidth: 1, borderColor: '#2a2e33',
-    borderRadius: 12, paddingHorizontal: 14, paddingVertical: 11,
-    fontSize: 15, color: '#f0ede8',
-  },
-  sectionHeader: {
-    paddingHorizontal: 22, paddingTop: 20, paddingBottom: 10,
-  },
-  sectionTitle: { fontSize: 13, fontWeight: '700', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: 1.2 },
-  teamGrid: {
-    flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 22, gap: 12,
-  },
-  empCard: {
-    backgroundColor: '#0d0f10', borderWidth: 1, borderColor: '#1a1d1f',
-    borderRadius: 16, padding: 12, alignItems: 'center', gap: 6,
-    width: '47%',
-  },
-  empAvatar: {
-    width: 46, height: 46, borderRadius: 23, backgroundColor: '#1a2a3a',
-    alignItems: 'center', justifyContent: 'center', borderWidth: 1,
-    borderColor: 'rgba(59,130,246,0.2)',
-  },
-  empAvatarText: { fontSize: 14, fontWeight: '700', color: '#60a5fa' },
-  empName: { fontSize: 13, fontWeight: '600', color: '#ffffff' },
-  empRole: { fontSize: 11, color: '#9ca3af' },
-  inactiveTag: { fontSize: 10, color: '#6b7280', fontWeight: '600' },
-  reviewsList: { paddingHorizontal: 22, gap: 10 },
-  reviewCard: {
-    backgroundColor: '#0d0f10', borderWidth: 1, borderColor: '#1a1d1f',
-    borderRadius: 14, padding: 14, gap: 6,
-  },
-  reviewHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  reviewerName: { fontSize: 13, fontWeight: '600', color: '#ffffff' },
-  reviewStars: { fontSize: 12, color: '#FF5C00' },
-  reviewComment: { fontSize: 13, color: '#9ca3af', lineHeight: 18 },
-  emptyCard: {
-    marginHorizontal: 22, backgroundColor: '#0d0f10', borderWidth: 1,
-    borderColor: '#1a1d1f', borderRadius: 14, padding: 20, alignItems: 'center',
-  },
-  emptyText: { fontSize: 14, color: '#6b7280' },
-  saveBtn: {
-    marginHorizontal: 22, backgroundColor: '#FF5C00', borderRadius: 14,
-    paddingVertical: 15, alignItems: 'center', marginTop: 8,
-  },
-  saveBtnDisabled: { opacity: 0.6 },
-  saveBtnText: { fontSize: 16, fontWeight: '700', color: '#fff' },
-  logoutBtn: {
-    marginHorizontal: 22, marginTop: 24, marginBottom: 8,
-    borderWidth: 1, borderColor: 'rgba(248,113,113,0.3)',
-    borderRadius: 14, paddingVertical: 14, alignItems: 'center',
-    backgroundColor: 'rgba(248,113,113,0.06)',
-  },
-  logoutBtnText: { fontSize: 15, fontWeight: '600', color: '#f87171' },
+  bookBtn:      {},
 });

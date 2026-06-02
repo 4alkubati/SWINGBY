@@ -1,22 +1,35 @@
-// T54 — NotificationsCenterScreen
+// T56 — NotificationsCenterScreen (UX polish)
 // Displays a persisted list of in-app notifications from AsyncStorage.
 // Pull-to-refresh, mark all as read, tap-to-navigate.
 import React, { useState, useCallback } from 'react';
 import {
   View,
-  Text,
   FlatList,
-  TouchableOpacity,
-  StyleSheet,
+  Pressable,
   RefreshControl,
 } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+} from 'react-native-reanimated';
 import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
+
+import Text from '../components/Text';
+import Stack from '../components/Stack';
+import Inline from '../components/Inline';
+import Badge from '../components/Badge';
 import EmptyState from '../components/EmptyState';
+import { SkeletonList } from '../components/Skeleton';
+import { colors, spacing, radius, motion } from '../theme/tokens';
 
 const STORAGE_KEY = 'swingby_notifications';
+
+// ─── AnimatedPressable ────────────────────────────────────────────────────────
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 function relativeTime(iso) {
@@ -52,26 +65,90 @@ function screenForType(type, meta) {
 
 // ─── Item ─────────────────────────────────────────────────────────────────────
 function NotifItem({ item, onPress }) {
+  const scale = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const handlePressIn = () => {
+    scale.value = withSpring(0.98, {
+      stiffness: motion.spring.stiffness,
+      damping: motion.spring.damping,
+    });
+  };
+
+  const handlePressOut = () => {
+    scale.value = withSpring(1, {
+      stiffness: motion.spring.stiffness,
+      damping: motion.spring.damping,
+    });
+  };
+
   return (
-    <TouchableOpacity
-      style={[styles.item, !item.read && styles.itemUnread]}
+    <AnimatedPressable
       onPress={() => onPress(item)}
-      activeOpacity={0.75}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      style={[
+        animatedStyle,
+        {
+          flexDirection: 'row',
+          alignItems: 'flex-start',
+          paddingVertical: spacing.base - 2,
+          paddingHorizontal: spacing.sm - 2,
+          gap: spacing.md,
+        },
+      ]}
     >
-      <View style={[styles.iconWrap, !item.read && styles.iconWrapUnread]}>
-        <Feather name={iconForType(item.type)} size={18} color={item.read ? '#6b7280' : '#FF5C00'} />
+      {/* Icon wrap */}
+      <View
+        style={{
+          width: 40,
+          height: 40,
+          borderRadius: radius.chip,
+          backgroundColor: item.read ? colors.surface : colors.accentMuted,
+          borderWidth: 1,
+          borderColor: colors.border,
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0,
+        }}
+      >
+        <Feather
+          name={iconForType(item.type)}
+          size={18}
+          color={item.read ? colors.textSecondary : colors.accent}
+        />
       </View>
 
-      <View style={styles.itemBody}>
-        <Text style={[styles.itemTitle, !item.read && styles.itemTitleUnread]} numberOfLines={1}>
+      {/* Body */}
+      <Stack spacing="xs" style={{ flex: 1 }}>
+        <Text
+          variant="bodyMedium"
+          color={item.read ? 'secondary' : 'primary'}
+          numberOfLines={1}
+          style={{ fontSize: 14, lineHeight: 20 }}
+        >
           {item.title}
         </Text>
-        <Text style={styles.itemText} numberOfLines={2}>{item.body}</Text>
-        <Text style={styles.itemTime}>{relativeTime(item.createdAt)}</Text>
-      </View>
+        <Text variant="small" color="secondary" numberOfLines={2}>
+          {item.body}
+        </Text>
+        <Text variant="caption" color="secondary">
+          {relativeTime(item.createdAt)}
+        </Text>
+      </Stack>
 
-      {!item.read && <View style={styles.unreadDot} />}
-    </TouchableOpacity>
+      {/* Unread dot */}
+      {!item.read && (
+        <Badge
+          dot
+          color="accent"
+          style={{ marginTop: spacing.base, flexShrink: 0 }}
+        />
+      )}
+    </AnimatedPressable>
   );
 }
 
@@ -80,6 +157,7 @@ export default function NotificationsCenterScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   const [notifications, setNotifications] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const loadNotifications = useCallback(async () => {
     try {
@@ -88,6 +166,8 @@ export default function NotificationsCenterScreen({ navigation }) {
       setNotifications(list.slice().reverse()); // newest first
     } catch {
       setNotifications([]);
+    } finally {
+      setLoading(false);
     }
   }, []);
 
@@ -129,139 +209,83 @@ export default function NotificationsCenterScreen({ navigation }) {
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View
+      style={{
+        flex: 1,
+        backgroundColor: colors.bg,
+        paddingTop: insets.top,
+      }}
+    >
       {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Notifications</Text>
+      <Inline
+        justify="space-between"
+        style={{
+          paddingHorizontal: spacing.base + spacing.xs,
+          paddingTop: spacing.md,
+          paddingBottom: spacing.base - 2,
+          borderBottomWidth: 1,
+          borderBottomColor: colors.border,
+        }}
+      >
+        <Text variant="display3">Notifications</Text>
         {unreadCount > 0 && (
-          <TouchableOpacity onPress={markAllRead} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-            <Text style={styles.markAllBtn}>Mark all read</Text>
-          </TouchableOpacity>
+          <Pressable
+            onPress={markAllRead}
+            hitSlop={{ top: spacing.sm, bottom: spacing.sm, left: spacing.sm, right: spacing.sm }}
+          >
+            <Text variant="smallMedium" color="accent">Mark all read</Text>
+          </Pressable>
         )}
-      </View>
+      </Inline>
 
-      <FlatList
-        data={notifications}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <NotifItem item={item} onPress={handlePress} />
-        )}
-        contentContainerStyle={notifications.length === 0 ? styles.emptyFlex : styles.listContent}
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor="#FF5C00"
-            colors={['#FF5C00']}
-          />
-        }
-        ListEmptyComponent={
-          <EmptyState
-            icon="bell"
-            title="No notifications yet"
-            body="Quotes, messages and booking updates will appear here."
-          />
-        }
-        ItemSeparatorComponent={() => <View style={styles.separator} />}
-      />
+      {/* Loading skeleton — shown only on first mount before AsyncStorage resolves */}
+      {loading ? (
+        <View style={{ paddingHorizontal: spacing.base, paddingTop: spacing.sm }}>
+          <SkeletonList count={6} />
+        </View>
+      ) : (
+        <FlatList
+          data={notifications}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => (
+            <NotifItem item={item} onPress={handlePress} />
+          )}
+          contentContainerStyle={
+            notifications.length === 0
+              ? { flex: 1 }
+              : {
+                  paddingHorizontal: spacing.base,
+                  paddingTop: spacing.sm,
+                  paddingBottom: spacing.xl,
+                }
+          }
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={colors.accent}
+              colors={[colors.accent]}
+            />
+          }
+          ListEmptyComponent={
+            <EmptyState
+              icon="bell"
+              title="No notifications yet"
+              body="Quotes, messages and booking updates will appear here."
+            />
+          }
+          ItemSeparatorComponent={() => (
+            <View
+              style={{
+                height: 1,
+                backgroundColor: colors.border,
+                marginHorizontal: spacing.base,
+              }}
+            />
+          )}
+        />
+      )}
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#07080a',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 22,
-    paddingTop: 12,
-    paddingBottom: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: '#1a1d1f',
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#ffffff',
-    letterSpacing: -0.5,
-  },
-  markAllBtn: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#FF5C00',
-  },
-  listContent: {
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 32,
-  },
-  emptyFlex: {
-    flex: 1,
-  },
-  separator: {
-    height: 1,
-    backgroundColor: '#1a1d1f',
-    marginHorizontal: 16,
-  },
-  item: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    paddingVertical: 14,
-    paddingHorizontal: 6,
-    gap: 12,
-  },
-  itemUnread: {
-    // subtle tint handled via iconWrapUnread + unreadDot
-  },
-  iconWrap: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: '#0d0f10',
-    borderWidth: 1,
-    borderColor: '#2a2e33',
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-  iconWrapUnread: {
-    backgroundColor: 'rgba(255,92,0,0.10)',
-    borderColor: 'rgba(255,92,0,0.25)',
-  },
-  itemBody: {
-    flex: 1,
-    gap: 3,
-  },
-  itemTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#9ca3af',
-  },
-  itemTitleUnread: {
-    color: '#ffffff',
-    fontWeight: '700',
-  },
-  itemText: {
-    fontSize: 13,
-    color: '#6b7280',
-    lineHeight: 18,
-  },
-  itemTime: {
-    fontSize: 11,
-    color: '#3a424c',
-    marginTop: 2,
-  },
-  unreadDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#FF5C00',
-    marginTop: 16,
-    flexShrink: 0,
-  },
-});

@@ -1,17 +1,17 @@
 // T38 — Empty-state component
-import React from 'react';
+// T72 — Idle pulse animation on icon wrapper
+import React, { useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withRepeat,
+  withTiming,
+  Easing,
+} from 'react-native-reanimated';
 import { Feather } from '@expo/vector-icons';
 
-// ─── Design tokens ────────────────────────────────────────────────────────────
-const COLORS = {
-  accent: '#FF5C00',
-  white: '#ffffff',
-  secondary: '#9ca3af',
-  card: '#0d0f10',
-  border: '#2a2e33',
-  orangeGlow: 'rgba(255,92,0,0.35)',
-};
+import { colors, spacing, radius } from '../theme/tokens';
 
 export default function EmptyState({
   icon = 'inbox',
@@ -19,12 +19,26 @@ export default function EmptyState({
   body,
   action, // { label, onPress }
 }) {
+  const scale = useSharedValue(1);
+
+  useEffect(() => {
+    scale.value = withRepeat(
+      withTiming(1.05, { duration: 2000, easing: Easing.inOut(Easing.ease) }),
+      -1, // infinite
+      true, // reverse (1.05 → 1.0 → 1.05 …)
+    );
+  }, []);
+
+  const pulseStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
   return (
     <View style={styles.container}>
       {/* Icon */}
-      <View style={styles.iconWrapper}>
-        <Feather name={icon} size={32} color={COLORS.accent} />
-      </View>
+      <Animated.View style={[styles.iconWrapper, pulseStyle]}>
+        <Feather name={icon} size={32} color={colors.accent} />
+      </Animated.View>
 
       {/* Title */}
       <Text style={styles.title}>{title}</Text>
@@ -58,16 +72,16 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 20,
-    backgroundColor: 'rgba(255,92,0,0.10)',
+    backgroundColor: colors.accentMuted,
     borderWidth: 1,
-    borderColor: 'rgba(255,92,0,0.25)',
+    borderColor: colors.accent + '40',
     alignItems: 'center',
     justifyContent: 'center',
   },
   title: {
     fontFamily: 'SpaceGrotesk_700Bold',
     fontSize: 18,
-    color: COLORS.white,
+    color: colors.textPrimary,
     marginTop: 20,
     textAlign: 'center',
     letterSpacing: -0.5,
@@ -75,31 +89,31 @@ const styles = StyleSheet.create({
   body: {
     fontFamily: 'Inter_400Regular',
     fontSize: 14,
-    color: COLORS.secondary,
+    color: colors.textSecondary,
     marginTop: 8,
     lineHeight: 22,
     maxWidth: 280,
     textAlign: 'center',
   },
   button: {
-    marginTop: 24,
-    backgroundColor: '#FF5C00',
-    borderRadius: 12,
+    marginTop: spacing.lg,
+    backgroundColor: colors.accent,
+    borderRadius: radius.button,
     paddingVertical: 13,
     paddingHorizontal: 28,
     minHeight: 44,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: 'rgba(255,92,0,0.35)',
+    shadowColor: colors.accent,
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 1,
+    shadowOpacity: 0.35,
     shadowRadius: 14,
     elevation: 8,
   },
   buttonLabel: {
     fontFamily: 'Inter_600SemiBold',
     fontSize: 15,
-    color: COLORS.white,
+    color: colors.textPrimary,
     letterSpacing: 0.2,
   },
 });

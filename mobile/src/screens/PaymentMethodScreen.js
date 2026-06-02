@@ -14,6 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import * as toast from '../services/toast';
 import EmptyState from '../components/EmptyState';
+import { colors } from '../theme/tokens';
 
 export default function PaymentMethodScreen({ navigation }) {
   const insets = useSafeAreaInsets();
@@ -31,7 +32,7 @@ export default function PaymentMethodScreen({ navigation }) {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Feather name="arrow-left" size={22} color="#ffffff" />
+          <Feather name="arrow-left" size={22} color={colors.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Payment method</Text>
         <View style={{ width: 36 }} />
@@ -44,7 +45,7 @@ export default function PaymentMethodScreen({ navigation }) {
         {/* Stripe placeholder card */}
         <View style={styles.stripeCard}>
           <View style={styles.stripeTop}>
-            <Feather name="credit-card" size={28} color="#6b7280" />
+            <Feather name="credit-card" size={28} color={colors.textSecondary} />
             <View style={styles.stripeBadge}>
               <Text style={styles.stripeBadgeText}>COMING SOON</Text>
             </View>
@@ -85,7 +86,7 @@ export default function PaymentMethodScreen({ navigation }) {
           onPress={handleAddCard}
           activeOpacity={0.85}
         >
-          <Feather name="plus" size={18} color="#ffffff" />
+          <Feather name="plus" size={18} color={colors.textPrimary} />
           <Text style={styles.addBtnText}>Add card</Text>
         </TouchableOpacity>
 
@@ -99,7 +100,7 @@ export default function PaymentMethodScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#07080a' },
+  container: { flex: 1, backgroundColor: colors.bg },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -107,17 +108,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#1a1d1f',
+    borderBottomColor: colors.border,
   },
   backBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { fontSize: 16, fontWeight: '700', color: '#ffffff', letterSpacing: -0.3 },
+  headerTitle: { fontSize: 16, fontWeight: '700', color: colors.textPrimary, letterSpacing: -0.3 },
 
   scroll: { paddingHorizontal: 20, paddingTop: 20, gap: 18, paddingBottom: 40 },
 
   stripeCard: {
-    backgroundColor: '#0d0f10',
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: '#2a2e33',
+    borderColor: colors.border,
     borderRadius: 20,
     padding: 20,
     gap: 10,
@@ -129,9 +130,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   stripeBadge: {
-    backgroundColor: '#131618',
+    backgroundColor: colors.surfaceAlt,
     borderWidth: 1,
-    borderColor: '#2a2e33',
+    borderColor: colors.border,
     borderRadius: 8,
     paddingHorizontal: 10,
     paddingVertical: 4,
@@ -139,18 +140,18 @@ const styles = StyleSheet.create({
   stripeBadgeText: {
     fontSize: 10,
     fontWeight: '700',
-    color: '#6b7280',
+    color: colors.textSecondary,
     letterSpacing: 1.0,
   },
   stripeTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#9ca3af',
+    color: colors.textSecondary,
     letterSpacing: -0.3,
   },
   stripeBody: {
     fontSize: 13,
-    color: '#6b7280',
+    color: colors.textSecondary,
     lineHeight: 20,
   },
 
@@ -158,18 +159,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    backgroundColor: '#131618',
+    backgroundColor: colors.surfaceAlt,
     borderRadius: 12,
     padding: 12,
     marginTop: 6,
     borderWidth: 1,
-    borderColor: '#1a1d1f',
+    borderColor: colors.border,
   },
   fakeCardChip: {
     width: 28,
     height: 20,
     borderRadius: 5,
-    backgroundColor: '#2a2e33',
+    backgroundColor: colors.border,
   },
   fakeCardNumbersWrap: {
     flex: 1,
@@ -181,11 +182,11 @@ const styles = StyleSheet.create({
     width: 24,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#2a2e33',
+    backgroundColor: colors.border,
   },
   fakeCardLast: {
     fontSize: 13,
-    color: '#3a424c',
+    color: colors.textSecondary,
     fontWeight: '600',
     letterSpacing: 1,
   },
@@ -193,16 +194,16 @@ const styles = StyleSheet.create({
   sectionLabel: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#9ca3af',
+    color: colors.textSecondary,
     textTransform: 'uppercase',
     letterSpacing: 0.8,
     marginBottom: -8,
   },
 
   emptyListWrap: {
-    backgroundColor: '#0d0f10',
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: '#1a1d1f',
+    borderColor: colors.border,
     borderRadius: 18,
     paddingVertical: 8,
     minHeight: 160,
@@ -213,19 +214,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    backgroundColor: '#0d0f10',
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: 'rgba(255,92,0,0.35)',
+    borderColor: colors.accentMuted, // rgba(255,92,0,0.35) → accentMuted approximates the tinted border
     borderRadius: 14,
     paddingVertical: 15,
     minHeight: 50,
     opacity: 0.65, // visually disabled
   },
-  addBtnText: { fontSize: 15, fontWeight: '700', color: '#FF8C42' },
+  addBtnText: { fontSize: 15, fontWeight: '700', color: colors.accent },
 
   footer: {
     fontSize: 12,
-    color: '#3a424c',
+    color: colors.textSecondary,
     textAlign: 'center',
     lineHeight: 18,
     marginTop: 4,

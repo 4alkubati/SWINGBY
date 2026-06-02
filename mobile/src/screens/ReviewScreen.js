@@ -1,27 +1,65 @@
-import {
-  View, Text, TextInput, TouchableOpacity, StyleSheet,
-  ActivityIndicator, Alert,
-} from 'react-native';
+import React, { useState } from 'react';
+import { ScrollView, TouchableOpacity, View } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useState } from 'react';
-import { api } from '../services/api';
+import { Ionicons } from '@expo/vector-icons';
 
-function initials(name = '') {
-  return name.split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2);
-}
+import Text from '../components/Text';
+import Stack from '../components/Stack';
+import Inline from '../components/Inline';
+import Surface from '../components/Surface';
+import Avatar from '../components/Avatar';
+import Button from '../components/Button';
+import TextField from '../components/TextField';
+import { RatingStarsInput } from '../components/RatingStars';
+
+import { api } from '../services/api';
+import { successTap } from '../services/haptics';
+import { colors, spacing, motion } from '../theme/tokens';
+
+const RATING_LABELS = ['', 'Poor', 'Fair', 'Good', 'Great', 'Excellent'];
 
 export default function ReviewScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
   const { bookingId, workerId, workerName } = route.params || {};
+
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+
+  // Spring scale for star section micro-interaction on rating change
+  const starsScale = useSharedValue(1);
+
+  const starsAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: starsScale.value }],
+  }));
+
+  function handleRatingChange(star) {
+    setRating(star);
+    setError('');
+    // Pulse scale up then settle back with spring
+    starsScale.value = withSpring(1.12, {
+      stiffness: motion.spring.stiffness,
+      damping: motion.spring.damping,
+    }, () => {
+      starsScale.value = withSpring(1, {
+        stiffness: motion.spring.stiffness,
+        damping: motion.spring.damping,
+      });
+    });
+  }
 
   async function handleSubmit() {
     if (rating === 0) {
-      Alert.alert('Rating required', 'Please select a star rating.');
+      setError('Please select a star rating before submitting.');
       return;
     }
+    setError('');
     setSubmitting(true);
     try {
       await api.post('/reviews/', {
@@ -31,118 +69,118 @@ export default function ReviewScreen({ navigation, route }) {
         rating,
         comment: comment.trim() || null,
       });
+      await successTap();
       navigation.goBack();
     } catch (err) {
-      Alert.alert('Error', err.message || 'Could not submit review.');
+      setError(err.message || 'Could not submit review. Please try again.');
     } finally {
       setSubmitting(false);
     }
   }
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.backBtn}>←</Text>
+    <View
+      style={{
+        flex: 1,
+        backgroundColor: colors.bg,
+        paddingTop: insets.top,
+        paddingBottom: insets.bottom,
+      }}
+    >
+      {/* Header */}
+      <Inline
+        spacing="sm"
+        align="center"
+        justify="space-between"
+        style={{
+          paddingHorizontal: spacing.base,
+          paddingTop: spacing.md,
+          paddingBottom: spacing.sm,
+        }}
+      >
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          style={{ width: 32, alignItems: 'flex-start' }}
+        >
+          <Ionicons name="chevron-back" size={24} color={colors.textSecondary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Leave a review</Text>
+
+        <Text variant="h2" style={{ flex: 1, textAlign: 'center' }}>
+          Leave a Review
+        </Text>
+
+        {/* Spacer to balance back button */}
         <View style={{ width: 32 }} />
-      </View>
+      </Inline>
 
-      <View style={styles.content}>
-        {/* Worker identity */}
-        <View style={styles.workerCard}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{initials(workerName || 'Provider')}</Text>
-          </View>
-          <Text style={styles.workerName}>{workerName || 'Your provider'}</Text>
-          <Text style={styles.workerSub}>How was your experience?</Text>
-        </View>
+      <ScrollView
+        contentContainerStyle={{
+          paddingHorizontal: spacing.base,
+          paddingTop: spacing.lg,
+          paddingBottom: spacing.xl,
+        }}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <Stack spacing="lg">
+          {/* Worker card */}
+          <Surface elevation="subtle" background="default">
+            <Stack spacing="sm" style={{ alignItems: 'center' }}>
+              <Avatar name={workerName || 'Provider'} size="xl" />
+              <Text variant="h2">{workerName || 'Your Provider'}</Text>
+              <Text variant="small" color="secondary">
+                How was your experience?
+              </Text>
+            </Stack>
+          </Surface>
 
-        {/* Star selector */}
-        <View style={styles.starsRow}>
-          {[1, 2, 3, 4, 5].map((star) => (
-            <TouchableOpacity
-              key={star}
-              onPress={() => setRating(star)}
-              activeOpacity={0.7}
-              style={styles.starBtn}
-            >
-              <Text style={[styles.star, star <= rating && styles.starActive]}>★</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-        {rating > 0 && (
-          <Text style={styles.ratingLabel}>
-            {['', 'Poor', 'Fair', 'Good', 'Great', 'Excellent'][rating]}
-          </Text>
-        )}
+          {/* Star rating section */}
+          <Stack spacing="sm" style={{ alignItems: 'center' }}>
+            <Animated.View style={starsAnimatedStyle}>
+              <RatingStarsInput
+                value={rating}
+                onChange={handleRatingChange}
+                size={40}
+              />
+            </Animated.View>
 
-        {/* Comment */}
-        <View style={styles.commentField}>
-          <Text style={styles.commentLabel}>Comment (optional)</Text>
-          <TextInput
-            style={styles.commentInput}
-            placeholder="Tell others about your experience…"
-            placeholderTextColor="#3a424c"
+            {rating > 0 && (
+              <Text variant="smallMedium" color="accent">
+                {RATING_LABELS[rating]}
+              </Text>
+            )}
+          </Stack>
+
+          {/* Comment field */}
+          <TextField
+            label="Comment (optional)"
             value={comment}
-            onChangeText={setComment}
+            onChangeText={(text) => {
+              setComment(text);
+              if (error) setError('');
+            }}
             multiline
-            numberOfLines={4}
             textAlignVertical="top"
           />
-        </View>
 
-        {/* Submit */}
-        <TouchableOpacity
-          style={[styles.submitBtn, (submitting || rating === 0) && styles.submitBtnDisabled]}
-          onPress={handleSubmit}
-          activeOpacity={0.85}
-          disabled={submitting || rating === 0}
-        >
-          {submitting
-            ? <ActivityIndicator color="#fff" />
-            : <Text style={styles.submitBtnText}>Submit review</Text>
-          }
-        </TouchableOpacity>
-      </View>
+          {/* Inline error */}
+          {!!error && (
+            <Text variant="caption" color="danger">
+              {error}
+            </Text>
+          )}
+
+          {/* Submit button */}
+          <Button
+            variant="primary"
+            label="Submit Review"
+            onPress={handleSubmit}
+            loading={submitting}
+            disabled={rating === 0}
+          />
+        </Stack>
+      </ScrollView>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#07080a' },
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 22, paddingTop: 12, paddingBottom: 8,
-  },
-  backBtn: { fontSize: 24, color: '#9ca3af', width: 32 },
-  headerTitle: { fontSize: 17, fontWeight: '700', color: '#ffffff' },
-  content: { flex: 1, paddingHorizontal: 22, paddingTop: 24, gap: 24 },
-  workerCard: { alignItems: 'center', gap: 8 },
-  avatar: {
-    width: 72, height: 72, borderRadius: 36, backgroundColor: '#FF5C00',
-    alignItems: 'center', justifyContent: 'center',
-    shadowColor: '#FF5C00', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 10, elevation: 6,
-  },
-  avatarText: { fontSize: 24, fontWeight: '700', color: '#fff' },
-  workerName: { fontSize: 20, fontWeight: '700', color: '#ffffff' },
-  workerSub: { fontSize: 14, color: '#9ca3af' },
-  starsRow: { flexDirection: 'row', justifyContent: 'center', gap: 8 },
-  starBtn: { padding: 4 },
-  star: { fontSize: 44, color: '#2a2e33' },
-  starActive: { color: '#FF5C00' },
-  ratingLabel: { textAlign: 'center', fontSize: 15, fontWeight: '600', color: '#FF8C42' },
-  commentField: { gap: 8 },
-  commentLabel: { fontSize: 11, color: '#9ca3af', fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.8 },
-  commentInput: {
-    backgroundColor: '#0d0f10', borderWidth: 1, borderColor: '#2a2e33',
-    borderRadius: 14, padding: 14, fontSize: 14, color: '#f0ede8', minHeight: 100,
-  },
-  submitBtn: {
-    backgroundColor: '#FF5C00', borderRadius: 14, paddingVertical: 15, alignItems: 'center',
-    shadowColor: '#FF5C00', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.35, shadowRadius: 8, elevation: 8,
-  },
-  submitBtnDisabled: { opacity: 0.5 },
-  submitBtnText: { fontSize: 16, fontWeight: '700', color: '#fff' },
-});

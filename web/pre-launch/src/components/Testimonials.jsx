@@ -22,7 +22,7 @@ export default function Testimonials() {
   return (
     <section className={styles.section}>
       <h2 className={styles.heading}>Real users, real stories</h2>
-      <div className={styles.grid}>
+      <div className={styles.track}>
         {TESTIMONIALS.map((t, i) => (
           <div className={styles.card} key={i}>
             <span className={styles.quoteMark} aria-hidden="true">"</span>

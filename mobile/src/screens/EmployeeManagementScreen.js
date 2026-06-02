@@ -20,6 +20,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { api } from '../services/api';
 import { SkeletonList } from '../components/Skeleton';
+import { colors } from '../theme/tokens';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function toInitials(name = '') {
@@ -32,10 +33,10 @@ function toInitials(name = '') {
 }
 
 const AVATAR_GRADIENTS = [
-  { bg: '#1a2a3a', color: '#60a5fa' },
-  { bg: '#1a3a2a', color: '#4ade80' },
-  { bg: '#2a1a3a', color: '#a78bfa' },
-  { bg: '#3a2a1a', color: '#FF8C42' },
+  { bg: colors.accentMuted, color: colors.accent },
+  { bg: colors.success + '1A', color: colors.success },
+  { bg: colors.accentMuted, color: colors.accent },
+  { bg: colors.warning + '1A', color: colors.warning },
 ];
 
 function avatarStyle(index) {
@@ -70,13 +71,13 @@ function EmployeeRow({ employee, index, onPress, onToggle, toggling }) {
 
       {/* Active toggle */}
       {toggling === employee.id ? (
-        <ActivityIndicator size="small" color="#FF5C00" style={styles.rowToggleArea} />
+        <ActivityIndicator size="small" color={colors.accent} style={styles.rowToggleArea} />
       ) : (
         <Switch
           value={employee.is_active !== false}
           onValueChange={(val) => onToggle(employee, val)}
-          thumbColor={employee.is_active !== false ? '#FF5C00' : '#6b7280'}
-          trackColor={{ false: '#2a2e33', true: 'rgba(255,92,0,0.30)' }}
+          thumbColor={employee.is_active !== false ? colors.accent : colors.textSecondary}
+          trackColor={{ false: colors.border, true: colors.accent + '4D' }} // 30% opacity
           style={styles.rowSwitch}
         />
       )}
@@ -177,7 +178,7 @@ function EmployeeEditModal({ employee, visible, onClose, onSaved }) {
               value={roleTitle}
               onChangeText={setRoleTitle}
               placeholder='e.g. "Senior Cleaner"'
-              placeholderTextColor="#3a424c"
+              placeholderTextColor={colors.textSecondary}
             />
           </View>
 
@@ -190,8 +191,8 @@ function EmployeeEditModal({ employee, visible, onClose, onSaved }) {
             <Switch
               value={isActive}
               onValueChange={setIsActive}
-              thumbColor={isActive ? '#FF5C00' : '#6b7280'}
-              trackColor={{ false: '#2a2e33', true: 'rgba(255,92,0,0.30)' }}
+              thumbColor={isActive ? colors.accent : colors.textSecondary}
+              trackColor={{ false: colors.border, true: colors.accent + '4D' }} // 30% opacity
             />
           </View>
 
@@ -203,7 +204,7 @@ function EmployeeEditModal({ employee, visible, onClose, onSaved }) {
             disabled={saving}
           >
             {saving
-              ? <ActivityIndicator color="#fff" />
+              ? <ActivityIndicator color={colors.textPrimary} />
               : <Text style={styles.saveBtnText}>Save</Text>
             }
           </TouchableOpacity>
@@ -346,7 +347,7 @@ export default function EmployeeManagementScreen({ navigation, route }) {
         <TextInput
           style={styles.searchInput}
           placeholder="Search by name…"
-          placeholderTextColor="#3a424c"
+          placeholderTextColor={colors.textSecondary}
           value={query}
           onChangeText={setQuery}
           returnKeyType="search"
@@ -408,7 +409,7 @@ export default function EmployeeManagementScreen({ navigation, route }) {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#07080a' },
+  container: { flex: 1, backgroundColor: colors.bg },
 
   // Header
   header: {
@@ -419,12 +420,12 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     paddingBottom: 10,
   },
-  backBtn: { fontSize: 24, color: '#9ca3af', width: 40 },
-  headerTitle: { fontSize: 20, fontWeight: '700', color: '#ffffff', letterSpacing: -0.5 },
+  backBtn: { fontSize: 24, color: colors.textSecondary, width: 40 },
+  headerTitle: { fontSize: 20, fontWeight: '700', color: colors.textPrimary, letterSpacing: -0.5 },
   inviteBtn: {
-    backgroundColor: 'rgba(255,92,0,0.12)',
+    backgroundColor: colors.accent + '1F', // ~12% opacity
     borderWidth: 1,
-    borderColor: 'rgba(255,92,0,0.30)',
+    borderColor: colors.accent + '4D', // ~30% opacity
     borderRadius: 20,
     paddingHorizontal: 14,
     paddingVertical: 7,
@@ -433,15 +434,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  inviteBtnText: { fontSize: 13, fontWeight: '700', color: '#FF5C00' },
+  inviteBtnText: { fontSize: 13, fontWeight: '700', color: colors.accent },
 
   // Search
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#0d0f10',
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: '#2a2e33',
+    borderColor: colors.border,
     borderRadius: 14,
     paddingHorizontal: 14,
     paddingVertical: 11,
@@ -450,8 +451,8 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   searchIcon: { fontSize: 16 },
-  searchInput: { flex: 1, fontSize: 14, color: '#f0ede8' },
-  searchClear: { fontSize: 13, color: '#6b7280' },
+  searchInput: { flex: 1, fontSize: 14, color: colors.textPrimary },
+  searchClear: { fontSize: 13, color: colors.textSecondary },
 
   // List
   skeletonWrap: { paddingHorizontal: 22, paddingTop: 6 },
@@ -462,9 +463,9 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#0d0f10',
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: '#1a1d1f',
+    borderColor: colors.border,
     borderRadius: 18,
     padding: 14,
     minHeight: 72,
@@ -479,11 +480,11 @@ const styles = StyleSheet.create({
   },
   avatarText: { fontSize: 16, fontWeight: '700' },
   rowInfo: { flex: 1, gap: 3 },
-  rowName: { fontSize: 16, fontWeight: '700', color: '#ffffff', letterSpacing: -0.3 },
-  rowRole: { fontSize: 12, color: '#9ca3af', fontWeight: '500' },
+  rowName: { fontSize: 16, fontWeight: '700', color: colors.textPrimary, letterSpacing: -0.3 },
+  rowRole: { fontSize: 12, color: colors.textSecondary, fontWeight: '500' },
   rowToggleArea: { marginRight: 8 },
   rowSwitch: { marginRight: 2 },
-  chevron: { fontSize: 22, color: '#3a424c', marginLeft: 4 },
+  chevron: { fontSize: 22, color: colors.textSecondary, marginLeft: 4 },
 
   // Empty
   empty: {
@@ -494,8 +495,8 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   emptyIcon: { fontSize: 48, marginBottom: 4 },
-  emptyTitle: { fontSize: 18, fontWeight: '700', color: '#ffffff', textAlign: 'center' },
-  emptySub: { fontSize: 14, color: '#9ca3af', textAlign: 'center', lineHeight: 20 },
+  emptyTitle: { fontSize: 18, fontWeight: '700', color: colors.textPrimary, textAlign: 'center' },
+  emptySub: { fontSize: 14, color: colors.textSecondary, textAlign: 'center', lineHeight: 20 },
 
   // Modal overlay
   modalOverlay: {
@@ -509,11 +510,11 @@ const styles = StyleSheet.create({
 
   // Bottom sheet
   sheet: {
-    backgroundColor: '#0d0f10',
+    backgroundColor: colors.surface,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     borderTopWidth: 1,
-    borderColor: '#1a1d1f',
+    borderColor: colors.border,
     padding: 24,
     paddingBottom: 40,
     gap: 16,
@@ -521,81 +522,81 @@ const styles = StyleSheet.create({
   sheetHandle: {
     width: 40,
     height: 4,
-    backgroundColor: '#2a2e33',
+    backgroundColor: colors.border,
     borderRadius: 2,
     alignSelf: 'center',
     marginBottom: 4,
   },
-  sheetTitle: { fontSize: 18, fontWeight: '700', color: '#ffffff', letterSpacing: -0.3 },
+  sheetTitle: { fontSize: 18, fontWeight: '700', color: colors.textPrimary, letterSpacing: -0.3 },
   sheetField: { gap: 8 },
   sheetLabel: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#9ca3af',
+    color: colors.textSecondary,
     textTransform: 'uppercase',
     letterSpacing: 0.8,
   },
   sheetReadOnly: {
-    backgroundColor: '#131618',
+    backgroundColor: colors.surfaceAlt,
     borderWidth: 1,
-    borderColor: '#1a1d1f',
+    borderColor: colors.border,
     borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 12,
   },
-  sheetReadOnlyText: { fontSize: 14, color: '#6b7280' },
+  sheetReadOnlyText: { fontSize: 14, color: colors.textSecondary },
   sheetInput: {
-    backgroundColor: '#07080a',
+    backgroundColor: colors.bg,
     borderWidth: 1,
-    borderColor: '#2a2e33',
+    borderColor: colors.border,
     borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 12,
     fontSize: 14,
-    color: '#f0ede8',
+    color: colors.textPrimary,
   },
   sheetToggleRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#131618',
+    backgroundColor: colors.surfaceAlt,
     borderWidth: 1,
-    borderColor: '#1a1d1f',
+    borderColor: colors.border,
     borderRadius: 14,
     padding: 14,
   },
-  sheetToggleLabel: { fontSize: 15, fontWeight: '600', color: '#ffffff' },
-  sheetToggleSub: { fontSize: 12, color: '#9ca3af', marginTop: 2 },
+  sheetToggleLabel: { fontSize: 15, fontWeight: '600', color: colors.textPrimary },
+  sheetToggleSub: { fontSize: 12, color: colors.textSecondary, marginTop: 2 },
 
   // Invite sheet (same base as sheet but standalone)
   inviteSheet: {
-    backgroundColor: '#0d0f10',
+    backgroundColor: colors.surface,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     borderTopWidth: 1,
-    borderColor: '#1a1d1f',
+    borderColor: colors.border,
     padding: 24,
     paddingBottom: 40,
     gap: 14,
   },
-  inviteSubtitle: { fontSize: 14, color: '#9ca3af', lineHeight: 20 },
+  inviteSubtitle: { fontSize: 14, color: colors.textSecondary, lineHeight: 20 },
   inviteLinkBox: {
-    backgroundColor: '#131618',
+    backgroundColor: colors.surfaceAlt,
     borderWidth: 1,
-    borderColor: 'rgba(255,92,0,0.25)',
+    borderColor: colors.accent + '40', // ~25% opacity
     borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 13,
   },
-  inviteLinkText: { fontSize: 13, color: '#FF8C42', fontWeight: '500' },
+  inviteLinkText: { fontSize: 13, color: colors.accent, fontWeight: '500' },
 
   // Save button (shared)
   saveBtn: {
-    backgroundColor: '#FF5C00',
+    backgroundColor: colors.accent,
     borderRadius: 14,
     paddingVertical: 15,
     alignItems: 'center',
-    shadowColor: '#FF5C00',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.35,
     shadowRadius: 8,
@@ -604,5 +605,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   saveBtnDisabled: { opacity: 0.6 },
-  saveBtnText: { fontSize: 16, fontWeight: '700', color: '#ffffff' },
+  saveBtnText: { fontSize: 16, fontWeight: '700', color: colors.textPrimary },
 });

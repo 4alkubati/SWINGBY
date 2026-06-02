@@ -1,200 +1,298 @@
+import React, { useState, useRef } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity, StyleSheet,
-  KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator,
+  SafeAreaView, KeyboardAvoidingView, ScrollView,
+  Platform, Pressable, View,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useState } from 'react';
+import Animated, {
+  useSharedValue, useAnimatedStyle,
+  withTiming, withSpring, Easing, FadeIn,
+} from 'react-native-reanimated';
+
+import { colors, spacing } from '../theme/tokens';
+import Text from '../components/Text';
+import TextField from '../components/TextField';
+import Button from '../components/Button';
+import Tabs from '../components/Tabs';
+import Stack from '../components/Stack';
 import { useAuth } from '../context/AuthContext';
 
-export default function SignupScreen({ navigation, route }) {
-  const insets = useSafeAreaInsets();
-  const { signup } = useAuth();
-  const role = route.params?.role || 'client';
-  const isBusiness = role === 'business_owner';
+// ─── Email validation ───────────────────────────────────────────────────────
+function isValidEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+}
 
+// ─── Animated block that slides + fades in once mounted ─────────────────────
+function SlideIn({ children, delay = 0 }) {
+  const opacity = useSharedValue(0);
+  const translateY = useSharedValue(18);
+
+  React.useEffect(() => {
+    const d = delay;
+    opacity.value = withTiming(1, {
+      duration: 280,
+      easing: Easing.out(Easing.cubic),
+    });
+    translateY.value = withSpring(0, { stiffness: 200, damping: 22, delay: d });
+  }, []);
+
+  const style = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+    transform: [{ translateY: translateY.value }],
+  }));
+
+  return <Animated.View style={style}>{children}</Animated.View>;
+}
+
+// ─── Step indicator dot ──────────────────────────────────────────────────────
+function StepDots({ step }) {
+  return (
+    <View
+      style={{ flexDirection: 'row', gap: spacing.xs, marginBottom: spacing.lg }}
+      accessibilityLabel={`Step ${step + 1} of 3`}
+      accessibilityRole="progressbar"
+      accessible={true}
+    >
+      {[0, 1, 2].map((i) => (
+        <View
+          key={i}
+          accessible={false}
+          style={{
+            width: i === step ? 20 : 6,
+            height: 6,
+            borderRadius: 3,
+            backgroundColor: i === step ? colors.accent : colors.border,
+          }}
+        />
+      ))}
+    </View>
+  );
+}
+
+// ─── Main screen ─────────────────────────────────────────────────────────────
+export default function SignupScreen({ navigation }) {
+  const { signup } = useAuth();
+
+  // ─── Step state (0 = email, 1 = password+name, 2 = role) ─────────────────
+  const [step, setStep] = useState(0);
+
+  // ─── Form fields ──────────────────────────────────────────────────────────
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  const [password, setPassword] = useState('');
-  const [businessName, setBusinessName] = useState('');
-  const [category, setCategory] = useState('');
-  const [serviceRadius, setServiceRadius] = useState('25');
+  const [roleIndex, setRoleIndex] = useState(0); // 0 = client, 1 = business_owner
+
+  // ─── Error state (per-field + general) ────────────────────────────────────
+  const [emailError, setEmailError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [firstNameError, setFirstNameError] = useState('');
+  const [lastNameError, setLastNameError] = useState('');
+  const [generalError, setGeneralError] = useState('');
+
+  // ─── Loading ───────────────────────────────────────────────────────────────
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
 
+  const scrollRef = useRef(null);
+
+  // ─── Step 1: Validate email and advance ───────────────────────────────────
+  function handleContinue() {
+    setEmailError('');
+    if (!email.trim()) {
+      setEmailError('Email is required.');
+      return;
+    }
+    if (!isValidEmail(email)) {
+      setEmailError('Please enter a valid email address.');
+      return;
+    }
+    setStep(1);
+    setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 120);
+  }
+
+  // ─── Step 2: Validate password+name and advance ────────────────────────────
+  function handleContinueStep2() {
+    let valid = true;
+    setPasswordError('');
+    setFirstNameError('');
+    setLastNameError('');
+
+    if (!password) {
+      setPasswordError('Password is required.');
+      valid = false;
+    } else if (password.length < 8) {
+      setPasswordError('Password must be at least 8 characters.');
+      valid = false;
+    }
+    if (!firstName.trim()) {
+      setFirstNameError('First name is required.');
+      valid = false;
+    }
+    if (!lastName.trim()) {
+      setLastNameError('Last name is required.');
+      valid = false;
+    }
+    if (!valid) return;
+
+    setStep(2);
+    setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 120);
+  }
+
+  // ─── Final: submit signup ─────────────────────────────────────────────────
   async function handleSignup() {
-    if (!firstName.trim() || !lastName.trim() || !email.trim() || !password) {
-      setError('Please fill in all required fields.');
-      return;
-    }
-    if (isBusiness && !businessName.trim()) {
-      setError('Business name is required.');
-      return;
-    }
-
+    setGeneralError('');
     setLoading(true);
-    setError('');
     try {
+      const role = roleIndex === 0 ? 'client' : 'business_owner';
       const payload = {
         first_name: firstName.trim(),
         last_name: lastName.trim(),
         email: email.trim().toLowerCase(),
-        phone: phone.trim() || null,
         password,
         role,
+        phone: null, // preserved from original; phone not collected in new flow
       };
-      if (isBusiness) {
-        payload.business_name = businessName.trim();
-        payload.category = category.trim() || 'General';
-        payload.service_radius_km = parseInt(serviceRadius, 10) || 25;
-      }
       const result = await signup(payload);
       if (result?.requiresConfirmation) {
-        // Email confirmation required — show message, go to Login.
         navigation.navigate('Login');
-        setError('');
-        // Brief message (navigation clears it, but visible for a moment).
       }
       // If requiresConfirmation is false, AuthContext already set user → app auto-navigates.
     } catch (err) {
-      setError(err.message || 'Signup failed. Try again.');
+      setGeneralError(err.message || 'Signup failed. Try again.');
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <KeyboardAvoidingView
-      style={[styles.container, { paddingTop: insets.top }]}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.inner}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <TouchableOpacity style={styles.back} onPress={() => navigation.goBack()}>
-          <Text style={styles.backText}>← Back</Text>
-        </TouchableOpacity>
+        <ScrollView
+          ref={scrollRef}
+          style={{ flex: 1 }}
+          contentContainerStyle={{
+            paddingHorizontal: spacing.lg,
+            paddingTop: spacing.xl,
+            paddingBottom: spacing['2xl'],
+          }}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* ── Header ─────────────────────────────────────────────────────── */}
+          <Stack spacing="xs" style={{ marginBottom: spacing.xl }}>
+            <Text variant="display2" accessibilityRole="header" maxFontSizeMultiplier={1.4}>Create Account</Text>
+            <Text variant="body" color="secondary">Join SwingBy today</Text>
+          </Stack>
 
-        <Text style={styles.title}>{isBusiness ? 'List your business' : 'Create an account'}</Text>
-        <Text style={styles.subtitle}>
-          {isBusiness ? 'Start getting jobs from Calgary locals' : 'Book local services in minutes'}
-        </Text>
+          {/* ── Step dots ──────────────────────────────────────────────────── */}
+          <StepDots step={step} />
 
-        <View style={styles.form}>
-          <View style={styles.row}>
-            <View style={styles.half}>
-              <Text style={styles.label}>First name *</Text>
-              <TextInput style={styles.input} placeholder="Ali" placeholderTextColor="#3a424c"
-                value={firstName} onChangeText={setFirstName} />
-            </View>
-            <View style={styles.half}>
-              <Text style={styles.label}>Last name *</Text>
-              <TextInput style={styles.input} placeholder="Hassan" placeholderTextColor="#3a424c"
-                value={lastName} onChangeText={setLastName} />
-            </View>
-          </View>
+          <Stack spacing="base">
+            {/* ── Step 1: Email + Continue ─────────────────────────────────── */}
+            <Stack spacing="base">
+              <TextField
+                label="Email"
+                value={email}
+                onChangeText={(v) => { setEmail(v); if (emailError) setEmailError(''); }}
+                error={emailError}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
+                returnKeyType="done"
+                onSubmitEditing={step === 0 ? handleContinue : undefined}
+              />
 
-          <View style={styles.field}>
-            <Text style={styles.label}>Email *</Text>
-            <TextInput style={styles.input} placeholder="you@example.com" placeholderTextColor="#3a424c"
-              value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" autoCorrect={false} />
-          </View>
+              {step === 0 && (
+                <Button
+                  label="Continue"
+                  onPress={handleContinue}
+                />
+              )}
+            </Stack>
 
-          <View style={styles.field}>
-            <Text style={styles.label}>Phone</Text>
-            <TextInput style={styles.input} placeholder="+1 403 555 0100" placeholderTextColor="#3a424c"
-              value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
-          </View>
+            {/* ── Step 2: Password + Name (animated slide in) ──────────────── */}
+            {step >= 1 && (
+              <SlideIn delay={0}>
+                <Stack spacing="base">
+                  <TextField
+                    label="Password"
+                    value={password}
+                    onChangeText={(v) => { setPassword(v); if (passwordError) setPasswordError(''); }}
+                    error={passwordError}
+                    secureTextEntry
+                    returnKeyType="next"
+                  />
+                  <TextField
+                    label="First Name"
+                    value={firstName}
+                    onChangeText={(v) => { setFirstName(v); if (firstNameError) setFirstNameError(''); }}
+                    error={firstNameError}
+                    autoCapitalize="words"
+                    returnKeyType="next"
+                  />
+                  <TextField
+                    label="Last Name"
+                    value={lastName}
+                    onChangeText={(v) => { setLastName(v); if (lastNameError) setLastNameError(''); }}
+                    error={lastNameError}
+                    autoCapitalize="words"
+                    returnKeyType="done"
+                    onSubmitEditing={step === 1 ? handleContinueStep2 : undefined}
+                  />
 
-          <View style={styles.field}>
-            <Text style={styles.label}>Password *</Text>
-            <TextInput style={styles.input} placeholder="Min. 8 characters" placeholderTextColor="#3a424c"
-              value={password} onChangeText={setPassword} secureTextEntry />
-          </View>
+                  {step === 1 && (
+                    <Button
+                      label="Continue"
+                      onPress={handleContinueStep2}
+                    />
+                  )}
+                </Stack>
+              </SlideIn>
+            )}
 
-          {isBusiness && (
-            <>
-              <View style={styles.divider} />
-              <Text style={styles.sectionLabel}>Business Details</Text>
+            {/* ── Step 3: Role picker + Create Account (animated slide in) ─── */}
+            {step >= 2 && (
+              <SlideIn delay={60}>
+                <Stack spacing="base">
+                  <Text variant="small" color="secondary">I want to...</Text>
+                  <Tabs
+                    tabs={['Find Services', 'Offer Services']}
+                    activeIndex={roleIndex}
+                    onChange={setRoleIndex}
+                  />
 
-              <View style={styles.field}>
-                <Text style={styles.label}>Business name *</Text>
-                <TextInput style={styles.input} placeholder="Ahmed's Cleaning Co." placeholderTextColor="#3a424c"
-                  value={businessName} onChangeText={setBusinessName} />
-              </View>
+                  {generalError ? (
+                    <Text variant="caption" color="danger">{generalError}</Text>
+                  ) : null}
 
-              <View style={styles.row}>
-                <View style={styles.half}>
-                  <Text style={styles.label}>Category</Text>
-                  <TextInput style={styles.input} placeholder="Cleaning" placeholderTextColor="#3a424c"
-                    value={category} onChangeText={setCategory} />
-                </View>
-                <View style={styles.half}>
-                  <Text style={styles.label}>Radius (km)</Text>
-                  <TextInput style={styles.input} placeholder="25" placeholderTextColor="#3a424c"
-                    value={serviceRadius} onChangeText={setServiceRadius} keyboardType="numeric" />
-                </View>
-              </View>
-            </>
-          )}
+                  <Button
+                    label="Create Account"
+                    onPress={handleSignup}
+                    loading={loading}
+                  />
+                </Stack>
+              </SlideIn>
+            )}
+          </Stack>
 
-          {error ? <Text style={styles.error}>{error}</Text> : null}
-
-          <TouchableOpacity
-            style={[styles.btn, loading && styles.btnDisabled]}
-            onPress={handleSignup}
-            activeOpacity={0.85}
-            disabled={loading}
+          {/* ── Login link ────────────────────────────────────────────────── */}
+          <Pressable
+            onPress={() => navigation.navigate('Login')}
+            style={{ marginTop: spacing.xl, alignItems: 'center' }}
+            accessibilityRole="button"
+            accessibilityLabel="Already have an account? Log in"
           >
-            {loading
-              ? <ActivityIndicator color="#fff" />
-              : <Text style={styles.btnText}>Create account →</Text>
-            }
-          </TouchableOpacity>
-        </View>
-
-        <TouchableOpacity onPress={() => navigation.navigate('Login')} style={styles.loginLink}>
-          <Text style={styles.loginText}>
-            Already have an account? <Text style={styles.loginAccent}>Log in</Text>
-          </Text>
-        </TouchableOpacity>
-      </ScrollView>
-    </KeyboardAvoidingView>
+            <Text variant="small" color="secondary">
+              Already have an account?{' '}
+              <Text variant="small" style={{ color: colors.accent }}>
+                Log in
+              </Text>
+            </Text>
+          </Pressable>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#07080a' },
-  scroll: { flex: 1 },
-  inner: { paddingHorizontal: 24, paddingTop: 16, paddingBottom: 40 },
-  back: { marginBottom: 28 },
-  backText: { fontSize: 15, color: '#9ca3af', fontWeight: '500' },
-  title: { fontSize: 26, fontWeight: '700', color: '#ffffff', letterSpacing: -0.5, marginBottom: 6 },
-  subtitle: { fontSize: 14, color: '#6b7280', marginBottom: 28 },
-  form: { gap: 14 },
-  row: { flexDirection: 'row', gap: 10 },
-  half: { flex: 1, gap: 7 },
-  field: { gap: 7 },
-  label: { fontSize: 11, color: '#9ca3af', fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.8 },
-  input: {
-    backgroundColor: '#0d0f10', borderWidth: 1, borderColor: '#2a2e33',
-    borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 14, color: '#f0ede8',
-  },
-  divider: { height: 1, backgroundColor: '#1a1d1f', marginVertical: 4 },
-  sectionLabel: { fontSize: 13, color: '#9ca3af', fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1 },
-  error: { fontSize: 13, color: '#f87171', fontWeight: '500' },
-  btn: {
-    backgroundColor: '#FF5C00', borderRadius: 14, paddingVertical: 15, alignItems: 'center',
-    marginTop: 8, shadowColor: '#FF5C00', shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35, shadowRadius: 8, elevation: 8,
-  },
-  btnDisabled: { opacity: 0.6 },
-  btnText: { fontSize: 16, fontWeight: '700', color: '#ffffff' },
-  loginLink: { marginTop: 28, alignItems: 'center' },
-  loginText: { fontSize: 14, color: '#6b7280' },
-  loginAccent: { color: '#FF5C00', fontWeight: '600' },
-});

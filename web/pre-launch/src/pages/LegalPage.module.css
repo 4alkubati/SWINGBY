@@ -1,22 +1,35 @@
+/* ───────────────────────────────────────────
+   Smooth scroll for anchor links
+──────────────────────────────────────────── */
+html {
+  scroll-behavior: smooth;
+}
+
+/* ───────────────────────────────────────────
+   Page shell
+──────────────────────────────────────────── */
 .page {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background: var(--bg);
+  background: var(--color-bg);
 }
 
+/* ───────────────────────────────────────────
+   Nav
+──────────────────────────────────────────── */
 .nav {
   display: flex;
   align-items: center;
-  padding: 24px 48px;
-  border-bottom: 1px solid rgba(255,255,255,0.05);
+  padding: var(--space-lg) var(--space-2xl);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .logo {
   font-family: var(--font-head);
   font-size: 22px;
   font-weight: 700;
-  color: var(--text);
+  color: var(--color-text-primary);
   letter-spacing: -0.5px;
   text-decoration: none;
   transition: opacity 0.2s;
@@ -25,86 +38,228 @@
   opacity: 0.8;
 }
 
-.main {
+/* ───────────────────────────────────────────
+   Content wrapper — 2-col on desktop
+──────────────────────────────────────────── */
+.contentWrapper {
   flex: 1;
-  max-width: 760px;
+  width: 100%;
+  max-width: 1100px;
   margin: 0 auto;
-  padding: 64px 48px 80px;
+  padding: var(--space-3xl) var(--space-2xl) var(--space-3xl);
   display: flex;
-  flex-direction: column;
-  gap: 24px;
+  align-items: flex-start;
+  gap: var(--space-2xl);
 }
 
+/* ───────────────────────────────────────────
+   TOC sidebar (desktop only)
+──────────────────────────────────────────── */
+.toc {
+  width: 220px;
+  flex-shrink: 0;
+  position: sticky;
+  top: var(--space-2xl);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.tocLabel {
+  font-family: var(--font-head);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-xs);
+}
+
+.tocLink {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-chip);
+  border-left: 2px solid transparent;
+  transition: color 0.2s, border-color 0.2s, background 0.2s;
+  line-height: 1.4;
+}
+.tocLink:hover {
+  color: var(--color-text-primary);
+  border-left-color: var(--color-accent);
+  background: var(--color-accent-muted);
+}
+
+/* ───────────────────────────────────────────
+   Main content column
+──────────────────────────────────────────── */
+.main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+/* ───────────────────────────────────────────
+   Document header
+──────────────────────────────────────────── */
 .docTitle {
   font-family: var(--font-head);
   font-size: 36px;
   font-weight: 700;
   letter-spacing: -0.75px;
-  color: var(--text);
+  color: var(--color-text-primary);
+  margin: 0;
 }
 
 .docMeta {
+  font-family: var(--font-sans);
   font-size: 13px;
-  color: var(--muted);
-  margin-top: -12px;
+  color: var(--color-text-secondary);
+  margin-top: calc(-1 * var(--space-sm));
 }
 
 .docIntro {
+  font-family: var(--font-sans);
   font-size: 16px;
-  color: #9ca3af;
+  color: var(--color-text-secondary);
   line-height: 1.7;
+  margin: 0;
 }
 
+/* ───────────────────────────────────────────
+   Section cards
+──────────────────────────────────────────── */
 .section {
-  background: #0d0f10;
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 24px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  padding: var(--space-lg);
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--space-md);
+  transition: transform 0.2s var(--ease-entry), box-shadow 0.2s var(--ease-entry);
+  scroll-margin-top: var(--space-2xl);
+}
+.section:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-modal);
 }
 
 .sectionHeading {
   font-family: var(--font-head);
   font-size: 18px;
   font-weight: 700;
-  color: var(--text);
+  color: var(--color-text-primary);
   letter-spacing: -0.3px;
+  margin: 0;
 }
 
+/* Replace pre-line with proper paragraph + bullet rendering */
 .sectionBody {
+  font-family: var(--font-sans);
   font-size: 15px;
-  color: #d1cdc7;
+  color: var(--color-text-primary);
   line-height: 1.75;
-  white-space: pre-line;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
 }
 
+.sectionParagraph {
+  margin: 0;
+}
+
+.sectionList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.sectionListItem {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-sm);
+}
+
+.sectionListItem::before {
+  content: '';
+  display: block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  margin-top: 9px;
+  flex-shrink: 0;
+}
+
+/* ───────────────────────────────────────────
+   Back to top
+──────────────────────────────────────────── */
+.backToTop {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: var(--space-xs);
+}
+
+.backToTopLink {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-chip);
+  transition: color 0.2s, background 0.2s;
+}
+.backToTopLink:hover {
+  color: var(--color-accent-text);
+  background: var(--color-accent-muted);
+}
+
+/* ───────────────────────────────────────────
+   Contact card
+──────────────────────────────────────────── */
 .contactCard {
-  background: rgba(255,92,0,0.04);
-  border: 1px solid rgba(255,92,0,0.15);
-  border-radius: 16px;
-  padding: 24px;
+  background: var(--color-surface-alt);
+  border: 1px solid var(--color-accent-muted);
+  border-radius: var(--radius-card);
+  padding: var(--space-lg);
   text-align: center;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-sm);
 }
 
 .contactTitle {
+  font-family: var(--font-head);
   font-size: 16px;
   font-weight: 700;
-  color: var(--text);
+  color: var(--color-text-primary);
+  margin: 0;
 }
 
 .contactBody {
+  font-family: var(--font-sans);
   font-size: 14px;
-  color: var(--muted);
+  color: var(--color-text-secondary);
   line-height: 1.6;
+  margin: 0;
 }
 
 .contactLink {
-  color: var(--accent2);
+  color: var(--color-accent-text);
   font-weight: 600;
   text-decoration: none;
   transition: opacity 0.2s;
@@ -113,13 +268,24 @@
   opacity: 0.8;
 }
 
+/* ───────────────────────────────────────────
+   Responsive — mobile
+──────────────────────────────────────────── */
 @media (max-width: 768px) {
   .nav {
-    padding: 20px 24px;
+    padding: 20px var(--space-lg);
   }
-  .main {
-    padding: 48px 24px 64px;
+
+  .contentWrapper {
+    flex-direction: column;
+    padding: var(--space-2xl) var(--space-lg) var(--space-3xl);
+    gap: var(--space-xl);
   }
+
+  .toc {
+    display: none;
+  }
+
   .docTitle {
     font-size: 28px;
   }

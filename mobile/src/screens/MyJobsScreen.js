@@ -1,20 +1,23 @@
 import {
   View, Text, FlatList, TouchableOpacity, StyleSheet,
-  ActivityIndicator, RefreshControl,
+  RefreshControl,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
+import { colors, spacing } from '../theme/tokens';
+import { SkeletonList } from '../components/Skeleton';
+import EmptyState from '../components/EmptyState';
 
 const STATUS_CONFIG = {
-  confirmed:   { label: 'Confirmed',   color: '#60a5fa', bg: 'rgba(59,130,246,0.12)' },
-  in_progress: { label: 'In Progress', color: '#FF8C42', bg: 'rgba(255,92,0,0.12)' },
-  completed:   { label: 'Done',        color: '#4ade80', bg: 'rgba(34,197,94,0.12)' },
-  cancelled:   { label: 'Cancelled',   color: '#6b7280', bg: 'rgba(107,114,128,0.12)' },
-  open:        { label: 'Awaiting Quotes', color: '#a78bfa', bg: 'rgba(167,139,250,0.12)' },
-  matched:     { label: 'Matched',     color: '#4ade80', bg: 'rgba(34,197,94,0.12)' },
-  expired:     { label: 'Expired',     color: '#6b7280', bg: 'rgba(107,114,128,0.12)' },
+  confirmed:   { label: 'Confirmed',   color: colors.accent,   bg: colors.accentMuted },
+  in_progress: { label: 'In Progress', color: colors.accent,   bg: colors.accentMuted },
+  completed:   { label: 'Done',        color: colors.success,  bg: colors.accentMuted },
+  cancelled:   { label: 'Cancelled',   color: colors.textSecondary, bg: colors.surfaceAlt },
+  open:        { label: 'Awaiting Quotes', color: '#a78bfa',   bg: colors.accentMuted },
+  matched:     { label: 'Matched',     color: colors.success,  bg: colors.accentMuted },
+  expired:     { label: 'Expired',     color: colors.textSecondary, bg: colors.surfaceAlt },
 };
 
 function BookingRow({ booking, onPress, onReview, userRole }) {
@@ -125,8 +128,13 @@ export default function MyJobsScreen({ navigation }) {
 
   if (loading) {
     return (
-      <View style={[styles.loader, { paddingTop: insets.top }]}>
-        <ActivityIndicator color="#FF5C00" size="large" />
+      <View style={[styles.container, { paddingTop: insets.top }]}>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>My Jobs</Text>
+        </View>
+        <View style={{ paddingHorizontal: spacing.base, paddingTop: spacing.sm }}>
+          <SkeletonList count={5} />
+        </View>
       </View>
     );
   }
@@ -182,13 +190,17 @@ export default function MyJobsScreen({ navigation }) {
         keyExtractor={(b) => b.id}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.list}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor="#FF5C00" colors={['#FF5C00']} progressBackgroundColor="#0d0f10" />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor={colors.accent} colors={[colors.accent]} progressBackgroundColor={colors.surface} />}
         ListEmptyComponent={
-          <View style={styles.emptyCard}>
-            <Text style={styles.emptyText}>
-              {tab === 'active' ? 'No active jobs right now' : 'No past jobs yet'}
-            </Text>
-          </View>
+          <EmptyState
+            icon={tab === 'active' ? 'briefcase' : 'clock'}
+            title={tab === 'active' ? 'No active jobs right now' : 'No past jobs yet'}
+            body={
+              tab === 'active'
+                ? 'Book a service or post a job to get started.'
+                : 'Completed and cancelled jobs will appear here.'
+            }
+          />
         }
         renderItem={({ item }) => (
           <BookingRow
@@ -210,46 +222,43 @@ export default function MyJobsScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#07080a' },
-  loader: { flex: 1, backgroundColor: '#07080a', alignItems: 'center', justifyContent: 'center' },
+  container: { flex: 1, backgroundColor: colors.bg },
   header: { paddingHorizontal: 22, paddingTop: 12, paddingBottom: 8 },
-  headerTitle: { fontSize: 22, fontWeight: '700', color: '#ffffff', letterSpacing: -0.5 },
+  headerTitle: { fontSize: 22, fontWeight: '700', color: colors.textPrimary, letterSpacing: -0.5 },
   postsSection: { paddingHorizontal: 22 },
   sectionLabel: {
     fontSize: 11, color: '#a78bfa', fontWeight: '700',
     textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 4,
   },
-  divider: { height: 1, backgroundColor: '#111315', marginVertical: 12 },
+  divider: { height: 1, backgroundColor: colors.border, marginVertical: 12 },
   tabs: {
     flexDirection: 'row', marginHorizontal: 22, marginBottom: 8,
-    backgroundColor: '#0d0f10', borderRadius: 12, padding: 3, borderWidth: 1, borderColor: '#1a1d1f',
+    backgroundColor: colors.surface, borderRadius: 12, padding: 3, borderWidth: 1, borderColor: colors.border,
   },
   tabBtn: { flex: 1, paddingVertical: 9, borderRadius: 10, alignItems: 'center' },
-  tabBtnActive: { backgroundColor: '#131618', borderWidth: 1, borderColor: '#2a2e33' },
-  tabText: { fontSize: 13, fontWeight: '600', color: '#6b7280' },
-  tabTextActive: { color: '#ffffff' },
+  tabBtnActive: { backgroundColor: colors.surfaceAlt, borderWidth: 1, borderColor: colors.border },
+  tabText: { fontSize: 13, fontWeight: '600', color: colors.textSecondary },
+  tabTextActive: { color: colors.textPrimary },
   list: { paddingHorizontal: 22, paddingBottom: 24 },
   row: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#111315',
+    paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: colors.border,
   },
   rowLeft: { flex: 1, gap: 3 },
   rowTop: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  rowTitle: { fontSize: 15, fontWeight: '600', color: '#ffffff', flex: 1 },
+  rowTitle: { fontSize: 15, fontWeight: '600', color: colors.textPrimary, flex: 1 },
   statusPill: { borderRadius: 20, paddingHorizontal: 8, paddingVertical: 3 },
   statusText: { fontSize: 10, fontWeight: '700' },
-  rowSub: { fontSize: 13, color: '#9ca3af' },
-  rowDate: { fontSize: 12, color: '#6b7280' },
+  rowSub: { fontSize: 13, color: colors.textSecondary },
+  rowDate: { fontSize: 12, color: colors.textSecondary },
   actionBtn: {
-    backgroundColor: 'rgba(255,92,0,0.1)', borderWidth: 1,
-    borderColor: 'rgba(255,92,0,0.3)', borderRadius: 10,
+    backgroundColor: colors.accentMuted, borderWidth: 1,
+    borderColor: colors.border, borderRadius: 10,
     paddingHorizontal: 12, paddingVertical: 7,
   },
   actionBtnHighlight: {
-    backgroundColor: 'rgba(167,139,250,0.1)', borderColor: 'rgba(167,139,250,0.4)',
+    backgroundColor: colors.accentMuted, borderColor: colors.border,
   },
-  actionBtnText: { fontSize: 12, fontWeight: '700', color: '#FF8C42' },
+  actionBtnText: { fontSize: 12, fontWeight: '700', color: colors.accent },
   actionBtnTextHighlight: { color: '#a78bfa' },
-  emptyCard: { paddingTop: 40, alignItems: 'center' },
-  emptyText: { fontSize: 14, color: '#6b7280' },
 });

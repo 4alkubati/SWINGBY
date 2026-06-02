@@ -1,25 +1,81 @@
-// T60 — FavoritesScreen
+// T59 — FavoritesScreen (UX polish)
 // Reads favorited IDs from AsyncStorage, fetches each business in parallel,
-// renders a list of NearbyCards with a removable heart icon.
-import {
-  View,
-  Text,
-  FlatList,
-  TouchableOpacity,
-  StyleSheet,
-  ActivityIndicator,
-} from 'react-native';
+// renders a list of NearbyCards with an animated heart-remove overlay.
+import { View, FlatList, Pressable } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '../services/api';
 import { show as showToast } from '../services/toast';
+import { buttonTap } from '../services/haptics';
 import { useFavorites } from '../hooks/useFavorites';
 import NearbyCard from '../components/NearbyCard';
 import EmptyState from '../components/EmptyState';
+import Text from '../components/Text';
+import Stack from '../components/Stack';
+import Inline from '../components/Inline';
+import { SkeletonList } from '../components/Skeleton';
 import { Feather } from '@expo/vector-icons';
+import { colors, spacing, radius, shadows, motion } from '../theme/tokens';
+
+// ─── AnimatedPressable ────────────────────────────────────────────────────────
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 function toInitials(name) {
   return (name || '').slice(0, 2).toUpperCase();
+}
+
+// ─── HeartButton — spring scale micro-interaction ─────────────────────────────
+function HeartButton({ onPress }) {
+  const scale = useSharedValue(1);
+
+  const animStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  function handlePressIn() {
+    scale.value = withSpring(0.95, { stiffness: motion.spring.stiffness, damping: motion.spring.damping });
+  }
+
+  function handlePressOut() {
+    scale.value = withSpring(1, { stiffness: motion.spring.stiffness, damping: motion.spring.damping });
+  }
+
+  async function handlePress() {
+    await buttonTap();
+    onPress();
+  }
+
+  return (
+    <AnimatedPressable
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      onPress={handlePress}
+      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+      style={[
+        animStyle,
+        {
+          position: 'absolute',
+          top: spacing.sm + 2,
+          right: spacing.sm + 2,
+          width: 36,
+          height: 36,
+          backgroundColor: colors.accent + '1F',
+          borderWidth: 1,
+          borderColor: colors.accent + '4D',
+          borderRadius: radius.pill,
+          alignItems: 'center',
+          justifyContent: 'center',
+        },
+      ]}
+    >
+      <Feather name="heart" size={18} color={colors.accent} />
+    </AnimatedPressable>
+  );
 }
 
 export default function FavoritesScreen({ navigation }) {
@@ -70,23 +126,51 @@ export default function FavoritesScreen({ navigation }) {
 
   // ─── Header ──────────────────────────────────────────────────────────────
   const renderHeader = () => (
-    <View style={styles.header}>
-      <TouchableOpacity
-        style={styles.backBtn}
+    <Inline
+      justify="space-between"
+      style={{
+        paddingHorizontal: spacing.base,
+        paddingTop: spacing.sm,
+        paddingBottom: spacing.md,
+      }}
+    >
+      <Pressable
         onPress={() => navigation.goBack()}
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        style={{
+          width: 40,
+          height: 40,
+          backgroundColor: colors.surface,
+          borderWidth: 1,
+          borderColor: colors.border,
+          borderRadius: radius.pill,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
       >
-        <Feather name="arrow-left" size={20} color="#ffffff" />
-      </TouchableOpacity>
-      <Text style={styles.headerTitle}>Favorites</Text>
-      <View style={styles.headerRight} />
-    </View>
+        <Feather name="arrow-left" size={20} color={colors.textPrimary} />
+      </Pressable>
+
+      <Text variant="h2" style={{ flex: 1, textAlign: 'center' }}>
+        Favorites
+      </Text>
+
+      {/* Spacer to balance the back button */}
+      <View style={{ width: 40 }} />
+    </Inline>
   );
+
+  // ─── Shared container ─────────────────────────────────────────────────────
+  const containerStyle = {
+    flex: 1,
+    backgroundColor: colors.bg,
+    paddingTop: insets.top,
+  };
 
   // ─── Empty state ─────────────────────────────────────────────────────────
   if (!loading && ids.length === 0) {
     return (
-      <View style={[styles.container, { paddingTop: insets.top }]}>
+      <Stack style={containerStyle} spacing={0}>
         {renderHeader()}
         <EmptyState
           icon="heart"
@@ -97,26 +181,26 @@ export default function FavoritesScreen({ navigation }) {
             onPress: () => navigation.navigate('Home'),
           }}
         />
-      </View>
+      </Stack>
     );
   }
 
   // ─── Loading ─────────────────────────────────────────────────────────────
   if (loading) {
     return (
-      <View style={[styles.container, { paddingTop: insets.top }]}>
+      <Stack style={containerStyle} spacing={0}>
         {renderHeader()}
-        <View style={styles.centered}>
-          <ActivityIndicator color="#FF5C00" size="large" />
+        <View style={{ paddingHorizontal: spacing.base }}>
+          <SkeletonList count={5} />
         </View>
-      </View>
+      </Stack>
     );
   }
 
   // ─── Error ───────────────────────────────────────────────────────────────
   if (error) {
     return (
-      <View style={[styles.container, { paddingTop: insets.top }]}>
+      <Stack style={containerStyle} spacing={0}>
         {renderHeader()}
         <EmptyState
           icon="wifi-off"
@@ -127,21 +211,24 @@ export default function FavoritesScreen({ navigation }) {
             onPress: () => setError(null), // triggers re-render → useEffect re-runs
           }}
         />
-      </View>
+      </Stack>
     );
   }
 
   // ─── Results list ─────────────────────────────────────────────────────────
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View style={containerStyle}>
       {renderHeader()}
       <FlatList
         data={businesses}
         keyExtractor={(item) => String(item.id)}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={{
+          paddingHorizontal: spacing.base,
+          paddingBottom: spacing.xl,
+        }}
         showsVerticalScrollIndicator={false}
         renderItem={({ item, index }) => (
-          <View style={styles.cardWrap}>
+          <View style={{ position: 'relative' }}>
             <NearbyCard
               name={item.business_name}
               initials={toInitials(item.business_name)}
@@ -153,18 +240,11 @@ export default function FavoritesScreen({ navigation }) {
                 navigation.navigate('BusinessProfile', { businessId: item.id })
               }
             />
-            {/* Heart button — filled orange, top-right of card */}
-            <TouchableOpacity
-              style={styles.heartBtn}
-              onPress={() => handleRemove(item.id)}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              activeOpacity={0.8}
-            >
-              <Feather name="heart" size={18} color="#FF5C00" />
-            </TouchableOpacity>
+            {/* Heart remove button — animated spring scale */}
+            <HeartButton onPress={() => handleRemove(item.id)} />
           </View>
         )}
-        ItemSeparatorComponent={() => <View style={styles.separator} />}
+        ItemSeparatorComponent={() => <View style={{ height: spacing.sm + 2 }} />}
         ListEmptyComponent={
           <EmptyState
             icon="heart"
@@ -177,70 +257,3 @@ export default function FavoritesScreen({ navigation }) {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#07080a',
-  },
-  // ── Header ─────────────────────────────────────────────────────────────────
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 12,
-  },
-  backBtn: {
-    width: 40,
-    height: 40,
-    backgroundColor: '#0d0f10',
-    borderWidth: 1,
-    borderColor: '#2a2e33',
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerTitle: {
-    flex: 1,
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#ffffff',
-    textAlign: 'center',
-    letterSpacing: -0.5,
-  },
-  headerRight: {
-    width: 40,
-  },
-  // ── List ───────────────────────────────────────────────────────────────────
-  listContent: {
-    paddingHorizontal: 16,
-    paddingBottom: 32,
-  },
-  separator: {
-    height: 10,
-  },
-  // ── Card + heart overlay ───────────────────────────────────────────────────
-  cardWrap: {
-    position: 'relative',
-  },
-  heartBtn: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
-    width: 36,
-    height: 36,
-    backgroundColor: 'rgba(255,92,0,0.12)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,92,0,0.3)',
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  // ── Loading / error fallbacks ──────────────────────────────────────────────
-  centered: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});

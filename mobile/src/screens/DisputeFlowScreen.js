@@ -18,6 +18,7 @@ import { Feather } from '@expo/vector-icons';
 import { api } from '../services/api';
 import * as toast from '../services/toast';
 import * as haptics from '../services/haptics';
+import { colors } from '../theme/tokens';
 
 const ISSUE_TYPES = [
   { key: 'not_completed', label: 'Work not completed' },
@@ -37,7 +38,7 @@ function ProgressBar({ step }) {
           key={i}
           style={[
             styles.progressSegment,
-            { backgroundColor: i < step ? '#FF5C00' : '#2a2e33' },
+            { backgroundColor: i < step ? colors.accent : colors.border },
           ]}
         />
       ))}
@@ -114,7 +115,7 @@ export default function DisputeFlowScreen({ route, navigation }) {
           onPress={() => (step > 1 ? setStep((s) => s - 1) : navigation.goBack())}
           style={styles.backBtn}
         >
-          <Feather name="arrow-left" size={22} color="#ffffff" />
+          <Feather name="arrow-left" size={22} color={colors.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Open a dispute</Text>
         <View style={{ width: 36 }} />
@@ -172,7 +173,7 @@ export default function DisputeFlowScreen({ route, navigation }) {
               <TextInput
                 style={[styles.textArea, !descValid && descLen > 0 && styles.textAreaError]}
                 placeholder="Describe what happened, when it happened, and what you expected…"
-                placeholderTextColor="#3a424c"
+                placeholderTextColor={colors.textSecondary}
                 value={description}
                 onChangeText={setDescription}
                 multiline
@@ -208,7 +209,7 @@ export default function DisputeFlowScreen({ route, navigation }) {
                       toast.show({ type: 'info', text1: 'Coming soon', text2: 'Photo upload is not yet available.' })
                     }
                   >
-                    <Feather name="camera" size={24} color="#FF5C00" />
+                    <Feather name="camera" size={24} color={colors.accent} />
                     <Text style={styles.photoLabel}>Add photo</Text>
                   </TouchableOpacity>
                 ))}
@@ -228,7 +229,7 @@ export default function DisputeFlowScreen({ route, navigation }) {
             activeOpacity={0.85}
           >
             {submitting
-              ? <ActivityIndicator color="#ffffff" />
+              ? <ActivityIndicator color={colors.textPrimary} />
               : (
                 <Text style={styles.nextBtnText}>
                   {step < TOTAL_STEPS ? 'Continue' : 'Submit dispute'}
@@ -243,7 +244,7 @@ export default function DisputeFlowScreen({ route, navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#07080a' },
+  container: { flex: 1, backgroundColor: colors.bg },
   flex: { flex: 1 },
   header: {
     flexDirection: 'row',
@@ -252,10 +253,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#1a1d1f',
+    borderBottomColor: colors.border,
   },
   backBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { fontSize: 16, fontWeight: '700', color: '#ffffff', letterSpacing: -0.3 },
+  headerTitle: { fontSize: 16, fontWeight: '700', color: colors.textPrimary, letterSpacing: -0.3 },
 
   progressWrap: {
     flexDirection: 'row',
@@ -274,20 +275,20 @@ const styles = StyleSheet.create({
   stepLabel: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#FF5C00',
+    color: colors.accent,
     textTransform: 'uppercase',
     letterSpacing: 1.0,
   },
   stepTitle: {
     fontSize: 22,
     fontWeight: '700',
-    color: '#ffffff',
+    color: colors.textPrimary,
     letterSpacing: -0.5,
     marginTop: -4,
   },
   stepBody: {
     fontSize: 14,
-    color: '#9ca3af',
+    color: colors.textSecondary,
     lineHeight: 21,
     marginTop: -4,
   },
@@ -297,50 +298,50 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    backgroundColor: '#0d0f10',
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: '#2a2e33',
+    borderColor: colors.border,
     borderRadius: 12,
     paddingVertical: 14,
     paddingHorizontal: 14,
     minHeight: 50,
   },
   radioRowActive: {
-    backgroundColor: 'rgba(255,92,0,0.08)',
-    borderColor: 'rgba(255,92,0,0.35)',
+    backgroundColor: colors.accent + '14', // ~8% opacity
+    borderColor: colors.accent + '59', // ~35% opacity
   },
   radio: {
     width: 20,
     height: 20,
     borderRadius: 10,
     borderWidth: 2,
-    borderColor: '#2a2e33',
+    borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
   },
-  radioActive: { borderColor: '#FF5C00' },
+  radioActive: { borderColor: colors.accent },
   radioDot: {
     width: 9,
     height: 9,
     borderRadius: 4.5,
-    backgroundColor: '#FF5C00',
+    backgroundColor: colors.accent,
   },
-  radioLabel: { fontSize: 14, color: '#9ca3af', fontWeight: '500', flex: 1 },
-  radioLabelActive: { color: '#ffffff', fontWeight: '600' },
+  radioLabel: { fontSize: 14, color: colors.textSecondary, fontWeight: '500', flex: 1 },
+  radioLabelActive: { color: colors.textPrimary, fontWeight: '600' },
 
   textArea: {
-    backgroundColor: '#0d0f10',
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: '#2a2e33',
+    borderColor: colors.border,
     borderRadius: 14,
     padding: 14,
     fontSize: 15,
-    color: '#f0ede8',
+    color: colors.textPrimary,
     minHeight: 140,
     lineHeight: 22,
   },
-  textAreaError: { borderColor: 'rgba(239,68,68,0.5)' },
+  textAreaError: { borderColor: colors.danger + '80' }, // ~50% opacity
 
   charCountRow: {
     flexDirection: 'row',
@@ -348,44 +349,44 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: -8,
   },
-  charCount: { fontSize: 12, color: '#6b7280' },
-  charCountOver: { color: '#ef4444' },
-  charHint: { fontSize: 12, color: '#FF8C42' },
+  charCount: { fontSize: 12, color: colors.textSecondary },
+  charCountOver: { color: colors.danger },
+  charHint: { fontSize: 12, color: colors.warning },
 
   photoGrid: { flexDirection: 'row', gap: 12, marginTop: 4 },
   photoPlaceholder: {
     flex: 1,
     aspectRatio: 1,
     borderWidth: 1.5,
-    borderColor: 'rgba(255,92,0,0.40)',
+    borderColor: colors.accent + '66', // ~40% opacity
     borderStyle: 'dashed',
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    backgroundColor: 'rgba(255,92,0,0.04)',
+    backgroundColor: colors.accent + '0A', // ~4% opacity
   },
-  photoLabel: { fontSize: 11, color: '#FF8C42', fontWeight: '600' },
+  photoLabel: { fontSize: 11, color: colors.accent, fontWeight: '600' },
 
   bottomBar: {
     paddingHorizontal: 16,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#1a1d1f',
-    backgroundColor: '#07080a',
+    borderTopColor: colors.border,
+    backgroundColor: colors.bg,
   },
   nextBtn: {
-    backgroundColor: '#FF5C00',
+    backgroundColor: colors.accent,
     borderRadius: 14,
     paddingVertical: 15,
     alignItems: 'center',
     minHeight: 50,
-    shadowColor: 'rgba(255,92,0,0.35)',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 1,
     shadowRadius: 10,
     elevation: 6,
   },
   nextBtnDisabled: { opacity: 0.45 },
-  nextBtnText: { fontSize: 16, fontWeight: '700', color: '#ffffff' },
+  nextBtnText: { fontSize: 16, fontWeight: '700', color: colors.textPrimary },
 });

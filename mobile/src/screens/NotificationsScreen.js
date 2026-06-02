@@ -1,9 +1,12 @@
 import {
-  View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, RefreshControl,
+  View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '../services/api';
+import { colors, spacing } from '../theme/tokens';
+import { SkeletonList } from '../components/Skeleton';
+import EmptyState from '../components/EmptyState';
 
 function timeAgo(dateStr) {
   if (!dateStr) return '';
@@ -86,8 +89,15 @@ export default function NotificationsScreen({ navigation }) {
 
   if (loading) {
     return (
-      <View style={[styles.loader, { paddingTop: insets.top }]}>
-        <ActivityIndicator color="#FF5C00" size="large" />
+      <View style={[styles.container, { paddingTop: insets.top }]}>
+        <View style={styles.header}>
+          <View style={{ width: 32 }} />
+          <Text style={styles.headerTitle}>Notifications</Text>
+          <View style={{ width: 32 }} />
+        </View>
+        <View style={{ paddingHorizontal: spacing.base, paddingTop: spacing.sm }}>
+          <SkeletonList count={5} />
+        </View>
       </View>
     );
   }
@@ -107,13 +117,13 @@ export default function NotificationsScreen({ navigation }) {
         keyExtractor={(n) => n.id}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.list}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor="#FF5C00" />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor={colors.accent} />}
         ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyIcon}>🔔</Text>
-            <Text style={styles.emptyTitle}>All caught up</Text>
-            <Text style={styles.emptyDesc}>No new notifications</Text>
-          </View>
+          <EmptyState
+            icon="bell"
+            title="All caught up"
+            body="Booking updates and messages will appear here."
+          />
         }
         renderItem={({ item }) => (
           <TouchableOpacity
@@ -135,28 +145,21 @@ export default function NotificationsScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#07080a' },
-  loader: { flex: 1, backgroundColor: '#07080a', alignItems: 'center', justifyContent: 'center' },
+  container: { flex: 1, backgroundColor: colors.bg },
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 22, paddingTop: 12, paddingBottom: 8,
   },
-  backBtn: { fontSize: 24, color: '#9ca3af', width: 32 },
-  headerTitle: { fontSize: 17, fontWeight: '700', color: '#ffffff' },
+  backBtn: { fontSize: 24, color: colors.textSecondary, width: 32 },
+  headerTitle: { fontSize: 17, fontWeight: '700', color: colors.textPrimary },
   list: { paddingHorizontal: 22, paddingBottom: 24 },
   notifRow: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
-    paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#111315',
+    paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: colors.border,
   },
   notifIcon: { fontSize: 24, width: 32, textAlign: 'center' },
   notifContent: { flex: 1 },
-  notifTitle: { fontSize: 14, fontWeight: '600', color: '#ffffff', marginBottom: 2 },
-  notifDesc: { fontSize: 13, color: '#9ca3af' },
-  notifTime: { fontSize: 11, color: '#6b7280', fontWeight: '500' },
-  emptyContainer: {
-    paddingTop: 80, alignItems: 'center', gap: 10,
-  },
-  emptyIcon: { fontSize: 48 },
-  emptyTitle: { fontSize: 18, fontWeight: '700', color: '#ffffff' },
-  emptyDesc: { fontSize: 14, color: '#9ca3af' },
+  notifTitle: { fontSize: 14, fontWeight: '600', color: colors.textPrimary, marginBottom: 2 },
+  notifDesc: { fontSize: 13, color: colors.textSecondary },
+  notifTime: { fontSize: 11, color: colors.textSecondary, fontWeight: '500' },
 });

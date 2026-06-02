@@ -1,31 +1,45 @@
 import { View, Text, StyleSheet } from 'react-native';
 
 export default function FeaturedCard({ name, initials, rating, jobs, distance, category, verified }) {
+  const a11yLabel = [
+    name,
+    verified ? 'Verified provider' : null,
+    `Rated ${rating} stars`,
+    `${jobs} jobs`,
+    distance ? `${distance} away` : null,
+    category,
+  ].filter(Boolean).join(', ');
+
   return (
-    <View style={styles.container}>
-      <View style={styles.avatar}>
-        <Text style={styles.avatarText}>{initials}</Text>
+    <View
+      style={styles.container}
+      accessible={true}
+      accessibilityLabel={a11yLabel}
+      accessibilityRole="none"
+    >
+      <View style={styles.avatar} accessible={false}>
+        <Text style={styles.avatarText} accessibilityElementsHidden={true} importantForAccessibility="no">{initials}</Text>
       </View>
       <View style={styles.info}>
         <View style={styles.nameRow}>
-          <Text style={styles.name} numberOfLines={1}>{name}</Text>
-          <View style={styles.badge}>
-            <Text style={styles.badgeText}>TOP RATED</Text>
+          <Text style={styles.name} numberOfLines={1} allowFontScaling={true}>{name}</Text>
+          <View style={styles.badge} accessible={false}>
+            <Text style={styles.badgeText} accessibilityElementsHidden={true} importantForAccessibility="no">TOP RATED</Text>
           </View>
         </View>
-        <Text style={styles.meta}>
+        <Text style={styles.meta} allowFontScaling={true} maxFontSizeMultiplier={1.3} accessibilityElementsHidden={true} importantForAccessibility="no">
           <Text style={styles.star}>★ {rating}</Text>
           <Text>{` · ${jobs} jobs · ${distance}`}</Text>
         </Text>
         <View style={styles.tags}>
           {verified && (
-            <View style={[styles.tag, styles.tagVerified]}>
-              <Text style={[styles.tagText, styles.tagTextVerified]}>✓ Verified</Text>
+            <View style={[styles.tag, styles.tagVerified]} accessible={false}>
+              <Text style={[styles.tagText, styles.tagTextVerified]} accessibilityElementsHidden={true} importantForAccessibility="no">Verified</Text>
             </View>
           )}
           {category ? (
-            <View style={styles.tag}>
-              <Text style={styles.tagText}>{category}</Text>
+            <View style={styles.tag} accessible={false}>
+              <Text style={styles.tagText} accessibilityElementsHidden={true} importantForAccessibility="no">{category}</Text>
             </View>
           ) : null}
         </View>

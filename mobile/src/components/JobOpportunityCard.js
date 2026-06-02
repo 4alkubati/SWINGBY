@@ -30,7 +30,7 @@ export default function JobOpportunityCard({ post, onSendQuote }) {
       </View>
 
       {/* Description */}
-      <Text style={styles.desc} numberOfLines={2}>{post.title || post.description || 'Job details'}</Text>
+      <Text style={styles.desc} numberOfLines={2} allowFontScaling={true}>{post.title || post.description || 'Job details'}</Text>
 
       {/* Meta row */}
       <View style={styles.metaRow}>
@@ -45,8 +45,15 @@ export default function JobOpportunityCard({ post, onSendQuote }) {
       </View>
 
       {/* Send Quote button */}
-      <TouchableOpacity style={styles.quoteBtn} onPress={onSendQuote} activeOpacity={0.85}>
-        <Text style={styles.quoteBtnText}>Send Quote →</Text>
+      <TouchableOpacity
+        style={styles.quoteBtn}
+        onPress={onSendQuote}
+        activeOpacity={0.85}
+        accessibilityRole="button"
+        accessibilityLabel={`Send quote for ${post.title || post.description || 'this job'}`}
+        accessibilityHint="Opens a form to submit your quote"
+      >
+        <Text style={styles.quoteBtnText} allowFontScaling={true} maxFontSizeMultiplier={1.3}>Send Quote</Text>
       </TouchableOpacity>
     </View>
   );

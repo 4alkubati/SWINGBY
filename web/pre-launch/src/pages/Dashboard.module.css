@@ -1,0 +1,558 @@
+/* ── Keyframes ── */
+@keyframes pulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.7; }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes progressFill {
+  from { width: 0%; }
+}
+
+/* ── Page ── */
+.page {
+  min-height: 100vh;
+  background: var(--color-bg);
+  color: var(--color-text-primary);
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Nav ── */
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-lg) var(--space-2xl);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-bg);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.logo {
+  font-family: var(--font-head);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  letter-spacing: -0.5px;
+  text-decoration: none;
+}
+
+.navRight {
+  display: flex;
+  align-items: center;
+  gap: var(--space-base);
+}
+
+.navUser {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.navUserInfo {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.navName {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  line-height: 1;
+}
+
+.navEmail {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  line-height: 1;
+}
+
+.avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-avatar);
+  background: var(--color-accent-muted);
+  border: 1px solid var(--color-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-head);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-accent-text);
+  flex-shrink: 0;
+}
+
+.signOutBtn {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  background: transparent;
+  border: 1px solid var(--color-border);
+  padding: var(--space-xs) var(--space-base);
+  border-radius: var(--radius-button);
+  cursor: pointer;
+  transition: color var(--duration-exit) var(--ease-exit),
+              border-color var(--duration-exit) var(--ease-exit);
+}
+
+.signOutBtn:hover {
+  color: var(--color-text-primary);
+  border-color: var(--color-text-secondary);
+}
+
+/* ── Main ── */
+.main {
+  flex: 1;
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: var(--space-2xl) var(--space-2xl) var(--space-3xl);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xl);
+}
+
+/* ── Sections fade-in stagger ── */
+.section0 {
+  animation: fadeInUp var(--duration-entry) var(--ease-entry) both;
+  animation-delay: 0ms;
+}
+.section1 {
+  animation: fadeInUp var(--duration-entry) var(--ease-entry) both;
+  animation-delay: 80ms;
+}
+.section2 {
+  animation: fadeInUp var(--duration-entry) var(--ease-entry) both;
+  animation-delay: 160ms;
+}
+.section3 {
+  animation: fadeInUp var(--duration-entry) var(--ease-entry) both;
+  animation-delay: 240ms;
+}
+.section4 {
+  animation: fadeInUp var(--duration-entry) var(--ease-entry) both;
+  animation-delay: 320ms;
+}
+
+/* ── Welcome Header ── */
+.welcomeHeader {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.welcomeTitle {
+  font-family: var(--font-head);
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.welcomeSubtitle {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+/* ── KPI Row ── */
+.kpiGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-base);
+}
+
+.kpiCard {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  padding: var(--space-base) var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  transition: transform var(--duration-exit) var(--ease-exit),
+              box-shadow var(--duration-exit) var(--ease-exit);
+}
+
+.kpiCard:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-subtle);
+}
+
+.kpiLabel {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.kpiValue {
+  font-family: var(--font-head);
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.kpiValueSuccess {
+  color: var(--color-success);
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.kpiValueSecondary {
+  color: var(--color-text-secondary);
+}
+
+.kpiValueAccent {
+  color: var(--color-accent-text);
+}
+
+.statusDot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-pill);
+  background: var(--color-success);
+  flex-shrink: 0;
+  display: inline-block;
+}
+
+/* ── Surface Card (shared) ── */
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  padding: var(--space-lg);
+}
+
+/* ── Profile Completeness ── */
+.cardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-base);
+}
+
+.cardTitle {
+  font-family: var(--font-head);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.cardTitleAccent {
+  font-family: var(--font-head);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-accent-text);
+}
+
+.progressTrack {
+  width: 100%;
+  height: 6px;
+  background: var(--color-surface-alt);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+  margin-bottom: var(--space-base);
+}
+
+.progressFill {
+  height: 100%;
+  background: var(--color-accent);
+  border-radius: var(--radius-pill);
+  animation: progressFill 600ms ease-out both;
+  animation-delay: 400ms;
+  transition: width 600ms ease-out;
+}
+
+.checklist {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.checkItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-size: 14px;
+}
+
+.checkItemDone {
+  color: var(--color-success);
+}
+
+.checkItemPending {
+  color: var(--color-text-secondary);
+}
+
+.checkIcon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+}
+
+.checkCircle {
+  width: 14px;
+  height: 14px;
+  border-radius: var(--radius-pill);
+  border: 1.5px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+/* ── CTA Card ── */
+.ctaCard {
+  background: var(--color-accent-muted);
+  border: 1px solid rgba(110, 86, 247, 0.2);
+  border-radius: var(--radius-card);
+  padding: var(--space-lg);
+  display: flex;
+  align-items: center;
+  gap: var(--space-base);
+}
+
+.ctaIcon {
+  font-size: 32px;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.ctaContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.ctaTitle {
+  font-family: var(--font-head);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.ctaSubtitle {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+.ctaBtn {
+  flex-shrink: 0;
+  background: var(--color-accent);
+  color: var(--color-text-primary);
+  font-size: 14px;
+  font-weight: 600;
+  padding: var(--space-sm) var(--space-lg);
+  border-radius: var(--radius-button);
+  border: none;
+  cursor: pointer;
+  transition: transform var(--duration-exit) var(--ease-exit),
+              box-shadow var(--duration-exit) var(--ease-exit),
+              opacity var(--duration-exit) var(--ease-exit);
+}
+
+.ctaBtn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px rgba(110, 86, 247, 0.35);
+  opacity: 0.92;
+}
+
+/* ── Activity Empty State ── */
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-xl) 0;
+  text-align: center;
+}
+
+.emptyIcon {
+  font-size: 36px;
+  line-height: 1;
+}
+
+.emptyTitle {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.emptyText {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  margin: 0;
+  max-width: 360px;
+  line-height: 1.6;
+}
+
+/* ── Loading Skeletons ── */
+.skeletonWrapper {
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: var(--space-2xl) var(--space-2xl) var(--space-3xl);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xl);
+}
+
+.skeletonHeader {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.skeletonLine {
+  background: var(--color-surface);
+  border-radius: var(--radius-chip);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.skeletonKpiGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-base);
+}
+
+.skeletonKpi {
+  height: 90px;
+  background: var(--color-surface);
+  border-radius: var(--radius-card);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.skeletonKpi:nth-child(2) { animation-delay: 0.2s; }
+.skeletonKpi:nth-child(3) { animation-delay: 0.4s; }
+
+.skeletonBlock {
+  background: var(--color-surface);
+  border-radius: var(--radius-card);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+/* ── Responsive ── */
+@media (max-width: 1024px) {
+  .nav {
+    padding: var(--space-base) var(--space-xl);
+  }
+
+  .main {
+    padding: var(--space-xl) var(--space-xl) var(--space-2xl);
+  }
+
+  .skeletonWrapper {
+    padding: var(--space-xl) var(--space-xl) var(--space-2xl);
+  }
+
+  .kpiGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .skeletonKpiGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .nav {
+    padding: 20px var(--space-lg);
+  }
+
+  .navUserInfo {
+    display: none;
+  }
+
+  .main {
+    padding: var(--space-lg) var(--space-lg) var(--space-2xl);
+    gap: var(--space-lg);
+  }
+
+  .kpiGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .skeletonKpiGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .ctaCard {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-base);
+  }
+
+  .ctaBtn {
+    width: 100%;
+    text-align: center;
+  }
+
+  .welcomeTitle {
+    font-size: 22px;
+  }
+
+  .skeletonWrapper {
+    padding: var(--space-lg);
+  }
+}
+
+@media (max-width: 480px) {
+  .nav {
+    padding: var(--space-base);
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+  }
+
+  .navRight {
+    gap: var(--space-sm);
+  }
+
+  .main {
+    padding: var(--space-base) var(--space-base) var(--space-xl);
+  }
+
+  .skeletonWrapper {
+    padding: var(--space-base);
+  }
+
+  .welcomeTitle {
+    font-size: 20px;
+  }
+
+  .kpiCard {
+    padding: var(--space-base);
+  }
+
+  .signOutBtn,
+  .ctaBtn {
+    min-height: 44px;
+  }
+}

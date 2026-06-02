@@ -28,15 +28,28 @@ export default function CookieBanner() {
   if (!visible) return null
 
   return (
-    <div className={`${styles.banner} ${visible ? styles.bannerVisible : ''}`} role="region" aria-label="Cookie consent">
-      <p className={styles.text}>
-        We use cookies to make SwingBy work and to learn what's useful. Read more in our{' '}
+    <div
+      className={`${styles.banner} ${visible ? styles.bannerVisible : ''}`}
+      role="dialog"
+      aria-label="Cookie consent"
+      aria-describedby="cookie-banner-desc"
+    >
+      <p id="cookie-banner-desc" className={styles.text}>
+        <span className={styles.cookieIcon} aria-hidden="true">🍪</span>
+        We use cookies to make SwingBy work and to learn what&apos;s useful. Read more in our{' '}
         <a href="/privacy" className={styles.link}>Privacy Policy</a>.
       </p>
       <div className={styles.actions}>
         <button className={styles.declineBtn} onClick={handleDecline}>Decline</button>
         <button className={styles.acceptBtn} onClick={handleAccept}>Accept</button>
       </div>
+      <button
+        className={styles.closeBtn}
+        onClick={handleDecline}
+        aria-label="Close cookie banner"
+      >
+        ×
+      </button>
     </div>
   )
 }

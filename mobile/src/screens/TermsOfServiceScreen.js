@@ -1,9 +1,14 @@
-// T65 — TermsOfServiceScreen
+// T53 — TermsOfServiceScreen (UX polish pass)
 import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
+import { colors, spacing, radius } from '../theme/tokens';
+import Text from '../components/Text';
+import Stack from '../components/Stack';
+import Inline from '../components/Inline';
+import Surface from '../components/Surface';
 
 const LAST_UPDATED = 'May 2025';
 
@@ -36,144 +41,77 @@ export default function TermsOfServiceScreen() {
   const navigation = useNavigation();
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View style={{ flex: 1, backgroundColor: colors.bg, paddingTop: insets.top }}>
       {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
+      <Inline
+        justify="space-between"
+        style={{
+          paddingHorizontal: spacing.base,
+          paddingBottom: spacing.md,
+          borderBottomWidth: 1,
+          borderBottomColor: colors.border,
+        }}
+      >
+        <Pressable
           onPress={() => navigation.goBack()}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          style={styles.backBtn}
+          hitSlop={{ top: spacing.sm, bottom: spacing.sm, left: spacing.sm, right: spacing.sm }}
+          style={{ width: 40, height: 40, alignItems: 'center', justifyContent: 'center' }}
         >
-          <Feather name="arrow-left" size={22} color="#f0ede8" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Terms of Service</Text>
-        <View style={styles.backBtn} />
-      </View>
+          <Feather name="arrow-left" size={22} color={colors.textPrimary} />
+        </Pressable>
+
+        <Text variant="h2">Terms of Service</Text>
+
+        {/* spacer to balance the back button */}
+        <View style={{ width: 40 }} />
+      </Inline>
 
       <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 32 }]}
+        style={{ flex: 1 }}
+        contentContainerStyle={{
+          paddingHorizontal: spacing.lg,
+          paddingTop: spacing.lg,
+          paddingBottom: insets.bottom + spacing.xl,
+          gap: spacing.lg,
+        }}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.docTitle}>Terms of Service</Text>
-        <Text style={styles.docMeta}>Last updated: {LAST_UPDATED}</Text>
-        <Text style={styles.docIntro}>
+        <Stack spacing="xs">
+          <Text variant="display3">Terms of Service</Text>
+          <Text variant="caption" color="secondary">Last updated: {LAST_UPDATED}</Text>
+        </Stack>
+
+        <Text variant="body" color="secondary">
           Please read these Terms of Service carefully before using SwingBy. By accessing or using our platform, you agree to be bound by these terms.
         </Text>
 
         {SECTIONS.map((section, i) => (
-          <View key={i} style={styles.section}>
-            <Text style={styles.sectionHeading}>{section.title}</Text>
-            <Text style={styles.sectionBody}>{section.body}</Text>
-          </View>
+          <Surface key={i} elevation="subtle" rounded="card" padding="base">
+            <Stack spacing="sm">
+              <Text variant="bodyMedium">{section.title}</Text>
+              <Text variant="body">{section.body}</Text>
+            </Stack>
+          </Surface>
         ))}
 
-        <View style={styles.contactCard}>
-          <Feather name="file-text" size={16} color="#FF8C42" style={{ marginBottom: 6 }} />
-          <Text style={styles.contactTitle}>Legal questions?</Text>
-          <Text style={styles.contactBody}>
+        {/* Contact card */}
+        <Surface
+          elevation="subtle"
+          background="alt"
+          rounded="card"
+          padding="base"
+          style={{ alignItems: 'center', borderColor: colors.accentMuted }}
+        >
+          <Feather name="file-text" size={16} color={colors.accent} style={{ marginBottom: spacing.xs }} />
+          <Text variant="bodyMedium" style={{ marginBottom: spacing.xs }}>Legal questions?</Text>
+          <Text variant="small" color="secondary" style={{ textAlign: 'center' }}>
             Email{' '}
-            <Text style={styles.contactLink}>legal@swingbyy.com</Text>
+            <Text variant="small" color="accent">legal@swingbyy.com</Text>
             {' '}or{' '}
-            <Text style={styles.contactLink}>4alkubati@gmail.com</Text>
+            <Text variant="small" color="accent">4alkubati@gmail.com</Text>
           </Text>
-        </View>
+        </Surface>
       </ScrollView>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#07080a',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#1a1d1f',
-  },
-  backBtn: {
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: '#ffffff',
-    letterSpacing: -0.3,
-  },
-  scroll: {
-    flex: 1,
-  },
-  content: {
-    paddingHorizontal: 22,
-    paddingTop: 24,
-    gap: 20,
-  },
-  docTitle: {
-    fontSize: 26,
-    fontWeight: '700',
-    color: '#ffffff',
-    letterSpacing: -0.75,
-  },
-  docMeta: {
-    fontSize: 12,
-    color: '#6b7280',
-    marginTop: -12,
-  },
-  docIntro: {
-    fontSize: 14,
-    color: '#9ca3af',
-    lineHeight: 22,
-  },
-  section: {
-    gap: 10,
-    backgroundColor: '#0d0f10',
-    borderWidth: 1,
-    borderColor: '#1a1d1f',
-    borderRadius: 16,
-    padding: 18,
-  },
-  sectionHeading: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#ffffff',
-    letterSpacing: -0.3,
-  },
-  sectionBody: {
-    fontSize: 14,
-    color: '#f0ede8',
-    lineHeight: 22,
-  },
-  contactCard: {
-    backgroundColor: 'rgba(255,92,0,0.05)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,92,0,0.15)',
-    borderRadius: 16,
-    padding: 18,
-    alignItems: 'center',
-  },
-  contactTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#ffffff',
-    marginBottom: 4,
-  },
-  contactBody: {
-    fontSize: 13,
-    color: '#9ca3af',
-    textAlign: 'center',
-    lineHeight: 20,
-  },
-  contactLink: {
-    color: '#FF8C42',
-    fontWeight: '600',
-  },
-});
