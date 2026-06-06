@@ -1,38 +1,35 @@
 import React, { useState, useRef } from 'react';
 import {
   SafeAreaView, KeyboardAvoidingView, ScrollView,
-  Platform, Pressable, View,
+  Platform, Pressable, View, StyleSheet,
 } from 'react-native';
 import Animated, {
   useSharedValue, useAnimatedStyle,
-  withTiming, withSpring, Easing, FadeIn,
+  withTiming, withSpring, FadeInDown,
 } from 'react-native-reanimated';
 
-import { colors, spacing } from '../theme/tokens';
+import { colors, spacing, radius, motion } from '../theme/tokens';
 import Text from '../components/Text';
 import TextField from '../components/TextField';
 import Button from '../components/Button';
 import Tabs from '../components/Tabs';
-import Stack from '../components/Stack';
 import { useAuth } from '../context/AuthContext';
 
-// ─── Email validation ───────────────────────────────────────────────────────
 function isValidEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
 }
 
-// ─── Animated block that slides + fades in once mounted ─────────────────────
 function SlideIn({ children, delay = 0 }) {
   const opacity = useSharedValue(0);
   const translateY = useSharedValue(18);
 
   React.useEffect(() => {
-    const d = delay;
-    opacity.value = withTiming(1, {
-      duration: 280,
-      easing: Easing.out(Easing.cubic),
+    opacity.value = withTiming(1, { duration: 280 });
+    translateY.value = withSpring(0, {
+      stiffness: motion.spring.stiffness,
+      damping: motion.spring.damping,
+      ...(delay ? { delay } : {}),
     });
-    translateY.value = withSpring(0, { stiffness: 200, damping: 22, delay: d });
   }, []);
 
   const style = useAnimatedStyle(() => ({
@@ -43,119 +40,88 @@ function SlideIn({ children, delay = 0 }) {
   return <Animated.View style={style}>{children}</Animated.View>;
 }
 
-// ─── Step indicator dot ──────────────────────────────────────────────────────
 function StepDots({ step }) {
   return (
     <View
-      style={{ flexDirection: 'row', gap: spacing.xs, marginBottom: spacing.lg }}
+      style={styles.stepDots}
       accessibilityLabel={`Step ${step + 1} of 3`}
       accessibilityRole="progressbar"
-      accessible={true}
+      accessible
     >
       {[0, 1, 2].map((i) => (
         <View
           key={i}
           accessible={false}
-          style={{
-            width: i === step ? 20 : 6,
-            height: 6,
-            borderRadius: 3,
-            backgroundColor: i === step ? colors.accent : colors.border,
-          }}
+          style={[
+            styles.dot,
+            i === step ? styles.dotActive : styles.dotInactive,
+          ]}
         />
       ))}
     </View>
   );
 }
 
-// ─── Main screen ─────────────────────────────────────────────────────────────
 export default function SignupScreen({ navigation }) {
   const { signup } = useAuth();
 
-  // ─── Step state (0 = email, 1 = password+name, 2 = role) ─────────────────
   const [step, setStep] = useState(0);
 
-  // ─── Form fields ──────────────────────────────────────────────────────────
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
-  const [roleIndex, setRoleIndex] = useState(0); // 0 = client, 1 = business_owner
+  const [roleIndex, setRoleIndex] = useState(0);
 
-  // ─── Error state (per-field + general) ────────────────────────────────────
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [firstNameError, setFirstNameError] = useState('');
   const [lastNameError, setLastNameError] = useState('');
   const [generalError, setGeneralError] = useState('');
 
-  // ─── Loading ───────────────────────────────────────────────────────────────
   const [loading, setLoading] = useState(false);
-
   const scrollRef = useRef(null);
 
-  // ─── Step 1: Validate email and advance ───────────────────────────────────
   function handleContinue() {
     setEmailError('');
-    if (!email.trim()) {
-      setEmailError('Email is required.');
-      return;
-    }
-    if (!isValidEmail(email)) {
-      setEmailError('Please enter a valid email address.');
-      return;
-    }
+    if (!email.trim()) { setEmailError('Email is required.'); return; }
+    if (!isValidEmail(email)) { setEmailError('Please enter a valid email address.'); return; }
     setStep(1);
     setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 120);
   }
 
-  // ─── Step 2: Validate password+name and advance ────────────────────────────
   function handleContinueStep2() {
     let valid = true;
     setPasswordError('');
     setFirstNameError('');
     setLastNameError('');
 
-    if (!password) {
-      setPasswordError('Password is required.');
-      valid = false;
-    } else if (password.length < 8) {
-      setPasswordError('Password must be at least 8 characters.');
-      valid = false;
-    }
-    if (!firstName.trim()) {
-      setFirstNameError('First name is required.');
-      valid = false;
-    }
-    if (!lastName.trim()) {
-      setLastNameError('Last name is required.');
-      valid = false;
-    }
+    if (!password) { setPasswordError('Password is required.'); valid = false; }
+    else if (password.length < 8) { setPasswordError('Password must be at least 8 characters.'); valid = false; }
+    if (!firstName.trim()) { setFirstNameError('First name is required.'); valid = false; }
+    if (!lastName.trim()) { setLastNameError('Last name is required.'); valid = false; }
     if (!valid) return;
 
     setStep(2);
     setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 120);
   }
 
-  // ─── Final: submit signup ─────────────────────────────────────────────────
   async function handleSignup() {
     setGeneralError('');
     setLoading(true);
     try {
       const role = roleIndex === 0 ? 'client' : 'business_owner';
-      const payload = {
+      const result = await signup({
         first_name: firstName.trim(),
         last_name: lastName.trim(),
         email: email.trim().toLowerCase(),
         password,
         role,
-        phone: null, // preserved from original; phone not collected in new flow
-      };
-      const result = await signup(payload);
+        phone: null,
+      });
       if (result?.requiresConfirmation) {
         navigation.navigate('Login');
       }
-      // If requiresConfirmation is false, AuthContext already set user → app auto-navigates.
     } catch (err) {
       setGeneralError(err.message || 'Signup failed. Try again.');
     } finally {
@@ -164,135 +130,236 @@ export default function SignupScreen({ navigation }) {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }}>
+    <SafeAreaView style={styles.safe}>
       <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <ScrollView
           ref={scrollRef}
-          style={{ flex: 1 }}
-          contentContainerStyle={{
-            paddingHorizontal: spacing.lg,
-            paddingTop: spacing.xl,
-            paddingBottom: spacing['2xl'],
-          }}
-          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scroll}
           keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
-          {/* ── Header ─────────────────────────────────────────────────────── */}
-          <Stack spacing="xs" style={{ marginBottom: spacing.xl }}>
-            <Text variant="display2" accessibilityRole="header" maxFontSizeMultiplier={1.4}>Create Account</Text>
-            <Text variant="body" color="secondary">Join SwingBy today</Text>
-          </Stack>
+          <View style={styles.glowOrb} />
 
-          {/* ── Step dots ──────────────────────────────────────────────────── */}
-          <StepDots step={step} />
-
-          <Stack spacing="base">
-            {/* ── Step 1: Email + Continue ─────────────────────────────────── */}
-            <Stack spacing="base">
-              <TextField
-                label="Email"
-                value={email}
-                onChangeText={(v) => { setEmail(v); if (emailError) setEmailError(''); }}
-                error={emailError}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoCorrect={false}
-                returnKeyType="done"
-                onSubmitEditing={step === 0 ? handleContinue : undefined}
-              />
-
-              {step === 0 && (
-                <Button
-                  label="Continue"
-                  onPress={handleContinue}
-                />
-              )}
-            </Stack>
-
-            {/* ── Step 2: Password + Name (animated slide in) ──────────────── */}
-            {step >= 1 && (
-              <SlideIn delay={0}>
-                <Stack spacing="base">
-                  <TextField
-                    label="Password"
-                    value={password}
-                    onChangeText={(v) => { setPassword(v); if (passwordError) setPasswordError(''); }}
-                    error={passwordError}
-                    secureTextEntry
-                    returnKeyType="next"
-                  />
-                  <TextField
-                    label="First Name"
-                    value={firstName}
-                    onChangeText={(v) => { setFirstName(v); if (firstNameError) setFirstNameError(''); }}
-                    error={firstNameError}
-                    autoCapitalize="words"
-                    returnKeyType="next"
-                  />
-                  <TextField
-                    label="Last Name"
-                    value={lastName}
-                    onChangeText={(v) => { setLastName(v); if (lastNameError) setLastNameError(''); }}
-                    error={lastNameError}
-                    autoCapitalize="words"
-                    returnKeyType="done"
-                    onSubmitEditing={step === 1 ? handleContinueStep2 : undefined}
-                  />
-
-                  {step === 1 && (
-                    <Button
-                      label="Continue"
-                      onPress={handleContinueStep2}
-                    />
-                  )}
-                </Stack>
-              </SlideIn>
-            )}
-
-            {/* ── Step 3: Role picker + Create Account (animated slide in) ─── */}
-            {step >= 2 && (
-              <SlideIn delay={60}>
-                <Stack spacing="base">
-                  <Text variant="small" color="secondary">I want to...</Text>
-                  <Tabs
-                    tabs={['Find Services', 'Offer Services']}
-                    activeIndex={roleIndex}
-                    onChange={setRoleIndex}
-                  />
-
-                  {generalError ? (
-                    <Text variant="caption" color="danger">{generalError}</Text>
-                  ) : null}
-
-                  <Button
-                    label="Create Account"
-                    onPress={handleSignup}
-                    loading={loading}
-                  />
-                </Stack>
-              </SlideIn>
-            )}
-          </Stack>
-
-          {/* ── Login link ────────────────────────────────────────────────── */}
-          <Pressable
-            onPress={() => navigation.navigate('Login')}
-            style={{ marginTop: spacing.xl, alignItems: 'center' }}
-            accessibilityRole="button"
-            accessibilityLabel="Already have an account? Log in"
-          >
-            <Text variant="small" color="secondary">
-              Already have an account?{' '}
-              <Text variant="small" style={{ color: colors.accent }}>
-                Log in
-              </Text>
+          {/* Hero */}
+          <Animated.View entering={FadeInDown.duration(400).delay(80)} style={styles.hero}>
+            <Text
+              style={styles.brandMark}
+              accessibilityRole="header"
+              maxFontSizeMultiplier={1.4}
+            >
+              S
             </Text>
-          </Pressable>
+            <Text style={styles.title} accessibilityRole="header" maxFontSizeMultiplier={1.4}>
+              Create Account
+            </Text>
+            <Text style={styles.subtitle}>Join SwingBy today</Text>
+          </Animated.View>
+
+          {/* Step indicator */}
+          <Animated.View entering={FadeInDown.duration(400).delay(160)}>
+            <StepDots step={step} />
+          </Animated.View>
+
+          {/* Step 1: Email */}
+          <Animated.View entering={FadeInDown.duration(400).delay(240)}>
+            <TextField
+              label="Email"
+              value={email}
+              onChangeText={(v) => { setEmail(v); if (emailError) setEmailError(''); }}
+              error={emailError}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoCorrect={false}
+              returnKeyType="done"
+              onSubmitEditing={step === 0 ? handleContinue : undefined}
+            />
+
+            {step === 0 && (
+              <View style={styles.stepAction}>
+                <Button label="Continue" onPress={handleContinue} />
+              </View>
+            )}
+          </Animated.View>
+
+          {/* Step 2: Password + Name */}
+          {step >= 1 && (
+            <SlideIn>
+              <View style={styles.stepGroup}>
+                <TextField
+                  label="Password"
+                  value={password}
+                  onChangeText={(v) => { setPassword(v); if (passwordError) setPasswordError(''); }}
+                  error={passwordError}
+                  secureTextEntry
+                  returnKeyType="next"
+                />
+                <View style={{ height: spacing.base }} />
+                <TextField
+                  label="First Name"
+                  value={firstName}
+                  onChangeText={(v) => { setFirstName(v); if (firstNameError) setFirstNameError(''); }}
+                  error={firstNameError}
+                  autoCapitalize="words"
+                  returnKeyType="next"
+                />
+                <View style={{ height: spacing.base }} />
+                <TextField
+                  label="Last Name"
+                  value={lastName}
+                  onChangeText={(v) => { setLastName(v); if (lastNameError) setLastNameError(''); }}
+                  error={lastNameError}
+                  autoCapitalize="words"
+                  returnKeyType="done"
+                  onSubmitEditing={step === 1 ? handleContinueStep2 : undefined}
+                />
+
+                {step === 1 && (
+                  <View style={styles.stepAction}>
+                    <Button label="Continue" onPress={handleContinueStep2} />
+                  </View>
+                )}
+              </View>
+            </SlideIn>
+          )}
+
+          {/* Step 3: Role picker */}
+          {step >= 2 && (
+            <SlideIn delay={60}>
+              <View style={styles.stepGroup}>
+                <Text style={styles.roleLabel}>I want to...</Text>
+                <Tabs
+                  tabs={['Find Services', 'Offer Services']}
+                  activeIndex={roleIndex}
+                  onChange={setRoleIndex}
+                />
+
+                <Text style={styles.roleHint}>
+                  {roleIndex === 0
+                    ? 'Browse and book local service providers near you.'
+                    : 'List your business and receive booking requests.'}
+                </Text>
+
+                {generalError ? (
+                  <Text style={styles.errorText}>{generalError}</Text>
+                ) : null}
+
+                <Button
+                  variant="primary"
+                  label="Create Account"
+                  onPress={handleSignup}
+                  loading={loading}
+                  disabled={loading}
+                />
+              </View>
+            </SlideIn>
+          )}
+
+          {/* Footer */}
+          <Animated.View entering={FadeInDown.duration(400).delay(360)}>
+            <Pressable
+              onPress={() => navigation.navigate('Login')}
+              style={styles.footer}
+              accessibilityRole="button"
+              accessibilityLabel="Already have an account? Log in"
+            >
+              <Text style={styles.footerText}>
+                Already have an account?{' '}
+                <Text style={styles.footerLink}>Log in</Text>
+              </Text>
+            </Pressable>
+          </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: colors.bg },
+  flex: { flex: 1 },
+  scroll: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.xl,
+  },
+
+  glowOrb: {
+    position: 'absolute',
+    top: -120,
+    left: -80,
+    width: 280,
+    height: 280,
+    borderRadius: 140,
+    backgroundColor: colors.accentMuted,
+    opacity: 0.35,
+  },
+
+  hero: { alignItems: 'center', marginBottom: spacing['2xl'] },
+  brandMark: {
+    fontSize: 48,
+    fontFamily: 'SpaceGrotesk_700Bold',
+    color: colors.accent,
+    marginBottom: spacing.md,
+  },
+  title: {
+    fontSize: 28,
+    fontFamily: 'SpaceGrotesk_700Bold',
+    color: colors.textPrimary,
+    letterSpacing: -1,
+    marginBottom: spacing.xs,
+  },
+  subtitle: {
+    fontSize: 15,
+    fontFamily: 'Inter_400Regular',
+    color: colors.textSecondary,
+  },
+
+  stepDots: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    marginBottom: spacing.lg,
+  },
+  dot: { height: 6, borderRadius: 3 },
+  dotActive: { width: 24, backgroundColor: colors.accent },
+  dotInactive: { width: 6, backgroundColor: colors.border },
+
+  stepAction: { marginTop: spacing.lg },
+  stepGroup: { marginTop: spacing.lg },
+
+  roleLabel: {
+    fontSize: 14,
+    fontFamily: 'Inter_600SemiBold',
+    color: colors.textSecondary,
+    marginBottom: spacing.sm,
+  },
+  roleHint: {
+    fontSize: 13,
+    fontFamily: 'Inter_400Regular',
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginTop: spacing.md,
+    marginBottom: spacing.lg,
+  },
+  errorText: {
+    fontSize: 13,
+    fontFamily: 'Inter_400Regular',
+    color: colors.danger,
+    marginBottom: spacing.sm,
+  },
+
+  footer: { marginTop: spacing.xl, alignItems: 'center' },
+  footerText: {
+    fontSize: 14,
+    fontFamily: 'Inter_400Regular',
+    color: colors.textSecondary,
+  },
+  footerLink: {
+    color: colors.accentText,
+    fontFamily: 'Inter_600SemiBold',
+  },
+});

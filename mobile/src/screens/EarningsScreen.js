@@ -11,13 +11,10 @@ import {
   Dimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import {
-  VictoryChart,
-  VictoryLine,
-  VictoryArea,
-  VictoryAxis,
-  VictoryTheme,
-} from 'victory-native';
+// victory-native@41 requires @shopify/react-native-skia + react-native-reanimated@4
+// which conflict with Expo SDK 54 (RN 0.81). Chart is stubbed with a placeholder
+// until we upgrade Expo OR pin victory-native to ~40.x (older API). All other
+// EarningsScreen UI (hero, stats grid, range chips) is unaffected.
 import { api } from '../services/api';
 import { SkeletonBox } from '../components/Skeleton';
 import { colors } from '../theme/tokens';
@@ -81,7 +78,7 @@ function formatAxisDate(range, date) {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
-// ─── Chart component ──────────────────────────────────────────────────────────
+// ─── Chart component (stub — see top-of-file comment) ─────────────────────────
 function EarningsChart({ data, range }) {
   const chartWidth = SCREEN_WIDTH - 44;
 
@@ -93,66 +90,31 @@ function EarningsChart({ data, range }) {
     );
   }
 
-  // Sample to keep chart readable (max 30 points)
-  let displayData = data;
-  if (data.length > 30) {
-    const step = Math.ceil(data.length / 30);
-    displayData = data.filter((_, i) => i % step === 0);
+  // Lightweight bar visualization without victory-native. Renders inline
+  // proportional bars across the data points so the screen feels alive.
+  let display = data;
+  if (data.length > 14) {
+    const step = Math.ceil(data.length / 14);
+    display = data.filter((_, i) => i % step === 0);
   }
-
-  // Tick count for x axis
-  const tickCount = Math.min(displayData.length, range === 'week' ? 7 : 6);
+  const max = Math.max(...display.map((d) => d.y), 1);
 
   return (
-    <View style={styles.chartWrap}>
-      <VictoryChart
-        width={chartWidth}
-        height={200}
-        padding={{ top: 16, bottom: 40, left: 50, right: 20 }}
-        theme={VictoryTheme.material}
-        scale={{ x: 'time' }}
-      >
-        <VictoryAxis
-          tickCount={tickCount}
-          tickFormat={(t) => formatAxisDate(range, t)}
-          style={{
-            axis: { stroke: colors.border },
-            tickLabels: { fill: colors.textSecondary, fontSize: 9, fontWeight: '600' },
-            grid: { stroke: 'transparent' },
-            ticks: { stroke: 'transparent' },
-          }}
-        />
-        <VictoryAxis
-          dependentAxis
-          tickFormat={(t) => (t >= 1000 ? `$${(t / 1000).toFixed(1)}k` : `$${t}`)}
-          style={{
-            axis: { stroke: 'transparent' },
-            tickLabels: { fill: colors.textSecondary, fontSize: 9, fontWeight: '600' },
-            grid: { stroke: colors.border, strokeDasharray: '4,6' },
-            ticks: { stroke: 'transparent' },
-          }}
-        />
-        <VictoryArea
-          data={displayData}
-          style={{
-            data: {
-              fill: colors.accent + '1A', // ~10% opacity area fill
-              stroke: 'transparent',
-            },
-          }}
-          interpolation="monotoneX"
-        />
-        <VictoryLine
-          data={displayData}
-          style={{
-            data: {
-              stroke: colors.accent,
-              strokeWidth: 2,
-            },
-          }}
-          interpolation="monotoneX"
-        />
-      </VictoryChart>
+    <View style={[styles.chartWrap, { width: chartWidth, height: 200 }]}>
+      <View style={styles.barsRow}>
+        {display.map((d, i) => (
+          <View
+            key={i}
+            style={[
+              styles.bar,
+              { height: Math.max(6, (d.y / max) * 140) },
+            ]}
+          />
+        ))}
+      </View>
+      <Text style={styles.chartEmptyText}>
+        Detailed chart coming soon
+      </Text>
     </View>
   );
 }
@@ -379,7 +341,14 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     marginBottom: 16,
   },
-  chartWrap: { backgroundColor: colors.bg },
+  chartWrap: {
+    backgroundColor: colors.bg,
+    paddingTop: 20,
+    paddingBottom: 16,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
   chartLoadingWrap: { padding: 20, alignItems: 'center' },
   chartEmpty: {
     height: 200,
@@ -387,7 +356,24 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: colors.bg,
   },
-  chartEmptyText: { fontSize: 14, color: colors.textSecondary },
+  chartEmptyText: { fontSize: 12, color: colors.textSecondary, marginTop: 12 },
+
+  // Bar chart stub
+  barsRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
+    width: '100%',
+    height: 140,
+    gap: 4,
+  },
+  bar: {
+    flex: 1,
+    backgroundColor: colors.accent,
+    opacity: 0.85,
+    borderTopLeftRadius: 3,
+    borderTopRightRadius: 3,
+  },
 
   // Stats grid
   statsGrid: { paddingHorizontal: 22, gap: 10 },

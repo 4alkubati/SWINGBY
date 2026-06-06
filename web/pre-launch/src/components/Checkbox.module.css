@@ -1,0 +1,70 @@
+.wrapper {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  cursor: pointer;
+}
+
+.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.box {
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-sm);
+  border: 2px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--duration-entry) var(--ease-entry);
+  color: var(--color-text-primary);
+  flex-shrink: 0;
+}
+
+.checked {
+  background: var(--color-accent-btn);
+  border-color: var(--color-accent-btn);
+}
+
+.input:focus-visible ~ .box,
+.input:focus-visible ~ .radio {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.radio {
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-pill);
+  border: 2px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--duration-entry) var(--ease-entry);
+  flex-shrink: 0;
+}
+
+.radioChecked {
+  border-color: var(--color-accent-btn);
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: var(--radius-pill);
+  background: var(--color-accent-btn);
+}
+
+.label {
+  font-size: 14px;
+  color: var(--color-text-primary);
+}

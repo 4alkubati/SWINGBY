@@ -72,11 +72,14 @@ export default function NotificationsScreen({ navigation }) {
 
   const load = useCallback(async () => {
     try {
-      const [bookings, posts] = await Promise.all([
+      const [bookingsRes, postsRes] = await Promise.all([
         api.get('/bookings/'),
-        api.get('/service-posts/my').catch(() => []),
+        api.get('/service-posts/my').catch(() => ({ items: [] })),
       ]);
-      setNotifications(buildNotifications(bookings, posts));
+      setNotifications(buildNotifications(
+        bookingsRes?.items || bookingsRes || [],
+        postsRes?.items || postsRes || [],
+      ));
     } catch {
       // keep stale
     } finally {

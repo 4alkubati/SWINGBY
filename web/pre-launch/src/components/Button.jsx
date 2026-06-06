@@ -1,16 +1,29 @@
-import React from 'react';
-import styles from './Button.module.css';
+import { forwardRef } from 'react'
+import { motion } from 'framer-motion'
+import { CircleNotch } from '@phosphor-icons/react'
+import styles from './Button.module.css'
 
-export default function Button({ variant = 'primary', label, onClick, loading, disabled, icon, className, ...props }) {
+const Button = forwardRef(function Button(
+  { variant = 'primary', size = 'md', loading, disabled, icon, children, className, ...props },
+  ref
+) {
   return (
-    <button
-      className={`${styles.button} ${styles[variant]} ${className || ''}`}
-      onClick={onClick}
+    <motion.button
+      ref={ref}
+      className={`${styles.btn} ${styles[variant]} ${styles[size]} ${className || ''}`}
       disabled={disabled || loading}
+      whileTap={{ scale: 0.98 }}
+      transition={{ duration: 0.1 }}
       {...props}
     >
-      {loading ? <span className={styles.spinner} /> : icon}
-      {label}
-    </button>
-  );
-}
+      {loading ? (
+        <CircleNotch size={size === 'sm' ? 14 : 18} className={styles.spinner} weight="bold" />
+      ) : icon ? (
+        <span className={styles.icon}>{icon}</span>
+      ) : null}
+      {children}
+    </motion.button>
+  )
+})
+
+export default Button

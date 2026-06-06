@@ -1,0 +1,137 @@
+/* Hero */
+.hero {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 75vh;
+  text-align: center;
+  overflow: hidden;
+  padding: var(--space-3xl) var(--space-lg);
+}
+
+.heroGlow {
+  position: absolute;
+  top: -150px;
+  right: -150px;
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, rgba(110, 86, 247, 0.12), transparent 70%);
+  pointer-events: none;
+}
+
+.heroContent {
+  max-width: 680px;
+  position: relative;
+  z-index: 1;
+}
+
+.heroBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-base);
+  background: var(--color-accent-muted);
+  color: var(--color-accent-text);
+  border-radius: var(--radius-pill);
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: var(--space-lg);
+}
+
+.heroTitle {
+  font-family: var(--font-display);
+  font-size: clamp(36px, 5.5vw, 56px);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -1.5px;
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-lg);
+}
+
+.heroSubtitle {
+  font-size: 17px;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+  max-width: 520px;
+  margin: 0 auto var(--space-xl);
+}
+
+.heroCtas {
+  display: flex;
+  gap: var(--space-md);
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* Sections */
+.section {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: var(--space-4xl) var(--space-lg);
+}
+
+.sectionTitle {
+  font-family: var(--font-display);
+  font-size: clamp(24px, 3.5vw, 32px);
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  color: var(--color-text-primary);
+  text-align: center;
+  margin-bottom: var(--space-2xl);
+}
+
+/* Neighborhoods */
+.neighborhoodGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  justify-content: center;
+}
+
+.neighborhoodChip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-base);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  transition: border-color var(--duration-entry) var(--ease-entry),
+              color var(--duration-entry) var(--ease-entry);
+}
+
+.neighborhoodChip:hover {
+  border-color: var(--color-accent);
+  color: var(--color-text-primary);
+}
+
+/* Final CTA */
+.finalCta {
+  text-align: center;
+  padding: var(--space-4xl) var(--space-lg);
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-border);
+}
+
+.finalCtaContent {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.finalCtaTitle {
+  font-family: var(--font-display);
+  font-size: clamp(24px, 3.5vw, 36px);
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-base);
+}
+
+.finalCtaSubtitle {
+  font-size: 16px;
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-xl);
+  line-height: 1.6;
+}

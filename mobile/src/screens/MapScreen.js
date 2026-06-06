@@ -3,8 +3,19 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useState, useEffect } from 'react';
-import MapView, { Marker, Callout } from 'react-native-maps';
 import { getCurrentLocation } from '../services/location';
+
+let MapView, Marker, Callout;
+try {
+  const maps = require('react-native-maps');
+  MapView = maps.default;
+  Marker = maps.Marker;
+  Callout = maps.Callout;
+} catch {
+  MapView = null;
+  Marker = null;
+  Callout = null;
+}
 import { api } from '../services/api';
 import { colors } from '../theme/tokens';
 

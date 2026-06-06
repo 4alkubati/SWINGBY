@@ -112,6 +112,7 @@ export default function SearchScreen({ navigation }) {
   const [errorMsg, setErrorMsg] = useState('');
 
   const [recentSearches, setRecentSearches] = useState([]);
+  const abortRef = useRef(null);
 
   // ─── Load recent searches + prefetch location on mount ───────────────────
   useEffect(() => {
@@ -138,6 +139,10 @@ export default function SearchScreen({ navigation }) {
 
   // ─── Core search logic ───────────────────────────────────────────────────
   const runSearch = useCallback(async (q, category, rad) => {
+    if (abortRef.current) abortRef.current.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     setLoadState('loading');
     setErrorMsg('');
 
@@ -152,7 +157,7 @@ export default function SearchScreen({ navigation }) {
       const params = { lat: coords.lat, lng: coords.lng, radius_km: rad };
       if (q) params.q = q;
 
-      const data = await api.get('/businesses/nearby', { params });
+      const data = await api.get('/businesses/nearby', { params, signal: controller.signal });
       let list = Array.isArray(data) ? data : (data?.businesses ?? []);
 
       // Client-side text filter (defensive fallback)
@@ -180,6 +185,7 @@ export default function SearchScreen({ navigation }) {
       setLoadState(list.length === 0 ? 'empty' : 'done');
       saveRecent(q);
     } catch (err) {
+      if (controller.signal.aborted) return;
       setErrorMsg(err.message || 'Network error');
       setLoadState('error');
     }

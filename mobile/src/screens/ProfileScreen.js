@@ -1,12 +1,16 @@
 import {
-  View, Text, TouchableOpacity, StyleSheet, Alert, ScrollView,
-  ActivityIndicator, TextInput,
+  View, TouchableOpacity, StyleSheet, Alert, ScrollView,
+  ActivityIndicator, TextInput, Platform, Pressable,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useState } from 'react';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
 import { updateMe } from '../services/auth';
-import { colors } from '../theme/tokens';
+import { colors, spacing, radius } from '../theme/tokens';
+import Text from '../components/Text';
+import Button from '../components/Button';
 
 function initials(user) {
   if (!user) return '?';
@@ -19,6 +23,23 @@ const ROLE_LABEL = {
   employee: 'Employee',
 };
 
+function MenuRow({ icon, label, onPress, danger }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [styles.menuRow, pressed && styles.menuRowPressed]}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+    >
+      <View style={styles.menuLeft}>
+        <Ionicons name={icon} size={20} color={danger ? colors.danger : colors.textSecondary} />
+        <Text style={[styles.menuLabel, danger && { color: colors.danger }]}>{label}</Text>
+      </View>
+      <Ionicons name="chevron-forward" size={16} color={colors.textSecondary} />
+    </Pressable>
+  );
+}
+
 export default function ProfileScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   const { user, logout, updateUser } = useAuth();
@@ -26,26 +47,25 @@ export default function ProfileScreen({ navigation }) {
   const [editMode, setEditMode] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  // edit fields
   const [firstName, setFirstName] = useState(user?.first_name || '');
   const [lastName, setLastName] = useState(user?.last_name || '');
   const [phone, setPhone] = useState(user?.phone || '');
 
-  function confirmLogout() {
-    Alert.alert(
-      'Log out',
-      'Are you sure you want to log out?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Log out', style: 'destructive',
-          onPress: async () => {
-            setLoggingOut(true);
-            await logout();
-          },
-        },
-      ]
-    );
+  async function confirmLogout() {
+    if (Platform.OS === 'web') {
+      if (window.confirm('Are you sure you want to log out?')) {
+        setLoggingOut(true);
+        await logout();
+      }
+      return;
+    }
+    Alert.alert('Log out', 'Are you sure you want to log out?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Log out', style: 'destructive',
+        onPress: async () => { setLoggingOut(true); await logout(); },
+      },
+    ]);
   }
 
   function startEdit() {
@@ -57,21 +77,26 @@ export default function ProfileScreen({ navigation }) {
 
   async function handleSave() {
     if (!firstName.trim() || !lastName.trim()) {
-      Alert.alert('Required', 'First and last name cannot be blank.');
+      if (Platform.OS === 'web') {
+        window.alert('First and last name cannot be blank.');
+      } else {
+        Alert.alert('Required', 'First and last name cannot be blank.');
+      }
       return;
     }
     setSaving(true);
     try {
-      const payload = {
-        first_name: firstName.trim(),
-        last_name: lastName.trim(),
-      };
+      const payload = { first_name: firstName.trim(), last_name: lastName.trim() };
       if (phone.trim()) payload.phone = phone.trim();
       const res = await updateMe(payload);
       updateUser(res.user || payload);
       setEditMode(false);
     } catch (err) {
-      Alert.alert('Error', err.message || 'Could not save changes.');
+      if (Platform.OS === 'web') {
+        window.alert(err.message || 'Could not save changes.');
+      } else {
+        Alert.alert('Error', err.message || 'Could not save changes.');
+      }
     } finally {
       setSaving(false);
     }
@@ -79,32 +104,23 @@ export default function ProfileScreen({ navigation }) {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
+      {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle} accessibilityRole="header" maxFontSizeMultiplier={1.4}>Profile</Text>
+        <Text style={styles.headerTitle} accessibilityRole="header" maxFontSizeMultiplier={1.4}>
+          Profile
+        </Text>
         <View style={styles.headerRight}>
           {!editMode && (
-            <TouchableOpacity
-              onPress={startEdit}
-              style={styles.editBtn}
-              accessibilityRole="button"
-              accessibilityLabel="Edit profile"
-            >
-              <Text style={styles.editBtnText} allowFontScaling={true} maxFontSizeMultiplier={1.3}>Edit</Text>
+            <TouchableOpacity onPress={startEdit} style={styles.editBtn} accessibilityRole="button" accessibilityLabel="Edit profile">
+              <Text style={styles.editBtnText}>Edit</Text>
             </TouchableOpacity>
           )}
-          <TouchableOpacity
-            onPress={() => navigation.navigate('Notifications')}
-            accessibilityRole="button"
-            accessibilityLabel="Notifications"
-          >
-            <Text style={styles.bellIcon} accessibilityElementsHidden={true} importantForAccessibility="no">🔔</Text>
-          </TouchableOpacity>
         </View>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
-        {/* Avatar + identity */}
-        <View style={styles.identityCard}>
+        {/* Identity card */}
+        <Animated.View entering={FadeInDown.duration(400).delay(80)} style={styles.identityCard}>
           <View style={styles.avatar}>
             <Text style={styles.avatarText}>{initials(user)}</Text>
           </View>
@@ -145,7 +161,9 @@ export default function ProfileScreen({ navigation }) {
             </View>
           ) : (
             <>
-              <Text style={styles.name} maxFontSizeMultiplier={1.4}>{user?.first_name} {user?.last_name}</Text>
+              <Text style={styles.name} maxFontSizeMultiplier={1.4}>
+                {user?.first_name} {user?.last_name}
+              </Text>
               <Text style={styles.email} maxFontSizeMultiplier={1.4}>{user?.email}</Text>
             </>
           )}
@@ -153,43 +171,28 @@ export default function ProfileScreen({ navigation }) {
           <View style={styles.rolePill}>
             <Text style={styles.roleText}>{ROLE_LABEL[user?.role] || user?.role}</Text>
           </View>
-        </View>
+        </Animated.View>
 
         {editMode ? (
           <View style={styles.editActions}>
-            <TouchableOpacity
-              style={styles.cancelBtn}
-              onPress={() => setEditMode(false)}
-              accessibilityRole="button"
-              accessibilityLabel="Cancel editing profile"
-            >
-              <Text style={styles.cancelBtnText} maxFontSizeMultiplier={1.4}>Cancel</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.saveBtn, saving && styles.saveBtnDisabled]}
-              onPress={handleSave}
-              disabled={saving}
-              accessibilityRole="button"
-              accessibilityLabel="Save profile changes"
-              accessibilityState={{ disabled: saving, busy: saving }}
-            >
-              {saving
-                ? <ActivityIndicator color={colors.textPrimary} size="small" />
-                : <Text style={styles.saveBtnText} maxFontSizeMultiplier={1.4}>Save changes</Text>
-              }
-            </TouchableOpacity>
+            <View style={{ flex: 1 }}>
+              <Button variant="secondary" label="Cancel" onPress={() => setEditMode(false)} />
+            </View>
+            <View style={{ flex: 2 }}>
+              <Button label="Save changes" onPress={handleSave} loading={saving} disabled={saving} />
+            </View>
           </View>
         ) : (
           <>
             {/* Info rows */}
-            <View style={styles.infoCard}>
+            <Animated.View entering={FadeInDown.duration(400).delay(160)} style={styles.infoCard}>
               {user?.phone && (
                 <View style={styles.infoRow}>
                   <Text style={styles.infoLabel}>Phone</Text>
                   <Text style={styles.infoValue}>{user.phone}</Text>
                 </View>
               )}
-              <View style={styles.infoRow}>
+              <View style={[styles.infoRow, !user?.phone && styles.infoRowFirst]}>
                 <Text style={styles.infoLabel}>Member since</Text>
                 <Text style={styles.infoValue}>
                   {user?.created_at
@@ -197,35 +200,37 @@ export default function ProfileScreen({ navigation }) {
                     : '—'}
                 </Text>
               </View>
-            </View>
+            </Animated.View>
 
-            {/* App info */}
-            <View style={styles.infoCard}>
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>App version</Text>
-                <Text style={styles.infoValue}>1.0.0</Text>
-              </View>
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Region</Text>
-                <Text style={styles.infoValue}>Calgary, AB</Text>
-              </View>
-            </View>
+            {/* Menu */}
+            <Animated.View entering={FadeInDown.duration(400).delay(240)} style={styles.menuCard}>
+              <MenuRow icon="settings-outline" label="Settings" onPress={() => navigation.navigate('Settings')} />
+              <MenuRow icon="help-circle-outline" label="Help & FAQ" onPress={() => navigation.navigate('HelpFAQ')} />
+              <MenuRow icon="shield-checkmark-outline" label="Privacy Policy" onPress={() => navigation.navigate('PrivacyPolicy')} />
+              <MenuRow icon="document-text-outline" label="Terms of Service" onPress={() => navigation.navigate('TermsOfService')} />
+            </Animated.View>
 
             {/* Logout */}
-            <TouchableOpacity
-              style={[styles.logoutBtn, loggingOut && styles.logoutBtnDisabled]}
-              onPress={confirmLogout}
-              activeOpacity={0.8}
-              disabled={loggingOut}
-              accessibilityRole="button"
-              accessibilityLabel="Log out"
-              accessibilityState={{ disabled: loggingOut, busy: loggingOut }}
-            >
-              {loggingOut
-                ? <ActivityIndicator color={colors.danger} />
-                : <Text style={styles.logoutText} maxFontSizeMultiplier={1.4}>Log out</Text>
-              }
-            </TouchableOpacity>
+            <Animated.View entering={FadeInDown.duration(400).delay(320)}>
+              <TouchableOpacity
+                style={[styles.logoutBtn, loggingOut && styles.logoutBtnDisabled]}
+                onPress={confirmLogout}
+                activeOpacity={0.8}
+                disabled={loggingOut}
+                accessibilityRole="button"
+                accessibilityLabel="Log out"
+                accessibilityState={{ disabled: loggingOut, busy: loggingOut }}
+              >
+                {loggingOut
+                  ? <ActivityIndicator color={colors.danger} />
+                  : (
+                    <View style={styles.logoutInner}>
+                      <Ionicons name="log-out-outline" size={18} color={colors.danger} />
+                      <Text style={styles.logoutText}>Log out</Text>
+                    </View>
+                  )}
+              </TouchableOpacity>
+            </Animated.View>
           </>
         )}
       </ScrollView>
@@ -237,70 +242,83 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 22, paddingTop: 12, paddingBottom: 8,
+    paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: spacing.sm,
   },
-  headerTitle: { fontSize: 22, fontWeight: '700', color: colors.textPrimary, letterSpacing: -0.5 },
-  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  headerTitle: {
+    fontSize: 22, fontFamily: 'SpaceGrotesk_700Bold',
+    color: colors.textPrimary, letterSpacing: -0.5,
+  },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   editBtn: {
-    backgroundColor: colors.accentMuted, borderWidth: 1, borderColor: colors.accentMuted,
-    borderRadius: 10, paddingHorizontal: 12, paddingVertical: 6,
+    backgroundColor: colors.accentMuted, borderRadius: radius.chip,
+    paddingHorizontal: spacing.md, paddingVertical: spacing.xs + 2,
   },
-  editBtnText: { fontSize: 13, color: colors.accent, fontWeight: '600' },
-  bellIcon: { fontSize: 22 },
-  content: { paddingHorizontal: 22, paddingTop: 8, paddingBottom: 40, gap: 14 },
+  editBtnText: { fontSize: 13, fontFamily: 'Inter_600SemiBold', color: colors.accent },
+  content: { paddingHorizontal: spacing.lg, paddingTop: spacing.sm, paddingBottom: spacing.xl, gap: spacing.base },
+
   identityCard: {
     backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border,
-    borderRadius: 20, padding: 24, alignItems: 'center', gap: 8,
+    borderRadius: radius.card, padding: spacing.lg, alignItems: 'center', gap: spacing.sm,
   },
   avatar: {
     width: 72, height: 72, borderRadius: 36, backgroundColor: colors.accent,
     alignItems: 'center', justifyContent: 'center',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 10, elevation: 6,
   },
-  avatarText: { fontSize: 26, fontWeight: '700', color: colors.textPrimary },
-  name: { fontSize: 20, fontWeight: '700', color: colors.textPrimary },
-  email: { fontSize: 14, color: colors.textSecondary },
+  avatarText: { fontSize: 26, fontFamily: 'SpaceGrotesk_700Bold', color: colors.textPrimary },
+  name: { fontSize: 20, fontFamily: 'SpaceGrotesk_700Bold', color: colors.textPrimary },
+  email: { fontSize: 14, fontFamily: 'Inter_400Regular', color: colors.textSecondary },
   rolePill: {
-    backgroundColor: colors.accentMuted, borderWidth: 1, borderColor: colors.accentMuted,
-    borderRadius: 20, paddingHorizontal: 12, paddingVertical: 4,
+    backgroundColor: colors.accentMuted, borderRadius: radius.pill,
+    paddingHorizontal: spacing.md, paddingVertical: spacing.xs,
   },
-  roleText: { fontSize: 12, color: colors.accent, fontWeight: '600' },
-  editFields: { width: '100%', gap: 10 },
-  editRow: { flexDirection: 'row', gap: 10 },
-  editHalf: { flex: 1, gap: 5 },
-  editLabel: { fontSize: 10, color: colors.textSecondary, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.8 },
+  roleText: { fontSize: 12, fontFamily: 'Inter_600SemiBold', color: colors.accent },
+
+  editFields: { width: '100%', gap: spacing.sm },
+  editRow: { flexDirection: 'row', gap: spacing.sm },
+  editHalf: { flex: 1, gap: spacing.xs },
+  editLabel: {
+    fontSize: 10, fontFamily: 'Inter_600SemiBold', color: colors.textSecondary,
+    textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: spacing.xs,
+  },
   editInput: {
     backgroundColor: colors.surfaceAlt, borderWidth: 1, borderColor: colors.border,
-    borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: colors.textPrimary,
+    borderRadius: radius.input, paddingHorizontal: spacing.md, paddingVertical: spacing.sm + 2,
+    fontSize: 14, fontFamily: 'Inter_400Regular', color: colors.textPrimary,
   },
-  editActions: { flexDirection: 'row', gap: 10 },
-  cancelBtn: {
-    flex: 1, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border,
-    borderRadius: 14, paddingVertical: 14, alignItems: 'center',
-  },
-  cancelBtnText: { fontSize: 15, fontWeight: '600', color: colors.textSecondary },
-  saveBtn: {
-    flex: 2, backgroundColor: colors.accent, borderRadius: 14,
-    paddingVertical: 14, alignItems: 'center',
-  },
-  saveBtnDisabled: { opacity: 0.6 },
-  saveBtnText: { fontSize: 15, fontWeight: '700', color: colors.textPrimary },
+  editActions: { flexDirection: 'row', gap: spacing.sm },
+
   infoCard: {
-    backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: 16,
+    backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border,
+    borderRadius: radius.card, overflow: 'hidden',
   },
   infoRow: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingHorizontal: 16, paddingVertical: 13,
+    paddingHorizontal: spacing.base, paddingVertical: spacing.md + 1,
+    borderTopWidth: 1, borderTopColor: colors.border,
+  },
+  infoRowFirst: { borderTopWidth: 0 },
+  infoLabel: { fontSize: 14, fontFamily: 'Inter_400Regular', color: colors.textSecondary },
+  infoValue: { fontSize: 14, fontFamily: 'Inter_600SemiBold', color: colors.textPrimary },
+
+  menuCard: {
+    backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border,
+    borderRadius: radius.card, overflow: 'hidden',
+  },
+  menuRow: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: spacing.base, paddingVertical: spacing.md + 2,
     borderBottomWidth: 1, borderBottomColor: colors.border,
   },
-  infoLabel: { fontSize: 14, color: colors.textSecondary },
-  infoValue: { fontSize: 14, fontWeight: '500', color: colors.textPrimary },
+  menuRowPressed: { backgroundColor: colors.surfaceAlt },
+  menuLeft: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  menuLabel: { fontSize: 15, fontFamily: 'Inter_400Regular', color: colors.textPrimary },
+
   logoutBtn: {
     borderWidth: 1, borderColor: colors.danger,
-    backgroundColor: colors.surface, borderRadius: 14,
-    paddingVertical: 15, alignItems: 'center', marginTop: 8,
-    opacity: 0.85,
+    backgroundColor: colors.surface, borderRadius: radius.button,
+    paddingVertical: 15, alignItems: 'center', marginTop: spacing.xs,
   },
-  logoutBtnDisabled: { opacity: 0.6 },
-  logoutText: { fontSize: 15, fontWeight: '700', color: colors.danger },
+  logoutBtnDisabled: { opacity: 0.5 },
+  logoutInner: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  logoutText: { fontSize: 15, fontFamily: 'Inter_600SemiBold', color: colors.danger },
 });

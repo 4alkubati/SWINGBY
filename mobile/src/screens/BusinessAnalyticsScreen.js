@@ -10,12 +10,9 @@ import {
   Dimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import {
-  VictoryChart,
-  VictoryBar,
-  VictoryAxis,
-  VictoryTheme,
-} from 'victory-native';
+// victory-native@41 requires Skia + reanimated@4 which conflict with Expo SDK 54.
+// CategoryChart is stubbed with native View bars until we upgrade Expo OR pin
+// victory-native to ~40.x. All other UI on this screen is unaffected.
 import { api } from '../services/api';
 import { SkeletonBox } from '../components/Skeleton';
 import { RatingStarsDisplay } from '../components/RatingStars';
@@ -88,7 +85,7 @@ function relativeDate(iso) {
   return `${Math.floor(days / 30)}mo ago`;
 }
 
-// ─── Category bar chart ───────────────────────────────────────────────────────
+// ─── Category bar chart (stub — see top-of-file comment) ──────────────────────
 function CategoryChart({ data }) {
   const chartWidth = SCREEN_WIDTH - 44;
 
@@ -100,55 +97,26 @@ function CategoryChart({ data }) {
     );
   }
 
-  const chartData = data.map((d, i) => ({
-    x: d.category.length > 9 ? d.category.slice(0, 8) + '.' : d.category,
-    y: d.count,
-    label: String(d.count),
-  }));
+  const max = Math.max(...data.map((d) => d.count), 1);
 
   return (
     <View style={styles.barChartWrap}>
-      <VictoryChart
-        width={chartWidth}
-        height={200}
-        padding={{ top: 20, bottom: 50, left: 20, right: 20 }}
-        domainPadding={{ x: 28 }}
-        theme={VictoryTheme.material}
-      >
-        <VictoryAxis
-          style={{
-            axis: { stroke: colors.border },
-            tickLabels: { fill: colors.textSecondary, fontSize: 9, fontWeight: '600' },
-            grid: { stroke: 'transparent' },
-            ticks: { stroke: 'transparent' },
-          }}
-        />
-        <VictoryAxis
-          dependentAxis
-          style={{
-            axis: { stroke: 'transparent' },
-            tickLabels: { fill: colors.textSecondary, fontSize: 9 },
-            grid: { stroke: colors.border, strokeDasharray: '4,6' },
-            ticks: { stroke: 'transparent' },
-          }}
-        />
-        <VictoryBar
-          data={chartData}
-          style={{
-            data: {
-              fill: colors.accent,
-              borderRadius: 4,
-            },
-            labels: {
-              fill: colors.textPrimary,
-              fontSize: 9,
-              fontWeight: '700',
-            },
-          }}
-          cornerRadius={{ top: 4 }}
-          barRatio={0.6}
-        />
-      </VictoryChart>
+      {data.map((d, i) => (
+        <View key={i} style={styles.catRow}>
+          <Text style={styles.catLabel} numberOfLines={1}>
+            {d.category}
+          </Text>
+          <View style={styles.catTrack}>
+            <View
+              style={[
+                styles.catFill,
+                { width: `${Math.max(6, (d.count / max) * 100)}%` },
+              ]}
+            />
+          </View>
+          <Text style={styles.catCount}>{d.count}</Text>
+        </View>
+      ))}
     </View>
   );
 }
@@ -490,7 +458,42 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     marginBottom: 4,
   },
-  barChartWrap: { backgroundColor: colors.bg },
+  barChartWrap: {
+    backgroundColor: colors.bg,
+    paddingVertical: 18,
+    paddingHorizontal: 16,
+    gap: 10,
+  },
+  catRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  catLabel: {
+    width: 80,
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.textSecondary,
+  },
+  catTrack: {
+    flex: 1,
+    height: 10,
+    backgroundColor: colors.border,
+    borderRadius: 5,
+    overflow: 'hidden',
+  },
+  catFill: {
+    height: 10,
+    backgroundColor: colors.accent,
+    borderRadius: 5,
+  },
+  catCount: {
+    width: 28,
+    textAlign: 'right',
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.textPrimary,
+  },
   chartLoadingWrap: { padding: 20, alignItems: 'center' },
   chartEmpty: {
     height: 180,

@@ -1,0 +1,183 @@
+.container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 0 var(--space-lg) var(--space-4xl);
+}
+
+/* Pricing Cards */
+.pricingCards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-lg);
+  margin-bottom: var(--space-4xl);
+}
+
+.pricingCard {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-xl);
+  display: flex;
+  flex-direction: column;
+}
+
+.pricingCardFeatured {
+  border-color: var(--color-accent);
+  position: relative;
+}
+
+.pricingCardFeatured::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: var(--radius-lg);
+  padding: 1px;
+  background: linear-gradient(135deg, var(--color-accent), transparent 60%);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: var(--space-base);
+}
+
+.cardPlan {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.cardPrice {
+  font-family: var(--font-display);
+  font-size: 36px;
+  font-weight: 700;
+  color: var(--color-accent-text);
+}
+
+.cardDesc {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+  margin-bottom: var(--space-lg);
+}
+
+.cardFeatures {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 var(--space-xl);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  flex: 1;
+}
+
+.cardFeatures li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-size: 14px;
+  color: var(--color-text-secondary);
+}
+
+.featureCheck {
+  color: var(--color-success);
+  flex-shrink: 0;
+}
+
+.cardBtn {
+  width: 100%;
+}
+
+/* Comparison Table */
+.tableSection {
+  margin-bottom: var(--space-4xl);
+}
+
+.tableSectionTitle {
+  font-family: var(--font-display);
+  font-size: clamp(22px, 3vw, 28px);
+  font-weight: 700;
+  color: var(--color-text-primary);
+  text-align: center;
+  margin-bottom: var(--space-xl);
+}
+
+.tableWrap {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th,
+.table td {
+  padding: var(--space-base) var(--space-lg);
+  text-align: left;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.table th {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.table td {
+  font-size: 14px;
+  color: var(--color-text-primary);
+}
+
+.table th:not(:first-child),
+.table td:not(:first-child) {
+  text-align: center;
+}
+
+.checkIcon {
+  color: var(--color-success);
+}
+
+.naIcon {
+  color: var(--color-text-secondary);
+  opacity: 0.4;
+}
+
+.freeLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-success);
+}
+
+.feeLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-accent-text);
+}
+
+/* FAQ */
+.faqSection {
+  padding-bottom: var(--space-2xl);
+}
+
+.faqWrap {
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+@media (max-width: 768px) {
+  .pricingCards {
+    grid-template-columns: 1fr;
+  }
+
+  .table th,
+  .table td {
+    padding: var(--space-md);
+  }
+}

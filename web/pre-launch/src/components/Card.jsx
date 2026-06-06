@@ -1,16 +1,19 @@
-import React from 'react';
-import styles from './Card.module.css';
+import styles from './Card.module.css'
 
-export default function Card({ imageUrl, title, subtitle, meta, actions, onClick, className }) {
+export default function Card({ image, title, meta, children, actions, onClick, className }) {
+  const Tag = onClick ? 'button' : 'div'
   return (
-    <div className={`${styles.card} ${className || ''}`} onClick={onClick} role={onClick ? 'button' : undefined}>
-      {imageUrl && <img src={imageUrl} alt={title || ''} className={styles.cardImage} />}
-      <div className={styles.cardBody}>
-        {title && <div className={styles.cardTitle}>{title}</div>}
-        {subtitle && <div className={styles.cardSubtitle}>{subtitle}</div>}
-        {meta && <div className={styles.cardMeta}>{meta}</div>}
-        {actions && <div className={styles.cardActions}>{actions}</div>}
+    <Tag
+      className={`${styles.card} ${onClick ? styles.clickable : ''} ${className || ''}`}
+      onClick={onClick}
+    >
+      {image && <div className={styles.imageSlot}>{image}</div>}
+      <div className={styles.body}>
+        {title && <h3 className={styles.title}>{title}</h3>}
+        {meta && <div className={styles.meta}>{meta}</div>}
+        {children && <div className={styles.content}>{children}</div>}
+        {actions && <div className={styles.actions}>{actions}</div>}
       </div>
-    </div>
-  );
+    </Tag>
+  )
 }

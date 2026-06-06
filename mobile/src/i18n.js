@@ -1,7 +1,8 @@
 // T70 — i18n module (i18n-js + expo-localization)
 import { I18n } from 'i18n-js';
 import * as Localization from 'expo-localization';
-import * as SecureStore from 'expo-secure-store';
+// Cross-platform storage wrapper (works on web + native).
+import * as SecureStore from './services/storage';
 
 const LOCALE_KEY = 'swingby_locale';
 

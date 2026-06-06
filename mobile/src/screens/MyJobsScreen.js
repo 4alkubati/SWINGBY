@@ -1,5 +1,5 @@
 import {
-  View, Text, FlatList, TouchableOpacity, StyleSheet,
+  View, FlatList, TouchableOpacity, StyleSheet,
   RefreshControl,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -9,13 +9,14 @@ import { api } from '../services/api';
 import { colors, spacing } from '../theme/tokens';
 import { SkeletonList } from '../components/Skeleton';
 import EmptyState from '../components/EmptyState';
+import Text from '../components/Text';
 
 const STATUS_CONFIG = {
   confirmed:   { label: 'Confirmed',   color: colors.accent,   bg: colors.accentMuted },
   in_progress: { label: 'In Progress', color: colors.accent,   bg: colors.accentMuted },
   completed:   { label: 'Done',        color: colors.success,  bg: colors.accentMuted },
   cancelled:   { label: 'Cancelled',   color: colors.textSecondary, bg: colors.surfaceAlt },
-  open:        { label: 'Awaiting Quotes', color: '#a78bfa',   bg: colors.accentMuted },
+  open:        { label: 'Awaiting Quotes', color: colors.accentText,   bg: colors.accentMuted },
   matched:     { label: 'Matched',     color: colors.success,  bg: colors.accentMuted },
   expired:     { label: 'Expired',     color: colors.textSecondary, bg: colors.surfaceAlt },
 };
@@ -92,19 +93,21 @@ export default function MyJobsScreen({ navigation }) {
   const [tab, setTab] = useState('active');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState(null);
   const isClient = user?.role === 'client';
 
   const load = useCallback(async () => {
     try {
+      setError(null);
       const calls = [api.get('/bookings/')];
       if (isClient) {
-        calls.push(api.get('/service-posts/my').catch(() => []));
+        calls.push(api.get('/service-posts/my').catch(() => ({ items: [] })));
       }
-      const [bookingData, postData] = await Promise.all(calls);
-      setBookings(bookingData || []);
-      if (isClient) setPosts(postData || []);
-    } catch {
-      // keep stale
+      const [bookingRes, postRes] = await Promise.all(calls);
+      setBookings(bookingRes?.items || bookingRes || []);
+      if (isClient) setPosts(postRes?.items || postRes || []);
+    } catch (e) {
+      setError(e.message || 'Could not load jobs');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -135,6 +138,23 @@ export default function MyJobsScreen({ navigation }) {
         <View style={{ paddingHorizontal: spacing.base, paddingTop: spacing.sm }}>
           <SkeletonList count={5} />
         </View>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={[styles.container, { paddingTop: insets.top }]}>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>My Jobs</Text>
+        </View>
+        <EmptyState
+          icon="alert-circle"
+          title="Could not load jobs"
+          body={error}
+          ctaLabel="Try again"
+          onCta={load}
+        />
       </View>
     );
   }
@@ -224,10 +244,10 @@ export default function MyJobsScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   header: { paddingHorizontal: 22, paddingTop: 12, paddingBottom: 8 },
-  headerTitle: { fontSize: 22, fontWeight: '700', color: colors.textPrimary, letterSpacing: -0.5 },
+  headerTitle: { fontSize: 22, fontFamily: 'SpaceGrotesk_700Bold', color: colors.textPrimary, letterSpacing: -0.5 },
   postsSection: { paddingHorizontal: 22 },
   sectionLabel: {
-    fontSize: 11, color: '#a78bfa', fontWeight: '700',
+    fontSize: 11, color: colors.accentText, fontFamily: 'Inter_600SemiBold',
     textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 4,
   },
   divider: { height: 1, backgroundColor: colors.border, marginVertical: 12 },
@@ -237,7 +257,7 @@ const styles = StyleSheet.create({
   },
   tabBtn: { flex: 1, paddingVertical: 9, borderRadius: 10, alignItems: 'center' },
   tabBtnActive: { backgroundColor: colors.surfaceAlt, borderWidth: 1, borderColor: colors.border },
-  tabText: { fontSize: 13, fontWeight: '600', color: colors.textSecondary },
+  tabText: { fontSize: 13, fontFamily: 'Inter_600SemiBold', color: colors.textSecondary },
   tabTextActive: { color: colors.textPrimary },
   list: { paddingHorizontal: 22, paddingBottom: 24 },
   row: {
@@ -246,11 +266,11 @@ const styles = StyleSheet.create({
   },
   rowLeft: { flex: 1, gap: 3 },
   rowTop: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  rowTitle: { fontSize: 15, fontWeight: '600', color: colors.textPrimary, flex: 1 },
+  rowTitle: { fontSize: 15, fontFamily: 'Inter_600SemiBold', color: colors.textPrimary, flex: 1 },
   statusPill: { borderRadius: 20, paddingHorizontal: 8, paddingVertical: 3 },
-  statusText: { fontSize: 10, fontWeight: '700' },
-  rowSub: { fontSize: 13, color: colors.textSecondary },
-  rowDate: { fontSize: 12, color: colors.textSecondary },
+  statusText: { fontSize: 10, fontFamily: 'Inter_600SemiBold' },
+  rowSub: { fontSize: 13, fontFamily: 'Inter_400Regular', color: colors.textSecondary },
+  rowDate: { fontSize: 12, fontFamily: 'Inter_400Regular', color: colors.textSecondary },
   actionBtn: {
     backgroundColor: colors.accentMuted, borderWidth: 1,
     borderColor: colors.border, borderRadius: 10,
@@ -259,6 +279,6 @@ const styles = StyleSheet.create({
   actionBtnHighlight: {
     backgroundColor: colors.accentMuted, borderColor: colors.border,
   },
-  actionBtnText: { fontSize: 12, fontWeight: '700', color: colors.accent },
-  actionBtnTextHighlight: { color: '#a78bfa' },
+  actionBtnText: { fontSize: 12, fontFamily: 'Inter_600SemiBold', color: colors.accent },
+  actionBtnTextHighlight: { color: colors.accentText },
 });

@@ -1,0 +1,79 @@
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.inputWrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  transition: border-color var(--duration-entry) var(--ease-entry);
+}
+
+.inputWrap:focus-within {
+  border-color: var(--color-accent);
+}
+
+.error .inputWrap {
+  border-color: var(--color-danger);
+}
+
+.input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--color-text-primary);
+  font-size: 14px;
+  padding: 20px var(--space-base) 8px;
+  width: 100%;
+}
+
+.input::placeholder {
+  color: transparent;
+}
+
+.label {
+  position: absolute;
+  left: var(--space-base);
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  pointer-events: none;
+  transition: all var(--duration-entry) var(--ease-entry);
+}
+
+.input:focus ~ .label,
+.input:not(:placeholder-shown) ~ .label {
+  top: 10px;
+  transform: translateY(0);
+  font-size: 11px;
+  color: var(--color-accent-text);
+}
+
+.error .input:focus ~ .label,
+.error .input:not(:placeholder-shown) ~ .label {
+  color: var(--color-danger);
+}
+
+.prefix, .suffix {
+  display: flex;
+  align-items: center;
+  color: var(--color-text-secondary);
+  padding: 0 var(--space-md);
+  flex-shrink: 0;
+}
+
+.helper {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  padding-left: var(--space-base);
+}
+
+.error .helper {
+  color: var(--color-danger);
+}

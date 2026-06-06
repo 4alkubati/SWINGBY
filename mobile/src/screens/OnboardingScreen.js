@@ -1,10 +1,9 @@
-// T36 — OnboardingScreen full redesign (Sleek UX Pass)
 import React, { useRef, useState, useCallback } from 'react';
-import { View, FlatList, Dimensions, Pressable } from 'react-native';
+import { View, FlatList, Dimensions, Pressable, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
-import * as SecureStore from 'expo-secure-store';
+import Animated, { FadeIn, FadeOut, FadeInDown } from 'react-native-reanimated';
+import * as SecureStore from '../services/storage';
 import { colors, spacing, radius } from '../theme/tokens';
 import Text from '../components/Text';
 import Button from '../components/Button';
@@ -35,41 +34,17 @@ const SLIDES = [
 
 function SlideItem({ item }) {
   return (
-    <Animated.View
-      entering={FadeIn.duration(300)}
-      style={{ width: SCREEN_W, flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.xl }}
-    >
-      {/* Icon circle */}
-      <View
-        style={{
-          width: 160,
-          height: 160,
-          borderRadius: radius.avatar,
-          backgroundColor: colors.accentMuted,
-          borderWidth: 1,
-          borderColor: colors.border,
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginBottom: spacing['2xl'],
-        }}
-      >
+    <View style={styles.slide}>
+      <View style={styles.iconCircle}>
         <Ionicons name={item.icon} size={80} color={colors.accent} />
       </View>
-
-      {/* Text block */}
-      <View style={{ alignItems: 'center', gap: spacing.sm }}>
-        <Text variant="display2" style={{ textAlign: 'center' }}>
+      <View style={styles.slideText}>
+        <Text style={styles.slideTitle} accessibilityRole="header" maxFontSizeMultiplier={1.4}>
           {item.title}
         </Text>
-        <Text
-          variant="body"
-          color="secondary"
-          style={{ textAlign: 'center', maxWidth: 280 }}
-        >
-          {item.subtitle}
-        </Text>
+        <Text style={styles.slideSubtitle}>{item.subtitle}</Text>
       </View>
-    </Animated.View>
+    </View>
   );
 }
 
@@ -81,9 +56,7 @@ export default function OnboardingScreen({ navigation }) {
   const viewabilityConfig = useRef({ viewAreaCoveragePercentThreshold: 50 }).current;
 
   async function finish() {
-    try {
-      await SecureStore.setItemAsync(ONBOARDING_KEY, 'true');
-    } catch { /* non-fatal */ }
+    try { await SecureStore.setItemAsync(ONBOARDING_KEY, 'true'); } catch {}
     navigation.navigate('Login');
   }
 
@@ -94,32 +67,21 @@ export default function OnboardingScreen({ navigation }) {
   }
 
   const onViewableItemsChanged = useCallback(({ viewableItems }) => {
-    if (viewableItems.length > 0) {
-      setActiveIndex(viewableItems[0].index);
-    }
+    if (viewableItems.length > 0) setActiveIndex(viewableItems[0].index);
   }, []);
 
   const isLast = activeIndex === SLIDES.length - 1;
 
   return (
-    <View
-      style={{
-        flex: 1,
-        backgroundColor: colors.bg,
-        paddingTop: insets.top,
-      }}
-    >
-      {/* Skip — top right, hidden on last slide */}
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      <View style={styles.glowOrb} />
+
+      {/* Skip */}
       {!isLast && (
         <Animated.View
           entering={FadeIn.duration(200)}
           exiting={FadeOut.duration(150)}
-          style={{
-            position: 'absolute',
-            top: insets.top + spacing.sm,
-            right: spacing.lg,
-            zIndex: 10,
-          }}
+          style={[styles.skipWrap, { top: insets.top + spacing.sm }]}
         >
           <Pressable
             onPress={finish}
@@ -127,11 +89,8 @@ export default function OnboardingScreen({ navigation }) {
             style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
             accessibilityRole="button"
             accessibilityLabel="Skip onboarding"
-            accessibilityHint="Goes directly to the login screen"
           >
-            <Text variant="smallMedium" color="secondary">
-              Skip
-            </Text>
+            <Text style={styles.skipText}>Skip</Text>
           </Pressable>
         </Animated.View>
       )}
@@ -148,66 +107,133 @@ export default function OnboardingScreen({ navigation }) {
         renderItem={({ item }) => <SlideItem item={item} />}
         onViewableItemsChanged={onViewableItemsChanged}
         viewabilityConfig={viewabilityConfig}
-        style={{ flex: 1 }}
+        style={styles.flex}
       />
 
-      {/* Bottom zone — dots + CTA */}
-      <View
-        style={{
-          paddingHorizontal: spacing.lg,
-          paddingTop: spacing.base,
-          paddingBottom: insets.bottom + spacing.lg,
-          gap: spacing.lg,
-          alignItems: 'center',
-        }}
+      {/* Bottom */}
+      <Animated.View
+        entering={FadeInDown.duration(400).delay(200)}
+        style={[styles.bottom, { paddingBottom: insets.bottom + spacing.lg }]}
       >
-        {/* Pagination dots */}
-        <View style={{ flexDirection: 'row', gap: spacing.sm, alignItems: 'center' }}>
+        {/* Dots */}
+        <View style={styles.dots}>
           {SLIDES.map((_, i) => (
             <View
               key={i}
-              style={{
-                height: 8,
-                borderRadius: radius.pill,
-                width: i === activeIndex ? 24 : 8,
-                backgroundColor: i === activeIndex ? colors.accent : colors.border,
-              }}
+              style={[
+                styles.dot,
+                i === activeIndex ? styles.dotActive : styles.dotInactive,
+              ]}
             />
           ))}
         </View>
 
-        {/* Action button */}
+        {/* CTA */}
         {isLast ? (
-          <Animated.View entering={FadeIn.duration(250)} style={{ width: '100%' }}>
-            <Button
-              label="Get Started"
-              variant="primary"
-              onPress={finish}
-              style={{ width: '100%' }}
-            />
+          <Animated.View entering={FadeIn.duration(250)} style={styles.ctaWrap}>
+            <Button label="Get Started" variant="primary" onPress={finish} />
           </Animated.View>
         ) : (
           <Pressable
             onPress={handleNext}
             accessibilityRole="button"
             accessibilityLabel="Next slide"
-            style={({ pressed }) => ({
-              width: '100%',
-              backgroundColor: colors.surfaceAlt,
-              borderWidth: 1,
-              borderColor: colors.border,
-              borderRadius: radius.button,
-              paddingVertical: spacing.base,
-              alignItems: 'center',
-              minHeight: 52,
-              justifyContent: 'center',
-              opacity: pressed ? 0.75 : 1,
-            })}
+            style={({ pressed }) => [styles.nextBtn, { opacity: pressed ? 0.75 : 1 }]}
           >
-            <Text variant="bodyMedium" maxFontSizeMultiplier={1.3}>Next</Text>
+            <Text style={styles.nextBtnText}>Next</Text>
           </Pressable>
         )}
-      </View>
+      </Animated.View>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.bg },
+  flex: { flex: 1 },
+
+  glowOrb: {
+    position: 'absolute',
+    top: -100,
+    left: -60,
+    width: 260,
+    height: 260,
+    borderRadius: 130,
+    backgroundColor: colors.accentMuted,
+    opacity: 0.3,
+  },
+
+  skipWrap: {
+    position: 'absolute',
+    right: spacing.lg,
+    zIndex: 10,
+  },
+  skipText: {
+    fontSize: 14,
+    fontFamily: 'Inter_600SemiBold',
+    color: colors.textSecondary,
+  },
+
+  slide: {
+    width: SCREEN_W,
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.xl,
+  },
+  iconCircle: {
+    width: 160,
+    height: 160,
+    borderRadius: radius.avatar,
+    backgroundColor: colors.accentMuted,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing['2xl'],
+  },
+  slideText: { alignItems: 'center', gap: spacing.sm },
+  slideTitle: {
+    fontSize: 24,
+    fontFamily: 'SpaceGrotesk_700Bold',
+    color: colors.textPrimary,
+    textAlign: 'center',
+    letterSpacing: -0.5,
+  },
+  slideSubtitle: {
+    fontSize: 15,
+    fontFamily: 'Inter_400Regular',
+    color: colors.textSecondary,
+    textAlign: 'center',
+    maxWidth: 280,
+  },
+
+  bottom: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.base,
+    gap: spacing.lg,
+    alignItems: 'center',
+  },
+  dots: { flexDirection: 'row', gap: spacing.sm, alignItems: 'center' },
+  dot: { height: 6, borderRadius: 3 },
+  dotActive: { width: 24, backgroundColor: colors.accent },
+  dotInactive: { width: 6, backgroundColor: colors.border },
+
+  ctaWrap: { width: '100%' },
+  nextBtn: {
+    width: '100%',
+    backgroundColor: colors.surfaceAlt,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.button,
+    paddingVertical: 14,
+    alignItems: 'center',
+    minHeight: 52,
+    justifyContent: 'center',
+  },
+  nextBtnText: {
+    fontSize: 15,
+    fontFamily: 'Inter_600SemiBold',
+    color: colors.textPrimary,
+  },
+});

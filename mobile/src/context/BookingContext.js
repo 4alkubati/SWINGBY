@@ -11,7 +11,7 @@ export function BookingProvider({ children }) {
     setIsLoading(true);
     try {
       const data = await api.get('/bookings/');
-      setBookings(data || []);
+      setBookings(data?.items || data || []);
     } catch {
       // keep stale data on error
     } finally {

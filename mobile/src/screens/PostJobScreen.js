@@ -153,7 +153,7 @@ function StepBudget({ budget, setBudget, date, setDate, time, setTime }) {
         </Stack>
         <Stack spacing="base">
           <TextField
-            label="Budget (optional)"
+            label="Budget *"
             value={budget}
             onChangeText={setBudget}
             keyboardType="numeric"
@@ -278,17 +278,22 @@ export default function PostJobScreen() {
       setDescError('Please describe what you need.');
       return;
     }
+    const parsedBudget = parseFloat(budget);
+    if (!parsedBudget || parsedBudget <= 0) {
+      setDescError('Enter a budget amount greater than $0.');
+      setStep(2);
+      return;
+    }
     setSubmitting(true);
     try {
       const data = await api.post('/service-posts/', {
         title: description.trim(),
+        description: description.trim(),
         category: category || 'General',
-        budget: budget ? parseFloat(budget) : null,
-        preferred_date: date.trim() || null,
-        preferred_time: time.trim() || null,
-        address: address.trim() || null,
+        budget: parsedBudget,
       });
 
+      const post = data?.post || data;
       setDescription('');
       setCategory('');
       setAddress('');
@@ -297,11 +302,10 @@ export default function PostJobScreen() {
       setTime('');
 
       navigation.navigate('QuoteComparison', {
-        postId: data.id,
-        postTitle: data.title,
+        postId: post.id,
+        postTitle: post.title,
       });
     } catch (err) {
-      // Show error on confirm step (inline, not Alert)
       setDescError(err.message || 'Could not post job. Try again.');
     } finally {
       setSubmitting(false);

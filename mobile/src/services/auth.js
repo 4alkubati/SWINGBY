@@ -1,4 +1,6 @@
-import * as SecureStore from 'expo-secure-store';
+// Use our cross-platform storage wrapper instead of expo-secure-store directly.
+// Routes to native SecureStore on iOS/Android, localStorage on web. Same API.
+import * as SecureStore from './storage';
 import { api } from './api';
 
 const TOKEN_KEY = 'swingby_token';

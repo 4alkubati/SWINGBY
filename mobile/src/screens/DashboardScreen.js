@@ -206,8 +206,8 @@ export default function DashboardScreen({ navigation }) {
         api.get('/service-posts/'),
         api.get('/businesses/me').catch(() => null),
       ]);
-      setBookings(b || []);
-      setPosts((p || []).filter((post) => post.status === 'open'));
+      setBookings(b?.items || b || []);
+      setPosts((p?.items || p || []).filter((post) => post.status === 'open'));
       setBusiness(biz || null);
     } catch {
       setError(true);

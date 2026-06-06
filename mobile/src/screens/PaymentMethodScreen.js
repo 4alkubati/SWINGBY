@@ -5,7 +5,6 @@
 import React from 'react';
 import {
   View,
-  Text,
   TouchableOpacity,
   StyleSheet,
   ScrollView,
@@ -14,7 +13,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import * as toast from '../services/toast';
 import EmptyState from '../components/EmptyState';
-import { colors } from '../theme/tokens';
+import { colors, spacing, radius } from '../theme/tokens';
+import Text from '../components/Text';
 
 export default function PaymentMethodScreen({ navigation }) {
   const insets = useSafeAreaInsets();
@@ -111,7 +111,7 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.border,
   },
   backBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { fontSize: 16, fontWeight: '700', color: colors.textPrimary, letterSpacing: -0.3 },
+  headerTitle: { fontSize: 16, fontFamily: 'SpaceGrotesk_700Bold', color: colors.textPrimary, letterSpacing: -0.3 },
 
   scroll: { paddingHorizontal: 20, paddingTop: 20, gap: 18, paddingBottom: 40 },
 
@@ -139,18 +139,19 @@ const styles = StyleSheet.create({
   },
   stripeBadgeText: {
     fontSize: 10,
-    fontWeight: '700',
+    fontFamily: 'Inter_600SemiBold',
     color: colors.textSecondary,
     letterSpacing: 1.0,
   },
   stripeTitle: {
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: 'SpaceGrotesk_700Bold',
     color: colors.textSecondary,
     letterSpacing: -0.3,
   },
   stripeBody: {
     fontSize: 13,
+    fontFamily: 'Inter_400Regular',
     color: colors.textSecondary,
     lineHeight: 20,
   },
@@ -193,7 +194,7 @@ const styles = StyleSheet.create({
 
   sectionLabel: {
     fontSize: 11,
-    fontWeight: '700',
+    fontFamily: 'Inter_600SemiBold',
     color: colors.textSecondary,
     textTransform: 'uppercase',
     letterSpacing: 0.8,
@@ -222,13 +223,14 @@ const styles = StyleSheet.create({
     minHeight: 50,
     opacity: 0.65, // visually disabled
   },
-  addBtnText: { fontSize: 15, fontWeight: '700', color: colors.accent },
+  addBtnText: { fontSize: 15, fontFamily: 'Inter_600SemiBold', color: colors.accent },
 
   footer: {
     fontSize: 12,
+    fontFamily: 'Inter_400Regular',
     color: colors.textSecondary,
     textAlign: 'center',
     lineHeight: 18,
-    marginTop: 4,
+    marginTop: spacing.xs,
   },
 });

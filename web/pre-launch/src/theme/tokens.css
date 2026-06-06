@@ -1,5 +1,5 @@
 :root {
-  /* Colors */
+  /* Colors — locked palette */
   --color-bg: #07080a;
   --color-surface: #0F1115;
   --color-surface-alt: #161A21;
@@ -8,13 +8,7 @@
   --color-text-secondary: #8B92A0;
   --color-accent: #6E56F7;
   --color-accent-muted: #2A2247;
-  /* Lightened accent for use as foreground text on dark backgrounds.
-     #6E56F7 yields 4.14:1 on bg (fails WCAG AA 4.5:1 for normal text).
-     #8878F9 yields 6.10 on bg, 5.86 on surface, 5.45 on surface-alt — all pass. */
   --color-accent-text: #8878F9;
-  /* Darkened accent for button backgrounds where text-primary (#F4F6FA) is the label.
-     #6E56F7 yields 4.4999:1 against #F4F6FA (just below WCAG AA 4.5:1).
-     #6D55F6 yields 4.56:1 — passes AA. Use this token for filled button backgrounds. */
   --color-accent-btn: #6D55F6;
   --color-success: #2EBD85;
   --color-warning: #F6B23B;
@@ -29,23 +23,28 @@
   --space-xl: 32px;
   --space-2xl: 48px;
   --space-3xl: 64px;
+  --space-4xl: 96px;
 
   /* Border Radius */
-  --radius-chip: 8px;
-  --radius-input: 12px;
-  --radius-button: 12px;
-  --radius-card: 20px;
-  --radius-sheet: 28px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
   --radius-pill: 999px;
-  --radius-avatar: 999px;
 
   /* Shadows */
-  --shadow-subtle: 0 4px 8px rgba(0, 0, 0, 0.16);
-  --shadow-modal: 0 8px 24px rgba(0, 0, 0, 0.32);
+  --shadow-subtle: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-elevated: 0 8px 32px rgba(0, 0, 0, 0.5);
 
   /* Motion */
   --ease-entry: cubic-bezier(0, 0, 0.2, 1);
   --ease-exit: cubic-bezier(0.4, 0, 1, 1);
   --duration-entry: 240ms;
   --duration-exit: 180ms;
+  --spring-stiffness: 220;
+  --spring-damping: 22;
+
+  /* Fonts */
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-sans: 'Inter', sans-serif;
 }

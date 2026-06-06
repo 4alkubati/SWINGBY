@@ -4,7 +4,6 @@
 import React, { useState, useMemo } from 'react';
 import {
   View,
-  Text,
   TouchableOpacity,
   ScrollView,
   TextInput,
@@ -18,7 +17,8 @@ import { Feather } from '@expo/vector-icons';
 import { api } from '../services/api';
 import * as toast from '../services/toast';
 import * as haptics from '../services/haptics';
-import { colors } from '../theme/tokens';
+import { colors, spacing, radius } from '../theme/tokens';
+import Text from '../components/Text';
 
 const REASONS = [
   'Schedule conflict',
@@ -198,7 +198,7 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.border,
   },
   backBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { fontSize: 16, fontWeight: '700', color: colors.textPrimary, letterSpacing: -0.3 },
+  headerTitle: { fontSize: 16, fontFamily: 'SpaceGrotesk_700Bold', color: colors.textPrimary, letterSpacing: -0.3 },
 
   scroll: { paddingHorizontal: 22, paddingTop: 28, gap: 16 },
 
@@ -215,17 +215,18 @@ const styles = StyleSheet.create({
   },
   headline: {
     fontSize: 22,
-    fontWeight: '700',
+    fontFamily: 'SpaceGrotesk_700Bold',
     color: colors.textPrimary,
     letterSpacing: -0.5,
     textAlign: 'center',
-    marginTop: 12,
+    marginTop: spacing.md,
   },
   subheadline: {
     fontSize: 14,
+    fontFamily: 'Inter_400Regular',
     color: colors.textSecondary,
     textAlign: 'center',
-    marginTop: 4,
+    marginTop: spacing.xs,
   },
 
   // Penalty card — dominant focal
@@ -241,24 +242,25 @@ const styles = StyleSheet.create({
   },
   penaltyLabel: {
     fontSize: 11,
-    fontWeight: '700',
+    fontFamily: 'Inter_600SemiBold',
     color: colors.danger,
     textTransform: 'uppercase',
     letterSpacing: 1.0,
   },
   penaltyAmount: {
     fontSize: 46,
-    fontWeight: '700',
+    fontFamily: 'SpaceGrotesk_700Bold',
     color: colors.textPrimary,
     letterSpacing: -1.5,
-    marginTop: 4,
+    marginTop: spacing.xs,
   },
   penaltyDesc: {
     fontSize: 13,
+    fontFamily: 'Inter_400Regular',
     color: colors.textSecondary,
     textAlign: 'center',
     lineHeight: 20,
-    marginTop: 4,
+    marginTop: spacing.xs,
   },
   penaltyTip: {
     flexDirection: 'row',
@@ -276,11 +278,11 @@ const styles = StyleSheet.create({
 
   sectionLabel: {
     fontSize: 11,
-    fontWeight: '700',
+    fontFamily: 'Inter_600SemiBold',
     color: colors.textSecondary,
     textTransform: 'uppercase',
     letterSpacing: 0.8,
-    marginTop: 8,
+    marginTop: spacing.sm,
   },
   reasonList: { gap: 8 },
   reasonRow: {
@@ -316,8 +318,8 @@ const styles = StyleSheet.create({
     borderRadius: 4.5,
     backgroundColor: colors.accent,
   },
-  reasonText: { fontSize: 14, color: colors.textSecondary, fontWeight: '500' },
-  reasonTextActive: { color: colors.textPrimary, fontWeight: '600' },
+  reasonText: { fontSize: 14, fontFamily: 'Inter_400Regular', color: colors.textSecondary },
+  reasonTextActive: { color: colors.textPrimary, fontFamily: 'Inter_600SemiBold' },
 
   otherInput: {
     backgroundColor: colors.surface,
@@ -352,7 +354,7 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   confirmBtnDisabled: { opacity: 0.45 },
-  confirmBtnText: { fontSize: 15, fontWeight: '700', color: colors.textPrimary },
-  backLink: { alignItems: 'center', paddingVertical: 10, minHeight: 44, justifyContent: 'center' },
-  backLinkText: { fontSize: 14, fontWeight: '600', color: colors.textSecondary },
+  confirmBtnText: { fontSize: 15, fontFamily: 'Inter_600SemiBold', color: colors.textPrimary },
+  backLink: { alignItems: 'center', paddingVertical: spacing.sm + 2, minHeight: 44, justifyContent: 'center' },
+  backLinkText: { fontSize: 14, fontFamily: 'Inter_600SemiBold', color: colors.textSecondary },
 });

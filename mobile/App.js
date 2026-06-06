@@ -1,11 +1,39 @@
-import * as Sentry from '@sentry/react-native';
+// react-native-gesture-handler MUST be imported before any other React Native
+// code so Android registers its native module. Do not move this line.
+import 'react-native-gesture-handler';
 
-Sentry.init({
-  dsn: process.env.EXPO_PUBLIC_SENTRY_DSN || '',
-  enableAutoSessionTracking: true,
-  tracesSampleRate: 0.1,
-  enabled: !!process.env.EXPO_PUBLIC_SENTRY_DSN,
-});
+import { LogBox } from 'react-native';
+LogBox.ignoreLogs([
+  'expo-notifications',
+  'Notifications.setNotificationHandler',
+]);
+
+import Constants from 'expo-constants';
+
+// @sentry/react-native@8 probes for native modules at MODULE IMPORT time,
+// before any code can guard it. In Expo Go those native modules don't exist,
+// so the JSI probe throws "Exception in HostFunction" and crashes the runtime
+// before the first React render. Load Sentry lazily via require() so the
+// module is only evaluated when we are NOT inside Expo Go.
+const isExpoGo =
+  Constants.appOwnership === 'expo' ||
+  Constants.executionEnvironment === 'storeClient';
+const sentryEnabled =
+  !isExpoGo && !!process.env.EXPO_PUBLIC_SENTRY_DSN;
+
+let Sentry = null;
+if (sentryEnabled) {
+  try {
+    Sentry = require('@sentry/react-native');
+    Sentry.init({
+      dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
+      enableAutoSessionTracking: true,
+      tracesSampleRate: 0.1,
+    });
+  } catch {
+    Sentry = null;
+  }
+}
 
 import { NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -77,4 +105,6 @@ function App() {
   );
 }
 
-export default Sentry.wrap(App);
+// Only wrap with Sentry when Sentry actually loaded successfully.
+// Sentry.wrap() touches native modules even when init was skipped.
+export default Sentry ? Sentry.wrap(App) : App;

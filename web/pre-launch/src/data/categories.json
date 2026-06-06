@@ -1,0 +1,93 @@
+[
+  {
+    "slug": "cleaning",
+    "name": "Cleaning",
+    "icon": "Broom",
+    "tagline": "Spotless homes and offices, on your schedule",
+    "description": "Professional cleaning services for residential and commercial spaces. From deep cleans to regular maintenance.",
+    "averagePrice": "$120 - $250",
+    "faqItems": [
+      { "question": "How long does a typical cleaning take?", "answer": "A standard home cleaning takes 2-4 hours depending on the size of your home." },
+      { "question": "Do I need to provide cleaning supplies?", "answer": "Most businesses bring their own professional-grade supplies and equipment." },
+      { "question": "Can I book recurring cleaning?", "answer": "Yes, many businesses offer weekly, bi-weekly, or monthly plans at discounted rates." }
+    ]
+  },
+  {
+    "slug": "plumbing",
+    "name": "Plumbing",
+    "icon": "Wrench",
+    "tagline": "Fix leaks, install fixtures, and prevent water damage",
+    "description": "Licensed plumbers for repairs, installations, and emergency services. Available for residential and commercial properties.",
+    "averagePrice": "$80 - $350",
+    "faqItems": [
+      { "question": "Do you handle emergency plumbing?", "answer": "Many plumbers on SwingBy offer same-day emergency services." },
+      { "question": "Are plumbers licensed and insured?", "answer": "Yes, all plumbing businesses on SwingBy must hold valid licenses for Calgary." },
+      { "question": "What's included in a plumbing estimate?", "answer": "Estimates include labor, parts, and any applicable call-out fees." }
+    ]
+  },
+  {
+    "slug": "electrical",
+    "name": "Electrical",
+    "icon": "Lightning",
+    "tagline": "Safe, code-compliant electrical work for any project",
+    "description": "Certified electricians for wiring, panel upgrades, lighting installation, and safety inspections.",
+    "averagePrice": "$100 - $400",
+    "faqItems": [
+      { "question": "Do I need a permit for electrical work?", "answer": "Many electrical jobs in Calgary require permits. Your electrician will advise on what's needed." },
+      { "question": "Can you install EV chargers?", "answer": "Yes, several electricians on SwingBy specialize in EV charger installation." },
+      { "question": "How quickly can I get an electrician?", "answer": "Most electricians can schedule within 1-3 business days, with emergency services available." }
+    ]
+  },
+  {
+    "slug": "landscaping",
+    "name": "Landscaping",
+    "icon": "Plant",
+    "tagline": "Transform your outdoor space into something beautiful",
+    "description": "Lawn care, garden design, tree trimming, snow removal, and seasonal maintenance services.",
+    "averagePrice": "$60 - $300",
+    "faqItems": [
+      { "question": "Do you offer snow removal?", "answer": "Yes, many landscaping businesses in Calgary offer winter snow removal services." },
+      { "question": "Can I get a full yard redesign?", "answer": "Absolutely. Several businesses offer complete landscape design and installation." },
+      { "question": "Is there a minimum job size?", "answer": "Most businesses have a minimum of $60 per visit for basic lawn maintenance." }
+    ]
+  },
+  {
+    "slug": "painting",
+    "name": "Painting",
+    "icon": "PaintBrush",
+    "tagline": "Fresh coats, clean lines, and a professional finish",
+    "description": "Interior and exterior painting for homes, offices, and commercial properties. Color consultation available.",
+    "averagePrice": "$200 - $800",
+    "faqItems": [
+      { "question": "Do you include paint and supplies?", "answer": "Most painters include paint and supplies in their quote, but confirm when booking." },
+      { "question": "How long does a room take to paint?", "answer": "A standard room takes 4-8 hours including prep, two coats, and cleanup." },
+      { "question": "Do you offer exterior painting?", "answer": "Yes, many painters handle both interior and exterior residential and commercial projects." }
+    ]
+  },
+  {
+    "slug": "carpentry",
+    "name": "Carpentry",
+    "icon": "Hammer",
+    "tagline": "Custom woodwork, repairs, and installations",
+    "description": "Skilled carpenters for furniture building, cabinet installation, deck construction, and wood repairs.",
+    "averagePrice": "$150 - $600",
+    "faqItems": [
+      { "question": "Can you build custom furniture?", "answer": "Yes, many carpenters on SwingBy create custom pieces to your specifications." },
+      { "question": "Do you handle deck construction?", "answer": "Several businesses specialize in deck building, from design through completion." },
+      { "question": "What types of wood do you work with?", "answer": "Carpenters work with a range of woods from pine and cedar to hardwoods like oak and walnut." }
+    ]
+  },
+  {
+    "slug": "handyman",
+    "name": "Handyman",
+    "icon": "Toolbox",
+    "tagline": "One call for all your odd jobs and home repairs",
+    "description": "General repairs, assembly, mounting, and maintenance tasks. Perfect for the projects that don't fit one category.",
+    "averagePrice": "$50 - $200",
+    "faqItems": [
+      { "question": "What kind of tasks can a handyman do?", "answer": "Everything from TV mounting and furniture assembly to drywall patching and door adjustments." },
+      { "question": "Is there a minimum booking time?", "answer": "Most handymen have a 1-2 hour minimum booking to make the trip worthwhile." },
+      { "question": "Can I book multiple tasks in one visit?", "answer": "Yes, that's the best way to use a handyman. Create a list and they'll work through it." }
+    ]
+  }
+]

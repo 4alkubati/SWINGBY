@@ -1,0 +1,287 @@
+.page {
+  min-height: calc(100vh - 64px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--space-2xl) var(--space-lg);
+}
+
+.card {
+  width: 100%;
+  max-width: 600px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-2xl);
+}
+
+.progress {
+  display: flex;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-2xl);
+}
+
+.dot {
+  flex: 1;
+  height: 4px;
+  border-radius: var(--radius-pill);
+  background: var(--color-border);
+  transition: background var(--duration-entry) var(--ease-entry);
+}
+
+.dotActive { background: var(--color-accent); }
+.dotDone { background: var(--color-success); }
+
+.stepLabel {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-accent-text);
+  margin-bottom: var(--space-sm);
+}
+
+.stepTitle {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-sm);
+}
+
+.stepSubtitle {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-xl);
+  line-height: 1.6;
+}
+
+.fieldGroup {
+  margin-bottom: var(--space-base);
+}
+
+.fieldLabel {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-xs);
+}
+
+.fieldInput {
+  width: 100%;
+  padding: var(--space-md) var(--space-base);
+  background: var(--color-surface-alt);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text-primary);
+  font-size: 14px;
+  transition: border-color var(--duration-entry) var(--ease-entry);
+}
+
+.fieldInput:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+.fieldTextarea {
+  composes: fieldInput;
+  min-height: 80px;
+  resize: vertical;
+}
+
+.categoryGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-sm);
+  margin-bottom: var(--space-xl);
+}
+
+.chip {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-md) var(--space-base);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-alt);
+  color: var(--color-text-secondary);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all var(--duration-entry) var(--ease-entry);
+}
+
+.chip:hover {
+  border-color: var(--color-accent);
+  color: var(--color-text-primary);
+}
+
+.chipSelected {
+  background: var(--color-accent-muted);
+  border-color: var(--color-accent);
+  color: var(--color-accent-text);
+}
+
+.dayRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-sm) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.dayRow:last-child {
+  border-bottom: none;
+}
+
+.dayName {
+  width: 80px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+.timeInputs {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex: 1;
+}
+
+.timeInput {
+  padding: var(--space-xs) var(--space-sm);
+  background: var(--color-surface-alt);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-primary);
+  font-size: 13px;
+  width: 100px;
+}
+
+.timeInput:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+.dash {
+  color: var(--color-text-secondary);
+}
+
+.teamRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-base);
+  background: var(--color-surface-alt);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-sm);
+}
+
+.teamAvatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--color-accent-muted);
+  color: var(--color-accent-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.teamInfo {
+  flex: 1;
+}
+
+.teamName {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.teamRole {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.addBtn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  width: 100%;
+  justify-content: center;
+  color: var(--color-text-secondary);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all var(--duration-entry) var(--ease-entry);
+  background: none;
+  margin-bottom: var(--space-xl);
+}
+
+.addBtn:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent-text);
+}
+
+.actions {
+  display: flex;
+  gap: var(--space-md);
+  margin-top: var(--space-xl);
+}
+
+.actions > * {
+  flex: 1;
+}
+
+.completeIcon {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: var(--color-success);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto var(--space-lg);
+  color: var(--color-bg);
+}
+
+.completeTitle {
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  text-align: center;
+  margin-bottom: var(--space-sm);
+}
+
+.completeDesc {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  text-align: center;
+  margin-bottom: var(--space-xl);
+  line-height: 1.6;
+}
+
+.completeCtas {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+@media (max-width: 600px) {
+  .card {
+    padding: var(--space-lg);
+  }
+  .categoryGrid {
+    grid-template-columns: 1fr;
+  }
+  .dayRow {
+    flex-wrap: wrap;
+  }
+}

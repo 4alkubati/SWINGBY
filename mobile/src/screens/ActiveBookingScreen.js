@@ -205,7 +205,7 @@ export default function ActiveBookingScreen({ navigation, route }) {
 
       {/* ── Empty (no booking) ── */}
       {!loading && !error && !booking && (
-        <NoActiveBooking onBrowse={() => navigation.navigate('Explore')} />
+        <NoActiveBooking onBrowse={() => navigation.navigate('Home')} />
       )}
 
       {/* ── Content ── */}
@@ -338,7 +338,7 @@ export default function ActiveBookingScreen({ navigation, route }) {
                 <Button
                   variant="secondary"
                   label="Cancel booking"
-                  onPress={() => navigation.navigate('CancelBooking', { bookingId: booking.id })}
+                  onPress={() => navigation.navigate('CancellationFlow', { bookingId: booking.id })}
                   style={styles.cancelBtn}
                 />
               </SpringCard>

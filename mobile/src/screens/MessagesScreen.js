@@ -133,7 +133,7 @@ export default function MessagesScreen({ navigation }) {
     setError(null);
     try {
       const data = await api.get('/bookings/');
-      const withChat = (data || []).filter(
+      const withChat = (data?.items || data || []).filter(
         (b) =>
           b.status === 'confirmed' ||
           b.status === 'in_progress' ||

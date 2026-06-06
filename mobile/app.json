@@ -17,7 +17,8 @@
       "bundleIdentifier": "com.swingby.app",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "SwingBy uses your location to show nearby service providers.",
-        "NSLocationAlwaysUsageDescription": "SwingBy uses your location to show nearby service providers."
+        "NSLocationAlwaysUsageDescription": "SwingBy uses your location to show nearby service providers.",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -29,7 +30,9 @@
       "package": "com.swingby.app",
       "permissions": [
         "ACCESS_FINE_LOCATION",
-        "ACCESS_COARSE_LOCATION"
+        "ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
       ]
     },
     "web": {
@@ -44,7 +47,14 @@
       ],
       "expo-font",
       "expo-secure-store",
-      "expo-notifications"
-    ]
+      "expo-notifications",
+      "@sentry/react-native",
+      "expo-localization"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "ec4c12cf-4859-416c-a375-a22fb676ae53"
+      }
+    }
   }
 }

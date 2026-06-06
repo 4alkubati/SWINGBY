@@ -1,0 +1,19 @@
+User-agent: *
+Allow: /
+Disallow: /dashboard
+Disallow: /bookings
+Disallow: /messages
+Disallow: /profile
+Disallow: /reviews
+Disallow: /favorites
+Disallow: /searches
+Disallow: /payment-methods
+Disallow: /account
+Disallow: /notifications
+Disallow: /privacy-settings
+Disallow: /business/
+Disallow: /onboarding/
+Disallow: /auth/
+Disallow: /maintenance
+
+Sitemap: https://swingbyy.com/sitemap.xml

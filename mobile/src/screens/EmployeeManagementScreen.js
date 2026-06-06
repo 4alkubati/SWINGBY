@@ -14,9 +14,9 @@ import {
   Platform,
   Animated,
   ActivityIndicator,
-  Clipboard,
   Alert,
 } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { api } from '../services/api';
 import { SkeletonList } from '../components/Skeleton';
@@ -219,7 +219,7 @@ function InviteModal({ visible, bizId, onClose }) {
   const inviteUrl = `swingby://invite/${bizId || 'demo'}`;
 
   function handleCopy() {
-    Clipboard.setString(inviteUrl);
+    Clipboard.setStringAsync(inviteUrl);
     Alert.alert('Copied!', 'Invite link copied to clipboard.');
     onClose();
   }
@@ -277,7 +277,7 @@ export default function EmployeeManagementScreen({ navigation, route }) {
     setLoading(true);
     try {
       const data = await api.get('/employees/');
-      setEmployees(Array.isArray(data) ? data : (data?.results ?? []));
+      setEmployees(Array.isArray(data) ? data : (data?.items || data?.results || []));
     } catch {
       setEmployees([]);
     } finally {

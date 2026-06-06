@@ -1,0 +1,38 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "web-pre-launch",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--prefix", "web/pre-launch"],
+      "port": 5173
+    },
+    {
+      "name": "web-admin",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--prefix", "web/admin"],
+      "port": 5174
+    },
+    {
+      "name": "mobile-expo",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["start", "--prefix", "mobile"],
+      "port": 8081,
+      "autoPort": false
+    },
+    {
+      "name": "backend-fastapi",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "uvicorn", "app.main:app", "--reload", "--port", "8000"],
+      "port": 8000,
+      "cwd": "backend"
+    },
+    {
+      "name": "waitlist-worker",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["wrangler", "dev"],
+      "port": 8787,
+      "cwd": "workers/waitlist"
+    }
+  ]
+}

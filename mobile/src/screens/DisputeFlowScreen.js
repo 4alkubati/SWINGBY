@@ -4,7 +4,6 @@
 import React, { useState } from 'react';
 import {
   View,
-  Text,
   TouchableOpacity,
   TextInput,
   StyleSheet,
@@ -18,7 +17,8 @@ import { Feather } from '@expo/vector-icons';
 import { api } from '../services/api';
 import * as toast from '../services/toast';
 import * as haptics from '../services/haptics';
-import { colors } from '../theme/tokens';
+import { colors, spacing, radius } from '../theme/tokens';
+import Text from '../components/Text';
 
 const ISSUE_TYPES = [
   { key: 'not_completed', label: 'Work not completed' },
@@ -256,7 +256,7 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.border,
   },
   backBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { fontSize: 16, fontWeight: '700', color: colors.textPrimary, letterSpacing: -0.3 },
+  headerTitle: { fontSize: 16, fontFamily: 'SpaceGrotesk_700Bold', color: colors.textPrimary, letterSpacing: -0.3 },
 
   progressWrap: {
     flexDirection: 'row',
@@ -274,20 +274,21 @@ const styles = StyleSheet.create({
 
   stepLabel: {
     fontSize: 11,
-    fontWeight: '700',
+    fontFamily: 'Inter_600SemiBold',
     color: colors.accent,
     textTransform: 'uppercase',
     letterSpacing: 1.0,
   },
   stepTitle: {
     fontSize: 22,
-    fontWeight: '700',
+    fontFamily: 'SpaceGrotesk_700Bold',
     color: colors.textPrimary,
     letterSpacing: -0.5,
     marginTop: -4,
   },
   stepBody: {
     fontSize: 14,
+    fontFamily: 'Inter_400Regular',
     color: colors.textSecondary,
     lineHeight: 21,
     marginTop: -4,
@@ -327,8 +328,8 @@ const styles = StyleSheet.create({
     borderRadius: 4.5,
     backgroundColor: colors.accent,
   },
-  radioLabel: { fontSize: 14, color: colors.textSecondary, fontWeight: '500', flex: 1 },
-  radioLabelActive: { color: colors.textPrimary, fontWeight: '600' },
+  radioLabel: { fontSize: 14, fontFamily: 'Inter_400Regular', color: colors.textSecondary, flex: 1 },
+  radioLabelActive: { color: colors.textPrimary, fontFamily: 'Inter_600SemiBold' },
 
   textArea: {
     backgroundColor: colors.surface,
@@ -366,7 +367,7 @@ const styles = StyleSheet.create({
     gap: 6,
     backgroundColor: colors.accent + '0A', // ~4% opacity
   },
-  photoLabel: { fontSize: 11, color: colors.accent, fontWeight: '600' },
+  photoLabel: { fontSize: 11, fontFamily: 'Inter_600SemiBold', color: colors.accent },
 
   bottomBar: {
     paddingHorizontal: 16,
@@ -388,5 +389,5 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   nextBtnDisabled: { opacity: 0.45 },
-  nextBtnText: { fontSize: 16, fontWeight: '700', color: colors.textPrimary },
+  nextBtnText: { fontSize: 16, fontFamily: 'Inter_600SemiBold', color: colors.textPrimary },
 });

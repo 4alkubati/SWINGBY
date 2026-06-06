@@ -1,0 +1,332 @@
+/* ── Download Page ── */
+
+.page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 var(--space-lg);
+}
+
+/* ── Hero ── */
+.hero {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3xl);
+  align-items: center;
+  padding: var(--space-4xl) 0 var(--space-3xl);
+}
+
+.heroContent {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-md);
+  background: var(--color-accent-muted);
+  border: 1px solid color-mix(in srgb, var(--color-accent) 25%, transparent);
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-accent-text);
+  margin-bottom: var(--space-lg);
+  letter-spacing: 0.3px;
+}
+
+.storeButtons {
+  display: flex;
+  gap: var(--space-md);
+  margin-top: var(--space-lg);
+}
+
+.storeBtn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-md) var(--space-lg);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text-primary);
+  text-decoration: none;
+  transition: border-color var(--duration-entry) var(--ease-entry),
+              background var(--duration-entry) var(--ease-entry);
+}
+
+.storeBtn:hover {
+  border-color: var(--color-accent);
+  background: var(--color-surface-alt);
+}
+
+.storeBtnText {
+  display: flex;
+  flex-direction: column;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.storeBtnSmall {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--color-text-secondary);
+}
+
+/* ── Phone Mockup ── */
+.heroVisual {
+  display: flex;
+  justify-content: center;
+}
+
+.phoneMockup {
+  width: 260px;
+  height: 520px;
+  background: var(--color-surface);
+  border: 2px solid var(--color-border);
+  border-radius: 36px;
+  padding: var(--space-md);
+  box-shadow: var(--shadow-elevated),
+    0 0 80px color-mix(in srgb, var(--color-accent) 8%, transparent);
+}
+
+.phoneScreen {
+  width: 100%;
+  height: 100%;
+  background: var(--color-bg);
+  border-radius: 28px;
+  overflow: hidden;
+  padding: var(--space-base);
+}
+
+.phoneStatusBar {
+  height: 28px;
+  background: var(--color-surface-alt);
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--space-base);
+}
+
+.phoneContent {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.phoneLine {
+  height: 12px;
+  background: var(--color-surface-alt);
+  border-radius: var(--radius-sm);
+}
+
+.phoneCard {
+  height: 80px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+/* ── QR Section ── */
+.qrSection {
+  padding: var(--space-2xl) 0;
+  display: flex;
+  justify-content: center;
+}
+
+.qrCard {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xl);
+  padding: var(--space-xl) var(--space-2xl);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  max-width: 520px;
+  width: 100%;
+}
+
+.qrPlaceholder {
+  flex-shrink: 0;
+  width: 120px;
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-surface-alt);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text-secondary);
+}
+
+.qrText {
+  flex: 1;
+}
+
+.qrTitle {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-sm);
+}
+
+.qrDesc {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+}
+
+/* ── Features ── */
+.features {
+  padding: var(--space-3xl) 0;
+}
+
+.featureGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-lg);
+}
+
+.featureCard {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-xl);
+  transition: border-color var(--duration-entry) var(--ease-entry);
+}
+
+.featureCard:hover {
+  border-color: color-mix(in srgb, var(--color-accent) 30%, transparent);
+}
+
+.featureIcon {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-accent-muted);
+  border-radius: var(--radius-md);
+  color: var(--color-accent-text);
+  margin-bottom: var(--space-base);
+}
+
+.featureTitle {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-sm);
+}
+
+.featureDesc {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+}
+
+/* ── Screenshots ── */
+.screenshots {
+  padding: var(--space-3xl) 0;
+  text-align: center;
+}
+
+.screenshotGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-lg);
+  margin-top: var(--space-xl);
+}
+
+.screenshotPlaceholder {
+  aspect-ratio: 9 / 16;
+  max-height: 400px;
+  background: var(--color-surface);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  color: var(--color-text-secondary);
+}
+
+.screenshotLabel {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+/* ── CTA ── */
+.cta {
+  text-align: center;
+  padding: var(--space-4xl) var(--space-lg);
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.ctaTitle {
+  font-family: var(--font-display);
+  font-size: clamp(24px, 3vw, 32px);
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-md);
+}
+
+.ctaDesc {
+  font-size: 16px;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+  margin-bottom: var(--space-xl);
+}
+
+/* ── Responsive ── */
+@media (max-width: 1024px) {
+  .featureGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .hero {
+    grid-template-columns: 1fr;
+    gap: var(--space-2xl);
+    padding: var(--space-2xl) 0;
+    text-align: center;
+  }
+
+  .heroContent {
+    align-items: center;
+  }
+
+  .storeButtons {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .storeBtn {
+    justify-content: center;
+  }
+
+  .phoneMockup {
+    width: 220px;
+    height: 440px;
+  }
+
+  .qrCard {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .featureGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .screenshotGrid {
+    grid-template-columns: 1fr;
+    max-width: 280px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}

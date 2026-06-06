@@ -1,0 +1,109 @@
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 0 var(--space-lg) var(--space-4xl);
+}
+
+.section {
+  padding: var(--space-lg) 0;
+}
+
+.sectionTitle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-family: var(--font-display);
+  font-size: clamp(20px, 3vw, 24px);
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-xl);
+}
+
+/* Press Kit */
+.kitBlock {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-lg);
+  padding: var(--space-xl);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.kitIcon {
+  flex-shrink: 0;
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-accent-muted);
+  color: var(--color-accent-text);
+  border-radius: var(--radius-md);
+}
+
+.kitBody {
+  flex: 1;
+}
+
+.kitTitle {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-sm);
+}
+
+.kitDesc {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+  margin-bottom: var(--space-lg);
+}
+
+/* Media Contact */
+.contactBlock {
+  text-align: center;
+  padding: var(--space-2xl);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.contactIcon {
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-base);
+}
+
+.contactTitle {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-sm);
+}
+
+.contactDesc {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+  max-width: 420px;
+  margin: 0 auto var(--space-lg);
+}
+
+.contactEmail {
+  display: inline-block;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-accent-text);
+  text-decoration: none;
+  transition: opacity var(--duration-entry) var(--ease-entry);
+}
+
+.contactEmail:hover {
+  opacity: 0.8;
+}
+
+@media (max-width: 768px) {
+  .kitBlock {
+    flex-direction: column;
+  }
+}

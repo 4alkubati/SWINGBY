@@ -1,0 +1,106 @@
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: var(--space-2xl) var(--space-lg) var(--space-4xl);
+}
+
+.breadcrumbs {
+  margin-bottom: var(--space-xl);
+}
+
+/* Hero */
+.hero {
+  text-align: center;
+  padding: var(--space-2xl) 0;
+}
+
+.heroIcon {
+  width: 80px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-accent-muted);
+  color: var(--color-accent-text);
+  border-radius: var(--radius-lg);
+  margin: 0 auto var(--space-lg);
+}
+
+.heroTitle {
+  font-family: var(--font-display);
+  font-size: clamp(32px, 5vw, 48px);
+  font-weight: 700;
+  letter-spacing: -1px;
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-md);
+}
+
+.heroTagline {
+  font-size: 18px;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+}
+
+/* Description */
+.descSection {
+  padding: var(--space-xl) 0;
+}
+
+.description {
+  font-size: 16px;
+  color: var(--color-text-secondary);
+  line-height: 1.7;
+  margin-bottom: var(--space-xl);
+}
+
+.priceBlock {
+  display: flex;
+  align-items: center;
+  gap: var(--space-base);
+  padding: var(--space-lg);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.priceIcon {
+  color: var(--color-accent-text);
+  flex-shrink: 0;
+}
+
+.priceLabel {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 2px;
+}
+
+.priceValue {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+/* CTA */
+.ctaRow {
+  text-align: center;
+  padding: var(--space-lg) 0 var(--space-2xl);
+}
+
+/* FAQ */
+.faqSection {
+  padding-top: var(--space-xl);
+  border-top: 1px solid var(--color-border);
+}
+
+.faqTitle {
+  font-family: var(--font-display);
+  font-size: clamp(22px, 3vw, 28px);
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-xl);
+}

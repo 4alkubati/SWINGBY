@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { show as showToast } from './toast';
 
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://127.0.0.1:8000';
 
@@ -20,9 +21,17 @@ export function setUnauthorizedHandler(fn) {
   _onUnauthorized = fn;
 }
 
+let _reqCounter = 0;
+
 api.interceptors.request.use((config) => {
   if (_token) {
     config.headers.Authorization = `Bearer ${_token}`;
+  }
+  _reqCounter += 1;
+  config.headers['X-Request-ID'] = `mob-${Date.now()}-${_reqCounter}`;
+
+  if (config.url?.startsWith('/auth/')) {
+    config.timeout = 30000;
   }
   return config;
 });
@@ -64,17 +73,46 @@ api.interceptors.response.use(
 );
 
 // ─── Existing 401 handler + response unwrap ───────────────────────────────────
+//
+// FastAPI returns validation errors as { detail: [{loc, msg, type}, ...] } —
+// an ARRAY of objects, not a string. Concatenating the array directly into
+// `new Error(...)` stringifies to "[object Object]" and shows up that way in
+// the UI. extractMessage walks every common error shape and always returns a
+// plain string so the UI can render it.
+export function extractMessage(error) {
+  if (!error) return 'Something went wrong';
+  const data = error.response?.data;
+
+  if (data) {
+    // FastAPI string detail: { detail: "Invalid credentials" }
+    if (typeof data.detail === 'string') return data.detail;
+    // FastAPI validation array: { detail: [{loc, msg}, ...] }
+    if (Array.isArray(data.detail)) {
+      return data.detail
+        .map((d) => (typeof d === 'string' ? d : d?.msg || 'Validation error'))
+        .join(', ');
+    }
+    // Generic { message: "..." } shape
+    if (typeof data.message === 'string') return data.message;
+    if (typeof data.error === 'string') return data.error;
+    // Object detail (rare): { detail: { msg: "..." } }
+    if (data.detail?.msg) return String(data.detail.msg);
+  }
+
+  if (typeof error.message === 'string') return error.message;
+  return 'Something went wrong';
+}
+
 api.interceptors.response.use(
   (response) => response.data,
   (error) => {
     if (error.response?.status === 401 && _onUnauthorized) {
       _onUnauthorized();
     }
-    const message =
-      error.response?.data?.detail ||
-      error.response?.data?.message ||
-      error.message ||
-      'Something went wrong';
-    return Promise.reject(new Error(message));
+    const msg = extractMessage(error);
+    if (error.response?.status !== 401) {
+      showToast({ type: 'error', text1: 'Request failed', text2: msg });
+    }
+    return Promise.reject(new Error(msg));
   }
 );

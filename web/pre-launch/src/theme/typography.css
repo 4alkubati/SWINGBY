@@ -1,90 +1,90 @@
-.display1 {
-  font-family: 'Space Grotesk', sans-serif;
+@import '@fontsource/space-grotesk/700.css';
+@import '@fontsource/space-grotesk/400.css';
+@import '@fontsource/inter/400.css';
+@import '@fontsource/inter/500.css';
+@import '@fontsource/inter/600.css';
+@import '@fontsource/inter/700.css';
+
+.display-lg {
+  font-family: var(--font-display);
   font-weight: 700;
-  font-size: 40px;
-  line-height: 48px;
+  font-size: 56px;
+  line-height: 1.15;
   letter-spacing: -1px;
   color: var(--color-text-primary);
 }
 
-.display2 {
-  font-family: 'Space Grotesk', sans-serif;
+.display-md {
+  font-family: var(--font-display);
   font-weight: 700;
-  font-size: 28px;
-  line-height: 34px;
+  font-size: 40px;
+  line-height: 1.15;
   letter-spacing: -0.5px;
   color: var(--color-text-primary);
 }
 
-.display3 {
-  font-family: 'Space Grotesk', sans-serif;
+.display-sm {
+  font-family: var(--font-display);
   font-weight: 700;
-  font-size: 22px;
-  line-height: 28px;
+  font-size: 32px;
+  line-height: 1.15;
+  letter-spacing: -0.5px;
+  color: var(--color-text-primary);
+}
+
+.heading-lg {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 24px;
+  line-height: 1.3;
   letter-spacing: -0.3px;
   color: var(--color-text-primary);
 }
 
-.h1 {
-  font-family: 'Space Grotesk', sans-serif;
+.heading-md {
+  font-family: var(--font-display);
   font-weight: 700;
   font-size: 20px;
-  line-height: 26px;
+  line-height: 1.3;
   letter-spacing: -0.3px;
   color: var(--color-text-primary);
 }
 
-.h2 {
-  font-family: 'Space Grotesk', sans-serif;
-  font-weight: 400;
+.heading-sm {
+  font-family: var(--font-display);
+  font-weight: 700;
   font-size: 18px;
-  line-height: 24px;
+  line-height: 1.3;
   color: var(--color-text-primary);
 }
 
-.body {
-  font-family: 'Inter', sans-serif;
+.body-lg {
+  font-family: var(--font-sans);
   font-weight: 400;
   font-size: 16px;
-  line-height: 24px;
+  line-height: 1.5;
   color: var(--color-text-primary);
 }
 
-.body-medium {
-  font-family: 'Inter', sans-serif;
-  font-weight: 600;
-  font-size: 16px;
-  line-height: 24px;
-  color: var(--color-text-primary);
-}
-
-.small {
-  font-family: 'Inter', sans-serif;
+.body-md {
+  font-family: var(--font-sans);
   font-weight: 400;
   font-size: 14px;
-  line-height: 20px;
+  line-height: 1.5;
   color: var(--color-text-secondary);
 }
 
-.small-medium {
-  font-family: 'Inter', sans-serif;
-  font-weight: 600;
-  font-size: 14px;
-  line-height: 20px;
-  color: var(--color-text-secondary);
-}
-
-.caption {
-  font-family: 'Inter', sans-serif;
+.body-sm {
+  font-family: var(--font-sans);
   font-weight: 400;
   font-size: 12px;
-  line-height: 16px;
+  line-height: 1.5;
   color: var(--color-text-secondary);
 }
 
 .label {
-  font-family: 'Inter', sans-serif;
-  font-weight: 600;
+  font-family: var(--font-sans);
+  font-weight: 700;
   font-size: 11px;
   line-height: 14px;
   letter-spacing: 0.8px;

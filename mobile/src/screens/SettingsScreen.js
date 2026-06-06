@@ -7,8 +7,13 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
-import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
+
+// expo-notifications is lazy-required (see services/notifications.js for the
+// full explanation). Imported here only inside handlers, never at module load.
+const isExpoGo =
+  Constants.appOwnership === 'expo' ||
+  Constants.executionEnvironment === 'storeClient';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 import { show as showToast } from '../services/toast';
@@ -39,16 +44,31 @@ export default function SettingsScreen() {
   const [deleteLoading, setDeleteLoading] = useState(false);
 
   useEffect(() => {
-    Notifications.getPermissionsAsync().then(({ status }) => {
-      setNotifEnabled(status === 'granted');
-    });
+    if (isExpoGo) return;
+    try {
+      const Notifications = require('expo-notifications');
+      Notifications.getPermissionsAsync().then(({ status }) => {
+        setNotifEnabled(status === 'granted');
+      }).catch(() => {});
+    } catch {
+      // Native module unavailable — leave switch off.
+    }
   }, []);
 
   async function toggleNotifications(val) {
-    if (val) {
-      const { status } = await Notifications.requestPermissionsAsync();
-      setNotifEnabled(status === 'granted');
-    } else {
+    if (isExpoGo) {
+      // Expo Go can't grant push perms. Silently no-op the toggle.
+      return;
+    }
+    try {
+      const Notifications = require('expo-notifications');
+      if (val) {
+        const { status } = await Notifications.requestPermissionsAsync();
+        setNotifEnabled(status === 'granted');
+      } else {
+        setNotifEnabled(false);
+      }
+    } catch {
       setNotifEnabled(false);
     }
   }

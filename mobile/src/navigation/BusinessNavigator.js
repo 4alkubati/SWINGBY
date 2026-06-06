@@ -1,6 +1,7 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import BottomNav from '../components/BottomNav';
+import ErrorBoundary from '../components/ErrorBoundary';
 
 import DashboardScreen from '../screens/DashboardScreen';
 import MessagesScreen from '../screens/MessagesScreen';
@@ -50,6 +51,7 @@ function BusinessTabs() {
 
 export default function BusinessNavigator() {
   return (
+    <ErrorBoundary>
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="BusinessTabs" component={BusinessTabs} />
       <Stack.Screen name="JobManagement" component={JobManagementScreen} />
@@ -69,5 +71,6 @@ export default function BusinessNavigator() {
       <Stack.Screen name="PaymentMethod" component={PaymentMethodScreen} />
       <Stack.Screen name="DisputeFlow" component={DisputeFlowScreen} />
     </Stack.Navigator>
+    </ErrorBoundary>
   );
 }

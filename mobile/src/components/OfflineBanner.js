@@ -6,8 +6,9 @@
 //     ...rest of tree
 //   </SafeAreaProvider>
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, Animated, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, Animated, StyleSheet } from 'react-native';
 import NetInfo from '@react-native-community/netinfo';
+import { colors } from '../theme/tokens';
 
 const BANNER_HEIGHT = 32;
 
@@ -51,7 +52,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: BANNER_HEIGHT,
-    backgroundColor: '#FF5C00',
+    backgroundColor: colors.danger,
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 9999,
@@ -59,7 +60,7 @@ const styles = StyleSheet.create({
   label: {
     fontFamily: 'Inter_400Regular',
     fontSize: 12,
-    color: '#ffffff',
+    color: colors.textPrimary,
     textAlign: 'center',
     paddingHorizontal: 16,
   },
