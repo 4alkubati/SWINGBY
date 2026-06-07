@@ -25,3 +25,11 @@ Thumbs.db
 CODE/
 research/
 push.log
+
+# Obsidian — personal vault config, never commit
+.obsidian/
+
+# Test credentials — never commit
+SEED ACCOUNT FOR TESTING*
+seed-account*
+test-credentials*
