@@ -1,0 +1,28 @@
+.wrapper { display: flex; flex-direction: column; gap: var(--space-xs); }
+
+.label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  letter-spacing: 0.3px;
+}
+
+.input {
+  padding: var(--space-md) var(--space-base);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-primary);
+  font-size: 14px;
+  transition: border-color var(--duration-entry) var(--ease-entry);
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+.input.error { border-color: var(--color-danger); }
+
+.errorMsg { font-size: 12px; color: var(--color-danger); }
+.hint { font-size: 12px; color: var(--color-text-secondary); }

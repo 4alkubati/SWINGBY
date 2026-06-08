@@ -43,9 +43,9 @@ const COLUMNS = [
   {
     titleKey: 'footer.social',
     links: [
-      { href: 'https://twitter.com/swingbyapp', label: 'Twitter' },
-      { href: 'https://instagram.com/swingbyapp', label: 'Instagram' },
-      { href: 'https://linkedin.com/company/swingby', label: 'LinkedIn' },
+      { href: 'https://instagram.com/swingbyy', label: 'Instagram' },
+      { href: 'https://twitter.com/swingbyy', label: 'Twitter / X' },
+      { href: 'https://tiktok.com/@swingbyyy', label: 'TikTok' },
     ],
   },
 ]

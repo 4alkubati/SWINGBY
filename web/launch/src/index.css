@@ -1,0 +1,26 @@
+body {
+  background: var(--color-bg);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+}
+
+.skip-to-content {
+  position: absolute;
+  left: -9999px;
+  top: var(--space-sm);
+  padding: var(--space-sm) var(--space-base);
+  background: var(--color-accent);
+  color: #fff;
+  border-radius: var(--radius-sm);
+  z-index: 9999;
+  font-weight: 600;
+}
+
+.skip-to-content:focus {
+  left: var(--space-base);
+}
+
+*:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
