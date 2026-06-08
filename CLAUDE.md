@@ -192,6 +192,11 @@ AWS_BUCKET=                          ← leave empty until file uploads needed
 | JWT expiry | ✅ 3600s default (free plan, not configurable) |
 | Email confirmation | ⚠️ Check: Auth → Sign In / Providers → Email → "Confirm email" ON |
 | AWS S3 bucket | ⚪ Not needed until file uploads (post-MVP) |
+| CSP headers (_headers for Cloudflare/Netlify) | ✅ web/launch/public/_headers |
+| Admin role in DB constraint | ✅ wave-5-admin-role.sql applied, amrbasem37@gmail.com = admin |
+| CI secret scan + npm audit | ✅ .github/workflows/web-launch-ci.yml |
+| react-router-dom XSS (GHSA-2w69) | ✅ Upgraded to 6.30.4 |
+| xlsx prototype pollution (no npm fix) | ✅ Replaced with ExcelJS |
 
 ---
 
@@ -199,19 +204,16 @@ AWS_BUCKET=                          ← leave empty until file uploads needed
 
 **Two versions to build:**
 
-### Version 1 — Pre-launch (build now)
-- Coming soon / waitlist page
-- Hero section with value prop
-- Email capture for early access
-- Clean, modern design
-- Tech: React + Vite (already scaffolded in `web/`)
+### Version 1 — Pre-launch ✅ DONE (`web/pre-launch/`)
+- Coming soon / waitlist page with email capture
 
-### Version 2 — Full launch (later)
-- Full marketing site
-- How it works
-- Pricing
-- Business sign-up flow
-- Blog/press
+### Version 2 — Full launch ✅ DONE (`web/launch/`)
+- 40+ routes: marketing, auth, app/dashboard (client + business)
+- Analytics (Recharts), Earnings ledger, CSV/XLSX exports (ExcelJS)
+- Webhook form, API keys management
+- CSP headers, Sentry, Plausible analytics, WCAG 2.1 AA
+- Pending: Stripe payment UI, GET /businesses/me/analytics backend endpoint,
+  POST /api-keys backend endpoint + migration
 
 ---
 
@@ -243,3 +245,4 @@ Branch: main
 | 2026-05-14 | Added auth/me, geo-browse, input validation, supabase hardening, orphan cleanup |
 | 2026-05-14 | Applied all RLS policies to Supabase via MCP, expiry cron live, 0 security warnings |
 | 2026-05-16 | Starting web/ — pre-launch website (Version 1) |
+| 2026-06-07–08 | Built web/launch/ — full launch site (Workstreams A–E, 5 commits pushed) |
