@@ -10,7 +10,7 @@
 |---|---|---|
 | 1 | Mobile app builds for iOS via `eas build --profile production --platform ios` without warnings | ☐ |
 | 2 | Mobile app builds for Android (same command, `--platform android`) without warnings | ☐ |
-| 3 | Seed accounts (`client@swingby.test`, `business@swingby.test`) log in successfully on a real device | ☐ |
+| 3 | Seed accounts (`client@swingby.app`, `business@swingby.app`) log in successfully on a real device | ☐ |
 | 4 | End-to-end booking flow tested on real device: post → quote → accept → complete → review | ☐ |
 | 5 | Push notification arrives within 30s of trigger on a physical device | ☐ |
 | 6 | Deep links open the correct screen: `swingby://booking/<id>`, `swingby://invite/<code>` | ☐ |

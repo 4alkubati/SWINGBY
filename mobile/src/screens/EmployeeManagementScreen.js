@@ -151,7 +151,7 @@ function EmployeeEditModal({ employee, visible, onClose, onSaved }) {
     >
       <KeyboardAvoidingView
         style={styles.modalOverlay}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior="padding"
       >
         <TouchableOpacity style={styles.modalBackdrop} onPress={onClose} activeOpacity={1} />
         <Animated.View

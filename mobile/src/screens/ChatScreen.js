@@ -349,7 +349,7 @@ export default function ChatScreen({ navigation, route }) {
   return (
     <KeyboardAvoidingView
       style={[styles.screen, { paddingTop: insets.top }]}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={0}
     >
       {/* ── Header ─────────────────────────────────────────────────────────── */}

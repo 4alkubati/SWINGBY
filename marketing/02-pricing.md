@@ -16,26 +16,27 @@ Why: marketplace demand-side friction is fatal. Free clients = liquidity.
 
 ## Business pricing — base
 
-| Item | Price | Notes |
-|---|---|---|
-| Signup | Free | |
-| Listing | Free | One business = one listing |
-| Geo-browse visibility | Free | |
-| Post-and-match interest expressions | Free | Unlimited |
-| Messaging on confirmed bookings | Free | |
-| **Transaction fee** | **10% of total** | Taken on completion |
+| Item                                | Price            | Notes                      |
+| ----------------------------------- | ---------------- | -------------------------- |
+| Signup                              | Free             |                            |
+| Listing                             | Free             | One business = one listing |
+| Geo-browse visibility               | Free             |                            |
+| Post-and-match interest expressions | Free             | Unlimited                  |
+| Messaging on confirmed bookings     | Free             |                            |
+| **Transaction fee**                 | **10% of total** | Taken on completion        |
+|                                     |                  |                            |
 
 ---
 
 ## Business pricing — paid add-ons (post-launch month 2+)
 
-| Add-on | Price | What you get |
-|---|---|---|
+| Add-on                     | Price     | What you get                                                            |
+| -------------------------- | --------- | ----------------------------------------------------------------------- |
 | Featured listing (monthly) | $29/month | Top placement in your category + neighbourhood, max 3 featured per slot |
-| Boost (per-use) | $5 / 24h | Same as above but one-shot |
-| Verified Business badge | $99/year | Manual verification of license, insurance, references. Filter target. |
-| Lead pack — Starter | $50 | 10 lead intros, no 10% fee on those bookings |
-| Lead pack — Growth | $200 | 50 lead intros, no 10% fee |
+| Boost (per-use)            | $5 / 24h  | Same as above but one-shot                                              |
+| Verified Business badge    | $99/year  | Manual verification of license, insurance, references. Filter target.   |
+| Lead pack — Starter        | $50       | 10 lead intros, no 10% fee on those bookings                            |
+| Lead pack — Growth         | $200      | 50 lead intros, no 10% fee                                              |
 
 ---
 

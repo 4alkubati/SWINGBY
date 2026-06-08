@@ -86,7 +86,7 @@ export default function ReviewSubmitSheet({
 
       <KeyboardAvoidingView
         style={styles.sheetWrap}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior="padding"
         pointerEvents="box-none"
       >
         <View style={[styles.sheet, { paddingBottom: insets.bottom + 20 }]}>

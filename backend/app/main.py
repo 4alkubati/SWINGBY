@@ -113,8 +113,8 @@ def health_check():
         with engine.connect() as conn:
             conn.execute(text("SELECT 1"))
         return {"status": "ok", "database": "connected"}
-    except Exception as e:
-        return {"status": "error", "detail": str(e)}
+    except Exception:
+        return {"status": "error", "detail": "Database unavailable"}
 
 
 @app.get("/healthz")

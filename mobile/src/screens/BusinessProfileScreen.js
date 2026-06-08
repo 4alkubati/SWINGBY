@@ -1,5 +1,5 @@
 import {
-  View, ScrollView, StyleSheet, RefreshControl, Alert,
+  View, ScrollView, StyleSheet, RefreshControl, Alert, Platform,
   TextInput, Switch, FlatList, Animated as RNAnimated,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -255,20 +255,32 @@ export default function BusinessProfileScreen({ navigation, route }) {
       await load();
       setEditMode(false);
     } catch (err) {
-      Alert.alert('Error', err.message || 'Could not save changes.');
+      const msg = err.message || 'Could not save changes.';
+      if (Platform.OS === 'web') {
+        window.alert(msg);
+      } else {
+        Alert.alert('Error', msg);
+      }
     } finally {
       setSaving(false);
     }
   }
 
-  function handleLogout() {
+  async function handleLogout() {
+    if (Platform.OS === 'web') {
+      if (window.confirm('Are you sure you want to log out?')) {
+        setLoggingOut(true);
+        try { await logout(); } catch { /* AuthContext handles cleanup */ }
+      }
+      return;
+    }
     Alert.alert('Log out', 'Are you sure you want to log out?', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Log out', style: 'destructive',
         onPress: async () => {
           setLoggingOut(true);
-          try { await logout(); } finally { setLoggingOut(false); }
+          try { await logout(); } catch { /* AuthContext handles cleanup */ }
         },
       },
     ]);
