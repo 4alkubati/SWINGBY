@@ -33,3 +33,10 @@ push.log
 SEED ACCOUNT FOR TESTING*
 seed-account*
 test-credentials*
+
+# Live credentials for autonomous agents — NEVER commit
+# Templates (*.template.txt) are committed; filled-in files are not.
+.claude/secrets/*
+!.claude/secrets/*.template.txt
+!.claude/secrets/.gitkeep
+!.claude/secrets/README.md
