@@ -54,17 +54,16 @@ You can disable these by clearing app storage. Features that depend on them may 
 
 ### 3. Analytics
 
-These cookies help us understand how users use the platform so we can improve it. They do not identify you personally.
+We use **Cloudflare Web Analytics**, which is privacy-first by design: it **does not set cookies**, does not use fingerprinting, and does not track users across sites.
 
-| Tool | What it tracks | Data sent to | Opt-out |
+| Tool | What it tracks | Data sent to | Cookies? |
 |---|---|---|---|
-| PostHog | Page views, button clicks, feature usage, funnel steps, session recording (no PII) | PostHog cloud or self-hosted | Opt out via cookie banner |
-| Plausible (or Umami) | Page views, referrers, device type — no PII, no fingerprinting | Plausible cloud or self-hosted | Opt out via cookie banner |
-| Sentry | JavaScript errors, crash reports — may include partial URL or stack trace | Sentry (US/EU) | Contact privacy@swingby.ca |
+| Cloudflare Web Analytics | Aggregate page views, referrers, country-level data | Cloudflare (global edge) | **No cookies** |
+| Sentry | JavaScript errors and crash reports (may include partial URL or stack trace) | Sentry (US) | Session storage only — no third-party cookies |
 
-> TODO (HUMAN): Confirm which analytics tools are in production before publishing. Update this table accordingly.
+Because Cloudflare Web Analytics does not use cookies, you do not need to opt in or out — there is nothing to consent to. We deliberately chose this tool to avoid showing a cookie banner.
 
-Analytics cookies are only set with your consent (where required by law). You can withdraw consent at any time.
+We do not currently use any product analytics provider (PostHog, Mixpanel, Amplitude, etc.). If we add one in the future, this policy will be updated and consent will be obtained where required.
 
 ---
 

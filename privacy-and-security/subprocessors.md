@@ -24,19 +24,18 @@ SwingBy uses the following subprocessors to provide its platform. Each has been 
 
 ---
 
-### Stripe
+### Stripe (planned — not yet integrated)
 
 | Field | Detail |
 |---|---|
 | **Purpose** | Payment processing and escrow |
-| **Data processed** | Payment amounts, transaction IDs, payout records. Stripe directly processes card data — SwingBy does not. |
+| **Status** | **Not yet integrated.** SwingBy is currently in pre-launch testing. Stripe will be enabled before public launch, after the business email is provisioned and Stripe Connect onboarding is complete. |
+| **Data processed (once live)** | Payment amounts, transaction IDs, payout records. Stripe directly processes card data — SwingBy does not. |
 | **Hosting location** | United States (with EU infrastructure available) |
 | **Privacy policy** | stripe.com/privacy |
 | **DPA** | stripe.com/legal/dpa |
 | **Security certifications** | PCI-DSS Level 1, SOC 2, ISO 27001 |
-| **Notes** | SwingBy never receives or stores card numbers, CVVs, or expiry dates. |
-
-> TODO (HUMAN): Confirm Stripe integration is live and the Connect account is configured before publishing.
+| **Notes** | When live, SwingBy will never receive or store card numbers, CVVs, or expiry dates. |
 
 ---
 
@@ -82,51 +81,45 @@ SwingBy uses the following subprocessors to provide its platform. Each has been 
 
 ---
 
-### Resend / Amazon SES / Postmark (transactional email)
+### Resend (transactional email)
 
 | Field | Detail |
 |---|---|
 | **Purpose** | Sending transactional emails: welcome, booking confirmation, password reset, notifications |
 | **Data processed** | Email address, first name, email content |
 | **Hosting location** | United States |
-| **Privacy policy** | resend.com/privacy / docs.aws.amazon.com/ses (SES) / postmarkapp.com/privacy-policy |
-| **DPA** | Available from each provider on request |
-| **Security certifications** | SOC 2 (Resend, Postmark) |
-| **Notes** | Email content is transactional only — not used for marketing without separate consent. |
-
-> TODO (HUMAN): Confirm which transactional email provider is in use before publishing.
+| **Privacy policy** | resend.com/privacy |
+| **DPA** | resend.com/legal/dpa |
+| **Security certifications** | SOC 2 Type II |
+| **Notes** | Email content is transactional only — not used for marketing without separate consent. Marketing emails (if launched later) will use a separate sender domain and CASL-compliant double opt-in. |
 
 ---
 
-### PostHog / Plausible (analytics)
+### Cloudflare Web Analytics (web analytics)
 
 | Field | Detail |
 |---|---|
-| **Purpose** | Product analytics: page views, feature usage, funnel analysis |
-| **Data processed** | Anonymized usage events, device type, session data. No PII by default. |
-| **Hosting location** | PostHog cloud: US or EU. Plausible: EU (Germany). Self-hosted option available. |
-| **Privacy policy** | posthog.com/privacy / plausible.io/privacy |
-| **DPA** | posthog.com/dpa / plausible.io/dpa |
-| **Security certifications** | SOC 2 (PostHog) |
-| **Notes** | Plausible uses no cookies and no fingerprinting. PostHog can be configured for cookie-free tracking. |
-
-> TODO (HUMAN): Confirm which analytics provider is active and whether self-hosted or cloud.
+| **Purpose** | Aggregate web analytics — page views, referrers, country-level visitor data |
+| **Data processed** | Page URL, referrer, anonymized visit data. **No cookies.** **No cross-site tracking.** **No persistent identifiers.** |
+| **Hosting location** | Global edge (Cloudflare). Aggregated server-side. |
+| **Privacy policy** | cloudflare.com/web-analytics (privacy notice) |
+| **DPA** | cloudflare.com/gdpr/introduction |
+| **Security certifications** | ISO 27001, SOC 2, PCI DSS |
+| **Notes** | Cookie-free and privacy-first by design — no consent banner required under PIPEDA/GDPR. We do not use any product analytics tool (PostHog, Mixpanel, etc.) at this stage. |
 
 ---
 
-### Cloudflare (CDN and DDoS protection)
+### Cloudflare (CDN, DDoS protection, DNS, web analytics)
 
 | Field | Detail |
 |---|---|
-| **Purpose** | Content delivery, DDoS mitigation, DNS |
-| **Data processed** | IP addresses (in transit), HTTP headers, cached static assets |
+| **Purpose** | Content delivery, DDoS mitigation, DNS, bot protection, rate limiting, web analytics |
+| **Data processed** | IP addresses (in transit), HTTP headers, cached static assets, aggregated analytics |
 | **Hosting location** | Global edge network (US-based corporate entity) |
 | **Privacy policy** | cloudflare.com/privacypolicy |
 | **DPA** | cloudflare.com/gdpr/introduction |
 | **Security certifications** | ISO 27001, SOC 2, PCI DSS |
-| **Notes** | Cloudflare does not have access to database contents. IP logs are transient. |
-
-> TODO (HUMAN): Confirm whether Cloudflare is in use. If only DNS, data processing is minimal.
+| **Notes** | Cloudflare does not have access to database contents. IP logs are transient. Used as our primary edge layer — the entire `swingby.ca` zone is proxied through Cloudflare. |
 
 ---
 

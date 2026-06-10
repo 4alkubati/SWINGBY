@@ -93,11 +93,9 @@ If SwingBy's servers were compromised, no card data would be at risk because we 
 | Component | Provider | Region |
 |---|---|---|
 | Database, auth, storage | Supabase (on AWS) | ca-central-1 (Montreal) |
-| Backend API | [Render / Fly.io / Railway — TODO: confirm] | [Confirm region] |
+| Backend API | Render | Oregon (us-west) |
 | Mobile app delivery | Expo EAS | US |
-| CDN / DDoS protection | Cloudflare (if applicable) | Global edge |
-
-> TODO (HUMAN): Confirm backend hosting provider and region before publishing.
+| CDN / DDoS protection | Cloudflare | Global edge |
 
 SwingBy's backend does not run on a shared web host. It runs as a containerized service with environment-variable-based configuration. There is no configuration file with credentials on disk.
 
@@ -126,13 +124,11 @@ Secrets (database passwords, API keys, Supabase service keys) are managed as fol
 
 ## Backup and recovery
 
-**Automatic backups:** Supabase performs automated daily backups of the database. On the free plan, backups are retained for 7 days. On paid plans, up to 30 days.
+**Automatic backups:** Supabase performs automated daily backups of the database. On our current free plan, backups are retained for 7 days. We will evaluate upgrading to the Pro plan (point-in-time recovery, 30-day retention) once the platform processes recurring paying-customer transactions.
 
 **Recovery targets:**
 - Recovery Point Objective (RPO): 24 hours (maximum data loss in a catastrophic failure)
 - Recovery Time Objective (RTO): 4 hours (maximum time to restore service)
-
-> TODO (HUMAN): Upgrade Supabase plan to get point-in-time recovery if the platform processes significant transaction volume.
 
 ---
 

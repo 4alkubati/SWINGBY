@@ -162,7 +162,15 @@ Next update in 30 minutes.
 
 ### External user-facing template (post only if user data was accessed or service is significantly impacted)
 
-> TODO (HUMAN): Determine communication channels before launch (in-app banner, email, Twitter post). Draft with legal review.
+**Communication channels (in order of priority):**
+
+1. **Email** to affected users via Resend (primary — required for regulatory notification under PIPEDA where personal data is involved)
+2. **In-app banner** on the next session start
+3. **Twitter / X** — [@swingbyca](https://twitter.com/swingbyca) — for public awareness and ongoing updates
+4. **Instagram** — [@swingbyca](https://instagram.com/swingbyca) — story post linking to a full statement on the website
+5. **Status page** — `/status` updated with incident summary and ongoing updates
+
+The same wording goes to all channels (no inconsistencies). Twitter and Instagram are the public-facing channels we expect users to check first; email is the channel of record for regulatory and legal purposes. All external comms drafts are reviewed by counsel before posting if the incident involves a confirmed breach of personal data.
 
 Generic template:
 
