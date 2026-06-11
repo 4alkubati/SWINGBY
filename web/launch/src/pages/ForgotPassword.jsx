@@ -7,7 +7,6 @@ import SEO from '../components/SEO'
 import Button from '../components/Button'
 import Input from '../components/Input'
 import { sendPasswordReset } from '../lib/auth'
-import styles from './Auth.module.css'
 
 const schema = z.object({ email: z.string().email('Enter a valid email') })
 

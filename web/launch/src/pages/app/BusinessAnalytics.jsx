@@ -5,9 +5,9 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
 } from 'recharts'
 import { format, subDays, parseISO, startOfDay, isWithinInterval } from 'date-fns'
-import { CurrencyDollar, CalendarCheck, Star, Users, ArrowUp, ArrowDown } from '@phosphor-icons/react'
+import { CurrencyDollar, CalendarCheck, Star } from '@phosphor-icons/react'
 import api from '../../lib/api'
-import Spinner from '../../components/Spinner'
+import Skeleton from '../../components/Skeleton'
 import Alert from '../../components/Alert'
 import StatCard from '../../components/StatCard'
 import styles from './Dashboard.module.css'
@@ -32,8 +32,6 @@ const CUSTOM_TOOLTIP_STYLE = {
   color: 'var(--color-text-primary)',
 }
 
-function fmt(n) { return `$${Number(n || 0).toLocaleString('en-CA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` }
-
 export default function BusinessAnalytics() {
   const [rangeIdx, setRangeIdx] = useState(1)
   const range = RANGES[rangeIdx]
@@ -49,7 +47,7 @@ export default function BusinessAnalytics() {
     queryFn: () => api.get('/businesses/me').then(r => r.data),
   })
 
-  const { data: reviews = [] } = useQuery({
+  useQuery({
     queryKey: ['reviews-biz', biz?.id],
     queryFn: () => api.get(`/reviews/business/${biz.id}`).then(r => r.data),
     enabled: !!biz?.id,
@@ -133,7 +131,18 @@ export default function BusinessAnalytics() {
     return months
   }, [bookings])
 
-  if (bLoading) return <Spinner />
+  if (bLoading) return (
+    <div>
+      <div style={{ marginBottom: 'var(--space-xl)' }}><Skeleton width={200} height={28} /></div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 'var(--space-md)', marginBottom: 'var(--space-xl)' }}>
+        {[1, 2, 3, 4].map(i => <Skeleton key={i} height={96} />)}
+      </div>
+      <Skeleton height={240} style={{ marginBottom: 'var(--space-lg)' }} />
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 'var(--space-lg)' }}>
+        {[1, 2, 3].map(i => <Skeleton key={i} height={200} />)}
+      </div>
+    </div>
+  )
   if (bError) return <Alert type="error" message="Could not load analytics data." />
 
   const statDelta = delta(gross, prevGross)

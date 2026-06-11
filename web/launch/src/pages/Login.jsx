@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -45,7 +45,7 @@ export default function Login() {
     try {
       await loginWithPassword(email, password)
       navigate(next)
-    } catch (err) {
+    } catch (_err) {
       attempts.current.push(Date.now())
       setServerError('Invalid email or password.')
     }

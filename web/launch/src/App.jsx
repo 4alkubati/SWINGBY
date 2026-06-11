@@ -1,11 +1,10 @@
 import { lazy, Suspense } from 'react'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import ErrorBoundary from './components/ErrorBoundary'
 import Layout from './components/Layout'
 import DashboardLayout from './components/DashboardLayout'
 import ProtectedRoute, { RoleRoute } from './components/ProtectedRoute'
 import Spinner from './components/Spinner'
-import { useAuth } from './hooks/useAuth'
 import { useUser } from './hooks/useUser'
 
 const MAINTENANCE = import.meta.env.VITE_MAINTENANCE_MODE === 'true'

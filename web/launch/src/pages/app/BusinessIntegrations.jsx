@@ -42,7 +42,7 @@ export default function BusinessIntegrations() {
     defaultValues: { url: '', events: [], secret: '' },
   })
 
-  const selectedEvents = watch('events') || []
+  void watch('events')
 
   function onSave(data) {
     // TODO (HUMAN): add POST /webhooks endpoint + docs/wave-N-webhooks.sql migration
@@ -69,7 +69,7 @@ export default function BusinessIntegrations() {
       <section>
         <h2 className={styles.sectionTitle}>Available integrations</h2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 'var(--space-md)', marginBottom: 'var(--space-2xl)' }}>
-          {INTEGRATIONS.map(({ id, name, description, icon: Icon, status }) => (
+          {INTEGRATIONS.map(({ id, name, description, icon: Icon }) => (
             <div key={id} style={{ display: 'flex', gap: 'var(--space-md)', padding: 'var(--space-lg)', background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)' }}>
               <div style={{ width: 44, height: 44, background: 'var(--color-accent-muted)', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 <Icon size={22} style={{ color: 'var(--color-accent-text)' }} />

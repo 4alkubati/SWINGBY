@@ -1,4 +1,3 @@
-import { Link } from 'react-router-dom'
 import SEO from '../components/SEO'
 import styles from './page.module.css'
 

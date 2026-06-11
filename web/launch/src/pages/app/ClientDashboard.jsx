@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { Plus, CalendarCheck, ChatCircle, Star } from '@phosphor-icons/react'
+import { Plus, CalendarCheck, ChatCircle } from '@phosphor-icons/react'
 import api from '../../lib/api'
 import { useUser } from '../../hooks/useUser'
 import Spinner from '../../components/Spinner'

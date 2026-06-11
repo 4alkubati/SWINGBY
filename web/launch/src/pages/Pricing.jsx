@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Check, Star, Tag, Rocket } from '@phosphor-icons/react'
+import { Check } from '@phosphor-icons/react'
 import SEO from '../components/SEO'
 import Button from '../components/Button'
 import Badge from '../components/Badge'
