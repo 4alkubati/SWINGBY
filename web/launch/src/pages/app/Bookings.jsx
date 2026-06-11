@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { CalendarCheck } from '@phosphor-icons/react'
 import api from '../../lib/api'
-import Spinner from '../../components/Spinner'
+import Skeleton from '../../components/Skeleton'
 import EmptyState from '../../components/EmptyState'
 import Badge from '../../components/Badge'
 import styles from './Dashboard.module.css'
@@ -18,7 +18,19 @@ export default function Bookings() {
   return (
     <div>
       <h1 className={styles.pageTitle}>Bookings</h1>
-      {isLoading ? <Spinner /> : !bookings?.length ? (
+      {isLoading ? (
+        <div className={styles.list} style={{ marginTop: 'var(--space-lg)' }}>
+          {[1, 2, 3].map(i => (
+            <div key={i} className={styles.listItem} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1 }}>
+                <Skeleton width={160} height={16} />
+                <Skeleton width={120} height={12} />
+              </div>
+              <Skeleton width={80} height={24} />
+            </div>
+          ))}
+        </div>
+      ) : !bookings?.length ? (
         <EmptyState icon={<CalendarCheck size={48} />} title="No bookings yet" description="Your bookings will appear here once you accept a quote or get hired." />
       ) : (
         <div className={styles.list} style={{ marginTop: 'var(--space-lg)' }}>

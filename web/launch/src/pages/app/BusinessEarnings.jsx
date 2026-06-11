@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { format, parseISO, subDays, isWithinInterval, startOfDay } from 'date-fns'
 import { CurrencyDollar, ArrowDown, ArrowUp, Clock } from '@phosphor-icons/react'
 import api from '../../lib/api'
-import Spinner from '../../components/Spinner'
+import Skeleton from '../../components/Skeleton'
 import Alert from '../../components/Alert'
 import Badge from '../../components/Badge'
 import styles from './Dashboard.module.css'
@@ -91,7 +91,16 @@ export default function BusinessEarnings() {
     return rows.sort((a, b) => new Date(b.date) - new Date(a.date))
   }, [inRange])
 
-  if (bLoading) return <Spinner />
+  if (bLoading) return (
+    <div>
+      <div style={{ marginBottom: 'var(--space-xl)' }}><Skeleton width={200} height={28} /></div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 'var(--space-md)', marginBottom: 'var(--space-xl)' }}>
+        {[1, 2, 3, 4].map(i => <Skeleton key={i} height={96} />)}
+      </div>
+      <Skeleton height={32} style={{ marginBottom: 'var(--space-md)' }} />
+      <Skeleton height={240} />
+    </div>
+  )
   if (bError) return <Alert type="error" message="Could not load earnings data." />
 
   return (

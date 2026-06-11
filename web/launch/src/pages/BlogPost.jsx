@@ -1,8 +1,50 @@
 import { useParams, Link } from 'react-router-dom'
 import { format } from 'date-fns'
+import toast from 'react-hot-toast'
+import { LinkedinLogo, TwitterLogo, LinkSimple } from '@phosphor-icons/react'
 import SEO from '../components/SEO'
 import { BLOG_POSTS } from '../data/blogPosts'
 import styles from './page.module.css'
+
+function ShareButtons({ title, url }) {
+  const encoded = encodeURIComponent(url)
+  const encodedTitle = encodeURIComponent(title)
+
+  function copyLink() {
+    navigator.clipboard.writeText(url).then(() => toast.success('Link copied.')).catch(() => toast.error('Copy failed.'))
+  }
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: 'var(--space-2xl)', paddingTop: 'var(--space-xl)', borderTop: '1px solid var(--color-border)' }}>
+      <span style={{ fontSize: '13px', color: 'var(--color-text-secondary)', marginRight: '4px' }}>Share:</span>
+      <a
+        href={`https://twitter.com/intent/tweet?text=${encodedTitle}&url=${encoded}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Share on X"
+        style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '6px 12px', background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-sm)', fontSize: '13px', color: 'var(--color-text-secondary)', textDecoration: 'none', fontWeight: 500 }}
+      >
+        <TwitterLogo size={15} /> X
+      </a>
+      <a
+        href={`https://www.linkedin.com/sharing/share-offsite/?url=${encoded}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Share on LinkedIn"
+        style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '6px 12px', background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-sm)', fontSize: '13px', color: 'var(--color-text-secondary)', textDecoration: 'none', fontWeight: 500 }}
+      >
+        <LinkedinLogo size={15} /> LinkedIn
+      </a>
+      <button
+        onClick={copyLink}
+        aria-label="Copy link"
+        style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '6px 12px', background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-sm)', fontSize: '13px', color: 'var(--color-text-secondary)', fontWeight: 500, cursor: 'pointer' }}
+      >
+        <LinkSimple size={15} /> Copy link
+      </button>
+    </div>
+  )
+}
 
 export default function BlogPost() {
   const { slug } = useParams()
@@ -20,6 +62,7 @@ export default function BlogPost() {
   }
 
   const paragraphs = post.content.split('\n\n').filter(Boolean)
+  const pageUrl = typeof window !== 'undefined' ? window.location.href : `https://swingby.ca/blog/${slug}`
 
   return (
     <>
@@ -43,6 +86,7 @@ export default function BlogPost() {
               return <p key={i}>{p}</p>
             })}
           </div>
+          <ShareButtons title={post.title} url={pageUrl} />
         </div>
       </div>
     </>

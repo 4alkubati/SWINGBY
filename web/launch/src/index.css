@@ -24,3 +24,33 @@ body {
   outline: 2px solid var(--color-accent);
   outline-offset: 2px;
 }
+
+/* Smooth anchor scroll with sticky-header offset */
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 80px;
+}
+
+/* Print styles — booking receipt */
+@media print {
+  header, nav, aside, footer,
+  .skip-to-content,
+  [data-print-hide] {
+    display: none !important;
+  }
+
+  body {
+    background: #fff;
+    color: #000;
+    font-size: 12pt;
+  }
+
+  a {
+    color: #000;
+    text-decoration: underline;
+  }
+
+  [data-print-show="booking"] {
+    display: block !important;
+  }
+}
