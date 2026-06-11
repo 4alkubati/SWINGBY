@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <title>Welcome to SwingBy — your business is listed</title>
+  <style>
+    body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif; background: #07080a; color: #F4F6FA; }
+    .container { max-width: 540px; margin: 0 auto; padding: 48px 24px; }
+    .logo { font-size: 22px; font-weight: 700; letter-spacing: -0.5px; color: #F4F6FA; text-decoration: none; display: block; margin-bottom: 32px; }
+    .card { background: #0F1115; border: 1px solid #1F232B; border-radius: 16px; padding: 36px 32px; }
+    h1 { font-size: 24px; font-weight: 700; margin: 0 0 12px; color: #F4F6FA; }
+    p { font-size: 15px; line-height: 1.65; color: #8B92A0; margin: 0 0 20px; }
+    .btn { display: inline-block; background: #6E56F7; color: #F4F6FA !important; font-size: 15px; font-weight: 600; padding: 14px 32px; border-radius: 10px; text-decoration: none; }
+    .checklist { margin: 24px 0; border-top: 1px solid #1F232B; padding-top: 24px; }
+    .item { margin-bottom: 12px; font-size: 14px; color: #8B92A0; }
+    .item::before { content: "— "; color: #6E56F7; }
+    .item strong { color: #F4F6FA; }
+    .highlight { background: rgba(110,86,247,0.1); border: 1px solid rgba(110,86,247,0.2); border-radius: 10px; padding: 16px 20px; margin: 24px 0; font-size: 14px; color: #8B92A0; }
+    .highlight strong { color: #8878F9; }
+    .footer { margin-top: 36px; font-size: 12px; color: #8B92A0; text-align: center; line-height: 1.7; }
+    .footer a { color: #8878F9; text-decoration: none; }
+    @media (prefers-color-scheme: light) {
+      body { background: #f5f5f5; color: #1a1a1a; }
+      .card { background: #fff; border-color: #e5e5e5; }
+      .logo, h1 { color: #1a1a1a; }
+      p, .item { color: #555; }
+      .checklist { border-color: #e5e5e5; }
+    }
+  </style>
+</head>
+<body>
+  <!--preview: Your business is live on SwingBy. Here's how to get your first booking.-->
+  <div class="container">
+    <a href="https://swingby.ca" class="logo">SwingBy</a>
+    <div class="card">
+      <h1>{{business_name}} is live on SwingBy.</h1>
+      <p>Welcome, {{first_name}}. Your business is now listed and ready to receive quote requests from clients in your area.</p>
+      <div class="checklist">
+        <p style="font-size: 13px; font-weight: 600; color: #F4F6FA; margin-bottom: 12px;">Complete your profile to get more jobs:</p>
+        <div class="item"><strong>Add a profile photo</strong> — businesses with photos get 3× more quote requests.</div>
+        <div class="item"><strong>Write your bio</strong> — tell clients what makes you the right choice.</div>
+        <div class="item"><strong>Set your service area</strong> — confirm the neighbourhoods you cover.</div>
+        <div class="item"><strong>Upload your license</strong> — once verified, you get a trust badge on your profile.</div>
+      </div>
+      <div class="highlight">
+        <strong>Founder pricing:</strong> The first 100 businesses on SwingBy pay 5% platform fee instead of 10%. You're in that group. Lock it in while it lasts.
+      </div>
+      <a href="https://swingby.ca/app/business/profile" class="btn">Complete your profile</a>
+    </div>
+    <div class="footer">
+      <p>&copy; SwingBy Inc. &bull; Calgary, AB, Canada</p>
+      <p><a href="https://swingby.ca/privacy">Privacy</a> &bull; <a href="https://swingby.ca/terms">Terms</a> &bull; <a href="{{unsubscribe_url}}">Unsubscribe</a></p>
+    </div>
+  </div>
+</body>
+</html>

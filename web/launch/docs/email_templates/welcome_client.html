@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <title>Welcome to SwingBy</title>
+  <style>
+    body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif; background: #07080a; color: #F4F6FA; }
+    .container { max-width: 540px; margin: 0 auto; padding: 48px 24px; }
+    .logo { font-size: 22px; font-weight: 700; letter-spacing: -0.5px; color: #F4F6FA; text-decoration: none; display: block; margin-bottom: 32px; }
+    .card { background: #0F1115; border: 1px solid #1F232B; border-radius: 16px; padding: 36px 32px; }
+    h1 { font-size: 24px; font-weight: 700; margin: 0 0 12px; color: #F4F6FA; }
+    p { font-size: 15px; line-height: 1.65; color: #8B92A0; margin: 0 0 20px; }
+    .btn { display: inline-block; background: #6E56F7; color: #F4F6FA !important; font-size: 15px; font-weight: 600; padding: 14px 32px; border-radius: 10px; text-decoration: none; }
+    .steps { margin: 24px 0; border-top: 1px solid #1F232B; padding-top: 24px; }
+    .step { display: flex; gap: 12px; margin-bottom: 16px; }
+    .step-num { font-size: 13px; font-weight: 700; color: #8878F9; min-width: 20px; padding-top: 1px; }
+    .step-text { font-size: 14px; color: #8B92A0; line-height: 1.5; }
+    .step-text strong { color: #F4F6FA; }
+    .footer { margin-top: 36px; font-size: 12px; color: #8B92A0; text-align: center; line-height: 1.7; }
+    .footer a { color: #8878F9; text-decoration: none; }
+    @media (prefers-color-scheme: light) {
+      body { background: #f5f5f5; color: #1a1a1a; }
+      .card { background: #fff; border-color: #e5e5e5; }
+      .logo, h1 { color: #1a1a1a; }
+      p, .step-text { color: #555; }
+      .steps { border-color: #e5e5e5; }
+    }
+  </style>
+</head>
+<body>
+  <!--preview: You're in. Here's how to book your first service.-->
+  <div class="container">
+    <a href="https://swingby.ca" class="logo">SwingBy</a>
+    <div class="card">
+      <h1>Welcome, {{first_name}}.</h1>
+      <p>You're now on SwingBy — the simplest way to find trusted local service businesses in Calgary. Here's how it works:</p>
+      <div class="steps">
+        <div class="step">
+          <span class="step-num">01</span>
+          <span class="step-text"><strong>Post a job</strong> — describe what you need, set a rough budget, pick your area. Takes two minutes.</span>
+        </div>
+        <div class="step">
+          <span class="step-num">02</span>
+          <span class="step-text"><strong>Receive quotes</strong> — vetted local businesses respond with their price and timeline.</span>
+        </div>
+        <div class="step">
+          <span class="step-num">03</span>
+          <span class="step-text"><strong>Book with confidence</strong> — payment is held in escrow and released only when the job is done.</span>
+        </div>
+      </div>
+      <a href="https://swingby.ca/app/post" class="btn">Post your first job free</a>
+      <p style="margin-top: 24px; font-size: 13px;">Questions? Reply to this email or visit <a href="https://swingby.ca/help" style="color: #8878F9;">swingby.ca/help</a>.</p>
+    </div>
+    <div class="footer">
+      <p>&copy; SwingBy Inc. &bull; Calgary, AB, Canada</p>
+      <p><a href="https://swingby.ca/privacy">Privacy</a> &bull; <a href="https://swingby.ca/terms">Terms</a> &bull; <a href="{{unsubscribe_url}}">Unsubscribe</a></p>
+    </div>
+  </div>
+</body>
+</html>

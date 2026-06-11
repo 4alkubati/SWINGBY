@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <title>Your week on SwingBy</title>
+  <style>
+    body{margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Inter',sans-serif;background:#07080a;color:#F4F6FA}
+    .container{max-width:540px;margin:0 auto;padding:48px 24px}
+    .logo{font-size:22px;font-weight:700;letter-spacing:-0.5px;color:#F4F6FA;text-decoration:none;display:block;margin-bottom:32px}
+    .card{background:#0F1115;border:1px solid #1F232B;border-radius:16px;padding:36px 32px}
+    .date-range{font-size:12px;font-weight:600;color:#8B92A0;text-transform:uppercase;letter-spacing:.08em;margin-bottom:16px}
+    h1{font-size:22px;font-weight:700;margin:0 0 24px;color:#F4F6FA}
+    .stats{display:table;width:100%;margin-bottom:28px}
+    .stat{display:table-cell;text-align:center;padding:20px 8px;background:#161A21;border-radius:10px;margin:0 4px}
+    .stat-value{font-size:28px;font-weight:700;color:#F4F6FA;display:block}
+    .stat-label{font-size:11px;color:#8B92A0;display:block;margin-top:4px;text-transform:uppercase;letter-spacing:.05em}
+    .divider{border:none;border-top:1px solid #1F232B;margin:24px 0}
+    h2{font-size:15px;font-weight:700;color:#F4F6FA;margin:0 0 12px}
+    .booking-row{padding:12px 0;border-bottom:1px solid #1F232B;font-size:13px}
+    .booking-row:last-child{border-bottom:none}
+    .b-title{color:#F4F6FA;font-weight:500;margin-bottom:3px}
+    .b-sub{color:#8B92A0}
+    .b-amount{color:#2EBD85;font-weight:600}
+    .btn{display:inline-block;background:#6E56F7;color:#F4F6FA !important;font-size:15px;font-weight:600;padding:14px 32px;border-radius:10px;text-decoration:none;margin-top:8px}
+    .footer{margin-top:36px;font-size:12px;color:#8B92A0;text-align:center;line-height:1.7}
+    .footer a{color:#8878F9;text-decoration:none}
+    @media(prefers-color-scheme:light){body{background:#f5f5f5}.card{background:#fff;border-color:#e5e5e5}.logo,h1,h2{color:#1a1a1a}.stat,.divider+*{color:#555}.stat{background:#f9f9f9}.booking-row{border-color:#e5e5e5}.divider{border-color:#e5e5e5}}
+  </style>
+</head>
+<body>
+  <!--preview: Your week: {{bookings_count}} bookings, {{net_earnings}} earned.-->
+  <div class="container">
+    <a href="https://swingby.ca" class="logo">SwingBy</a>
+    <div class="card">
+      <div class="date-range">{{week_start}} — {{week_end}}</div>
+      <h1>Your week on SwingBy</h1>
+
+      <table style="width:100%;border-collapse:separate;border-spacing:8px 0">
+        <tr>
+          <td style="width:33%;text-align:center;background:#161A21;border-radius:10px;padding:20px 8px">
+            <span style="font-size:28px;font-weight:700;color:#F4F6FA;display:block">{{bookings_count}}</span>
+            <span style="font-size:11px;color:#8B92A0;display:block;margin-top:4px;text-transform:uppercase;letter-spacing:.05em">Bookings</span>
+          </td>
+          <td style="width:33%;text-align:center;background:#161A21;border-radius:10px;padding:20px 8px">
+            <span style="font-size:28px;font-weight:700;color:#2EBD85;display:block">{{net_earnings}}</span>
+            <span style="font-size:11px;color:#8B92A0;display:block;margin-top:4px;text-transform:uppercase;letter-spacing:.05em">Earned (net)</span>
+          </td>
+          <td style="width:33%;text-align:center;background:#161A21;border-radius:10px;padding:20px 8px">
+            <span style="font-size:28px;font-weight:700;color:#F6B23B;display:block">{{avg_rating}}</span>
+            <span style="font-size:11px;color:#8B92A0;display:block;margin-top:4px;text-transform:uppercase;letter-spacing:.05em">Avg rating</span>
+          </td>
+        </tr>
+      </table>
+
+      <hr class="divider" style="border:none;border-top:1px solid #1F232B;margin:28px 0">
+
+      <h2>Recent bookings</h2>
+      {{#each bookings}}
+      <div class="booking-row">
+        <div class="b-title">{{this.service}} — {{this.client_name}}</div>
+        <div style="display:flex;justify-content:space-between;margin-top:2px">
+          <span class="b-sub">{{this.date}} &bull; {{this.status}}</span>
+          <span class="b-amount">{{this.amount}}</span>
+        </div>
+      </div>
+      {{/each}}
+
+      <a href="https://swingby.ca/app/business/analytics" class="btn">View full analytics</a>
+    </div>
+    <div class="footer">
+      <p>&copy; SwingBy Inc. &bull; Calgary, AB, Canada</p>
+      <p><a href="https://swingby.ca/privacy">Privacy</a> &bull; <a href="https://swingby.ca/terms">Terms</a> &bull; <a href="{{unsubscribe_url}}">Unsubscribe</a></p>
+    </div>
+  </div>
+</body>
+</html>
