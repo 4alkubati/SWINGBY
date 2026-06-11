@@ -1,0 +1,266 @@
+{
+  "id": "qznSX1fO2DqOmWAz",
+  "name": "SwingBy — DM auto-reply",
+  "active": false,
+  "description": "Meta webhook-triggered DM classifier: routes complaints to Slack, auto-replies to service inquiries and compliments, ignores spam. Uses GPT-4o-mini for classification. Placeholder credentials — activate after Phase 2 setup.",
+  "tags": [],
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "nodes": [
+    {
+      "id": "b7a52f86-90c6-467c-8768-304074aa650a",
+      "name": "Sticky Note 33d2ae80",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [0, 0],
+      "parameters": {
+        "content": "## SwingBy DM Auto-Reply\n\nTriggered by Meta webhook when an Instagram or Facebook DM arrives. Classifies the message via GPT-4o-mini and routes: complaints escalate to Slack, service inquiries and compliments get an auto-reply, spam is silently ignored.\n\nSetup: configure Meta webhook to POST to this webhook URL for message events.\nDocs: marketing/11-n8n-social-workflow.md\nPhase 2: fill credentials before activating.",
+        "color": 5,
+        "width": 680,
+        "height": 220
+      }
+    },
+    {
+      "id": "72b40b5f-f048-4373-aece-cf8526741981",
+      "name": "Webhook: Incoming DM",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [0, 384],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "swingby-dm",
+        "responseMode": "onReceived"
+      },
+      "webhookId": "313ca4af-3376-404c-9d37-b8a591c9ad6d"
+    },
+    {
+      "id": "1602a5f4-063d-4abb-b4d9-e61048515f11",
+      "name": "Normalize DM Payload",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [224, 384],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            { "id": "sender", "name": "senderId", "value": "={{ $json.body?.sender?.id ?? $json.sender?.id ?? \"unknown\" }}", "type": "string" },
+            { "id": "msgtext", "name": "messageText", "value": "={{ $json.body?.message?.text ?? $json.message?.text ?? $json.body?.messaging?.[0]?.message?.text ?? \"no message\" }}", "type": "string" },
+            { "id": "pageid", "name": "pageId", "value": "={{ $json.body?.page_id ?? $json.page_id ?? $vars.FB_PAGE_ID }}", "type": "string" },
+            { "id": "platform", "name": "platform", "value": "={{ $json.body?.platform ?? \"facebook\" }}", "type": "string" }
+          ]
+        }
+      }
+    },
+    {
+      "id": "33b3e9bf-258d-4c5b-b322-0ee65a3d8e39",
+      "name": "Classify Incoming DM",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [448, 384],
+      "parameters": {
+        "promptType": "define",
+        "text": "=Classify this social media DM sent to SwingBy (a Calgary service marketplace) into exactly one category.\n\nCategories:\n- service_inquiry: asking about booking, pricing, how to find a service, how the app works\n- complaint: expressing dissatisfaction, reporting a problem, leaving a bad review\n- compliment: positive feedback, thank-you messages, praise\n- spam: promotional content, irrelevant messages, automated bot messages\n- other: anything that does not fit the above\n\nDM text: {{ $json.messageText }}\n\nReturn JSON: { \"category\": \"...\", \"summary\": \"one-sentence summary\", \"confidence\": 0.0-1.0 }",
+        "hasOutputParser": true
+      }
+    },
+    {
+      "id": "26d468bc-1063-4f76-bdc8-8679785a211d",
+      "name": "OpenAI Classifier",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [464, 608],
+      "parameters": {
+        "model": { "__rl": true, "mode": "id", "value": "gpt-4o-mini" },
+        "options": { "temperature": 0.1, "maxTokens": 150 }
+      }
+    },
+    {
+      "id": "f2e579c2-62f3-4595-9e9b-ef59208b5586",
+      "name": "DM Category Parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [592, 608],
+      "parameters": {
+        "schemaType": "fromJson",
+        "jsonSchemaExample": "{ \"category\": \"service_inquiry\", \"summary\": \"User wants to book a cleaner\", \"confidence\": 0.95 }"
+      }
+    },
+    {
+      "id": "167b18d7-0252-48bb-83ee-81062cca609e",
+      "name": "Add DM Data to Classification",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [800, 384],
+      "parameters": {
+        "mode": "manual",
+        "includeOtherFields": true,
+        "assignments": {
+          "assignments": [
+            { "id": "sid", "name": "senderId", "value": "={{ $(\"Normalize DM Payload\").item.json.senderId }}", "type": "string" },
+            { "id": "msg", "name": "messageText", "value": "={{ $(\"Normalize DM Payload\").item.json.messageText }}", "type": "string" },
+            { "id": "pid", "name": "pageId", "value": "={{ $(\"Normalize DM Payload\").item.json.pageId }}", "type": "string" }
+          ]
+        }
+      }
+    },
+    {
+      "id": "cf1f7b89-1f56-4499-ac2e-5f7e877a030f",
+      "name": "Route by DM Category",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [1024, 336],
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "outputKey": "complaint",
+              "conditions": {
+                "options": { "caseSensitive": false, "leftValue": "", "typeValidation": "loose" },
+                "conditions": [{ "leftValue": "={{ $json.category }}", "operator": { "type": "string", "operation": "equals" }, "rightValue": "complaint" }],
+                "combinator": "and"
+              }
+            },
+            {
+              "outputKey": "service_inquiry",
+              "conditions": {
+                "options": { "caseSensitive": false, "leftValue": "", "typeValidation": "loose" },
+                "conditions": [{ "leftValue": "={{ $json.category }}", "operator": { "type": "string", "operation": "equals" }, "rightValue": "service_inquiry" }],
+                "combinator": "and"
+              }
+            },
+            {
+              "outputKey": "compliment",
+              "conditions": {
+                "options": { "caseSensitive": false, "leftValue": "", "typeValidation": "loose" },
+                "conditions": [{ "leftValue": "={{ $json.category }}", "operator": { "type": "string", "operation": "equals" }, "rightValue": "compliment" }],
+                "combinator": "and"
+              }
+            },
+            {
+              "outputKey": "spam",
+              "conditions": {
+                "options": { "caseSensitive": false, "leftValue": "", "typeValidation": "loose" },
+                "conditions": [{ "leftValue": "={{ $json.category }}", "operator": { "type": "string", "operation": "equals" }, "rightValue": "spam" }],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": { "fallbackOutput": "extra", "renameFallbackOutput": "other" }
+      }
+    },
+    {
+      "id": "7729d5e5-3407-46a0-8d3f-dd56a01e862c",
+      "name": "Slack: Escalate Complaint",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.5,
+      "position": [1248, 0],
+      "parameters": {
+        "resource": "message",
+        "operation": "post",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $vars.SLACK_ALERTS_CHANNEL }}"
+        },
+        "text": "=:red_circle: *DM Complaint received*\nFrom: {{ $json.senderId }}\nMessage: {{ $json.messageText }}\nSummary: {{ $json.summary }}\n\nPlease respond personally within 2 hours.",
+        "otherOptions": { "includeLinkToWorkflow": false }
+      },
+      "webhookId": "fa4d5b02-1e85-4d25-8c7f-f26241da975c"
+    },
+    {
+      "id": "8a8651c9-d8d4-4007-950a-f08fc79c23cd",
+      "name": "Auto-Reply: Service Inquiry",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [1248, 192],
+      "parameters": {
+        "method": "POST",
+        "url": "https://graph.facebook.com/v19.0/me/messages",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ recipient: { id: $json.senderId }, message: { text: \"Thanks for reaching out! To find a trusted local service, post your job at swingby.ca — it takes 60 seconds and local businesses will come to you. Any questions? Just reply here.\" }, access_token: $vars.META_ACCESS_TOKEN }) }}",
+        "options": { "timeout": 30000 }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "19c31e52-381d-4726-adb4-059593a47f2d",
+      "name": "Auto-Reply: Compliment",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [1248, 384],
+      "parameters": {
+        "method": "POST",
+        "url": "https://graph.facebook.com/v19.0/me/messages",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ recipient: { id: $json.senderId }, message: { text: \"That means a lot — thank you! If you can, leaving a review in the app helps local businesses grow. We appreciate the support.\" }, access_token: $vars.META_ACCESS_TOKEN }) }}",
+        "options": { "timeout": 30000 }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "de907ed4-1998-4f91-8744-f48b5e9085bb",
+      "name": "Ignore Spam",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1248, 576],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            { "id": "ignored", "name": "action", "value": "ignored_spam", "type": "string" }
+          ]
+        }
+      }
+    },
+    {
+      "id": "6420e815-2b3f-4a0b-8c16-e18b55eb9dff",
+      "name": "Auto-Reply: Other",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [1248, 768],
+      "parameters": {
+        "method": "POST",
+        "url": "https://graph.facebook.com/v19.0/me/messages",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ recipient: { id: $json.senderId }, message: { text: \"Hi! We read every message but get a lot of DMs. For the fastest help, visit swingby.ca or post a job in the app. We will get back to you soon.\" }, access_token: $vars.META_ACCESS_TOKEN }) }}",
+        "options": { "timeout": 30000 }
+      },
+      "onError": "continueRegularOutput"
+    }
+  ],
+  "connections": {
+    "Webhook: Incoming DM": {
+      "main": [[{ "node": "Normalize DM Payload", "type": "main", "index": 0 }]]
+    },
+    "Normalize DM Payload": {
+      "main": [[{ "node": "Classify Incoming DM", "type": "main", "index": 0 }]]
+    },
+    "Classify Incoming DM": {
+      "main": [[{ "node": "Add DM Data to Classification", "type": "main", "index": 0 }]]
+    },
+    "OpenAI Classifier": {
+      "ai_languageModel": [[{ "node": "Classify Incoming DM", "type": "ai_languageModel", "index": 0 }]]
+    },
+    "DM Category Parser": {
+      "ai_outputParser": [[{ "node": "Classify Incoming DM", "type": "ai_outputParser", "index": 0 }]]
+    },
+    "Add DM Data to Classification": {
+      "main": [[{ "node": "Route by DM Category", "type": "main", "index": 0 }]]
+    },
+    "Route by DM Category": {
+      "main": [
+        [{ "node": "Slack: Escalate Complaint", "type": "main", "index": 0 }],
+        [{ "node": "Auto-Reply: Service Inquiry", "type": "main", "index": 0 }],
+        [{ "node": "Auto-Reply: Compliment", "type": "main", "index": 0 }],
+        [{ "node": "Ignore Spam", "type": "main", "index": 0 }],
+        [{ "node": "Auto-Reply: Other", "type": "main", "index": 0 }]
+      ]
+    }
+  }
+}

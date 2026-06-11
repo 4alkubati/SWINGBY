@@ -257,10 +257,24 @@ For the full partnerships strategy: [10-partnerships.md](10-partnerships.md)
 
 **Founder:** Amr Alkubati — Calgary. Built the full backend, database, and architecture. Product and technical lead.
 
-> TODO (HUMAN): Add co-founder, advisors, and key hires here. Also add what you're raising and what it's for.
+<!-- HUMAN: replace with real team when ready -->
+**Team:**
+- Founder: Amr Alkubati — product, engineering, operations
+- Advisors: TBD
+- Planned hires: Marketing lead (Q4 2026), Customer success (Q1 2027), second engineer (Q1 2027)
 
 **What the next [X] months of funding enables:**
-> TODO (HUMAN): Fill in the funding ask and use of funds.
+<!-- HUMAN: replace with actual raise details when decided -->
+SwingBy is not currently raising external capital. The product is self-funded through MVP. When the time comes, funding will accelerate:
+
+| Use of funds | Allocation |
+|---|---|
+| Marketing & paid acquisition (Calgary) | ~40% |
+| Engineering (mobile app, full-time hire) | ~35% |
+| Operations & customer success | ~15% |
+| Legal, compliance, admin | ~10% |
+
+> TODO (HUMAN): Fill in exact raise amount, valuation, and investor type (angels, pre-seed VC, etc.) when fundraising begins.
 
 ---
 

@@ -1,0 +1,227 @@
+{
+  "id": "Um8k8RKKLPJb0EWb",
+  "name": "SwingBy — Engagement collector",
+  "active": false,
+  "description": "Nightly 11pm MT: fetches engagement metrics from Instagram, Facebook, Twitter/X, and LinkedIn. Saves daily totals to Notion Post Metrics DB and sends a Slack digest. Placeholder credentials — activate after Phase 2 setup.",
+  "tags": [],
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "nodes": [
+    {
+      "id": "ecca560d-576a-40ab-9546-e5b4c9b2a06a",
+      "name": "Sticky Note dda480fb",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [0, 0],
+      "parameters": {
+        "content": "## SwingBy Engagement Collector\n\nFires at 23:00 America/Edmonton every night. Pulls metrics from Instagram, Facebook, Twitter/X, and LinkedIn for posts made in the last 24h. Writes rows to the Notion Post Metrics database and sends a Slack digest.\n\nDocs: marketing/11-n8n-social-workflow.md\nPhase 2: fill credentials and set env vars before activating.",
+        "color": 4,
+        "width": 680,
+        "height": 200
+      }
+    },
+    {
+      "id": "c0e37639-a992-4e07-b972-0e8064c1d7a1",
+      "name": "Nightly 11pm MT",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [0, 96],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 23 * * *"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "a6538a7b-0206-40db-b7ee-38938a0aedef",
+      "name": "Fetch Instagram Metrics",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [224, 96],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ \"https://graph.facebook.com/v19.0/\" + $vars.IG_USER_ID + \"/media?fields=id,like_count,comments_count,timestamp,permalink&limit=5&access_token=\" + $vars.META_ACCESS_TOKEN }}",
+        "options": { "timeout": 30000 }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "id": "bbc0a428-e35d-42cb-bc45-79e0d5aa10b7",
+      "name": "Slack: IG Fetch Error",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.5,
+      "position": [448, 192],
+      "parameters": {
+        "resource": "message",
+        "operation": "post",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $vars.SLACK_ALERTS_CHANNEL }}"
+        },
+        "text": ":red_circle: SwingBy engagement collector: Instagram metrics fetch failed. Check META_ACCESS_TOKEN.",
+        "otherOptions": { "includeLinkToWorkflow": true }
+      },
+      "webhookId": "982cfde3-9915-47ed-b0cf-6869b8121916"
+    },
+    {
+      "id": "77eb27bc-e2c9-4135-be90-90cab747958f",
+      "name": "Fetch Facebook Metrics",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [448, 0],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ \"https://graph.facebook.com/v19.0/\" + $vars.FB_PAGE_ID + \"/posts?fields=id,message,likes.summary(true),comments.summary(true),shares,created_time&limit=5&access_token=\" + $vars.META_ACCESS_TOKEN }}",
+        "options": { "timeout": 30000 }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "80999e56-8370-45f2-91d7-cd68f4cce383",
+      "name": "Fetch Twitter Metrics",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [672, 0],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ \"https://api.twitter.com/2/users/\" + $vars.TWITTER_USER_ID + \"/tweets?max_results=5&tweet.fields=public_metrics,created_at&expansions=attachments.media_keys\" }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "={{ \"Bearer \" + $vars.TWITTER_BEARER_TOKEN }}" }
+          ]
+        },
+        "options": { "timeout": 30000 }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "c1a972dc-0943-44b0-bc6c-2bb0bc15fb73",
+      "name": "Fetch LinkedIn Metrics",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [896, 0],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ \"https://api.linkedin.com/v2/organizationalEntityShareStatistics?q=organizationalEntity&organizationalEntity=urn:li:organization:\" + $vars.LI_ORG_ID }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "={{ \"Bearer \" + $vars.LI_ACCESS_TOKEN }}" },
+            { "name": "X-Restli-Protocol-Version", "value": "2.0.0" }
+          ]
+        },
+        "options": { "timeout": 30000 }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "d18c8c87-b028-4ab9-81bf-6117cca3df37",
+      "name": "Summarize Metrics",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1120, 0],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            { "id": "date", "name": "reportDate", "value": "={{ $today.toFormat(\"MMMM d, yyyy\") }}", "type": "string" },
+            { "id": "ig-likes", "name": "igLikes", "value": "={{ ($(\"Fetch Instagram Metrics\").item.json.data ?? []).reduce((sum, p) => sum + (p.like_count ?? 0), 0) }}", "type": "number" },
+            { "id": "ig-comments", "name": "igComments", "value": "={{ ($(\"Fetch Instagram Metrics\").item.json.data ?? []).reduce((sum, p) => sum + (p.comments_count ?? 0), 0) }}", "type": "number" },
+            { "id": "fb-likes", "name": "fbLikes", "value": "={{ ($(\"Fetch Facebook Metrics\").item.json.data ?? []).reduce((sum, p) => sum + (p.likes?.summary?.total_count ?? 0), 0) }}", "type": "number" },
+            { "id": "tw-likes", "name": "twLikes", "value": "={{ ($(\"Fetch Twitter Metrics\").item.json.data ?? []).reduce((sum, p) => sum + (p.public_metrics?.like_count ?? 0), 0) }}", "type": "number" },
+            { "id": "tw-impressions", "name": "twImpressions", "value": "={{ ($(\"Fetch Twitter Metrics\").item.json.data ?? []).reduce((sum, p) => sum + (p.public_metrics?.impression_count ?? 0), 0) }}", "type": "number" },
+            { "id": "li-impressions", "name": "liImpressions", "value": "={{ ($(\"Fetch LinkedIn Metrics\").item.json.elements ?? []).reduce((sum, e) => sum + (e.totalShareStatistics?.impressionCount ?? 0), 0) }}", "type": "number" },
+            { "id": "li-likes", "name": "liLikes", "value": "={{ ($(\"Fetch LinkedIn Metrics\").item.json.elements ?? []).reduce((sum, e) => sum + (e.totalShareStatistics?.likeCount ?? 0), 0) }}", "type": "number" }
+          ]
+        }
+      }
+    },
+    {
+      "id": "c59df54d-dee8-4482-bce4-c2f570d63096",
+      "name": "Save Metrics to Notion",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [1344, 0],
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "create",
+        "databaseId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $vars.NOTION_METRICS_DB_ID }}"
+        },
+        "simple": true,
+        "propertiesUi": {
+          "propertyValues": [
+            { "key": "Title|title", "type": "title", "title": "={{ \"Daily Metrics — \" + $json.reportDate }}" },
+            { "key": "Report date|date", "type": "date", "date": "={{ $today.toISO() }}" },
+            { "key": "IG Likes|number", "type": "number", "numberValue": "={{ $json.igLikes }}" },
+            { "key": "IG Comments|number", "type": "number", "numberValue": "={{ $json.igComments }}" },
+            { "key": "FB Likes|number", "type": "number", "numberValue": "={{ $json.fbLikes }}" },
+            { "key": "Twitter Likes|number", "type": "number", "numberValue": "={{ $json.twLikes }}" },
+            { "key": "Twitter Impressions|number", "type": "number", "numberValue": "={{ $json.twImpressions }}" },
+            { "key": "LinkedIn Impressions|number", "type": "number", "numberValue": "={{ $json.liImpressions }}" },
+            { "key": "LinkedIn Likes|number", "type": "number", "numberValue": "={{ $json.liLikes }}" }
+          ]
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "6a717528-2765-484b-b22d-83ce9655509f",
+      "name": "Slack: Nightly Digest",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.5,
+      "position": [1568, 0],
+      "executeOnce": true,
+      "parameters": {
+        "resource": "message",
+        "operation": "post",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $vars.SLACK_METRICS_CHANNEL }}"
+        },
+        "text": "=:bar_chart: *SwingBy Social Digest — {{ $(\"Summarize Metrics\").item.json.reportDate }}*\n\n*Instagram:* {{ $(\"Summarize Metrics\").item.json.igLikes }} likes | {{ $(\"Summarize Metrics\").item.json.igComments }} comments\n*Facebook:* {{ $(\"Summarize Metrics\").item.json.fbLikes }} likes\n*Twitter/X:* {{ $(\"Summarize Metrics\").item.json.twLikes }} likes | {{ $(\"Summarize Metrics\").item.json.twImpressions }} impressions\n*LinkedIn:* {{ $(\"Summarize Metrics\").item.json.liLikes }} likes | {{ $(\"Summarize Metrics\").item.json.liImpressions }} impressions\n\nFull data in Notion Post Metrics.",
+        "otherOptions": { "includeLinkToWorkflow": false }
+      },
+      "webhookId": "1c8ad3ee-1e5d-4474-8134-33156510413e"
+    }
+  ],
+  "connections": {
+    "Nightly 11pm MT": {
+      "main": [[{ "node": "Fetch Instagram Metrics", "type": "main", "index": 0 }]]
+    },
+    "Fetch Instagram Metrics": {
+      "main": [
+        [{ "node": "Fetch Facebook Metrics", "type": "main", "index": 0 }],
+        [{ "node": "Slack: IG Fetch Error", "type": "main", "index": 0 }]
+      ]
+    },
+    "Fetch Facebook Metrics": {
+      "main": [[{ "node": "Fetch Twitter Metrics", "type": "main", "index": 0 }]]
+    },
+    "Fetch Twitter Metrics": {
+      "main": [[{ "node": "Fetch LinkedIn Metrics", "type": "main", "index": 0 }]]
+    },
+    "Fetch LinkedIn Metrics": {
+      "main": [[{ "node": "Summarize Metrics", "type": "main", "index": 0 }]]
+    },
+    "Summarize Metrics": {
+      "main": [[{ "node": "Save Metrics to Notion", "type": "main", "index": 0 }]]
+    },
+    "Save Metrics to Notion": {
+      "main": [[{ "node": "Slack: Nightly Digest", "type": "main", "index": 0 }]]
+    }
+  }
+}

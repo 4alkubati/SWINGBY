@@ -1,7 +1,32 @@
 {
-  "name": "SwingBy Social Media Automation",
+  "id": "SQIBLuX7eM6lfaIa",
+  "name": "SwingBy — Daily social publishing",
+  "active": false,
+  "description": "Daily 9am MT: fetches Notion content briefs, generates platform captions via GPT-4o, waits for Slack approval, then posts to IG/FB/Twitter/LinkedIn/TikTok. Placeholder credentials — activate after Phase 2 setup.",
+  "tags": [],
+  "settings": {
+    "executionOrder": "v1"
+  },
   "nodes": [
     {
+      "id": "979efb02-dc56-4f5d-88f5-99f36e974baf",
+      "name": "Sticky Note 25084453",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [0, 0],
+      "parameters": {
+        "content": "## SwingBy Daily Social Publishing\n\nFires at 09:00 America/Edmonton every day. Pulls ready briefs from Notion, generates captions via GPT-4o, waits for Slack approval, then posts to IG/FB/Twitter/LinkedIn/TikTok.\n\nDocs: marketing/11-n8n-social-workflow.md\nPhase 2: fill credentials before activating.",
+        "color": 3,
+        "width": 680,
+        "height": 180
+      }
+    },
+    {
+      "id": "1fdda889-3646-4124-a19c-6857b0f10a5a",
+      "name": "Daily 9am MT",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [0, 208],
       "parameters": {
         "rule": {
           "interval": [
@@ -10,683 +35,434 @@
               "expression": "0 9 * * *"
             }
           ]
-        },
-        "timezone": "America/Edmonton"
-      },
-      "id": "node-001",
-      "name": "Daily 9am Trigger",
-      "type": "n8n-nodes-base.cron",
-      "typeVersion": 1,
-      "position": [100, 300]
+        }
+      }
     },
     {
+      "id": "4540f3c3-4bcd-4bec-8525-416ec90307fe",
+      "name": "Fetch Briefs from Notion",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [224, 208],
       "parameters": {
         "resource": "databasePage",
         "operation": "getAll",
-        "databaseId": "={{$vars.NOTION_CONTENT_DB_ID}}",
-        "returnAll": false,
-        "limit": 10,
+        "databaseId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $vars.NOTION_CONTENT_DB_ID }}"
+        },
+        "returnAll": true,
+        "simple": true,
         "filterType": "manual",
+        "matchType": "allFilters",
         "filters": {
           "conditions": [
             {
-              "key": "Status.select.name",
+              "key": "Status|select",
               "condition": "equals",
               "value": "ready"
             },
             {
-              "key": "Scheduled date.date.start",
+              "key": "Scheduled date|date",
               "condition": "equals",
-              "value": "={{$now.toFormat('yyyy-MM-dd')}}"
+              "value": "={{ $today.toFormat(\"yyyy-MM-dd\") }}"
             }
           ]
         }
       },
-      "id": "node-002",
-      "name": "Fetch Content from Notion",
-      "type": "n8n-nodes-base.notion",
-      "typeVersion": 2,
-      "position": [320, 300],
-      "credentials": {
-        "notionApi": {
-          "id": "NOTION_CREDENTIAL_ID",
-          "name": "Notion API"
-        }
-      }
+      "onError": "continueErrorOutput"
     },
     {
-      "parameters": {
-        "conditions": {
-          "number": [
-            {
-              "value1": "={{$json.results.length}}",
-              "operation": "larger",
-              "value2": 0
-            }
-          ]
-        }
-      },
-      "id": "node-003",
-      "name": "Has Content Today?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 1,
-      "position": [540, 300]
-    },
-    {
-      "parameters": {
-        "channel": "={{$vars.SLACK_APPROVAL_CHANNEL}}",
-        "text": "No content scheduled for today. Add a row with Status=ready in the Notion DB.",
-        "otherOptions": {}
-      },
-      "id": "node-004",
-      "name": "Slack: No Content Today",
+      "id": "11c77669-af88-4c30-a8e3-5c2106b47907",
+      "name": "Slack: Fetch Error Alert",
       "type": "n8n-nodes-base.slack",
-      "typeVersion": 2,
-      "position": [760, 500],
-      "credentials": {
-        "slackApi": {
-          "id": "SLACK_CREDENTIAL_ID",
-          "name": "Slack Bot Token"
-        }
-      }
-    },
-    {
+      "typeVersion": 2.5,
+      "position": [448, 304],
       "parameters": {
-        "conditions": {
-          "string": [
-            {
-              "value1": "={{$json['Caption draft']}}",
-              "operation": "isEmpty"
-            }
-          ]
-        }
-      },
-      "id": "node-005",
-      "name": "Has Caption Draft?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 1,
-      "position": [760, 300]
-    },
-    {
-      "parameters": {
-        "resource": "chat",
-        "operation": "complete",
-        "model": "gpt-4o",
-        "messages": {
-          "values": [
-            {
-              "role": "system",
-              "content": "You are a social media copywriter for SwingBy, a Calgary-based service marketplace. Voice: direct, warm, confident. Short sentences. No jargon. No 'unlock', 'leverage', or 'ecosystem'. Calgary-specific where possible. Always end with a soft call to action or question."
-            },
-            {
-              "role": "user",
-              "content": "Content brief: {{$json['Content brief']}}\nPlatforms: {{$json['Platform']}}\n\nWrite captions for each platform. Follow platform conventions:\n- Instagram: 100-150 words, 5-10 hashtags at end, emoji allowed\n- LinkedIn: 120-200 words, no hashtags, professional but personal\n- Twitter: under 280 characters, punchy\n- Facebook: 80-120 words, conversational, local focus\n- TikTok: short caption, 3-5 hashtags\n\nReturn valid JSON only: {\"instagram\": \"...\", \"linkedin\": \"...\", \"twitter\": \"...\", \"facebook\": \"...\", \"tiktok\": \"...\"}"
-            }
-          ]
+        "resource": "message",
+        "operation": "post",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $vars.SLACK_ALERTS_CHANNEL }}"
         },
-        "options": {
-          "temperature": 0.7,
-          "maxTokens": 1500
+        "text": "={{ \":red_circle: SwingBy: Notion fetch failed at \" + $now.toFormat(\"h:mm a\") + \". Check credentials and NOTION_CONTENT_DB_ID.\" }}",
+        "otherOptions": {
+          "includeLinkToWorkflow": true
         }
       },
-      "id": "node-006",
-      "name": "OpenAI: Generate Captions",
-      "type": "n8n-nodes-base.openAi",
-      "typeVersion": 1,
-      "position": [980, 200],
-      "credentials": {
-        "openAiApi": {
-          "id": "OPENAI_CREDENTIAL_ID",
-          "name": "OpenAI API Key"
+      "webhookId": "22d4f5aa-0233-471c-aeb7-81909424c39c"
+    },
+    {
+      "id": "6624f5d0-4440-4894-8f65-dac5809ec893",
+      "name": "Extract Page Fields",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [448, 112],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            { "id": "pid", "name": "notionPageId", "value": "={{ $json.id }}", "type": "string" },
+            { "id": "ptitle", "name": "postTitle", "value": "={{ $json.Title ?? \"Untitled\" }}", "type": "string" },
+            { "id": "pbrief", "name": "contentBrief", "value": "={{ $json.Brief ?? \"\" }}", "type": "string" },
+            { "id": "pdraft", "name": "captionDraft", "value": "={{ $json[\"Caption draft\"] ?? \"\" }}", "type": "string" },
+            { "id": "pimage", "name": "imageUrl", "value": "={{ $json[\"Image URL\"] ?? \"\" }}", "type": "string" },
+            { "id": "pplat", "name": "platforms", "value": "={{ Array.isArray($json.Platforms) ? $json.Platforms.join(\", \") : ($json.Platforms ?? \"all\") }}", "type": "string" }
+          ]
         }
       }
     },
     {
+      "id": "e0b06ea2-7337-4aed-989a-e769e322ab62",
+      "name": "Generate Platform Captions",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [672, 112],
       "parameters": {
-        "jsCode": "const captions = JSON.parse($input.first().json.choices[0].message.content);\nreturn [{\n  json: {\n    ...$input.first().json,\n    generatedCaptions: captions\n  }\n}];"
-      },
-      "id": "node-007",
-      "name": "Parse Generated Captions",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [1200, 200]
+        "promptType": "define",
+        "text": "=You are a social media copywriter for SwingBy, a Calgary service marketplace.\nVoice: direct, warm, confident. Short sentences. No \"unlock\", \"leverage\", \"ecosystem\".\n\nPost title: {{ $json.postTitle }}\nContent brief: {{ $json.contentBrief }}\nExisting draft: {{ $json.captionDraft || \"none\" }}\n\nWrite platform captions:\n- Instagram: 100-150 words, 5-10 hashtags at end, emoji OK\n- LinkedIn: 120-200 words, no hashtags, professional but personal\n- Twitter: under 280 chars, punchy\n- Facebook: 80-120 words, conversational, Calgary-local\n- TikTok: under 150 chars, casual, 3-5 hashtags\n\nReturn ONLY valid JSON: { \"instagram\": \"...\", \"linkedin\": \"...\", \"twitter\": \"...\", \"facebook\": \"...\", \"tiktok\": \"...\" }",
+        "hasOutputParser": true
+      }
     },
     {
+      "id": "96a6bb90-9b55-4022-9bf5-101cf324aa88",
+      "name": "OpenAI GPT Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [688, 336],
       "parameters": {
-        "jsCode": "const existingDraft = $input.first().json['Caption draft'];\nreturn [{\n  json: {\n    ...$input.first().json,\n    generatedCaptions: {\n      instagram: existingDraft,\n      linkedin: existingDraft,\n      twitter: existingDraft.substring(0, 280),\n      facebook: existingDraft,\n      tiktok: existingDraft\n    }\n  }\n}];"
-      },
-      "id": "node-008",
-      "name": "Use Existing Draft",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [980, 400]
+        "model": { "__rl": true, "mode": "id", "value": "gpt-4o" },
+        "options": { "temperature": 0.7, "maxTokens": 2000 }
+      }
     },
     {
+      "id": "bb7ba3dd-1305-47bc-980d-23c9094d08b8",
+      "name": "Caption JSON Parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [816, 336],
       "parameters": {
-        "channel": "={{$vars.SLACK_APPROVAL_CHANNEL}}",
-        "text": ":pencil: *Content ready for approval*\n\n*Title:* {{$json.Title}}\n*Platforms:* {{$json.Platform}}\n*Image:* {{$json['Image URL'] || 'No image provided'}}\n\n*Instagram caption preview:*\n{{$json.generatedCaptions.instagram.substring(0, 200)}}...\n\nReply with `approve` or `reject [reason]` to this message.",
-        "otherOptions": {}
-      },
-      "id": "node-009",
-      "name": "Slack: Send for Approval",
+        "schemaType": "fromJson",
+        "jsonSchemaExample": "{ \"instagram\": \"caption with hashtags\", \"linkedin\": \"professional caption\", \"twitter\": \"punchy tweet\", \"facebook\": \"local caption\", \"tiktok\": \"short #hashtag\" }"
+      }
+    },
+    {
+      "id": "7482069e-4535-4433-8d1a-accd9e760244",
+      "name": "Add Page Data to Captions",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1024, 112],
+      "parameters": {
+        "mode": "manual",
+        "includeOtherFields": true,
+        "assignments": {
+          "assignments": [
+            { "id": "add-pid", "name": "notionPageId", "value": "={{ $('Extract Page Fields').item.json.notionPageId }}", "type": "string" },
+            { "id": "add-title", "name": "postTitle", "value": "={{ $('Extract Page Fields').item.json.postTitle }}", "type": "string" },
+            { "id": "add-image", "name": "imageUrl", "value": "={{ $('Extract Page Fields').item.json.imageUrl }}", "type": "string" },
+            { "id": "add-plat", "name": "platforms", "value": "={{ $('Extract Page Fields').item.json.platforms }}", "type": "string" }
+          ]
+        }
+      }
+    },
+    {
+      "id": "b638f53a-a62f-4929-93c4-485cf1b8efdf",
+      "name": "Slack: Approval Gate",
       "type": "n8n-nodes-base.slack",
-      "typeVersion": 2,
-      "position": [1420, 300],
-      "credentials": {
-        "slackApi": {
-          "id": "SLACK_CREDENTIAL_ID",
-          "name": "Slack Bot Token"
-        }
-      }
-    },
-    {
+      "typeVersion": 2.5,
+      "position": [1248, 112],
       "parameters": {
-        "httpMethod": "POST",
-        "path": "swingby-approval",
-        "responseMode": "lastNode",
-        "options": {}
+        "resource": "message",
+        "operation": "sendAndWait",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $vars.SLACK_APPROVAL_CHANNEL }}"
+        },
+        "message": "=:pencil: *Content ready for approval*\n\n*Title:* {{ $json.postTitle }}\n*Platforms:* {{ $json.platforms }}\n*Image:* {{ $json.imageUrl || \"_(no image provided)_\" }}\n\n*Instagram preview:*\n{{ ($json.instagram ?? \"\").substring(0, 300) }}...\n\n_Approve to post. Reject to mark as rejected in Notion._",
+        "responseType": "approval"
       },
-      "id": "node-010",
-      "name": "Webhook: Receive Approval",
-      "type": "n8n-nodes-base.webhook",
-      "typeVersion": 1,
-      "position": [1640, 300],
-      "webhookId": "REPLACE_WITH_YOUR_WEBHOOK_ID"
+      "webhookId": "b9f6ee03-d64f-407a-85a1-77456bd5ad5e"
     },
     {
+      "id": "64eba26f-1f9d-4f1c-a25a-3111c823bf64",
+      "name": "Post to Instagram",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [1472, 16],
       "parameters": {
-        "conditions": {
-          "string": [
-            {
-              "value1": "={{$json.body.action}}",
-              "operation": "equals",
-              "value2": "approve"
-            }
-          ]
-        }
-      },
-      "id": "node-011",
-      "name": "Approved?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 1,
-      "position": [1860, 300]
-    },
-    {
-      "parameters": {
-        "url": "https://graph.facebook.com/v19.0/={{$vars.INSTAGRAM_USER_ID}}/media",
+        "method": "POST",
+        "url": "={{ \"https://graph.facebook.com/v19.0/\" + $vars.IG_USER_ID + \"/media\" }}",
         "sendBody": true,
+        "specifyBody": "keypair",
         "bodyParameters": {
           "parameters": [
-            {
-              "name": "image_url",
-              "value": "={{$json['Image URL']}}"
-            },
-            {
-              "name": "caption",
-              "value": "={{$json.generatedCaptions.instagram}}"
-            },
-            {
-              "name": "access_token",
-              "value": "={{$vars.META_ACCESS_TOKEN}}"
-            }
+            { "name": "image_url", "value": "={{ $json.imageUrl }}" },
+            { "name": "caption", "value": "={{ $json.instagram }}" },
+            { "name": "access_token", "value": "={{ $vars.META_ACCESS_TOKEN }}" }
           ]
         },
-        "options": {}
+        "options": { "timeout": 30000 }
       },
-      "id": "node-012",
-      "name": "Instagram: Upload Media",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 3,
-      "position": [2080, 100]
+      "onError": "continueRegularOutput"
     },
     {
+      "id": "9cfba515-ba5f-4474-86ce-9d56bcd80fc8",
+      "name": "Publish Instagram Container",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [1696, 16],
       "parameters": {
-        "url": "https://graph.facebook.com/v19.0/={{$vars.INSTAGRAM_USER_ID}}/media_publish",
+        "method": "POST",
+        "url": "={{ \"https://graph.facebook.com/v19.0/\" + $vars.IG_USER_ID + \"/media_publish\" }}",
         "sendBody": true,
+        "specifyBody": "keypair",
         "bodyParameters": {
           "parameters": [
-            {
-              "name": "creation_id",
-              "value": "={{$json.id}}"
-            },
-            {
-              "name": "access_token",
-              "value": "={{$vars.META_ACCESS_TOKEN}}"
-            }
+            { "name": "creation_id", "value": "={{ $json.id }}" },
+            { "name": "access_token", "value": "={{ $vars.META_ACCESS_TOKEN }}" }
           ]
         },
-        "options": {}
+        "options": { "timeout": 30000 }
       },
-      "id": "node-013",
-      "name": "Instagram: Publish",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 3,
-      "position": [2300, 100]
+      "onError": "continueRegularOutput"
     },
     {
+      "id": "61f082b1-c754-48dc-a480-47aeeaa010e7",
+      "name": "Post to Facebook",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [1920, 16],
       "parameters": {
-        "url": "https://graph.facebook.com/v19.0/={{$vars.FACEBOOK_PAGE_ID}}/photos",
+        "method": "POST",
+        "url": "={{ \"https://graph.facebook.com/v19.0/\" + $vars.FB_PAGE_ID + \"/photos\" }}",
         "sendBody": true,
+        "specifyBody": "keypair",
         "bodyParameters": {
           "parameters": [
-            {
-              "name": "url",
-              "value": "={{$json['Image URL']}}"
-            },
-            {
-              "name": "message",
-              "value": "={{$json.generatedCaptions.facebook}}"
-            },
-            {
-              "name": "access_token",
-              "value": "={{$vars.META_ACCESS_TOKEN}}"
-            }
+            { "name": "url", "value": "={{ $('Add Page Data to Captions').item.json.imageUrl }}" },
+            { "name": "message", "value": "={{ $('Add Page Data to Captions').item.json.facebook }}" },
+            { "name": "access_token", "value": "={{ $vars.META_ACCESS_TOKEN }}" }
           ]
         },
-        "options": {}
+        "options": { "timeout": 30000 }
       },
-      "id": "node-014",
-      "name": "Facebook: Post Photo",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "2911b241-0e43-488c-b74d-124d5715e3d4",
+      "name": "Post to Twitter/X",
       "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 3,
-      "position": [2080, 300]
-    },
-    {
+      "typeVersion": 4.4,
+      "position": [2144, 16],
       "parameters": {
-        "resource": "post",
-        "operation": "create",
-        "text": "={{$json.generatedCaptions.twitter}}",
-        "additionalFields": {}
-      },
-      "id": "node-015",
-      "name": "Twitter: Post Tweet",
-      "type": "n8n-nodes-base.twitter",
-      "typeVersion": 2,
-      "position": [2080, 500],
-      "credentials": {
-        "twitterOAuth2Api": {
-          "id": "TWITTER_CREDENTIAL_ID",
-          "name": "Twitter OAuth2"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "resource": "post",
-        "operation": "create",
-        "organizationId": "={{$vars.LINKEDIN_ORG_ID}}",
-        "text": "={{$json.generatedCaptions.linkedin}}",
-        "additionalFields": {}
-      },
-      "id": "node-016",
-      "name": "LinkedIn: Post",
-      "type": "n8n-nodes-base.linkedIn",
-      "typeVersion": 1,
-      "position": [2080, 700],
-      "credentials": {
-        "linkedInOAuth2Api": {
-          "id": "LINKEDIN_CREDENTIAL_ID",
-          "name": "LinkedIn OAuth2"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "url": "https://api.bufferapp.com/1/updates/create.json",
+        "method": "POST",
+        "url": "https://api.twitter.com/2/tweets",
         "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth",
+        "genericAuthType": "oAuth1Api",
         "sendBody": true,
-        "bodyParameters": {
-          "parameters": [
-            {
-              "name": "profile_ids[]",
-              "value": "={{$vars.BUFFER_TIKTOK_PROFILE_ID}}"
-            },
-            {
-              "name": "text",
-              "value": "={{$json.generatedCaptions.tiktok}}"
-            }
-          ]
-        },
-        "options": {}
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ text: $(\"Add Page Data to Captions\").item.json.twitter }) }}",
+        "options": { "timeout": 30000 }
       },
-      "id": "node-017",
-      "name": "TikTok: Queue via Buffer",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 3,
-      "position": [2080, 900]
+      "onError": "continueRegularOutput"
     },
     {
+      "id": "23b415ba-6e33-439d-ae77-78efa423c86b",
+      "name": "Post to LinkedIn",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [2368, 16],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkedin.com/v2/ugcPosts",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "={{ \"Bearer \" + $vars.LI_ACCESS_TOKEN }}" },
+            { "name": "X-Restli-Protocol-Version", "value": "2.0.0" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ author: \"urn:li:organization:\" + $vars.LI_ORG_ID, lifecycleState: \"PUBLISHED\", specificContent: { \"com.linkedin.ugc.ShareContent\": { shareCommentary: { text: $(\"Add Page Data to Captions\").item.json.linkedin }, shareMediaCategory: \"NONE\" } }, visibility: { \"com.linkedin.ugc.MemberNetworkVisibility\": \"PUBLIC\" } }) }}",
+        "options": { "timeout": 30000 }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "fcab6a58-0863-4a14-bf71-d1d853a09127",
+      "name": "Queue TikTok via Buffer",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [2592, 16],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.bufferapp.com/1/updates/create.json",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "={{ \"Bearer \" + $vars.BUFFER_ACCESS_TOKEN }}" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "keypair",
+        "bodyParameters": {
+          "parameters": [
+            { "name": "profile_ids[]", "value": "={{ $vars.BUFFER_TIKTOK_PROFILE_ID }}" },
+            { "name": "text", "value": "={{ $('Add Page Data to Captions').item.json.tiktok }}" }
+          ]
+        },
+        "options": { "timeout": 30000 }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "5c8c3aa5-89c6-4f27-9863-31271390552d",
+      "name": "Notion: Mark as Posted",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [2816, 16],
       "parameters": {
         "resource": "databasePage",
         "operation": "update",
-        "pageId": "={{$json.id}}",
+        "pageId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Add Page Data to Captions').item.json.notionPageId }}"
+        },
+        "simple": true,
         "propertiesUi": {
           "propertyValues": [
-            {
-              "key": "Status",
-              "type": "select",
-              "selectValue": "posted"
-            },
-            {
-              "key": "Post IDs",
-              "type": "richText",
-              "textContent": "IG: {{$json.instagramPostId}} | FB: {{$json.facebookPostId}} | TW: {{$json.twitterPostId}}"
-            }
+            { "key": "Status|select", "type": "select", "selectValue": "posted" },
+            { "key": "Posted at|date", "type": "date", "date": "={{ $now.toISO() }}" },
+            { "key": "Post URLs|rich_text", "type": "rich_text", "textContent": "={{ \"IG:\" + ($(\"Publish Instagram Container\").item.json.id ?? \"err\") + \" FB:\" + ($(\"Post to Facebook\").item.json.id ?? \"err\") + \" TW:\" + ($(\"Post to Twitter/X\").item.json.data?.id ?? \"err\") + \" LI:\" + ($(\"Post to LinkedIn\").item.json.id ?? \"err\") }}" }
           ]
-        }
-      },
-      "id": "node-018",
-      "name": "Notion: Mark as Posted",
-      "type": "n8n-nodes-base.notion",
-      "typeVersion": 2,
-      "position": [2520, 400],
-      "credentials": {
-        "notionApi": {
-          "id": "NOTION_CREDENTIAL_ID",
-          "name": "Notion API"
         }
       }
     },
     {
+      "id": "c1fed86e-b4fb-493d-a6bd-c7583b7b8f79",
+      "name": "Slack: Post Success",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.5,
+      "position": [3040, 16],
       "parameters": {
-        "channel": "={{$vars.SLACK_APPROVAL_CHANNEL}}",
-        "text": ":x: Post rejected or timed out. Notion row status updated to 'ready' for tomorrow.",
-        "otherOptions": {}
+        "resource": "message",
+        "operation": "post",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $vars.SLACK_APPROVAL_CHANNEL }}"
+        },
+        "text": "={{ \":white_check_mark: Posted to all platforms — *\" + $(\"Add Page Data to Captions\").item.json.postTitle + \"* — \" + $now.toFormat(\"h:mm a, MMMM d\") }}",
+        "otherOptions": { "includeLinkToWorkflow": false }
       },
-      "id": "node-019",
+      "webhookId": "116ff472-f538-47a3-95b2-dd80d18aea05"
+    },
+    {
+      "id": "7a34163c-aef3-41d6-9d12-51599b5b146a",
+      "name": "Notion: Mark as Rejected",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [1472, 208],
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "update",
+        "pageId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Add Page Data to Captions').item.json.notionPageId }}"
+        },
+        "simple": true,
+        "propertiesUi": {
+          "propertyValues": [
+            { "key": "Status|select", "type": "select", "selectValue": "rejected" }
+          ]
+        }
+      }
+    },
+    {
+      "id": "e70ed137-5051-4a20-92a1-fbbd7c1d736a",
       "name": "Slack: Rejection Notice",
       "type": "n8n-nodes-base.slack",
-      "typeVersion": 2,
-      "position": [2080, 1100],
-      "credentials": {
-        "slackApi": {
-          "id": "SLACK_CREDENTIAL_ID",
-          "name": "Slack Bot Token"
-        }
-      }
-    },
-    {
+      "typeVersion": 2.5,
+      "position": [1696, 208],
       "parameters": {
-        "rule": {
-          "interval": [
-            {
-              "field": "cronExpression",
-              "expression": "0 23 * * *"
-            }
-          ]
+        "resource": "message",
+        "operation": "post",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $vars.SLACK_APPROVAL_CHANNEL }}"
         },
-        "timezone": "America/Edmonton"
+        "text": "={{ \":x: Post rejected: *\" + $(\"Add Page Data to Captions\").item.json.postTitle + \"*. Edit the brief in Notion and reset Status to ready to reschedule.\" }}",
+        "otherOptions": { "includeLinkToWorkflow": false }
       },
-      "id": "node-020",
-      "name": "Nightly 11pm Analytics Trigger",
-      "type": "n8n-nodes-base.cron",
-      "typeVersion": 1,
-      "position": [100, 800]
-    },
-    {
-      "parameters": {
-        "url": "https://graph.facebook.com/v19.0/={{$vars.INSTAGRAM_USER_ID}}/media?fields=id,like_count,comments_count,timestamp&access_token={{$vars.META_ACCESS_TOKEN}}&limit=10",
-        "options": {}
-      },
-      "id": "node-021",
-      "name": "Instagram: Fetch Last 10 Posts Metrics",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 3,
-      "position": [320, 800]
-    },
-    {
-      "parameters": {
-        "jsCode": "const posts = $input.first().json.data;\nconst today = new Date().toISOString().split('T')[0];\nconst summary = posts.slice(0, 3).map(p => `Post ${p.id}: ${p.like_count} likes, ${p.comments_count} comments`).join('\\n');\nreturn [{ json: { summary, count: posts.length, date: today, posts } }];"
-      },
-      "id": "node-022",
-      "name": "Summarize Metrics",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [540, 800]
-    },
-    {
-      "parameters": {
-        "channel": "={{$vars.SLACK_METRICS_CHANNEL}}",
-        "text": ":bar_chart: *SwingBy Social Digest — {{$json.date}}*\n\nTop posts today:\n{{$json.summary}}\n\nTotal posts tracked: {{$json.count}}",
-        "otherOptions": {}
-      },
-      "id": "node-023",
-      "name": "Slack: Nightly Digest",
-      "type": "n8n-nodes-base.slack",
-      "typeVersion": 2,
-      "position": [760, 800],
-      "credentials": {
-        "slackApi": {
-          "id": "SLACK_CREDENTIAL_ID",
-          "name": "Slack Bot Token"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "httpMethod": "POST",
-        "path": "swingby-dm-webhook",
-        "responseMode": "lastNode",
-        "options": {}
-      },
-      "id": "node-024",
-      "name": "Webhook: Incoming DM",
-      "type": "n8n-nodes-base.webhook",
-      "typeVersion": 1,
-      "position": [100, 1200],
-      "webhookId": "REPLACE_WITH_DM_WEBHOOK_ID"
-    },
-    {
-      "parameters": {
-        "resource": "chat",
-        "operation": "complete",
-        "model": "gpt-4o",
-        "messages": {
-          "values": [
-            {
-              "role": "system",
-              "content": "Classify this incoming social media DM into one of: service_inquiry, complaint, compliment, spam, other. Return JSON only: {\"category\": \"...\", \"summary\": \"...\"}"
-            },
-            {
-              "role": "user",
-              "content": "DM: {{$json.body.message}}"
-            }
-          ]
-        },
-        "options": {
-          "temperature": 0.3,
-          "maxTokens": 100
-        }
-      },
-      "id": "node-025",
-      "name": "OpenAI: Classify DM",
-      "type": "n8n-nodes-base.openAi",
-      "typeVersion": 1,
-      "position": [320, 1200],
-      "credentials": {
-        "openAiApi": {
-          "id": "OPENAI_CREDENTIAL_ID",
-          "name": "OpenAI API Key"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "string": [
-            {
-              "value1": "={{JSON.parse($json.choices[0].message.content).category}}",
-              "operation": "equals",
-              "value2": "complaint"
-            }
-          ]
-        }
-      },
-      "id": "node-026",
-      "name": "Is Complaint?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 1,
-      "position": [540, 1200]
-    },
-    {
-      "parameters": {
-        "channel": "={{$vars.SLACK_ALERTS_CHANNEL}}",
-        "text": ":red_circle: *DM Complaint received*\nFrom: {{$json.body.sender}}\nMessage: {{$json.body.message}}\n\nPlease respond personally within 2 hours.",
-        "otherOptions": {}
-      },
-      "id": "node-027",
-      "name": "Slack: Escalate Complaint",
-      "type": "n8n-nodes-base.slack",
-      "typeVersion": 2,
-      "position": [760, 1100],
-      "credentials": {
-        "slackApi": {
-          "id": "SLACK_CREDENTIAL_ID",
-          "name": "Slack Bot Token"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "url": "https://graph.facebook.com/v19.0/me/messages",
-        "sendBody": true,
-        "bodyParameters": {
-          "parameters": [
-            {
-              "name": "recipient",
-              "value": "={\"id\": \"{{$json.body.sender_id}}\"}"
-            },
-            {
-              "name": "message",
-              "value": "={\"text\": \"Thanks for reaching out! The fastest way to get started is to post your job at swingby.ca — it takes 60 seconds. Let me know if you have any questions!\"}"
-            },
-            {
-              "name": "access_token",
-              "value": "={{$vars.META_ACCESS_TOKEN}}"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "id": "node-028",
-      "name": "Auto-reply: Non-complaint DM",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 3,
-      "position": [760, 1300]
+      "webhookId": "4adca316-e203-4308-a2f0-e96aff96cc0d"
     }
   ],
   "connections": {
-    "Daily 9am Trigger": {
+    "Daily 9am MT": {
+      "main": [[{ "node": "Fetch Briefs from Notion", "type": "main", "index": 0 }]]
+    },
+    "Fetch Briefs from Notion": {
       "main": [
-        [{ "node": "Fetch Content from Notion", "type": "main", "index": 0 }]
+        [{ "node": "Extract Page Fields", "type": "main", "index": 0 }],
+        [{ "node": "Slack: Fetch Error Alert", "type": "main", "index": 0 }]
       ]
     },
-    "Fetch Content from Notion": {
+    "Extract Page Fields": {
+      "main": [[{ "node": "Generate Platform Captions", "type": "main", "index": 0 }]]
+    },
+    "Generate Platform Captions": {
+      "main": [[{ "node": "Add Page Data to Captions", "type": "main", "index": 0 }]]
+    },
+    "OpenAI GPT Model": {
+      "ai_languageModel": [[{ "node": "Generate Platform Captions", "type": "ai_languageModel", "index": 0 }]]
+    },
+    "Caption JSON Parser": {
+      "ai_outputParser": [[{ "node": "Generate Platform Captions", "type": "ai_outputParser", "index": 0 }]]
+    },
+    "Add Page Data to Captions": {
+      "main": [[{ "node": "Slack: Approval Gate", "type": "main", "index": 0 }]]
+    },
+    "Slack: Approval Gate": {
       "main": [
-        [{ "node": "Has Content Today?", "type": "main", "index": 0 }]
+        [{ "node": "Post to Instagram", "type": "main", "index": 0 }],
+        [{ "node": "Notion: Mark as Rejected", "type": "main", "index": 0 }]
       ]
     },
-    "Has Content Today?": {
-      "main": [
-        [{ "node": "Has Caption Draft?", "type": "main", "index": 0 }],
-        [{ "node": "Slack: No Content Today", "type": "main", "index": 0 }]
-      ]
+    "Post to Instagram": {
+      "main": [[{ "node": "Publish Instagram Container", "type": "main", "index": 0 }]]
     },
-    "Has Caption Draft?": {
-      "main": [
-        [{ "node": "Use Existing Draft", "type": "main", "index": 0 }],
-        [{ "node": "OpenAI: Generate Captions", "type": "main", "index": 0 }]
-      ]
+    "Publish Instagram Container": {
+      "main": [[{ "node": "Post to Facebook", "type": "main", "index": 0 }]]
     },
-    "OpenAI: Generate Captions": {
-      "main": [
-        [{ "node": "Parse Generated Captions", "type": "main", "index": 0 }]
-      ]
+    "Post to Facebook": {
+      "main": [[{ "node": "Post to Twitter/X", "type": "main", "index": 0 }]]
     },
-    "Parse Generated Captions": {
-      "main": [
-        [{ "node": "Slack: Send for Approval", "type": "main", "index": 0 }]
-      ]
+    "Post to Twitter/X": {
+      "main": [[{ "node": "Post to LinkedIn", "type": "main", "index": 0 }]]
     },
-    "Use Existing Draft": {
-      "main": [
-        [{ "node": "Slack: Send for Approval", "type": "main", "index": 0 }]
-      ]
+    "Post to LinkedIn": {
+      "main": [[{ "node": "Queue TikTok via Buffer", "type": "main", "index": 0 }]]
     },
-    "Slack: Send for Approval": {
-      "main": [
-        [{ "node": "Webhook: Receive Approval", "type": "main", "index": 0 }]
-      ]
+    "Queue TikTok via Buffer": {
+      "main": [[{ "node": "Notion: Mark as Posted", "type": "main", "index": 0 }]]
     },
-    "Webhook: Receive Approval": {
-      "main": [
-        [{ "node": "Approved?", "type": "main", "index": 0 }]
-      ]
+    "Notion: Mark as Posted": {
+      "main": [[{ "node": "Slack: Post Success", "type": "main", "index": 0 }]]
     },
-    "Approved?": {
-      "main": [
-        [
-          { "node": "Instagram: Upload Media", "type": "main", "index": 0 },
-          { "node": "Facebook: Post Photo", "type": "main", "index": 0 },
-          { "node": "Twitter: Post Tweet", "type": "main", "index": 0 },
-          { "node": "LinkedIn: Post", "type": "main", "index": 0 },
-          { "node": "TikTok: Queue via Buffer", "type": "main", "index": 0 }
-        ],
-        [{ "node": "Slack: Rejection Notice", "type": "main", "index": 0 }]
-      ]
-    },
-    "Instagram: Upload Media": {
-      "main": [
-        [{ "node": "Instagram: Publish", "type": "main", "index": 0 }]
-      ]
-    },
-    "Instagram: Publish": {
-      "main": [
-        [{ "node": "Notion: Mark as Posted", "type": "main", "index": 0 }]
-      ]
-    },
-    "Nightly 11pm Analytics Trigger": {
-      "main": [
-        [{ "node": "Instagram: Fetch Last 10 Posts Metrics", "type": "main", "index": 0 }]
-      ]
-    },
-    "Instagram: Fetch Last 10 Posts Metrics": {
-      "main": [
-        [{ "node": "Summarize Metrics", "type": "main", "index": 0 }]
-      ]
-    },
-    "Summarize Metrics": {
-      "main": [
-        [{ "node": "Slack: Nightly Digest", "type": "main", "index": 0 }]
-      ]
-    },
-    "Webhook: Incoming DM": {
-      "main": [
-        [{ "node": "OpenAI: Classify DM", "type": "main", "index": 0 }]
-      ]
-    },
-    "OpenAI: Classify DM": {
-      "main": [
-        [{ "node": "Is Complaint?", "type": "main", "index": 0 }]
-      ]
-    },
-    "Is Complaint?": {
-      "main": [
-        [{ "node": "Slack: Escalate Complaint", "type": "main", "index": 0 }],
-        [{ "node": "Auto-reply: Non-complaint DM", "type": "main", "index": 0 }]
-      ]
+    "Notion: Mark as Rejected": {
+      "main": [[{ "node": "Slack: Rejection Notice", "type": "main", "index": 0 }]]
     }
-  },
-  "settings": {
-    "executionOrder": "v1",
-    "saveManualExecutions": true,
-    "callerPolicy": "workflowsFromSameOwner",
-    "errorWorkflow": ""
-  },
-  "staticData": null,
-  "tags": ["social-media", "swingby", "automation"],
-  "triggerCount": 3,
-  "updatedAt": "2026-06-06T00:00:00.000Z",
-  "versionId": "1"
+  }
 }
