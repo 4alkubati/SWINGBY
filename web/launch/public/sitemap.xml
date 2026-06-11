@@ -23,4 +23,23 @@
   <url><loc>https://swingbyapp.ca/contact</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
   <url><loc>https://swingbyapp.ca/privacy</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
   <url><loc>https://swingbyapp.ca/terms</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
+
+  <!-- Hyperlocal SEO pages — neighbourhood × category -->
+  <url><loc>https://swingbyapp.ca/calgary/beltline/house-cleaning</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://swingbyapp.ca/calgary/mission/handyman</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://swingbyapp.ca/calgary/kensington/dog-walking</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://swingbyapp.ca/calgary/inglewood/personal-training</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://swingbyapp.ca/calgary/bridgeland/lawn-care</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://swingbyapp.ca/calgary/beltline/handyman</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://swingbyapp.ca/calgary/mission/dog-walking</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://swingbyapp.ca/calgary/kensington/house-cleaning</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://swingbyapp.ca/calgary/inglewood/dog-walking</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://swingbyapp.ca/calgary/bridgeland/handyman</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://swingbyapp.ca/calgary/mission/house-cleaning</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://swingbyapp.ca/calgary/kensington/handyman</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://swingbyapp.ca/calgary/ramsay/house-cleaning</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://swingbyapp.ca/calgary/hillhurst/lawn-care</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://swingbyapp.ca/calgary/erlton/house-cleaning</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://swingbyapp.ca/calgary/bankview/handyman</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://swingbyapp.ca/calgary/killarney/lawn-care</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
 </urlset>
