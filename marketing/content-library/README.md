@@ -14,7 +14,8 @@ Ready-to-use social and email content. Paste into your Notion content queue, sch
 | [instagram-week-4.md](instagram-week-4.md) | IG captions, days 22–28 | 7 posts |
 | [instagram-90-day-drafts.md](instagram-90-day-drafts.md) | Extended IG drafts through day 90 | 62 more posts |
 | [facebook-week-1-4.md](facebook-week-1-4.md) | FB Page posts (longer, conversational) | 28 posts |
-| [linkedin-30-day-posts.md](linkedin-30-day-posts.md) | Founder LinkedIn build-in-public posts | 30 posts |
+| [linkedin-30-day-posts.md](linkedin-30-day-posts.md) | Company page LinkedIn posts | 30 posts |
+| [founder-linkedin-30.md](founder-linkedin-30.md) | Founder personal LinkedIn (build-in-public voice) | 30 posts |
 | [twitter-90-day-threads.md](twitter-90-day-threads.md) | X/Twitter threads and single posts | 30 threads |
 | [tiktok-30-day-scripts.md](tiktok-30-day-scripts.md) | TikTok video scripts | 30 videos |
 | [customer-story-template.md](customer-story-template.md) | Fill-in-the-blank story format + 3 examples | Template |
