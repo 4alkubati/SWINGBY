@@ -1,0 +1,125 @@
+/* ── Escrow tracker card ─────────────────────────────────────────────────── */
+
+.escrowCard {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.escrowTitle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin-bottom: 4px;
+}
+
+.escrowRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.escrowLabel {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.escrowValue {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.escrowBar {
+  height: 6px;
+  background: var(--color-border);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+  margin: 4px 0;
+}
+
+.escrowFill {
+  height: 100%;
+  background: var(--color-accent);
+  border-radius: var(--radius-pill);
+  transition: width 0.6s ease;
+  min-width: 4px;
+}
+
+.escrowHint {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+  margin-top: 4px;
+}
+
+/* ── Team on duty card ───────────────────────────────────────────────────── */
+
+.teamCard {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.teamRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: 6px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.teamRow:last-child {
+  border-bottom: none;
+}
+
+.teamAvatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--color-accent-muted);
+  color: var(--color-accent-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.teamInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.teamName {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.teamRole {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+}
+
+.teamCount {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-accent);
+  background: var(--color-accent-muted);
+  border-radius: 12px;
+  padding: 2px 8px;
+}
