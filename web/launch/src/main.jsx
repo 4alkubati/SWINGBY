@@ -3,8 +3,10 @@ import ReactDOM from 'react-dom/client'
 import { HelmetProvider } from 'react-helmet-async'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Toaster } from 'react-hot-toast'
+import { I18nextProvider } from 'react-i18next'
 import { AuthProvider } from './context/AuthContext'
 import { initSentry } from './lib/sentry'
+import i18n from './lib/i18n'
 import App from './App'
 
 import './theme/reset.css'
@@ -25,6 +27,7 @@ const queryClient = new QueryClient({
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
+    <I18nextProvider i18n={i18n}>
     <HelmetProvider>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
@@ -43,5 +46,6 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         </AuthProvider>
       </QueryClientProvider>
     </HelmetProvider>
+    </I18nextProvider>
   </React.StrictMode>
 )

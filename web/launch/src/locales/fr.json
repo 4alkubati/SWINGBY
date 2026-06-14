@@ -1,0 +1,43 @@
+{
+  "nav": {
+    "howItWorks": "Comment ça marche",
+    "forBusinesses": "Pour les entreprises",
+    "pricing": "Tarifs",
+    "login": "Connexion",
+    "getStarted": "Commencer"
+  },
+  "home": {
+    "hero": {
+      "headline": "Services locaux, devis en quelques minutes",
+      "sub": "Publiez une tâche, recevez des devis d'entreprises vérifiées à Calgary et réservez en toute confiance.",
+      "cta": "Publier une tâche — c'est gratuit",
+      "ctaSub": "Aucune carte de crédit requise"
+    },
+    "howItWorks": "Comment ça marche",
+    "step1Title": "Publiez une tâche",
+    "step1Desc": "Décrivez ce dont vous avez besoin, fixez un budget et choisissez votre zone. Moins de deux minutes.",
+    "step2Title": "Recevez des devis",
+    "step2Desc": "Des entreprises locales vérifiées vous envoient des devis compétitifs. Comparez les évaluations et les prix.",
+    "step3Title": "Réservez en toute confiance",
+    "step3Desc": "Acceptez le meilleur devis. Le paiement est mis sous séquestre et libéré à la fin.",
+    "trustTitle": "Fondé sur la confiance",
+    "categories": "Catégories populaires",
+    "testimonials": "Ce que disent les gens",
+    "faqTitle": "Questions fréquentes",
+    "ctaSection": "Prêt à commencer?",
+    "ctaDesc": "Rejoignez des milliers de propriétaires de Calgary qui font les choses plus intelligemment."
+  },
+  "common": {
+    "learnMore": "En savoir plus",
+    "viewAll": "Tout voir",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "loading": "Chargement…",
+    "error": "Une erreur s'est produite",
+    "retry": "Réessayer",
+    "back": "Retour"
+  },
+  "footer": {
+    "tagline": "La marketplace des services locaux à Calgary."
+  }
+}

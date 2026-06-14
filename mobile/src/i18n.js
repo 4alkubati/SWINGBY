@@ -176,6 +176,92 @@ const translations = {
     'faq.q5': 'Comment devenir une entreprise?',
     'faq.q6': 'Comment supprimer mon compte?',
   },
+
+  // ── Arabic (RTL) — skeleton keys, translator TODO ──────────────────────
+  ar: {
+    // Auth
+    'auth.signin': 'تسجيل الدخول',
+    'auth.signup': 'إنشاء حساب',
+    'auth.logout': 'تسجيل الخروج',
+    'auth.email': 'البريد الإلكتروني',
+    'auth.password': 'كلمة المرور',
+    'auth.forgotPassword': 'نسيت كلمة المرور؟',
+    'auth.noAccount': 'ليس لديك حساب؟',
+    'auth.hasAccount': 'لديك حساب بالفعل؟',
+    'auth.login': 'تسجيل الدخول',
+
+    // Common
+    'common.save': 'حفظ',
+    'common.cancel': 'إلغاء',
+    'common.delete': 'حذف',
+    'common.confirm': 'تأكيد',
+    'common.back': 'رجوع',
+    'common.loading': 'جارٍ التحميل…',
+    'common.error': 'حدث خطأ ما',
+    'common.retry': 'حاول مجدداً',
+    'common.done': 'تم',
+    'common.edit': 'تعديل',
+    'common.share': 'مشاركة',
+    'common.copy': 'نسخ',
+    'common.copied': 'تم النسخ',
+    'common.comingSoon': 'قريباً',
+
+    // Settings
+    'settings.title': 'الإعدادات',
+    'settings.language': 'اللغة',
+    'settings.languageTitle': 'اختر اللغة',
+    'settings.notifications': 'الإشعارات',
+    'settings.account': 'الحساب',
+    'settings.privacy': 'الخصوصية والقانون',
+    'settings.support': 'الدعم',
+    'settings.editProfile': 'تعديل الملف الشخصي',
+    'settings.privacyPolicy': 'سياسة الخصوصية',
+    'settings.termsOfService': 'شروط الخدمة',
+    'settings.exportData': 'تصدير بياناتي',
+    'settings.deleteAccount': 'حذف حسابي',
+    'settings.helpFAQ': 'المساعدة والأسئلة الشائعة',
+    'settings.contactUs': 'اتصل بنا',
+    'settings.signOut': 'تسجيل الخروج',
+    'settings.version': 'الإصدار',
+
+    // Profile
+    'profile.title': 'تعديل الملف الشخصي',
+    'profile.firstName': 'الاسم الأول',
+    'profile.lastName': 'اسم العائلة',
+    'profile.email': 'البريد الإلكتروني',
+    'profile.emailLocked': 'البريد الإلكتروني — تواصل مع الدعم للتغيير',
+    'profile.phone': 'رقم الهاتف',
+    'profile.saveChanges': 'حفظ التغييرات',
+    'profile.updated': 'تم تحديث الملف الشخصي',
+    'profile.updateError': 'تعذر حفظ التغييرات',
+    'profile.photoComingSoon': 'رفع الصور قريباً',
+
+    // Onboarding
+    'onboarding.skip': 'تخطي',
+    'onboarding.getStarted': 'ابدأ',
+    'onboarding.slide1Title': 'محترفون محليون، عند الطلب',
+    'onboarding.slide1Sub': 'سباكة، تنظيف، عشب وأكثر — عروض أسعار من شركات محلية موثوقة.',
+    'onboarding.slide2Title': 'أنت تحدد اليوم، وهم يتنافسون',
+    'onboarding.slide2Sub': 'انشر مرة واحدة. قارن العروض. اختر الأفضل.',
+    'onboarding.slide3Title': 'عمال موثوقون في كل مرة',
+    'onboarding.slide3Sub': 'دليل صوري عند اكتمال العمل. الضمان يحمي دفعتك.',
+
+    // Referral
+    'referral.title': 'شارك SwingBy واحصل على 10 دولار رصيد',
+    'referral.body': 'عندما يُكمل صديقك حجزه الأول، تحصلان معاً على 10 دولار خصماً.',
+    'referral.shareText': 'انضم إليّ على SwingBy! الكود: %{code} — https://swingbyy.com',
+    'referral.shareCTA': 'شارك كودي',
+    'referral.stats': '%{friends} أصدقاء انضموا • %{earned}$ مكسبة',
+
+    // FAQ
+    'faq.title': 'المساعدة والأسئلة الشائعة',
+    'faq.q1': 'كيف يعمل SwingBy؟',
+    'faq.q2': 'كيف تُقبَل العروض؟',
+    'faq.q3': 'متى يتم الدفع؟',
+    'faq.q4': 'ماذا يحدث إذا ساءت الأمور؟',
+    'faq.q5': 'كيف أصبح صاحب عمل؟',
+    'faq.q6': 'كيف أحذف حسابي؟',
+  },
 };
 
 const i18n = new I18n(translations);
@@ -193,7 +279,9 @@ i18n.enableFallback = true;
     } else {
       // Use device locale if supported, else fallback en
       const deviceLocale = Localization.getLocales?.()?.[0]?.languageTag ?? Localization.locale ?? 'en';
-      i18n.locale = deviceLocale.startsWith('fr') ? 'fr-CA' : 'en';
+      if (deviceLocale.startsWith('fr')) i18n.locale = 'fr-CA';
+      else if (deviceLocale.startsWith('ar')) i18n.locale = 'ar';
+      else i18n.locale = 'en';
     }
   } catch {
     i18n.locale = 'en';

@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 import {
   ArrowRight, Broom, Wrench, Lightning, Plant, PaintBrush, Hammer, Toolbox,
   ShieldCheck, CurrencyDollar, Star, MapPin,
@@ -52,6 +53,8 @@ const fadeUp = {
 }
 
 export default function Home() {
+  const { t } = useTranslation()
+  // TODO (i18n): convert remaining strings below to t() calls
   return (
     <>
       <SEO
@@ -71,16 +74,13 @@ export default function Home() {
         <div className={styles.heroInner}>
           <motion.div className={styles.heroContent} {...fadeUp}>
             <div className={styles.heroBadge}><MapPin size={14} weight="fill" /> Now live in Calgary</div>
-            <h1 className={styles.heroTitle}>Local services, trusted and simple</h1>
-            <p className={styles.heroSubtitle}>
-              Post a job, receive quotes from vetted local businesses, and book — all in one place.
-              Safe escrow payments. Real reviews. No surprises.
-            </p>
+            <h1 className={styles.heroTitle}>{t('home.hero.headline')}</h1>
+            <p className={styles.heroSubtitle}>{t('home.hero.sub')}</p>
             <div className={styles.heroCtas}>
-              <Link to="/signup"><Button size="lg">Post a job free</Button></Link>
+              <Link to="/signup"><Button size="lg">{t('home.hero.cta')}</Button></Link>
               <Link to="/for-businesses">
                 <Button variant="secondary" size="lg">
-                  Join as a business <ArrowRight size={18} />
+                  {t('nav.forBusinesses')} <ArrowRight size={18} />
                 </Button>
               </Link>
             </div>

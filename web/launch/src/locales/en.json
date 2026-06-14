@@ -1,0 +1,43 @@
+{
+  "nav": {
+    "howItWorks": "How it works",
+    "forBusinesses": "For businesses",
+    "pricing": "Pricing",
+    "login": "Log in",
+    "getStarted": "Get started"
+  },
+  "home": {
+    "hero": {
+      "headline": "Local services, quoted in minutes",
+      "sub": "Post a job, get competitive quotes from verified Calgary businesses, and book with confidence.",
+      "cta": "Post a job — it's free",
+      "ctaSub": "No credit card required"
+    },
+    "howItWorks": "How it works",
+    "step1Title": "Post a job",
+    "step1Desc": "Describe what you need, set a budget, and pick your area. Takes under two minutes.",
+    "step2Title": "Get quotes",
+    "step2Desc": "Verified local businesses send you competitive quotes. Compare ratings, reviews, and prices.",
+    "step3Title": "Book with confidence",
+    "step3Desc": "Accept the best quote. Payment is held in escrow and released on completion.",
+    "trustTitle": "Built on trust",
+    "categories": "Popular categories",
+    "testimonials": "What people are saying",
+    "faqTitle": "Frequently asked questions",
+    "ctaSection": "Ready to get started?",
+    "ctaDesc": "Join thousands of Calgary homeowners getting things done smarter."
+  },
+  "common": {
+    "learnMore": "Learn more",
+    "viewAll": "View all",
+    "save": "Save",
+    "cancel": "Cancel",
+    "loading": "Loading…",
+    "error": "Something went wrong",
+    "retry": "Try again",
+    "back": "Back"
+  },
+  "footer": {
+    "tagline": "Calgary's local services marketplace."
+  }
+}
