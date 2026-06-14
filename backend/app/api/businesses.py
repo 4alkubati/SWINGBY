@@ -1,13 +1,13 @@
-import logging
 import math
 
+import structlog
 from fastapi import APIRouter, HTTPException, Depends, Query
 from pydantic import BaseModel, Field, field_validator
 from typing import Optional
 from app.deps import get_current_user
 from app.supabase_client import supabase
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 router = APIRouter()
 
@@ -69,7 +69,7 @@ def create_business(data: BusinessCreate, current_user: dict = Depends(get_curre
         res = supabase.table("businesses").insert(payload).execute()
         return {"message": "Business created", "business": res.data[0]}
     except Exception:
-        logger.exception("Could not create business")
+        logger.exception("create_business_error")
         raise HTTPException(status_code=400, detail="Could not create business")
 
 
@@ -88,12 +88,14 @@ def get_nearby_businesses(
 
     Uses a bounding-box pre-filter in the query, then Haversine exact filtering
     in Python (no PostGIS required). Supports pagination via limit/offset.
+    Returns an empty items list on any database error so the mobile home screen
+    shows "No businesses nearby" rather than crashing with a 500.
     """
-    # Rough degree offsets for the bounding box (1° lat ≈ 111 km)
-    lat_delta = radius_km / 111.0
-    lng_delta = radius_km / (111.0 * math.cos(math.radians(lat)) + 1e-9)
-
     try:
+        # Rough degree offsets for the bounding box (1° lat ≈ 111 km)
+        lat_delta = radius_km / 111.0
+        lng_delta = radius_km / (111.0 * math.cos(math.radians(lat)) + 1e-9)
+
         query = (
             supabase.table("businesses")
             .select("*")
@@ -112,10 +114,16 @@ def get_nearby_businesses(
         # overlaps the caller's location
         nearby = []
         for biz in businesses:
-            if biz.get("lat") is None or biz.get("lng") is None:
+            biz_lat = biz.get("lat")
+            biz_lng = biz.get("lng")
+            if biz_lat is None or biz_lng is None:
                 continue
-            dist = _haversine_km(lat, lng, biz["lat"], biz["lng"])
-            biz_radius = biz.get("service_radius_km") or 25.0
+            try:
+                dist = _haversine_km(lat, lng, float(biz_lat), float(biz_lng))
+            except (TypeError, ValueError):
+                logger.warning("nearby_bad_coords", biz_id=biz.get("id"), lat=biz_lat, lng=biz_lng)
+                continue
+            biz_radius = float(biz.get("service_radius_km") or 25.0)
             if dist <= min(radius_km, biz_radius):
                 nearby.append({**biz, "distance_km": round(dist, 2)})
 
@@ -129,8 +137,8 @@ def get_nearby_businesses(
         return {"items": page, "limit": limit, "offset": offset, "next_offset": next_offset}
 
     except Exception:
-        logger.exception("Could not fetch nearby businesses")
-        raise HTTPException(status_code=400, detail="Could not fetch nearby businesses")
+        logger.exception("nearby_businesses_error", lat=lat, lng=lng, radius_km=radius_km)
+        return {"items": [], "limit": limit, "offset": offset, "next_offset": None}
 
 
 @router.get("/me")
@@ -160,7 +168,7 @@ def list_businesses(
         next_offset = offset + limit if len(items) == limit else None
         return {"items": items, "limit": limit, "offset": offset, "next_offset": next_offset}
     except Exception:
-        logger.exception("Could not list businesses")
+        logger.exception("list_businesses_error")
         raise HTTPException(status_code=400, detail="Could not list businesses")
 
 
@@ -196,5 +204,5 @@ def update_business(
         res = supabase.table("businesses").update(update_data).eq("id", business_id).execute()
         return {"message": "Business updated", "business": res.data[0]}
     except Exception:
-        logger.exception("Could not update business")
+        logger.exception("update_business_error")
         raise HTTPException(status_code=400, detail="Could not update business")

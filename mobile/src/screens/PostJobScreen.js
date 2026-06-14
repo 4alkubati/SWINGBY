@@ -258,9 +258,15 @@ export default function PostJobScreen() {
 
   // Navigate between steps
   function goForward() {
-    if (step === 1 && !description.trim()) {
-      setDescError('Please describe what you need.');
-      return;
+    if (step === 1) {
+      if (!description.trim() || description.trim().length < 10) {
+        setDescError('Describe your job in at least 10 characters.');
+        return;
+      }
+      if (address.trim().length > 0 && address.trim().length < 5) {
+        setDescError('Enter a full address (at least 5 characters).');
+        return;
+      }
     }
     setDescError('');
     setDirection(1);
@@ -274,8 +280,9 @@ export default function PostJobScreen() {
 
   // Original submit logic — preserved in full
   async function handleSubmit() {
-    if (!description.trim()) {
-      setDescError('Please describe what you need.');
+    if (!description.trim() || description.trim().length < 10) {
+      setDescError('Describe your job in at least 10 characters.');
+      setStep(1);
       return;
     }
     const parsedBudget = parseFloat(budget);
