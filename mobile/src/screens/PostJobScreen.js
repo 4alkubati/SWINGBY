@@ -1,11 +1,13 @@
 import {
-  View, ScrollView, KeyboardAvoidingView, Platform, StyleSheet,
+  View, ScrollView, KeyboardAvoidingView, Platform, StyleSheet, Modal, TouchableOpacity,
 } from 'react-native';
 import { useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import Animated, {
   useSharedValue, useAnimatedStyle, withSpring, withTiming, Easing,
 } from 'react-native-reanimated';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import GooglePlacesAutocomplete from 'react-native-google-places-autocomplete';
 
 import Text from '../components/Text';
 import TextField from '../components/TextField';
@@ -17,6 +19,18 @@ import Inline from '../components/Inline';
 
 import { api } from '../services/api';
 import { colors, spacing, radius } from '../theme/tokens';
+
+// > TODO (HUMAN): get Google Places API key from Google Cloud Console
+// > Set it as EXPO_PUBLIC_GOOGLE_PLACES_KEY in mobile/.env
+const GOOGLE_PLACES_KEY = process.env.EXPO_PUBLIC_GOOGLE_PLACES_KEY || '';
+
+function formatTime(date) {
+  const h = date.getHours();
+  const m = date.getMinutes();
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const hour12 = h % 12 || 12;
+  return `${hour12}:${String(m).padStart(2, '0')} ${ampm}`;
+}
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const CATEGORIES = [
@@ -127,13 +141,54 @@ function StepDetails({ description, setDescription, address, setAddress, descErr
             textAlignVertical="top"
             placeholder="e.g. Deep clean of 2-bedroom apartment, fix leaking pipe, move furniture…"
           />
-          <TextField
-            label="Address (where's the job?)"
-            value={address}
-            onChangeText={setAddress}
-            placeholder="123 Main St SW, Calgary"
-            autoCapitalize="words"
-          />
+          {/* Address autocomplete — falls back to plain text when no API key */}
+          {GOOGLE_PLACES_KEY ? (
+            <View style={styles.placesWrapper}>
+              <Text variant="caption" color="secondary" style={styles.placesLabel}>
+                Address (where's the job?)
+              </Text>
+              <GooglePlacesAutocomplete
+                placeholder="123 Main St SW, Calgary"
+                onPress={(data) => setAddress(data.description)}
+                query={{ key: GOOGLE_PLACES_KEY, language: 'en', components: 'country:ca' }}
+                styles={{
+                  textInput: {
+                    fontFamily: 'Inter_400Regular',
+                    fontSize: 16,
+                    color: colors.textPrimary,
+                    backgroundColor: colors.surface,
+                    borderWidth: 1,
+                    borderColor: colors.border,
+                    borderRadius: radius.input,
+                    paddingHorizontal: spacing.base,
+                    paddingVertical: spacing.md,
+                    height: 52,
+                  },
+                  listView: { borderRadius: radius.card, marginTop: 4 },
+                  row: { backgroundColor: colors.surface },
+                  description: { color: colors.textPrimary, fontFamily: 'Inter_400Regular' },
+                  separator: { backgroundColor: colors.border },
+                }}
+                textInputProps={{
+                  value: address,
+                  onChangeText: setAddress,
+                  autoCapitalize: 'words',
+                }}
+                enablePoweredByContainer={false}
+                fetchDetails={false}
+                minLength={3}
+                keepResultsAfterBlur
+              />
+            </View>
+          ) : (
+            <TextField
+              label="Address (where's the job?)"
+              value={address}
+              onChangeText={setAddress}
+              placeholder="123 Main St SW, Calgary"
+              autoCapitalize="words"
+            />
+          )}
         </Stack>
       </Stack>
     </StepPanel>
@@ -142,6 +197,26 @@ function StepDetails({ description, setDescription, address, setAddress, descErr
 
 // ─── Step 2: Budget ──────────────────────────────────────────────────────────
 function StepBudget({ budget, setBudget, date, setDate, time, setTime }) {
+  const [showTimePicker, setShowTimePicker] = useState(false);
+  const [pickerTime, setPickerTime] = useState(new Date());
+
+  function openTimePicker() {
+    setShowTimePicker(true);
+  }
+
+  function onTimeChange(_, selected) {
+    if (Platform.OS === 'android') setShowTimePicker(false);
+    if (selected) {
+      setPickerTime(selected);
+      setTime(formatTime(selected));
+    }
+  }
+
+  function confirmTime() {
+    setTime(formatTime(pickerTime));
+    setShowTimePicker(false);
+  }
+
   return (
     <StepPanel direction={1}>
       <Stack spacing="lg">
@@ -167,16 +242,63 @@ function StepBudget({ budget, setBudget, date, setDate, time, setTime }) {
               placeholder="May 28"
               style={{ flex: 1 }}
             />
-            <TextField
-              label="Preferred time"
-              value={time}
-              onChangeText={setTime}
-              placeholder="10:00 AM"
-              style={{ flex: 1 }}
-            />
+            {/* Native iOS scroll-wheel time picker */}
+            <TouchableOpacity
+              onPress={openTimePicker}
+              style={[styles.timeTrigger, { flex: 1 }]}
+              accessibilityLabel="Select preferred time"
+              accessibilityRole="button"
+            >
+              <Text variant="caption" color="secondary" style={styles.timeLabel}>
+                Preferred time
+              </Text>
+              <Text variant="body" color={time ? 'primary' : 'secondary'}>
+                {time || '10:00 AM'}
+              </Text>
+            </TouchableOpacity>
           </Inline>
         </Stack>
       </Stack>
+
+      {/* iOS: modal sheet. Android: inline picker (dismissed automatically) */}
+      {Platform.OS === 'ios' ? (
+        <Modal
+          transparent
+          animationType="slide"
+          visible={showTimePicker}
+          onRequestClose={() => setShowTimePicker(false)}
+        >
+          <View style={styles.pickerOverlay}>
+            <View style={styles.pickerSheet}>
+              <View style={styles.pickerToolbar}>
+                <TouchableOpacity onPress={() => setShowTimePicker(false)}>
+                  <Text variant="body" color="secondary">Cancel</Text>
+                </TouchableOpacity>
+                <Text variant="label">Preferred time</Text>
+                <TouchableOpacity onPress={confirmTime}>
+                  <Text variant="body" color="accent" style={{ fontWeight: '600' }}>Done</Text>
+                </TouchableOpacity>
+              </View>
+              <DateTimePicker
+                value={pickerTime}
+                mode="time"
+                display="spinner"
+                onChange={onTimeChange}
+                style={{ height: 200 }}
+              />
+            </View>
+          </View>
+        </Modal>
+      ) : (
+        showTimePicker && (
+          <DateTimePicker
+            value={pickerTime}
+            mode="time"
+            display="default"
+            onChange={onTimeChange}
+          />
+        )
+      )}
     </StepPanel>
   );
 }
@@ -453,4 +575,49 @@ const styles = StyleSheet.create({
   // Confirm step
   postBtn: { marginTop: spacing.xs },
   hint: { textAlign: 'center' },
+
+  // Google Places wrapper
+  placesWrapper: { gap: spacing.xs },
+  placesLabel: { marginBottom: spacing.xs },
+
+  // Time picker trigger
+  timeTrigger: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.input,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingHorizontal: spacing.base,
+    paddingTop: 22,
+    paddingBottom: 8,
+    minHeight: 52,
+    justifyContent: 'flex-end',
+  },
+  timeLabel: {
+    position: 'absolute',
+    top: 8,
+    left: spacing.base,
+    fontSize: 11,
+  },
+
+  // Time picker modal (iOS)
+  pickerOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.3)',
+  },
+  pickerSheet: {
+    backgroundColor: colors.surface,
+    borderTopLeftRadius: radius.card,
+    borderTopRightRadius: radius.card,
+    paddingBottom: spacing.xl,
+  },
+  pickerToolbar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.md,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
+  },
 });
