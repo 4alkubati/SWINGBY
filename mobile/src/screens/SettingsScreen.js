@@ -150,6 +150,11 @@ export default function SettingsScreen() {
       {/* Header */}
       <View style={styles.header}>
         <Text variant="display3">Settings</Text>
+        {user && (
+          <Text variant="body" color="secondary" style={styles.headerSub}>
+            {user.first_name} {user.last_name} · {user.email}
+          </Text>
+        )}
       </View>
 
       <ScrollView
@@ -165,14 +170,14 @@ export default function SettingsScreen() {
             </Text>
             <Stack spacing={0}>
               <ListItem
-                left={<Feather name="user" size={18} color={colors.textSecondary} />}
+                left={<Feather name="user" size={24} color={colors.textSecondary} />}
                 title="Edit profile"
                 onPress={() => navigation.navigate('ProfileEdit')}
                 style={styles.listItemFlush}
               />
               <View style={styles.divider} />
               <ListItem
-                left={<Feather name="globe" size={18} color={colors.textSecondary} />}
+                left={<Feather name="globe" size={24} color={colors.textSecondary} />}
                 title="Language"
                 onPress={() => setLangVisible(true)}
                 right={localeChip}
@@ -181,7 +186,7 @@ export default function SettingsScreen() {
               />
               <View style={styles.divider} />
               <ListItem
-                left={<Feather name="bell" size={18} color={colors.textSecondary} />}
+                left={<Feather name="bell" size={24} color={colors.textSecondary} />}
                 title="Notifications"
                 right={notifSwitch}
                 showChevron={false}
@@ -197,21 +202,21 @@ export default function SettingsScreen() {
             </Text>
             <Stack spacing={0}>
               <ListItem
-                left={<Feather name="shield" size={18} color={colors.textSecondary} />}
+                left={<Feather name="shield" size={24} color={colors.textSecondary} />}
                 title="Privacy Policy"
                 onPress={() => navigation.navigate('PrivacyPolicy')}
                 style={styles.listItemFlush}
               />
               <View style={styles.divider} />
               <ListItem
-                left={<Feather name="file-text" size={18} color={colors.textSecondary} />}
+                left={<Feather name="file-text" size={24} color={colors.textSecondary} />}
                 title="Terms of Service"
                 onPress={() => navigation.navigate('TermsOfService')}
                 style={styles.listItemFlush}
               />
               <View style={styles.divider} />
               <ListItem
-                left={<Feather name="download" size={18} color={colors.textSecondary} />}
+                left={<Feather name="download" size={24} color={colors.textSecondary} />}
                 title="Export my data"
                 onPress={exportLoading ? undefined : handleExportData}
                 right={
@@ -224,7 +229,7 @@ export default function SettingsScreen() {
               />
               <View style={styles.divider} />
               <ListItem
-                left={<Feather name="trash-2" size={18} color={colors.danger} />}
+                left={<Feather name="trash-2" size={24} color={colors.danger} />}
                 title="Delete my account"
                 onPress={deleteLoading ? undefined : handleDeleteAccount}
                 right={
@@ -246,14 +251,14 @@ export default function SettingsScreen() {
             </Text>
             <Stack spacing={0}>
               <ListItem
-                left={<Feather name="help-circle" size={18} color={colors.textSecondary} />}
+                left={<Feather name="help-circle" size={24} color={colors.textSecondary} />}
                 title="Help & FAQ"
                 onPress={() => navigation.navigate('HelpFAQ')}
                 style={styles.listItemFlush}
               />
               <View style={styles.divider} />
               <ListItem
-                left={<Feather name="mail" size={18} color={colors.textSecondary} />}
+                left={<Feather name="mail" size={24} color={colors.textSecondary} />}
                 title="Contact us"
                 onPress={handleContactUs}
                 style={styles.listItemFlush}
@@ -295,28 +300,33 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.sm,
-    paddingBottom: spacing.base,
-    borderBottomWidth: 1,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.lg,
+    borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border,
+  },
+  headerSub: {
+    marginTop: spacing.xs,
   },
   scroll: {
     flex: 1,
   },
   content: {
     paddingHorizontal: spacing.base,
-    paddingTop: spacing.lg,
+    paddingTop: spacing.xl,
   },
   // Section card — Surface with no padding; label + rows rendered inside
   section: {
     overflow: 'hidden',
+    borderRadius: radius.card,
   },
   sectionLabel: {
-    letterSpacing: 1.0,
+    letterSpacing: 1.2,
     textTransform: 'uppercase',
+    fontSize: 11,
     paddingHorizontal: spacing.base,
     paddingTop: spacing.md,
-    paddingBottom: spacing.sm,
+    paddingBottom: spacing.xs,
   },
   // Strip the ListItem's own card styling so rows sit flush inside Surface
   listItemFlush: {
@@ -324,11 +334,13 @@ const styles = StyleSheet.create({
     borderRadius: 0,
     backgroundColor: 'transparent',
     paddingHorizontal: spacing.base,
+    paddingVertical: spacing.md,
+    minHeight: 52,
   },
   divider: {
-    height: 1,
+    height: StyleSheet.hairlineWidth,
     backgroundColor: colors.border,
-    marginLeft: spacing.base,
+    marginLeft: spacing.base + 24 + spacing.sm,
   },
   rowDisabled: {
     opacity: 0.5,
@@ -346,6 +358,6 @@ const styles = StyleSheet.create({
   },
   versionText: {
     textAlign: 'center',
-    paddingBottom: spacing.sm,
+    paddingVertical: spacing.base,
   },
 });

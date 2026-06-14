@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { View, TextInput, Pressable } from 'react-native';
-import Animated, { useSharedValue, useAnimatedStyle, withTiming, Easing } from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedStyle, withTiming, Easing, interpolate } from 'react-native-reanimated';
 import Text from './Text';
 import { colors, spacing, radius, motion } from '../theme/tokens';
 
@@ -41,10 +41,12 @@ export default function TextField({
     }
   };
 
+  // Use interpolate so the label smoothly slides up as the user types rather
+  // than snapping only when the shared value reaches exactly 1.0.
   const labelAnimatedStyle = useAnimatedStyle(() => ({
     transform: [
-      { translateY: labelPosition.value === 1 ? -12 : 8 },
-      { scale: labelPosition.value === 1 ? 0.8 : 1 },
+      { translateY: interpolate(labelPosition.value, [0, 1], [8, -12]) },
+      { scale: interpolate(labelPosition.value, [0, 1], [1, 0.8]) },
     ],
   }));
 
@@ -107,6 +109,7 @@ export default function TextField({
             placeholderTextColor={colors.textSecondary}
             selectionColor={colors.accent}
             {...props}
+            placeholder={hasValue || focused ? '' : props.placeholder}
           />
           {secureTextEntry && (
             <Pressable
