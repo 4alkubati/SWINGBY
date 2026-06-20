@@ -1,5 +1,6 @@
 import {
-  View, ScrollView, KeyboardAvoidingView, Platform, StyleSheet, Modal, TouchableOpacity,
+  View, ScrollView, KeyboardAvoidingView, Platform, StyleSheet, Modal,
+  TouchableOpacity, ActivityIndicator, Alert, Image,
 } from 'react-native';
 import { useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
@@ -8,6 +9,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import GooglePlacesAutocomplete from 'react-native-google-places-autocomplete';
+import * as ImagePicker from 'expo-image-picker';
+import { Ionicons } from '@expo/vector-icons';
 
 import Text from '../components/Text';
 import TextField from '../components/TextField';
@@ -17,12 +20,12 @@ import Surface from '../components/Surface';
 import Chip from '../components/Chip';
 import Inline from '../components/Inline';
 
-import { api } from '../services/api';
+import { api, uploadFile } from '../services/api';
 import { colors, spacing, radius } from '../theme/tokens';
 
-// > TODO (HUMAN): get Google Places API key from Google Cloud Console
-// > Set it as EXPO_PUBLIC_GOOGLE_PLACES_KEY in mobile/.env
 const GOOGLE_PLACES_KEY = process.env.EXPO_PUBLIC_GOOGLE_PLACES_KEY || '';
+
+const MAX_PHOTOS = 5;
 
 function formatTime(date) {
   const h = date.getHours();
@@ -51,7 +54,6 @@ function ProgressBar({ step }) {
   );
 }
 
-// ─── Step labels ─────────────────────────────────────────────────────────────
 function StepLabels({ step }) {
   return (
     <Inline justify="space-between" style={styles.stepLabels}>
@@ -71,7 +73,6 @@ function StepLabels({ step }) {
 
 // ─── Animated step panel ──────────────────────────────────────────────────────
 function StepPanel({ children, direction }) {
-  // direction: 1 = entering from right, -1 = entering from left
   const translateX = useSharedValue(direction * 300);
   const opacity = useSharedValue(0);
 
@@ -80,7 +81,6 @@ function StepPanel({ children, direction }) {
     opacity: opacity.value,
   }));
 
-  // Animate in on mount
   useState(() => {
     translateX.value = withSpring(0, { stiffness: 260, damping: 26 });
     opacity.value = withTiming(1, { duration: 180, easing: Easing.out(Easing.cubic) });
@@ -90,6 +90,122 @@ function StepPanel({ children, direction }) {
     <Animated.View style={[{ flex: 1 }, style]}>
       {children}
     </Animated.View>
+  );
+}
+
+// ─── Photo picker strip ───────────────────────────────────────────────────────
+function PhotoPicker({ photos, setPhotos, uploading, setUploading }) {
+  async function handlePickPhotos() {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert(
+        'Photos permission required',
+        'Allow SwingBy to access your photos so you can attach images to your job post.',
+        [{ text: 'OK' }],
+      );
+      return;
+    }
+
+    const remaining = MAX_PHOTOS - photos.length;
+    if (remaining <= 0) return;
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsMultipleSelection: true,
+      quality: 0.85,
+      selectionLimit: remaining,
+      exif: false,
+    });
+
+    if (result.canceled || !result.assets?.length) return;
+
+    setUploading(true);
+    const uploaded = [];
+
+    for (const asset of result.assets) {
+      try {
+        const ext = (asset.uri.split('.').pop() || 'jpg').toLowerCase();
+        const mimeType = asset.mimeType || `image/${ext === 'jpg' ? 'jpeg' : ext}`;
+        const data = await uploadFile('/uploads/image', {
+          uri: asset.uri,
+          type: mimeType,
+          name: asset.fileName || `photo_${Date.now()}.${ext}`,
+        });
+        uploaded.push({ uri: asset.uri, url: data.url, path: data.path });
+      } catch {
+        // skip photos that fail — toast is shown by uploadFile
+      }
+    }
+
+    setPhotos((prev) => [...prev, ...uploaded].slice(0, MAX_PHOTOS));
+    setUploading(false);
+  }
+
+  function removePhoto(index) {
+    setPhotos((prev) => prev.filter((_, i) => i !== index));
+  }
+
+  return (
+    <Stack spacing="sm">
+      <Text variant="label" color="secondary" style={styles.photoSectionLabel}>
+        Photos <Text variant="label" color="secondary" style={styles.optional}>(optional)</Text>
+      </Text>
+
+      {/* Thumbnails */}
+      {photos.length > 0 && (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.thumbScroll}
+          contentContainerStyle={styles.thumbScrollContent}
+        >
+          {photos.map((photo, i) => (
+            <View key={photo.url || i} style={styles.thumbWrapper}>
+              <Image source={{ uri: photo.uri }} style={styles.thumb} />
+              <TouchableOpacity
+                style={styles.thumbRemove}
+                onPress={() => removePhoto(i)}
+                hitSlop={{ top: 4, right: 4, bottom: 4, left: 4 }}
+                accessibilityLabel={`Remove photo ${i + 1}`}
+              >
+                <View style={styles.thumbRemoveInner}>
+                  <Ionicons name="close" size={11} color="#fff" />
+                </View>
+              </TouchableOpacity>
+            </View>
+          ))}
+        </ScrollView>
+      )}
+
+      {/* Add button */}
+      {photos.length < MAX_PHOTOS && (
+        <TouchableOpacity
+          style={styles.photoBox}
+          onPress={handlePickPhotos}
+          disabled={uploading}
+          activeOpacity={0.75}
+          accessibilityRole="button"
+          accessibilityLabel="Upload photos"
+        >
+          {uploading ? (
+            <Stack spacing="sm" style={styles.photoBoxContent}>
+              <ActivityIndicator color={colors.accent} size="small" />
+              <Text variant="caption" color="secondary">Uploading…</Text>
+            </Stack>
+          ) : (
+            <Stack spacing="xs" style={styles.photoBoxContent}>
+              <Ionicons name="camera-outline" size={26} color={colors.accent} />
+              <Text variant="label" color="accent">
+                {photos.length > 0 ? `Add more (${photos.length}/${MAX_PHOTOS})` : 'Upload photos'}
+              </Text>
+              <Text variant="caption" color="secondary" style={styles.photoHint}>
+                Businesses see this before quoting
+              </Text>
+            </Stack>
+          )}
+        </TouchableOpacity>
+      )}
+    </Stack>
   );
 }
 
@@ -120,7 +236,10 @@ function StepCategory({ category, setCategory }) {
 }
 
 // ─── Step 1: Details ─────────────────────────────────────────────────────────
-function StepDetails({ description, setDescription, address, setAddress, descError }) {
+function StepDetails({
+  description, setDescription, address, setAddress, descError,
+  photos, setPhotos, photoUploading, setPhotoUploading,
+}) {
   return (
     <StepPanel direction={1}>
       <Stack spacing="lg">
@@ -130,6 +249,7 @@ function StepDetails({ description, setDescription, address, setAddress, descErr
             The more detail you add, the better quotes you'll receive.
           </Text>
         </Stack>
+
         <Stack spacing="base">
           <TextField
             label="What do you need? *"
@@ -141,7 +261,8 @@ function StepDetails({ description, setDescription, address, setAddress, descErr
             textAlignVertical="top"
             placeholder="e.g. Deep clean of 2-bedroom apartment, fix leaking pipe, move furniture…"
           />
-          {/* Address autocomplete — falls back to plain text when no API key */}
+
+          {/* Address autocomplete */}
           {GOOGLE_PLACES_KEY ? (
             <View style={styles.placesWrapper}>
               <Text variant="caption" color="secondary" style={styles.placesLabel}>
@@ -189,6 +310,14 @@ function StepDetails({ description, setDescription, address, setAddress, descErr
               autoCapitalize="words"
             />
           )}
+
+          {/* Photo upload */}
+          <PhotoPicker
+            photos={photos}
+            setPhotos={setPhotos}
+            uploading={photoUploading}
+            setUploading={setPhotoUploading}
+          />
         </Stack>
       </Stack>
     </StepPanel>
@@ -200,16 +329,9 @@ function StepBudget({ budget, setBudget, date, setDate, time, setTime }) {
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [pickerTime, setPickerTime] = useState(new Date());
 
-  function openTimePicker() {
-    setShowTimePicker(true);
-  }
-
   function onTimeChange(_, selected) {
     if (Platform.OS === 'android') setShowTimePicker(false);
-    if (selected) {
-      setPickerTime(selected);
-      setTime(formatTime(selected));
-    }
+    if (selected) setPickerTime(selected);
   }
 
   function confirmTime() {
@@ -242,9 +364,8 @@ function StepBudget({ budget, setBudget, date, setDate, time, setTime }) {
               placeholder="May 28"
               style={{ flex: 1 }}
             />
-            {/* Native iOS scroll-wheel time picker */}
             <TouchableOpacity
-              onPress={openTimePicker}
+              onPress={() => setShowTimePicker(true)}
               style={[styles.timeTrigger, { flex: 1 }]}
               accessibilityLabel="Select preferred time"
               accessibilityRole="button"
@@ -260,7 +381,6 @@ function StepBudget({ budget, setBudget, date, setDate, time, setTime }) {
         </Stack>
       </Stack>
 
-      {/* iOS: modal sheet. Android: inline picker (dismissed automatically) */}
       {Platform.OS === 'ios' ? (
         <Modal
           transparent
@@ -304,7 +424,7 @@ function StepBudget({ budget, setBudget, date, setDate, time, setTime }) {
 }
 
 // ─── Step 3: Confirm ─────────────────────────────────────────────────────────
-function StepConfirm({ category, description, address, budget, date, time, onSubmit, submitting }) {
+function StepConfirm({ category, description, address, budget, date, time, photos, onSubmit, submitting }) {
   const rows = [
     { label: 'Category', value: category || 'General' },
     { label: 'Description', value: description || '—' },
@@ -344,6 +464,28 @@ function StepConfirm({ category, description, address, budget, date, time, onSub
           </Stack>
         </Surface>
 
+        {/* Photo thumbnails summary */}
+        {photos.length > 0 && (
+          <Stack spacing="sm">
+            <Text variant="label" color="secondary">
+              Photos ({photos.length})
+            </Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.confirmThumbRow}
+            >
+              {photos.map((photo, i) => (
+                <Image
+                  key={photo.url || i}
+                  source={{ uri: photo.uri }}
+                  style={styles.confirmThumb}
+                />
+              ))}
+            </ScrollView>
+          </Stack>
+        )}
+
         <Button
           label="Post job → get quotes"
           loading={submitting}
@@ -364,21 +506,20 @@ function StepConfirm({ category, description, address, budget, date, time, onSub
 export default function PostJobScreen() {
   const navigation = useNavigation();
 
-  // Form state (preserved exactly as original)
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('');
   const [address, setAddress] = useState('');
   const [budget, setBudget] = useState('');
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
+  const [photos, setPhotos] = useState([]);
+  const [photoUploading, setPhotoUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  // Wizard state
   const [step, setStep] = useState(0);
-  const [direction, setDirection] = useState(1); // 1 = forward, -1 = backward
+  const [direction, setDirection] = useState(1);
   const [descError, setDescError] = useState('');
 
-  // Navigate between steps
   function goForward() {
     if (step === 1) {
       if (!description.trim() || description.trim().length < 10) {
@@ -400,7 +541,6 @@ export default function PostJobScreen() {
     setStep((s) => Math.max(s - 1, 0));
   }
 
-  // Original submit logic — preserved in full
   async function handleSubmit() {
     if (!description.trim() || description.trim().length < 10) {
       setDescError('Describe your job in at least 10 characters.');
@@ -413,22 +553,30 @@ export default function PostJobScreen() {
       setStep(2);
       return;
     }
+
     setSubmitting(true);
     try {
-      const data = await api.post('/service-posts/', {
+      const payload = {
         title: description.trim(),
         description: description.trim(),
         category: category || 'General',
         budget: parsedBudget,
-      });
+        address: address.trim() || undefined,
+        image_urls: photos.map((p) => p.url),
+      };
 
+      const data = await api.post('/service-posts/', payload);
       const post = data?.post || data;
+
+      // Reset form
       setDescription('');
       setCategory('');
       setAddress('');
       setBudget('');
       setDate('');
       setTime('');
+      setPhotos([]);
+      setStep(0);
 
       navigation.navigate('QuoteComparison', {
         postId: post.id,
@@ -455,13 +603,11 @@ export default function PostJobScreen() {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Step indicator */}
         <Stack spacing="sm" style={styles.progressSection}>
           <StepLabels step={step} />
           <ProgressBar step={step} />
         </Stack>
 
-        {/* Step content — key forces remount & re-animation on each step */}
         <View style={styles.stepContent}>
           {step === 0 && (
             <StepCategory key="cat" category={category} setCategory={setCategory} />
@@ -474,6 +620,10 @@ export default function PostJobScreen() {
               address={address}
               setAddress={setAddress}
               descError={descError}
+              photos={photos}
+              setPhotos={setPhotos}
+              photoUploading={photoUploading}
+              setPhotoUploading={setPhotoUploading}
             />
           )}
           {step === 2 && (
@@ -496,13 +646,13 @@ export default function PostJobScreen() {
               budget={budget}
               date={date}
               time={time}
+              photos={photos}
               onSubmit={handleSubmit}
               submitting={submitting}
             />
           )}
         </View>
 
-        {/* Back / Next navigation */}
         {!isLastStep && (
           <Inline justify="space-between" style={styles.navRow}>
             {!isFirstStep ? (
@@ -518,12 +668,12 @@ export default function PostJobScreen() {
             <Button
               label={step === TOTAL_STEPS - 2 ? 'Review →' : 'Next →'}
               onPress={goForward}
+              disabled={photoUploading}
               style={styles.navBtn}
             />
           </Inline>
         )}
 
-        {/* Back button on confirm step */}
         {isLastStep && (
           <Button
             variant="ghost"
@@ -575,6 +725,13 @@ const styles = StyleSheet.create({
   // Confirm step
   postBtn: { marginTop: spacing.xs },
   hint: { textAlign: 'center' },
+  confirmThumbRow: { gap: spacing.sm },
+  confirmThumb: {
+    width: 72,
+    height: 72,
+    borderRadius: radius.chip,
+    backgroundColor: colors.surface,
+  },
 
   // Google Places wrapper
   placesWrapper: { gap: spacing.xs },
@@ -620,4 +777,47 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border,
   },
+
+  // Photo picker
+  photoSectionLabel: { textTransform: 'uppercase', letterSpacing: 0.8, fontSize: 11 },
+  optional: { fontWeight: '400', fontSize: 10 },
+
+  thumbScroll: { flexGrow: 0 },
+  thumbScrollContent: { gap: spacing.sm, paddingBottom: spacing.xs },
+  thumbWrapper: { position: 'relative' },
+  thumb: {
+    width: 80,
+    height: 80,
+    borderRadius: radius.chip,
+    backgroundColor: colors.surface,
+  },
+  thumbRemove: {
+    position: 'absolute',
+    top: -6,
+    right: -6,
+    zIndex: 1,
+  },
+  thumbRemoveInner: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: colors.danger,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: colors.bg,
+  },
+
+  photoBox: {
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    borderColor: colors.accentMuted,
+    borderRadius: radius.input,
+    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.base,
+    alignItems: 'center',
+    backgroundColor: `${colors.accentMuted}40`,
+  },
+  photoBoxContent: { alignItems: 'center' },
+  photoHint: { textAlign: 'center', marginTop: spacing.xs },
 });

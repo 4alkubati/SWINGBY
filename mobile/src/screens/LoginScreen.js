@@ -93,7 +93,7 @@ export default function LoginScreen({ navigation }) {
             />
 
             <Pressable
-              onPress={() => {}}
+              onPress={() => navigation.navigate('ForgotPassword')}
               style={styles.forgotLink}
               accessibilityRole="link"
               accessibilityLabel="Forgot password"

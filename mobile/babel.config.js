@@ -3,10 +3,10 @@ module.exports = function (api) {
   return {
     presets: ['babel-preset-expo'],
     plugins: [
-      // react-native-reanimated/plugin MUST be the LAST plugin in this array.
-      // Reanimated worklets are compiled by Babel — without this, every
-      // import of 'react-native-reanimated' breaks at metro bundle time.
-      'react-native-reanimated/plugin',
+      // react-native-worklets/plugin MUST be the LAST plugin in this array.
+      // Reanimated 4 split worklets into a separate package — plugin name
+      // changed from 'react-native-reanimated/plugin' (v3) to this one (v4).
+      'react-native-worklets/plugin',
     ],
   };
 };

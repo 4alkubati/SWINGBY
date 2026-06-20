@@ -3,6 +3,8 @@ import { show as showToast } from './toast';
 
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://127.0.0.1:8000';
 
+export { BASE_URL };
+
 export const api = axios.create({
   baseURL: BASE_URL,
   timeout: 10000,
@@ -116,3 +118,36 @@ api.interceptors.response.use(
     return Promise.reject(new Error(msg));
   }
 );
+
+/**
+ * Upload a file using native fetch (bypasses axios JSON encoding).
+ * @param {string} endpoint  e.g. '/uploads/image'
+ * @param {{ uri: string, type: string, name: string }} file  RN file descriptor
+ * @returns {Promise<object>}  parsed JSON response body
+ */
+export async function uploadFile(endpoint, file) {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const res = await fetch(`${BASE_URL}${endpoint}`, {
+    method: 'POST',
+    headers: {
+      ...(_token ? { Authorization: `Bearer ${_token}` } : {}),
+    },
+    body: formData,
+  });
+
+  let data;
+  try {
+    data = await res.json();
+  } catch {
+    throw new Error('Server returned an invalid response');
+  }
+
+  if (!res.ok) {
+    const msg = typeof data?.detail === 'string' ? data.detail : 'Upload failed';
+    showToast({ type: 'error', text1: 'Upload failed', text2: msg });
+    throw new Error(msg);
+  }
+  return data;
+}
