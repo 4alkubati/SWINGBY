@@ -1,11 +1,14 @@
 import math
+from collections import defaultdict
+from datetime import datetime, timezone, timedelta
 
 import structlog
-from fastapi import APIRouter, HTTPException, Depends, Query
+from fastapi import APIRouter, HTTPException, Depends, Query, Request
 from pydantic import BaseModel, Field, field_validator
 from typing import Optional
 from app.deps import get_current_user
 from app.supabase_client import supabase
+from app.limiter import limiter
 
 logger = structlog.get_logger(__name__)
 
@@ -150,6 +153,156 @@ def get_my_business(current_user: dict = Depends(get_current_user)):
         return res.data
     except Exception:
         raise HTTPException(status_code=404, detail="No business found for this account")
+
+
+@router.get("/me/analytics")
+@limiter.limit("30/minute")
+def get_my_analytics(
+    request: Request,
+    current_user: dict = Depends(get_current_user),
+):
+    """Business owner analytics: earnings, bookings, categories, reviews."""
+    if current_user["role"] != "business_owner":
+        raise HTTPException(status_code=403, detail="Only business owners can view analytics")
+
+    uid = current_user["id"]
+
+    try:
+        # 1. Fetch this owner's business
+        biz_res = (
+            supabase.table("businesses")
+            .select("id, avg_rating, review_count")
+            .eq("owner_id", uid)
+            .single()
+            .execute()
+        )
+        if not biz_res.data:
+            raise HTTPException(status_code=404, detail="No business found for this account")
+        biz = biz_res.data
+        biz_id = biz["id"]
+
+        # 2. All bookings for this business
+        bookings_res = (
+            supabase.table("bookings")
+            .select("id, total_amount, created_at, post_id")
+            .eq("business_id", biz_id)
+            .execute()
+        )
+        bookings = bookings_res.data or []
+        total_bookings = len(bookings)
+
+        # 3. Total earnings (sum of released_to_business from settled payments)
+        booking_ids = [b["id"] for b in bookings]
+        total_earnings = 0.0
+        if booking_ids:
+            payments_res = (
+                supabase.table("payments")
+                .select("released_to_business, status")
+                .in_("booking_id", booking_ids)
+                .execute()
+            )
+            for p in (payments_res.data or []):
+                if p.get("status") == "settled" and p.get("released_to_business"):
+                    total_earnings += float(p["released_to_business"])
+
+        # 4. Bookings by month (last 6 months)
+        six_months_ago = datetime.now(timezone.utc) - timedelta(days=182)
+        monthly: dict = defaultdict(lambda: {"count": 0, "revenue": 0.0})
+        for b in bookings:
+            try:
+                dt = datetime.fromisoformat(b["created_at"].replace("Z", "+00:00"))
+            except (TypeError, ValueError):
+                continue
+            if dt < six_months_ago:
+                continue
+            month_key = dt.strftime("%Y-%m")
+            monthly[month_key]["count"] += 1
+            monthly[month_key]["revenue"] += float(b.get("total_amount") or 0)
+        bookings_by_month = [
+            {"month": k, "count": v["count"], "revenue": round(v["revenue"], 2)}
+            for k, v in sorted(monthly.items())
+        ]
+
+        # 5. Top categories from service_posts linked to this business's bookings
+        post_ids = [b["post_id"] for b in bookings if b.get("post_id")]
+        top_categories = []
+        if post_ids:
+            posts_res = (
+                supabase.table("service_posts")
+                .select("category")
+                .in_("id", post_ids)
+                .execute()
+            )
+            cat_counts: dict = defaultdict(int)
+            for p in (posts_res.data or []):
+                if p.get("category"):
+                    cat_counts[p["category"]] += 1
+            top_categories = [
+                {"category": cat, "count": cnt}
+                for cat, cnt in sorted(cat_counts.items(), key=lambda x: -x[1])
+            ][:5]
+
+        # 6. Conversion rate from interests
+        interests_res = (
+            supabase.table("interests")
+            .select("status")
+            .eq("business_id", biz_id)
+            .execute()
+        )
+        interests = interests_res.data or []
+        total_interests = len(interests)
+        accepted_interests = sum(1 for i in interests if i.get("status") == "accepted")
+        conversion_rate = round(accepted_interests / total_interests * 100, 1) if total_interests else 0.0
+
+        # 7. Recent reviews (last 5, join reviewer first name)
+        reviews_res = (
+            supabase.table("reviews")
+            .select("id, rating, comment, created_at, reviewer_id")
+            .eq("reviewee_id", uid)
+            .order("created_at", desc=True)
+            .limit(5)
+            .execute()
+        )
+        recent_reviews = []
+        for rev in (reviews_res.data or []):
+            client_first_name = ""
+            try:
+                user_res = (
+                    supabase.table("users")
+                    .select("first_name")
+                    .eq("id", rev["reviewer_id"])
+                    .single()
+                    .execute()
+                )
+                client_first_name = (user_res.data or {}).get("first_name", "")
+            except Exception:
+                pass
+            recent_reviews.append({
+                "id": rev["id"],
+                "rating": rev["rating"],
+                "comment": rev.get("comment", ""),
+                "client_first_name": client_first_name,
+                "created_at": rev["created_at"],
+            })
+
+        return {
+            "avg_rating": float(biz.get("avg_rating") or 0),
+            "review_count": int(biz.get("review_count") or 0),
+            "total_bookings": total_bookings,
+            "total_earnings": round(total_earnings, 2),
+            "profile_views": 0,
+            "conversion_rate": conversion_rate,
+            "repeat_rate": 0,
+            "bookings_by_month": bookings_by_month,
+            "top_categories": top_categories,
+            "recent_reviews": recent_reviews,
+        }
+
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception("get_my_analytics_error", uid=uid)
+        raise HTTPException(status_code=500, detail="Analytics unavailable")
 
 
 @router.get("/")
