@@ -1,0 +1,90 @@
+{
+  "name": "Morning Brief — agent-os",
+  "active": false,
+  "settings": { "executionOrder": "v1" },
+  "pinData": {},
+  "nodes": [
+    {
+      "parameters": {
+        "rule": { "interval": [ { "field": "cronExpression", "expression": "5 6 * * *" } ] }
+      },
+      "id": "node-schedule",
+      "name": "Schedule 06:05",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [ -640, 300 ]
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "fileSelector": "=/ABSOLUTE/PATH/TO/agent-os/memory/STATUS.md",
+        "options": {}
+      },
+      "id": "node-read-status",
+      "name": "Read Overnight Status",
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [ -420, 180 ]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "getAll",
+        "returnAll": false,
+        "limit": 15,
+        "filters": { "readStatus": "unread" },
+        "options": {}
+      },
+      "id": "node-gmail",
+      "name": "Gmail — Unread",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [ -420, 360 ],
+      "notes": "Attach Gmail OAuth2 credentials"
+    },
+    {
+      "parameters": {
+        "url": "https://REPLACE-WITH-YOUR-ANALYTICS-ENDPOINT",
+        "options": {}
+      },
+      "id": "node-social",
+      "name": "Social Analytics",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [ -420, 540 ],
+      "notes": "Point at Plausible / IG / FB Graph API. Attach creds if needed."
+    },
+    {
+      "parameters": {
+        "jsCode": "// Compile the Morning Image Brief (DISPATCH_GATE Layer 5 format)\n// Inputs arrive from the three upstream branches; adapt field access to your sources.\n\nconst status = $('Read Overnight Status').first()?.json?.data || 'No overnight status found.';\nconst emails = $('Gmail — Unread').all().map(e => e.json) || [];\nconst social = $('Social Analytics').first()?.json || {};\n\nconst inboxLines = emails.length\n  ? emails.map((e, i) => `   ${i + 1}. ${e.From || e.from || 'unknown'} — ${e.Subject || e.subject || '(no subject)'}  [approve/edit/skip]`).join('\\n')\n  : '   (inbox clear)';\n\nconst brief = [\n  `☀️ MORNING BRIEF — ${new Date().toISOString().slice(0,10)}`,\n  ``,\n  `BUILD (overnight): see STATUS — ${String(status).split('\\n').find(l => l.includes('Last Agent Run')) || 'review STATUS.md'}`,\n  `SOCIAL: ${JSON.stringify(social).slice(0, 200)}`,\n  `INBOX (${emails.length} need you):`,\n  inboxLines,\n  ``,\n  `ONE THING: <orchestrator fills the single most important action>`\n].join('\\n');\n\nreturn [{ json: { brief } }];"
+      },
+      "id": "node-compile",
+      "name": "Compile Brief",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [ -180, 360 ]
+    },
+    {
+      "parameters": {},
+      "id": "node-deliver",
+      "name": "Deliver Brief (wire to your channel)",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [ 60, 360 ],
+      "notes": "Replace with Gmail send / Telegram / Notion / Slack node to receive the brief."
+    }
+  ],
+  "connections": {
+    "Schedule 06:05": {
+      "main": [ [
+        { "node": "Read Overnight Status", "type": "main", "index": 0 },
+        { "node": "Gmail — Unread", "type": "main", "index": 0 },
+        { "node": "Social Analytics", "type": "main", "index": 0 }
+      ] ]
+    },
+    "Read Overnight Status": { "main": [ [ { "node": "Compile Brief", "type": "main", "index": 0 } ] ] },
+    "Gmail — Unread": { "main": [ [ { "node": "Compile Brief", "type": "main", "index": 0 } ] ] },
+    "Social Analytics": { "main": [ [ { "node": "Compile Brief", "type": "main", "index": 0 } ] ] },
+    "Compile Brief": { "main": [ [ { "node": "Deliver Brief (wire to your channel)", "type": "main", "index": 0 } ] ] }
+  }
+}

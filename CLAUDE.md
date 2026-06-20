@@ -191,7 +191,9 @@ AWS_BUCKET=                          ← leave empty until file uploads needed
 | Post expiry cron (hourly, pg_cron) | ✅ Live on Supabase |
 | JWT expiry | ✅ 3600s default (free plan, not configurable) |
 | Email confirmation | ⚠️ Check: Auth → Sign In / Providers → Email → "Confirm email" ON |
-| AWS S3 bucket | ⚪ Not needed until file uploads (post-MVP) |
+| AWS S3 bucket | ⚪ Not needed — using Supabase Storage instead |
+| Supabase Storage bucket job-photos | ✅ Created 2026-06-15 — public read, 10 MB limit, images only |
+| Image upload endpoint /uploads/image | ✅ backend/app/api/uploads.py — validates type+size, auth-protected |
 | CSP headers (_headers for Cloudflare/Netlify) | ✅ web/launch/public/_headers |
 | Admin role in DB constraint | ✅ wave-5-admin-role.sql applied, amrbasem37@gmail.com = admin |
 | CI secret scan + npm audit | ✅ .github/workflows/web-launch-ci.yml |
@@ -246,3 +248,5 @@ Branch: main
 | 2026-05-14 | Applied all RLS policies to Supabase via MCP, expiry cron live, 0 security warnings |
 | 2026-05-16 | Starting web/ — pre-launch website (Version 1) |
 | 2026-06-07–08 | Built web/launch/ — full launch site (Workstreams A–E, 5 commits pushed) |
+| 2026-06-10 | Autonomous 100-task polish run: ESLint fix (eslint-plugin-react), 404/maintenance polish, OG image SVG, skeleton loaders, share buttons, print CSS, anchor scroll, hyperlocal SEO pages (17 live), 7 email templates + 3 drip sequences, 4-week IG content, 28 FB posts, 30 founder LinkedIn posts, customer story templates; n8n social automation workflows wired by founder in parallel |
+| 2026-06-15 | Full cross-platform audit (backend+mobile+web+design+AGENTS orchestrator directory). Fixed: photo upload in PostJobScreen (expo-image-picker + /uploads/image backend + Supabase Storage bucket job-photos), address field now sent to backend (image_urls + address columns added to service_posts), ForgotPasswordScreen created + POST /auth/forgot-password endpoint + wired in AuthNavigator, LoginScreen Forgot password? link activated, Supabase Storage RLS policies applied, comprehensive ORCHESTRATOR_ISSUES.md created (36 issues tracked across CRITICAL/HIGH/MEDIUM/LOW/DESIGN). |
