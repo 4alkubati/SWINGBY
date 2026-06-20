@@ -40,3 +40,6 @@ test-credentials*
 !.claude/secrets/*.template.txt
 !.claude/secrets/.gitkeep
 !.claude/secrets/README.md
+
+# Personal operator profile — keep local, never push
+AGENTS/claude/KIRA.md

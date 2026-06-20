@@ -42,7 +42,4 @@ n/a (all blockers are build tasks, not external decisions)
 2026-06-17 TEST RUN: design-agent dispatched for beta invite card spec. DONE received, reviewed (two-pass), APPROVED. Spec at deliverables/beta-invite-card-spec.md. Mobile-agent handoff (20260617-0003) is OPEN, pending founder copy approval.
 
 ## Next Action
-Run PLAN.md beta queue, domino 1: configure Resend so email actually sends.
-
-## Security Gate
-✅ passing (1 user-action item: enable HaveIBeenPwned leaked-password protection in Supabase Auth dashboard)
+Run PLAN.md beta queue, domino 1: configure Resend so email actua
