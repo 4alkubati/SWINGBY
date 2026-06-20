@@ -214,6 +214,205 @@ function EmployeeEditModal({ employee, visible, onClose, onSaved }) {
   );
 }
 
+// ─── AddEmployeeModal ─────────────────────────────────────────────────────────
+function AddEmployeeModal({ visible, bizId, onClose, onAdded }) {
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [roleTitle, setRoleTitle] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [showInviteLink, setShowInviteLink] = useState(false);
+  const slideAnim = useRef(new Animated.Value(500)).current;
+
+  const inviteUrl = `swingby://invite/${bizId || 'demo'}`;
+
+  useEffect(() => {
+    if (visible) {
+      Animated.spring(slideAnim, {
+        toValue: 0,
+        useNativeDriver: true,
+        damping: 20,
+        stiffness: 200,
+      }).start();
+    } else {
+      Animated.timing(slideAnim, {
+        toValue: 500,
+        duration: 220,
+        useNativeDriver: true,
+      }).start();
+      // Reset form on close
+      setFirstName('');
+      setLastName('');
+      setEmail('');
+      setPassword('');
+      setRoleTitle('');
+      setShowInviteLink(false);
+    }
+  }, [visible, slideAnim]);
+
+  const canSubmit = firstName.trim() && lastName.trim() && email.trim() && password.trim() && !saving;
+
+  async function handleAdd() {
+    if (!canSubmit) return;
+    setSaving(true);
+    try {
+      const newEmployee = await api.post('/employees/', {
+        email: email.trim().toLowerCase(),
+        password,
+        first_name: firstName.trim(),
+        last_name: lastName.trim(),
+        ...(roleTitle.trim() ? { role_title: roleTitle.trim() } : {}),
+      });
+      onAdded(newEmployee);
+      onClose();
+    } catch (err) {
+      Alert.alert('Error', err.message || 'Could not add employee.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function handleCopyInvite() {
+    Clipboard.setStringAsync(inviteUrl);
+    Alert.alert('Copied!', 'Invite link copied to clipboard.');
+  }
+
+  return (
+    <Modal visible={visible} transparent animationType="none" onRequestClose={onClose}>
+      <KeyboardAvoidingView style={styles.modalOverlay} behavior="padding">
+        <TouchableOpacity style={styles.modalBackdrop} onPress={onClose} activeOpacity={1} />
+        <Animated.View style={[styles.sheet, { transform: [{ translateY: slideAnim }] }]}>
+          {/* Handle */}
+          <View style={styles.sheetHandle} />
+
+          <Text style={styles.sheetTitle}>Add Employee</Text>
+
+          {/* First Name */}
+          <View style={styles.sheetField}>
+            <Text style={styles.sheetLabel}>First Name *</Text>
+            <TextInput
+              style={styles.sheetInput}
+              value={firstName}
+              onChangeText={setFirstName}
+              placeholder="First name"
+              placeholderTextColor={colors.textSecondary}
+              autoCapitalize="words"
+              returnKeyType="next"
+            />
+          </View>
+
+          {/* Last Name */}
+          <View style={styles.sheetField}>
+            <Text style={styles.sheetLabel}>Last Name *</Text>
+            <TextInput
+              style={styles.sheetInput}
+              value={lastName}
+              onChangeText={setLastName}
+              placeholder="Last name"
+              placeholderTextColor={colors.textSecondary}
+              autoCapitalize="words"
+              returnKeyType="next"
+            />
+          </View>
+
+          {/* Email */}
+          <View style={styles.sheetField}>
+            <Text style={styles.sheetLabel}>Email *</Text>
+            <TextInput
+              style={styles.sheetInput}
+              value={email}
+              onChangeText={setEmail}
+              placeholder="employee@example.com"
+              placeholderTextColor={colors.textSecondary}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoCorrect={false}
+              returnKeyType="next"
+            />
+          </View>
+
+          {/* Password */}
+          <View style={styles.sheetField}>
+            <Text style={styles.sheetLabel}>Password *</Text>
+            <TextInput
+              style={styles.sheetInput}
+              value={password}
+              onChangeText={setPassword}
+              placeholder="Temporary password"
+              placeholderTextColor={colors.textSecondary}
+              secureTextEntry
+              returnKeyType="next"
+            />
+          </View>
+
+          {/* Role Title (optional) */}
+          <View style={styles.sheetField}>
+            <Text style={styles.sheetLabel}>Role Title</Text>
+            <TextInput
+              style={styles.sheetInput}
+              value={roleTitle}
+              onChangeText={setRoleTitle}
+              placeholder="e.g. Cleaner, Driver"
+              placeholderTextColor={colors.textSecondary}
+              returnKeyType="done"
+              onSubmitEditing={handleAdd}
+            />
+          </View>
+
+          {/* Add button */}
+          <TouchableOpacity
+            style={[styles.saveBtn, !canSubmit && styles.saveBtnDisabled]}
+            onPress={handleAdd}
+            activeOpacity={0.85}
+            disabled={!canSubmit}
+          >
+            {saving
+              ? <ActivityIndicator color={colors.textPrimary} />
+              : <Text style={styles.saveBtnText}>Add Employee</Text>
+            }
+          </TouchableOpacity>
+
+          {/* Divider + Share invite link */}
+          <TouchableOpacity
+            style={styles.addModalInviteToggle}
+            onPress={() => setShowInviteLink((v) => !v)}
+            activeOpacity={0.7}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Text style={styles.addModalInviteToggleText}>
+              {showInviteLink ? 'Hide invite link ▲' : 'Share invite link instead ▼'}
+            </Text>
+          </TouchableOpacity>
+
+          {showInviteLink && (
+            <View>
+              <Text style={styles.inviteSubtitle}>
+                Share this link with your teammate. They'll join your team after signing up.
+              </Text>
+              <View style={styles.inviteLinkBox}>
+                <Text style={styles.inviteLinkText} numberOfLines={1}>{inviteUrl}</Text>
+              </View>
+              <TouchableOpacity style={[styles.saveBtn, { marginTop: 4 }]} onPress={handleCopyInvite} activeOpacity={0.85}>
+                <Text style={styles.saveBtnText}>Copy Invite Link</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* Cancel */}
+          <TouchableOpacity
+            onPress={onClose}
+            style={styles.addModalCancel}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Text style={styles.addModalCancelText}>Cancel</Text>
+          </TouchableOpacity>
+        </Animated.View>
+      </KeyboardAvoidingView>
+    </Modal>
+  );
+}
+
 // ─── InviteModal ──────────────────────────────────────────────────────────────
 function InviteModal({ visible, bizId, onClose }) {
   const inviteUrl = `swingby://invite/${bizId || 'demo'}`;
@@ -272,6 +471,7 @@ export default function EmployeeManagementScreen({ navigation, route }) {
   const [editTarget, setEditTarget] = useState(null);
   const [showEdit, setShowEdit] = useState(false);
   const [showInvite, setShowInvite] = useState(false);
+  const [showAddEmployee, setShowAddEmployee] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -324,6 +524,10 @@ export default function EmployeeManagementScreen({ navigation, route }) {
     );
   }
 
+  function handleEmployeeAdded(newEmployee) {
+    setEmployees((prev) => [newEmployee, ...prev]);
+  }
+
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Header */}
@@ -334,10 +538,10 @@ export default function EmployeeManagementScreen({ navigation, route }) {
         <Text style={styles.headerTitle}>Team</Text>
         <TouchableOpacity
           style={styles.inviteBtn}
-          onPress={() => setShowInvite(true)}
+          onPress={() => setShowAddEmployee(true)}
           activeOpacity={0.8}
         >
-          <Text style={styles.inviteBtnText}>+ Invite</Text>
+          <Text style={styles.inviteBtnText}>+ Add</Text>
         </TouchableOpacity>
       </View>
 
@@ -365,7 +569,7 @@ export default function EmployeeManagementScreen({ navigation, route }) {
           <SkeletonList count={5} />
         </View>
       ) : filtered.length === 0 && employees.length === 0 ? (
-        <EmptyTeam onInvite={() => setShowInvite(true)} />
+        <EmptyTeam onInvite={() => setShowAddEmployee(true)} />
       ) : filtered.length === 0 ? (
         <View style={styles.empty}>
           <Text style={styles.emptyTitle}>No results for "{query}"</Text>
@@ -389,6 +593,14 @@ export default function EmployeeManagementScreen({ navigation, route }) {
         />
       )}
 
+      {/* Add Employee modal */}
+      <AddEmployeeModal
+        visible={showAddEmployee}
+        bizId={bizId}
+        onClose={() => setShowAddEmployee(false)}
+        onAdded={handleEmployeeAdded}
+      />
+
       {/* Edit bottom sheet */}
       <EmployeeEditModal
         employee={editTarget}
@@ -397,7 +609,7 @@ export default function EmployeeManagementScreen({ navigation, route }) {
         onSaved={handleSaved}
       />
 
-      {/* Invite modal */}
+      {/* Invite modal (legacy deeplink — still accessible via Add modal) */}
       <InviteModal
         visible={showInvite}
         bizId={bizId}
@@ -589,6 +801,28 @@ const styles = StyleSheet.create({
     paddingVertical: 13,
   },
   inviteLinkText: { fontSize: 13, color: colors.accent, fontWeight: '500' },
+
+  // Add employee modal extras
+  addModalInviteToggle: {
+    alignItems: 'center',
+    paddingVertical: 6,
+  },
+  addModalInviteToggleText: {
+    fontSize: 13,
+    color: colors.accent,
+    fontWeight: '600',
+  },
+  addModalCancel: {
+    alignItems: 'center',
+    paddingVertical: 10,
+    minHeight: 44,
+    justifyContent: 'center',
+  },
+  addModalCancelText: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    fontWeight: '500',
+  },
 
   // Save button (shared)
   saveBtn: {

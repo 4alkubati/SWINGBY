@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   Dimensions,
+  RefreshControl,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 // victory-native@41 requires Skia + reanimated@4 which conflict with Expo SDK 54.
@@ -20,59 +21,7 @@ import { colors } from '../theme/tokens';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
-// ─── Placeholder data ─────────────────────────────────────────────────────────
-const PLACEHOLDER_CATEGORIES = [
-  { category: 'Cleaning', count: 42 },
-  { category: 'Lawn', count: 28 },
-  { category: 'Plumbing', count: 19 },
-  { category: 'Moving', count: 14 },
-  { category: 'Painting', count: 9 },
-];
-
-const PLACEHOLDER_REVIEWS = [
-  {
-    id: 1,
-    rating: 5,
-    comment: 'Absolutely excellent work. The team was punctual, professional, and left the place spotless.',
-    client_first_name: 'Sarah',
-    created_at: new Date(Date.now() - 2 * 86400000).toISOString(),
-  },
-  {
-    id: 2,
-    rating: 4,
-    comment: 'Great service overall. Would definitely book again.',
-    client_first_name: 'James',
-    created_at: new Date(Date.now() - 5 * 86400000).toISOString(),
-  },
-  {
-    id: 3,
-    rating: 5,
-    comment: 'Very thorough and friendly. Highly recommend!',
-    client_first_name: 'Aisha',
-    created_at: new Date(Date.now() - 9 * 86400000).toISOString(),
-  },
-  {
-    id: 4,
-    rating: 4,
-    comment: 'Good job. A couple small spots were missed but overall happy.',
-    client_first_name: 'Michael',
-    created_at: new Date(Date.now() - 14 * 86400000).toISOString(),
-  },
-  {
-    id: 5,
-    rating: 5,
-    comment: 'Fast, efficient, and very communicative throughout.',
-    client_first_name: 'Nina',
-    created_at: new Date(Date.now() - 20 * 86400000).toISOString(),
-  },
-];
-
-const PLACEHOLDER_METRICS = {
-  avg_rating: 4.7,
-  profile_views: 312,
-  conversion_rate: 34,
-  repeat_rate: 58,
-};
+// Placeholder data removed — all data now sourced from /businesses/me/analytics
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function relativeDate(iso) {
@@ -198,51 +147,75 @@ export default function BusinessAnalyticsScreen({ navigation, route }) {
   const bizId = route?.params?.businessId;
 
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState(null);
   const [metrics, setMetrics] = useState(null);
   const [categories, setCategories] = useState([]);
   const [reviews, setReviews] = useState([]);
   const [hasData, setHasData] = useState(true);
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  const load = useCallback(async ({ silent = false } = {}) => {
+    if (!silent) setLoading(true);
+    setError(null);
     try {
-      // Fetch reviews
-      let reviewData = [];
-      try {
-        const rRes = await api.get(`/reviews/business/${bizId || 'me'}`);
-        reviewData = Array.isArray(rRes) ? rRes : (rRes?.results ?? []);
-      } catch {
-        reviewData = PLACEHOLDER_REVIEWS;
-      }
-
-      // Compute avg rating from reviews or fall back to placeholder
-      let avgRating = PLACEHOLDER_METRICS.avg_rating;
-      if (reviewData.length) {
-        avgRating = reviewData.reduce((s, r) => s + (r.rating || 0), 0) / reviewData.length;
-        avgRating = Math.round(avgRating * 10) / 10;
-      }
-
-      // Fetch category breakdown (placeholder if missing)
-      let catData = PLACEHOLDER_CATEGORIES;
-      try {
-        const cRes = await api.get('/analytics/categories');
-        if (Array.isArray(cRes) && cRes.length) catData = cRes;
-      } catch {
-        catData = PLACEHOLDER_CATEGORIES;
-      }
-
-      setMetrics({ ...PLACEHOLDER_METRICS, avg_rating: avgRating });
-      setCategories(catData);
-      setReviews(reviewData.slice(0, 5));
-      setHasData(true);
-    } catch {
+      const data = await api.get('/businesses/me/analytics');
+      setMetrics({
+        avg_rating: data.avg_rating ?? 0,
+        review_count: data.review_count ?? 0,
+        total_bookings: data.total_bookings ?? 0,
+        total_earnings: data.total_earnings ?? 0,
+        profile_views: data.profile_views ?? 0,
+        conversion_rate: data.conversion_rate ?? 0,
+        repeat_rate: data.repeat_rate ?? 0,
+      });
+      setCategories(Array.isArray(data.top_categories) ? data.top_categories : []);
+      setReviews(Array.isArray(data.recent_reviews) ? data.recent_reviews.slice(0, 5) : []);
+      setHasData(
+        (data.review_count ?? 0) > 0 ||
+        (data.total_bookings ?? 0) > 0 ||
+        Array.isArray(data.recent_reviews) && data.recent_reviews.length > 0
+      );
+    } catch (err) {
+      setError(err.message || 'Could not load analytics.');
       setHasData(false);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
-  }, [bizId]);
+  }, []);
+
+  const handleRefresh = useCallback(() => {
+    setRefreshing(true);
+    load({ silent: true });
+  }, [load]);
 
   useEffect(() => { load(); }, [load]);
+
+  if (!loading && error) {
+    return (
+      <View style={[styles.container, { paddingTop: insets.top }]}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+            <Text style={styles.backBtn}>←</Text>
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Analytics</Text>
+          <View style={{ width: 40 }} />
+        </View>
+        <View style={styles.emptyFull}>
+          <Text style={styles.emptyIcon}>⚠️</Text>
+          <Text style={styles.emptyTitle}>Failed to load</Text>
+          <Text style={styles.emptySub}>{error}</Text>
+          <TouchableOpacity
+            style={styles.retryBtn}
+            onPress={() => load()}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.retryBtnText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
 
   if (!loading && !hasData) {
     return (
@@ -276,6 +249,13 @@ export default function BusinessAnalyticsScreen({ navigation, route }) {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scroll}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={colors.accent}
+          />
+        }
       >
         {/* Hero — avg rating */}
         {loading ? (
@@ -302,7 +282,7 @@ export default function BusinessAnalyticsScreen({ navigation, route }) {
         >
           <MetricCard
             label="Profile Views"
-            value={loading ? '—' : String(metrics?.profile_views ?? 0)}
+            value={loading ? '—' : (metrics?.profile_views ? String(metrics.profile_views) : '—')}
             sub="This month"
           />
           <MetricCard
@@ -313,7 +293,7 @@ export default function BusinessAnalyticsScreen({ navigation, route }) {
           />
           <MetricCard
             label="Repeat Customers"
-            value={loading ? '—' : `${metrics?.repeat_rate ?? 0}%`}
+            value={loading ? '—' : (metrics?.repeat_rate ? `${metrics.repeat_rate}%` : '—')}
             sub="Come back rate"
             showProgress={loading ? false : metrics?.repeat_rate ?? 0}
           />
@@ -558,4 +538,15 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 22,
   },
+  retryBtn: {
+    marginTop: 8,
+    backgroundColor: colors.accent,
+    borderRadius: 14,
+    paddingVertical: 13,
+    paddingHorizontal: 32,
+    minHeight: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  retryBtnText: { fontSize: 15, fontWeight: '700', color: colors.textPrimary },
 });

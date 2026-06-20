@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import {
   SafeAreaView, KeyboardAvoidingView, ScrollView,
-  Platform, Pressable, View, StyleSheet,
+  Platform, Pressable, TouchableOpacity, View, StyleSheet,
 } from 'react-native';
 import Animated, {
   useSharedValue, useAnimatedStyle,
@@ -80,6 +80,8 @@ export default function SignupScreen({ navigation }) {
   const [generalError, setGeneralError] = useState('');
 
   const [loading, setLoading] = useState(false);
+  const [showEmailConfirm, setShowEmailConfirm] = useState(false);
+  const [emailForConfirm, setEmailForConfirm] = useState('');
   const scrollRef = useRef(null);
 
   function handleContinue() {
@@ -120,13 +122,39 @@ export default function SignupScreen({ navigation }) {
         phone: null,
       });
       if (result?.requiresConfirmation) {
-        navigation.navigate('Login');
+        setEmailForConfirm(email.trim().toLowerCase());
+        setShowEmailConfirm(true);
       }
     } catch (err) {
       setGeneralError(err.message || 'Signup failed. Try again.');
     } finally {
       setLoading(false);
     }
+  }
+
+  if (showEmailConfirm) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <View style={styles.confirmWrap}>
+          <Animated.View entering={FadeInDown.duration(400).delay(80)} style={styles.confirmInner}>
+            <Text style={styles.confirmIcon}>✉️</Text>
+            <Text style={styles.confirmHeading}>Check your inbox</Text>
+            <Text style={styles.confirmBody}>
+              We sent a verification link to{' '}
+              <Text style={styles.confirmEmail}>{emailForConfirm}</Text>.
+              {'\n'}Tap it to activate your SwingBy account.
+            </Text>
+            <TouchableOpacity
+              style={styles.confirmBackBtn}
+              onPress={() => navigation.navigate('Login')}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.confirmBackBtnText}>Back to login</Text>
+            </TouchableOpacity>
+          </Animated.View>
+        </View>
+      </SafeAreaView>
+    );
   }
 
   return (
@@ -350,6 +378,56 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_400Regular',
     color: colors.danger,
     marginBottom: spacing.sm,
+  },
+
+  // Email confirmation view
+  confirmWrap: {
+    flex: 1,
+    backgroundColor: colors.bg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.lg,
+  },
+  confirmInner: {
+    alignItems: 'center',
+    gap: spacing.md,
+    maxWidth: 320,
+    width: '100%',
+  },
+  confirmIcon: { fontSize: 56, marginBottom: spacing.sm },
+  confirmHeading: {
+    fontSize: 26,
+    fontFamily: 'SpaceGrotesk_700Bold',
+    color: colors.textPrimary,
+    letterSpacing: -0.8,
+    textAlign: 'center',
+  },
+  confirmBody: {
+    fontSize: 15,
+    fontFamily: 'Inter_400Regular',
+    color: colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 23,
+  },
+  confirmEmail: {
+    fontFamily: 'Inter_600SemiBold',
+    color: colors.textPrimary,
+  },
+  confirmBackBtn: {
+    marginTop: spacing.lg,
+    backgroundColor: colors.accent,
+    borderRadius: radius.md,
+    paddingVertical: 14,
+    paddingHorizontal: 40,
+    minHeight: 52,
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+  },
+  confirmBackBtnText: {
+    fontSize: 16,
+    fontFamily: 'Inter_600SemiBold',
+    color: colors.textPrimary,
   },
 
   footer: { marginTop: spacing.xl, alignItems: 'center' },
