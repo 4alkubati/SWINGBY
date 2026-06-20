@@ -2,7 +2,7 @@ import logging
 
 from fastapi import APIRouter, HTTPException, Depends, Query
 from pydantic import BaseModel, Field, field_validator
-from typing import Optional, Literal
+from typing import Optional, Literal, List
 from app.deps import get_current_user
 from app.supabase_client import supabase
 
@@ -20,6 +20,8 @@ class ServicePostCreate(BaseModel):
     budget: float = Field(..., gt=0, le=1_000_000)
     lat: Optional[float] = Field(None, ge=-90.0, le=90.0)
     lng: Optional[float] = Field(None, ge=-180.0, le=180.0)
+    address: Optional[str] = Field(None, max_length=300)
+    image_urls: Optional[List[str]] = Field(default_factory=list, max_length=5)
 
     @field_validator("title", "category", mode="before")
     @classmethod
@@ -28,6 +30,17 @@ class ServicePostCreate(BaseModel):
         if not v:
             raise ValueError("Field cannot be blank")
         return v
+
+    @field_validator("image_urls", mode="before")
+    @classmethod
+    def validate_image_urls(cls, v):
+        if v is None:
+            return []
+        if not isinstance(v, list):
+            raise ValueError("image_urls must be a list")
+        if len(v) > 5:
+            raise ValueError("Maximum 5 images per post")
+        return [str(url).strip() for url in v if url]
 
 
 # ── Endpoints ─────────────────────────────────────────────────────────────────
@@ -46,6 +59,8 @@ def create_service_post(data: ServicePostCreate, current_user: dict = Depends(ge
             "budget": data.budget,
             "lat": data.lat,
             "lng": data.lng,
+            "address": data.address,
+            "image_urls": data.image_urls or [],
             "status": "open",
         }).execute()
         return {"message": "Service post created", "post": res.data[0]}

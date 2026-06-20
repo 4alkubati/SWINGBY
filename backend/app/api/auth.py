@@ -244,6 +244,13 @@ def signup(request: Request, data: SignupRequest):
         except Exception:
             pass
 
+        # Welcome email — best-effort, never blocks signup
+        try:
+            from app.services.email import send_welcome_email
+            send_welcome_email(str(data.email), data.first_name)
+        except Exception:
+            pass
+
         # If email confirmation is OFF, Supabase returns a live session immediately.
         # Return the token so the mobile app can auto-login.
         access_token = res.session.access_token if res.session else None
@@ -342,6 +349,27 @@ def logout(current_user: dict = Depends(get_current_user)):
         logger.warning("auth.logout sign_out failed", user_id=uid)
     logger.info("auth.logout", user_id=uid)
     return {"message": "logged_out"}
+
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
+@router.post("/forgot-password")
+@limiter.limit("3/minute")
+def forgot_password(request: Request, data: ForgotPasswordRequest):
+    """
+    Triggers a Supabase password-reset email for the given address.
+    Always returns 200 to avoid email enumeration.
+    """
+    try:
+        supabase.auth.reset_password_email(
+            data.email,
+            options={"redirect_to": "swingby://auth/reset"},
+        )
+    except Exception:
+        logger.warning("auth.forgot_password failed (non-fatal)", email=data.email)
+    return {"message": "If that email exists, a reset link has been sent"}
 
 
 @router.get("/me")

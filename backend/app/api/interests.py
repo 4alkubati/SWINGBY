@@ -182,11 +182,16 @@ def accept_interest(interest_id: str, current_user: dict = Depends(get_current_u
             "status": "partial",
         }).execute()
 
-        # Notify the business owner — best-effort
+        # Notify the business owner and client (push + email) — best-effort
         try:
+            from app.services.email import (
+                send_booking_confirmed_business,
+                send_booking_confirmed_client,
+            )
+
             biz_owner_res = (
                 supabase.table("businesses")
-                .select("owner_id")
+                .select("owner_id, business_name")
                 .eq("id", interest["business_id"])
                 .single()
                 .execute()
@@ -199,17 +204,47 @@ def accept_interest(interest_id: str, current_user: dict = Depends(get_current_u
                 .execute()
             )
             biz_owner_id = biz_owner_res.data["owner_id"] if biz_owner_res.data else None
+            biz_name = (
+                biz_owner_res.data["business_name"] if biz_owner_res.data else "Your business"
+            )
             post_title = (
                 post_title_res.data["title"] if post_title_res.data else "your quote"
             )
+
             if biz_owner_id:
-                send_push_to_user(
-                    biz_owner_id,
-                    "Your quote was accepted",
-                    post_title,
+                send_push_to_user(biz_owner_id, "Your quote was accepted", post_title)
+                biz_owner_user_res = (
+                    supabase.table("users")
+                    .select("email")
+                    .eq("id", biz_owner_id)
+                    .single()
+                    .execute()
+                )
+                if biz_owner_user_res.data:
+                    send_booking_confirmed_business(
+                        biz_owner_user_res.data["email"],
+                        biz_name,
+                        booking["id"],
+                        total_amount,
+                    )
+
+            # Email the client too
+            client_user_res = (
+                supabase.table("users")
+                .select("email, first_name")
+                .eq("id", current_user["id"])
+                .single()
+                .execute()
+            )
+            if client_user_res.data:
+                send_booking_confirmed_client(
+                    client_user_res.data["email"],
+                    client_user_res.data["first_name"],
+                    booking["id"],
+                    total_amount,
                 )
         except Exception:
-            pass  # push failure must not break the request
+            pass  # notification failure must not break the request
 
         return {
             "message": "Interest accepted — booking and payment created",

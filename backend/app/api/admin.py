@@ -2,6 +2,8 @@
 admin.py — Admin-only endpoints for the SwingBy backend.
 
 T27  Admin user/booking management:
+     - GET  /admin/users
+     - GET  /admin/bookings
      - POST /admin/suspend-user/{user_id}
      - POST /admin/unsuspend-user/{user_id}
      - POST /admin/force-complete-booking/{booking_id}
@@ -38,6 +40,47 @@ def require_admin(current_user: dict = Depends(get_current_user)) -> dict:
 # ---------------------------------------------------------------------------
 # Endpoints
 # ---------------------------------------------------------------------------
+
+@router.get("/users")
+@limiter.limit("30/minute")
+def list_users(
+    request: Request,
+    current_user: dict = Depends(require_admin),
+):
+    """Returns all users (admin only). Used by the admin app UsersPage."""
+    try:
+        res = (
+            supabase.table("users")
+            .select("id, email, first_name, last_name, role, is_suspended, created_at")
+            .order("created_at", desc=True)
+            .execute()
+        )
+        return res.data or []
+    except Exception:
+        logger.exception("admin.list_users failed")
+        raise HTTPException(status_code=400, detail="Could not list users")
+
+
+@router.get("/bookings")
+@limiter.limit("30/minute")
+def list_bookings(
+    request: Request,
+    current_user: dict = Depends(require_admin),
+):
+    """Returns all bookings (admin only). Used by the admin app BookingsPage."""
+    try:
+        res = (
+            supabase.table("bookings")
+            .select("*")
+            .order("created_at", desc=True)
+            .limit(500)
+            .execute()
+        )
+        return res.data or []
+    except Exception:
+        logger.exception("admin.list_bookings failed")
+        raise HTTPException(status_code=400, detail="Could not list bookings")
+
 
 @router.post("/suspend-user/{user_id}")
 @limiter.limit("30/minute")

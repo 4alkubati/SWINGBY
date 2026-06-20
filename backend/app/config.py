@@ -37,6 +37,8 @@ _OPTIONAL = [
     "SENTRY_DSN",
     "HCAPTCHA_SECRET",
     "HCAPTCHA_SITEKEY",
+    "RESEND_API_KEY",       # Resend transactional email — set after domain verified
+    "RESEND_FROM_EMAIL",    # e.g. "SwingBy <hello@swingby.ca>"
 ]
 
 
@@ -88,6 +90,14 @@ class _Settings:
     @property
     def HCAPTCHA_SITEKEY(self) -> str:
         return os.getenv("HCAPTCHA_SITEKEY", "")
+
+    @property
+    def RESEND_API_KEY(self) -> str:
+        return os.getenv("RESEND_API_KEY", "")
+
+    @property
+    def RESEND_FROM_EMAIL(self) -> str:
+        return os.getenv("RESEND_FROM_EMAIL", "SwingBy <hello@swingby.ca>")
 
     # Convenience typed accessors (mirrors the property names for legacy callers)
     def get_database_url(self) -> str:
