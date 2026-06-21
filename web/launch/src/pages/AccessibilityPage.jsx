@@ -25,7 +25,7 @@ export default function AccessibilityPage() {
           <h2>Known gaps</h2>
           <p>We are continuously improving. Known areas of work: improving ARIA live regions on dynamic content, enhancing screen reader experience in the messaging UI.</p>
           <h2>Feedback</h2>
-          <p>If you encounter an accessibility barrier, email <a href="mailto:accessibility@swingby.ca" style={{ color: 'var(--color-accent-text)' }}>accessibility@swingby.ca</a>. We aim to respond within 5 business days.</p>
+          <p>If you encounter an accessibility barrier, email <a href="mailto:accessibility@swingbyy.com" style={{ color: 'var(--color-accent-text)' }}>accessibility@swingbyy.com</a>. We aim to respond within 5 business days.</p>
         </div>
       </div>
     </>

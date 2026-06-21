@@ -31,7 +31,7 @@ Here's how SwingBy works for clients:
 
 That's it. You can have a cleaner, handyman, or dog walker booked today.
 
-SwingBy.ca — link in bio.
+swingbyy.com — link in bio.
 
 ---
 
@@ -209,7 +209,7 @@ Quick tips for businesses on SwingBy to get more bookings:
 3. Set your service radius to a realistic area — not all of Calgary if you work in SW
 4. Keep your response time fast — clients book the first good quote they get
 
-More tips in the Help Center at SwingBy.ca.
+More tips in the Help Center at swingbyy.com.
 
 ---
 
@@ -251,7 +251,7 @@ Want SwingBy updates delivered straight to your inbox?
 
 We send a monthly email: new businesses in your area, platform updates, and Calgary-specific tips for getting the most out of local services.
 
-No spam. Unsubscribe any time. CASL-compliant, obviously. Sign up at SwingBy.ca.
+No spam. Unsubscribe any time. CASL-compliant, obviously. Sign up at swingbyy.com.
 
 ---
 

@@ -21,7 +21,7 @@ def _api_key() -> str:
 
 
 def _from_addr() -> str:
-    return os.getenv("RESEND_FROM_EMAIL", "SwingBy <hello@swingby.ca>")
+    return os.getenv("RESEND_FROM_EMAIL", "SwingBy <hello@swingbyy.com>")
 
 
 def send_email(to: str, subject: str, html: str) -> None:

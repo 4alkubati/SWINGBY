@@ -49,8 +49,8 @@ export default function Contact() {
           <div style={{ marginTop: 'var(--space-xl)', padding: 'var(--space-lg)', background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)' }}>
             <p style={{ fontSize: '14px', color: 'var(--color-text-secondary)' }}>You can also email us directly:</p>
             <div style={{ marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <a href="mailto:hello@swingby.ca" style={{ color: 'var(--color-accent-text)', fontSize: '14px' }}>hello@swingby.ca</a>
-              <a href="mailto:support@swingby.ca" style={{ color: 'var(--color-accent-text)', fontSize: '14px' }}>support@swingby.ca</a>
+              <a href="mailto:hello@swingbyy.com" style={{ color: 'var(--color-accent-text)', fontSize: '14px' }}>hello@swingbyy.com</a>
+              <a href="mailto:support@swingbyy.com" style={{ color: 'var(--color-accent-text)', fontSize: '14px' }}>support@swingbyy.com</a>
             </div>
           </div>
         </div>

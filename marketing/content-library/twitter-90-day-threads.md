@@ -40,9 +40,9 @@ If a business has 40 five-star reviews on SwingBy, they earned them.
 
 7/ We're live in Calgary as of this week. 180 businesses. 900 clients. 97% completion rate on our first 1,200 bookings.
 
-8/ If you're in Calgary and need a service — try it: swingby.ca
+8/ If you're in Calgary and need a service — try it: swingbyy.com
 
-If you run a local service business in Calgary — join us: swingby.ca/business
+If you run a local service business in Calgary — join us: swingbyy.com/business
 
 Thank you to everyone who helped test it. On to week 2. 🏁
 
@@ -149,7 +149,7 @@ The platform only works if people review.
 
 7/ That's it. 5 steps. Most people skip all five and then wonder how they ended up with a no-show.
 
-Build good habits. Hire well. swingby.ca
+Build good habits. Hire well. swingbyy.com
 
 ---
 
@@ -465,7 +465,7 @@ Why Calgary first? Homeownership rate, strong trades culture, city that values l
 
 **Single 33** — The 4-month to-do list is a universal human experience. SwingBy is for the person who wants to clear it in one afternoon.
 
-**Single 34** — "I didn't know what to pay" is the #1 reason people get burned hiring local services. We publish pricing guides at swingby.ca so you always know what fair looks like.
+**Single 34** — "I didn't know what to pay" is the #1 reason people get burned hiring local services. We publish pricing guides at swingbyy.com so you always know what fair looks like.
 
 **Single 35** — Beltline, Kensington, Bridgeland, Mission — the inner-city neighbourhoods are where SwingBy is densest right now. If you're a business in those areas, we want to talk.
 

@@ -34,7 +34,7 @@
 
 **Profile setup:**
 - Bio: "Calgary's service marketplace. Find a cleaner, handyman, dog walker. Free for clients."
-- Link in bio: swingby.ca or a Linktree with app download + website
+- Link in bio: swingbyy.com or a Linktree with app download + website
 - Highlight covers: How it Works / Businesses / Reviews / About
 
 **Technical:**
@@ -216,7 +216,7 @@ None needed on the company page. In community groups, use 0 — they look promot
 
 | Type | What to do |
 |---|---|
-| Service inquiry | "Thanks for reaching out! The fastest way is to post a job at swingby.ca — businesses will come to you with quotes. Takes 60 seconds." |
+| Service inquiry | "Thanks for reaching out! The fastest way is to post a job at swingbyy.com — businesses will come to you with quotes. Takes 60 seconds." |
 | "How much does X cost?" | Give a real answer with a Calgary range. Then offer the app as the way to get an exact quote. |
 | Complaint | "I'm really sorry to hear that. Can you send me the details — booking ID or your email? I'll look into it personally." Never say "please contact support" without giving a name. |
 | Job application | "Thanks for your interest! We're hiring [yes/no]. Apply at [link]." |
@@ -326,7 +326,7 @@ Copy, adapt, and use these. Replace `[brackets]`.
 >
 > No chasing invoices. No fake reviews. No surprises.
 >
-> [swingby.ca — link in bio]
+> [swingbyy.com — link in bio]
 
 **Template 3 — Education / value**
 > [Statistic or surprising fact about Calgary services.]
@@ -415,16 +415,16 @@ Copy, adapt, and use these. Replace `[brackets]`.
 ## DM templates
 
 **DM 1 — Service inquiry**
-> Hi [name]! Thanks for reaching out. The easiest way to get started is to post your job at swingby.ca — it takes about 60 seconds, and businesses in your area will send you quotes directly. No obligation to accept any of them. Let me know if you have any questions!
+> Hi [name]! Thanks for reaching out. The easiest way to get started is to post your job at swingbyy.com — it takes about 60 seconds, and businesses in your area will send you quotes directly. No obligation to accept any of them. Let me know if you have any questions!
 
 **DM 2 — Complaint**
 > Hi [name] — I'm Amr, the founder. I'm really sorry you had this experience. Can you share the details (booking ID or email used)? I'll look into this personally and get back to you within 24 hours.
 
 **DM 3 — Partnership inquiry**
-> Hi [name] — thanks for reaching out. I'm the founder. Would love to explore this. Can you send me a quick note at partnerships@swingby.ca with a bit more context? I read everything that comes in.
+> Hi [name] — thanks for reaching out. I'm the founder. Would love to explore this. Can you send me a quick note at partnerships@swingbyy.com with a bit more context? I read everything that comes in.
 
 **DM 4 — Business inquiry**
-> Hi [name]! Thanks for your interest in listing your business on SwingBy. Sign up at swingby.ca/for-businesses — it takes about 5 minutes and you're free to use the platform. You only pay when you win a job (10%). Happy to answer any questions.
+> Hi [name]! Thanks for your interest in listing your business on SwingBy. Sign up at swingbyy.com/for-businesses — it takes about 5 minutes and you're free to use the platform. You only pay when you win a job (10%). Happy to answer any questions.
 
 **DM 5 — General / unclear intent**
 > Hi! Thanks for the message. Happy to help — what are you looking for? If it's a service, the fastest way is to post a job on the app. If you have another question, just ask here.

@@ -94,7 +94,7 @@ Most browsers allow you to block or delete cookies through their settings. Note 
 
 ### In the app or website
 
-A cookie consent banner appears on your first visit to swingby.ca. You can:
+A cookie consent banner appears on your first visit to swingbyy.com. You can:
 - Accept all cookies
 - Accept only strictly necessary cookies
 - Manage individual categories
@@ -103,7 +103,7 @@ You can change your preferences at any time by visiting the cookie settings link
 
 ### Opt-out of analytics
 
-- **PostHog:** visit posthog.com/privacy or contact us at privacy@swingby.ca
+- **PostHog:** visit posthog.com/privacy or contact us at privacy@swingbyy.com
 - **Plausible:** visit plausible.io/data-policy (Plausible does not use cookies by default)
 
 ---
@@ -123,4 +123,4 @@ We may update this policy when we add or remove analytics tools or change how we
 ## Contact
 
 For questions about our cookie practices:  
-**Email:** privacy@swingby.ca
+**Email:** privacy@swingbyy.com

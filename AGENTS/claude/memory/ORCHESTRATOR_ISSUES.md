@@ -34,7 +34,7 @@ metadata:
 | H1 | Mobile | Google Maps API key in plain text in app.json | ⚠️ Exists | Move `android.googleMapsApiKey` to EAS secret via `eas secret:create` |
 | H2 | Backend/Auth | Admin password "Swingby123" is temporary | ⚠️ | Rotate via Supabase Auth dashboard |
 | H3 | Auth | HaveIBeenPwned leaked-password protection not enabled | ⚠️ | Enable in Supabase Auth → Password → Enable leaked password protection |
-| H4 | Email | Resend not configured — all transactional emails are silent | ❌ | Sign up for Resend → verify swingby.ca → set RESEND_API_KEY in backend env |
+| H4 | Email | Resend not configured — all transactional emails are silent | ❌ | Sign up for Resend → verify swingbyy.com → set RESEND_API_KEY in backend env |
 | H5 | Mobile | EarningsScreen: placeholder data only | ❌ | Wire GET /payments (sum by business + month) |
 | H6 | Mobile | BusinessAnalyticsScreen: all mock charts | ❌ | Wire GET /businesses/me/analytics (blocked on C5) |
 | H7 | Mobile | EmployeeManagementScreen: list loads but create/deactivate not wired | ❌ | Wire POST /employees + PATCH /employees/{id}/deactivate |
@@ -80,7 +80,7 @@ metadata:
 | L4 | Mobile | No haptic feedback on form submission or error | ❌ | Use `expo-haptics` on success/error in PostJob + Login |
 | L5 | Backend | Rate limiter thresholds not tuned (e.g., 5/min on auth may be too restrictive for testing) | ⚠️ | Tune after load testing |
 | L6 | Backend | No automated Supabase database backup | ❌ | Enable in Supabase dashboard (Project → Database → Backups) |
-| L7 | Web | Plausible analytics script uses `swingbyy.com` — update to `swingby.ca` | ⚠️ | Update src in Layout.jsx |
+| L7 | Web | Plausible analytics script uses `swingbyy.com` — update to `swingbyy.com` | ⚠️ | Update src in Layout.jsx |
 | L8 | Web | Cloudflare Web Analytics not enabled | ❌ | Add snippet to `_headers` / layout |
 | L9 | CI/CD | EAS Build not in CI — mobile builds triggered manually only | ❌ | Add `eas build` step to GitHub Actions workflow |
 | L10 | CI/CD | `web-launch-ci.yml` doesn't run `npm test` (no test files in web/launch) | ⚠️ | Add Playwright smoke test step |
@@ -221,7 +221,7 @@ STATUS: OPEN
 
 1. **User action**: Enable HaveIBeenPwned in Supabase Auth → Password
 2. **User action**: Move Google Maps key to EAS secrets (`eas secret:create`)
-3. **User action**: Sign up for Resend → verify swingby.ca → set `RESEND_API_KEY` env var
+3. **User action**: Sign up for Resend → verify swingbyy.com → set `RESEND_API_KEY` env var
 4. **Dispatch C3**: Wire QuoteComparisonScreen (MESSAGE BUS 2026-06-15-001)
 5. **Dispatch C5**: Create `/businesses/me/analytics` endpoint (MESSAGE BUS 2026-06-15-002)
 6. **Dispatch C7**: HomeScreen real data + greeting (MESSAGE BUS 2026-06-15-003)

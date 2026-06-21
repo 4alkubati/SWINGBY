@@ -28,7 +28,7 @@ export default function LocationCategoryPage() {
     provider: {
       '@type': 'Organization',
       name: 'SwingBy',
-      url: 'https://swingby.ca',
+      url: 'https://swingbyy.com',
       areaServed: {
         '@type': 'Place',
         name: `${hood}, Calgary, AB`,

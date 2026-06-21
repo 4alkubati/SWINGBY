@@ -25,7 +25,7 @@ export default function Maintenance() {
           <a href="/status" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '10px 20px', background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-sm)', color: 'var(--color-text-primary)', fontSize: '14px', fontWeight: 600, textDecoration: 'none' }}>
             Check status page
           </a>
-          <span style={{ fontSize: '12px', color: 'var(--color-text-secondary)' }}>Real-time updates at status.swingby.ca</span>
+          <span style={{ fontSize: '12px', color: 'var(--color-text-secondary)' }}>Real-time updates at status.swingbyy.com</span>
         </div>
       </div>
     </>

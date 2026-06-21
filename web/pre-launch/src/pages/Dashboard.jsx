@@ -11,12 +11,18 @@ function formatJoinDate(isoString) {
 
 function computeCompleteness(user) {
   const meta = user.user_metadata || {}
+  const emailConfirmed = !!user.email_confirmed_at
+  const hasAvatar = !!(meta.avatar_url || user.avatar_url)
   const checks = [
-    { label: 'Email verified',        done: !!user.email_confirmed_at },
-    { label: 'Account created',       done: true },
-    { label: 'Profile photo added',   done: false },
-    { label: 'First booking completed', done: false },
-    { label: 'Payment method added',  done: false },
+    {
+      label: emailConfirmed ? 'Email verified' : 'Confirm your email',
+      done: emailConfirmed,
+      action: emailConfirmed ? null : { label: 'Resend link', to: `/verify-email?email=${encodeURIComponent(user.email || '')}` },
+    },
+    { label: 'Account created',         done: true,  action: null },
+    { label: 'Profile photo added',     done: hasAvatar, action: hasAvatar ? null : { label: 'Add photo', to: '/profile' } },
+    { label: 'First booking completed', done: false,    action: { label: 'Browse services', to: '/categories' } },
+    { label: 'Payment method added',    done: false,    action: { label: 'Add method', to: '/payment-methods' } },
   ]
   const doneCount = checks.filter(c => c.done).length
   const pct = Math.round((doneCount / checks.length) * 100)
@@ -149,7 +155,7 @@ export default function Dashboard() {
           </div>
 
           <ul className={styles.checklist}>
-            {checks.map(({ label, done }) => (
+            {checks.map(({ label, done, action }) => (
               <li
                 key={label}
                 className={`${styles.checkItem} ${done ? styles.checkItemDone : styles.checkItemPending}`}
@@ -159,7 +165,12 @@ export default function Dashboard() {
                 ) : (
                   <span className={styles.checkCircle} />
                 )}
-                {label}
+                <span style={{ flex: 1 }}>{label}</span>
+                {action && (
+                  <Link to={action.to} className={styles.checkAction} style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-accent, #6c5ce7)', textDecoration: 'none', marginLeft: 'auto' }}>
+                    {action.label} →
+                  </Link>
+                )}
               </li>
             ))}
           </ul>

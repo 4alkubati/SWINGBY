@@ -39,7 +39,7 @@ When you create a SwingBy account, you agree to:
 - Provide accurate, complete, and current information
 - Maintain the accuracy of your information and update it promptly if it changes
 - Keep your password secure and not share it with anyone
-- Notify us immediately at security@swingby.ca if you suspect unauthorized access to your account
+- Notify us immediately at security@swingbyy.com if you suspect unauthorized access to your account
 - Accept responsibility for all activity that occurs under your account
 
 SwingBy accounts are personal to you. You may not transfer your account to another person or use another person's account.
@@ -274,7 +274,7 @@ Your continued use of the platform after changes take effect constitutes accepta
 ## 17. Contact
 
 For legal questions or notices:  
-**Email:** legal@swingby.ca  
+**Email:** legal@swingbyy.com  
 **Mailing address:** [SwingBy Technologies Inc., Calgary, Alberta, Canada — TODO: add full address]
 
 ---

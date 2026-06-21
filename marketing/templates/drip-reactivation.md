@@ -27,7 +27,7 @@ A few things have changed since you last logged in:
 
 If you have a job that needs doing, we'd love to help you get it sorted.
 
-**Browse local services:** [swingby.ca](https://swingby.ca)
+**Browse local services:** [swingbyy.com](https://swingbyy.com)
 
 And if SwingBy just isn't the right fit right now, no hard feelings. You can unsubscribe below.
 
@@ -58,7 +58,7 @@ Common reasons people come back after a break:
 
 If any of those match your situation right now, we can help.
 
-**Post a job free:** [swingby.ca/app/post](https://swingby.ca/app/post)
+**Post a job free:** [swingbyy.com/app/post](https://swingbyy.com/app/post)
 
 — The SwingBy team
 
@@ -80,7 +80,7 @@ This is the last reactivation email we'll send. We don't want to be the kind of 
 
 If you ever need a local service in Calgary — cleaning, handyman work, lawn care, dog walking, or any of our other categories — SwingBy will be here.
 
-**Your account is still active.** You can post a job anytime at [swingby.ca/app/post](https://swingby.ca/app/post).
+**Your account is still active.** You can post a job anytime at [swingbyy.com/app/post](https://swingbyy.com/app/post).
 
 If you'd like to stop hearing from us entirely, that's completely fine:
 

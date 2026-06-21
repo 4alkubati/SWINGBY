@@ -27,7 +27,7 @@ Your SwingBy business account is live. To start receiving job quote requests, co
 
 A complete profile gets 3x more quote requests than an incomplete one. Clients read profiles before they decide who to contact.
 
-**Complete your profile:** [swingby.ca/app/business/onboarding](https://swingby.ca/app/business/onboarding)
+**Complete your profile:** [swingbyy.com/app/business/onboarding](https://swingbyy.com/app/business/onboarding)
 
 Founder pricing reminder: You joined as one of our first 100 businesses. Your platform fee is 5% (half the standard rate) — locked in for life.
 
@@ -55,7 +55,7 @@ Clients post a job, get several quotes, and book the first good one. If you resp
 - Set your service availability so you only receive requests when you're actually available
 - Keep a short quote template ready for your most common job types
 
-If you haven't enabled email notifications for new job requests yet, do it now: [Account settings](https://swingby.ca/app/settings/notifications)
+If you haven't enabled email notifications for new job requests yet, do it now: [Account settings](https://swingbyy.com/app/settings/notifications)
 
 — The SwingBy team
 
@@ -73,7 +73,7 @@ Hi {{first_name}},
 
 Clients in your service area are posting jobs right now. Here's how to find them and send your first quote:
 
-1. Go to your [SwingBy dashboard](https://swingby.ca/app/dashboard)
+1. Go to your [SwingBy dashboard](https://swingbyy.com/app/dashboard)
 2. Check the "Available jobs" section for new posts in your category
 3. Click any job to view the details and send a quote
 
@@ -110,7 +110,7 @@ Payouts are processed within 3–5 business days depending on your payment metho
 
 **Your next step:** Leave a review for the client. It keeps the marketplace honest and encourages clients to leave reviews for you.
 
-[View your earnings](https://swingby.ca/app/business/earnings)
+[View your earnings](https://swingbyy.com/app/business/earnings)
 
 — The SwingBy team
 
@@ -138,8 +138,8 @@ Two weeks in. Here's what the busiest businesses on SwingBy do consistently:
 
 Any questions? Reply to this email. We read every one.
 
-[Go to your dashboard](https://swingby.ca/app/dashboard)
+[Go to your dashboard](https://swingbyy.com/app/dashboard)
 
 — The SwingBy team
 
-*You're receiving this because you registered as a business at swingby.ca. [Unsubscribe]({{unsubscribe_url}})*
+*You're receiving this because you registered as a business at swingbyy.com. [Unsubscribe]({{unsubscribe_url}})*

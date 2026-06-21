@@ -119,7 +119,7 @@ SwingBy uses the following subprocessors to provide its platform. Each has been 
 | **Privacy policy** | cloudflare.com/privacypolicy |
 | **DPA** | cloudflare.com/gdpr/introduction |
 | **Security certifications** | ISO 27001, SOC 2, PCI DSS |
-| **Notes** | Cloudflare does not have access to database contents. IP logs are transient. Used as our primary edge layer — the entire `swingby.ca` zone is proxied through Cloudflare. |
+| **Notes** | Cloudflare does not have access to database contents. IP logs are transient. Used as our primary edge layer — the entire `swingbyy.com` zone is proxied through Cloudflare. |
 
 ---
 
@@ -132,4 +132,4 @@ We will update this page when we add, change, or remove a subprocessor. Enterpri
 ## Questions
 
 If you have questions about our subprocessors or data processing practices, contact:  
-**Email:** privacy@swingby.ca
+**Email:** privacy@swingbyy.com

@@ -68,7 +68,7 @@ If the business has a phone number visible, call instead of email. Conversion ra
 A business referral program is the only acquisition channel that scales with zero marginal cost.
 
 **How it works:**
-- Every business gets a unique referral link (e.g., `swingby.ca/ref/[code]`)
+- Every business gets a unique referral link (e.g., `swingbyy.com/ref/[code]`)
 - When a referred business completes their first booking, both sides get a reward
 - Referrer gets: $50 account credit (applied to platform fee)
 - New business gets: 0% platform fee for their first 60 days
@@ -102,7 +102,7 @@ Hold off on paid acquisition for businesses until month 3. Use the budget for cl
 
 **Google Ads targeting for businesses:**
 - Keyword: "how to get more clients [category]", "find clients as a [category] Calgary"
-- Landing page: A dedicated "Grow your business" page at swingby.ca/for-businesses
+- Landing page: A dedicated "Grow your business" page at swingbyy.com/for-businesses
 - Copy: "Stop paying $40/lead on HomeStars. SwingBy charges 10% only when you win the job."
 
 **CAC target for business:** < $200 including all paid and owned channel costs.

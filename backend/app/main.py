@@ -109,6 +109,9 @@ app.include_router(me_router, prefix="/me", tags=["me"])
 from app.api.uploads import router as uploads_router
 app.include_router(uploads_router, prefix="/uploads", tags=["uploads"])
 
+from app.api.contact import router as contact_router
+app.include_router(contact_router, prefix="/contact", tags=["contact"])
+
 
 @app.get("/health")
 def health_check():

@@ -35,11 +35,23 @@ const TOPICS = [
   'contact.topicFeedback',
 ]
 
+const API_BASE = import.meta.env.VITE_API_URL || 'https://swingbyy-api.onrender.com'
+
 async function submitContactForm(data) {
-  // Placeholder: replace with real API call
-  await new Promise((resolve) => setTimeout(resolve, 1000))
-  console.log('Contact form submitted:', data)
-  return { success: true }
+  const res = await fetch(`${API_BASE}/contact/`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  })
+  if (!res.ok) {
+    let detail = 'Could not send your message. Please try again.'
+    try {
+      const body = await res.json()
+      if (typeof body?.detail === 'string') detail = body.detail
+    } catch { /* ignore json parse failures */ }
+    throw new Error(detail)
+  }
+  return res.json()
 }
 
 export default function Contact() {

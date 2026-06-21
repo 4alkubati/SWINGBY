@@ -6,10 +6,10 @@ import styles from './AuditLogPage.module.css'
 /* ── Constants ────────────────────────────────────────────────────────────── */
 
 const PLACEHOLDER_ROWS = [
-  { id: 1, timestamp: '2026-05-27T09:14:00Z', actor: 'admin@swingby.com', action: 'suspend_user',      resource_type: 'user',    resource_id: 'usr_001' },
-  { id: 2, timestamp: '2026-05-27T08:55:00Z', actor: 'admin@swingby.com', action: 'verify_license',    resource_type: 'business', resource_id: 'biz_012' },
+  { id: 1, timestamp: '2026-05-27T09:14:00Z', actor: 'admin@swingbyy.com', action: 'suspend_user',      resource_type: 'user',    resource_id: 'usr_001' },
+  { id: 2, timestamp: '2026-05-27T08:55:00Z', actor: 'admin@swingbyy.com', action: 'verify_license',    resource_type: 'business', resource_id: 'biz_012' },
   { id: 3, timestamp: '2026-05-26T17:40:00Z', actor: 'system',            action: 'booking_completed', resource_type: 'booking',  resource_id: 'bkg_089' },
-  { id: 4, timestamp: '2026-05-26T15:22:00Z', actor: 'admin@swingby.com', action: 'unsuspend_user',    resource_type: 'user',    resource_id: 'usr_047' },
+  { id: 4, timestamp: '2026-05-26T15:22:00Z', actor: 'admin@swingbyy.com', action: 'unsuspend_user',    resource_type: 'user',    resource_id: 'usr_047' },
   { id: 5, timestamp: '2026-05-26T12:01:00Z', actor: 'system',            action: 'payment_released',  resource_type: 'booking',  resource_id: 'bkg_074' },
 ]
 

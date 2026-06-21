@@ -38,7 +38,8 @@ _OPTIONAL = [
     "HCAPTCHA_SECRET",
     "HCAPTCHA_SITEKEY",
     "RESEND_API_KEY",       # Resend transactional email — set after domain verified
-    "RESEND_FROM_EMAIL",    # e.g. "SwingBy <hello@swingby.ca>"
+    "RESEND_FROM_EMAIL",    # e.g. "SwingBy <hello@swingbyy.com>"
+    "PASSWORD_RESET_REDIRECT_URL",  # override where Supabase reset emails redirect (defaults to web)
 ]
 
 
@@ -97,7 +98,11 @@ class _Settings:
 
     @property
     def RESEND_FROM_EMAIL(self) -> str:
-        return os.getenv("RESEND_FROM_EMAIL", "SwingBy <hello@swingby.ca>")
+        return os.getenv("RESEND_FROM_EMAIL", "SwingBy <hello@swingbyy.com>")
+
+    @property
+    def PASSWORD_RESET_REDIRECT_URL(self) -> str:
+        return os.getenv("PASSWORD_RESET_REDIRECT_URL", "https://swingbyy.com/reset-password")
 
     # Convenience typed accessors (mirrors the property names for legacy callers)
     def get_database_url(self) -> str:

@@ -37,7 +37,7 @@
 | Obstacle train | [START] → create Resend acct + verify swingby domain → set RESEND_API_KEY in Render → wire send calls (signup, booking) → test: real signup email lands → [DONE] |
 | What Kira does | Create Resend account, verify domain, paste API key |
 | What the agent does | Wire the send helper + call sites, test delivery |
-| Status | 🔶 waiting on you — create Resend account, verify swingby.ca domain, paste RESEND_API_KEY + RESEND_FROM_EMAIL into Render env vars |
+| Status | 🔶 waiting on you — create Resend account, verify swingbyy.com domain, paste RESEND_API_KEY + RESEND_FROM_EMAIL into Render env vars |
 
 #### D2 — Kill the mock data
 | Field | Value |
@@ -54,4 +54,28 @@
 |---|---|
 | 5W+H | WHO testers · WHAT installable build · WHEN after D2 · WHERE EAS → TestFlight/Play internal · WHY they need it on a real phone · HOW eas build + real Maps key |
 | Track | BOH | Agent | mobile-agent + Kira (store accounts) |
-| Obstacle train | [START] → real Google Maps key in EAS secrets
+| Obstacle train | [START] → real Google Maps key in EAS secrets → eas build (ios+android) → upload to TestFlight + Play internal → seed accounts log in on device → [DONE] |
+| What Kira does | Apple/Google accounts, paste Maps key, invite testers |
+| What the agent does | Configure EAS, run builds, document install steps |
+| Status | ⬜ pending |
+
+#### D4 — One real end-to-end run
+| Field | Value |
+|---|---|
+| 5W+H | WHO a real tester · WHAT full flow works on a phone · WHEN after D3 · WHERE live app · WHY proof it works for a stranger · HOW post→quote→accept→complete→review, payment in sandbox |
+| Track | BOH | Agent | qa-agent |
+| Obstacle train | [START] → tester signs up → posts/browses → quote → accept → complete → review → email confirms → [DONE: BETA LIVE] |
+| What Kira does | Recruit 1–3 testers, run it with them |
+| What the agent does | Smoke-test the flow first, file any breakage |
+| Status | ⬜ pending |
+
+---
+
+### FOH (runs in parallel — fill the waitlist + recruit testers)
+| Task | Agent | Status |
+|---|---|---|
+| Draft beta-tester recruiting message + 5 outreach targets | marketing-agent | ⬜ pending |
+| Daily morning brief (build + inbox + social) | assistant-agent | ⬜ pending |
+
+### Parked (capture, don't chase — revisit after beta is moving)
+- Self-host **Umami** (free, Docker, next to n8n) for site-visitor analytics → wire into the morning brief. Only once actively driving traffic; ~15 min when needed.

@@ -8,7 +8,7 @@
 
 ### Product (mobile + web)
 - [ ] Mobile app builds successfully on iOS (TestFlight) and Android (internal track)
-- [ ] Web app deployed to production domain (swingby.ca or chosen domain)
+- [ ] Web app deployed to production domain (swingbyy.com or chosen domain)
 - [ ] End-to-end test: signup → post job → business expresses interest → accept → message → complete → review (on real device, not simulator)
 - [ ] Backend deployed to Render/Fly.io with health check green
 - [ ] Supabase production project has RLS verified (0 advisor warnings) — already ✅
@@ -31,7 +31,7 @@
 - [ ] Landing page hero video or animated demo (30s loop)
 - [ ] Press kit folder ready (logo, screenshots, founder bio, one-pager)
 - [ ] Social handles claimed: @swingbyca on Instagram, TikTok, Twitter/X, LinkedIn, Facebook
-- [ ] Domain `swingby.ca` (and `.app` if available) registered
+- [ ] Domain `swingbyy.com` (and `.app` if available) registered
 
 ### Outreach
 - [ ] Spreadsheet of 50 target businesses (name, category, neighbourhood, contact) ready

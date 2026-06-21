@@ -14,9 +14,9 @@ export default function Press() {
           <h2>About SwingBy</h2>
           <p>SwingBy is a Calgary-based marketplace connecting homeowners and renters with vetted local service businesses. Clients post jobs, businesses quote, and payments are held safely in escrow. Founded in 2026 and currently serving Calgary, Alberta.</p>
           <h2>Media contact</h2>
-          <p><a href="mailto:press@swingby.ca" style={{ color: 'var(--color-accent-text)' }}>press@swingby.ca</a> — we respond within 24 hours on business days.</p>
+          <p><a href="mailto:press@swingbyy.com" style={{ color: 'var(--color-accent-text)' }}>press@swingbyy.com</a> — we respond within 24 hours on business days.</p>
           <h2>Press kit</h2>
-          <p>Logo files, screenshots, and founder bio are available on request. Email us at press@swingby.ca.</p>
+          <p>Logo files, screenshots, and founder bio are available on request. Email us at press@swingbyy.com.</p>
         </div>
       </div>
     </>

@@ -54,10 +54,12 @@ export default function Signup() {
     setStatus('loading')
     setErrMsg('')
 
-    const { error } = await supabase.auth.signUp({
-      email: form.email.trim(),
+    const emailTrimmed = form.email.trim()
+    const { data: signUpData, error } = await supabase.auth.signUp({
+      email: emailTrimmed,
       password: form.password,
       options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
         data: {
           first_name: form.first_name.trim(),
           last_name: form.last_name.trim(),
@@ -71,7 +73,16 @@ export default function Signup() {
       setStatus('error')
     } else {
       advanceTo(3)
-      setTimeout(() => navigate('/dashboard'), 1500)
+      // If Supabase returns a confirmed session (confirm-email OFF), go to dashboard.
+      // Otherwise route to /verify-email so the user knows the inbox is the next step.
+      const isConfirmed = !!signUpData?.session && !!signUpData?.user?.email_confirmed_at
+      setTimeout(() => {
+        if (isConfirmed) {
+          navigate('/dashboard', { replace: true })
+        } else {
+          navigate('/verify-email', { replace: true, state: { email: emailTrimmed } })
+        }
+      }, 1500)
     }
   }
 

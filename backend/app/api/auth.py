@@ -361,11 +361,18 @@ def forgot_password(request: Request, data: ForgotPasswordRequest):
     """
     Triggers a Supabase password-reset email for the given address.
     Always returns 200 to avoid email enumeration.
+
+    The redirect target is the web reset page (works for both web and mobile
+    users — a mobile user opens the link in a browser, sets a new password,
+    then signs back into the app). The site URL is configurable via
+    PASSWORD_RESET_REDIRECT_URL; defaults to https://swingbyy.com/reset-password.
     """
+    redirect_to = getattr(settings, "PASSWORD_RESET_REDIRECT_URL", None) \
+        or "https://swingbyy.com/reset-password"
     try:
         supabase.auth.reset_password_email(
             data.email,
-            options={"redirect_to": "swingby://auth/reset"},
+            options={"redirect_to": redirect_to},
         )
     except Exception:
         logger.warning("auth.forgot_password failed (non-fatal)", email=data.email)

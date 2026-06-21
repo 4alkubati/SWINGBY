@@ -70,7 +70,7 @@ Without supply, paid demand just churns. With supply, paid demand compounds.
 | Daily budget | $10/day |
 | Ad copy variant A | Headline 1: "SwingBy Calgary" / Headline 2: "Book Local Services Fast" / Headline 3: "Escrow Protected — Try Free" |
 | Ad copy variant B | Headline 1: "SwingBy — Local Services" / Headline 2: "Post a Job, Get Bids Fast" / Headline 3: "No Fees for Clients" |
-| Landing page | swingby.ca (home) |
+| Landing page | swingbyy.com (home) |
 
 **Expected CPC:** $0.30-0.80 (branded is cheap). **Expected monthly spend:** $100-150.
 
@@ -126,7 +126,7 @@ Without supply, paid demand just churns. With supply, paid demand compounds.
 - Location: Calgary, AB, Canada (25km radius)
 - Age: 25-55
 - Interests: home improvement, home decor, real estate (homeowner signal)
-- Exclude: people who already visited swingby.ca (put them in retargeting)
+- Exclude: people who already visited swingbyy.com (put them in retargeting)
 - Budget: $10-15/day
 - Objective: Conversions → signup event
 
@@ -141,7 +141,7 @@ Without supply, paid demand just churns. With supply, paid demand compounds.
 **Copy variant B:**
 > "Finding a cleaner in Calgary shouldn't take 3 hours of Googling. SwingBy connects you with vetted local businesses in minutes. No hidden fees. Escrow protected."
 
-**Landing page:** swingby.ca home with client CTA prominent.
+**Landing page:** swingbyy.com home with client CTA prominent.
 
 ---
 
@@ -158,7 +158,7 @@ Without supply, paid demand just churns. With supply, paid demand compounds.
 
 ### Campaign 3 — Retargeting
 
-**Audience:** People who visited swingby.ca but did not sign up (pixel-based). Exclude people who already signed up.
+**Audience:** People who visited swingbyy.com but did not sign up (pixel-based). Exclude people who already signed up.
 
 **Budget:** $5/day  
 **Creative:** Simpler, shorter. "You were on SwingBy. Still need a [cleaner/handyman]? 3 minutes to post your job."  
@@ -224,7 +224,7 @@ All paid ads must use UTMs. Convention:
 
 Example:
 ```
-https://swingby.ca/?utm_source=google&utm_medium=cpc&utm_campaign=service-intent&utm_content=variant-b&utm_term=house-cleaner-calgary
+https://swingbyy.com/?utm_source=google&utm_medium=cpc&utm_campaign=service-intent&utm_content=variant-b&utm_term=house-cleaner-calgary
 ```
 
 Store UTM parameters in your analytics DB on signup. This tells you which ad led to which signup and eventually which booking.

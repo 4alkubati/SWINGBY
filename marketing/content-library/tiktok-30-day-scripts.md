@@ -98,7 +98,7 @@
 - [0–3s] "Your money = protected 🔒"
 - [3–10s] "Held in escrow until job complete"
 - [10–17s] "No cash. No stress."
-- [17–20s] "SwingBy.ca"
+- [17–20s] "swingbyy.com"
 
 **Hashtags:** #Escrow #SafePay #SwingBy #Calgary #HomeServices #PaymentProtection #YYC #Hire
 
@@ -122,7 +122,7 @@
 - [0–3s] "Before vs After 👇"
 - [3–12s] "Before: 3 days, zero results"
 - [12–22s] "After: 60 seconds, 3 quotes"
-- [22–25s] "SwingBy.ca"
+- [22–25s] "swingbyy.com"
 
 **Hashtags:** #BeforeAfter #SwingBy #Calgary #HomeServices #YYC #Cleaning #Comparison #LocalHire
 
@@ -292,7 +292,7 @@
 - [0–3s] "A customer story 📱"
 - [3–12s] "Posted 8am → 3 quotes by 10am"
 - [12–20s] "Showed up. Did the work. No surprises."
-- [20–25s] "SwingBy.ca"
+- [20–25s] "swingbyy.com"
 
 **Hashtags:** #CustomerStory #SwingBy #Calgary #Handyman #TrustLocal #YYC #HireLocal #Review
 

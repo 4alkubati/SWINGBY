@@ -154,4 +154,4 @@ We take all good-faith security reports seriously. We will acknowledge receipt w
 ## Questions
 
 If you have questions about SwingBy's security practices, contact us at:  
-**Email:** security@swingby.ca
+**Email:** security@swingbyy.com

@@ -206,7 +206,7 @@ export default function BusinessOnboarding() {
                 <p className={s.stepSubtitle}>Connect your payment method to receive earnings from completed jobs.</p>
                 <div style={{ padding: 'var(--space-xl)', textAlign: 'center', background: 'var(--color-surface-alt)', borderRadius: 'var(--radius-md)', marginBottom: 'var(--space-xl)' }}>
                   <Clock size={32} weight="regular" style={{ color: 'var(--color-text-secondary)', marginBottom: 'var(--space-sm)' }} />
-                  <p style={{ fontSize: '14px', color: 'var(--color-text-secondary)' }}>Payment integration coming soon. You can skip this step for now and set it up later in your dashboard.</p>
+                  <p style={{ fontSize: '14px', color: 'var(--color-text-secondary)' }}>You can add a payout method any time from your dashboard. Skip for now and finish your profile — you'll be paid the moment a job completes.</p>
                 </div>
                 <div className={s.actions}>
                   <Button variant="secondary" onClick={back}>{t('common.back')}</Button>

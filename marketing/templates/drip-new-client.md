@@ -24,7 +24,7 @@ Here's how it works in three steps:
 2. **Get quotes.** Vetted local businesses in your area respond with their price and availability.
 3. **Book with confidence.** Your payment is held safely in escrow until the job is done to your satisfaction.
 
-**Post your first job free:** [swingby.ca/app/post](https://swingby.ca/app/post)
+**Post your first job free:** [swingbyy.com/app/post](https://swingbyy.com/app/post)
 
 What services do we cover? House cleaning, handyman work, lawn care, dog walking, personal training, moving help, and more — all in Calgary.
 
@@ -48,7 +48,7 @@ Haven't posted a job yet? Here's what a good job post looks like:
 
 That's enough to get accurate quotes. You don't need to be detailed — businesses will ask follow-up questions if they need more info.
 
-**What do you need done?** Post it now: [swingby.ca/app/post](https://swingby.ca/app/post)
+**What do you need done?** Post it now: [swingbyy.com/app/post](https://swingbyy.com/app/post)
 
 Most Calgary jobs on SwingBy get their first quote within 30 minutes.
 
@@ -79,7 +79,7 @@ We'll let you know within 24 hours if there aren't enough businesses in your are
 
 Still have a question? Reply to this email — we read them all.
 
-Or just try it: [swingby.ca/app/post](https://swingby.ca/app/post)
+Or just try it: [swingbyy.com/app/post](https://swingbyy.com/app/post)
 
 — The SwingBy team
 
@@ -99,7 +99,7 @@ You recently completed a booking on SwingBy with {{business_name}}.
 
 If you haven't left a review yet, it takes 30 seconds and it matters a lot — both for the business and for the next client who needs a reliable recommendation.
 
-**Leave your review:** [swingby.ca/app/bookings/{{booking_id}}](https://swingby.ca/app/bookings/{{booking_id}})
+**Leave your review:** [swingbyy.com/app/bookings/{{booking_id}}](https://swingbyy.com/app/bookings/{{booking_id}})
 
 Did something go wrong? Reply to this email and we'll sort it out.
 
@@ -124,10 +124,10 @@ You've been on SwingBy for a month. Here's what's popular in Calgary right now:
 - Dog walking (recurring weekly bookings available)
 - Handyman work (pre-summer maintenance rush)
 
-**Post your next job:** [swingby.ca/app/post](https://swingby.ca/app/post)
+**Post your next job:** [swingbyy.com/app/post](https://swingbyy.com/app/post)
 
 If you had a great experience with a business from your last booking, you can favourite them and message them directly for future work.
 
 — The SwingBy team
 
-*You're receiving this because you signed up at swingby.ca. [Unsubscribe]({{unsubscribe_url}})*
+*You're receiving this because you signed up at swingbyy.com. [Unsubscribe]({{unsubscribe_url}})*

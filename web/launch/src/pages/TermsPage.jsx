@@ -26,7 +26,7 @@ export default function TermsPage() {
           <h2>Governing law</h2>
           <p>These terms are governed by the laws of Alberta, Canada.</p>
           <h2>Contact</h2>
-          <p>Legal questions: <a href="mailto:legal@swingby.ca" style={{ color: 'var(--color-accent-text)' }}>legal@swingby.ca</a></p>
+          <p>Legal questions: <a href="mailto:legal@swingbyy.com" style={{ color: 'var(--color-accent-text)' }}>legal@swingbyy.com</a></p>
         </div>
       </div>
     </>

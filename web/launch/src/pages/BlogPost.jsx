@@ -62,7 +62,7 @@ export default function BlogPost() {
   }
 
   const paragraphs = post.content.split('\n\n').filter(Boolean)
-  const pageUrl = typeof window !== 'undefined' ? window.location.href : `https://swingby.ca/blog/${slug}`
+  const pageUrl = typeof window !== 'undefined' ? window.location.href : `https://swingbyy.com/blog/${slug}`
 
   return (
     <>

@@ -40,7 +40,7 @@ The job was completed that Friday. Total time from posting to booked: four hours
 
 Sarah has now used SwingBy for three jobs. She's got her go-to cleaner saved and books again in under two minutes.
 
-**Post a job free at swingby.ca →**
+**Post a job free at swingbyy.com →**
 
 ---
 
@@ -58,7 +58,7 @@ He accepted 5 and completed all 5. Net of the SwingBy platform fee, he earned mo
 
 James now maintains a 4.9-star rating with 32 reviews. He's planning to hire a second handyman to keep up with demand.
 
-**List your business free at swingby.ca →**
+**List your business free at swingbyy.com →**
 
 ---
 
@@ -76,7 +76,7 @@ By month three, she'd hired a fourth cleaner. By month six, a fifth.
 
 "SwingBy replaced the marketing I was doing myself. I focus on the work, SwingBy handles the discovery."
 
-**List your business free at swingby.ca →**
+**List your business free at swingbyy.com →**
 
 ---
 

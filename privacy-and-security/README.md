@@ -98,6 +98,6 @@ Relevant if California users use the platform.
 
 ## Contact
 
-- Privacy requests: privacy@swingby.ca
-- Security issues: security@swingby.ca
-- Legal: legal@swingby.ca
+- Privacy requests: privacy@swingbyy.com
+- Security issues: security@swingbyy.com
+- Legal: legal@swingbyy.com

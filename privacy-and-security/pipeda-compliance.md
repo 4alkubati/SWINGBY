@@ -20,7 +20,7 @@ An organization is responsible for personal information under its control. A nam
 
 ### What SwingBy does
 - **Privacy Officer:** Amr Alkubati (founder) is the designated Privacy Officer.
-- Privacy contact: privacy@swingby.ca
+- Privacy contact: privacy@swingbyy.com
 - This privacy-and-security folder documents our compliance posture.
 - Third-party subprocessors are listed in [subprocessors.md](subprocessors.md) with contractual data protection obligations.
 
@@ -107,7 +107,7 @@ Personal information shall be as accurate, complete, and up-to-date as necessary
 - Users can update their own account data at any time through Settings → Profile
 - Business owners can update business information including address, category, and service radius
 - Reviews cannot be edited after submission (accuracy is preserved for trust)
-- Users can submit corrections via privacy@swingby.ca (DSAR correction process in [data-handling.md](data-handling.md))
+- Users can submit corrections via privacy@swingbyy.com (DSAR correction process in [data-handling.md](data-handling.md))
 
 ### Gap / TODO
 - [ ] Add an in-app notification if a user's email address bounces, prompting them to update it
@@ -140,15 +140,15 @@ Personal information shall be protected by security safeguards appropriate to th
 An organization shall make readily available to individuals specific information about its policies and practices relating to the management of personal information.
 
 ### What SwingBy does
-- Privacy policy is publicly accessible at swingby.ca/privacy
-- Cookie policy is publicly accessible at swingby.ca/cookies
-- Terms of service are publicly accessible at swingby.ca/terms
-- Security overview is publicly accessible at swingby.ca/security
+- Privacy policy is publicly accessible at swingbyy.com/privacy
+- Cookie policy is publicly accessible at swingbyy.com/cookies
+- Terms of service are publicly accessible at swingbyy.com/terms
+- Security overview is publicly accessible at swingbyy.com/security
 - Subprocessors list is publicly accessible
 
 ### Gap / TODO
 - [ ] Publish all policy pages on the live website before any user data is collected
-- [ ] Add footer links to all legal pages on swingby.ca
+- [ ] Add footer links to all legal pages on swingbyy.com
 - [ ] Publish a "last updated" changelog on the privacy policy page so users can track changes
 
 ---
@@ -177,7 +177,7 @@ Upon request, an individual shall be informed of the existence, use, and disclos
 An individual shall be able to address a challenge concerning compliance with the above principles to the designated individual accountable for the organization's compliance.
 
 ### What SwingBy does
-- Privacy contact is publicly listed: privacy@swingby.ca
+- Privacy contact is publicly listed: privacy@swingbyy.com
 - Privacy policy includes information on how to complain to the Office of the Privacy Commissioner of Canada
 - Internal DSAR log tracks all requests and resolutions
 

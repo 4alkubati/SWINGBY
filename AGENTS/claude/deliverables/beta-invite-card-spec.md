@@ -521,7 +521,7 @@ Invite expires in 7 days · SwingBy Inc. © 2026
 
 ### F12 — Error Banner Copy (C6 error state)
 ```
-Something went wrong. Please try again or contact support@swingby.ca
+Something went wrong. Please try again or contact support@swingbyy.com
 ```
 
 ### F13 — Copied! feedback (C2 copy icon state)

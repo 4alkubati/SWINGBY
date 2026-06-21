@@ -181,7 +181,7 @@
         "url": "https://graph.facebook.com/v19.0/me/messages",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ recipient: { id: $json.senderId }, message: { text: \"Thanks for reaching out! To find a trusted local service, post your job at swingby.ca — it takes 60 seconds and local businesses will come to you. Any questions? Just reply here.\" }, access_token: $vars.META_ACCESS_TOKEN }) }}",
+        "jsonBody": "={{ JSON.stringify({ recipient: { id: $json.senderId }, message: { text: \"Thanks for reaching out! To find a trusted local service, post your job at swingbyy.com — it takes 60 seconds and local businesses will come to you. Any questions? Just reply here.\" }, access_token: $vars.META_ACCESS_TOKEN }) }}",
         "options": { "timeout": 30000 }
       },
       "onError": "continueRegularOutput"
@@ -228,7 +228,7 @@
         "url": "https://graph.facebook.com/v19.0/me/messages",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ recipient: { id: $json.senderId }, message: { text: \"Hi! We read every message but get a lot of DMs. For the fastest help, visit swingby.ca or post a job in the app. We will get back to you soon.\" }, access_token: $vars.META_ACCESS_TOKEN }) }}",
+        "jsonBody": "={{ JSON.stringify({ recipient: { id: $json.senderId }, message: { text: \"Hi! We read every message but get a lot of DMs. For the fastest help, visit swingbyy.com or post a job in the app. We will get back to you soon.\" }, access_token: $vars.META_ACCESS_TOKEN }) }}",
         "options": { "timeout": 30000 }
       },
       "onError": "continueRegularOutput"

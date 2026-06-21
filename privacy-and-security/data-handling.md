@@ -113,7 +113,7 @@ PIPEDA gives individuals the right to access and correct their personal data. Th
 
 ### Step 1 — Receive and log the request
 
-DSAR requests come to privacy@swingby.ca. Log the request immediately:
+DSAR requests come to privacy@swingbyy.com. Log the request immediately:
 - Name of requestor
 - Email used to submit
 - Date received

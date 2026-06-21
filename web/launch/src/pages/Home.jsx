@@ -63,7 +63,7 @@ export default function Home() {
           '@context': 'https://schema.org',
           '@type': 'Organization',
           name: 'SwingBy',
-          url: 'https://swingby.ca',
+          url: 'https://swingbyy.com',
           description: 'Local services marketplace connecting clients with verified businesses in Calgary.',
         }}
       />

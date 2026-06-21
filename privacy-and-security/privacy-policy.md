@@ -11,7 +11,7 @@ SwingBy is a service marketplace that connects clients with local service busine
 
 For privacy-related requests or questions, contact us at:
 
-**Email:** privacy@swingby.ca  
+**Email:** privacy@swingbyy.com  
 **Mailing address:** [Physical address — TODO (HUMAN): Add incorporated address]
 
 > LEGAL REVIEW NEEDED: Confirm legal entity name once incorporation is complete.
@@ -22,7 +22,7 @@ For privacy-related requests or questions, contact us at:
 
 This policy applies to:
 - The SwingBy mobile application (iOS and Android)
-- The SwingBy website (swingby.ca)
+- The SwingBy website (swingbyy.com)
 - Any related services, APIs, or communications
 
 It does not apply to third-party websites or services we may link to. Those are governed by their own privacy policies.
@@ -174,7 +174,7 @@ For Stripe's privacy practices, see stripe.com/privacy.
 
 ## 9. User rights
 
-You have rights over your personal data. To exercise any of them, email privacy@swingby.ca with "Privacy Request" in the subject line. We will respond within 30 days (PIPEDA) or 30 days (GDPR).
+You have rights over your personal data. To exercise any of them, email privacy@swingbyy.com with "Privacy Request" in the subject line. We will respond within 30 days (PIPEDA) or 30 days (GDPR).
 
 ### 9.1 Right to access
 
@@ -202,7 +202,7 @@ California residents have the right to opt out of the "sale" of personal informa
 
 ### 9.7 Right to withdraw consent
 
-You can withdraw consent at any time by emailing privacy@swingby.ca. Withdrawal of consent does not affect the lawfulness of processing before withdrawal.
+You can withdraw consent at any time by emailing privacy@swingbyy.com. Withdrawal of consent does not affect the lawfulness of processing before withdrawal.
 
 ---
 
@@ -218,7 +218,7 @@ You can manage cookie preferences through your browser settings or the cookie co
 
 SwingBy is not directed at children under 16 years of age. We do not knowingly collect personal data from anyone under 16. If we learn that we have collected data from a child under 16, we will delete it promptly.
 
-If you believe a child under 16 has provided us with personal data, contact us at privacy@swingby.ca.
+If you believe a child under 16 has provided us with personal data, contact us at privacy@swingbyy.com.
 
 ---
 
@@ -256,7 +256,7 @@ Your continued use of SwingBy after changes are posted constitutes your acceptan
 
 For privacy requests, complaints, or questions:
 
-**Email:** privacy@swingby.ca  
+**Email:** privacy@swingbyy.com  
 **Subject line:** "Privacy Request — [your request type]"  
 **Response time:** Within 30 days
 

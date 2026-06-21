@@ -135,10 +135,10 @@ graph TD
 | Add DM Data to Classification | set (includeOtherFields) | Re-attaches senderId, messageText, pageId after agent output | None |
 | Route by DM Category | switch | Routes on category value: complaint / service_inquiry / compliment / spam / other | None |
 | Slack: Escalate Complaint | slack message post | Human escalation with full DM text in alerts channel | `swingby-slack-cred` |
-| Auto-Reply: Service Inquiry | httpRequest POST | Sends swingby.ca CTA via Graph API send message | `$vars.META_ACCESS_TOKEN` |
+| Auto-Reply: Service Inquiry | httpRequest POST | Sends swingbyy.com CTA via Graph API send message | `$vars.META_ACCESS_TOKEN` |
 | Auto-Reply: Compliment | httpRequest POST | Warm thank-you + app review ask | `$vars.META_ACCESS_TOKEN` |
 | Ignore Spam | set | No-op — marks as ignored, no reply | None |
-| Auto-Reply: Other | httpRequest POST | Generic reply directing to swingby.ca | `$vars.META_ACCESS_TOKEN` |
+| Auto-Reply: Other | httpRequest POST | Generic reply directing to swingbyy.com | `$vars.META_ACCESS_TOKEN` |
 
 ---
 

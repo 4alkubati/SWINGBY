@@ -44,7 +44,10 @@ export default function Login() {
     setMagicStatus('loading')
     setMagicErr('')
 
-    const { error } = await supabase.auth.signInWithOtp({ email: magicEmail.trim() })
+    const { error } = await supabase.auth.signInWithOtp({
+      email: magicEmail.trim(),
+      options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+    })
 
     if (error) {
       setMagicErr(error.message)

@@ -18,7 +18,7 @@ We spent 8 months building it. We tested with 40 local businesses before going l
 
 This is day one. Calgary is where we start. If you know anyone who hires or provides local services here, we'd appreciate the introduction.
 
-🔗 swingby.ca
+🔗 swingbyy.com
 
 ---
 
@@ -60,7 +60,7 @@ This isn't a new concept in marketplace design. But for home services specifical
 
 Fair for clients. Fair for businesses. That's the point.
 
-🔗 swingby.ca
+🔗 swingbyy.com
 
 ---
 
@@ -147,7 +147,7 @@ Here's what we know: running a small service business in Calgary means spending 
 
 On SwingBy, your reviews are your marketing. Your profile shows your license status and insurance. Your payments are protected from the moment a booking is confirmed. You compete on reputation, not on who can advertise loudest.
 
-If this sounds like what you've been looking for — we're at swingby.ca. Setup takes 15 minutes.
+If this sounds like what you've been looking for — we're at swingbyy.com. Setup takes 15 minutes.
 
 ---
 
@@ -179,7 +179,7 @@ He arrived on time. Completed all six items in an afternoon. Payment processed t
 
 We build for that feeling. Not the feature — the feeling.
 
-🔗 swingby.ca
+🔗 swingbyy.com
 
 ---
 
@@ -261,7 +261,7 @@ Both were requested by clients and businesses. Both are now searchable. Both are
 
 If you're a business in either category and you're not on the platform yet — come join us.
 
-🔗 swingby.ca/business
+🔗 swingbyy.com/business
 
 ---
 
@@ -417,4 +417,4 @@ What we're not doing yet: expanding to other cities. We'll go deep in Calgary fi
 
 We're not there yet. And that's exactly where we want to be.
 
-🔗 swingby.ca
+🔗 swingbyy.com

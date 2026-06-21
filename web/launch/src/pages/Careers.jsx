@@ -16,8 +16,8 @@ export default function Careers() {
           </p>
           <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '22px', color: 'var(--color-text-primary)', marginBottom: 'var(--space-base)' }}>Open roles</h2>
           <p style={{ color: 'var(--color-text-secondary)', fontSize: '15px', marginBottom: 'var(--space-xl)' }}>No open roles posted right now. We occasionally hire for full-stack engineering, product design, and growth. Email us with your background and what you'd want to work on.</p>
-          <a href="mailto:careers@swingby.ca" style={{ display: 'inline-block', padding: '10px 24px', background: 'var(--color-accent-btn)', color: '#fff', borderRadius: 'var(--radius-sm)', fontWeight: 600, fontSize: '14px' }}>
-            careers@swingby.ca
+          <a href="mailto:careers@swingbyy.com" style={{ display: 'inline-block', padding: '10px 24px', background: 'var(--color-accent-btn)', color: '#fff', borderRadius: 'var(--radius-sm)', fontWeight: 600, fontSize: '14px' }}>
+            careers@swingbyy.com
           </a>
         </div>
       </div>

@@ -27,7 +27,7 @@ See also: `docs/DEPLOY.md` for the original Render-specific guide.
 | `SUPABASE_KEY` | Supabase → Project → Settings → API → anon/public key |
 | `SUPABASE_SERVICE_KEY` | Supabase → Project → Settings → API → service_role key |
 | `SECRET_KEY` | Generate: `openssl rand -hex 32` |
-| `SWINGBY_ALLOWED_ORIGINS` | Comma-separated list of frontend origins (e.g. `https://swingby.ca,https://admin.swingby.ca`) |
+| `SWINGBY_ALLOWED_ORIGINS` | Comma-separated list of frontend origins (e.g. `https://swingbyy.com,https://admin.swingbyy.com`) |
 | `AWS_BUCKET` | Leave empty until S3 file uploads are needed |
 
 ### Health check
@@ -41,9 +41,9 @@ On Render free plan: service spins down after 15 min idle; first request takes ~
 ## Frontend — Cloudflare Pages
 
 **Sites:**
-- `web/launch/` → `swingby.ca`
-- `web/pre-launch/` → pre-launch.swingby.ca (or separate project)
-- `web/admin/` → admin.swingby.ca
+- `web/launch/` → `swingbyy.com`
+- `web/pre-launch/` → pre-launch.swingbyy.com (or separate project)
+- `web/admin/` → admin.swingbyy.com
 
 ### Deploy to Cloudflare Pages
 
@@ -65,7 +65,7 @@ On Render free plan: service spins down after 15 min idle; first request takes ~
 | `VITE_SUPABASE_ANON_KEY` | Supabase anon key |
 | `VITE_API_BASE_URL` | Render backend URL |
 | `VITE_SENTRY_DSN` | Sentry DSN (optional) |
-| `VITE_PLAUSIBLE_DOMAIN` | `swingby.ca` |
+| `VITE_PLAUSIBLE_DOMAIN` | `swingbyy.com` |
 | `VITE_MAINTENANCE_MODE` | `false` |
 
 ### CSP and security headers

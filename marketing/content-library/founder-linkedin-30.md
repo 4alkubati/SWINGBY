@@ -17,7 +17,7 @@ I built the full backend in Python (FastAPI + Supabase), the web app in React, a
 
 The problem it solves: finding a reliable local service is harder than it should be. I got burned by no-shows, murky pricing, and unprotected payments. I built the thing I needed.
 
-If you're in Calgary and need local services — or run one — SwingBy.ca.
+If you're in Calgary and need local services — or run one — swingbyy.com.
 
 ---
 
@@ -380,7 +380,7 @@ After the first 100 businesses, the platform fee goes to 10% (still competitive)
 
 If you run a service business in Calgary and you've been on the fence — this is the week to get off it.
 
-[SwingBy.ca/signup — Business tab]
+[swingbyy.com/signup — Business tab]
 
 ---
 

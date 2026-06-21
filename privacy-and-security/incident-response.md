@@ -36,8 +36,8 @@ Incidents are detected through:
 
 1. **Sentry alerts** — error spikes, unhandled exceptions, performance degradation
 2. **Uptime monitoring** — platform unavailability
-3. **User reports** — in-app support, email to support@swingby.ca
-4. **Security researcher reports** — via security@swingby.ca per [vulnerability-disclosure.md](vulnerability-disclosure.md)
+3. **User reports** — in-app support, email to support@swingbyy.com
+4. **Security researcher reports** — via security@swingbyy.com per [vulnerability-disclosure.md](vulnerability-disclosure.md)
 5. **Supabase advisor alerts** — database-level anomalies
 6. **Stripe alerts** — payment failures, chargeback spikes
 7. **Manual discovery** — during development, code review, or routine audit

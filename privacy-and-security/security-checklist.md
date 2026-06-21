@@ -33,7 +33,7 @@ At the end, compile a summary of all `[!]` items and create action items in your
 
 ## Section 2 — Data protection
 
-- [ ] **TLS is enforced on all public API endpoints** — test: `curl -v http://api.swingby.ca/health` — should redirect to HTTPS or refuse plaintext
+- [ ] **TLS is enforced on all public API endpoints** — test: `curl -v http://api.swingbyy.com/health` — should redirect to HTTPS or refuse plaintext
 - [ ] **No plaintext password is stored anywhere in the database** — verify: `SELECT COUNT(*) FROM users WHERE password IS NOT NULL;` — should be 0 (passwords are hashed by Supabase Auth)
 - [ ] **No credit card data (PAN, CVV, expiry) is stored in SwingBy's database** — confirm Stripe integration only stores intent IDs
 - [ ] **Supabase storage buckets have appropriate access controls** — verify in Supabase Storage: no bucket is set to "public" unless it contains intentionally public assets
@@ -111,13 +111,13 @@ At the end, compile a summary of all `[!]` items and create action items in your
 
 ## Section 10 — Compliance posture
 
-- [ ] **Privacy policy is current and published** — [privacy-policy.md](privacy-policy.md) is live at swingby.ca/privacy with correct "Last updated" date
-- [ ] **Terms of service are current and published** — live at swingby.ca/terms
-- [ ] **Cookie policy is current** — live at swingby.ca/cookies with accurate cookie list
+- [ ] **Privacy policy is current and published** — [privacy-policy.md](privacy-policy.md) is live at swingbyy.com/privacy with correct "Last updated" date
+- [ ] **Terms of service are current and published** — live at swingbyy.com/terms
+- [ ] **Cookie policy is current** — live at swingbyy.com/cookies with accurate cookie list
 - [ ] **PIPEDA compliance checklist has been reviewed this year** — [pipeda-compliance.md](pipeda-compliance.md) last reviewed date is current
 - [ ] **No unresolved DSAR requests older than 30 days** — check the DSAR log in [data-handling.md](data-handling.md)
-- [ ] **Vulnerability disclosure policy is published** — [vulnerability-disclosure.md](vulnerability-disclosure.md) is live at swingby.ca/security/disclosure
-- [ ] **Subprocessors page is published** — live at swingby.ca/subprocessors
+- [ ] **Vulnerability disclosure policy is published** — [vulnerability-disclosure.md](vulnerability-disclosure.md) is live at swingbyy.com/security/disclosure
+- [ ] **Subprocessors page is published** — live at swingbyy.com/subprocessors
 
 ---
 

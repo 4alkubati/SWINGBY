@@ -20,11 +20,11 @@ export default function PrivacyPage() {
           <h2>Data storage</h2>
           <p>Data is stored on servers in Canada (Supabase, ca-central-1 region). We use Supabase Auth for authentication and Row Level Security to protect data access.</p>
           <h2>Your rights</h2>
-          <p>Under PIPEDA, you have the right to access, correct, or request deletion of your personal information. Email privacy@swingby.ca to exercise these rights.</p>
+          <p>Under PIPEDA, you have the right to access, correct, or request deletion of your personal information. Email privacy@swingbyy.com to exercise these rights.</p>
           <h2>Cookies</h2>
           <p>We use essential cookies for authentication (session management). We use Plausible Analytics, which is cookie-free and privacy-compliant. See our <a href="/cookies" style={{ color: 'var(--color-accent-text)' }}>cookies page</a> for details.</p>
           <h2>Contact</h2>
-          <p>Privacy questions: <a href="mailto:privacy@swingby.ca" style={{ color: 'var(--color-accent-text)' }}>privacy@swingby.ca</a></p>
+          <p>Privacy questions: <a href="mailto:privacy@swingbyy.com" style={{ color: 'var(--color-accent-text)' }}>privacy@swingbyy.com</a></p>
         </div>
       </div>
     </>
