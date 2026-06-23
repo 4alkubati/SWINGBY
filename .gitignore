@@ -29,8 +29,14 @@ push.log
 # Obsidian — personal vault config, never commit
 .obsidian/
 
-# Test credentials — never commit
+# Local-only credentials vault (test accounts + API keys + service notes).
+# Only the README is committed so the folder structure is discoverable.
+credentials/*
+!credentials/README.md
+
+# Legacy test-credential patterns (kept so any stragglers stay ignored)
 SEED ACCOUNT FOR TESTING*
+SEED ACCOUNT*
 seed-account*
 test-credentials*
 
@@ -43,4 +49,3 @@ test-credentials*
 
 # Personal operator profile — keep local, never push
 AGENTS/claude/KIRA.md
-SEED ACCOUNT*

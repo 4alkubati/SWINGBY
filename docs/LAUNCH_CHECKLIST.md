@@ -44,15 +44,15 @@
 | 19 | No `SUPABASE_SERVICE_KEY` or JWT blob in `mobile/` or `web/` (grep clean) | ☐ |
 | 20 | Auth dashboard: HaveIBeenPwned leaked-password protection ENABLED | ☐ |
 | 21 | `handle_new_user()` execute permission revoked from anon + authenticated (hotfix applied 2026-05-28) | ☐ |
-| 22 | App Store + Play Store privacy disclosures completed and match `docs/PRIVACY_POLICY.md` | ☐ |
+| 22 | App Store + Play Store privacy disclosures completed and match `docs/legal/PRIVACY_POLICY.md` | ☐ |
 | 23 | Real Google Maps API key in EAS secrets (`GOOGLE_MAPS_API_KEY`), placeholder replaced | ☐ |
 
 ## Section 5 — Legal + comms (4 items)
 
 | # | Item | Status |
 |---|---|---|
-| 24 | `docs/PRIVACY_POLICY.md` reviewed by a Canadian lawyer (or accepted as-is for soft launch) | ☐ |
-| 25 | `docs/TERMS_OF_SERVICE.md` reviewed | ☐ |
+| 24 | `docs/legal/PRIVACY_POLICY.md` reviewed by a Canadian lawyer (or accepted as-is for soft launch) | ☐ |
+| 25 | `docs/legal/TERMS_OF_SERVICE.md` reviewed | ☐ |
 | 26 | Public privacy + terms pages live at `https://swingbyy.com/privacy` and `/terms` | ☐ |
 | 27 | CASL footer on every email (physical address + unsubscribe link) | ☐ |
 

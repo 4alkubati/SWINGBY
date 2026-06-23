@@ -125,6 +125,35 @@ STATUS: OPEN
 ---
 
 ---
+ID: 20260621-0001
+FROM: orchestrator
+TO: broadcast
+TYPE: DONE
+REF: BRIEF-post-launch-site.md
+PRIORITY: HIGH
+TIMESTAMP: 2026-06-21T19:30:00Z
+SUBJECT: DONE — Post-launch site partial pass: build unblocked, Home honest-rewrite, CSP fixed
+BODY:
+  SHIPPED:
+    - HowItWorksBusinesses.jsx created (was missing — broke the build)
+    - Home.jsx + Home.module.css honest rewrite: killed fake testimonials, fixed 2025 copy, added 8th category, expanded trust strip to 5, added 2-col How-It-Works, app-preview, Calgary block, honest stories skeleton
+    - public/_headers CSP fixed (stale api.swingbyapp.ca + dev localhost removed; real prod hosts added)
+    - Deliverable: claude/deliverables/post-launch-site-2026-06-22.md
+  GATES:
+    - npm run build → green
+    - npm audit → 0 vulns (all severities)
+    - npm run lint → clean
+    - Honest-copy grep → only "Coming soon" left is a roadmap-labelled badge for genuinely-unbuilt integrations
+  KIRA-ONLY (cutover blockers):
+    1. Export 11 mobile app screenshots (full list in deliverable) → web/launch/public/screenshots/
+    2. One Calgary hero/city photo
+    3. Run Lighthouse mobile on `/`, `/how-it-works/clients`, `/how-it-works/businesses` and confirm perf ≥ 90 / a11y = 100
+    4. (Still pending from prior session) D1 email: Confirm Email toggle, Site URL config, DMARC, RESEND env in Render
+  NEXT: After all 4 Kira items clear → cutover decision for swingbyy.com
+STATUS: RESOLVED
+---
+
+---
 ID: 20260620-0001
 FROM: orchestrator
 TO: broadcast

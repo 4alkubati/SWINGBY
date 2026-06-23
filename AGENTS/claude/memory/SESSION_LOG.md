@@ -72,6 +72,33 @@ NEXT: Verify the end-to-end signup flow once Kira completes (1) + (4) — sign u
 ---
 
 ---
+DATE: 2026-06-21
+PROJECT: swingby
+PHASE: BRIEF-post-launch-site.md — partial pass (overnight runner had been stuck on session-limit since 16:10 MDT)
+DISPATCHED: orchestrator inline (no subagent — tightly-coupled diffs across one page + its CSS + the public/_headers file; DISPATCH_GATE layers 1–3 framed in TaskList, layers 5–6 verified via build + lint + audit gates)
+SHIPPED:
+  - web/launch/src/pages/HowItWorksBusinesses.jsx — NEW (5-step business flow w/ AppMockupFrame, FindJobVisual, PaymentFlowVisual, FAQ). Unblocked the broken build (App.jsx had been importing this missing file)
+  - web/launch/src/pages/Home.jsx — rewrite: killed 3 fabricated testimonials → honest "Real stories landing post-beta" skeleton; fixed outdated "expanding across Alberta in 2025" FAQ copy → honest "live in Calgary today, other cities once supply is deep enough"; trust strip 3 → 5 pillars (added Canadian-owned + 72h human dispute support); 2-column How-It-Works (client + business, each linking to deep page); app-preview section w/ AppMockupFrame + "Coming Aug 2026" badge; "Live in Calgary" block w/ SVG radius visual; added 8th category Moving (Truck icon)
+  - web/launch/src/pages/Home.module.css — new section styles (.trustGrid, .twoCol, .colCard/.colTitle/.colSteps/.colNum/.colStepTitle/.colStepDesc/.colLink, .appPreview/.appPreviewCopy/.appPreviewMockup/.appPreviewMeta/.appPreviewBadge/.appPreviewNote, .cityBlock/.cityCopy/.cityTitle/.cityText/.eyebrow/.cityMap, .storiesSkeleton/.storyCard/.storyDot/.storyText)
+  - web/launch/public/_headers — CSP connect-src: removed stale `api.swingbyapp.ca` + dev `localhost:8000`; added real prod hosts `https://swingbyy-api.onrender.com` + `https://api.swingbyy.com`
+  - AGENTS/claude/deliverables/post-launch-site-2026-06-22.md — NEW: status table, files-touched table, vulns table, 11-screenshot TODO, gaps, stage-not-cut-over deploy reco
+GATES PASSED:
+  - `npm run build` exits 0 ✅
+  - `npm audit` → 0 vulns ✅
+  - `npm run lint` clean ✅
+  - Honest-copy grep: only remaining "Coming soon" is roadmap-labelled badge for genuinely-pending integrations (acceptable)
+NEEDS KIRA (cannot be done by agent):
+  - Export 11 mobile app screenshots (list in deliverable) into web/launch/public/screenshots/
+  - Calgary hero/city photo
+  - Run Lighthouse mobile on `/`, `/how-it-works/clients`, `/how-it-works/businesses` and confirm ≥ 90 perf / 100 a11y before cutover
+  - All 4 prior-session D1 items still pending (Confirm Email toggle, Site URL config, DMARC, RESEND env in Render)
+LEARNING-LOOP:
+  - Lesson: when an overnight runner reports endless "session limit" cycles, the actual code state may already contain partial work from a prior session — always git-diff the working tree before assuming a clean restart.
+  - Lesson: a missing import in App.jsx silently shipped to the working tree from a prior session = broken build that the session-limit-blocked runner never caught. Build verification (`npm run build`) is the first gate before any other Home-page edits.
+NEXT: Kira → review honest-copy diff, export screenshots, run Lighthouse. After all gates green: cutover decision for swingbyy.com.
+---
+
+---
 DATE: 2026-06-17 (test run)
 PROJECT: swingby
 PHASE: Orchestrator system verification

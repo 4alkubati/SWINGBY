@@ -9,6 +9,18 @@
 
 ---
 
+## ⚡ OVERNIGHT JOB (2026-06-21 → 2026-06-22) — RUN THIS FIRST
+
+**Brief:** `AGENTS/BRIEF-post-launch-site.md`
+
+**Win condition:** `web/launch` rebuilt into a polished post-launch marketing site (better than `web/pre-launch`). Two How-It-Works flows (clients + businesses), app-mockup placeholders, payment + post + find-job visuals, vite 5→8 vuln fix, lighthouse mobile ≥ 90 perf / 100 a11y, zero `coming soon` lies. Deliverable to `claude/deliverables/post-launch-site-2026-06-22.md`.
+
+**Safeguards:** debug every line (read → edit → re-read → build/lint gate); auto-compact at 128k context (write SESSION_LOG checkpoint, summarize, continue); exit on NEEDS-KIRA — never spin.
+
+**Status:** 🟢 code work done 2026-06-21 (vite 8 prior session, plus this session: HowItWorksBusinesses created, Home rewritten honest, CSP fixed, build/lint/audit green, deliverable written). **Remaining = Kira-only**: export 11 mobile screenshots into `web/launch/public/screenshots/`, supply Calgary photo, run Lighthouse on `/` (perf ≥ 90 / a11y = 100). See `claude/deliverables/post-launch-site-2026-06-22.md`.
+
+---
+
 ## TOMORROW — lock-in plan (open this at your evening block, just execute)
 
 **Win condition for the day:** Domino 1 DONE (a real signup email actually sends) + Domino 2 STARTED (mock data being killed). If both happen, you shipped real beta progress.
