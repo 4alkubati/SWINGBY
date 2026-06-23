@@ -100,6 +100,9 @@ export default function SignupScreen({ navigation }) {
 
     if (!password) { setPasswordError('Password is required.'); valid = false; }
     else if (password.length < 8) { setPasswordError('Password must be at least 8 characters.'); valid = false; }
+    else if (!/[A-Z]/.test(password)) { setPasswordError('Add at least one uppercase letter.'); valid = false; }
+    else if (!/[a-z]/.test(password)) { setPasswordError('Add at least one lowercase letter.'); valid = false; }
+    else if (!/[0-9]/.test(password)) { setPasswordError('Add at least one number.'); valid = false; }
     if (!firstName.trim()) { setFirstNameError('First name is required.'); valid = false; }
     if (!lastName.trim()) { setLastNameError('Last name is required.'); valid = false; }
     if (!valid) return;
@@ -224,6 +227,9 @@ export default function SignupScreen({ navigation }) {
                   secureTextEntry
                   returnKeyType="next"
                 />
+                <Text style={styles.passwordHint}>
+                  At least 8 characters with an uppercase letter, a lowercase letter, and a number.
+                </Text>
                 <View style={{ height: spacing.base }} />
                 <TextField
                   label="First Name"
@@ -358,6 +364,13 @@ const styles = StyleSheet.create({
 
   stepAction: { marginTop: spacing.lg },
   stepGroup: { marginTop: spacing.lg },
+
+  passwordHint: {
+    fontSize: 12,
+    fontFamily: 'Inter_400Regular',
+    color: colors.textSecondary,
+    marginTop: spacing.xs,
+  },
 
   roleLabel: {
     fontSize: 14,

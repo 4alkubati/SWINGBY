@@ -132,7 +132,7 @@ export default function LoginScreen({ navigation }) {
           {/* Footer */}
           <Animated.View entering={FadeInDown.duration(400).delay(440)}>
             <Pressable
-              onPress={() => navigation.navigate('Onboarding')}
+              onPress={() => navigation.navigate('Signup')}
               style={styles.footer}
               accessibilityRole="button"
               accessibilityLabel="Sign up"

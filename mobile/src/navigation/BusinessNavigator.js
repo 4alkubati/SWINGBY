@@ -1,12 +1,17 @@
+import { useEffect, useState } from 'react';
+import { View, ActivityIndicator } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import BottomNav from '../components/BottomNav';
 import ErrorBoundary from '../components/ErrorBoundary';
+import { api } from '../services/api';
+import { colors } from '../theme/tokens';
 
 import DashboardScreen from '../screens/DashboardScreen';
 import MessagesScreen from '../screens/MessagesScreen';
 import BusinessProfileScreen from '../screens/BusinessProfileScreen';
 import MyJobsScreen from '../screens/MyJobsScreen';
+import BusinessSetupScreen from '../screens/BusinessSetupScreen';
 
 import JobManagementScreen from '../screens/JobManagementScreen';
 import ChatScreen from '../screens/ChatScreen';
@@ -50,6 +55,43 @@ function BusinessTabs() {
 }
 
 export default function BusinessNavigator() {
+  // Gate the business UI on having a business record. New business_owner accounts
+  // must complete BusinessSetupScreen first (name, category, address, radius)
+  // before they can reach the dashboard / job feed / etc.
+  const [setupStatus, setSetupStatus] = useState('loading'); // 'loading' | 'needs-setup' | 'ready'
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const biz = await api.get('/businesses/me');
+        // A complete business needs at minimum a name and a category. Force
+        // BusinessSetupScreen if either is missing (e.g. partial record from
+        // an earlier flow).
+        const isComplete = biz && biz.business_name && biz.category;
+        setSetupStatus(isComplete ? 'ready' : 'needs-setup');
+      } catch {
+        // 404 / "no business" — needs setup
+        setSetupStatus('needs-setup');
+      }
+    })();
+  }, []);
+
+  if (setupStatus === 'loading') {
+    return (
+      <View style={{ flex: 1, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center' }}>
+        <ActivityIndicator color={colors.accent} size="large" />
+      </View>
+    );
+  }
+
+  if (setupStatus === 'needs-setup') {
+    return (
+      <ErrorBoundary>
+        <BusinessSetupScreen onComplete={() => setSetupStatus('ready')} />
+      </ErrorBoundary>
+    );
+  }
+
   return (
     <ErrorBoundary>
     <Stack.Navigator screenOptions={{ headerShown: false }}>

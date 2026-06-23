@@ -8,7 +8,7 @@ import Animated, {
   useSharedValue, useAnimatedStyle, withSpring, withTiming, Easing,
 } from 'react-native-reanimated';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import GooglePlacesAutocomplete from 'react-native-google-places-autocomplete';
+import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -270,7 +270,14 @@ function StepDetails({
               </Text>
               <GooglePlacesAutocomplete
                 placeholder="123 Main St SW, Calgary"
-                onPress={(data) => setAddress(data.description)}
+                onPress={(data, details = null) => {
+                  setAddress(data.description);
+                  const loc = details?.geometry?.location;
+                  if (loc) {
+                    setAddressLat(loc.lat);
+                    setAddressLng(loc.lng);
+                  }
+                }}
                 query={{ key: GOOGLE_PLACES_KEY, language: 'en', components: 'country:ca' }}
                 styles={{
                   textInput: {
@@ -296,7 +303,7 @@ function StepDetails({
                   autoCapitalize: 'words',
                 }}
                 enablePoweredByContainer={false}
-                fetchDetails={false}
+                fetchDetails={true}
                 minLength={3}
                 keepResultsAfterBlur
               />
@@ -509,6 +516,8 @@ export default function PostJobScreen() {
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('');
   const [address, setAddress] = useState('');
+  const [addressLat, setAddressLat] = useState(null);
+  const [addressLng, setAddressLng] = useState(null);
   const [budget, setBudget] = useState('');
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
@@ -526,7 +535,10 @@ export default function PostJobScreen() {
         setDescError('Describe your job in at least 10 characters.');
         return;
       }
-      if (address.trim().length > 0 && address.trim().length < 5) {
+      // Address is required for businesses to find the job. If picked from
+      // Google Places autocomplete, lat/lng are set — skip the length check.
+      const hasCoords = addressLat != null && addressLng != null;
+      if (!hasCoords && address.trim().length > 0 && address.trim().length < 5) {
         setDescError('Enter a full address (at least 5 characters).');
         return;
       }
@@ -562,6 +574,8 @@ export default function PostJobScreen() {
         category: category || 'General',
         budget: parsedBudget,
         address: address.trim() || undefined,
+        lat: addressLat ?? undefined,
+        lng: addressLng ?? undefined,
         image_urls: photos.map((p) => p.url),
       };
 
@@ -572,6 +586,8 @@ export default function PostJobScreen() {
       setDescription('');
       setCategory('');
       setAddress('');
+      setAddressLat(null);
+      setAddressLng(null);
       setBudget('');
       setDate('');
       setTime('');

@@ -48,6 +48,7 @@ import { UnreadProvider } from './src/context/UnreadContext';
 import AuthNavigator from './src/navigation/AuthNavigator';
 import ClientNavigator from './src/navigation/ClientNavigator';
 import BusinessNavigator from './src/navigation/BusinessNavigator';
+import AdminScreen from './src/screens/AdminScreen';
 import { configureNotificationHandlers } from './src/services/notifications';
 import OfflineBanner from './src/components/OfflineBanner';
 import Toast from 'react-native-toast-message';
@@ -71,6 +72,7 @@ function RootNavigator() {
   }
 
   if (!user) return <AuthNavigator />;
+  if (user.role === 'admin') return <AdminScreen />;
   if (user.role === 'business_owner' || user.role === 'employee') return <BusinessNavigator />;
   return <ClientNavigator />;
 }
