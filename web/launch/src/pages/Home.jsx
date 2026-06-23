@@ -2,11 +2,12 @@ import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import {
-  ArrowRight, Broom, Wrench, Lightning, Plant, PaintBrush, Hammer, Toolbox,
-  ShieldCheck, CurrencyDollar, Star, MapPin,
+  ArrowRight, Broom, Wrench, Lightning, Plant, PaintBrush, Hammer, Toolbox, Truck,
+  ShieldCheck, CurrencyDollar, Star, MapPin, MapTrifold, Headset,
 } from '@phosphor-icons/react'
 import SEO from '../components/SEO'
 import Button from '../components/Button'
+import AppMockupFrame from '../components/AppMockupFrame'
 import styles from './Home.module.css'
 
 const CATEGORIES = [
@@ -17,32 +18,37 @@ const CATEGORIES = [
   { slug: 'painting', name: 'Painting', Icon: PaintBrush },
   { slug: 'carpentry', name: 'Carpentry', Icon: Hammer },
   { slug: 'handyman', name: 'Handyman', Icon: Toolbox },
+  { slug: 'moving', name: 'Moving', Icon: Truck },
 ]
 
-const STEPS = [
-  { num: '01', title: 'Post a job', desc: 'Describe what you need, set a budget, and pick your area. Takes under two minutes.' },
-  { num: '02', title: 'Get quotes', desc: 'Verified local businesses send you competitive quotes. Compare ratings, reviews, and prices.' },
-  { num: '03', title: 'Book with confidence', desc: 'Accept the best quote. Payment is held in escrow and released on completion.' },
+const CLIENT_STEPS = [
+  { num: '01', title: 'Post a job', desc: 'Category, address, budget, photos. Two minutes.' },
+  { num: '02', title: 'Get quotes', desc: 'Verified Calgary businesses tap "Express interest" with a price.' },
+  { num: '03', title: 'Book + pay safely', desc: 'Pay through escrow. First 50% releases on confirmation.' },
+  { num: '04', title: 'Done → release + review', desc: 'Confirm complete. Remaining 50% releases (minus 10% SwingBy fee). Leave a review.' },
 ]
 
-const PILLARS = [
-  { Icon: ShieldCheck, title: 'Vetted businesses', desc: 'Every business is verified before listing. License checks, reviews, ongoing monitoring.' },
-  { Icon: CurrencyDollar, title: 'Safe escrow payments', desc: '50% released on booking confirmation, 50% on completion. Dispute protection built in.' },
-  { Icon: Star, title: 'Real reviews', desc: 'Reviews only from confirmed clients. No fake ratings. Businesses can\'t suppress feedback.' },
+const BUSINESS_STEPS = [
+  { num: '01', title: 'Sign up + verify', desc: 'Manual verification in 24–48 hours during the Calgary beta.' },
+  { num: '02', title: 'Browse nearby', desc: 'Real jobs sorted by distance and recency. No mystery leads.' },
+  { num: '03', title: 'Quote + win', desc: 'Tap a post, add your price and pitch. Booking unlocks chat + address.' },
+  { num: '04', title: 'Complete + paid', desc: 'You keep 90% after the 10% commission. No subscription, no per-quote fee.' },
 ]
 
-const TESTIMONIALS = [
-  { name: 'Sarah M.', role: 'Homeowner, Calgary', text: 'Found an amazing cleaner in under an hour. The quoting process made it easy to compare.' },
-  { name: 'James K.', role: 'Business owner', text: 'SwingBy helped me double my bookings in the first month. The platform just works.' },
-  { name: 'Priya R.', role: 'Renter, Calgary NW', text: 'No more calling around for plumbers. Posted a job, got three quotes, booked by lunch.' },
+const TRUST = [
+  { Icon: ShieldCheck, title: 'Verified businesses', desc: 'Manual license + identity check before any business can quote.' },
+  { Icon: CurrencyDollar, title: 'Escrow protection', desc: 'Your money sits with SwingBy until the job is confirmed done.' },
+  { Icon: MapTrifold, title: 'Canadian-owned', desc: 'Built in Calgary. Data in Canadian regions. Real local support.' },
+  { Icon: Headset, title: 'Real human support', desc: '72-hour dispute review. We can withhold payment until resolved.' },
+  { Icon: Star, title: 'Honest reviews', desc: 'Only confirmed bookings can leave one. Businesses can\'t suppress them.' },
 ]
 
 const FAQ = [
-  { q: 'Is SwingBy free for clients?', a: 'Yes. Posting jobs and receiving quotes is free. You pay the agreed price to the business — nothing more.' },
-  { q: 'How are businesses verified?', a: 'Every business goes through license checks, identity verification, and review monitoring before they can quote on jobs.' },
-  { q: 'How does payment work?', a: 'Payment is held in escrow when you book. 50% is released on booking confirmation and the remaining 50% when the job is marked complete.' },
-  { q: 'What if I\'m not happy with the work?', a: 'Open a dispute through the app. SwingBy support reviews it within 72 hours and can withhold payment until it\'s resolved.' },
-  { q: 'Which cities are supported?', a: 'We\'re live in Calgary and expanding across Alberta in 2025.' },
+  { q: 'Is SwingBy free for clients?', a: 'Yes. Posting jobs and receiving quotes is free. You pay the agreed price to the business — nothing more. The 10% commission comes out of the business\'s payout, not on top of your bill.' },
+  { q: 'How are businesses verified?', a: 'A SwingBy team member reviews each license and identity manually during the Calgary beta. Automated checks come post-beta once we know the edge cases to catch.' },
+  { q: 'How does payment work?', a: 'Payment is held in escrow when you book. 50% is released on booking confirmation. The remaining 50% releases when you confirm the job is done — minus our 10% fee.' },
+  { q: 'What if I\'m not happy with the work?', a: 'Open a dispute through the app. SwingBy support reviews within 72 hours and can withhold payment until it\'s resolved.' },
+  { q: 'Which cities are supported?', a: 'Live in Calgary today. Other cities will open once we have enough verified businesses to quote there — no fake city pages.' },
 ]
 
 const fadeUp = {
@@ -54,11 +60,10 @@ const fadeUp = {
 
 export default function Home() {
   const { t } = useTranslation()
-  // TODO (i18n): convert remaining strings below to t() calls
   return (
     <>
       <SEO
-        description="Post a job, get quotes from verified local businesses, and book with confidence. Escrow payments, real reviews, Calgary-based."
+        description="Post a job, get quotes from verified Calgary businesses, book with escrow-protected payments. No subscription for businesses — 10% only when paid."
         jsonLd={{
           '@context': 'https://schema.org',
           '@type': 'Organization',
@@ -77,10 +82,10 @@ export default function Home() {
             <h1 className={styles.heroTitle}>{t('home.hero.headline')}</h1>
             <p className={styles.heroSubtitle}>{t('home.hero.sub')}</p>
             <div className={styles.heroCtas}>
-              <Link to="/signup"><Button size="lg">{t('home.hero.cta')}</Button></Link>
-              <Link to="/for-businesses">
+              <Link to="/signup"><Button size="lg">Post a job — it&apos;s free</Button></Link>
+              <Link to="/signup?role=business">
                 <Button variant="secondary" size="lg">
-                  {t('nav.forBusinesses')} <ArrowRight size={18} />
+                  Get more jobs <ArrowRight size={18} />
                 </Button>
               </Link>
             </div>
@@ -102,40 +107,17 @@ export default function Home() {
         </div>
       </section>
 
-      {/* How it works */}
-      <section className={styles.section}>
-        <div className={styles.container}>
-          <motion.div className={styles.sectionHeader} {...fadeUp}>
-            <h2 className={styles.sectionTitle}>Simple from start to finish</h2>
-            <p className={styles.sectionSubtitle}>Three steps to booking a local pro.</p>
-          </motion.div>
-          <div className={styles.stepsGrid}>
-            {STEPS.map((step, i) => (
-              <motion.div
-                key={i}
-                className={styles.stepCard}
-                {...fadeUp}
-                transition={{ ...fadeUp.transition, delay: i * 0.1 }}
-              >
-                <span className={styles.stepNum}>{step.num}</span>
-                <h3 className={styles.stepTitle}>{step.title}</h3>
-                <p className={styles.stepDesc}>{step.desc}</p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Trust pillars */}
+      {/* Trust strip */}
       <section className={styles.section}>
         <div className={styles.container}>
           <motion.div className={styles.sectionHeader} {...fadeUp}>
             <h2 className={styles.sectionTitle}>Built on trust</h2>
+            <p className={styles.sectionSubtitle}>Five things we hold ourselves to.</p>
           </motion.div>
-          <div className={styles.pillarsGrid}>
-            {PILLARS.map(({ Icon, title, desc }, i) => (
-              <motion.div key={i} className={styles.pillar} {...fadeUp} transition={{ ...fadeUp.transition, delay: i * 0.1 }}>
-                <div className={styles.pillarIcon}><Icon size={32} weight="duotone" /></div>
+          <div className={styles.trustGrid}>
+            {TRUST.map(({ Icon, title, desc }, i) => (
+              <motion.div key={title} className={styles.pillar} {...fadeUp} transition={{ ...fadeUp.transition, delay: i * 0.06 }}>
+                <div className={styles.pillarIcon}><Icon size={28} weight="duotone" /></div>
                 <h3 className={styles.pillarTitle}>{title}</h3>
                 <p className={styles.pillarDesc}>{desc}</p>
               </motion.div>
@@ -144,19 +126,119 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Testimonials */}
+      {/* How it works — two columns */}
       <section className={styles.section}>
         <div className={styles.container}>
-          <motion.h2 className={styles.sectionTitle} {...fadeUp}>What people say</motion.h2>
-          <div className={styles.testimonialGrid}>
-            {TESTIMONIALS.map((t, i) => (
-              <motion.blockquote key={i} className={styles.testimonialCard} {...fadeUp} transition={{ ...fadeUp.transition, delay: i * 0.1 }}>
-                <p className={styles.testimonialText}>&ldquo;{t.text}&rdquo;</p>
-                <footer className={styles.testimonialAuthor}>
-                  <strong>{t.name}</strong> — {t.role}
-                </footer>
-              </motion.blockquote>
-            ))}
+          <motion.div className={styles.sectionHeader} {...fadeUp}>
+            <h2 className={styles.sectionTitle}>How SwingBy works</h2>
+            <p className={styles.sectionSubtitle}>Same platform, two flows.</p>
+          </motion.div>
+          <div className={styles.twoCol}>
+            <div className={styles.colCard}>
+              <h3 className={styles.colTitle}>For clients</h3>
+              <ol className={styles.colSteps}>
+                {CLIENT_STEPS.map((s) => (
+                  <li key={s.num}>
+                    <span className={styles.colNum}>{s.num}</span>
+                    <div>
+                      <p className={styles.colStepTitle}>{s.title}</p>
+                      <p className={styles.colStepDesc}>{s.desc}</p>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+              <Link to="/how-it-works/clients" className={styles.colLink}>See the full client flow <ArrowRight size={14} weight="bold" /></Link>
+            </div>
+
+            <div className={styles.colCard}>
+              <h3 className={styles.colTitle}>For businesses</h3>
+              <ol className={styles.colSteps}>
+                {BUSINESS_STEPS.map((s) => (
+                  <li key={s.num}>
+                    <span className={styles.colNum}>{s.num}</span>
+                    <div>
+                      <p className={styles.colStepTitle}>{s.title}</p>
+                      <p className={styles.colStepDesc}>{s.desc}</p>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+              <Link to="/how-it-works/businesses" className={styles.colLink}>See the full business flow <ArrowRight size={14} weight="bold" /></Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* App preview */}
+      <section className={styles.section}>
+        <div className={styles.container}>
+          <div className={styles.appPreview}>
+            <div className={styles.appPreviewCopy}>
+              <h2 className={styles.sectionTitle}>The app — Calgary jobs, one tap away</h2>
+              <p className={styles.sectionSubtitle}>
+                Native iOS and Android. Browse nearby posts, quote without leaving the feed, message safely once a booking is confirmed.
+              </p>
+              <p className={styles.appPreviewMeta}>
+                <span className={styles.appPreviewBadge}>Coming Aug 2026</span>
+                <span className={styles.appPreviewNote}>App store listings open at general launch.</span>
+              </p>
+            </div>
+            <div className={styles.appPreviewMockup}>
+              <AppMockupFrame label="Nearby jobs feed" alt="SwingBy app — nearby jobs feed mockup" width={300} />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Live in Calgary */}
+      <section className={styles.section}>
+        <div className={styles.container}>
+          <motion.div className={styles.cityBlock} {...fadeUp}>
+            <div className={styles.cityCopy}>
+              <span className={styles.eyebrow}>Live in Calgary</span>
+              <h2 className={styles.cityTitle}>Built local, before going national.</h2>
+              <p className={styles.cityText}>
+                We&apos;re proving the model in Calgary first. Every business is checked by a real human. Every quote is from someone who can actually do the job in your neighbourhood.
+              </p>
+              <p className={styles.cityText}>
+                <strong>Next on the map:</strong> Edmonton and Red Deer, once Calgary supply is deep enough to support a second city.
+              </p>
+              <Link to="/calgary" className={styles.colLink}>See Calgary coverage <ArrowRight size={14} weight="bold" /></Link>
+            </div>
+            <div className={styles.cityMap} aria-hidden="true">
+              <svg viewBox="0 0 200 200" role="presentation">
+                <circle cx="100" cy="100" r="80" fill="rgba(110,86,247,0.10)" stroke="var(--color-accent)" strokeDasharray="4 4" />
+                <circle cx="100" cy="100" r="40" fill="rgba(110,86,247,0.18)" />
+                <circle cx="100" cy="100" r="6" fill="var(--color-accent)" />
+                <text x="100" y="130" textAnchor="middle" fill="var(--color-text-secondary)" fontSize="11" fontFamily="Inter, sans-serif">Calgary</text>
+              </svg>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Stories placeholder — honest, no invented quotes */}
+      <section className={styles.section}>
+        <div className={styles.container}>
+          <motion.div className={styles.sectionHeader} {...fadeUp}>
+            <h2 className={styles.sectionTitle}>Real stories landing post-beta</h2>
+            <p className={styles.sectionSubtitle}>
+              We&apos;re holding this space for actual client and business quotes once the beta cohort completes their first bookings. Fake testimonials aren&apos;t our style.
+            </p>
+          </motion.div>
+          <div className={styles.storiesSkeleton}>
+            <div className={styles.storyCard}>
+              <div className={styles.storyDot} />
+              <p className={styles.storyText}>First client story drops once we&apos;ve closed five real bookings.</p>
+            </div>
+            <div className={styles.storyCard}>
+              <div className={styles.storyDot} />
+              <p className={styles.storyText}>First business story drops once one Calgary pro hits five completed jobs.</p>
+            </div>
+            <div className={styles.storyCard}>
+              <div className={styles.storyDot} />
+              <p className={styles.storyText}>Want to be one of the first names here? <Link to="/signup" className={styles.colLink}>Join the beta</Link></p>
+            </div>
           </div>
         </div>
       </section>
@@ -167,7 +249,7 @@ export default function Home() {
           <motion.h2 className={styles.sectionTitle} {...fadeUp}>Common questions</motion.h2>
           <div className={styles.faqList}>
             {FAQ.map(({ q, a }, i) => (
-              <motion.details key={i} className={styles.faqItem} {...fadeUp} transition={{ ...fadeUp.transition, delay: i * 0.05 }}>
+              <motion.details key={q} className={styles.faqItem} {...fadeUp} transition={{ ...fadeUp.transition, delay: i * 0.05 }}>
                 <summary className={styles.faqQ}>{q}</summary>
                 <p className={styles.faqA}>{a}</p>
               </motion.details>
@@ -184,7 +266,7 @@ export default function Home() {
             <p className={styles.ctaSubtitle}>Post a job in two minutes. Free for clients, always.</p>
             <div className={styles.heroCtas}>
               <Link to="/signup"><Button size="lg">Get started free</Button></Link>
-              <Link to="/how-it-works">
+              <Link to="/how-it-works/clients">
                 <Button variant="ghost" size="lg">See how it works</Button>
               </Link>
             </div>

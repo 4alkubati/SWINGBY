@@ -123,6 +123,193 @@
 
 .pillarsGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-lg); }
 
+.trustGrid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: var(--space-md);
+}
+
+@media (max-width: 1100px) {
+  .trustGrid { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 700px) {
+  .trustGrid { grid-template-columns: 1fr; }
+}
+
+.twoCol {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-lg);
+}
+@media (max-width: 900px) {
+  .twoCol { grid-template-columns: 1fr; }
+}
+
+.colCard {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-xl);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.colTitle {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.colSteps {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.colSteps li {
+  display: grid;
+  grid-template-columns: 40px 1fr;
+  gap: var(--space-base);
+  align-items: start;
+}
+
+.colNum {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--color-accent-muted);
+  color: var(--color-accent-text);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.colStepTitle { font-weight: 600; font-size: 15px; color: var(--color-text-primary); margin: 0; }
+.colStepDesc { margin: 4px 0 0; font-size: 14px; color: var(--color-text-secondary); line-height: 1.5; }
+
+.colLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-accent-text);
+  font-weight: 600;
+  font-size: 14px;
+  text-decoration: none;
+  margin-top: auto;
+}
+.colLink:hover { text-decoration: underline; }
+
+.appPreview {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--space-2xl);
+  align-items: center;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-2xl);
+}
+@media (max-width: 900px) {
+  .appPreview { grid-template-columns: 1fr; text-align: left; justify-items: center; }
+}
+
+.appPreviewCopy { display: flex; flex-direction: column; gap: var(--space-md); }
+.appPreviewMockup { display: flex; justify-content: center; }
+
+.appPreviewMeta { display: flex; align-items: center; gap: var(--space-sm); flex-wrap: wrap; margin: 0; }
+.appPreviewBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-accent-text);
+  background: var(--color-accent-muted);
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  letter-spacing: 0.3px;
+}
+.appPreviewNote { font-size: 13px; color: var(--color-text-secondary); }
+
+.cityBlock {
+  display: grid;
+  grid-template-columns: 1fr 240px;
+  gap: var(--space-2xl);
+  align-items: center;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-2xl);
+}
+@media (max-width: 900px) {
+  .cityBlock { grid-template-columns: 1fr; }
+  .cityMap { order: -1; max-width: 240px; margin: 0 auto; }
+}
+
+.cityCopy { display: flex; flex-direction: column; gap: var(--space-md); }
+.cityTitle {
+  font-family: var(--font-display);
+  font-size: clamp(22px, 3.4vw, 32px);
+  font-weight: 700;
+  letter-spacing: -0.4px;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+.cityText { font-size: 15px; color: var(--color-text-secondary); line-height: 1.6; margin: 0; }
+
+.eyebrow {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: var(--color-accent-text);
+}
+
+.cityMap { display: flex; justify-content: center; }
+.cityMap svg { width: 100%; max-width: 220px; height: auto; }
+
+.storiesSkeleton {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-lg);
+}
+@media (max-width: 900px) {
+  .storiesSkeleton { grid-template-columns: 1fr; }
+}
+
+.storyCard {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-base);
+  background: var(--color-surface);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-xl);
+}
+
+.storyDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--color-accent-muted);
+  border: 2px solid var(--color-accent);
+  margin-top: 6px;
+  flex-shrink: 0;
+}
+
+.storyText { margin: 0; font-size: 14px; color: var(--color-text-secondary); line-height: 1.6; }
+
 .pillar {
   display: flex;
   flex-direction: column;

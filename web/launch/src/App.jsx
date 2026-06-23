@@ -12,6 +12,8 @@ const MAINTENANCE = import.meta.env.VITE_MAINTENANCE_MODE === 'true'
 /* ── Marketing ────────────────────────────────────────────────────────────── */
 const Home                  = lazy(() => import('./pages/Home'))
 const HowItWorks            = lazy(() => import('./pages/HowItWorks'))
+const HowItWorksClients     = lazy(() => import('./pages/HowItWorksClients'))
+const HowItWorksBusinesses  = lazy(() => import('./pages/HowItWorksBusinesses'))
 const ForClients            = lazy(() => import('./pages/ForClients'))
 const ForBusinesses         = lazy(() => import('./pages/ForBusinesses'))
 const Pricing               = lazy(() => import('./pages/Pricing'))
@@ -92,6 +94,8 @@ function AppRoutes() {
       <Route element={<Layout />}>
         <Route path="/" element={<Home />} />
         <Route path="/how-it-works" element={<HowItWorks />} />
+        <Route path="/how-it-works/clients" element={<HowItWorksClients />} />
+        <Route path="/how-it-works/businesses" element={<HowItWorksBusinesses />} />
         <Route path="/for-clients" element={<ForClients />} />
         <Route path="/for-businesses" element={<ForBusinesses />} />
         <Route path="/pricing" element={<Pricing />} />
