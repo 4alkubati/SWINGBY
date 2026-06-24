@@ -11,3 +11,4 @@ httpx
 structlog>=24.0
 sentry-sdk[fastapi]>=2.0
 slowapi>=0.1.9
+stripe>=10.0,<12

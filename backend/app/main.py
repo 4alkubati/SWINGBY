@@ -88,8 +88,17 @@ app.include_router(interests_router, prefix="/interests", tags=["interests"])
 from app.api.bookings import router as bookings_router
 app.include_router(bookings_router, prefix="/bookings", tags=["bookings"])
 
+from app.api.booking_events import router as booking_events_router
+app.include_router(booking_events_router, prefix="/bookings", tags=["booking-events"])
+
+from app.api.booking_photos import router as booking_photos_router
+app.include_router(booking_photos_router, prefix="/bookings", tags=["booking-photos"])
+
 from app.api.payments import router as payments_router
 app.include_router(payments_router, prefix="/payments", tags=["payments"])
+
+from app.api.payments_stripe import router as payments_stripe_router
+app.include_router(payments_stripe_router, prefix="/payments/stripe", tags=["payments-stripe"])
 
 from app.api.reviews import router as reviews_router
 app.include_router(reviews_router, prefix="/reviews", tags=["reviews"])

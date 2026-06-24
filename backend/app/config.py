@@ -40,6 +40,10 @@ _OPTIONAL = [
     "RESEND_API_KEY",       # Resend transactional email — set after domain verified
     "RESEND_FROM_EMAIL",    # e.g. "SwingBy <hello@swingbyy.com>"
     "PASSWORD_RESET_REDIRECT_URL",  # override where Supabase reset emails redirect (defaults to web)
+    "STRIPE_SECRET_KEY",        # sk_test_… for beta sandbox, sk_live_… post-beta
+    "STRIPE_WEBHOOK_SECRET",    # whsec_… — used to verify Stripe webhook signature
+    "STRIPE_SUCCESS_URL",       # browser landing after Checkout success (defaults to web)
+    "STRIPE_CANCEL_URL",        # browser landing after Checkout cancel  (defaults to web)
 ]
 
 
@@ -103,6 +107,22 @@ class _Settings:
     @property
     def PASSWORD_RESET_REDIRECT_URL(self) -> str:
         return os.getenv("PASSWORD_RESET_REDIRECT_URL", "https://swingbyy.com/reset-password")
+
+    @property
+    def STRIPE_SECRET_KEY(self) -> str:
+        return os.getenv("STRIPE_SECRET_KEY", "")
+
+    @property
+    def STRIPE_WEBHOOK_SECRET(self) -> str:
+        return os.getenv("STRIPE_WEBHOOK_SECRET", "")
+
+    @property
+    def STRIPE_SUCCESS_URL(self) -> str:
+        return os.getenv("STRIPE_SUCCESS_URL", "https://swingbyy.com/payment-success")
+
+    @property
+    def STRIPE_CANCEL_URL(self) -> str:
+        return os.getenv("STRIPE_CANCEL_URL", "https://swingbyy.com/payment-cancelled")
 
     # Convenience typed accessors (mirrors the property names for legacy callers)
     def get_database_url(self) -> str:
