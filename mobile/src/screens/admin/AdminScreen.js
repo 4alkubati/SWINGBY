@@ -1,11 +1,11 @@
 import { SafeAreaView, ScrollView, View, StyleSheet, Linking, Alert } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
-import Text from '../components/Text';
-import Button from '../components/Button';
-import Surface from '../components/Surface';
-import { colors, spacing, radius } from '../theme/tokens';
-import { useAuth } from '../context/AuthContext';
+import Text from '../../components/Text';
+import Button from '../../components/Button';
+import Surface from '../../components/Surface';
+import { colors, spacing, radius } from '../../theme/tokens';
+import { useAuth } from '../../context/AuthContext';
 
 const WEB_ADMIN_URL = 'https://swingbyy.com/admin';
 

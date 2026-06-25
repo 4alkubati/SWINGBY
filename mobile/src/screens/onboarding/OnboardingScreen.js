@@ -3,10 +3,10 @@ import { View, FlatList, Dimensions, Pressable, StyleSheet } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeIn, FadeOut, FadeInDown } from 'react-native-reanimated';
-import * as SecureStore from '../services/storage';
-import { colors, spacing, radius } from '../theme/tokens';
-import Text from '../components/Text';
-import Button from '../components/Button';
+import * as SecureStore from '../../services/storage';
+import { colors, spacing, radius } from '../../theme/tokens';
+import Text from '../../components/Text';
+import Button from '../../components/Button';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 const ONBOARDING_KEY = 'has_seen_onboarding';

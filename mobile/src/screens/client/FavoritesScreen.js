@@ -9,18 +9,18 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useState, useEffect, useCallback } from 'react';
-import { api } from '../services/api';
-import { show as showToast } from '../services/toast';
-import { buttonTap } from '../services/haptics';
-import { useFavorites } from '../hooks/useFavorites';
-import NearbyCard from '../components/NearbyCard';
-import EmptyState from '../components/EmptyState';
-import Text from '../components/Text';
-import Stack from '../components/Stack';
-import Inline from '../components/Inline';
-import { SkeletonList } from '../components/Skeleton';
+import { api } from '../../services/api';
+import { show as showToast } from '../../services/toast';
+import { buttonTap } from '../../services/haptics';
+import { useFavorites } from '../../hooks/useFavorites';
+import NearbyCard from '../../components/NearbyCard';
+import EmptyState from '../../components/EmptyState';
+import Text from '../../components/Text';
+import Stack from '../../components/Stack';
+import Inline from '../../components/Inline';
+import { SkeletonList } from '../../components/Skeleton';
 import { Feather } from '@expo/vector-icons';
-import { colors, spacing, radius, shadows, motion } from '../theme/tokens';
+import { colors, spacing, radius, shadows, motion } from '../../theme/tokens';
 
 // ─── AnimatedPressable ────────────────────────────────────────────────────────
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);

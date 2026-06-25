@@ -14,11 +14,11 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
-import { api } from '../services/api';
-import * as toast from '../services/toast';
-import * as haptics from '../services/haptics';
-import { colors, spacing, radius } from '../theme/tokens';
-import Text from '../components/Text';
+import { api } from '../../services/api';
+import * as toast from '../../services/toast';
+import * as haptics from '../../services/haptics';
+import { colors, spacing, radius } from '../../theme/tokens';
+import Text from '../../components/Text';
 
 const REASONS = [
   'Schedule conflict',

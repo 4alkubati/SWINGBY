@@ -8,12 +8,12 @@ import Animated, {
   withTiming, withSpring, FadeInDown,
 } from 'react-native-reanimated';
 
-import { colors, spacing, radius, motion } from '../theme/tokens';
-import Text from '../components/Text';
-import TextField from '../components/TextField';
-import Button from '../components/Button';
-import Tabs from '../components/Tabs';
-import { useAuth } from '../context/AuthContext';
+import { colors, spacing, radius, motion } from '../../theme/tokens';
+import Text from '../../components/Text';
+import TextField from '../../components/TextField';
+import Button from '../../components/Button';
+import Tabs from '../../components/Tabs';
+import { useAuth } from '../../context/AuthContext';
 
 function isValidEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());

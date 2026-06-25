@@ -16,14 +16,14 @@ import Animated, {
   FadeOut,
   interpolate,
 } from 'react-native-reanimated';
-import { useAuth } from '../context/AuthContext';
-import { api } from '../services/api';
-import Text from '../components/Text';
-import Surface from '../components/Surface';
-import Inline from '../components/Inline';
-import Button from '../components/Button';
-import { SkeletonBox } from '../components/Skeleton';
-import { colors, spacing, radius, shadows, motion } from '../theme/tokens';
+import { useAuth } from '../../context/AuthContext';
+import { api } from '../../services/api';
+import Text from '../../components/Text';
+import Surface from '../../components/Surface';
+import Inline from '../../components/Inline';
+import Button from '../../components/Button';
+import { SkeletonBox } from '../../components/Skeleton';
+import { colors, spacing, radius, shadows, motion } from '../../theme/tokens';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 

@@ -7,18 +7,18 @@ import Animated, {
   useSharedValue, useAnimatedStyle, withSpring, withDelay,
 } from 'react-native-reanimated';
 import { Feather } from '@expo/vector-icons';
-import { api } from '../services/api';
-import BookingStatusTimeline from '../components/BookingStatusTimeline';
-import Text from '../components/Text';
-import Button from '../components/Button';
-import Avatar from '../components/Avatar';
-import Surface from '../components/Surface';
-import Stack from '../components/Stack';
-import Inline from '../components/Inline';
-import Badge from '../components/Badge';
-import { SkeletonBox } from '../components/Skeleton';
-import { RatingStarsDisplay } from '../components/RatingStars';
-import { colors, spacing, radius, motion } from '../theme/tokens';
+import { api } from '../../services/api';
+import BookingStatusTimeline from '../../components/BookingStatusTimeline';
+import Text from '../../components/Text';
+import Button from '../../components/Button';
+import Avatar from '../../components/Avatar';
+import Surface from '../../components/Surface';
+import Stack from '../../components/Stack';
+import Inline from '../../components/Inline';
+import Badge from '../../components/Badge';
+import { SkeletonBox } from '../../components/Skeleton';
+import { RatingStarsDisplay } from '../../components/RatingStars';
+import { colors, spacing, radius, motion } from '../../theme/tokens';
 
 // ─── Loading skeleton ─────────────────────────────────────────────────────────
 function ActiveBookingSkeleton() {

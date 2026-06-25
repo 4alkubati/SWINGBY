@@ -9,19 +9,19 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { useAuth } from '../context/AuthContext';
-import { api } from '../services/api';
-import JobCard from '../components/JobCard';
-import JobOpportunityCard from '../components/JobOpportunityCard';
-import SendQuoteSheet from '../components/SendQuoteSheet';
-import { colors, spacing, radius, shadows, motion } from '../theme/tokens';
-import Text from '../components/Text';
-import Surface from '../components/Surface';
-import Stack from '../components/Stack';
-import Inline from '../components/Inline';
-import Badge from '../components/Badge';
-import Button from '../components/Button';
-import { SkeletonBox } from '../components/Skeleton';
+import { useAuth } from '../../context/AuthContext';
+import { api } from '../../services/api';
+import JobCard from '../../components/JobCard';
+import JobOpportunityCard from '../../components/JobOpportunityCard';
+import SendQuoteSheet from '../../components/SendQuoteSheet';
+import { colors, spacing, radius, shadows, motion } from '../../theme/tokens';
+import Text from '../../components/Text';
+import Surface from '../../components/Surface';
+import Stack from '../../components/Stack';
+import Inline from '../../components/Inline';
+import Badge from '../../components/Badge';
+import Button from '../../components/Button';
+import { SkeletonBox } from '../../components/Skeleton';
 
 // ─── greeting helper ──────────────────────────────────────────────────────────
 

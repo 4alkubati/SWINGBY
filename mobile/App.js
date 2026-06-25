@@ -48,7 +48,7 @@ import { UnreadProvider } from './src/context/UnreadContext';
 import AuthNavigator from './src/navigation/AuthNavigator';
 import ClientNavigator from './src/navigation/ClientNavigator';
 import BusinessNavigator from './src/navigation/BusinessNavigator';
-import AdminScreen from './src/screens/AdminScreen';
+import AdminScreen from './src/screens/admin/AdminScreen';
 import { configureNotificationHandlers } from './src/services/notifications';
 import OfflineBanner from './src/components/OfflineBanner';
 import Toast from 'react-native-toast-message';

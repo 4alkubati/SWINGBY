@@ -8,19 +8,22 @@ import Animated, {
   useSharedValue, useAnimatedStyle, withSpring, withTiming,
   FadeIn, FadeOut, Layout,
 } from 'react-native-reanimated';
-import { api } from '../services/api';
-import StatusTracker from '../components/StatusTracker';
-import Text from '../components/Text';
-import Tabs from '../components/Tabs';
-import Chip from '../components/Chip';
-import Surface from '../components/Surface';
-import Stack from '../components/Stack';
-import Inline from '../components/Inline';
-import Badge from '../components/Badge';
-import Button from '../components/Button';
-import ListItem from '../components/ListItem';
-import { SkeletonBox } from '../components/Skeleton';
-import { colors, spacing, radius, shadows, motion } from '../theme/tokens';
+import { api } from '../../services/api';
+import StatusTracker from '../../components/StatusTracker';
+import LiveStatusActions from '../../components/LiveStatusActions';
+import LiveStatusTimeline from '../../components/LiveStatusTimeline';
+import BookingPhotos from '../../components/BookingPhotos';
+import Text from '../../components/Text';
+import Tabs from '../../components/Tabs';
+import Chip from '../../components/Chip';
+import Surface from '../../components/Surface';
+import Stack from '../../components/Stack';
+import Inline from '../../components/Inline';
+import Badge from '../../components/Badge';
+import Button from '../../components/Button';
+import ListItem from '../../components/ListItem';
+import { SkeletonBox } from '../../components/Skeleton';
+import { colors, spacing, radius, shadows, motion } from '../../theme/tokens';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -464,6 +467,16 @@ export default function JobManagementScreen({ navigation, route }) {
             <Stack spacing="md">
               <View style={styles.cardMargin}>
                 <StatusTracker bookingStatus={booking.status} onAdvance={handleAdvance} />
+              </View>
+              {/* Live Job Status — provider posts events; both parties see timeline */}
+              <View style={styles.cardMargin}>
+                <LiveStatusActions bookingId={booking.id} onEventPosted={() => load()} />
+              </View>
+              <View style={styles.cardMargin}>
+                <LiveStatusTimeline bookingId={booking.id} />
+              </View>
+              <View style={styles.cardMargin}>
+                <BookingPhotos bookingId={booking.id} canAttach />
               </View>
               {advancing && (
                 <Inline justify="center" spacing="sm">

@@ -4,12 +4,12 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useState, useEffect, useCallback } from 'react';
-import { useAuth } from '../context/AuthContext';
-import { api } from '../services/api';
-import { colors, spacing } from '../theme/tokens';
-import { SkeletonList } from '../components/Skeleton';
-import EmptyState from '../components/EmptyState';
-import Text from '../components/Text';
+import { useAuth } from '../../context/AuthContext';
+import { api } from '../../services/api';
+import { colors, spacing } from '../../theme/tokens';
+import { SkeletonList } from '../../components/Skeleton';
+import EmptyState from '../../components/EmptyState';
+import Text from '../../components/Text';
 
 const STATUS_CONFIG = {
   confirmed:   { label: 'Confirmed',   color: colors.accent,   bg: colors.accentMuted },

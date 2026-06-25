@@ -12,16 +12,16 @@ import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplet
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 
-import Text from '../components/Text';
-import TextField from '../components/TextField';
-import Button from '../components/Button';
-import Stack from '../components/Stack';
-import Surface from '../components/Surface';
-import Chip from '../components/Chip';
-import Inline from '../components/Inline';
+import Text from '../../components/Text';
+import TextField from '../../components/TextField';
+import Button from '../../components/Button';
+import Stack from '../../components/Stack';
+import Surface from '../../components/Surface';
+import Chip from '../../components/Chip';
+import Inline from '../../components/Inline';
 
-import { api, uploadFile } from '../services/api';
-import { colors, spacing, radius } from '../theme/tokens';
+import { api, uploadFile } from '../../services/api';
+import { colors, spacing, radius } from '../../theme/tokens';
 
 const GOOGLE_PLACES_KEY = process.env.EXPO_PUBLIC_GOOGLE_PLACES_KEY || '';
 

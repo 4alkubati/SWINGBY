@@ -18,13 +18,13 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 
-import Text from '../components/Text';
-import Stack from '../components/Stack';
-import Inline from '../components/Inline';
-import Badge from '../components/Badge';
-import EmptyState from '../components/EmptyState';
-import { SkeletonList } from '../components/Skeleton';
-import { colors, spacing, radius, motion } from '../theme/tokens';
+import Text from '../../components/Text';
+import Stack from '../../components/Stack';
+import Inline from '../../components/Inline';
+import Badge from '../../components/Badge';
+import EmptyState from '../../components/EmptyState';
+import { SkeletonList } from '../../components/Skeleton';
+import { colors, spacing, radius, motion } from '../../theme/tokens';
 
 const STORAGE_KEY = 'swingby_notifications';
 

@@ -8,21 +8,21 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { useAuth } from '../context/AuthContext';
-import { useUnread } from '../context/UnreadContext';
-import { api } from '../services/api';
-import { colors, spacing, radius, shadows, motion } from '../theme/tokens';
+import { useAuth } from '../../context/AuthContext';
+import { useUnread } from '../../context/UnreadContext';
+import { api } from '../../services/api';
+import { colors, spacing, radius, shadows, motion } from '../../theme/tokens';
 
-import Text from '../components/Text';
-import Stack from '../components/Stack';
-import Inline from '../components/Inline';
-import Surface from '../components/Surface';
-import Avatar from '../components/Avatar';
-import Badge from '../components/Badge';
-import Button from '../components/Button';
-import SearchField from '../components/SearchField';
-import EmptyState from '../components/EmptyState';
-import { SkeletonList } from '../components/Skeleton';
+import Text from '../../components/Text';
+import Stack from '../../components/Stack';
+import Inline from '../../components/Inline';
+import Surface from '../../components/Surface';
+import Avatar from '../../components/Avatar';
+import Badge from '../../components/Badge';
+import Button from '../../components/Button';
+import SearchField from '../../components/SearchField';
+import EmptyState from '../../components/EmptyState';
+import { SkeletonList } from '../../components/Skeleton';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 

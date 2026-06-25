@@ -8,18 +8,18 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
-import Text from '../components/Text';
-import Stack from '../components/Stack';
-import Inline from '../components/Inline';
-import Surface from '../components/Surface';
-import Avatar from '../components/Avatar';
-import Button from '../components/Button';
-import TextField from '../components/TextField';
-import { RatingStarsInput } from '../components/RatingStars';
+import Text from '../../components/Text';
+import Stack from '../../components/Stack';
+import Inline from '../../components/Inline';
+import Surface from '../../components/Surface';
+import Avatar from '../../components/Avatar';
+import Button from '../../components/Button';
+import TextField from '../../components/TextField';
+import { RatingStarsInput } from '../../components/RatingStars';
 
-import { api } from '../services/api';
-import { successTap } from '../services/haptics';
-import { colors, spacing, motion } from '../theme/tokens';
+import { api } from '../../services/api';
+import { successTap } from '../../services/haptics';
+import { colors, spacing, motion } from '../../theme/tokens';
 
 const RATING_LABELS = ['', 'Poor', 'Fair', 'Good', 'Great', 'Excellent'];
 

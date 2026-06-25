@@ -14,17 +14,17 @@ import Constants from 'expo-constants';
 const isExpoGo =
   Constants.appOwnership === 'expo' ||
   Constants.executionEnvironment === 'storeClient';
-import { useAuth } from '../context/AuthContext';
-import { api } from '../services/api';
-import { show as showToast } from '../services/toast';
-import LanguageSelector from '../components/LanguageSelector';
-import i18n from '../i18n';
-import { colors, spacing, radius } from '../theme/tokens';
-import Text from '../components/Text';
-import Stack from '../components/Stack';
-import Surface from '../components/Surface';
-import Button from '../components/Button';
-import ListItem from '../components/ListItem';
+import { useAuth } from '../../context/AuthContext';
+import { api } from '../../services/api';
+import { show as showToast } from '../../services/toast';
+import LanguageSelector from '../../components/LanguageSelector';
+import i18n from '../../i18n';
+import { colors, spacing, radius } from '../../theme/tokens';
+import Text from '../../components/Text';
+import Stack from '../../components/Stack';
+import Surface from '../../components/Surface';
+import Button from '../../components/Button';
+import ListItem from '../../components/ListItem';
 
 const APP_VERSION =
   Constants.expoConfig?.version ??

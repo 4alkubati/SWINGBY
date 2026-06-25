@@ -12,11 +12,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
 
-import { colors, spacing, radius, motion } from '../theme/tokens';
-import Text from '../components/Text';
-import Stack from '../components/Stack';
-import Inline from '../components/Inline';
-import Surface from '../components/Surface';
+import { colors, spacing, radius, motion } from '../../theme/tokens';
+import Text from '../../components/Text';
+import Stack from '../../components/Stack';
+import Inline from '../../components/Inline';
+import Surface from '../../components/Surface';
 
 // ─── data ──────────────────────────────────────────────────────────────────
 const FAQS = [

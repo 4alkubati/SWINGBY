@@ -3,7 +3,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useState, useEffect } from 'react';
-import { getCurrentLocation } from '../services/location';
+import { getCurrentLocation } from '../../services/location';
 
 let MapView, Marker, Callout;
 try {
@@ -16,8 +16,8 @@ try {
   Marker = null;
   Callout = null;
 }
-import { api } from '../services/api';
-import { colors } from '../theme/tokens';
+import { api } from '../../services/api';
+import { colors } from '../../theme/tokens';
 
 const CALGARY_DEFAULT = { latitude: 51.0447, longitude: -114.0719, latitudeDelta: 0.15, longitudeDelta: 0.15 };
 

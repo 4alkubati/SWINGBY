@@ -7,18 +7,18 @@ import Animated, {
   useSharedValue, useAnimatedStyle, withSpring,
 } from 'react-native-reanimated';
 
-import Text from '../components/Text';
-import Button from '../components/Button';
-import Avatar from '../components/Avatar';
-import Surface from '../components/Surface';
-import Stack from '../components/Stack';
-import Inline from '../components/Inline';
-import BottomSheet from '../components/BottomSheet';
-import { SkeletonCard } from '../components/Skeleton';
-import { RatingStarsDisplay } from '../components/RatingStars';
+import Text from '../../components/Text';
+import Button from '../../components/Button';
+import Avatar from '../../components/Avatar';
+import Surface from '../../components/Surface';
+import Stack from '../../components/Stack';
+import Inline from '../../components/Inline';
+import BottomSheet from '../../components/BottomSheet';
+import { SkeletonCard } from '../../components/Skeleton';
+import { RatingStarsDisplay } from '../../components/RatingStars';
 
-import { api } from '../services/api';
-import { colors, spacing, radius } from '../theme/tokens';
+import { api } from '../../services/api';
+import { colors, spacing, radius } from '../../theme/tokens';
 
 // ─── Skeleton list for loading state ─────────────────────────────────────────
 function QuoteSkeletons() {

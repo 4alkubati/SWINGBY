@@ -4,11 +4,11 @@ import {
 } from 'react-native';
 import { useState } from 'react';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { useAuth } from '../context/AuthContext';
-import { colors, spacing, radius } from '../theme/tokens';
-import Text from '../components/Text';
-import TextField from '../components/TextField';
-import Button from '../components/Button';
+import { useAuth } from '../../context/AuthContext';
+import { colors, spacing, radius } from '../../theme/tokens';
+import Text from '../../components/Text';
+import TextField from '../../components/TextField';
+import Button from '../../components/Button';
 
 export default function LoginScreen({ navigation }) {
   const { login } = useAuth();

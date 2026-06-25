@@ -11,10 +11,10 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
-import * as toast from '../services/toast';
-import EmptyState from '../components/EmptyState';
-import { colors, spacing, radius } from '../theme/tokens';
-import Text from '../components/Text';
+import * as toast from '../../services/toast';
+import EmptyState from '../../components/EmptyState';
+import { colors, spacing, radius } from '../../theme/tokens';
+import Text from '../../components/Text';
 
 export default function PaymentMethodScreen({ navigation }) {
   const insets = useSafeAreaInsets();

@@ -2,7 +2,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors } from '../theme/tokens';
+import { colors } from '../../theme/tokens';
 
 export default function NearbyMapScreen() {
   const insets = useSafeAreaInsets();

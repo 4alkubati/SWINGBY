@@ -14,11 +14,11 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
-import { api } from '../services/api';
-import * as toast from '../services/toast';
-import * as haptics from '../services/haptics';
-import { colors, spacing, radius } from '../theme/tokens';
-import Text from '../components/Text';
+import { api } from '../../services/api';
+import * as toast from '../../services/toast';
+import * as haptics from '../../services/haptics';
+import { colors, spacing, radius } from '../../theme/tokens';
+import Text from '../../components/Text';
 
 const ISSUE_TYPES = [
   { key: 'not_completed', label: 'Work not completed' },
@@ -91,8 +91,9 @@ export default function DisputeFlowScreen({ route, navigation }) {
       await haptics.successTap();
       navigation.goBack();
     } catch (err) {
-      // 404 or endpoint not yet live — best-effort UX
-      if (err.message?.includes('404') || err.message?.includes('not found')) {
+      // Endpoint not yet live — api.js interceptor unwraps to detail string only,
+      // so match FastAPI's "Not Found" detail (no HTTP status reaches err.message).
+      if (err.message?.toLowerCase().includes('not found')) {
         toast.show({
           type: 'info',
           text1: 'Submitted',

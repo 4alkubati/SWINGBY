@@ -22,12 +22,12 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
-import { useAuth } from '../context/AuthContext';
-import { api } from '../services/api';
-import * as toast from '../services/toast';
-import * as haptics from '../services/haptics';
-import EmptyState from '../components/EmptyState';
-import { colors } from '../theme/tokens';
+import { useAuth } from '../../context/AuthContext';
+import { api } from '../../services/api';
+import * as toast from '../../services/toast';
+import * as haptics from '../../services/haptics';
+import EmptyState from '../../components/EmptyState';
+import { colors } from '../../theme/tokens';
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 function msgTime(iso) {

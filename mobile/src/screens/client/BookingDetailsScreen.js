@@ -17,20 +17,22 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import { Linking, Share } from 'react-native';
-import { api } from '../services/api';
-import * as toast from '../services/toast';
-import * as haptics from '../services/haptics';
-import BookingStatusTimeline from '../components/BookingStatusTimeline';
-import { RatingStarsDisplay } from '../components/RatingStars';
-import { SkeletonBox } from '../components/Skeleton';
-import EmptyState from '../components/EmptyState';
-import Text from '../components/Text';
-import Stack from '../components/Stack';
-import Inline from '../components/Inline';
-import Surface from '../components/Surface';
-import Avatar from '../components/Avatar';
-import Button from '../components/Button';
-import { colors, spacing, radius, shadows, motion } from '../theme/tokens';
+import { api } from '../../services/api';
+import * as toast from '../../services/toast';
+import * as haptics from '../../services/haptics';
+import BookingStatusTimeline from '../../components/BookingStatusTimeline';
+import LiveStatusTimeline from '../../components/LiveStatusTimeline';
+import BookingPhotos from '../../components/BookingPhotos';
+import { RatingStarsDisplay } from '../../components/RatingStars';
+import { SkeletonBox } from '../../components/Skeleton';
+import EmptyState from '../../components/EmptyState';
+import Text from '../../components/Text';
+import Stack from '../../components/Stack';
+import Inline from '../../components/Inline';
+import Surface from '../../components/Surface';
+import Avatar from '../../components/Avatar';
+import Button from '../../components/Button';
+import { colors, spacing, radius, shadows, motion } from '../../theme/tokens';
 
 // ─── AnimatedPressable helper ─────────────────────────────────────────────────
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -200,7 +202,8 @@ export default function BookingDetailsScreen({ route, navigation }) {
       setBooking(data);
       setStatus('ready');
     } catch (err) {
-      if (err.message?.includes('404') || err.message?.includes('not found')) {
+      // api.js interceptor rejects with the FastAPI detail string only — no status code.
+      if (err.message?.toLowerCase().includes('not found')) {
         setStatus('deleted');
       } else {
         setStatus('error');
@@ -240,6 +243,35 @@ export default function BookingDetailsScreen({ route, navigation }) {
       bookingId,
       scheduledDate: booking?.scheduled_at,
     });
+  };
+
+  const [payInFlight, setPayInFlight] = useState(false);
+  const handlePay = async () => {
+    if (payInFlight) return;
+    setPayInFlight(true);
+    try {
+      const res = await api.post(`/payments/stripe/checkout/${bookingId}`, {});
+      if (res?.url) {
+        await Linking.openURL(res.url);
+      } else {
+        toast.show({ type: 'error', text1: 'Could not start checkout' });
+      }
+    } catch (err) {
+      const msg = err?.message ?? '';
+      // The 503 path surfaces as the detail string ("Stripe is not configured…"),
+      // not a status code, after the axios interceptor unwrap.
+      if (msg.toLowerCase().includes('stripe is not configured') || msg.includes('STRIPE_SECRET_KEY')) {
+        toast.show({
+          type: 'error',
+          text1: 'Payments not enabled yet',
+          text2: 'Stripe sandbox is being configured.',
+        });
+      } else {
+        toast.show({ type: 'error', text1: 'Checkout failed', text2: msg });
+      }
+    } finally {
+      setPayInFlight(false);
+    }
   };
 
   // ── Loading state ──
@@ -314,6 +346,12 @@ export default function BookingDetailsScreen({ route, navigation }) {
         >
           <BookingStatusTimeline currentStatus={booking?.status ?? 'confirmed'} />
         </Surface>
+
+        {/* Live Job Status — real-time provider events */}
+        <LiveStatusTimeline bookingId={bookingId} />
+
+        {/* Before / After photos — proof of work */}
+        <BookingPhotos bookingId={bookingId} />
 
         {/* Worker card */}
         <ScalePressable
@@ -450,8 +488,18 @@ export default function BookingDetailsScreen({ route, navigation }) {
           gap: spacing.sm + 2,
         }}
       >
+        {(booking?.payment_status !== 'paid_full' && booking?.status !== 'cancelled') && (
+          <Button
+            variant="primary"
+            label={payInFlight ? 'Opening checkout…' : 'Pay with card'}
+            onPress={handlePay}
+            disabled={payInFlight}
+            icon={<Feather name="credit-card" size={18} color={colors.textPrimary} />}
+          />
+        )}
+
         <Button
-          variant="primary"
+          variant={booking?.payment_status === 'paid_full' ? 'primary' : 'ghost'}
           label="Message"
           onPress={handleMessage}
           icon={<Feather name="message-circle" size={18} color={colors.textPrimary} />}

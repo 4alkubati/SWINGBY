@@ -10,15 +10,15 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
-import { useAuth } from '../context/AuthContext';
-import { show as showToast } from '../services/toast';
-import { buttonTap } from '../services/haptics';
-import { colors, spacing, radius, shadows, motion } from '../theme/tokens';
-import Text from '../components/Text';
-import Stack from '../components/Stack';
-import Inline from '../components/Inline';
-import Surface from '../components/Surface';
-import Button from '../components/Button';
+import { useAuth } from '../../context/AuthContext';
+import { show as showToast } from '../../services/toast';
+import { buttonTap } from '../../services/haptics';
+import { colors, spacing, radius, shadows, motion } from '../../theme/tokens';
+import Text from '../../components/Text';
+import Stack from '../../components/Stack';
+import Inline from '../../components/Inline';
+import Surface from '../../components/Surface';
+import Button from '../../components/Button';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 

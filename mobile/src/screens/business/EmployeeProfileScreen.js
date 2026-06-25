@@ -8,16 +8,16 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { api } from '../services/api';
-import { colors, spacing, radius, shadows } from '../theme/tokens';
-import Text from '../components/Text';
-import Avatar from '../components/Avatar';
-import Surface from '../components/Surface';
-import Stack from '../components/Stack';
-import Inline from '../components/Inline';
-import Badge from '../components/Badge';
-import Button from '../components/Button';
-import { SkeletonBox } from '../components/Skeleton';
+import { api } from '../../services/api';
+import { colors, spacing, radius, shadows } from '../../theme/tokens';
+import Text from '../../components/Text';
+import Avatar from '../../components/Avatar';
+import Surface from '../../components/Surface';
+import Stack from '../../components/Stack';
+import Inline from '../../components/Inline';
+import Badge from '../../components/Badge';
+import Button from '../../components/Button';
+import { SkeletonBox } from '../../components/Skeleton';
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 

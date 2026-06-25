@@ -9,20 +9,20 @@ import Animated, {
   useAnimatedScrollHandler, Extrapolation,
 } from 'react-native-reanimated';
 import { Feather } from '@expo/vector-icons';
-import { useAuth } from '../context/AuthContext';
-import { api } from '../services/api';
-import { colors, spacing, radius, shadows, motion } from '../theme/tokens';
-import Text from '../components/Text';
-import Button from '../components/Button';
-import Avatar from '../components/Avatar';
-import Badge from '../components/Badge';
-import Chip from '../components/Chip';
-import Surface from '../components/Surface';
-import Stack from '../components/Stack';
-import Inline from '../components/Inline';
-import Card from '../components/Card';
-import { SkeletonBox, SkeletonCard } from '../components/Skeleton';
-import { RatingStarsDisplay } from '../components/RatingStars';
+import { useAuth } from '../../context/AuthContext';
+import { api } from '../../services/api';
+import { colors, spacing, radius, shadows, motion } from '../../theme/tokens';
+import Text from '../../components/Text';
+import Button from '../../components/Button';
+import Avatar from '../../components/Avatar';
+import Badge from '../../components/Badge';
+import Chip from '../../components/Chip';
+import Surface from '../../components/Surface';
+import Stack from '../../components/Stack';
+import Inline from '../../components/Inline';
+import Card from '../../components/Card';
+import { SkeletonBox, SkeletonCard } from '../../components/Skeleton';
+import { RatingStarsDisplay } from '../../components/RatingStars';
 
 const AnimatedScrollView = Animated.createAnimatedComponent(ScrollView);
 

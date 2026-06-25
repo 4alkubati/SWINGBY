@@ -6,13 +6,13 @@ import {
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
 
-import { colors, spacing, radius } from '../theme/tokens';
-import Text from '../components/Text';
-import TextField from '../components/TextField';
-import Button from '../components/Button';
-import Chip from '../components/Chip';
-import { api } from '../services/api';
-import { show as showToast } from '../services/toast';
+import { colors, spacing, radius } from '../../theme/tokens';
+import Text from '../../components/Text';
+import TextField from '../../components/TextField';
+import Button from '../../components/Button';
+import Chip from '../../components/Chip';
+import { api } from '../../services/api';
+import { show as showToast } from '../../services/toast';
 
 const GOOGLE_PLACES_KEY = process.env.EXPO_PUBLIC_GOOGLE_PLACES_KEY || '';
 

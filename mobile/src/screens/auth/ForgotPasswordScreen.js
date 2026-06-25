@@ -4,11 +4,11 @@ import {
 } from 'react-native';
 import { useState } from 'react';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { colors, spacing, radius } from '../theme/tokens';
-import Text from '../components/Text';
-import TextField from '../components/TextField';
-import Button from '../components/Button';
-import { api } from '../services/api';
+import { colors, spacing, radius } from '../../theme/tokens';
+import Text from '../../components/Text';
+import TextField from '../../components/TextField';
+import Button from '../../components/Button';
+import { api } from '../../services/api';
 
 export default function ForgotPasswordScreen({ navigation }) {
   const [email, setEmail] = useState('');

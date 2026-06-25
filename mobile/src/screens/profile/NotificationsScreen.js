@@ -3,10 +3,10 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useState, useEffect, useCallback } from 'react';
-import { api } from '../services/api';
-import { colors, spacing } from '../theme/tokens';
-import { SkeletonList } from '../components/Skeleton';
-import EmptyState from '../components/EmptyState';
+import { api } from '../../services/api';
+import { colors, spacing } from '../../theme/tokens';
+import { SkeletonList } from '../../components/Skeleton';
+import EmptyState from '../../components/EmptyState';
 
 function timeAgo(dateStr) {
   if (!dateStr) return '';

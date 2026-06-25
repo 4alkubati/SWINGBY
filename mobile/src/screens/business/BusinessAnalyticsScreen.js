@@ -14,10 +14,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 // victory-native@41 requires Skia + reanimated@4 which conflict with Expo SDK 54.
 // CategoryChart is stubbed with native View bars until we upgrade Expo OR pin
 // victory-native to ~40.x. All other UI on this screen is unaffected.
-import { api } from '../services/api';
-import { SkeletonBox } from '../components/Skeleton';
-import { RatingStarsDisplay } from '../components/RatingStars';
-import { colors } from '../theme/tokens';
+import { api } from '../../services/api';
+import { SkeletonBox } from '../../components/Skeleton';
+import { RatingStarsDisplay } from '../../components/RatingStars';
+import { colors } from '../../theme/tokens';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 

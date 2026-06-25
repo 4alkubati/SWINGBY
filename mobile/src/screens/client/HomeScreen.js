@@ -9,25 +9,25 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import * as Location from 'expo-location';
-import { useAuth } from '../context/AuthContext';
-import ModeSwitch from '../components/ModeSwitch';
-import CategoryScroll from '../components/CategoryScroll';
-import FeaturedCard from '../components/FeaturedCard';
-import NearbyCard from '../components/NearbyCard';
+import { useAuth } from '../../context/AuthContext';
+import ModeSwitch from '../../components/ModeSwitch';
+import CategoryScroll from '../../components/CategoryScroll';
+import FeaturedCard from '../../components/FeaturedCard';
+import NearbyCard from '../../components/NearbyCard';
 import PostJobScreen from './PostJobScreen';
-import { api } from '../services/api';
-import { getUserLocation } from '../services/location';
+import { api } from '../../services/api';
+import { getUserLocation } from '../../services/location';
 
 // New design-system imports
-import { colors, spacing } from '../theme/tokens';
-import Text from '../components/Text';
-import Chip from '../components/Chip';
-import SearchField from '../components/SearchField';
-import Stack from '../components/Stack';
-import Inline from '../components/Inline';
-import Surface from '../components/Surface';
-import { SkeletonBox, SkeletonList } from '../components/Skeleton';
-import EmptyState from '../components/EmptyState';
+import { colors, spacing } from '../../theme/tokens';
+import Text from '../../components/Text';
+import Chip from '../../components/Chip';
+import SearchField from '../../components/SearchField';
+import Stack from '../../components/Stack';
+import Inline from '../../components/Inline';
+import Surface from '../../components/Surface';
+import { SkeletonBox, SkeletonList } from '../../components/Skeleton';
+import EmptyState from '../../components/EmptyState';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const CALGARY_FALLBACK = { lat: 51.0447, lng: -114.0719, city: 'Calgary, AB' };

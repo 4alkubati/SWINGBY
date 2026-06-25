@@ -12,18 +12,18 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Feather } from '@expo/vector-icons';
 
-import { api } from '../services/api';
-import { getUserLocation } from '../services/location';
-import NearbyCard from '../components/NearbyCard';
-import CategoryScroll from '../components/CategoryScroll';
-import EmptyState from '../components/EmptyState';
-import { SkeletonList } from '../components/Skeleton';
-import SearchField from '../components/SearchField';
-import Chip from '../components/Chip';
-import DSText from '../components/Text';
-import Stack from '../components/Stack';
-import Inline from '../components/Inline';
-import { colors, spacing, radius, motion } from '../theme/tokens';
+import { api } from '../../services/api';
+import { getUserLocation } from '../../services/location';
+import NearbyCard from '../../components/NearbyCard';
+import CategoryScroll from '../../components/CategoryScroll';
+import EmptyState from '../../components/EmptyState';
+import { SkeletonList } from '../../components/Skeleton';
+import SearchField from '../../components/SearchField';
+import Chip from '../../components/Chip';
+import DSText from '../../components/Text';
+import Stack from '../../components/Stack';
+import Inline from '../../components/Inline';
+import { colors, spacing, radius, motion } from '../../theme/tokens';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const CALGARY_FALLBACK = { lat: 51.0447, lng: -114.0719 };

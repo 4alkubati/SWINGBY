@@ -18,9 +18,9 @@ import {
 } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { api } from '../services/api';
-import { SkeletonList } from '../components/Skeleton';
-import { colors } from '../theme/tokens';
+import { api } from '../../services/api';
+import { SkeletonList } from '../../components/Skeleton';
+import { colors } from '../../theme/tokens';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function toInitials(name = '') {

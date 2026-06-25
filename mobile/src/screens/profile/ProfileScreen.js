@@ -6,11 +6,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useState } from 'react';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '../context/AuthContext';
-import { updateMe } from '../services/auth';
-import { colors, spacing, radius } from '../theme/tokens';
-import Text from '../components/Text';
-import Button from '../components/Button';
+import { useAuth } from '../../context/AuthContext';
+import { updateMe } from '../../services/auth';
+import { colors, spacing, radius } from '../../theme/tokens';
+import Text from '../../components/Text';
+import Button from '../../components/Button';
 
 function initials(user) {
   if (!user) return '?';
