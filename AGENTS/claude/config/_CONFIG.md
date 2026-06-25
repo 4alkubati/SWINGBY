@@ -8,3 +8,6 @@ Back to [[MAP]].
 
 ---
 *Read by [[ORCHESTRATOR]] before every dispatch.*
+
+- [[LOOP]] — the autonomous build loop (3-bucket gating)
+- [[PATH-INDEX]] — where every file lives

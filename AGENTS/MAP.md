@@ -12,3 +12,6 @@ The center of the vault. Everything links from here.
   - [[ORCHESTRATOR]] — the manager agent
   - [[_CONFIG]] — rulebooks: [[DISPATCH_GATE]], [[ROUTING]], [[MCP_INVENTORY]]
   - [[_MEMORY]] — the brain: [[STATUS]], [[PLAN]
+## The loop
+- [[PRODUCT-VISION]] — what we are building (role-sliced)
+- [[LOOP]] — the autonomous engine

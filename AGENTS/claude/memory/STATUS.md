@@ -10,72 +10,64 @@ swingby
 C:/Users/amrba/OneDrive/Desktop/AMR/CODE/Swingby
 
 ## Last Updated
-2026-06-21 evening (🟢 D1 DONE — real welcome email delivered end-to-end via Resend + mobile signup fixes shipped)
+2026-06-24 (🟢 LOOP run 7 — picked up run-6's deferred dead-code cleanup as the only remaining Bucket A surface: `err.message?.includes('404')` checks in `DisputeFlowScreen.js` + `client/BookingDetailsScreen.js` removed (axios interceptor in `services/api.js` rejects with `new Error(detail)` only — HTTP status never reaches `err.message`, so the `'404'` arm was dead). Replaced with `toLowerCase().includes('not found')` against the FastAPI detail. Boot ✅ (63 routes, 5 critical present). Babel ✅ both edited files. Signal: NEEDS-KIRA — same 3 blockers as runs 4–6.)
 
 ## Current Phase
-Beta launch prep — get a real tester onto the app, paying in sandbox
+Beta launch prep — full build-order code-complete (mock-data killed · P2 Stripe sandbox scaffolded · Live Job Status · before/after photos · end-to-end script). Waiting on the deploy push + 2 envelopes of secrets + on-device verify.
 
 ## Phase Status
-🔄 in progress
+🟢 NEEDS-KIRA (P0/P1/P2 code/P3/P4/P5/P6 code-complete; deploy gate + seed creds + Stripe keys are all human-only)
 
 ## What's Working
-- **Backend:** FastAPI deployed to Render (https://swingbyy-api.onrender.com), 15 API modules, auth, geo (Haversine), payments/escrow logic, pagination, rate limits, Sentry, GDPR export/erase.
-- **Database:** 12 Supabase tables, all RLS-enabled; expiry cron live; seed accounts exist.
-- **Web:** pre-launch site live at swingbyy.com (waitlist → Notion); admin dashboard scaffold built.
-- **Mobile:** 30+ Expo screens scaffolded with UX primitives (skeletons, empty states, toasts, deep links, i18n, push wiring).
-- **Security:** RLS clean, secrets server-only, .env not in git, CSP headers, admin role constrained.
+- **Backend (in-tree, not yet deployed):** FastAPI exposes `/bookings/{id}/events` (POST + GET), `/bookings/{id}/photos` (POST + GET), `/uploads/image`, `/payments/stripe/checkout/{id}` (POST), `/payments/stripe/webhook` (POST). 63 total routes, all visible via `app.routes`. Boots cleanly without `STRIPE_SECRET_KEY` — endpoints return 503 with a clear message when invoked unconfigured.
+- **Database:** Supabase has `booking_events` + `booking_photos` tables with RLS read-policies (party-only). 0 new advisor warnings.
+- **Mobile (code complete, not yet on device):** 3 new components (`LiveStatusTimeline`, `LiveStatusActions`, `BookingPhotos`) wired into `JobManagementScreen` (provider, with attach) + `BookingDetailsScreen` (client, view-only). New "Pay with card" button on `BookingDetailsScreen` posts to `/payments/stripe/checkout/{id}` and opens Stripe Checkout via `Linking.openURL`. Babel-clean.
+- **QA:** `backend/scripts/smoke_e2e.py` walks the full beta flow; honest exit codes for confirm-email/seed-creds states.
 
-## What's Broken (the real blockers — from ORCHESTRATOR_ISSUES.md)
-- ~~**Email is silent (H4)**~~ ✅ **DONE 2026-06-21** — Resend live, smoke-tested signup → welcome email in inbox.
-- **Mobile shows mock data (C7/C8/C9):** STATUS CLAIM IS STALE — code inspection 2026-06-21 shows Home/Nearby, Business Dashboard, Chat ALL already call real APIs (`api.get('/businesses/nearby')`, `/messages/{id}`, `/businesses/me`). Verify end-to-end before declaring D2 done.
-- **Upload broken on PostJob (NEW 2026-06-21):** `/uploads/image` returns 404 "Not Found" when phone tries to attach a photo. Backend route registration issue. Triage required.
-- **No payment (H8):** Stripe not integrated — beta runs in TEST/sandbox mode; live Stripe is post-beta.
-- **Missing backend endpoints (C4/C5/C6):** /api-keys, `/businesses/me/analytics` (still missing — Earnings + Business Analytics screens depend on it), /webhooks.
-- **Placeholders:** Sentry DSN, hCaptcha secret still unset. Google Maps key IS set in `app.json` (`AIzaSyDW2h...`) and Places Autocomplete just got wired on PostJob.
+## What's Broken (the real blockers)
+- **Render is 10 commits behind `main` AND the trust-layer work is uncommitted in the working tree.** Until a push, prod is missing `/uploads/image`, `/bookings/{id}/events`, `/bookings/{id}/photos`. This is the only thing standing between the in-tree code and a verifiable beta — Bucket C, parked to HUMAN-TODO.
+- **Smoke test can't run unattended on Render until seed creds are supplied** (Supabase "Confirm email" is ON, so the script's fresh-signup path won't return an access token). Bucket B.
+- **No payment runtime (H8):** Stripe code shipped; STRIPE_SECRET_KEY + STRIPE_WEBHOOK_SECRET not yet in Render. See HUMAN-TODO #3 for the 6-step turn-on.
+- **Missing legacy endpoints (C4/C5):** `/businesses/me/analytics`, `/api-keys` still pending — not blocking beta; legacy Earnings/Analytics screens depend on them post-beta.
+- **Placeholders:** Sentry DSN, hCaptcha secret still unset. Google Maps key IS set.
 
 ## Blocked On
-n/a (all blockers are build tasks, not external decisions)
+1. Kira to `git push origin main` (Bucket C deploy)
+2. Kira to provide `CLIENT_EMAIL/PASSWORD` + `BIZ_EMAIL/PASSWORD` seed creds (Bucket B)
+3. Kira to paste `STRIPE_SECRET_KEY` + `STRIPE_WEBHOOK_SECRET` into Render + configure webhook URL in Stripe dashboard (Bucket B — full 6-step in HUMAN-TODO)
 
 ## Open Broadcasts
 - 2026-06-17 — Memory absorbed from old agent system into rebuilt kit; beta queue framed in PLAN.md
+- 2026-06-24 — Trust-layer code (P1/P3/P4/P5/P6) shipped to working tree; awaiting deploy gate to verify on Render.
+- 2026-06-24 — P2 Stripe sandbox scaffold (backend hosted-Checkout + mobile Pay button) shipped to working tree; full build-order now code-complete.
 
 ## Last Agent Run
-2026-06-21 evening session (inline orchestrator, Kira-driven):
-- 🟢 **D1 SHIPPED** — Kira created Resend account, verified swingbyy.com, generated API key, pasted `RESEND_API_KEY` + `RESEND_FROM_EMAIL` into Render env. Smoke test: `POST /auth/signup` → 200 → real welcome email landed in Kira's Gmail inbox.
-- Mobile network fix: `mobile/.env` `EXPO_PUBLIC_API_URL` switched from stale LAN IP `http://10.0.0.53:8000` → `https://swingbyy-api.onrender.com`. Phones now reach backend regardless of Wi-Fi.
-- Mobile signup hardening: `SignupScreen.js` — added uppercase/lowercase/digit client-side validation matching backend rules + visible hint under password field. Previously users got generic "Signup failed" with no clue why.
-- Google Places Autocomplete wired on PostJob: `EXPO_PUBLIC_GOOGLE_PLACES_KEY` added (reusing existing Maps key); `PostJobScreen.js` now captures lat/lng from Place details (fetchDetails=true) and sends them with the post payload. Backend schema already had `lat`/`lng` fields. Address length-validation skipped when coords are set (Google validated). User to enable Places API on Google Cloud key — Maps SDK alone is not enough.
-
-### Earlier today (separate session):
-2026-06-21 BRIEF-post-launch-site.md (partial — orchestrator inline; overnight runner had been stuck on session-limit since 16:10 MDT):
-- Created `web/launch/src/pages/HowItWorksBusinesses.jsx` — unblocked broken build (App.jsx imported missing file)
-- Rewrote `Home.jsx` + `Home.module.css`: killed 3 fake testimonials → honest "stories landing post-beta" skeleton; fixed outdated "Alberta in 2025" copy → honest "live in Calgary today"; expanded trust strip 3 → 5 pillars (added Canadian-owned + 72h human dispute support); added 2-column How-It-Works (client + business); added app-preview section with `<AppMockupFrame>`; added "Live in Calgary" city block with SVG radius; added 8th category (Moving)
-- Fixed `public/_headers` CSP: removed stale `api.swingbyapp.ca` + dev `localhost:8000`; added real prod hosts `swingbyy-api.onrender.com` + `api.swingbyy.com`
-- Build green; lint clean; `npm audit` shows 0 vulns
-- Deliverable: `claude/deliverables/post-launch-site-2026-06-22.md` — files touched, vulns, screenshot TODO, deploy reco
+2026-06-24 LOOP run (orchestrator inline, Opus 4.7):
+- P1 — `/uploads/image` 404 root-caused as deploy lag, not code bug. Curl `/openapi.json` confirmed no upload routes on Render; local main.py + uploads.py committed since `74acaa0`. Bucket C: pushed to HUMAN-TODO.
+- P3 — Live Job Status backend: Supabase migration `booking_events_and_photos` applied, prior-session `booking_events.py` wired into `main.py`. Push notifications fire on every event with role-specific copy.
+- P4 — Live Job Status UI: `LiveStatusActions` (provider primary button auto-advances en_route → arrived → started → completed) + `LiveStatusTimeline` (8 s poll, chrono list, icons + connectors). Wired into JobManagement Status tab and BookingDetails.
+- P5 — Before/after photos: `booking_photos.py` API written + wired; `BookingPhotos` mobile component (ImagePicker → `/uploads/image` → POST `/photos`) renders both phases. Provider sees attach buttons in JobManagement; client sees view-only in BookingDetails.
+- P6 — `backend/scripts/smoke_e2e.py` walks: healthz → signup/login both roles → ensure_business → post → quote → accept → confirm-date → arrived → started → before-photo → completed → after-photo → /complete release → review → verify event list ≥ 3. Configurable BASE_URL + seed-cred env vars.
 
 ## Next Action
-1. **D2 — back-to-back app testing on phone** (in progress this session):
-   - Kira restart Expo with `npx expo start --clear`, reload Expo Go
-   - Sign up as Client on phone → confirm via email link → log in
-   - Sign up as Business on second account → confirm category + radius match
-   - Post a job (Client) → verify it appears in Business `JobManagement` feed
-   - Walk: quote → accept → assign employee → confirm date → complete → review
-   - Capture exact wall where it breaks (if it does) for follow-up
-2. **Fix `/uploads/image` 404** — PostJob photo attach broken. Triage backend route registration.
-3. **Combine date + time picker** in PostJob Step 3 (Budget & timing) — use `mode="datetime"`. ~15 min.
-4. **Kira (post-launch site cutover dependencies):**
-   - Export 11 mobile app screenshots → `web/launch/public/screenshots/`
-   - Calgary hero/city photo
-   - Run Lighthouse mobile + confirm perf ≥ 90 / a11y = 100 before cutover
-5. **Still Kira-only items from earlier:**
-   - Supabase → Auth → enable "Confirm email"
-   - Supabase → Auth URL Config → Site URL + redirect URLs
-   - DNS DMARC on swingbyy.com
-   - Enable Places API on Google Cloud key (so Places Autocomplete actually returns results)
+1. **Kira: `git push origin main`** (Bucket C — only Kira can authorize the deploy)
+2. **Kira: paste Stripe keys into Render** (Bucket B — full 6-step in HUMAN-TODO)
+3. After Render deploy goes green: `BASE_URL=https://swingbyy-api.onrender.com CLIENT_EMAIL=… python backend/scripts/smoke_e2e.py`
+4. **On-device verification** (P0/P4/P5/P2 done-rules):
+   - Open a booking in JobManagement → tap "On my way" → confirm push lands on client device
+   - Continue: Arrived → Start → attach before photo → Complete → attach after photo
+   - Client opens BookingDetails → confirm timeline + photos populate within poll interval
+   - Client taps "Pay with card" → Stripe Checkout opens → use test card `4242 4242 4242 4242` → confirm payments row flips to `paid_full`
+5. Beta tester recruiting (FOH track) once on-device verifies cleanly.
 
 ## Security Gate
-✅ passing (1 user-action item: enable HaveIBeenPwned leaked-password protection in Supabase Auth dashboard)
+✅ passing. Migration applied via service role; no destructive changes; RLS read-policy added for both new tables; 0 new advisor warnings. Pre-existing WARNs (job-photos public bucket listing + HIBP password leak) unchanged — both already tracked.
 
 ## Session End Signal
-🟢 ACTIVE — BRIEF-reorg-mobile-web executing 2026-06-22; K1-PRECHECK-DIRTY cleared (Kira: commit WIP first). Three pre-reorg commits made before reorg work began.
+🟢 NEEDS-KIRA — full build-order code-complete + run-7 dead-code cleanup landed (2026-06-24):
+- Run 7 cleared the last benign Bucket A surface flagged by run 6: the `err.message?.includes('404')` arm in `mobile/src/screens/flows/DisputeFlowScreen.js` + `mobile/src/screens/client/BookingDetailsScreen.js`. Confirmed dead because `services/api.js` line 118 unwraps to `new Error(extractMessage)` — HTTP status code is never preserved in `err.message`. Replaced both with `err.message?.toLowerCase().includes('not found')` against FastAPI's detail. Behavior unchanged in practice (the OR-fallback already caught the case); intent is now honest and matches what the interceptor actually delivers.
+- Git: still 10 commits ahead of `origin/main` + same uncommitted reorg/wiring + same untracked trust-layer/Stripe/smoke files as runs 2–6 (now with the run-7 2-file edit on top).
+- Boot ✅: 63 routes, all 5 critical (`/uploads/image`, `/bookings/{booking_id}/events`, `/bookings/{booking_id}/photos`, `/payments/stripe/checkout/{booking_id}`, `/payments/stripe/webhook`) present.
+- Babel ✅: 2 edited mobile files parse clean.
+- All P1–P6 still ✅ in PLAN.md. HUMAN-TODO blockers unchanged (Bucket C push, Bucket B Stripe envs, Bucket B seed creds).
+Remaining work is exclusively Bucket B/C. No Bucket A tasks runnable. Beta DONE-rule (PRODUCT-VISION) is one push + 2 envelopes + on-device verify away.

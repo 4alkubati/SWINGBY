@@ -349,3 +349,14 @@ Before every task, check for a relevant skill and apply it. Skills are workflows
 
 ## Read KIRA.md first
 Before Step 1, read `KIRA.md` (this folder) — who you work for and how she works. Apply it to every interaction: do the planning for her, never hand her raw errors, pull her fuel (self-proof, visible progress, hard-as-doable), stop at human-only steps.
+
+
+---
+
+## LOOP MODE (autonomous build — see config/LOOP.md)
+When Kira says "run the loop" or "start building," operate autonomously per `config/LOOP.md`:
+- FIRST read `PRODUCT-VISION.md` (your role slice only) + `config/PATH-INDEX.md` — never grep the repo for paths.
+- Draft/continue the phased plan in `memory/PLAN.md`; every task gets a DONE-RULE.
+- Run the loop with the 3-bucket gate: **A) just do it · B) park to `memory/HUMAN-TODO.md` and keep going · C) hard-stop (delete/deploy/spend/send/permissions) → NEEDS-KIRA**.
+- Retry cap 3. Verify before DONE. Checkpoint to SESSION_LOG at each phase boundary.
+- Kira clears `HUMAN-TODO.md` in the morning brief — no per-step approval.

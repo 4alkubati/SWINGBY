@@ -49,3 +49,8 @@ test-credentials*
 
 # Personal operator profile — keep local, never push
 AGENTS/claude/KIRA.md
+
+# Transient orchestrator artifacts — never commit
+AGENTS/claude/.scratch/
+AGENTS/claude/automation/overnight.log
+AGENTS/claude/automation/*.log

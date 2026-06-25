@@ -1,93 +1,116 @@
 # PLAN.md — Active Plan
 
 > Written by Orchestrator. Every task framed through DISPATCH_GATE Layer 1 (5W+H) before it lands here.
+> **Mode: AUTONOMOUS + GATED** per `config/LOOP.md`. 3-bucket gate (A: just do it · B: park to HUMAN-TODO · C: hard-stop).
 
 ## Project: SwingBy
 ## Repo: C:/Users/amrba/OneDrive/Desktop/AMR/CODE/Swingby
 
-## Goal: BETA — a real tester installs the app, signs up, does a real booking, gets a real email. Payment in sandbox.
+## Goal (beta DONE)
+A real tester installs the app, signs up, gets a branded email, posts/finds a job, books, **sees Live Job Status**, completes it, leaves a review — on a real device, payment in sandbox.
 
 ---
 
-## ⚡ OVERNIGHT JOB (2026-06-21 → 2026-06-22) — RUN THIS FIRST
-
-**Brief:** `AGENTS/BRIEF-post-launch-site.md`
-
-**Win condition:** `web/launch` rebuilt into a polished post-launch marketing site (better than `web/pre-launch`). Two How-It-Works flows (clients + businesses), app-mockup placeholders, payment + post + find-job visuals, vite 5→8 vuln fix, lighthouse mobile ≥ 90 perf / 100 a11y, zero `coming soon` lies. Deliverable to `claude/deliverables/post-launch-site-2026-06-22.md`.
-
-**Safeguards:** debug every line (read → edit → re-read → build/lint gate); auto-compact at 128k context (write SESSION_LOG checkpoint, summarize, continue); exit on NEEDS-KIRA — never spin.
-
-**Status:** 🟢 code work done 2026-06-21 (vite 8 prior session, plus this session: HowItWorksBusinesses created, Home rewritten honest, CSP fixed, build/lint/audit green, deliverable written). **Remaining = Kira-only**: export 11 mobile screenshots into `web/launch/public/screenshots/`, supply Calgary photo, run Lighthouse on `/` (perf ≥ 90 / a11y = 100). See `claude/deliverables/post-launch-site-2026-06-22.md`.
-
----
-
-## TOMORROW — lock-in plan (open this at your evening block, just execute)
-
-**Win condition for the day:** Domino 1 DONE (a real signup email actually sends) + Domino 2 STARTED (mock data being killed). If both happen, you shipped real beta progress.
-
-**Morning (6:10 + coffee):**
-1. Read the morning brief on your phone (build status + waitlist).
-2. Confirm Resend domain = Verified → paste RESEND_API_KEY into the SwingBy backend env. (2 min — unblocks D1.)
-3. Networking block: send 5 beta-tester recruiting messages (have marketing-agent draft, you send).
-
-**Evening lock-in (7:15–9:45 — the real work, no planning):**
-4. D1 finish: agent already wired Resend; send yourself a test signup → confirm the email lands. ✅ D1 done.
-5. D2 start: dispatch mobile-agent to wire Home/Nearby (C7) to the real API. Watch the first task; if clean, let it continue to Dashboard (C8) + Chat (C9).
-6. Close: update STATUS.md, frame tomorrow's task (D2 finish or D3 build).
-
-**Night:** launch run-overnight.sh on whatever D2 didn't finish. PC awake, Docker running.
+## Build order (locked by PRODUCT-VISION)
+1. ✅ **D1 — Email sends** (SHIPPED 2026-06-21)
+2. ✅ **P0 — Kill mock data on Home/Dashboard/Chat** (code already on real APIs per 2026-06-21 audit; E2E confirms with P6)
+3. ✅ **P1 — /uploads/image** (code already in `main.py` since `74acaa0`; live 404 is a deploy lag — `git push origin main` ships it)
+4. 🟡 **P2 — Transactions sandbox** (Stripe test mode) — code shipped to working tree (backend `payments_stripe.py` + service + config + requirements; mobile `Pay with card` button on BookingDetails). RUNNING IT requires `STRIPE_SECRET_KEY` + `STRIPE_WEBHOOK_SECRET` in Render env — Bucket B.
+5. ✅ **P3 — Live Job Status backend** (booking_events table + RLS + POST/GET events + push on each event — code shipped to working tree, awaits deploy)
+6. ✅ **P4 — Live Job Status UI** (LiveStatusActions + LiveStatusTimeline wired into JobManagement + BookingDetails — code shipped, awaits on-device verify)
+7. ✅ **P5 — Before/after photos** (booking_photos table + API + BookingPhotos mobile component — code shipped, awaits on-device verify)
+8. ✅ **P6 — End-to-end smoke test** (`backend/scripts/smoke_e2e.py` — code shipped, awaits deploy + seed creds to run)
+9. ⬜ **D3/D4 — Installable build + real tester run** (post-loop, Kira-driven; needs Apple/Google accounts)
 
 ---
 
-### The 4 dominoes (in order — each unblocks the next)
-
-#### D1 — Email actually sends
+## Phase P0 — Mock data verification ✅
 | Field | Value |
 |---|---|
-| 5W+H | WHO beta testers · WHAT signup/notify emails arrive · WHEN domino 1 · WHERE backend + Resend · WHY silent email = dead beta · HOW configure Resend + verify domain + set RESEND_API_KEY |
-| Track | BOH | Agent | backend-agent |
-| Obstacle train | [START] → create Resend acct + verify swingby domain → set RESEND_API_KEY in Render → wire send calls (signup, booking) → test: real signup email lands → [DONE] |
-| What Kira does | Create Resend account, verify domain, paste API key |
-| What the agent does | Wire the send helper + call sites, test delivery |
-| Status | 🔶 waiting on you — create Resend account, verify swingbyy.com domain, paste RESEND_API_KEY + RESEND_FROM_EMAIL into Render env vars |
+| 5W+H | WHO testers · WHAT Home/Dashboard/Chat show real data · WHEN now · WHERE mobile/src/screens · WHY fake screens = fake beta · HOW grep + read |
+| DONE-RULE | Each screen contains a real `api.get(...)` call and renders empty/loading/error states |
+| Status | ✅ DONE — code audit 2026-06-23: `HomeScreen.js:142` `api.get('/businesses/nearby')`; `DashboardScreen.js:205-207` `api.get('/bookings/')` + `/service-posts/` + `/businesses/me`; `ChatScreen.js:270` `api.get('/messages/{bookingId}')` with 5s polling. On-device verification rolls into P6. |
+| Bucket | A (just do it — verification only) |
 
-#### D2 — Kill the mock data
+---
+
+## Phase P1 — Fix /uploads/image 404
 | Field | Value |
 |---|---|
-| 5W+H | WHO testers · WHAT Home/Dashboard/Chat show real data · WHEN after D1 · WHERE mobile/ · WHY fake screens = fake beta · HOW wire to real endpoints (C7/C8/C9) |
-| Track | BOH | Agent | mobile-agent |
-| Obstacle train | [START] → verify endpoints return data → wire Home/Nearby → wire Dashboard → wire Chat polling → loading/empty/error states → [DONE] |
-| What Kira does | Approve, test on device |
-| What the agent does | Replace mock arrays with real fetches + states |
-| Status | ⬜ pending |
-
-#### D3 — A build a tester can install
-| Field | Value |
-|---|---|
-| 5W+H | WHO testers · WHAT installable build · WHEN after D2 · WHERE EAS → TestFlight/Play internal · WHY they need it on a real phone · HOW eas build + real Maps key |
-| Track | BOH | Agent | mobile-agent + Kira (store accounts) |
-| Obstacle train | [START] → real Google Maps key in EAS secrets → eas build (ios+android) → upload to TestFlight + Play internal → seed accounts log in on device → [DONE] |
-| What Kira does | Apple/Google accounts, paste Maps key, invite testers |
-| What the agent does | Configure EAS, run builds, document install steps |
-| Status | ⬜ pending |
-
-#### D4 — One real end-to-end run
-| Field | Value |
-|---|---|
-| 5W+H | WHO a real tester · WHAT full flow works on a phone · WHEN after D3 · WHERE live app · WHY proof it works for a stranger · HOW post→quote→accept→complete→review, payment in sandbox |
-| Track | BOH | Agent | qa-agent |
-| Obstacle train | [START] → tester signs up → posts/browses → quote → accept → complete → review → email confirms → [DONE: BETA LIVE] |
-| What Kira does | Recruit 1–3 testers, run it with them |
-| What the agent does | Smoke-test the flow first, file any breakage |
+| 5W+H | WHO clients posting jobs · WHAT photo attach works · WHEN now · WHERE backend/app/api/uploads.py + mobile/src/screens/client/PostJobScreen.js · WHY photos = trust + proof · HOW reproduce the call, isolate the path issue |
+| DONE-RULE | curl POST to `/uploads/image` with a JPEG returns 200 + URL; on-device PostJob photo attach succeeds |
+| Obstacle train | [START] → reproduce 404 with curl → confirm router prefix → inspect mobile FormData → fix → curl green → on-device green → [DONE] |
+| Bucket | A (just do it) |
 | Status | ⬜ pending |
 
 ---
 
-### FOH (runs in parallel — fill the waitlist + recruit testers)
+## Phase P2 — Transactions sandbox
+| Field | Value |
+|---|---|
+| 5W+H | WHO tester completing a booking · WHAT pay in Stripe sandbox · WHEN before beta tester run · WHERE backend/app/api/payments_stripe.py + backend/app/services/stripe_service.py + mobile/src/screens/client/BookingDetailsScreen.js · WHY no payment = no beta · HOW Stripe test mode + Checkout Session (hosted) + webhook signature verification |
+| DONE-RULE | A booking in test mode goes from confirmed → paid via a Stripe test card; payments row marked `paid_full`; webhook signature verified |
+| Bucket | A (code) ✅ shipped + B (Stripe account/keys) pending |
+| HUMAN-TODO sub-items | (Bucket B) — create Stripe test account if missing; paste `STRIPE_SECRET_KEY` + `STRIPE_WEBHOOK_SECRET` (+ optional `STRIPE_SUCCESS_URL` / `STRIPE_CANCEL_URL`) into Render env; configure webhook endpoint `https://swingbyy-api.onrender.com/payments/stripe/webhook` in Stripe Dashboard |
+| Status | 🟡 code complete — runtime needs keys + deploy |
+
+---
+
+## Phase P3 — Live Job Status backend
+| Field | Value |
+|---|---|
+| 5W+H | WHO client + business · WHAT see provider's real-time status · WHEN P2 done · WHERE Supabase + backend/app/api/bookings.py · WHY trust = the moat · HOW new `booking_events` table + 3 endpoints + push |
+| Obstacle train | [START] → migration: booking_events(id, booking_id, event_type ENUM, actor_id, lat, lng, note, created_at) → RLS policies (read: parties of booking; insert: assigned employee or business owner) → POST `/bookings/{id}/events` (event_type in {arrived,started,completed}) → on each event: insert row + send push to client + (for completed) re-use payment release logic → GET `/bookings/{id}/events` → [DONE] |
+| DONE-RULE | All 3 events insert rows + push the client; client and business can GET the event list; access denied for outsiders |
+| Bucket | A (code + migration) |
+| Status | ⬜ pending |
+
+---
+
+## Phase P4 — Live Job Status UI
+| Field | Value |
+|---|---|
+| 5W+H | WHO testers · WHAT timeline visible · WHEN P3 done · WHERE mobile/src/screens/business/JobManagementScreen.js + mobile/src/screens/client/BookingDetailsScreen.js + new TimelineComponent · WHY proof of work · HOW provider sees three buttons; client sees timeline that polls /events |
+| DONE-RULE | Provider taps Arrived → row appears in client's timeline within poll interval; Start + Complete same |
+| Bucket | A |
+| Status | ⬜ pending |
+
+---
+
+## Phase P5 — Before/after photos
+| Field | Value |
+|---|---|
+| 5W+H | WHO testers · WHAT capture + view before/after · WHEN P4 done · WHERE backend booking_photos table + endpoint + mobile camera + view UI · WHY dispute defense · HOW reuse uploads endpoint + new booking_photos linkage |
+| DONE-RULE | Provider attaches before photo → starts job; attaches after photo → completes job. Client sees both on BookingDetails. |
+| Bucket | A |
+| Status | ⬜ pending |
+
+---
+
+## Phase P6 — End-to-end smoke test
+| Field | Value |
+|---|---|
+| 5W+H | WHO orchestrator · WHAT scripted run of full flow against live Render + Supabase · WHEN P5 done · WHERE backend/scripts/smoke_e2e.py · WHY hand-test is unreliable · HOW Python httpx + seed accounts |
+| DONE-RULE | Script exits 0 after: signup-or-login both roles → post → quote → accept → assign → confirm date → arrive → start → upload after photo → complete → review |
+| Bucket | A (code + run); reads no secrets, sends no public messages |
+| Status | ⬜ pending |
+
+---
+
+## D3 / D4 (post-loop, Kira-driven)
+- D3: EAS build (needs Apple Developer + Google Play accounts — Bucket B, deferred per HUMAN-TODO)
+- D4: One real tester ride-along (needs recruited tester — FOH task)
+
+---
+
+## FOH (parallel, draft only — never auto-send)
 | Task | Agent | Status |
 |---|---|---|
-| Draft beta-tester recruiting message + 5 outreach targets | marketing-agent | ⬜ pending |
+| Beta-tester recruiting message + 5 outreach targets | marketing-agent | ⬜ pending |
 | Daily morning brief (build + inbox + social) | assistant-agent | ⬜ pending |
 
-### Parked (capture, don't chase — revisit after beta is moving)
-- Self-host **Umami** (free, Docker, next to n8n) for site-visitor analytics → wire into the morning brief. Only once actively driving traffic; ~15 min when needed.
+---
+
+## Parked (capture, don't chase)
+- Self-host Umami analytics next to n8n. ~15 min, revisit when actively driving traffic.
+- Phase 5 web reorg (BRIEF Section 5B) — deferred indefinitely per Kira's choice.

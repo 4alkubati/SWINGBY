@@ -9,3 +9,5 @@ Back to [[MAP]].
 
 ---
 *Project-scoped. When the kit is copied into a project, these files hold that project's memory.*
+
+- [[HUMAN-TODO]] — what is waiting on Kira (cleared in the morning brief)
