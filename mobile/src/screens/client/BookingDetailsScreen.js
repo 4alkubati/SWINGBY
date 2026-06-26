@@ -85,11 +85,24 @@ function formatTime(iso) {
 }
 
 function paymentPillStyle(status) {
+  // bookings.payment_status enum per CHECK: held | partial_released | fully_released.
+  // 'refunded' shipped only if Kira extends the CHECK (HUMAN-TODO).
   switch ((status || '').toLowerCase()) {
-    case 'paid':    return { bg: colors.success + '1F', border: colors.success + '4D', text: colors.success };
-    case 'pending': return { bg: colors.accent + '1A', border: colors.accent + '40', text: colors.accent };
-    case 'failed':  return { bg: colors.danger + '1A', border: colors.danger + '4D', text: colors.danger };
-    default:        return { bg: colors.surfaceAlt,    border: colors.border,         text: colors.textSecondary };
+    case 'fully_released':   return { bg: colors.success + '1F', border: colors.success + '4D', text: colors.success };
+    case 'partial_released': return { bg: colors.accent + '1A',  border: colors.accent + '40',  text: colors.accent };
+    case 'held':             return { bg: colors.accent + '1A',  border: colors.accent + '40',  text: colors.accent };
+    case 'refunded':         return { bg: colors.danger + '1A',  border: colors.danger + '4D',  text: colors.danger };
+    default:                 return { bg: colors.surfaceAlt,     border: colors.border,         text: colors.textSecondary };
+  }
+}
+
+function paymentPillLabel(status) {
+  switch ((status || '').toLowerCase()) {
+    case 'fully_released':   return 'PAID';
+    case 'partial_released': return 'IN PROGRESS';
+    case 'held':             return 'HELD';
+    case 'refunded':         return 'REFUNDED';
+    default:                 return (status || 'pending').toUpperCase();
   }
 }
 
@@ -192,14 +205,22 @@ export default function BookingDetailsScreen({ route, navigation }) {
   const { bookingId } = route.params ?? {};
 
   const [booking, setBooking] = useState(null);
+  const [payment, setPayment] = useState(null);
   const [status, setStatus] = useState('loading'); // loading | ready | error | deleted
 
   const fetchBooking = useCallback(async () => {
     if (!bookingId) { setStatus('deleted'); return; }
     setStatus('loading');
     try {
-      const data = await api.get(`/bookings/${bookingId}`);
-      setBooking(data);
+      // bookings.payment_status only tracks escrow release (held|partial_released|fully_released).
+      // The client-paid-Stripe-in-full signal lives on payments.status = 'paid_full', so we
+      // fetch the payments row in parallel and use it to gate the "Pay with card" button.
+      const [bookingData, paymentData] = await Promise.all([
+        api.get(`/bookings/${bookingId}`),
+        api.get(`/payments/${bookingId}`).catch(() => null),
+      ]);
+      setBooking(bookingData);
+      setPayment(paymentData);
       setStatus('ready');
     } catch (err) {
       // api.js interceptor rejects with the FastAPI detail string only — no status code.
@@ -460,7 +481,7 @@ export default function BookingDetailsScreen({ route, navigation }) {
                     variant="caption"
                     style={{ color: payPill.text, fontWeight: '700', letterSpacing: 0.8 }}
                   >
-                    {(booking?.payment_status ?? 'pending').toUpperCase()}
+                    {paymentPillLabel(booking?.payment_status)}
                   </Text>
                 </View>
               </Inline>
@@ -488,7 +509,7 @@ export default function BookingDetailsScreen({ route, navigation }) {
           gap: spacing.sm + 2,
         }}
       >
-        {(booking?.payment_status !== 'paid_full' && booking?.status !== 'cancelled') && (
+        {(payment?.status !== 'paid_full' && booking?.status !== 'cancelled') && (
           <Button
             variant="primary"
             label={payInFlight ? 'Opening checkout…' : 'Pay with card'}
@@ -499,7 +520,7 @@ export default function BookingDetailsScreen({ route, navigation }) {
         )}
 
         <Button
-          variant={booking?.payment_status === 'paid_full' ? 'primary' : 'ghost'}
+          variant={payment?.status === 'paid_full' ? 'primary' : 'ghost'}
           label="Message"
           onPress={handleMessage}
           icon={<Feather name="message-circle" size={18} color={colors.textPrimary} />}

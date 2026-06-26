@@ -86,9 +86,30 @@ def signup_or_login(
     email = os.environ.get(env_email)
     password = os.environ.get(env_password)
 
+    # Half-set env pair is almost always a typo. Fail loud rather than
+    # silently falling through to the signup path (which then dies with a
+    # confusing "Confirm email is ON" error).
+    if bool(email) != bool(password):
+        print(
+            f"\n[smoke] {env_email} and {env_password} must be set together. "
+            f"Got: {env_email}={'set' if email else 'unset'}, "
+            f"{env_password}={'set' if password else 'unset'}.",
+            file=sys.stderr,
+        )
+        sys.exit(5)
+
     if email and password:
         log("login", f"{role} {email}")
         resp = client.post("/auth/login", json={"email": email, "password": password})
+        if resp.status_code == 401:
+            print(
+                f"\n[smoke] 401 logging in as {email}. The seed account does not "
+                f"exist in Supabase Auth (or the password is wrong). Create it via "
+                f"Supabase dashboard → Authentication → Users → Add user, with "
+                f"'Auto Confirm User' ON. See AGENTS/claude/memory/HUMAN-TODO.md.",
+                file=sys.stderr,
+            )
+            sys.exit(6)
         data = _check(resp, "login")
         return data["user_id"], data["access_token"]
 

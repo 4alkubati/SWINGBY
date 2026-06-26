@@ -420,32 +420,6 @@ export default function JobManagementScreen({ navigation, route }) {
                 )}
               </Surface>
 
-              {/* Photo proof — shown when done */}
-              {isDone && (
-                <Animated.View
-                  entering={FadeIn.duration(300)}
-                  style={styles.cardMargin}
-                >
-                  <Surface
-                    elevation="none"
-                    rounded="card"
-                    padding="lg"
-                    style={styles.proofSurface}
-                  >
-                    <Stack spacing="sm" align="center">
-                      <Text style={styles.proofIcon}>📷</Text>
-                      <Text variant="bodyMedium">Upload proof of work</Text>
-                      <Text variant="small" color="secondary">Required to release final payment</Text>
-                      <Button
-                        variant="primary"
-                        label="Choose photos"
-                        style={{ marginTop: spacing.xs, alignSelf: 'center', minWidth: 160 }}
-                      />
-                    </Stack>
-                  </Surface>
-                </Animated.View>
-              )}
-
               {/* Message client */}
               <View style={styles.cardMargin}>
                 <Button
@@ -625,13 +599,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     minHeight: 0,
   },
-
-  proofSurface: {
-    borderWidth: 1.5,
-    borderStyle: 'dashed',
-    borderColor: colors.border,
-  },
-  proofIcon: { fontSize: 28 },
 
   errorIcon: { fontSize: 36 },
 
