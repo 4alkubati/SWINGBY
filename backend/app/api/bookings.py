@@ -219,10 +219,10 @@ def confirm_date(
                 if client_uid:
                     send_push_to_user(client_uid, "Booking confirmed", "Your booking date is confirmed")
 
-                # Look up business owner user_id
+                # Look up business owner + email date-confirmed notification
                 biz_owner_res = (
                     supabase.table("businesses")
-                    .select("owner_id")
+                    .select("owner_id, business_name")
                     .eq("id", biz_id)
                     .single()
                     .execute()
@@ -230,10 +230,31 @@ def confirm_date(
                 biz_owner_id = (
                     biz_owner_res.data["owner_id"] if biz_owner_res.data else None
                 )
+                biz_name = (
+                    biz_owner_res.data["business_name"] if biz_owner_res.data else "Your business"
+                )
                 if biz_owner_id:
                     send_push_to_user(biz_owner_id, "Booking confirmed", "A booking date has been confirmed")
+                    try:
+                        from app.services.email import send_date_confirmed_business
+                        biz_owner_user_res = (
+                            supabase.table("users")
+                            .select("email")
+                            .eq("id", biz_owner_id)
+                            .single()
+                            .execute()
+                        )
+                        if biz_owner_user_res.data:
+                            send_date_confirmed_business(
+                                biz_owner_user_res.data["email"],
+                                biz_name,
+                                booking_id,
+                                data.confirmed_date,
+                            )
+                    except Exception:
+                        pass
         except Exception:
-            pass  # push failure must not break the request
+            pass  # notification failure must not break the request
 
         return {"message": "Date confirmed — booking is now in progress", "booking": updated_booking}
     except HTTPException:
@@ -293,6 +314,36 @@ def complete_booking(booking_id: str, current_user: dict = Depends(get_current_u
                 "status": "completed",
                 "released_at": datetime.now(timezone.utc).isoformat(),
             }).eq("id", p["id"]).execute()
+
+        # Email the client a completion notice + review nudge — best-effort
+        try:
+            from app.services.email import send_booking_completed_client
+            client_user_res = (
+                supabase.table("users")
+                .select("email, first_name")
+                .eq("id", booking["client_id"])
+                .single()
+                .execute()
+            )
+            biz_name_res = (
+                supabase.table("businesses")
+                .select("business_name")
+                .eq("id", booking["business_id"])
+                .single()
+                .execute()
+            )
+            biz_name = (
+                biz_name_res.data["business_name"] if biz_name_res.data else "the business"
+            )
+            if client_user_res.data:
+                send_booking_completed_client(
+                    client_user_res.data["email"],
+                    client_user_res.data["first_name"],
+                    booking_id,
+                    biz_name,
+                )
+        except Exception:
+            pass
 
         return {"message": "Booking completed — full payment released (minus platform fee)"}
     except HTTPException:
@@ -360,6 +411,48 @@ def cancel_booking(
         payment_res = supabase.table("payments").select("id").eq("booking_id", booking_id).single().execute()
         if payment_res.data:
             supabase.table("payments").update({"status": "refunded"}).eq("id", payment_res.data["id"]).execute()
+
+        # Email the OTHER party (whoever didn't cancel) — best-effort
+        try:
+            from app.services.email import send_booking_cancelled
+            canceller_id = current_user["id"]
+            client_id = booking["client_id"]
+            biz_id = booking["business_id"]
+
+            # Find the business owner's user_id
+            biz_owner_res = (
+                supabase.table("businesses")
+                .select("owner_id")
+                .eq("id", biz_id)
+                .single()
+                .execute()
+            )
+            biz_owner_id = biz_owner_res.data["owner_id"] if biz_owner_res.data else None
+
+            # Determine which user to email (the one who did NOT cancel)
+            other_user_id = None
+            if canceller_id == client_id and biz_owner_id:
+                other_user_id = biz_owner_id
+            elif canceller_id != client_id:
+                other_user_id = client_id
+
+            if other_user_id:
+                other_user_res = (
+                    supabase.table("users")
+                    .select("email, first_name")
+                    .eq("id", other_user_id)
+                    .single()
+                    .execute()
+                )
+                if other_user_res.data:
+                    send_booking_cancelled(
+                        other_user_res.data["email"],
+                        other_user_res.data["first_name"],
+                        booking_id,
+                        penalty_amount,
+                    )
+        except Exception:
+            pass
 
         return {
             "message": "Booking cancelled",

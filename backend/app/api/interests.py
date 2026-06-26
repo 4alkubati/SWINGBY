@@ -60,7 +60,7 @@ def express_interest(data: InterestCreate, current_user: dict = Depends(get_curr
         try:
             post_owner_res = (
                 supabase.table("service_posts")
-                .select("client_id")
+                .select("client_id, title")
                 .eq("id", data.post_id)
                 .single()
                 .execute()
@@ -73,6 +73,9 @@ def express_interest(data: InterestCreate, current_user: dict = Depends(get_curr
                 .execute()
             )
             client_id = post_owner_res.data["client_id"] if post_owner_res.data else None
+            post_title = (
+                post_owner_res.data["title"] if post_owner_res.data else "your job"
+            )
             biz_name = (
                 biz_name_res.data["business_name"] if biz_name_res.data else "A business"
             )
@@ -82,8 +85,28 @@ def express_interest(data: InterestCreate, current_user: dict = Depends(get_curr
                     "New quote on your job",
                     f"{biz_name} is interested",
                 )
+                # Email the client too
+                try:
+                    from app.services.email import send_quote_received
+                    client_user_res = (
+                        supabase.table("users")
+                        .select("email, first_name")
+                        .eq("id", client_id)
+                        .single()
+                        .execute()
+                    )
+                    if client_user_res.data:
+                        send_quote_received(
+                            client_user_res.data["email"],
+                            client_user_res.data["first_name"],
+                            post_title,
+                            biz_name,
+                            data.quoted_price,
+                        )
+                except Exception:
+                    pass
         except Exception:
-            pass  # push failure must not break the request
+            pass  # notification failure must not break the request
 
         return {"message": "Interest expressed", "interest": interest}
     except HTTPException:

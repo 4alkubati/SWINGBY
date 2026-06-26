@@ -138,3 +138,33 @@ def _mark_payment_paid(booking_id: str, stripe_session_id: str | None) -> None:
     except Exception:
         logger.exception("Could not mark payment paid for booking %s", booking_id)
         # Don't raise — webhooks must be idempotent + always 200 to Stripe.
+
+    # Email the client a payment receipt — best-effort, never raises
+    try:
+        from app.services.email import send_payment_receipt
+        booking_res = (
+            supabase.table("bookings")
+            .select("client_id, total_amount")
+            .eq("id", booking_id)
+            .single()
+            .execute()
+        )
+        if booking_res.data:
+            client_id = booking_res.data["client_id"]
+            amount = float(booking_res.data.get("total_amount") or 0)
+            client_user_res = (
+                supabase.table("users")
+                .select("email, first_name")
+                .eq("id", client_id)
+                .single()
+                .execute()
+            )
+            if client_user_res.data and amount > 0:
+                send_payment_receipt(
+                    client_user_res.data["email"],
+                    client_user_res.data["first_name"],
+                    booking_id,
+                    amount,
+                )
+    except Exception:
+        logger.warning("payment receipt email failed for booking %s", booking_id)
