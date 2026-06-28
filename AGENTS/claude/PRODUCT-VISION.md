@@ -29,6 +29,12 @@ The pitch: trust-first local marketplace. Differentiators vs Jobber: escrow safe
 2. **Before/after photos** — proof of work, dispute defense.
 3. **Escrow option** (later, via processor) — deposit safe until done; auto-release on Live Job Status completion.
 
+## Payment model (build both — escrow is NOT the only path)
+Client picks a payment method at booking. Two modes:
+- **In-app card (Stripe)** — supports BOTH: (a) **escrow/hold** (held, auto-released on Live Job Status completion) and (b) **full/immediate** charge. Platform cut applies. This is the only mode SwingBy can hold/protect/monetize automatically.
+- **Off-platform: cash + e-transfer** — SwingBy never touches the money. App **records** it ("mark as paid"), Live Job Status + photos still give trust, but there is NO escrow and NO automatic platform cut on these. Treat as record-only.
+- **Open decision (NEEDS-KIRA):** how SwingBy earns when payment is cash/e-transfer (flat booking/lead fee charged to the business via card? free-for-growth now? business subscription?). Do not auto-build a monetization path for off-platform payments until Kira decides. Sandbox only for beta.
+
 
 ---
 *[[MAP]] · read first by [[LOOP]] + [[ORCHESTRATOR]] (role slice only)*

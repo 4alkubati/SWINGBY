@@ -3,6 +3,8 @@
 > The single plan to ship SwingBy. Three phases. One output: real people using it.
 > Daily files use the morning/night format (see `_TEMPLATE-daily.md`). The morning brief automation is **gen-1**; more launch automations come as we go.
 
+> 👉 **Active plan: [[DOMINOES]]** — the ordered list of dominoes between today and BETA LIVE. Each domino has its own file under [[dominoes]] with steps + an append-only log. Read DOMINOES first; this README is the north star.
+
 ---
 
 ## 👉 Tomorrow (Jun 18) — per Kira
@@ -29,7 +31,7 @@
 3. **Installable build** — EAS → TestFlight / Play internal
 4. **End-to-end run** — a tester completes a booking (sandbox payment)
 
-See `June/` for the daily sprint. Costs/credentials/APIs: `COSTS-CREDENTIALS-APIS.md`.
+See `June.md` (all June in one file) and `July/` (one file per day) for the daily plan. Master timeline: `DOMINOES.md`. Costs/credentials/APIs: `COSTS-CREDENTIALS-APIS.md`.
 
 ## The OS vision (why this folder exists)
 This is your command center. One place where:

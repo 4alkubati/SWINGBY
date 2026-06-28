@@ -1,6 +1,14 @@
 # JULY — Phase 2: Polish + Launch Prep
 
-> Beta is in testers' hands. July = fix what they break, then get launch-ready (payments live, stores, legal). Daily files use `../_TEMPLATE-daily.md`.
+> First week (Jul 1–7) **finishes Phase-1 beta** (D2.4 → D3 → D4 friend tester). Once a real tester completes a booking, July becomes: fix what they break, then get launch-ready (payments live, stores, legal). Daily files use `../_TEMPLATE-daily.md`. Master timeline (both lanes): [[../DOMINOES]].
+
+## 🗓️ Daily files (Jul 1–7 — the beta finish)
+- [[2026-07-01|Jul 1 (Wed)]] — D2.4 mobile Plan card + gating + webhook (loop)
+- [[2026-07-02|Jul 2 (Thu)]] — Smoke test full chain on Render (you) ‖ D2.4 finish (loop)
+- [[2026-07-03|Jul 3 (Fri)]] — D3 personal Expo Go walk-through (you)
+- [[2026-07-04|Jul 4–5 (Sat–Sun)]] — Fix D3 bugs (loop)
+- [[2026-07-06|Jul 6 (Mon)]] — Recruit 1 friend tester (you)
+- [[2026-07-07|Jul 7 (Tue)]] — D4 friend tester end-to-end → **BETA LIVE**
 
 ## July win condition
 By Jul 31: **store-ready build, Stripe live, 0 critical bugs, legal pages reviewed.** Ready to flip the switch in August.
