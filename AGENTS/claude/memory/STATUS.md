@@ -10,7 +10,7 @@ swingby
 C:/Users/amrba/OneDrive/Desktop/AMR/CODE/Swingby
 
 ## Last Updated
-2026-06-27 — D2.5 STATUS rewrite + D2.4 NEEDS-KIRA locked
+2026-06-28 — D2.1 code-complete (backend endpoint + mobile rewrite), awaits Kira push + on-device verify
 
 ## Current Phase
 **Phase 1 — BETA.** Build order moved from PLAN.md (P1–P6 done) to [[../../Roadmap/DOMINOES]] (D2.0–D5). Currently between dominoes:
@@ -22,7 +22,7 @@ C:/Users/amrba/OneDrive/Desktop/AMR/CODE/Swingby
 - ⬜ D3/D4/D5 — Expo Go walkthrough → friend tester → paid testers
 
 ## Phase Status
-🟢 BUILD-READY — D2.4 NEEDS-KIRA cleared 2026-06-27. Code can proceed on D2.1, D2.2, D2.3, D2.4. D2.0 waits on Kira's iPhone; D2.5 commit awaits Kira's push (Bucket C).
+🟢 BUILD-READY — D2.1 employee trust card code-complete this session (backend `GET /employees/{id}/profile` + mobile EmployeeProfileScreen rewrite). Awaits Kira push to ship to Render + on-device verify. D2.2 (invoices) is next runnable code domino. D2.0 still waits on Kira's iPhone walkthrough.
 
 ## What's Working (deployed surface)
 - **Backend (LIVE on Render `swingbyy-api.onrender.com`):** 50 routes — `/uploads/image`, `/bookings/{id}/events` (POST + GET), `/bookings/{id}/photos` (POST + GET), `/payments/stripe/checkout/{id}` (POST), `/payments/stripe/webhook` (POST), `/contact/`, full auth surface. Stripe routes return 503 with clear remediation copy until keys set in Render env.
@@ -61,11 +61,11 @@ C:/Users/amrba/OneDrive/Desktop/AMR/CODE/Swingby
 - Did NOT commit (Bucket C — Kira's push).
 
 ## Next Action
-1. **Kira:** push the D2.5 cleanup commit (suggested message in HUMAN-TODO)
-2. **Kira:** walk through Expo Go on iPhone → file bug list to `Roadmap/June/2026-06-26.md` (D2.0)
+1. **Kira:** push the local stack (D2.5 cleanup `1f1801b` + D1 emails `08715e3` + unread-count/web-Places fix `7875b31` + this session's D2.1 commit once approved) — see HUMAN-TODO
+2. **Kira:** walk through Expo Go on iPhone → file bug list to `Roadmap/June/2026-06-26.md` (D2.0); include the new EmployeeProfile trust card in the tap-through
 3. **Kira:** create 3 seed accounts in Supabase Auth (Auto-Confirm ON)
 4. **Kira:** paste Stripe keys into Render + configure webhook
-5. **Claude:** start D2.1 employee trust card (next runnable code domino)
+5. **Claude:** D2.2 invoices (next runnable code domino) — in-app receipt + PDF via reportlab
 
 ## Security Gate
 ✅ passing. All migrations via service role; no destructive changes; RLS on every table; 2 pre-existing Supabase WARNs unchanged (job-photos public bucket listing + HIBP password leak protection — both tracked, not regressions). `credentials/` gitignored.

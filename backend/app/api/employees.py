@@ -153,3 +153,92 @@ def reactivate_employee(employee_id: str, current_user: dict = Depends(get_curre
     except Exception:
         logger.exception("Could not reactivate employee")
         raise HTTPException(status_code=400, detail="Could not reactivate employee")
+
+
+@router.get("/{employee_id}/profile")
+def employee_profile(employee_id: str, current_user: dict = Depends(get_current_user)):
+    """
+    D2.1 — public trust card. Any authenticated user can read.
+
+    Aggregates: identity + tenure + jobs_completed + verified flag (via parent
+    business) + avg_rating/count from reviews where reviewee_type='employee'.
+
+    NOTE: reviews.reviewee_type CHECK currently allows only ('client','business'),
+    so avg_rating/review_count return null/0 today. When the client->employee
+    review flow lands, extend the CHECK and this query starts returning data.
+    """
+    emp = (
+        supabase.table("employees")
+        .select("id, business_id, user_id, role_title, is_active, created_at")
+        .eq("id", employee_id)
+        .single()
+        .execute()
+    )
+    if not emp.data:
+        raise HTTPException(status_code=404, detail="Employee not found")
+    employee = emp.data
+
+    biz = (
+        supabase.table("businesses")
+        .select("business_name, license_status")
+        .eq("id", employee["business_id"])
+        .single()
+        .execute()
+    )
+    if not biz.data:
+        raise HTTPException(status_code=404, detail="Parent business not found")
+    business = biz.data
+
+    user = (
+        supabase.table("users")
+        .select("first_name, last_name, avatar_url")
+        .eq("id", employee["user_id"])
+        .single()
+        .execute()
+    )
+    user_row = user.data or {}
+
+    try:
+        reviews_res = (
+            supabase.table("reviews")
+            .select("rating")
+            .eq("reviewee_id", employee["user_id"])
+            .eq("reviewee_type", "employee")
+            .execute()
+        )
+        ratings = [r["rating"] for r in (reviews_res.data or [])]
+        avg_rating = round(sum(ratings) / len(ratings), 2) if ratings else None
+        review_count = len(ratings)
+    except Exception:
+        logger.exception("Could not load employee reviews")
+        avg_rating, review_count = None, 0
+
+    try:
+        jobs_res = (
+            supabase.table("bookings")
+            .select("id", count="exact")
+            .eq("employee_id", employee_id)
+            .eq("status", "completed")
+            .execute()
+        )
+        jobs_completed = jobs_res.count or 0
+    except Exception:
+        logger.exception("Could not count completed jobs for employee")
+        jobs_completed = 0
+
+    return {
+        "id": employee["id"],
+        "user_id": employee["user_id"],
+        "business_id": employee["business_id"],
+        "role_title": employee.get("role_title"),
+        "is_active": employee.get("is_active", False),
+        "joined_at": employee.get("created_at"),
+        "first_name": user_row.get("first_name"),
+        "last_name": user_row.get("last_name"),
+        "avatar_url": user_row.get("avatar_url"),
+        "avg_rating": avg_rating,
+        "review_count": review_count,
+        "jobs_completed": jobs_completed,
+        "verified_via_business": business.get("license_status") == "verified",
+        "business_name": business.get("business_name"),
+    }

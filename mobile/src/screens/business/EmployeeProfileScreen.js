@@ -15,15 +15,22 @@ import Avatar from '../../components/Avatar';
 import Surface from '../../components/Surface';
 import Stack from '../../components/Stack';
 import Inline from '../../components/Inline';
-import Badge from '../../components/Badge';
 import Button from '../../components/Button';
 import { SkeletonBox } from '../../components/Skeleton';
+import { RatingStarsDisplay } from '../../components/RatingStars';
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
-function starString(rating) {
-  const r = Math.round(Math.max(0, Math.min(5, rating)));
-  return '★'.repeat(r) + '☆'.repeat(5 - r);
+const MONTH_NAMES = [
+  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+];
+
+function formatJoinedAt(iso) {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  return `${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`;
 }
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
@@ -31,7 +38,6 @@ function starString(rating) {
 function ProfileSkeleton({ insets }) {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      {/* fake header */}
       <View style={styles.header}>
         <SkeletonBox width={32} height={32} borderRadius={radius.chip} />
         <SkeletonBox width={80} height={18} borderRadius={6} />
@@ -42,13 +48,11 @@ function ProfileSkeleton({ insets }) {
         contentContainerStyle={[styles.content, { paddingBottom: spacing['2xl'] }]}
         showsVerticalScrollIndicator={false}
       >
-        {/* identity card skeleton */}
         <Surface style={[styles.identityCard, { alignItems: 'center', gap: spacing.sm }]}>
           <SkeletonBox width={96} height={96} borderRadius={radius.avatar} />
           <SkeletonBox width={160} height={22} borderRadius={6} />
           <SkeletonBox width={100} height={16} borderRadius={6} />
-          <SkeletonBox width={120} height={14} borderRadius={6} />
-          {/* stats row skeleton */}
+          <SkeletonBox width={140} height={20} borderRadius={radius.chip} />
           <View style={[styles.statsRow, { marginTop: spacing.sm }]}>
             {[0, 1, 2].map((i) => (
               <View key={i} style={styles.statBox}>
@@ -58,24 +62,6 @@ function ProfileSkeleton({ insets }) {
             ))}
           </View>
         </Surface>
-
-        {/* reviews skeleton */}
-        <View style={styles.sectionHeader}>
-          <SkeletonBox width={80} height={13} borderRadius={4} />
-        </View>
-
-        <Stack spacing="sm" style={{ paddingHorizontal: spacing.lg }}>
-          {[0, 1, 2].map((i) => (
-            <Surface key={i} padding="base" rounded="card" style={{ gap: spacing.sm }}>
-              <Inline justify="space-between">
-                <SkeletonBox width={80} height={13} borderRadius={4} />
-                <SkeletonBox width={72} height={12} borderRadius={4} />
-              </Inline>
-              <SkeletonBox width="100%" height={13} borderRadius={4} />
-              <SkeletonBox width="70%" height={13} borderRadius={4} />
-            </Surface>
-          ))}
-        </Stack>
       </ScrollView>
     </View>
   );
@@ -83,7 +69,7 @@ function ProfileSkeleton({ insets }) {
 
 // ─── Stat counter with fade-in micro-interaction ───────────────────────────────
 
-function StatItem({ value, label, isFirst }) {
+function StatItem({ value, label, sub, isFirst }) {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(8)).current;
 
@@ -114,31 +100,24 @@ function StatItem({ value, label, isFirst }) {
       <Text variant="label" color="secondary" style={{ textAlign: 'center' }}>
         {label}
       </Text>
+      {sub ? (
+        <Text variant="caption" color="secondary" style={{ textAlign: 'center' }}>
+          {sub}
+        </Text>
+      ) : null}
     </Animated.View>
   );
 }
 
-// ─── Review card ──────────────────────────────────────────────────────────────
+// ─── Verified badge — static pill, success colour ─────────────────────────────
 
-function ReviewCard({ review }) {
+function VerifiedBadge({ businessName }) {
   return (
-    <Surface padding="base" rounded="card">
-      <Stack spacing="xs">
-        <Inline justify="space-between">
-          <Text variant="smallMedium" color="primary">
-            {review.reviewer?.first_name || 'Client'}
-          </Text>
-          <Text variant="caption" style={{ color: colors.warning }}>
-            {starString(review.rating)}
-          </Text>
-        </Inline>
-        {!!review.comment && (
-          <Text variant="small" color="secondary" style={{ lineHeight: 20 }}>
-            {review.comment}
-          </Text>
-        )}
-      </Stack>
-    </Surface>
+    <View style={styles.verifiedPill}>
+      <Text variant="caption" color="primary" style={{ color: colors.success, fontWeight: '600' }}>
+        ✓ Verified by {businessName}
+      </Text>
+    </View>
   );
 }
 
@@ -146,11 +125,9 @@ function ReviewCard({ review }) {
 
 export default function EmployeeProfileScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
-  const { employeeId, businessId } = route.params || {};
+  const { employeeId } = route.params || {};
 
-  const [employee, setEmployee] = useState(null);
-  const [business, setBusiness] = useState(null);
-  const [reviews, setReviews] = useState([]);
+  const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(false);
@@ -158,33 +135,30 @@ export default function EmployeeProfileScreen({ navigation, route }) {
   const load = useCallback(async () => {
     setError(false);
     try {
-      const calls = [
-        api.get('/employees/'),
-        businessId ? api.get(`/reviews/business/${businessId}`) : Promise.resolve([]),
-        businessId ? api.get(`/businesses/${businessId}`) : Promise.resolve(null),
-      ];
-      const [emps, revs, biz] = await Promise.all(calls);
-      const emp = (emps || []).find((e) => e.id === employeeId);
-      setEmployee(emp || null);
-      setReviews(revs || []);
-      setBusiness(biz || null);
+      const data = await api.get(`/employees/${employeeId}/profile`);
+      setProfile(data || null);
     } catch {
       setError(true);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [employeeId, businessId]);
+  }, [employeeId]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    if (!employeeId) {
+      setError(true);
+      setLoading(false);
+      return;
+    }
+    load();
+  }, [load, employeeId]);
 
-  // ─── Loading skeleton ───────────────────────────────────────────────────────
   if (loading) {
     return <ProfileSkeleton insets={insets} />;
   }
 
-  // ─── Error with retry ──────────────────────────────────────────────────────
-  if (error) {
+  if (error || !profile) {
     return (
       <View style={[styles.container, { paddingTop: insets.top }]}>
         <View style={styles.header}>
@@ -212,18 +186,16 @@ export default function EmployeeProfileScreen({ navigation, route }) {
     );
   }
 
-  const fullName = employee?.user
-    ? `${employee.user.first_name} ${employee.user.last_name}`
-    : 'Team member';
-
-  const avgRating =
-    reviews.length > 0
-      ? (reviews.reduce((s, r) => s + (r.rating || 0), 0) / reviews.length).toFixed(1)
-      : null;
+  const fullName = [profile.first_name, profile.last_name].filter(Boolean).join(' ') || 'Team member';
+  const ratingValue = typeof profile.avg_rating === 'number' ? profile.avg_rating : null;
+  const reviewCount = profile.review_count || 0;
+  const jobsCompleted = profile.jobs_completed || 0;
+  const sinceLabel = formatJoinedAt(profile.joined_at);
+  const businessId = profile.business_id;
+  const businessName = profile.business_name;
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      {/* ── Nav header ──────────────────────────────────────────────────── */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={8}>
           <Text variant="display3" color="secondary">←</Text>
@@ -243,7 +215,6 @@ export default function EmployeeProfileScreen({ navigation, route }) {
           />
         }
       >
-        {/* ── Identity card ──────────────────────────────────────────────── */}
         <Surface
           elevation="subtle"
           background="default"
@@ -252,93 +223,90 @@ export default function EmployeeProfileScreen({ navigation, route }) {
           style={[styles.identityCard, shadows.subtle]}
         >
           <Stack spacing="sm" style={{ alignItems: 'center' }}>
-            {/* xl avatar */}
-            <Avatar name={fullName} size="xl" />
+            <Avatar name={fullName} source={profile.avatar_url || undefined} size="xl" />
 
-            {/* name + role */}
             <Stack spacing="xs" style={{ alignItems: 'center' }}>
               <Text variant="display3" color="primary" style={{ textAlign: 'center' }}>
                 {fullName}
               </Text>
-              {employee?.role_title ? (
+              {profile.role_title ? (
                 <Text variant="small" color="secondary" style={{ textAlign: 'center' }}>
-                  {employee.role_title}
+                  {profile.role_title}
                 </Text>
               ) : null}
             </Stack>
 
-            {/* company link */}
-            {businessId && business?.business_name ? (
+            {ratingValue !== null ? (
+              <Inline spacing="xs" align="center">
+                <RatingStarsDisplay rating={ratingValue} size={14} />
+                <Text variant="small" color="secondary">
+                  {ratingValue.toFixed(1)} · {reviewCount} review{reviewCount === 1 ? '' : 's'}
+                </Text>
+              </Inline>
+            ) : null}
+
+            {profile.verified_via_business && businessName ? (
+              <VerifiedBadge businessName={businessName} />
+            ) : null}
+
+            {businessId && businessName ? (
               <TouchableOpacity
                 onPress={() => navigation.navigate('BusinessProfile', { businessId })}
                 activeOpacity={0.7}
                 style={styles.companyLink}
               >
                 <Inline spacing="xs">
-                  <Text variant="caption" color="accent">
-                    {business.business_name}
-                  </Text>
+                  <Text variant="caption" color="accent">{businessName}</Text>
                   <Text variant="caption" color="accent">→</Text>
                 </Inline>
               </TouchableOpacity>
             ) : null}
 
-            {/* divider */}
             <View style={styles.divider} />
 
-            {/* stats row with fade-in counter animation */}
             <View style={styles.statsRow}>
               <StatItem
-                value={avgRating ?? '—'}
+                value={ratingValue !== null ? ratingValue.toFixed(1) : '0.0'}
                 label="Rating"
                 isFirst={true}
               />
               <View style={styles.statDivider} />
               <StatItem
-                value={employee?.completed_jobs ?? '—'}
+                value={jobsCompleted}
                 label="Jobs"
                 isFirst={false}
               />
               <View style={styles.statDivider} />
               <StatItem
-                value={reviews.length}
-                label="Reviews"
+                value={sinceLabel ? sinceLabel.split(' ')[1] : '—'}
+                label="Since"
+                sub={sinceLabel ? sinceLabel.split(' ')[0] : null}
                 isFirst={null}
               />
             </View>
           </Stack>
         </Surface>
 
-        {/* ── Reviews section ────────────────────────────────────────────── */}
         <View style={styles.sectionHeader}>
-          <Inline justify="space-between">
-            <Text variant="label" color="secondary">Reviews</Text>
-            {reviews.length > 0 && (
-              <Badge count={reviews.length} color="accent" />
-            )}
-          </Inline>
+          <Text variant="label" color="secondary">Reviews</Text>
         </View>
 
-        {reviews.length === 0 ? (
-          /* Empty state */
-          <Surface
-            padding="lg"
-            rounded="card"
-            style={styles.emptyCard}
-          >
+        {reviewCount === 0 ? (
+          <Surface padding="lg" rounded="card" style={styles.emptyCard}>
             <Stack spacing="sm" style={{ alignItems: 'center' }}>
               <Text variant="h1" style={{ textAlign: 'center' }}>No reviews yet</Text>
               <Text variant="small" color="secondary" style={{ textAlign: 'center' }}>
-                Reviews from completed jobs will appear here.
+                First one earns a badge.
               </Text>
             </Stack>
           </Surface>
         ) : (
-          <Stack spacing="sm" style={{ paddingHorizontal: spacing.lg }}>
-            {reviews.map((rev) => (
-              <ReviewCard key={rev.id} review={rev} />
-            ))}
-          </Stack>
+          <Surface padding="lg" rounded="card" style={styles.emptyCard}>
+            <Text variant="small" color="secondary" style={{ textAlign: 'center' }}>
+              {reviewCount} review{reviewCount === 1 ? '' : 's'} — list coming with the
+              client→employee review flow.
+            </Text>
+          </Surface>
         )}
       </ScrollView>
     </View>
@@ -367,6 +335,14 @@ const styles = StyleSheet.create({
   identityCard: {
     marginHorizontal: spacing.lg,
     marginTop: spacing.sm,
+  },
+  verifiedPill: {
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radius.chip,
+    borderWidth: 1,
+    borderColor: colors.success,
+    backgroundColor: colors.bg,
   },
   companyLink: {
     paddingVertical: spacing.xs,
