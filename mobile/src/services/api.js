@@ -112,7 +112,9 @@ api.interceptors.response.use(
       _onUnauthorized();
     }
     const msg = extractMessage(error);
-    if (error.response?.status !== 401) {
+    // Callers can opt out of the global toast by passing `_silent: true` in the
+    // request config (e.g. background polls like UnreadContext).
+    if (error.response?.status !== 401 && !error.config?._silent) {
       showToast({ type: 'error', text1: 'Request failed', text2: msg });
     }
     return Promise.reject(new Error(msg));

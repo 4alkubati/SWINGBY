@@ -117,7 +117,7 @@ export default function BusinessSetupScreen({ onComplete }) {
 
           {/* Address — Places autocomplete if key present, fallback to text otherwise */}
           <View style={styles.field}>
-            {GOOGLE_PLACES_KEY ? (
+            {GOOGLE_PLACES_KEY && Platform.OS !== 'web' ? (
               <View>
                 <Text style={styles.fieldLabel}>Service address</Text>
                 <GooglePlacesAutocomplete

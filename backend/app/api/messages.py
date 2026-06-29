@@ -108,6 +108,21 @@ def send_message(data: MessageSend, current_user: dict = Depends(get_current_use
         raise HTTPException(status_code=400, detail="Could not send message")
 
 
+@router.get("/unread-count")
+def unread_count(current_user: dict = Depends(get_current_user)):
+    """
+    Lightweight stub for the mobile UnreadProvider's 30-second poll.
+
+    The schema does not yet track per-message read state, so returning zero
+    keeps the badge silent rather than fabricating counts. When read receipts
+    land, this becomes a real query across the user's bookings.
+
+    Defined BEFORE `/{booking_id}` so FastAPI doesn't try to coerce
+    "unread-count" into a UUID and 422 the request.
+    """
+    return {"total": 0, "by_booking": {}}
+
+
 @router.get("/{booking_id}")
 def get_messages(
     booking_id: str,

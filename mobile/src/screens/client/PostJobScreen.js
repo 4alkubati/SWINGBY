@@ -238,6 +238,7 @@ function StepCategory({ category, setCategory }) {
 // ─── Step 1: Details ─────────────────────────────────────────────────────────
 function StepDetails({
   description, setDescription, address, setAddress, descError,
+  setAddressLat, setAddressLng,
   photos, setPhotos, photoUploading, setPhotoUploading,
 }) {
   return (
@@ -263,7 +264,7 @@ function StepDetails({
           />
 
           {/* Address autocomplete */}
-          {GOOGLE_PLACES_KEY ? (
+          {GOOGLE_PLACES_KEY && Platform.OS !== 'web' ? (
             <View style={styles.placesWrapper}>
               <Text variant="caption" color="secondary" style={styles.placesLabel}>
                 Address (where's the job?)
@@ -635,6 +636,8 @@ export default function PostJobScreen() {
               setDescription={setDescription}
               address={address}
               setAddress={setAddress}
+              setAddressLat={setAddressLat}
+              setAddressLng={setAddressLng}
               descError={descError}
               photos={photos}
               setPhotos={setPhotos}
