@@ -15,7 +15,6 @@ Simulates complete user journey:
 All Supabase calls are mocked.
 """
 
-import pytest
 from unittest.mock import patch, MagicMock
 
 
@@ -50,7 +49,7 @@ class TestFullBookingFlow:
                     "first_name": "Jane",
                     "last_name": "Client",
                     "role": "client",
-                }
+                },
             )
             assert client_response.status_code == 200
             client_token = client_response.json().get("access_token")
@@ -64,7 +63,7 @@ class TestFullBookingFlow:
                     "first_name": "John",
                     "last_name": "Business",
                     "role": "business_owner",
-                }
+                },
             )
             assert business_response.status_code == 200
             business_token = business_response.json().get("access_token")

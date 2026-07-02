@@ -14,7 +14,6 @@ import pytest
 import httpx
 import os
 
-
 # Target URL from environment variable
 BASE_URL = os.getenv("RENDER_URL", "https://swingbyy-api.onrender.com")
 

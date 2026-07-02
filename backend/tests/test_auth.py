@@ -9,9 +9,9 @@ Coverage:
 - Response structure validation
 """
 
-import pytest
-from fastapi.testclient import TestClient
 from unittest.mock import patch, MagicMock
+
+from app.main import app
 
 
 class TestSignup:
@@ -39,7 +39,9 @@ class TestSignup:
             mock_supabase.auth.sign_up.return_value = mock_res
 
             # Mock upsert
-            mock_supabase.table.return_value.upsert.return_value.execute.return_value = None
+            mock_supabase.table.return_value.upsert.return_value.execute.return_value = (
+                None
+            )
 
             response = test_client.post(
                 "/auth/signup",
@@ -49,7 +51,7 @@ class TestSignup:
                     "first_name": "John",
                     "last_name": "Doe",
                     "role": "client",
-                }
+                },
             )
 
             assert response.status_code == 200
@@ -70,7 +72,7 @@ class TestSignup:
                 "first_name": "John",
                 "last_name": "Doe",
                 "role": "client",
-            }
+            },
         )
 
         # Pydantic validation error
@@ -89,7 +91,7 @@ class TestSignup:
                 "first_name": "John",
                 "last_name": "Doe",
                 "role": "client",
-            }
+            },
         )
 
         assert response.status_code == 422
@@ -126,7 +128,7 @@ class TestLogin:
                 json={
                     "email": "test@example.com",
                     "password": "SecurePass123",
-                }
+                },
             )
 
             assert response.status_code == 200
@@ -150,7 +152,7 @@ class TestLogin:
                 json={
                     "email": "test@example.com",
                     "password": "WrongPassword123",
-                }
+                },
             )
 
             assert response.status_code == 401
@@ -161,6 +163,10 @@ class TestLogin:
         T81.6: After 5 failed login attempts (within 15 min window),
         the 6th attempt should return 429 (Too Many Requests).
         """
+        # The limiter is keyed by client IP ("testclient" for every test), so
+        # earlier login tests consume the 5/minute budget. Reset for determinism.
+        app.state.limiter.reset()
+
         with patch("app.api.auth.supabase") as mock_supabase:
             # Mock failed login
             mock_res = MagicMock()
@@ -174,7 +180,7 @@ class TestLogin:
                     json={
                         "email": "locked@example.com",
                         "password": f"WrongPass{i}",
-                    }
+                    },
                 )
                 assert response.status_code == 401
 
@@ -184,11 +190,12 @@ class TestLogin:
                 json={
                     "email": "locked@example.com",
                     "password": "AnyPassword",
-                }
+                },
             )
 
             assert response.status_code == 429
-            assert "Too many attempts" in response.json().get("detail", "")
+            # slowapi's default handler responds {"error": "Rate limit exceeded: ..."}
+            assert "Rate limit exceeded" in response.json().get("error", "")
 
 
 class TestGetMe:
@@ -207,7 +214,9 @@ class TestGetMe:
         T81.8: GET /auth/me with valid Bearer token should return 200 + user object.
         User object includes: id, email, first_name, last_name, role, avatar_url, created_at.
         """
-        with patch("app.api.auth.supabase") as mock_supabase:
+        # get_current_user lives in app.deps, so that's the supabase to patch —
+        # app.api.auth.supabase is never touched by GET /auth/me.
+        with patch("app.deps.supabase") as mock_supabase:
             # Mock get_user
             mock_auth_user = MagicMock()
             mock_auth_user.id = "test-user-id"
@@ -227,8 +236,7 @@ class TestGetMe:
             }
 
             response = test_client.get(
-                "/auth/me",
-                headers={"Authorization": "Bearer test-token"}
+                "/auth/me", headers={"Authorization": "Bearer test-token"}
             )
 
             assert response.status_code == 200

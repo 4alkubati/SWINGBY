@@ -11,14 +11,15 @@ Note: Does not run migrations; only validates syntax.
 """
 
 import pytest
-import os
 from pathlib import Path
 
 
 class TestMigrationSyntax:
     """Tests for SQL migration file syntax."""
 
-    @pytest.mark.skip(reason="Requires sqlparse or psycopg2; manual validation recommended")
+    @pytest.mark.skip(
+        reason="Requires sqlparse or psycopg2; manual validation recommended"
+    )
     def test_rls_policies_syntax_valid(self):
         """
         T89.1: docs/rls_policies.sql should be syntactically valid SQL.
@@ -35,7 +36,9 @@ class TestMigrationSyntax:
         assert sql_file.exists()
         assert sql_file.read_text()
 
-    @pytest.mark.skip(reason="Requires sqlparse or psycopg2; manual validation recommended")
+    @pytest.mark.skip(
+        reason="Requires sqlparse or psycopg2; manual validation recommended"
+    )
     def test_expiry_cron_syntax_valid(self):
         """
         T89.2: docs/expiry_cron.sql should be syntactically valid SQL.

@@ -2,81 +2,109 @@
 test_reviews.py — Tests for reviews and rating aggregation.
 
 Coverage:
-- Create review: POST /reviews
-- List reviews by business: GET /reviews?business_id=X
-- Average rating auto-update: business.avg_rating reflects review mean
+- Create review: POST /reviews/ (client reviewing a completed booking)
+- List reviews by business: GET /reviews/business/{business_id}
+- Average rating math (pure logic)
+
+Auth is replaced via FastAPI dependency_overrides; supabase access is stubbed
+per-table with SupabaseTableStub.
 """
 
+from unittest.mock import patch
+
 import pytest
-from unittest.mock import patch, MagicMock
+
+from app.deps import get_current_user
+from app.main import app
+from tests.conftest import SupabaseTableStub
+
+CLIENT = {
+    "id": "user-123",
+    "role": "client",
+    "first_name": "Test",
+    "last_name": "Client",
+    "email": "client@example.com",
+}
+
+
+@pytest.fixture
+def as_client():
+    app.dependency_overrides[get_current_user] = lambda: CLIENT
+    yield CLIENT
+    app.dependency_overrides.pop(get_current_user, None)
 
 
 class TestCreateReview:
-    """Tests for POST /reviews."""
+    """Tests for POST /reviews/."""
 
-    def test_create_review_returns_201(self, test_client):
+    def test_create_review_returns_201(self, test_client, as_client):
         """
-        T85.1: POST /reviews with valid data should return 201 + review object.
+        T85.1: POST /reviews/ for the caller's completed booking returns the
+        created review.
         """
-        with patch("app.api.reviews.supabase") as mock_supabase, \
-             patch("app.api.reviews.get_current_user") as mock_get_user:
-
-            mock_get_user.return_value = {"id": "user-123"}
-
-            # Mock review creation
-            mock_supabase.table.return_value.insert.return_value.execute.return_value.data = [
-                {
-                    "id": "review-123",
-                    "business_id": "biz-123",
+        tables = {
+            "bookings": SupabaseTableStub(
+                select_data={
+                    "id": "bk-1",
+                    "status": "completed",
                     "client_id": "user-123",
-                    "rating": 5,
-                    "comment": "Great service!",
+                    "business_id": "biz-1",
                 }
-            ]
+            ),
+            # select serves the duplicate check (empty) and the post-insert
+            # avg_rating recalculation (empty list skips the update).
+            "reviews": SupabaseTableStub(
+                select_data=[],
+                insert_data=[
+                    {
+                        "id": "review-123",
+                        "booking_id": "bk-1",
+                        "reviewer_id": "user-123",
+                        "reviewee_id": "biz-1",
+                        "reviewee_type": "business",
+                        "rating": 5,
+                        "comment": "Great service!",
+                    }
+                ],
+            ),
+            "businesses": SupabaseTableStub(select_data=[], update_data=[]),
+        }
+
+        with patch("app.api.reviews.supabase") as mock_supabase:
+            mock_supabase.table.side_effect = lambda name: tables[name]
 
             response = test_client.post(
-                "/reviews",
-                json={
-                    "business_id": "biz-123",
-                    "rating": 5,
-                    "comment": "Great service!",
-                },
-                headers={"Authorization": "Bearer test-token"}
+                "/reviews/",
+                json={"booking_id": "bk-1", "rating": 5, "comment": "Great service!"},
+                headers={"Authorization": "Bearer test-token"},
             )
 
             assert response.status_code in [200, 201]
             data = response.json()
-            assert "id" in data or "id" in data.get("data", {})
+            assert data["review"]["id"] == "review-123"
 
 
 class TestListReviews:
-    """Tests for GET /reviews."""
+    """Tests for GET /reviews/business/{business_id}."""
 
-    def test_list_reviews_by_business_returns_200(self, test_client):
+    def test_list_reviews_by_business_returns_200(self, test_client, as_client):
         """
-        T85.2: GET /reviews?business_id={id} should return 200 + list of reviews.
+        T85.2: GET /reviews/business/{id} returns the business's reviews.
         """
         with patch("app.api.reviews.supabase") as mock_supabase:
-            mock_supabase.table.return_value.select.return_value.eq.return_value.execute.return_value.data = [
-                {
-                    "id": "review-1",
-                    "business_id": "biz-123",
-                    "rating": 5,
-                    "comment": "Excellent",
-                },
-                {
-                    "id": "review-2",
-                    "business_id": "biz-123",
-                    "rating": 4,
-                    "comment": "Good",
-                }
-            ]
+            mock_supabase.table.return_value = SupabaseTableStub(
+                select_data=[
+                    {"id": "review-1", "rating": 5, "comment": "Excellent"},
+                    {"id": "review-2", "rating": 4, "comment": "Good"},
+                ]
+            )
 
-            response = test_client.get("/reviews?business_id=biz-123")
+            response = test_client.get("/reviews/business/biz-123")
 
             assert response.status_code == 200
             data = response.json()
-            assert isinstance(data, list) or "data" in data
+            assert isinstance(data, list)
+            assert len(data) == 2
 
 
 class TestRatingAggregation:

@@ -7,8 +7,7 @@ Coverage:
 - Payment transaction tracking
 """
 
-import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 
 class TestEscrowLogic:
@@ -83,8 +82,9 @@ class TestPaymentTransactions:
         """
         T84.5: POST /bookings/{id}/confirm should create a payment transaction.
         """
-        with patch("app.api.payments.supabase") as mock_supabase, \
-             patch("app.api.payments.get_current_user") as mock_get_user:
+        with patch("app.api.payments.supabase") as mock_supabase, patch(
+            "app.api.payments.get_current_user"
+        ) as mock_get_user:
 
             mock_get_user.return_value = {"id": "user-123"}
 
@@ -100,7 +100,7 @@ class TestPaymentTransactions:
 
             response = test_client.post(
                 "/bookings/booking-123/confirm",
-                headers={"Authorization": "Bearer test-token"}
+                headers={"Authorization": "Bearer test-token"},
             )
 
             # Response may be 200 or skipped depending on implementation

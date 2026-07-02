@@ -2,13 +2,18 @@ from fastapi import Header, HTTPException
 from app.supabase_client import supabase
 
 
-def get_current_user(authorization: str = Header(...)) -> dict:
+def get_current_user(authorization: str | None = Header(None)) -> dict:
     """
     Validates the Bearer JWT from Supabase Auth and returns the matching
     row from our `users` table (includes id, role, first_name, etc.).
+
+    The header is Optional so a missing token yields 401, not a 422
+    validation error.
     """
     if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Missing or invalid Authorization header")
+        raise HTTPException(
+            status_code=401, detail="Missing or invalid Authorization header"
+        )
 
     token = authorization[7:]  # strip "Bearer "
 
@@ -18,7 +23,9 @@ def get_current_user(authorization: str = Header(...)) -> dict:
             raise HTTPException(status_code=401, detail="Invalid token")
 
         user_id = auth_res.user.id
-        db_res = supabase.table("users").select("*").eq("id", user_id).single().execute()
+        db_res = (
+            supabase.table("users").select("*").eq("id", user_id).single().execute()
+        )
         if not db_res.data:
             raise HTTPException(status_code=401, detail="User not found in database")
 
