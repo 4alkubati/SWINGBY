@@ -5,6 +5,14 @@
 
 ## ⛔ Blocking (loop stuck until done)
 
+- [ ] **(Bucket B — rotate + secret the Google Maps key)** `mobile/app.json` had the real Android Maps key in plaintext (`AIzaSyDW…nyJw`) — flagged as **H1** in the 2026-07-01 audit. Replaced with a placeholder in the working tree; Kira must:
+  1. Google Cloud Console → API keys → find the leaked key → **Regenerate** (invalidates the old value).
+  2. New key → restrict by Android package `com.swingby.app` + SHA-1 fingerprint from Play Console / EAS credentials.
+  3. `eas secret:create --scope project --name EXPO_PUBLIC_GOOGLE_MAPS_KEY_ANDROID --value AIza...` (needs your Expo login).
+  4. Update `mobile/app.json` build channel to read from the EAS secret, OR keep the placeholder and inject via `expo prebuild` env if using bare RN.
+  5. Verify next EAS build succeeds and Maps renders on Android.
+
+
 - [ ] **(Bucket C — push the D2.5 cleanup commit)** This session rewrote `STATUS.md` + `HUMAN-TODO.md` to reality + backfilled `Roadmap/June/` daily files + locked D2.4 NEEDS-KIRA in `Roadmap/dominoes/D2.4-business-subscription.md`. Plus the working tree carries `PRODUCT-VISION.md` (Payment model section) + `CLAUDE.md` (auto-tweaks) + `Roadmap/README.md` + `Roadmap/DOMINOES.md` + `Roadmap/dominoes/*` (all 7 dominos) + new `docs/` files (API, SECURITY, SESSIONS). Suggested commit:
   ```
   git add Roadmap/ AGENTS/claude/memory/STATUS.md AGENTS/claude/memory/HUMAN-TODO.md \

@@ -4,7 +4,7 @@ description: Comprehensive SwingBy bug, gap, and improvement tracker — generat
 metadata:
   type: project
 ---
-
+  
 # SwingBy — Orchestrator Issue Tracker
 > Generated: 2026-06-15 | Last audited: full cross-platform pass (backend, mobile, web/launch, web/admin, design)
 > Status icons: ✅ Done  🔄 In progress  ❌ Not started  ⚠️ Needs attention
@@ -29,20 +29,20 @@ metadata:
 
 ## HIGH — Should fix before public launch
 
-| ID | Layer | Issue | Status | Fix |
-|---|---|---|---|---|
-| H1 | Mobile | Google Maps API key in plain text in app.json | ⚠️ Exists | Move `android.googleMapsApiKey` to EAS secret via `eas secret:create` |
-| H2 | Backend/Auth | Admin password "Swingby123" is temporary | ⚠️ | Rotate via Supabase Auth dashboard |
-| H3 | Auth | HaveIBeenPwned leaked-password protection not enabled | ⚠️ | Enable in Supabase Auth → Password → Enable leaked password protection |
-| H4 | Email | Resend not configured — all transactional emails are silent | ❌ | Sign up for Resend → verify swingbyy.com → set RESEND_API_KEY in backend env |
-| H5 | Mobile | EarningsScreen: placeholder data only | ❌ | Wire GET /payments (sum by business + month) |
-| H6 | Mobile | BusinessAnalyticsScreen: all mock charts | ❌ | Wire GET /businesses/me/analytics (blocked on C5) |
-| H7 | Mobile | EmployeeManagementScreen: list loads but create/deactivate not wired | ❌ | Wire POST /employees + PATCH /employees/{id}/deactivate |
-| H8 | Mobile | PaymentMethodScreen: shows UI but Stripe not integrated | ⚠️ | Post-MVP: Stripe Connect |
-| H9 | Mobile | ReferralScreen: shows referral code but no backend sharing endpoint | ❌ | Post-MVP or generate code client-side from user.id |
-| H10 | Mobile | NotificationsScreen / NotificationsCenterScreen: no real push data | ❌ | Wire push_tokens + unread context to show real notifications |
-| H11 | Backend | `supabase-storage`: bucket `job-photos` needed for image uploads | ✅ Fixed 2026-06-15 | Created via SQL + RLS policies |
-| H12 | Backend | `service_posts` missing `image_urls` and `address` columns | ✅ Fixed 2026-06-15 | Applied migration |
+| ID  | Layer        | Issue                                                                | Status             | Fix                                                                          |
+| --- | ------------ | -------------------------------------------------------------------- | ------------------ | ---------------------------------------------------------------------------- |
+| H1  | Mobile       | Google Maps API key in plain text in app.json                        | ⚠️ Exists          | Move `android.googleMapsApiKey` to EAS secret via `eas secret:create`        |
+| H2  | Backend/Auth | Admin password "Swingby123" is temporary                             | ⚠️                 | Rotate via Supabase Auth dashboard                                           |
+| H3  | Auth         | HaveIBeenPwned leaked-password protection not enabled                | ⚠️                 | Enable in Supabase Auth → Password → Enable leaked password protection       |
+| H4  | Email        | Resend not configured — all transactional emails are silent          | ❌                  | Sign up for Resend → verify swingbyy.com → set RESEND_API_KEY in backend env |
+| H5  | Mobile       | EarningsScreen: placeholder data only                                | ❌                  | Wire GET /payments (sum by business + month)                                 |
+| H6  | Mobile       | BusinessAnalyticsScreen: all mock charts                             | ❌                  | Wire GET /businesses/me/analytics (blocked on C5)                            |
+| H7  | Mobile       | EmployeeManagementScreen: list loads but create/deactivate not wired | ❌                  | Wire POST /employees + PATCH /employees/{id}/deactivate                      |
+| H8  | Mobile       | PaymentMethodScreen: shows UI but Stripe not integrated              | ⚠️                 | Post-MVP: Stripe Connect                                                     |
+| H9  | Mobile       | ReferralScreen: shows referral code but no backend sharing endpoint  | ❌                  | Post-MVP or generate code client-side from user.id                           |
+| H10 | Mobile       | NotificationsScreen / NotificationsCenterScreen: no real push data   | ❌                  | Wire push_tokens + unread context to show real notifications                 |
+| H11 | Backend      | `supabase-storage`: bucket `job-photos` needed for image uploads     | ✅ Fixed 2026-06-15 | Created via SQL + RLS policies                                               |
+| H12 | Backend      | `service_posts` missing `image_urls` and `address` columns           | ✅ Fixed 2026-06-15 | Applied migration                                                            |
 
 ---
 

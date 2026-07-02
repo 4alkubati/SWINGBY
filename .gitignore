@@ -26,6 +26,12 @@ CODE/
 research/
 push.log
 
+# Local scratch — one-off dumps that should never be committed.
+tree.txt
+Untitled.base
+Untitled.md
+Untitled*.md
+
 # Obsidian — personal vault config, never commit
 .obsidian/
 

@@ -132,5 +132,6 @@ npx expo start --clear
 - Running locally → `docs/RUNNING_LOCALLY.md`
 - Deploy / Rollback → `docs/DEPLOY.md`, `docs/ROLLBACK.md`
 - DB schema → `docs/swingby_database_schema.md`
+- **Code-flow graph → `docs/FLOW_GRAPH.md` + `docs/flow-graph.json`** — every screen ↔ screen edge, backend routes vs mobile calls, orphans in red. **Read this FIRST for any nav / 404 / dead-end question** — cheaper than scanning screen files. Regenerate: `"C:/Python314/python.exe" tools/flow_graph.py`. How-to: `AGENTS/claude/automation/FLOW_GRAPH.md`.
 - Orchestrator briefs → `AGENTS/BRIEF-*.md`
 - Roadmap → `Roadmap/`

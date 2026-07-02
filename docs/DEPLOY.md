@@ -103,3 +103,52 @@ Manual trigger: Render dashboard → **Manual Deploy** → **Deploy latest commi
 
 ## Rollback
 See `docs/ROLLBACK.md`.
+
+---
+
+## Frontend — Cloudflare Pages
+
+**Sites:**
+- `web/launch/` → `swingbyy.com`
+- `web/pre-launch/` → pre-launch site
+- `web/admin/` → admin dashboard
+
+### Deploy to Cloudflare Pages
+
+1. Cloudflare dashboard → Workers & Pages → Create application → Pages → Connect to Git.
+2. Select `4alkubati/SWINGBY`.
+3. Build settings:
+   - **Root directory:** `web/launch` (or `web/pre-launch`, `web/admin`)
+   - **Build command:** `npm run build`
+   - **Build output directory:** `dist`
+   - **Node version:** 20 (set via env var `NODE_VERSION=20`)
+4. Set environment variables (below).
+5. Add custom domain in Cloudflare DNS.
+
+### Frontend env vars (web/launch)
+
+| Key | Value |
+|---|---|
+| `VITE_SUPABASE_URL` | Supabase project URL |
+| `VITE_SUPABASE_ANON_KEY` | Supabase anon key (never the service key) |
+| `VITE_API_BASE_URL` | Render backend URL |
+| `VITE_SENTRY_DSN` | Sentry DSN (optional) |
+| `VITE_PLAUSIBLE_DOMAIN` | `swingbyy.com` |
+| `VITE_MAINTENANCE_MODE` | `false` |
+
+### CSP and security headers
+
+`web/launch/public/_headers` is served by Cloudflare Pages automatically. Covers CSP, X-Frame-Options, HSTS. Review when adding external services.
+
+---
+
+## Full environment checklist (before going live)
+
+- [ ] `SUPABASE_SERVICE_KEY` set in Render (backend only, never in frontend)
+- [ ] `SECRET_KEY` is a real random 32-char string, not a default
+- [ ] `SWINGBY_ALLOWED_ORIGINS` includes the production frontend domain
+- [ ] `VITE_SUPABASE_ANON_KEY` used in frontend (not the service key)
+- [ ] Sentry DSN configured
+- [ ] Plausible domain configured
+- [ ] Custom domain DNS pointing to Cloudflare Pages
+- [ ] SSL is active on Cloudflare (Full strict mode)
