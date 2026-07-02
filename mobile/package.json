@@ -19,7 +19,7 @@
     "@react-navigation/native": "^6.1.17",
     "@react-navigation/native-stack": "^6.9.26",
     "@sentry/react-native": "~7.2.0",
-    "axios": "^1.7.7",
+    "axios": "^1.18.1",
     "expo": "~54.0.35",
     "expo-clipboard": "~8.0.8",
     "expo-constants": "~18.0.13",
