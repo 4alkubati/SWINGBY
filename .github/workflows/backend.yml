@@ -60,3 +60,11 @@ jobs:
 
       - name: Run tests
         run: pytest backend/tests -q
+        env:
+          # Stub values: importing app.main hard-fails without these, but the
+          # test suite mocks all supabase/network access so they're never used.
+          DATABASE_URL: postgresql://stub:stub@localhost:5432/stub
+          SUPABASE_URL: https://stub.supabase.co
+          SUPABASE_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiJ9.stub
+          SUPABASE_SERVICE_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIn0.stub
+          SECRET_KEY: ci-test-secret
