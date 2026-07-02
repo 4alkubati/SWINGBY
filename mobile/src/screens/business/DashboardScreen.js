@@ -378,6 +378,40 @@ export default function DashboardScreen({ navigation }) {
           />
         </View>
 
+        {/* ── Business tools row (Earnings / Analytics / Team) ─────────── */}
+        <View style={styles.toolsRow}>
+          <TouchableOpacity
+            style={styles.toolChip}
+            activeOpacity={0.7}
+            onPress={() => navigation.navigate('Earnings')}
+            accessibilityRole="button"
+            accessibilityLabel="Open earnings"
+          >
+            <Text style={styles.toolEmoji}>💰</Text>
+            <Text variant="caption" color="primary">Earnings</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.toolChip}
+            activeOpacity={0.7}
+            onPress={() => navigation.navigate('BusinessAnalytics')}
+            accessibilityRole="button"
+            accessibilityLabel="Open analytics"
+          >
+            <Text style={styles.toolEmoji}>📈</Text>
+            <Text variant="caption" color="primary">Analytics</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.toolChip}
+            activeOpacity={0.7}
+            onPress={() => navigation.navigate('EmployeeManagement')}
+            accessibilityRole="button"
+            accessibilityLabel="Manage team"
+          >
+            <Text style={styles.toolEmoji}>👥</Text>
+            <Text variant="caption" color="primary">Team</Text>
+          </TouchableOpacity>
+        </View>
+
         {/* ── Active bookings ───────────────────────────────────────────── */}
         <View style={[styles.sectionRow, { marginTop: spacing.base }]}>
           <Text variant="label" color="secondary">Active Bookings</Text>
@@ -570,5 +604,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: spacing.lg,
+  },
+  toolsRow: {
+    flexDirection: 'row',
+    paddingHorizontal: spacing.lg,
+    gap: spacing.sm,
+    marginTop: spacing.md,
+  },
+  toolChip: {
+    flex: 1,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.card,
+    paddingVertical: spacing.md,
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  toolEmoji: {
+    fontSize: 20,
   },
 });

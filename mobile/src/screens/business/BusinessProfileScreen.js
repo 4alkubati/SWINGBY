@@ -1,6 +1,6 @@
 import {
   View, ScrollView, StyleSheet, RefreshControl, Alert, Platform,
-  TextInput, Switch, FlatList, Animated as RNAnimated,
+  TextInput, Switch, FlatList, Linking, TouchableOpacity, Animated as RNAnimated,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -202,6 +202,8 @@ export default function BusinessProfileScreen({ navigation, route }) {
   const [business, setBusiness] = useState(null);
   const [employees, setEmployees] = useState([]);
   const [reviews, setReviews] = useState([]);
+  const [subscription, setSubscription] = useState(null);
+  const [subActionInFlight, setSubActionInFlight] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -220,17 +222,26 @@ export default function BusinessProfileScreen({ navigation, route }) {
   const resolvedId = businessId || user?.business_id;
 
   const load = useCallback(async () => {
-    if (!resolvedId) { setLoading(false); return; }
+    if (!resolvedId) {
+      setError(true);
+      setLoading(false);
+      return;
+    }
     setError(false);
     try {
-      const [biz, emps, revs] = await Promise.all([
+      const isOwn = !businessId || businessId === user?.business_id;
+      const [biz, emps, revs, sub] = await Promise.all([
         api.get(`/businesses/${resolvedId}`),
-        api.get('/employees/'),
-        api.get(`/reviews/business/${resolvedId}`),
+        api.get(`/employees/business/${resolvedId}`).catch(() => []),
+        api.get(`/reviews/business/${resolvedId}`).catch(() => []),
+        isOwn && user?.role === 'business_owner'
+          ? api.get('/businesses/me/subscription').catch(() => null)
+          : Promise.resolve(null),
       ]);
       setBusiness(biz);
       setEmployees(emps || []);
       setReviews(revs || []);
+      setSubscription(sub);
       setEditName(biz.business_name || '');
       setEditCategory(biz.category || '');
       setEditRadius(String(biz.service_radius_km || 25));
@@ -301,7 +312,8 @@ export default function BusinessProfileScreen({ navigation, route }) {
     }
   }
 
-  const isOwner = user?.role === 'business_owner';
+  const isOwnProfile = !businessId || businessId === user?.business_id;
+  const isOwner = user?.role === 'business_owner' && isOwnProfile;
 
   // ─── Scroll-based header shrink animation ──────────────────────────────────
   const scrollHandler = useAnimatedScrollHandler((event) => {
@@ -486,7 +498,19 @@ export default function BusinessProfileScreen({ navigation, route }) {
           )}
 
           {/* ── Team section ── */}
-          <SectionHeader title="Team" />
+          <View style={styles.sectionHeaderRow}>
+            <Text variant="label" color="secondary">Team</Text>
+            {isOwner && (
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={() => navigation.navigate('EmployeeManagement')}
+                accessibilityRole="button"
+                accessibilityLabel="Manage team"
+              >
+                <Text variant="caption" color="accent">Manage</Text>
+              </TouchableOpacity>
+            )}
+          </View>
           {employees.length === 0 ? (
             <Surface background="alt" style={[styles.emptyCard, styles.hPad]}>
               <Text variant="small" color="secondary">No team members yet</Text>
@@ -547,17 +571,104 @@ export default function BusinessProfileScreen({ navigation, route }) {
             </View>
           )}
 
-          {/* ── Logout ── */}
-          <View style={[styles.hPad, { marginTop: spacing.lg, marginBottom: spacing.sm }]}>
-            <Button
-              variant="secondary"
-              label={loggingOut ? 'Logging out…' : 'Log out'}
-              onPress={handleLogout}
-              disabled={loggingOut}
-              loading={loggingOut}
-              style={styles.logoutBtn}
-            />
-          </View>
+          {/* ── D2.4 Plan card — only on own profile ── */}
+          {isOwner && subscription && (
+            <View style={styles.hPad}>
+              <SectionHeader title="Plan" />
+              <Surface elevation="subtle" padding="base" rounded="card">
+                <Stack spacing="sm">
+                  <Inline justify="space-between">
+                    <Text variant="bodyMedium">
+                      {subscription.tier === 'team' ? 'Team ($80/mo)' : subscription.tier === 'enterprise' ? 'Enterprise' : 'Solo ($30/mo)'}
+                    </Text>
+                    <View style={[styles.subPill, subscription.status === 'active' ? styles.subActive : subscription.status === 'past_due' ? styles.subPastDue : styles.subTrialing]}>
+                      <Text variant="caption" style={{ color: '#fff' }}>{(subscription.status || 'trialing').toUpperCase()}</Text>
+                    </View>
+                  </Inline>
+                  {subscription.current_period_end ? (
+                    <Text variant="caption" color="secondary">
+                      Next billing: {new Date(subscription.current_period_end).toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </Text>
+                  ) : null}
+                  {subscription.manage_url ? (
+                    <Button
+                      variant="secondary"
+                      label="Manage subscription"
+                      onPress={() => Linking.openURL(subscription.manage_url)}
+                    />
+                  ) : (
+                    <Button
+                      label={subActionInFlight ? 'Starting…' : 'Start subscription'}
+                      onPress={async () => {
+                        setSubActionInFlight(true);
+                        try {
+                          const res = await api.post('/businesses/me/subscribe', {});
+                          if (res.checkout_url) await Linking.openURL(res.checkout_url);
+                          else await load();
+                        } catch { /* toast via api */ }
+                        finally { setSubActionInFlight(false); }
+                      }}
+                      disabled={subActionInFlight}
+                      loading={subActionInFlight}
+                    />
+                  )}
+                </Stack>
+              </Surface>
+            </View>
+          )}
+
+          {/* ── Account menu — only on own profile ── */}
+          {isOwnProfile && (
+            <>
+              <SectionHeader title="Account" />
+              <View style={styles.acctMenu}>
+                <TouchableOpacity style={styles.acctRow} activeOpacity={0.7} onPress={() => navigation.navigate('NotificationsCenter')}>
+                  <Feather name="bell" size={18} color={colors.textSecondary} />
+                  <Text variant="body" style={styles.acctLabel}>Notifications</Text>
+                  <Feather name="chevron-right" size={16} color={colors.textSecondary} />
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.acctRow} activeOpacity={0.7} onPress={() => navigation.navigate('PaymentMethod')}>
+                  <Feather name="credit-card" size={18} color={colors.textSecondary} />
+                  <Text variant="body" style={styles.acctLabel}>Payment methods</Text>
+                  <Feather name="chevron-right" size={16} color={colors.textSecondary} />
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.acctRow} activeOpacity={0.7} onPress={() => navigation.navigate('Settings')}>
+                  <Feather name="settings" size={18} color={colors.textSecondary} />
+                  <Text variant="body" style={styles.acctLabel}>Settings</Text>
+                  <Feather name="chevron-right" size={16} color={colors.textSecondary} />
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.acctRow} activeOpacity={0.7} onPress={() => navigation.navigate('HelpFAQ')}>
+                  <Feather name="help-circle" size={18} color={colors.textSecondary} />
+                  <Text variant="body" style={styles.acctLabel}>Help & FAQ</Text>
+                  <Feather name="chevron-right" size={16} color={colors.textSecondary} />
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.acctRow} activeOpacity={0.7} onPress={() => navigation.navigate('PrivacyPolicy')}>
+                  <Feather name="shield" size={18} color={colors.textSecondary} />
+                  <Text variant="body" style={styles.acctLabel}>Privacy Policy</Text>
+                  <Feather name="chevron-right" size={16} color={colors.textSecondary} />
+                </TouchableOpacity>
+                <TouchableOpacity style={[styles.acctRow, styles.acctRowLast]} activeOpacity={0.7} onPress={() => navigation.navigate('TermsOfService')}>
+                  <Feather name="file-text" size={18} color={colors.textSecondary} />
+                  <Text variant="body" style={styles.acctLabel}>Terms of Service</Text>
+                  <Feather name="chevron-right" size={16} color={colors.textSecondary} />
+                </TouchableOpacity>
+              </View>
+            </>
+          )}
+
+          {/* ── Logout — only on own profile ── */}
+          {isOwnProfile && (
+            <View style={[styles.hPad, { marginTop: spacing.lg, marginBottom: spacing.sm }]}>
+              <Button
+                variant="secondary"
+                label={loggingOut ? 'Logging out…' : 'Log out'}
+                onPress={handleLogout}
+                disabled={loggingOut}
+                loading={loggingOut}
+                style={styles.logoutBtn}
+              />
+            </View>
+          )}
         </AnimatedScrollView>
       )}
 
@@ -623,6 +734,33 @@ const styles = StyleSheet.create({
     paddingTop: spacing.lg,
     paddingBottom: spacing.sm,
   },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.sm,
+  },
+  acctMenu: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.card,
+    marginHorizontal: spacing.lg,
+    overflow: 'hidden',
+  },
+  acctRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.md + 2,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  acctRowLast: { borderBottomWidth: 0 },
+  acctLabel: { flex: 1 },
 
   // Chips
   chipsRow:     { paddingHorizontal: spacing.lg, gap: spacing.sm, paddingBottom: spacing.sm },
@@ -679,4 +817,13 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bg,
   },
   bookBtn:      {},
+
+  // D2.4 subscription pill
+  subPill: {
+    paddingHorizontal: spacing.sm, paddingVertical: 2,
+    borderRadius: radius.pill,
+  },
+  subActive:   { backgroundColor: colors.success },
+  subTrialing: { backgroundColor: colors.accent },
+  subPastDue:  { backgroundColor: colors.danger },
 });

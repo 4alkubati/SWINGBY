@@ -174,6 +174,22 @@ def accept_interest(interest_id: str, current_user: dict = Depends(get_current_u
     if post["status"] != "open":
         raise HTTPException(status_code=400, detail="Post is no longer open")
 
+    # D2.4 — business subscription gate. Beta posture is track-only (default
+    # 'trialing'), so this only rejects businesses actively past_due / canceled.
+    biz_sub = (
+        supabase.table("businesses")
+        .select("subscription_status")
+        .eq("id", interest["business_id"])
+        .single()
+        .execute()
+    )
+    sub_status = (biz_sub.data or {}).get("subscription_status") or "trialing"
+    if sub_status not in ("active", "trialing"):
+        raise HTTPException(
+            status_code=402,
+            detail="This business isn't accepting bookings right now — subscription is not active.",
+        )
+
     try:
         supabase.table("interests").update({"status": "accepted"}).eq("id", interest_id).execute()
         supabase.table("interests").update({"status": "rejected"}).eq("post_id", post["id"]).neq("id", interest_id).execute()

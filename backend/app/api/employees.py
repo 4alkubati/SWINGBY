@@ -155,6 +155,23 @@ def reactivate_employee(employee_id: str, current_user: dict = Depends(get_curre
         raise HTTPException(status_code=400, detail="Could not reactivate employee")
 
 
+@router.get("/business/{business_id}")
+def list_employees_for_business(business_id: str, current_user: dict = Depends(get_current_user)):
+    """Public trust-card list. Any authenticated user can view a business's team."""
+    try:
+        res = (
+            supabase.table("employees")
+            .select("id, business_id, user_id, role_title, is_active, avatar_url, created_at, users(first_name, last_name, avatar_url)")
+            .eq("business_id", business_id)
+            .order("created_at")
+            .execute()
+        )
+        return res.data or []
+    except Exception:
+        logger.exception("Could not list employees for business")
+        raise HTTPException(status_code=400, detail="Could not list employees")
+
+
 @router.get("/{employee_id}/profile")
 def employee_profile(employee_id: str, current_user: dict = Depends(get_current_user)):
     """

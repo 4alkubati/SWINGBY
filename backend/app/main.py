@@ -100,6 +100,18 @@ app.include_router(payments_router, prefix="/payments", tags=["payments"])
 from app.api.payments_stripe import router as payments_stripe_router
 app.include_router(payments_stripe_router, prefix="/payments/stripe", tags=["payments-stripe"])
 
+from app.api.payments_offplatform import router as payments_offplatform_router
+app.include_router(payments_offplatform_router, prefix="/bookings", tags=["payments-offplatform"])
+
+from app.api.invoices import router as invoices_router
+app.include_router(invoices_router, prefix="/bookings", tags=["invoices"])
+
+from app.api.subscriptions import router as subscriptions_router
+app.include_router(subscriptions_router, prefix="/businesses", tags=["subscriptions"])
+
+from app.api.disputes import router as disputes_router
+app.include_router(disputes_router, prefix="/disputes", tags=["disputes"])
+
 from app.api.reviews import router as reviews_router
 app.include_router(reviews_router, prefix="/reviews", tags=["reviews"])
 
