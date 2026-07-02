@@ -109,7 +109,7 @@ export default function TextField({
             placeholderTextColor={colors.textSecondary}
             selectionColor={colors.accent}
             {...props}
-            placeholder={hasValue || focused ? '' : props.placeholder}
+            placeholder={focused && !hasValue ? props.placeholder : ''}
           />
           {secureTextEntry && (
             <Pressable

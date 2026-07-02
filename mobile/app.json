@@ -28,7 +28,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#07080a"
       },
-      "googleMapsApiKey": "AIzaSyDW2h2noMJ_PyVCwub17DIwi8xb8BAnyJw",
+      "googleMapsApiKey": "$EXPO_PUBLIC_GOOGLE_MAPS_KEY_PLACEHOLDER",
       "package": "com.swingby.app",
       "permissions": [
         "ACCESS_FINE_LOCATION",

@@ -249,6 +249,7 @@ export default function HomeScreen({ navigation }) {
           <SearchField
             value={searchQuery}
             onChangeText={setSearchQuery}
+            onSubmitEditing={() => navigation.navigate('Search', { q: searchQuery })}
             placeholder="Search services…"
             style={styles.searchField}
           />
@@ -308,7 +309,7 @@ export default function HomeScreen({ navigation }) {
           <SectionHeader
             title="Nearby"
             actionLabel="Map view"
-            onAction={() => navigation.navigate('Map')}
+            onAction={() => navigation.navigate('NearbyMap')}
             style={styles.sectionSpaced}
           />
 

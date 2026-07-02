@@ -150,8 +150,8 @@ export default function ActiveBookingScreen({ navigation, route }) {
 
   const isConfirmed = booking?.status === 'confirmed' || booking?.status === 'in_progress';
 
-  const workerName = booking?.employee_name || booking?.business_name || 'Your provider';
-  const companyName = booking?.business_name || '';
+  const workerName = booking?.employee_name || booking?.businesses?.business_name || booking?.business_name || 'Your provider';
+  const companyName = booking?.businesses?.business_name || booking?.business_name || 'View business';
   const rating = booking?.avg_rating;
   const jobCount = booking?.job_count;
 

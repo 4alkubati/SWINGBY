@@ -369,7 +369,7 @@ function StepBudget({ budget, setBudget, date, setDate, time, setTime }) {
               label="Preferred date"
               value={date}
               onChangeText={setDate}
-              placeholder="May 28"
+              placeholder="Jul 5"
               style={{ flex: 1 }}
             />
             <TouchableOpacity

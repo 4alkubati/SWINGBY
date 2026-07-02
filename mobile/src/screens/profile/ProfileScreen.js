@@ -204,6 +204,14 @@ export default function ProfileScreen({ navigation }) {
 
             {/* Menu */}
             <Animated.View entering={FadeInDown.duration(400).delay(240)} style={styles.menuCard}>
+              {user?.role === 'client' && (
+                <MenuRow icon="heart-outline" label="Favorites" onPress={() => navigation.navigate('Favorites')} />
+              )}
+              <MenuRow icon="notifications-outline" label="Notifications" onPress={() => navigation.navigate('NotificationsCenter')} />
+              <MenuRow icon="card-outline" label="Payment methods" onPress={() => navigation.navigate('PaymentMethod')} />
+              {user?.role === 'client' && (
+                <MenuRow icon="gift-outline" label="Invite friends" onPress={() => navigation.navigate('ReferralScreen')} />
+              )}
               <MenuRow icon="settings-outline" label="Settings" onPress={() => navigation.navigate('Settings')} />
               <MenuRow icon="help-circle-outline" label="Help & FAQ" onPress={() => navigation.navigate('HelpFAQ')} />
               <MenuRow icon="shield-checkmark-outline" label="Privacy Policy" onPress={() => navigation.navigate('PrivacyPolicy')} />

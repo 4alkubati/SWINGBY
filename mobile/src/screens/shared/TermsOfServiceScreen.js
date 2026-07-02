@@ -10,7 +10,7 @@ import Stack from '../../components/Stack';
 import Inline from '../../components/Inline';
 import Surface from '../../components/Surface';
 
-const LAST_UPDATED = 'May 2025';
+const LAST_UPDATED = 'June 2026';
 
 const SECTIONS = [
   {

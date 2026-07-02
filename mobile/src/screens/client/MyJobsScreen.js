@@ -24,8 +24,10 @@ const STATUS_CONFIG = {
 function BookingRow({ booking, onPress, onReview, userRole }) {
   const status = STATUS_CONFIG[booking.status] || STATUS_CONFIG.confirmed;
   const otherParty = userRole === 'client'
-    ? (booking.business_name || 'Business')
-    : (booking.client_name || 'Client');
+    ? (booking.businesses?.business_name || booking.business_name || 'Business')
+    : (booking.users?.first_name
+        ? [booking.users.first_name, booking.users.last_name].filter(Boolean).join(' ')
+        : (booking.client_name || 'Client'));
   const date = booking.scheduled_date
     ? new Date(booking.scheduled_date).toLocaleDateString('en-CA', { month: 'short', day: 'numeric' })
     : null;
@@ -231,7 +233,7 @@ export default function MyJobsScreen({ navigation }) {
               navigation.navigate('Review', {
                 bookingId: item.id,
                 workerId: item.employee_id || item.business_id,
-                workerName: item.employee_name || item.business_name || 'Provider',
+                workerName: item.employee_name || item.businesses?.business_name || item.business_name || 'Provider',
               }) : null
             }
           />
