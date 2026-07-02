@@ -149,20 +149,18 @@ export default function EarningsScreen({ navigation }) {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await api.get('/payments/', { params: { range } });
-      // Expect array of { date, amount } or similar
-      const raw = Array.isArray(data) ? data : (data?.results ?? []);
+      const data = await api.get('/payments/mine');
+      const raw = Array.isArray(data) ? data : (data?.items ?? []);
       if (raw.length) {
         const parsed = raw.map((d) => ({
-          x: new Date(d.date || d.created_at),
-          y: parseFloat(d.amount || d.total || 0),
-        }));
+          x: new Date(d.created_at || d.bookings?.completed_at || d.bookings?.scheduled_date),
+          y: parseFloat(d.released_to_business ?? d.total_charged ?? 0),
+        })).filter((p) => !Number.isNaN(p.x?.getTime()));
         setChartData(parsed);
       } else {
         setChartData(generatePlaceholder(range));
       }
     } catch {
-      // Backend may not support this endpoint yet — use placeholder
       setChartData(generatePlaceholder(range));
     } finally {
       setLoading(false);

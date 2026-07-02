@@ -16,6 +16,62 @@ def _can_view_payment(booking: dict, current_user: dict) -> bool:
     return False
 
 
+@router.get("/mine")
+def list_my_payments(current_user: dict = Depends(get_current_user)):
+    """F1 (audit 2026-07-01) — list all payments the caller has visibility on.
+
+    Client: payments for bookings they placed.
+    Business owner: payments for bookings against their business.
+    Returns: {items: [...], total_released, total_pending} for EarningsScreen.
+    """
+    role = current_user.get("role")
+    uid = current_user["id"]
+
+    if role == "business_owner":
+        biz = supabase.table("businesses").select("id").eq("owner_id", uid).single().execute()
+        if not biz.data:
+            return {"items": [], "total_released": 0, "total_pending": 0}
+        biz_id = biz.data["id"]
+        # payments joined via bookings for this business
+        bookings = supabase.table("bookings").select("id").eq("business_id", biz_id).execute()
+        booking_ids = [b["id"] for b in (bookings.data or [])]
+        if not booking_ids:
+            return {"items": [], "total_released": 0, "total_pending": 0}
+        pay = (
+            supabase.table("payments")
+            .select("*, bookings(scheduled_date, completed_at, service_category, client_id)")
+            .in_("booking_id", booking_ids)
+            .order("created_at", desc=True)
+            .execute()
+        )
+    else:
+        # client — payments on their bookings
+        bookings = supabase.table("bookings").select("id").eq("client_id", uid).execute()
+        booking_ids = [b["id"] for b in (bookings.data or [])]
+        if not booking_ids:
+            return {"items": [], "total_released": 0, "total_pending": 0}
+        pay = (
+            supabase.table("payments")
+            .select("*, bookings(scheduled_date, completed_at, service_category)")
+            .in_("booking_id", booking_ids)
+            .order("created_at", desc=True)
+            .execute()
+        )
+
+    items = pay.data or []
+    total_released = sum(float(p.get("released_to_business") or 0) for p in items)
+    total_pending = sum(
+        float(p.get("escrow_held") or 0)
+        for p in items
+        if p.get("status") in ("held", "partial_released")
+    )
+    return {
+        "items": items,
+        "total_released": round(total_released, 2),
+        "total_pending": round(total_pending, 2),
+    }
+
+
 @router.get("/{booking_id}")
 def get_payment(booking_id: str, current_user: dict = Depends(get_current_user)):
     """Returns the payment record for a given booking."""
