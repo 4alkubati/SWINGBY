@@ -4,6 +4,8 @@ A drop-in agent system. Copy this folder into any project, point it at the repo,
 
 Built for Kira's operating model: **she directs, agents build overnight, she reviews ~2 hrs.** The system is designed so her review window is decisions, not debugging.
 
+> **The sync rule:** this folder is the source of truth for agent behavior. Any change to how agents operate — gates, routing, loop rules, skills — is edited here and committed **before** it's applied in a live session. A session that discovers a better way of working writes it back here as its last act. New project? Don't copy by hand — see [[KICKOFF]].
+
 ---
 
 ## The 7-layer gate (the spine)

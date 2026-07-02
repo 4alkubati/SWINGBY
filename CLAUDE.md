@@ -133,5 +133,8 @@ npx expo start --clear
 - Deploy / Rollback → `docs/DEPLOY.md`, `docs/ROLLBACK.md`
 - DB schema → `docs/swingby_database_schema.md`
 - **Code-flow graph → `docs/FLOW_GRAPH.md` + `docs/flow-graph.json`** — every screen ↔ screen edge, backend routes vs mobile calls, orphans in red. **Read this FIRST for any nav / 404 / dead-end question** — cheaper than scanning screen files. Regenerate: `"C:/Python314/python.exe" tools/flow_graph.py`. How-to: `AGENTS/claude/automation/FLOW_GRAPH.md`.
-- Orchestrator briefs → `AGENTS/BRIEF-*.md`
+- Orchestrator briefs → `AGENTS/briefs/BRIEF-*.md`
+- New-project scaffolder → `AGENTS/KICKOFF.md` (invoked by the user-level `kira-kickoff` skill)
 - Roadmap → `Roadmap/`
+
+**Sync rule:** agent-behavior changes (gates, routing, loop, skills) are edited in `AGENTS/` and committed BEFORE being applied in a live session.

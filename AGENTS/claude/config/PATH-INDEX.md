@@ -23,7 +23,7 @@
 - `claude/ORCHESTRATOR.md` · `claude/config/` (DISPATCH_GATE, LOOP, ROUTING, MCP_INVENTORY, PATH-INDEX)
 - `claude/memory/` (STATUS, PLAN, SESSION_LOG, MESSAGE_BUS, HUMAN-TODO, ORCHESTRATOR_ISSUES)
 - `claude/skills/`, `claude/automation/`, `claude/PRODUCT-VISION.md`
-- `BOH/` (technical agents) · `FOH/` (marketing/pr/assistant) · briefs: `AGENTS/BRIEF-*.md`
+- `BOH/` (technical agents) · `FOH/` (marketing/pr/assistant) · briefs: `AGENTS/briefs/BRIEF-*.md`
 
 ## Planning / FOH (don't read for code tasks) — `marketing/`, `Roadmap/`, `design/`, `docs/`, `privacy-and-security/`
 
