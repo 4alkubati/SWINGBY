@@ -15,15 +15,18 @@ router = APIRouter()
 
 # ── Schemas ───────────────────────────────────────────────────────────────────
 
+
 class AssignEmployee(BaseModel):
     employee_id: str = Field(..., min_length=1, max_length=500)
-    proposed_date_1: Optional[str] = Field(None, max_length=500)   # ISO-8601 strings
+    proposed_date_1: Optional[str] = Field(None, max_length=500)  # ISO-8601 strings
     proposed_date_2: Optional[str] = Field(None, max_length=500)
     proposed_date_3: Optional[str] = Field(None, max_length=500)
 
 
 class ConfirmDate(BaseModel):
-    confirmed_date: str = Field(..., max_length=500)   # client picks one of the proposed dates
+    confirmed_date: str = Field(
+        ..., max_length=500
+    )  # client picks one of the proposed dates
 
 
 class CancelBooking(BaseModel):
@@ -31,6 +34,7 @@ class CancelBooking(BaseModel):
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
+
 
 def _assert_booking_access(booking: dict, current_user: dict):
     """Raises 403 if the current user has no relationship to this booking."""
@@ -41,12 +45,24 @@ def _assert_booking_access(booking: dict, current_user: dict):
         return
 
     if role == "business_owner":
-        biz = supabase.table("businesses").select("id").eq("owner_id", uid).single().execute()
+        biz = (
+            supabase.table("businesses")
+            .select("id")
+            .eq("owner_id", uid)
+            .single()
+            .execute()
+        )
         if biz.data and biz.data["id"] == booking["business_id"]:
             return
 
     if role == "employee":
-        emp = supabase.table("employees").select("id").eq("user_id", uid).single().execute()
+        emp = (
+            supabase.table("employees")
+            .select("id")
+            .eq("user_id", uid)
+            .single()
+            .execute()
+        )
         if emp.data and emp.data["id"] == booking.get("employee_id"):
             return
 
@@ -54,6 +70,7 @@ def _assert_booking_access(booking: dict, current_user: dict):
 
 
 # ── Endpoints ─────────────────────────────────────────────────────────────────
+
 
 @router.get("/")
 def list_my_bookings(
@@ -69,16 +86,29 @@ def list_my_bookings(
         if role == "client":
             res = (
                 supabase.table("bookings")
-                .select("*, businesses(business_name, category), employees(role_title, avatar_url, users(first_name, last_name))")
+                .select(
+                    "*, businesses(business_name, category), employees(role_title, avatar_url, users(first_name, last_name))"
+                )
                 .eq("client_id", uid)
                 .order("created_at", desc=True)
                 .range(offset, offset + limit - 1)
                 .execute()
             )
         elif role == "business_owner":
-            biz = supabase.table("businesses").select("id").eq("owner_id", uid).single().execute()
+            biz = (
+                supabase.table("businesses")
+                .select("id")
+                .eq("owner_id", uid)
+                .single()
+                .execute()
+            )
             if not biz.data:
-                return {"items": [], "limit": limit, "offset": offset, "next_offset": None}
+                return {
+                    "items": [],
+                    "limit": limit,
+                    "offset": offset,
+                    "next_offset": None,
+                }
             res = (
                 supabase.table("bookings")
                 .select("*, users(first_name, last_name), employees(role_title)")
@@ -88,9 +118,20 @@ def list_my_bookings(
                 .execute()
             )
         elif role == "employee":
-            emp = supabase.table("employees").select("id").eq("user_id", uid).single().execute()
+            emp = (
+                supabase.table("employees")
+                .select("id")
+                .eq("user_id", uid)
+                .single()
+                .execute()
+            )
             if not emp.data:
-                return {"items": [], "limit": limit, "offset": offset, "next_offset": None}
+                return {
+                    "items": [],
+                    "limit": limit,
+                    "offset": offset,
+                    "next_offset": None,
+                }
             res = (
                 supabase.table("bookings")
                 .select("*, users(first_name, last_name), businesses(business_name)")
@@ -104,7 +145,12 @@ def list_my_bookings(
 
         items = res.data or []
         next_offset = offset + limit if len(items) == limit else None
-        return {"items": items, "limit": limit, "offset": offset, "next_offset": next_offset}
+        return {
+            "items": items,
+            "limit": limit,
+            "offset": offset,
+            "next_offset": next_offset,
+        }
     except Exception:
         logger.exception("Could not list bookings")
         raise HTTPException(status_code=400, detail="Could not list bookings")
@@ -115,7 +161,9 @@ def get_booking(booking_id: str, current_user: dict = Depends(get_current_user))
     try:
         res = (
             supabase.table("bookings")
-            .select("*, businesses(business_name, category), employees(role_title, avatar_url, users(first_name, last_name))")
+            .select(
+                "*, businesses(business_name, category), employees(role_title, avatar_url, users(first_name, last_name))"
+            )
             .eq("id", booking_id)
             .single()
             .execute()
@@ -136,16 +184,28 @@ def assign_employee(
 ):
     """Business owner assigns one of their employees and proposes up to 3 dates."""
     if current_user["role"] != "business_owner":
-        raise HTTPException(status_code=403, detail="Only business owners can assign employees")
+        raise HTTPException(
+            status_code=403, detail="Only business owners can assign employees"
+        )
 
-    booking_res = supabase.table("bookings").select("*").eq("id", booking_id).single().execute()
+    booking_res = (
+        supabase.table("bookings").select("*").eq("id", booking_id).single().execute()
+    )
     if not booking_res.data:
         raise HTTPException(status_code=404, detail="Booking not found")
     booking = booking_res.data
 
-    biz = supabase.table("businesses").select("id").eq("owner_id", current_user["id"]).single().execute()
+    biz = (
+        supabase.table("businesses")
+        .select("id")
+        .eq("owner_id", current_user["id"])
+        .single()
+        .execute()
+    )
     if not biz.data or biz.data["id"] != booking["business_id"]:
-        raise HTTPException(status_code=403, detail="This booking doesn't belong to your business")
+        raise HTTPException(
+            status_code=403, detail="This booking doesn't belong to your business"
+        )
 
     # Validate employee is active and belongs to this business
     emp = (
@@ -157,7 +217,9 @@ def assign_employee(
         .execute()
     )
     if not emp.data:
-        raise HTTPException(status_code=404, detail="Employee not found in your business")
+        raise HTTPException(
+            status_code=404, detail="Employee not found in your business"
+        )
     if not emp.data["is_active"]:
         raise HTTPException(status_code=400, detail="Employee is deactivated")
 
@@ -170,7 +232,12 @@ def assign_employee(
         update_payload["proposed_date_3"] = data.proposed_date_3
 
     try:
-        res = supabase.table("bookings").update(update_payload).eq("id", booking_id).execute()
+        res = (
+            supabase.table("bookings")
+            .update(update_payload)
+            .eq("id", booking_id)
+            .execute()
+        )
         return {"message": "Employee assigned", "booking": res.data[0]}
     except Exception:
         logger.exception("Could not assign employee to booking")
@@ -187,19 +254,34 @@ def confirm_date(
     if current_user["role"] != "client":
         raise HTTPException(status_code=403, detail="Only clients can confirm dates")
 
-    booking_res = supabase.table("bookings").select("client_id, status").eq("id", booking_id).single().execute()
+    booking_res = (
+        supabase.table("bookings")
+        .select("client_id, status")
+        .eq("id", booking_id)
+        .single()
+        .execute()
+    )
     if not booking_res.data:
         raise HTTPException(status_code=404, detail="Booking not found")
     if booking_res.data["client_id"] != current_user["id"]:
         raise HTTPException(status_code=403, detail="This is not your booking")
     if booking_res.data["status"] != "confirmed":
-        raise HTTPException(status_code=400, detail="Booking is not in 'confirmed' state")
+        raise HTTPException(
+            status_code=400, detail="Booking is not in 'confirmed' state"
+        )
 
     try:
-        res = supabase.table("bookings").update({
-            "confirmed_date": data.confirmed_date,
-            "status": "in_progress",
-        }).eq("id", booking_id).execute()
+        res = (
+            supabase.table("bookings")
+            .update(
+                {
+                    "confirmed_date": data.confirmed_date,
+                    "status": "in_progress",
+                }
+            )
+            .eq("id", booking_id)
+            .execute()
+        )
         updated_booking = res.data[0]
 
         # Notify both client and business owner — best-effort
@@ -217,7 +299,11 @@ def confirm_date(
 
                 # Notify client
                 if client_uid:
-                    send_push_to_user(client_uid, "Booking confirmed", "Your booking date is confirmed")
+                    send_push_to_user(
+                        client_uid,
+                        "Booking confirmed",
+                        "Your booking date is confirmed",
+                    )
 
                 # Look up business owner + email date-confirmed notification
                 biz_owner_res = (
@@ -231,12 +317,19 @@ def confirm_date(
                     biz_owner_res.data["owner_id"] if biz_owner_res.data else None
                 )
                 biz_name = (
-                    biz_owner_res.data["business_name"] if biz_owner_res.data else "Your business"
+                    biz_owner_res.data["business_name"]
+                    if biz_owner_res.data
+                    else "Your business"
                 )
                 if biz_owner_id:
-                    send_push_to_user(biz_owner_id, "Booking confirmed", "A booking date has been confirmed")
+                    send_push_to_user(
+                        biz_owner_id,
+                        "Booking confirmed",
+                        "A booking date has been confirmed",
+                    )
                     try:
                         from app.services.email import send_date_confirmed_business
+
                         biz_owner_user_res = (
                             supabase.table("users")
                             .select("email")
@@ -256,7 +349,10 @@ def confirm_date(
         except Exception:
             pass  # notification failure must not break the request
 
-        return {"message": "Date confirmed — booking is now in progress", "booking": updated_booking}
+        return {
+            "message": "Date confirmed — booking is now in progress",
+            "booking": updated_booking,
+        }
     except HTTPException:
         raise
     except Exception:
@@ -275,9 +371,14 @@ def complete_booking(booking_id: str, current_user: dict = Depends(get_current_u
         e.g. $100 total: $50 already released, now release $40, SwingBy keeps $10.
     """
     if current_user["role"] not in ("business_owner", "employee"):
-        raise HTTPException(status_code=403, detail="Only business owners or employees can complete bookings")
+        raise HTTPException(
+            status_code=403,
+            detail="Only business owners or employees can complete bookings",
+        )
 
-    booking_res = supabase.table("bookings").select("*").eq("id", booking_id).single().execute()
+    booking_res = (
+        supabase.table("bookings").select("*").eq("id", booking_id).single().execute()
+    )
     if not booking_res.data:
         raise HTTPException(status_code=404, detail="Booking not found")
     booking = booking_res.data
@@ -287,37 +388,68 @@ def complete_booking(booking_id: str, current_user: dict = Depends(get_current_u
 
     # Authorisation
     if current_user["role"] == "business_owner":
-        biz = supabase.table("businesses").select("id").eq("owner_id", current_user["id"]).single().execute()
+        biz = (
+            supabase.table("businesses")
+            .select("id")
+            .eq("owner_id", current_user["id"])
+            .single()
+            .execute()
+        )
         if not biz.data or biz.data["id"] != booking["business_id"]:
-            raise HTTPException(status_code=403, detail="This booking doesn't belong to your business")
+            raise HTTPException(
+                status_code=403, detail="This booking doesn't belong to your business"
+            )
     else:  # employee
-        emp = supabase.table("employees").select("id").eq("user_id", current_user["id"]).single().execute()
+        emp = (
+            supabase.table("employees")
+            .select("id")
+            .eq("user_id", current_user["id"])
+            .single()
+            .execute()
+        )
         if not emp.data or emp.data["id"] != booking.get("employee_id"):
-            raise HTTPException(status_code=403, detail="You are not assigned to this booking")
+            raise HTTPException(
+                status_code=403, detail="You are not assigned to this booking"
+            )
 
     try:
         # Update booking
-        supabase.table("bookings").update({
-            "status": "completed",
-            "payment_status": "fully_released",
-        }).eq("id", booking_id).execute()
+        supabase.table("bookings").update(
+            {
+                "status": "completed",
+                "payment_status": "fully_released",
+            }
+        ).eq("id", booking_id).execute()
 
         # Release remaining escrow (minus platform cut)
-        payment_res = supabase.table("payments").select("*").eq("booking_id", booking_id).single().execute()
+        payment_res = (
+            supabase.table("payments")
+            .select("*")
+            .eq("booking_id", booking_id)
+            .single()
+            .execute()
+        )
         if payment_res.data:
             p = payment_res.data
             # already_released = 50 %, platform_cut = 10 % → final release = 40 %
-            final_release = round(p["total_charged"] - p["platform_cut"] - p["released_to_business"], 2)
-            supabase.table("payments").update({
-                "released_to_business": round(p["released_to_business"] + final_release, 2),
-                "escrow_held": 0,
-                "status": "completed",
-                "released_at": datetime.now(timezone.utc).isoformat(),
-            }).eq("id", p["id"]).execute()
+            final_release = round(
+                p["total_charged"] - p["platform_cut"] - p["released_to_business"], 2
+            )
+            supabase.table("payments").update(
+                {
+                    "released_to_business": round(
+                        p["released_to_business"] + final_release, 2
+                    ),
+                    "escrow_held": 0,
+                    "status": "completed",
+                    "released_at": datetime.now(timezone.utc).isoformat(),
+                }
+            ).eq("id", p["id"]).execute()
 
         # Email the client a completion notice + review nudge — best-effort
         try:
             from app.services.email import send_booking_completed_client
+
             client_user_res = (
                 supabase.table("users")
                 .select("email, first_name")
@@ -333,7 +465,9 @@ def complete_booking(booking_id: str, current_user: dict = Depends(get_current_u
                 .execute()
             )
             biz_name = (
-                biz_name_res.data["business_name"] if biz_name_res.data else "the business"
+                biz_name_res.data["business_name"]
+                if biz_name_res.data
+                else "the business"
             )
             if client_user_res.data:
                 send_booking_completed_client(
@@ -345,7 +479,9 @@ def complete_booking(booking_id: str, current_user: dict = Depends(get_current_u
         except Exception:
             pass
 
-        return {"message": "Booking completed — full payment released (minus platform fee)"}
+        return {
+            "message": "Booking completed — full payment released (minus platform fee)"
+        }
     except HTTPException:
         raise
     except Exception:
@@ -365,7 +501,9 @@ def cancel_booking(
       - > 48 h before date      → 25 % penalty  (business keeps 25 % of total)
       - ≤ 48 h before date      → 50 % penalty  (business keeps 50 % of total)
     """
-    booking_res = supabase.table("bookings").select("*").eq("id", booking_id).single().execute()
+    booking_res = (
+        supabase.table("bookings").select("*").eq("id", booking_id).single().execute()
+    )
     if not booking_res.data:
         raise HTTPException(status_code=404, detail="Booking not found")
     booking = booking_res.data
@@ -373,7 +511,10 @@ def cancel_booking(
     _assert_booking_access(booking, current_user)
 
     if booking["status"] in ("completed", "cancelled"):
-        raise HTTPException(status_code=400, detail=f"Cannot cancel a booking with status '{booking['status']}'")
+        raise HTTPException(
+            status_code=400,
+            detail=f"Cannot cancel a booking with status '{booking['status']}'",
+        )
 
     # Calculate penalty
     penalty_amount = 0.0
@@ -394,27 +535,40 @@ def cancel_booking(
 
     try:
         # Update booking
-        supabase.table("bookings").update({
-            "status": "cancelled",
-            "payment_status": "refunded",
-        }).eq("id", booking_id).execute()
+        supabase.table("bookings").update(
+            {
+                "status": "cancelled",
+                "payment_status": "refunded",
+            }
+        ).eq("id", booking_id).execute()
 
         # Log cancellation
-        supabase.table("cancellations").insert({
-            "booking_id": booking_id,
-            "cancelled_by": current_user["id"],
-            "reason": data.reason,
-            "penalty_amount": penalty_amount,
-        }).execute()
+        supabase.table("cancellations").insert(
+            {
+                "booking_id": booking_id,
+                "cancelled_by": current_user["id"],
+                "reason": data.reason,
+                "penalty_amount": penalty_amount,
+            }
+        ).execute()
 
         # Update payment record
-        payment_res = supabase.table("payments").select("id").eq("booking_id", booking_id).single().execute()
+        payment_res = (
+            supabase.table("payments")
+            .select("id")
+            .eq("booking_id", booking_id)
+            .single()
+            .execute()
+        )
         if payment_res.data:
-            supabase.table("payments").update({"status": "refunded"}).eq("id", payment_res.data["id"]).execute()
+            supabase.table("payments").update({"status": "refunded"}).eq(
+                "id", payment_res.data["id"]
+            ).execute()
 
         # Email the OTHER party (whoever didn't cancel) — best-effort
         try:
             from app.services.email import send_booking_cancelled
+
             canceller_id = current_user["id"]
             client_id = booking["client_id"]
             biz_id = booking["business_id"]
@@ -427,7 +581,9 @@ def cancel_booking(
                 .single()
                 .execute()
             )
-            biz_owner_id = biz_owner_res.data["owner_id"] if biz_owner_res.data else None
+            biz_owner_id = (
+                biz_owner_res.data["owner_id"] if biz_owner_res.data else None
+            )
 
             # Determine which user to email (the one who did NOT cancel)
             other_user_id = None

@@ -43,18 +43,10 @@ def sync_user_to_crm(
         payload = {
             "parent": {"database_id": settings.NOTION_CRM_DB_ID},
             "properties": {
-                "Name": {
-                    "title": [{"text": {"content": display_name}}]
-                },
-                "Email": {
-                    "email": email
-                },
-                "Source": {
-                    "rich_text": [{"text": {"content": source}}]
-                },
-                "Date": {
-                    "date": {"start": now_iso}
-                },
+                "Name": {"title": [{"text": {"content": display_name}}]},
+                "Email": {"email": email},
+                "Source": {"rich_text": [{"text": {"content": source}}]},
+                "Date": {"date": {"start": now_iso}},
             },
         }
 

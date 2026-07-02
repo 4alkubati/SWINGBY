@@ -30,6 +30,7 @@ router = APIRouter()
 # Dependency — admin guard
 # ---------------------------------------------------------------------------
 
+
 def require_admin(current_user: dict = Depends(get_current_user)) -> dict:
     """Raises 403 if the authenticated user does not have role='admin'."""
     if current_user.get("role") != "admin":
@@ -40,6 +41,7 @@ def require_admin(current_user: dict = Depends(get_current_user)) -> dict:
 # ---------------------------------------------------------------------------
 # Endpoints
 # ---------------------------------------------------------------------------
+
 
 @router.get("/users")
 @limiter.limit("30/minute")
@@ -99,7 +101,9 @@ def suspend_user(
         )
         if not res.data:
             raise HTTPException(status_code=404, detail="User not found")
-        logger.info("admin.suspend_user", admin_id=current_user["id"], target_user=user_id)
+        logger.info(
+            "admin.suspend_user", admin_id=current_user["id"], target_user=user_id
+        )
         return {"message": "user_suspended", "user_id": user_id}
     except HTTPException:
         raise
@@ -125,7 +129,9 @@ def unsuspend_user(
         )
         if not res.data:
             raise HTTPException(status_code=404, detail="User not found")
-        logger.info("admin.unsuspend_user", admin_id=current_user["id"], target_user=user_id)
+        logger.info(
+            "admin.unsuspend_user", admin_id=current_user["id"], target_user=user_id
+        )
         return {"message": "user_unsuspended", "user_id": user_id}
     except HTTPException:
         raise

@@ -42,7 +42,7 @@ router = APIRouter()
 # ---------------------------------------------------------------------------
 # T18 — Brute-force lockout state
 # ---------------------------------------------------------------------------
-_LOCKOUT_WINDOW_SECONDS: int = 15 * 60   # 15 minutes
+_LOCKOUT_WINDOW_SECONDS: int = 15 * 60  # 15 minutes
 _MAX_FAILURES: int = 5
 
 # Maps (email, remote_ip) -> list of epoch timestamps for each failure
@@ -71,8 +71,7 @@ def _check_lockout(email: str, ip: str) -> None:
     now = time.monotonic()
     # Prune stale entries outside the window
     _login_failures[key] = [
-        ts for ts in _login_failures[key]
-        if now - ts < _LOCKOUT_WINDOW_SECONDS
+        ts for ts in _login_failures[key] if now - ts < _LOCKOUT_WINDOW_SECONDS
     ]
     if len(_login_failures[key]) >= _MAX_FAILURES:
         oldest = min(_login_failures[key])
@@ -109,6 +108,7 @@ def _validate_phone(v: Optional[str]) -> Optional[str]:
 
 # ── Schemas ───────────────────────────────────────────────────────────────────
 
+
 class SignupRequest(BaseModel):
     email: EmailStr = Field(..., max_length=320)
     password: str = Field(..., min_length=8, max_length=128)
@@ -122,13 +122,21 @@ class SignupRequest(BaseModel):
     @classmethod
     def validate_password_complexity(cls, v: str) -> str:
         if len(v) < 8:
-            raise ValueError("Password must be at least 8 characters with uppercase, lowercase, and a digit.")
+            raise ValueError(
+                "Password must be at least 8 characters with uppercase, lowercase, and a digit."
+            )
         if not any(c.islower() for c in v):
-            raise ValueError("Password must be at least 8 characters with uppercase, lowercase, and a digit.")
+            raise ValueError(
+                "Password must be at least 8 characters with uppercase, lowercase, and a digit."
+            )
         if not any(c.isupper() for c in v):
-            raise ValueError("Password must be at least 8 characters with uppercase, lowercase, and a digit.")
+            raise ValueError(
+                "Password must be at least 8 characters with uppercase, lowercase, and a digit."
+            )
         if not any(c.isdigit() for c in v):
-            raise ValueError("Password must be at least 8 characters with uppercase, lowercase, and a digit.")
+            raise ValueError(
+                "Password must be at least 8 characters with uppercase, lowercase, and a digit."
+            )
         return v
 
     @field_validator("role")
@@ -184,6 +192,7 @@ class ProfileUpdate(BaseModel):
 
 # ── Endpoints ─────────────────────────────────────────────────────────────────
 
+
 @router.post("/signup")
 @limiter.limit("5/minute")
 def signup(request: Request, data: SignupRequest):
@@ -209,12 +218,17 @@ def signup(request: Request, data: SignupRequest):
 
     try:
         # 1. Create Supabase Auth user
-        res = supabase.auth.sign_up({
-            "email": str(data.email),
-            "password": data.password,
-        })
+        res = supabase.auth.sign_up(
+            {
+                "email": str(data.email),
+                "password": data.password,
+            }
+        )
         if not res.user:
-            raise HTTPException(status_code=400, detail="Signup failed — check if email is already in use")
+            raise HTTPException(
+                status_code=400,
+                detail="Signup failed — check if email is already in use",
+            )
 
         user_id = res.user.id
 
@@ -247,6 +261,7 @@ def signup(request: Request, data: SignupRequest):
         # Welcome email — best-effort, never blocks signup
         try:
             from app.services.email import send_welcome_email
+
             send_welcome_email(str(data.email), data.first_name)
         except Exception:
             pass
@@ -255,7 +270,11 @@ def signup(request: Request, data: SignupRequest):
         # Return the token so the mobile app can auto-login.
         access_token = res.session.access_token if res.session else None
         return {
-            "message": "Account created" if access_token else "Account created — check your email to confirm",
+            "message": (
+                "Account created"
+                if access_token
+                else "Account created — check your email to confirm"
+            ),
             "user_id": user_id,
             "access_token": access_token,
         }
@@ -277,10 +296,12 @@ def login(request: Request, data: LoginRequest):
     _check_lockout(email, ip)
 
     try:
-        res = supabase.auth.sign_in_with_password({
-            "email": email,
-            "password": data.password,
-        })
+        res = supabase.auth.sign_in_with_password(
+            {
+                "email": email,
+                "password": data.password,
+            }
+        )
         if not res.session:
             # Treat missing session as a credential failure
             _record_failure(email, ip)
@@ -292,7 +313,13 @@ def login(request: Request, data: LoginRequest):
         user_id = res.user.id
 
         # Read role + name from our users table (not Supabase metadata)
-        db_res = supabase.table("users").select("role, first_name, last_name").eq("id", user_id).single().execute()
+        db_res = (
+            supabase.table("users")
+            .select("role, first_name, last_name")
+            .eq("id", user_id)
+            .single()
+            .execute()
+        )
         user_data = db_res.data or {}
 
         return {
@@ -367,8 +394,10 @@ def forgot_password(request: Request, data: ForgotPasswordRequest):
     then signs back into the app). The site URL is configurable via
     PASSWORD_RESET_REDIRECT_URL; defaults to https://swingbyy.com/reset-password.
     """
-    redirect_to = getattr(settings, "PASSWORD_RESET_REDIRECT_URL", None) \
+    redirect_to = (
+        getattr(settings, "PASSWORD_RESET_REDIRECT_URL", None)
         or "https://swingbyy.com/reset-password"
+    )
     try:
         supabase.auth.reset_password_email(
             data.email,
@@ -384,7 +413,14 @@ def get_me(current_user: dict = Depends(get_current_user)):
     """Returns the full profile of the currently authenticated user."""
     # Omit sensitive internal fields before returning
     safe_fields = {
-        "id", "first_name", "last_name", "email", "phone", "role", "avatar_url", "created_at"
+        "id",
+        "first_name",
+        "last_name",
+        "email",
+        "phone",
+        "role",
+        "avatar_url",
+        "created_at",
     }
     return {k: v for k, v in current_user.items() if k in safe_fields}
 

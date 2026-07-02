@@ -17,17 +17,22 @@ router = APIRouter()
 
 # ── Haversine helper ──────────────────────────────────────────────────────────
 
+
 def _haversine_km(lat1: float, lng1: float, lat2: float, lng2: float) -> float:
     """Great-circle distance in km between two lat/lng points."""
     R = 6371.0
     phi1, phi2 = math.radians(lat1), math.radians(lat2)
     d_phi = math.radians(lat2 - lat1)
     d_lam = math.radians(lng2 - lng1)
-    a = math.sin(d_phi / 2) ** 2 + math.cos(phi1) * math.cos(phi2) * math.sin(d_lam / 2) ** 2
+    a = (
+        math.sin(d_phi / 2) ** 2
+        + math.cos(phi1) * math.cos(phi2) * math.sin(d_lam / 2) ** 2
+    )
     return 2 * R * math.asin(math.sqrt(a))
 
 
 # ── Schemas ───────────────────────────────────────────────────────────────────
+
 
 class BusinessCreate(BaseModel):
     business_name: str = Field(..., min_length=1, max_length=120)
@@ -58,14 +63,26 @@ class BusinessUpdate(BaseModel):
 
 # ── Endpoints ─────────────────────────────────────────────────────────────────
 
-@router.post("/")
-def create_business(data: BusinessCreate, current_user: dict = Depends(get_current_user)):
-    if current_user["role"] != "business_owner":
-        raise HTTPException(status_code=403, detail="Only business owners can create a business")
 
-    existing = supabase.table("businesses").select("id").eq("owner_id", current_user["id"]).execute()
+@router.post("/")
+def create_business(
+    data: BusinessCreate, current_user: dict = Depends(get_current_user)
+):
+    if current_user["role"] != "business_owner":
+        raise HTTPException(
+            status_code=403, detail="Only business owners can create a business"
+        )
+
+    existing = (
+        supabase.table("businesses")
+        .select("id")
+        .eq("owner_id", current_user["id"])
+        .execute()
+    )
     if existing.data:
-        raise HTTPException(status_code=400, detail="You already have a business registered")
+        raise HTTPException(
+            status_code=400, detail="You already have a business registered"
+        )
 
     try:
         payload = {"owner_id": current_user["id"], **data.model_dump(exclude_none=True)}
@@ -124,7 +141,9 @@ def get_nearby_businesses(
             try:
                 dist = _haversine_km(lat, lng, float(biz_lat), float(biz_lng))
             except (TypeError, ValueError):
-                logger.warning("nearby_bad_coords", biz_id=biz.get("id"), lat=biz_lat, lng=biz_lng)
+                logger.warning(
+                    "nearby_bad_coords", biz_id=biz.get("id"), lat=biz_lat, lng=biz_lng
+                )
                 continue
             biz_radius = float(biz.get("service_radius_km") or 25.0)
             if dist <= min(radius_km, biz_radius):
@@ -134,25 +153,42 @@ def get_nearby_businesses(
         nearby.sort(key=lambda b: b["distance_km"])
 
         # Apply pagination on the sorted result
-        page = nearby[offset: offset + limit]
+        page = nearby[offset : offset + limit]
         next_offset = offset + limit if len(page) == limit else None
 
-        return {"items": page, "limit": limit, "offset": offset, "next_offset": next_offset}
+        return {
+            "items": page,
+            "limit": limit,
+            "offset": offset,
+            "next_offset": next_offset,
+        }
 
     except Exception:
-        logger.exception("nearby_businesses_error", lat=lat, lng=lng, radius_km=radius_km)
+        logger.exception(
+            "nearby_businesses_error", lat=lat, lng=lng, radius_km=radius_km
+        )
         return {"items": [], "limit": limit, "offset": offset, "next_offset": None}
 
 
 @router.get("/me")
 def get_my_business(current_user: dict = Depends(get_current_user)):
     if current_user["role"] != "business_owner":
-        raise HTTPException(status_code=403, detail="Only business owners have a business profile")
+        raise HTTPException(
+            status_code=403, detail="Only business owners have a business profile"
+        )
     try:
-        res = supabase.table("businesses").select("*").eq("owner_id", current_user["id"]).single().execute()
+        res = (
+            supabase.table("businesses")
+            .select("*")
+            .eq("owner_id", current_user["id"])
+            .single()
+            .execute()
+        )
         return res.data
     except Exception:
-        raise HTTPException(status_code=404, detail="No business found for this account")
+        raise HTTPException(
+            status_code=404, detail="No business found for this account"
+        )
 
 
 @router.get("/me/analytics")
@@ -163,7 +199,9 @@ def get_my_analytics(
 ):
     """Business owner analytics: earnings, bookings, categories, reviews."""
     if current_user["role"] != "business_owner":
-        raise HTTPException(status_code=403, detail="Only business owners can view analytics")
+        raise HTTPException(
+            status_code=403, detail="Only business owners can view analytics"
+        )
 
     uid = current_user["id"]
 
@@ -177,7 +215,9 @@ def get_my_analytics(
             .execute()
         )
         if not biz_res.data:
-            raise HTTPException(status_code=404, detail="No business found for this account")
+            raise HTTPException(
+                status_code=404, detail="No business found for this account"
+            )
         biz = biz_res.data
         biz_id = biz["id"]
 
@@ -201,7 +241,7 @@ def get_my_analytics(
                 .in_("booking_id", booking_ids)
                 .execute()
             )
-            for p in (payments_res.data or []):
+            for p in payments_res.data or []:
                 if p.get("status") == "settled" and p.get("released_to_business"):
                     total_earnings += float(p["released_to_business"])
 
@@ -234,7 +274,7 @@ def get_my_analytics(
                 .execute()
             )
             cat_counts: dict = defaultdict(int)
-            for p in (posts_res.data or []):
+            for p in posts_res.data or []:
                 if p.get("category"):
                     cat_counts[p["category"]] += 1
             top_categories = [
@@ -252,7 +292,11 @@ def get_my_analytics(
         interests = interests_res.data or []
         total_interests = len(interests)
         accepted_interests = sum(1 for i in interests if i.get("status") == "accepted")
-        conversion_rate = round(accepted_interests / total_interests * 100, 1) if total_interests else 0.0
+        conversion_rate = (
+            round(accepted_interests / total_interests * 100, 1)
+            if total_interests
+            else 0.0
+        )
 
         # 7. Recent reviews (last 5, join reviewer first name)
         reviews_res = (
@@ -264,7 +308,7 @@ def get_my_analytics(
             .execute()
         )
         recent_reviews = []
-        for rev in (reviews_res.data or []):
+        for rev in reviews_res.data or []:
             client_first_name = ""
             try:
                 user_res = (
@@ -277,13 +321,15 @@ def get_my_analytics(
                 client_first_name = (user_res.data or {}).get("first_name", "")
             except Exception:
                 pass
-            recent_reviews.append({
-                "id": rev["id"],
-                "rating": rev["rating"],
-                "comment": rev.get("comment", ""),
-                "client_first_name": client_first_name,
-                "created_at": rev["created_at"],
-            })
+            recent_reviews.append(
+                {
+                    "id": rev["id"],
+                    "rating": rev["rating"],
+                    "comment": rev.get("comment", ""),
+                    "client_first_name": client_first_name,
+                    "created_at": rev["created_at"],
+                }
+            )
 
         return {
             "avg_rating": float(biz.get("avg_rating") or 0),
@@ -319,7 +365,12 @@ def list_businesses(
         res = query.range(offset, offset + limit - 1).execute()
         items = res.data or []
         next_offset = offset + limit if len(items) == limit else None
-        return {"items": items, "limit": limit, "offset": offset, "next_offset": next_offset}
+        return {
+            "items": items,
+            "limit": limit,
+            "offset": offset,
+            "next_offset": next_offset,
+        }
     except Exception:
         logger.exception("list_businesses_error")
         raise HTTPException(status_code=400, detail="Could not list businesses")
@@ -328,7 +379,13 @@ def list_businesses(
 @router.get("/{business_id}")
 def get_business(business_id: str, current_user: dict = Depends(get_current_user)):
     try:
-        res = supabase.table("businesses").select("*").eq("id", business_id).single().execute()
+        res = (
+            supabase.table("businesses")
+            .select("*")
+            .eq("id", business_id)
+            .single()
+            .execute()
+        )
         return res.data
     except Exception:
         raise HTTPException(status_code=404, detail="Business not found")
@@ -341,9 +398,17 @@ def update_business(
     current_user: dict = Depends(get_current_user),
 ):
     if current_user["role"] != "business_owner":
-        raise HTTPException(status_code=403, detail="Only business owners can update a business")
+        raise HTTPException(
+            status_code=403, detail="Only business owners can update a business"
+        )
 
-    biz = supabase.table("businesses").select("owner_id").eq("id", business_id).single().execute()
+    biz = (
+        supabase.table("businesses")
+        .select("owner_id")
+        .eq("id", business_id)
+        .single()
+        .execute()
+    )
     if not biz.data:
         raise HTTPException(status_code=404, detail="Business not found")
     if biz.data["owner_id"] != current_user["id"]:
@@ -354,7 +419,12 @@ def update_business(
         raise HTTPException(status_code=400, detail="No fields provided to update")
 
     try:
-        res = supabase.table("businesses").update(update_data).eq("id", business_id).execute()
+        res = (
+            supabase.table("businesses")
+            .update(update_data)
+            .eq("id", business_id)
+            .execute()
+        )
         return {"message": "Business updated", "business": res.data[0]}
     except Exception:
         logger.exception("update_business_error")

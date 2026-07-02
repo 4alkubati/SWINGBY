@@ -5,6 +5,7 @@ Forwards the submitted message to the SwingBy team inbox via Resend.
 Rate-limited to prevent spam. Always returns 200 to avoid leaking
 configuration state (e.g. whether email delivery is wired).
 """
+
 import html
 import os
 

@@ -9,6 +9,7 @@ router = APIRouter()
 
 # ── Schemas ───────────────────────────────────────────────────────────────────
 
+
 class PushTokenRegister(BaseModel):
     token: str = Field(..., min_length=1, max_length=512)
     platform: Literal["ios", "android", "web"]
@@ -16,8 +17,11 @@ class PushTokenRegister(BaseModel):
 
 # ── Endpoints ─────────────────────────────────────────────────────────────────
 
+
 @router.post("/register")
-def register_push_token(data: PushTokenRegister, current_user: dict = Depends(get_current_user)):
+def register_push_token(
+    data: PushTokenRegister, current_user: dict = Depends(get_current_user)
+):
     try:
         res = (
             supabase.table("push_tokens")

@@ -29,6 +29,7 @@ _DELETE_CONFIRM_PHRASE = "DELETE_MY_ACCOUNT"
 # Schemas
 # ---------------------------------------------------------------------------
 
+
 class DeleteAccountRequest(BaseModel):
     confirm: str = Field(..., max_length=50)
 
@@ -36,6 +37,7 @@ class DeleteAccountRequest(BaseModel):
 # ---------------------------------------------------------------------------
 # Endpoints
 # ---------------------------------------------------------------------------
+
 
 @router.get("/export")
 @limiter.limit("5/minute")
@@ -51,15 +53,11 @@ def export_my_data(
 
     try:
         # Users row (already fetched by get_current_user, but re-fetch for completeness)
-        user_row = (
-            supabase.table("users").select("*").eq("id", uid).single().execute()
-        )
+        user_row = supabase.table("users").select("*").eq("id", uid).single().execute()
         user_data = user_row.data or {}
 
         # Businesses owned by this user
-        biz_res = (
-            supabase.table("businesses").select("*").eq("owner_id", uid).execute()
-        )
+        biz_res = supabase.table("businesses").select("*").eq("owner_id", uid).execute()
         businesses = biz_res.data or []
         biz_ids = [b["id"] for b in businesses]
 
@@ -106,15 +104,11 @@ def export_my_data(
                 bookings.append(b)
 
         # Messages sent by me
-        msg_res = (
-            supabase.table("messages").select("*").eq("sender_id", uid).execute()
-        )
+        msg_res = supabase.table("messages").select("*").eq("sender_id", uid).execute()
         messages = msg_res.data or []
 
         # Reviews written by me
-        rev_res = (
-            supabase.table("reviews").select("*").eq("reviewer_id", uid).execute()
-        )
+        rev_res = supabase.table("reviews").select("*").eq("reviewer_id", uid).execute()
         reviews = rev_res.data or []
 
         logger.info("me.export", user_id=uid)

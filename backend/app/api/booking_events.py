@@ -22,6 +22,7 @@ PATCH /bookings/{id}/complete — kept in one place there (we just emit the
 event here; the client app can call /complete separately when ready, or
 we can extend this endpoint later to chain the two).
 """
+
 from __future__ import annotations
 
 import logging
@@ -60,6 +61,7 @@ class CreateEvent(BaseModel):
 
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
+
 
 def _load_booking(booking_id: str) -> dict:
     res = (
@@ -139,6 +141,7 @@ def _is_provider(booking: dict, current_user: dict) -> bool:
 
 # ── Endpoints ────────────────────────────────────────────────────────────────
 
+
 @router.post("/{booking_id}/events")
 def create_event(
     booking_id: str,
@@ -213,18 +216,28 @@ def list_events(
 # ── Internal helpers ─────────────────────────────────────────────────────────
 
 _PUSH_COPY = {
-    "en_route":  ("On the way", "Your provider is en route."),
-    "arrived":   ("Provider arrived", "Your provider has arrived at the job."),
-    "started":   ("Job started", "Work on your booking has started."),
-    "paused":    ("Job paused", "Your provider has paused the job."),
-    "resumed":   ("Job resumed", "Your provider has resumed the job."),
+    "en_route": ("On the way", "Your provider is en route."),
+    "arrived": ("Provider arrived", "Your provider has arrived at the job."),
+    "started": ("Job started", "Work on your booking has started."),
+    "paused": ("Job paused", "Your provider has paused the job."),
+    "resumed": ("Job resumed", "Your provider has resumed the job."),
     "completed": ("Job complete", "Your provider has marked the job complete."),
-    "cancelled_event": ("Update on your booking", "There is a new update on your booking."),
+    "cancelled_event": (
+        "Update on your booking",
+        "There is a new update on your booking.",
+    ),
 }
 
 
 def _push_client_for_event(booking: dict, event_type: str) -> None:
-    title, body = _PUSH_COPY.get(event_type, ("Booking update", "There is an update on your booking."))
+    title, body = _PUSH_COPY.get(
+        event_type, ("Booking update", "There is an update on your booking.")
+    )
     client_id = booking.get("client_id")
     if client_id:
-        send_push_to_user(client_id, title, body, data={"booking_id": booking["id"], "event_type": event_type})
+        send_push_to_user(
+            client_id,
+            title,
+            body,
+            data={"booking_id": booking["id"], "event_type": event_type},
+        )

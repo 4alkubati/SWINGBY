@@ -3,6 +3,7 @@ payments_offplatform.py — D2.3. Client records that a booking was paid outside
 SwingBy (cash / e-transfer). Money never touches the platform. No platform cut.
 Business subscription is what monetizes this flow.
 """
+
 from __future__ import annotations
 
 import logging
@@ -49,7 +50,9 @@ def mark_paid_offplatform(
     booking = booking_res.data
 
     if booking["client_id"] != current_user["id"]:
-        raise HTTPException(status_code=403, detail="Only the booking's client can mark it paid")
+        raise HTTPException(
+            status_code=403, detail="Only the booking's client can mark it paid"
+        )
 
     if booking["status"] != "completed":
         raise HTTPException(status_code=400, detail="Booking must be completed first")
@@ -68,29 +71,37 @@ def mark_paid_offplatform(
     try:
         pay_res = (
             supabase.table("payments")
-            .insert({
-                "booking_id": booking_id,
-                "total_charged": total,
-                "escrow_held": 0,
-                "released_to_business": 0,
-                "platform_cut": 0,
-                "status": "paid_off_platform",
-                "method": data.method,
-                "notes": (data.note or None),
-            })
+            .insert(
+                {
+                    "booking_id": booking_id,
+                    "total_charged": total,
+                    "escrow_held": 0,
+                    "released_to_business": 0,
+                    "platform_cut": 0,
+                    "status": "paid_off_platform",
+                    "method": data.method,
+                    "notes": (data.note or None),
+                }
+            )
             .execute()
         )
 
-        supabase.table("bookings").update({"payment_status": "fully_released"}).eq("id", booking_id).execute()
+        supabase.table("bookings").update({"payment_status": "fully_released"}).eq(
+            "id", booking_id
+        ).execute()
 
         try:
-            supabase.table("booking_events").insert({
-                "booking_id": booking_id,
-                "event_type": "paid_offplatform",
-                "note": f"{data.method}" + (f" — {data.note}" if data.note else ""),
-            }).execute()
+            supabase.table("booking_events").insert(
+                {
+                    "booking_id": booking_id,
+                    "event_type": "paid_offplatform",
+                    "note": f"{data.method}" + (f" — {data.note}" if data.note else ""),
+                }
+            ).execute()
         except Exception:
-            logger.warning("Could not append booking_events for offplatform pay %s", booking_id)
+            logger.warning(
+                "Could not append booking_events for offplatform pay %s", booking_id
+            )
 
         return {"payment": (pay_res.data or [{}])[0]}
     except HTTPException:

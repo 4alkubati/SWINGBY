@@ -31,16 +31,15 @@ works when Supabase "Confirm email" is OFF on that project.
 
 Exit code 0 ⇒ flow passed. Anything else ⇒ failed at the printed step.
 """
+
 from __future__ import annotations
 
 import os
 import sys
 import time
 import uuid
-from typing import Optional
 
 import httpx
-
 
 BASE_URL = os.environ.get("BASE_URL", "http://127.0.0.1:8000").rstrip("/")
 TIMEOUT = float(os.environ.get("SMOKE_TIMEOUT", "20"))
@@ -63,7 +62,9 @@ def fail(step: str, resp: httpx.Response) -> None:
     sys.exit(2)
 
 
-def _check(resp: httpx.Response, step: str, expected: tuple[int, ...] = (200, 201)) -> dict:
+def _check(
+    resp: httpx.Response, step: str, expected: tuple[int, ...] = (200, 201)
+) -> dict:
     if resp.status_code not in expected:
         fail(step, resp)
     try:
@@ -216,7 +217,9 @@ def confirm_date(client: httpx.Client, client_token: str, booking_id: str) -> No
     _check(resp, "confirm_date")
 
 
-def post_event(client: httpx.Client, biz_token: str, booking_id: str, event_type: str) -> None:
+def post_event(
+    client: httpx.Client, biz_token: str, booking_id: str, event_type: str
+) -> None:
     headers = {"Authorization": f"Bearer {biz_token}"}
     log("event", event_type)
     resp = client.post(
@@ -286,7 +289,9 @@ def main() -> int:
         log("healthz", "ok")
 
         # 1. Both roles in
-        _, client_token = signup_or_login(session, "client", "CLIENT_EMAIL", "CLIENT_PASSWORD")
+        _, client_token = signup_or_login(
+            session, "client", "CLIENT_EMAIL", "CLIENT_PASSWORD"
+        )
         _, biz_token = signup_or_login(session, "business", "BIZ_EMAIL", "BIZ_PASSWORD")
 
         # 2. Business has a profile

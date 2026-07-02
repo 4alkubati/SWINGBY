@@ -10,11 +10,11 @@ GET /bookings/{booking_id}/invoice
 GET /bookings/{booking_id}/invoice.pdf
     Same auth. Returns a rendered PDF (reportlab). iOS Safari opens inline.
 """
+
 from __future__ import annotations
 
 import io
 import logging
-from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
@@ -51,7 +51,13 @@ def _load_invoice_data(booking_id: str, current_user: dict) -> dict:
     is_client = booking["client_id"] == uid
     is_business_owner = False
     if role == "business_owner":
-        biz = supabase.table("businesses").select("owner_id").eq("id", booking["business_id"]).single().execute()
+        biz = (
+            supabase.table("businesses")
+            .select("owner_id")
+            .eq("id", booking["business_id"])
+            .single()
+            .execute()
+        )
         is_business_owner = bool(biz.data) and biz.data["owner_id"] == uid
     if not (is_client or is_business_owner):
         raise HTTPException(status_code=403, detail="Not your invoice")
@@ -67,7 +73,9 @@ def _load_invoice_data(booking_id: str, current_user: dict) -> dict:
 
     pay_res = (
         supabase.table("payments")
-        .select("status, method, notes, total_charged, platform_cut, released_to_business")
+        .select(
+            "status, method, notes, total_charged, platform_cut, released_to_business"
+        )
         .eq("booking_id", booking_id)
         .order("created_at", desc=True)
         .limit(1)
@@ -88,7 +96,10 @@ def _load_invoice_data(booking_id: str, current_user: dict) -> dict:
         "issued_at": (booking.get("completed_at") or booking.get("created_at")),
         "booking_id": booking["id"],
         "client": {
-            "name": " ".join(x for x in [client.get("first_name"), client.get("last_name")] if x).strip() or "Client",
+            "name": " ".join(
+                x for x in [client.get("first_name"), client.get("last_name")] if x
+            ).strip()
+            or "Client",
             "email": client.get("email"),
         },
         "business": {
@@ -96,10 +107,19 @@ def _load_invoice_data(booking_id: str, current_user: dict) -> dict:
             "category": biz.get("category"),
             "license_status": biz.get("license_status"),
         },
-        "employee": {
-            "name": " ".join(x for x in [emp_user.get("first_name"), emp_user.get("last_name")] if x).strip() or None,
-            "role_title": emp.get("role_title") if isinstance(emp, dict) else None,
-        } if emp else None,
+        "employee": (
+            {
+                "name": " ".join(
+                    x
+                    for x in [emp_user.get("first_name"), emp_user.get("last_name")]
+                    if x
+                ).strip()
+                or None,
+                "role_title": emp.get("role_title") if isinstance(emp, dict) else None,
+            }
+            if emp
+            else None
+        ),
         "service": {
             "category": booking.get("service_category"),
         },
@@ -109,7 +129,10 @@ def _load_invoice_data(booking_id: str, current_user: dict) -> dict:
         },
         "line_items": [
             {"label": "Service", "amount": total_amount},
-            {"label": f"Platform fee ({int((booking.get('commission_rate') or 0.10) * 100)}%)", "amount": -platform_cut},
+            {
+                "label": f"Platform fee ({int((booking.get('commission_rate') or 0.10) * 100)}%)",
+                "amount": -platform_cut,
+            },
         ],
         "totals": {
             "subtotal": total_amount,
@@ -119,7 +142,9 @@ def _load_invoice_data(booking_id: str, current_user: dict) -> dict:
         },
         "payment": {
             "method": payment.get("method") or "stripe_card",
-            "status": payment.get("status") or booking.get("payment_status") or "pending",
+            "status": payment.get("status")
+            or booking.get("payment_status")
+            or "pending",
             "processor_ref": payment.get("notes"),
         },
     }
@@ -140,21 +165,30 @@ def get_invoice_pdf(booking_id: str, current_user: dict = Depends(get_current_us
         from reportlab.lib.units import inch
         from reportlab.lib import colors as rl_colors
         from reportlab.platypus import (
-            SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle,
+            SimpleDocTemplate,
+            Paragraph,
+            Spacer,
+            Table,
+            TableStyle,
         )
     except ImportError:
         raise HTTPException(status_code=503, detail="PDF library unavailable")
 
     buf = io.BytesIO()
     doc = SimpleDocTemplate(
-        buf, pagesize=LETTER,
-        leftMargin=0.6 * inch, rightMargin=0.6 * inch,
-        topMargin=0.6 * inch, bottomMargin=0.6 * inch,
+        buf,
+        pagesize=LETTER,
+        leftMargin=0.6 * inch,
+        rightMargin=0.6 * inch,
+        topMargin=0.6 * inch,
+        bottomMargin=0.6 * inch,
     )
 
     styles = getSampleStyleSheet()
     h1 = ParagraphStyle("h1", parent=styles["Heading1"], fontSize=18, spaceAfter=6)
-    small = ParagraphStyle("small", parent=styles["Normal"], fontSize=9, textColor=rl_colors.grey)
+    small = ParagraphStyle(
+        "small", parent=styles["Normal"], fontSize=9, textColor=rl_colors.grey
+    )
     body = styles["Normal"]
 
     story = []
@@ -167,7 +201,10 @@ def get_invoice_pdf(booking_id: str, current_user: dict = Depends(get_current_us
     parties = [
         [Paragraph("<b>Bill to</b>", body), Paragraph("<b>From</b>", body)],
         [
-            Paragraph(f"{data['client']['name']}<br/>{data['client'].get('email') or ''}", body),
+            Paragraph(
+                f"{data['client']['name']}<br/>{data['client'].get('email') or ''}",
+                body,
+            ),
             Paragraph(
                 f"{data['business']['name']}<br/>{data['business'].get('category') or ''}<br/>"
                 f"License: {data['business'].get('license_status') or 'unverified'}",
@@ -176,26 +213,34 @@ def get_invoice_pdf(booking_id: str, current_user: dict = Depends(get_current_us
         ],
     ]
     ptbl = Table(parties, colWidths=[3.2 * inch, 3.2 * inch])
-    ptbl.setStyle(TableStyle([
-        ("VALIGN", (0, 0), (-1, -1), "TOP"),
-        ("BOTTOMPADDING", (0, 0), (-1, 0), 6),
-    ]))
+    ptbl.setStyle(
+        TableStyle(
+            [
+                ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                ("BOTTOMPADDING", (0, 0), (-1, 0), 6),
+            ]
+        )
+    )
     story.append(ptbl)
     story.append(Spacer(1, 14))
 
     if data.get("employee") and data["employee"].get("name"):
-        story.append(Paragraph(
-            f"Service delivered by: {data['employee']['name']} — {data['employee'].get('role_title') or ''}",
-            body,
-        ))
+        story.append(
+            Paragraph(
+                f"Service delivered by: {data['employee']['name']} — {data['employee'].get('role_title') or ''}",
+                body,
+            )
+        )
         story.append(Spacer(1, 10))
 
     if data["service"].get("category") or data["schedule"].get("completed_at"):
-        story.append(Paragraph(
-            f"<b>Service:</b> {data['service'].get('category') or 'Booking'} · "
-            f"Completed {data['schedule'].get('completed_at') or '—'}",
-            body,
-        ))
+        story.append(
+            Paragraph(
+                f"<b>Service:</b> {data['service'].get('category') or 'Booking'} · "
+                f"Completed {data['schedule'].get('completed_at') or '—'}",
+                body,
+            )
+        )
         story.append(Spacer(1, 10))
 
     rows = [["Description", "Amount (CAD)"]]
@@ -208,26 +253,34 @@ def get_invoice_pdf(booking_id: str, current_user: dict = Depends(get_current_us
     rows.append(["Total charged", f"${data['totals']['total_charged']:,.2f}"])
 
     tbl = Table(rows, colWidths=[4.5 * inch, 1.9 * inch])
-    tbl.setStyle(TableStyle([
-        ("FONT", (0, 0), (-1, 0), "Helvetica-Bold"),
-        ("LINEBELOW", (0, 0), (-1, 0), 0.5, rl_colors.grey),
-        ("LINEABOVE", (0, -2), (-1, -2), 0.5, rl_colors.grey),
-        ("FONT", (0, -2), (-1, -1), "Helvetica-Bold"),
-        ("ALIGN", (1, 0), (1, -1), "RIGHT"),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
-    ]))
+    tbl.setStyle(
+        TableStyle(
+            [
+                ("FONT", (0, 0), (-1, 0), "Helvetica-Bold"),
+                ("LINEBELOW", (0, 0), (-1, 0), 0.5, rl_colors.grey),
+                ("LINEABOVE", (0, -2), (-1, -2), 0.5, rl_colors.grey),
+                ("FONT", (0, -2), (-1, -1), "Helvetica-Bold"),
+                ("ALIGN", (1, 0), (1, -1), "RIGHT"),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+            ]
+        )
+    )
     story.append(tbl)
     story.append(Spacer(1, 14))
 
-    pay_line = f"Payment: {data['payment']['method']} · Status: {data['payment']['status']}"
+    pay_line = (
+        f"Payment: {data['payment']['method']} · Status: {data['payment']['status']}"
+    )
     if data["payment"].get("processor_ref"):
         pay_line += f" · Ref: {data['payment']['processor_ref']}"
     story.append(Paragraph(pay_line, small))
     story.append(Spacer(1, 20))
-    story.append(Paragraph(
-        "Thanks for using SwingBy. Questions? team@swingbyy.com",
-        small,
-    ))
+    story.append(
+        Paragraph(
+            "Thanks for using SwingBy. Questions? team@swingbyy.com",
+            small,
+        )
+    )
 
     doc.build(story)
     buf.seek(0)

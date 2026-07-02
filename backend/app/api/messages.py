@@ -14,6 +14,7 @@ router = APIRouter()
 
 # ── Schemas ───────────────────────────────────────────────────────────────────
 
+
 class MessageSend(BaseModel):
     booking_id: str = Field(..., min_length=1, max_length=500)
     content: str = Field(..., min_length=1, max_length=2000)
@@ -29,6 +30,7 @@ class MessageSend(BaseModel):
 
 # ── Helper ────────────────────────────────────────────────────────────────────
 
+
 def _assert_message_access(booking: dict, current_user: dict):
     uid = current_user["id"]
     role = current_user["role"]
@@ -36,22 +38,43 @@ def _assert_message_access(booking: dict, current_user: dict):
     if booking["client_id"] == uid:
         return
     if role == "business_owner":
-        biz = supabase.table("businesses").select("id").eq("owner_id", uid).single().execute()
+        biz = (
+            supabase.table("businesses")
+            .select("id")
+            .eq("owner_id", uid)
+            .single()
+            .execute()
+        )
         if biz.data and biz.data["id"] == booking["business_id"]:
             return
     if role == "employee":
-        emp = supabase.table("employees").select("id").eq("user_id", uid).single().execute()
+        emp = (
+            supabase.table("employees")
+            .select("id")
+            .eq("user_id", uid)
+            .single()
+            .execute()
+        )
         if emp.data and emp.data["id"] == booking.get("employee_id"):
             return
 
-    raise HTTPException(status_code=403, detail="You are not a participant in this booking")
+    raise HTTPException(
+        status_code=403, detail="You are not a participant in this booking"
+    )
 
 
 # ── Endpoints ─────────────────────────────────────────────────────────────────
 
+
 @router.post("/")
 def send_message(data: MessageSend, current_user: dict = Depends(get_current_user)):
-    booking_res = supabase.table("bookings").select("*").eq("id", data.booking_id).single().execute()
+    booking_res = (
+        supabase.table("bookings")
+        .select("*")
+        .eq("id", data.booking_id)
+        .single()
+        .execute()
+    )
     if not booking_res.data:
         raise HTTPException(status_code=404, detail="Booking not found")
 
@@ -65,11 +88,17 @@ def send_message(data: MessageSend, current_user: dict = Depends(get_current_use
     _assert_message_access(booking, current_user)
 
     try:
-        res = supabase.table("messages").insert({
-            "booking_id": data.booking_id,
-            "sender_id": current_user["id"],
-            "content": data.content,
-        }).execute()
+        res = (
+            supabase.table("messages")
+            .insert(
+                {
+                    "booking_id": data.booking_id,
+                    "sender_id": current_user["id"],
+                    "content": data.content,
+                }
+            )
+            .execute()
+        )
 
         # Notify the other participant — best-effort
         try:
@@ -127,10 +156,14 @@ def unread_count(current_user: dict = Depends(get_current_user)):
 def get_messages(
     booking_id: str,
     limit: int = Query(50, ge=1, le=200, description="Max messages to return"),
-    before: Optional[str] = Query(None, description="ISO-8601 timestamp — return messages sent before this time"),
+    before: Optional[str] = Query(
+        None, description="ISO-8601 timestamp — return messages sent before this time"
+    ),
     current_user: dict = Depends(get_current_user),
 ):
-    booking_res = supabase.table("bookings").select("*").eq("id", booking_id).single().execute()
+    booking_res = (
+        supabase.table("bookings").select("*").eq("id", booking_id).single().execute()
+    )
     if not booking_res.data:
         raise HTTPException(status_code=404, detail="Booking not found")
 
@@ -149,7 +182,12 @@ def get_messages(
         res = query.execute()
         items = res.data or []
         next_before = items[-1]["sent_at"] if items else None
-        return {"items": items, "limit": limit, "before": before, "next_before": next_before}
+        return {
+            "items": items,
+            "limit": limit,
+            "before": before,
+            "next_before": next_before,
+        }
     except Exception:
         logger.exception("Could not retrieve messages")
         raise HTTPException(status_code=400, detail="Could not retrieve messages")

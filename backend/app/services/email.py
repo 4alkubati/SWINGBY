@@ -6,6 +6,7 @@ Same contract as push.py:
   - NEVER logs email body content
   - No-ops silently if RESEND_API_KEY is not set (key not yet wired in env)
 """
+
 import logging
 import os
 
@@ -54,6 +55,7 @@ def send_email(to: str, subject: str, html: str) -> None:
 
 
 # ── Named templates ────────────────────────────────────────────────────────────
+
 
 def send_welcome_email(to: str, first_name: str) -> None:
     html = f"""

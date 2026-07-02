@@ -7,6 +7,7 @@ unconditionally so the FastAPI app stays healthy in environments where Stripe
 is intentionally not configured (e.g. local dev without keys). Endpoints
 themselves return 503 if invoked while keys are absent.
 """
+
 from __future__ import annotations
 
 import logging
@@ -73,7 +74,9 @@ def create_checkout_session(
                 "price_data": {
                     "currency": "cad",
                     "unit_amount": amount_cents,
-                    "product_data": {"name": description or f"SwingBy booking {booking_id}"},
+                    "product_data": {
+                        "name": description or f"SwingBy booking {booking_id}"
+                    },
                 },
                 "quantity": 1,
             }
@@ -88,13 +91,19 @@ def create_checkout_session(
     try:
         session = stripe.checkout.Session.create(**session_kwargs)
     except Exception:
-        logger.exception("stripe.checkout.Session.create failed for booking %s", booking_id)
-        raise HTTPException(status_code=502, detail="Could not create Stripe checkout session")
+        logger.exception(
+            "stripe.checkout.Session.create failed for booking %s", booking_id
+        )
+        raise HTTPException(
+            status_code=502, detail="Could not create Stripe checkout session"
+        )
 
     return {"id": session["id"], "url": session["url"]}
 
 
-def verify_webhook(payload_bytes: bytes, signature_header: str | None) -> dict[str, Any]:
+def verify_webhook(
+    payload_bytes: bytes, signature_header: str | None
+) -> dict[str, Any]:
     """
     Verify the Stripe webhook signature and return the parsed event.
 

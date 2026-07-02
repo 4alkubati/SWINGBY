@@ -37,13 +37,13 @@ _OPTIONAL = [
     "SENTRY_DSN",
     "HCAPTCHA_SECRET",
     "HCAPTCHA_SITEKEY",
-    "RESEND_API_KEY",       # Resend transactional email — set after domain verified
-    "RESEND_FROM_EMAIL",    # e.g. "SwingBy <hello@swingbyy.com>"
+    "RESEND_API_KEY",  # Resend transactional email — set after domain verified
+    "RESEND_FROM_EMAIL",  # e.g. "SwingBy <hello@swingbyy.com>"
     "PASSWORD_RESET_REDIRECT_URL",  # override where Supabase reset emails redirect (defaults to web)
-    "STRIPE_SECRET_KEY",        # sk_test_… for beta sandbox, sk_live_… post-beta
-    "STRIPE_WEBHOOK_SECRET",    # whsec_… — used to verify Stripe webhook signature
-    "STRIPE_SUCCESS_URL",       # browser landing after Checkout success (defaults to web)
-    "STRIPE_CANCEL_URL",        # browser landing after Checkout cancel  (defaults to web)
+    "STRIPE_SECRET_KEY",  # sk_test_… for beta sandbox, sk_live_… post-beta
+    "STRIPE_WEBHOOK_SECRET",  # whsec_… — used to verify Stripe webhook signature
+    "STRIPE_SUCCESS_URL",  # browser landing after Checkout success (defaults to web)
+    "STRIPE_CANCEL_URL",  # browser landing after Checkout cancel  (defaults to web)
 ]
 
 
@@ -106,7 +106,9 @@ class _Settings:
 
     @property
     def PASSWORD_RESET_REDIRECT_URL(self) -> str:
-        return os.getenv("PASSWORD_RESET_REDIRECT_URL", "https://swingbyy.com/reset-password")
+        return os.getenv(
+            "PASSWORD_RESET_REDIRECT_URL", "https://swingbyy.com/reset-password"
+        )
 
     @property
     def STRIPE_SECRET_KEY(self) -> str:

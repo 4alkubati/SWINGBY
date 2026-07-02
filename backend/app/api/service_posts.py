@@ -13,6 +13,7 @@ router = APIRouter()
 
 # ── Schemas ───────────────────────────────────────────────────────────────────
 
+
 class ServicePostCreate(BaseModel):
     title: str = Field(..., min_length=3, max_length=120)
     description: Optional[str] = Field(None, max_length=2000)
@@ -45,24 +46,35 @@ class ServicePostCreate(BaseModel):
 
 # ── Endpoints ─────────────────────────────────────────────────────────────────
 
+
 @router.post("/")
-def create_service_post(data: ServicePostCreate, current_user: dict = Depends(get_current_user)):
+def create_service_post(
+    data: ServicePostCreate, current_user: dict = Depends(get_current_user)
+):
     if current_user["role"] != "client":
-        raise HTTPException(status_code=403, detail="Only clients can create service posts")
+        raise HTTPException(
+            status_code=403, detail="Only clients can create service posts"
+        )
 
     try:
-        res = supabase.table("service_posts").insert({
-            "client_id": current_user["id"],
-            "title": data.title,
-            "description": data.description,
-            "category": data.category,
-            "budget": data.budget,
-            "lat": data.lat,
-            "lng": data.lng,
-            "address": data.address,
-            "image_urls": data.image_urls or [],
-            "status": "open",
-        }).execute()
+        res = (
+            supabase.table("service_posts")
+            .insert(
+                {
+                    "client_id": current_user["id"],
+                    "title": data.title,
+                    "description": data.description,
+                    "category": data.category,
+                    "budget": data.budget,
+                    "lat": data.lat,
+                    "lng": data.lng,
+                    "address": data.address,
+                    "image_urls": data.image_urls or [],
+                    "status": "open",
+                }
+            )
+            .execute()
+        )
         return {"message": "Service post created", "post": res.data[0]}
     except Exception:
         logger.exception("Could not create service post")
@@ -77,7 +89,9 @@ def list_my_posts(
     current_user: dict = Depends(get_current_user),
 ):
     if current_user["role"] != "client":
-        raise HTTPException(status_code=403, detail="Only clients can view their own posts")
+        raise HTTPException(
+            status_code=403, detail="Only clients can view their own posts"
+        )
     try:
         query = (
             supabase.table("service_posts")
@@ -87,14 +101,18 @@ def list_my_posts(
         if status:
             query = query.eq("status", status)
         res = (
-            query
-            .order("created_at", desc=True)
+            query.order("created_at", desc=True)
             .range(offset, offset + limit - 1)
             .execute()
         )
         items = res.data or []
         next_offset = offset + limit if len(items) == limit else None
-        return {"items": items, "limit": limit, "offset": offset, "next_offset": next_offset}
+        return {
+            "items": items,
+            "limit": limit,
+            "offset": offset,
+            "next_offset": next_offset,
+        }
     except Exception:
         logger.exception("Could not list service posts")
         raise HTTPException(status_code=400, detail="Could not list service posts")
@@ -109,9 +127,8 @@ def list_open_posts(
     current_user: dict = Depends(get_current_user),
 ):
     try:
-        query = (
-            supabase.table("service_posts")
-            .select("*, users(first_name, last_name)")
+        query = supabase.table("service_posts").select(
+            "*, users(first_name, last_name)"
         )
         # When no status filter given, default to showing only open posts
         # (preserves existing behaviour); with an explicit status, filter by it
@@ -124,14 +141,18 @@ def list_open_posts(
             query = query.eq("category", category.strip())
 
         res = (
-            query
-            .order("created_at", desc=True)
+            query.order("created_at", desc=True)
             .range(offset, offset + limit - 1)
             .execute()
         )
         items = res.data or []
         next_offset = offset + limit if len(items) == limit else None
-        return {"items": items, "limit": limit, "offset": offset, "next_offset": next_offset}
+        return {
+            "items": items,
+            "limit": limit,
+            "offset": offset,
+            "next_offset": next_offset,
+        }
     except Exception:
         logger.exception("Could not list open service posts")
         raise HTTPException(status_code=400, detail="Could not list service posts")
@@ -155,18 +176,31 @@ def get_service_post(post_id: str, current_user: dict = Depends(get_current_user
 @router.delete("/{post_id}")
 def cancel_service_post(post_id: str, current_user: dict = Depends(get_current_user)):
     if current_user["role"] != "client":
-        raise HTTPException(status_code=403, detail="Only clients can cancel their posts")
+        raise HTTPException(
+            status_code=403, detail="Only clients can cancel their posts"
+        )
 
-    post = supabase.table("service_posts").select("client_id, status").eq("id", post_id).single().execute()
+    post = (
+        supabase.table("service_posts")
+        .select("client_id, status")
+        .eq("id", post_id)
+        .single()
+        .execute()
+    )
     if not post.data:
         raise HTTPException(status_code=404, detail="Post not found")
     if post.data["client_id"] != current_user["id"]:
         raise HTTPException(status_code=403, detail="You don't own this post")
     if post.data["status"] != "open":
-        raise HTTPException(status_code=400, detail=f"Cannot cancel a post with status '{post.data['status']}'")
+        raise HTTPException(
+            status_code=400,
+            detail=f"Cannot cancel a post with status '{post.data['status']}'",
+        )
 
     try:
-        supabase.table("service_posts").update({"status": "cancelled"}).eq("id", post_id).execute()
+        supabase.table("service_posts").update({"status": "cancelled"}).eq(
+            "id", post_id
+        ).execute()
         return {"message": "Post cancelled"}
     except Exception:
         logger.exception("Could not cancel service post")

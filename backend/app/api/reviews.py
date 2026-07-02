@@ -13,6 +13,7 @@ router = APIRouter()
 
 # ── Schemas ───────────────────────────────────────────────────────────────────
 
+
 class ReviewCreate(BaseModel):
     booking_id: str = Field(..., min_length=1)
     rating: int = Field(..., ge=1, le=5)
@@ -28,15 +29,24 @@ class ReviewCreate(BaseModel):
 
 # ── Endpoints ─────────────────────────────────────────────────────────────────
 
+
 @router.post("/")
 def create_review(data: ReviewCreate, current_user: dict = Depends(get_current_user)):
-    booking_res = supabase.table("bookings").select("*").eq("id", data.booking_id).single().execute()
+    booking_res = (
+        supabase.table("bookings")
+        .select("*")
+        .eq("id", data.booking_id)
+        .single()
+        .execute()
+    )
     if not booking_res.data:
         raise HTTPException(status_code=404, detail="Booking not found")
     booking = booking_res.data
 
     if booking["status"] != "completed":
-        raise HTTPException(status_code=400, detail="Can only review completed bookings")
+        raise HTTPException(
+            status_code=400, detail="Can only review completed bookings"
+        )
 
     role = current_user["role"]
     reviewee_id = None
@@ -48,9 +58,17 @@ def create_review(data: ReviewCreate, current_user: dict = Depends(get_current_u
         reviewee_id = booking["business_id"]
         reviewee_type = "business"
     elif role == "business_owner":
-        biz = supabase.table("businesses").select("id").eq("owner_id", current_user["id"]).single().execute()
+        biz = (
+            supabase.table("businesses")
+            .select("id")
+            .eq("owner_id", current_user["id"])
+            .single()
+            .execute()
+        )
         if not biz.data or biz.data["id"] != booking["business_id"]:
-            raise HTTPException(status_code=403, detail="This booking doesn't belong to your business")
+            raise HTTPException(
+                status_code=403, detail="This booking doesn't belong to your business"
+            )
         reviewee_id = booking["client_id"]
         reviewee_type = "client"
     else:
@@ -67,14 +85,20 @@ def create_review(data: ReviewCreate, current_user: dict = Depends(get_current_u
         raise HTTPException(status_code=400, detail="You already reviewed this booking")
 
     try:
-        res = supabase.table("reviews").insert({
-            "booking_id": data.booking_id,
-            "reviewer_id": current_user["id"],
-            "reviewee_id": reviewee_id,
-            "reviewee_type": reviewee_type,
-            "rating": data.rating,
-            "comment": data.comment,
-        }).execute()
+        res = (
+            supabase.table("reviews")
+            .insert(
+                {
+                    "booking_id": data.booking_id,
+                    "reviewer_id": current_user["id"],
+                    "reviewee_id": reviewee_id,
+                    "reviewee_type": reviewee_type,
+                    "rating": data.rating,
+                    "comment": data.comment,
+                }
+            )
+            .execute()
+        )
 
         # Keep avg_rating + review_count on businesses table in sync
         if reviewee_type == "business":
@@ -87,10 +111,12 @@ def create_review(data: ReviewCreate, current_user: dict = Depends(get_current_u
             )
             if all_reviews.data:
                 avg = sum(r["rating"] for r in all_reviews.data) / len(all_reviews.data)
-                supabase.table("businesses").update({
-                    "avg_rating": round(avg, 2),
-                    "review_count": len(all_reviews.data),
-                }).eq("id", reviewee_id).execute()
+                supabase.table("businesses").update(
+                    {
+                        "avg_rating": round(avg, 2),
+                        "review_count": len(all_reviews.data),
+                    }
+                ).eq("id", reviewee_id).execute()
 
         return {"message": "Review submitted", "review": res.data[0]}
     except HTTPException:
@@ -101,7 +127,9 @@ def create_review(data: ReviewCreate, current_user: dict = Depends(get_current_u
 
 
 @router.get("/business/{business_id}")
-def get_business_reviews(business_id: str, current_user: dict = Depends(get_current_user)):
+def get_business_reviews(
+    business_id: str, current_user: dict = Depends(get_current_user)
+):
     try:
         res = (
             supabase.table("reviews")

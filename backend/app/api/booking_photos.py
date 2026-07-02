@@ -19,6 +19,7 @@ Authorisation
 The actual file upload happens at /uploads/image; this endpoint just records
 the (url, path, phase) tuple against the booking.
 """
+
 from __future__ import annotations
 
 import logging
@@ -175,11 +176,7 @@ def list_photos(
         raise HTTPException(status_code=403, detail="Access denied")
 
     try:
-        q = (
-            supabase.table("booking_photos")
-            .select("*")
-            .eq("booking_id", booking_id)
-        )
+        q = supabase.table("booking_photos").select("*").eq("booking_id", booking_id)
         if phase:
             q = q.eq("phase", phase)
         res = q.order("created_at", desc=False).limit(limit).execute()

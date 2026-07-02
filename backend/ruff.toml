@@ -1,0 +1,5 @@
+# Ruff config for the FastAPI backend. CI runs `ruff check backend/` (see .github/workflows/backend.yml).
+
+[lint.per-file-ignores]
+# main.py wires routers with import-then-include pairs after app creation — intentional E402.
+"app/main.py" = ["E402"]

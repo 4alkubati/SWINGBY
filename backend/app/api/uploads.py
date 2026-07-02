@@ -9,7 +9,13 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-ALLOWED_CONTENT_TYPES = {"image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif"}
+ALLOWED_CONTENT_TYPES = {
+    "image/jpeg",
+    "image/jpg",
+    "image/png",
+    "image/webp",
+    "image/gif",
+}
 MAX_BYTES = 10 * 1024 * 1024  # 10 MB
 BUCKET = "job-photos"
 

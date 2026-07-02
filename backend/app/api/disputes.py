@@ -16,6 +16,7 @@ PATCH /disputes/{dispute_id}/resolve
     Auth: admin only. Body: {resolution, refund_amount?}
     Sets status='resolved', resolved_at, resolution_notes.
 """
+
 from __future__ import annotations
 
 import logging
@@ -86,7 +87,10 @@ def _load_booking_for_auth(booking_id: str, current_user: dict) -> dict:
 @router.post("/")
 def create_dispute(body: DisputeCreate, current_user: dict = Depends(get_current_user)):
     if body.issue_type not in VALID_ISSUE_TYPES:
-        raise HTTPException(status_code=400, detail=f"issue_type must be one of {sorted(VALID_ISSUE_TYPES)}")
+        raise HTTPException(
+            status_code=400,
+            detail=f"issue_type must be one of {sorted(VALID_ISSUE_TYPES)}",
+        )
 
     booking = _load_booking_for_auth(body.booking_id, current_user)
 
@@ -98,12 +102,16 @@ def create_dispute(body: DisputeCreate, current_user: dict = Depends(get_current
         .execute()
     )
     if existing.data:
-        raise HTTPException(status_code=409, detail="Booking already has an open dispute")
+        raise HTTPException(
+            status_code=409, detail="Booking already has an open dispute"
+        )
 
     row = {
         "booking_id": body.booking_id,
         "opened_by": current_user["id"],
-        "against_party": "business" if booking["client_id"] == current_user["id"] else "client",
+        "against_party": (
+            "business" if booking["client_id"] == current_user["id"] else "client"
+        ),
         "issue_type": body.issue_type,
         "description": body.description.strip(),
         "status": "open",
@@ -114,13 +122,17 @@ def create_dispute(body: DisputeCreate, current_user: dict = Depends(get_current
         raise HTTPException(status_code=500, detail="Could not open dispute")
 
     try:
-        supabase.table("booking_events").insert({
-            "booking_id": body.booking_id,
-            "event_type": "dispute_opened",
-            "note": f"[{body.issue_type}] {body.description[:200]}",
-        }).execute()
+        supabase.table("booking_events").insert(
+            {
+                "booking_id": body.booking_id,
+                "event_type": "dispute_opened",
+                "note": f"[{body.issue_type}] {body.description[:200]}",
+            }
+        ).execute()
     except Exception as e:
-        logger.warning("booking_event write failed for dispute %s: %s", dispute.get("id"), e)
+        logger.warning(
+            "booking_event write failed for dispute %s: %s", dispute.get("id"), e
+        )
 
     return dispute
 
@@ -131,7 +143,9 @@ def list_my_disputes(current_user: dict = Depends(get_current_user)):
 
     filed = (
         supabase.table("disputes")
-        .select("*, bookings(id, client_id, business_id, service_category, scheduled_date)")
+        .select(
+            "*, bookings(id, client_id, business_id, service_category, scheduled_date)"
+        )
         .eq("opened_by", uid)
         .order("created_at", desc=True)
         .execute()
@@ -139,14 +153,27 @@ def list_my_disputes(current_user: dict = Depends(get_current_user)):
     items = list(filed.data or [])
 
     if current_user.get("role") == "business_owner":
-        biz = supabase.table("businesses").select("id").eq("owner_id", uid).single().execute()
+        biz = (
+            supabase.table("businesses")
+            .select("id")
+            .eq("owner_id", uid)
+            .single()
+            .execute()
+        )
         if biz.data:
-            biz_bookings = supabase.table("bookings").select("id").eq("business_id", biz.data["id"]).execute()
+            biz_bookings = (
+                supabase.table("bookings")
+                .select("id")
+                .eq("business_id", biz.data["id"])
+                .execute()
+            )
             biz_ids = [b["id"] for b in (biz_bookings.data or [])]
             if biz_ids:
                 against = (
                     supabase.table("disputes")
-                    .select("*, bookings(id, client_id, business_id, service_category, scheduled_date)")
+                    .select(
+                        "*, bookings(id, client_id, business_id, service_category, scheduled_date)"
+                    )
                     .in_("booking_id", biz_ids)
                     .neq("opened_by", uid)
                     .order("created_at", desc=True)
@@ -169,13 +196,15 @@ def resolve_dispute(
     now = datetime.now(timezone.utc).isoformat()
     updated = (
         supabase.table("disputes")
-        .update({
-            "status": "resolved",
-            "resolution_notes": body.resolution.strip(),
-            "refund_amount": body.refund_amount,
-            "resolved_at": now,
-            "resolved_by": current_user["id"],
-        })
+        .update(
+            {
+                "status": "resolved",
+                "resolution_notes": body.resolution.strip(),
+                "refund_amount": body.refund_amount,
+                "resolved_at": now,
+                "resolved_by": current_user["id"],
+            }
+        )
         .eq("id", dispute_id)
         .execute()
     )
@@ -184,12 +213,16 @@ def resolve_dispute(
         raise HTTPException(status_code=404, detail="Dispute not found")
 
     try:
-        supabase.table("booking_events").insert({
-            "booking_id": row["booking_id"],
-            "event_type": "dispute_resolved",
-            "note": body.resolution[:200],
-        }).execute()
+        supabase.table("booking_events").insert(
+            {
+                "booking_id": row["booking_id"],
+                "event_type": "dispute_resolved",
+                "note": body.resolution[:200],
+            }
+        ).execute()
     except Exception as e:
-        logger.warning("booking_event write failed for dispute resolve %s: %s", dispute_id, e)
+        logger.warning(
+            "booking_event write failed for dispute resolve %s: %s", dispute_id, e
+        )
 
     return row

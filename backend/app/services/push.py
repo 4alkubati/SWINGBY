@@ -6,6 +6,7 @@ Rules:
   - NEVER log token values
   - Uses service-role supabase client to query push_tokens
 """
+
 import logging
 
 import httpx

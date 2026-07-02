@@ -13,9 +13,7 @@ _service_key = os.getenv("SUPABASE_SERVICE_KEY")
 # back to the anon key (which would break all admin operations and expose data).
 
 if not _url:
-    raise RuntimeError(
-        "SUPABASE_URL is not set. Add it to backend/.env and restart."
-    )
+    raise RuntimeError("SUPABASE_URL is not set. Add it to backend/.env and restart.")
 
 if not _service_key:
     raise RuntimeError(

@@ -6,6 +6,7 @@ Beta posture (locked 2026-06-27): track-only. Every business defaults to
 STRIPE_PRICE_SOLO / STRIPE_PRICE_TEAM env vars are set; otherwise it flips the
 business to `trialing` without a Stripe charge so mobile flow works during beta.
 """
+
 from __future__ import annotations
 
 import os
@@ -22,9 +23,17 @@ router = APIRouter()
 
 
 def _get_owner_business(owner_id: str) -> dict:
-    res = supabase.table("businesses").select("*").eq("owner_id", owner_id).single().execute()
+    res = (
+        supabase.table("businesses")
+        .select("*")
+        .eq("owner_id", owner_id)
+        .single()
+        .execute()
+    )
     if not res.data:
-        raise HTTPException(status_code=404, detail="You don't have a business registered")
+        raise HTTPException(
+            status_code=404, detail="You don't have a business registered"
+        )
     return res.data
 
 
@@ -46,16 +55,20 @@ def _resolve_tier_and_price(business_id: str) -> tuple[str, str | None]:
 @router.post("/me/subscribe")
 def subscribe(current_user: dict = Depends(get_current_user)):
     if current_user["role"] != "business_owner":
-        raise HTTPException(status_code=403, detail="Only business owners can subscribe")
+        raise HTTPException(
+            status_code=403, detail="Only business owners can subscribe"
+        )
 
     business = _get_owner_business(current_user["id"])
     tier, price_id = _resolve_tier_and_price(business["id"])
 
     if not price_id:
-        supabase.table("businesses").update({
-            "subscription_tier": tier,
-            "subscription_status": "trialing",
-        }).eq("id", business["id"]).execute()
+        supabase.table("businesses").update(
+            {
+                "subscription_tier": tier,
+                "subscription_status": "trialing",
+            }
+        ).eq("id", business["id"]).execute()
         return {
             "checkout_url": None,
             "status": "trialing",
@@ -65,9 +78,12 @@ def subscribe(current_user: dict = Depends(get_current_user)):
 
     try:
         import stripe
+
         stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
         if not stripe.api_key:
-            raise HTTPException(status_code=503, detail="Stripe not configured on server")
+            raise HTTPException(
+                status_code=503, detail="Stripe not configured on server"
+            )
 
         customer_id = business.get("stripe_customer_id")
         if not customer_id:
@@ -77,10 +93,16 @@ def subscribe(current_user: dict = Depends(get_current_user)):
                 metadata={"business_id": business["id"]},
             )
             customer_id = customer.id
-            supabase.table("businesses").update({"stripe_customer_id": customer_id}).eq("id", business["id"]).execute()
+            supabase.table("businesses").update({"stripe_customer_id": customer_id}).eq(
+                "id", business["id"]
+            ).execute()
 
-        success_url = os.getenv("STRIPE_SUCCESS_URL", "https://swingbyy.com/subscription-success")
-        cancel_url = os.getenv("STRIPE_CANCEL_URL", "https://swingbyy.com/subscription-cancel")
+        success_url = os.getenv(
+            "STRIPE_SUCCESS_URL", "https://swingbyy.com/subscription-success"
+        )
+        cancel_url = os.getenv(
+            "STRIPE_CANCEL_URL", "https://swingbyy.com/subscription-cancel"
+        )
         session = stripe.checkout.Session.create(
             mode="subscription",
             customer=customer_id,
@@ -94,13 +116,17 @@ def subscribe(current_user: dict = Depends(get_current_user)):
         raise
     except Exception:
         logger.exception("Could not create subscription checkout")
-        raise HTTPException(status_code=400, detail="Could not start subscription checkout")
+        raise HTTPException(
+            status_code=400, detail="Could not start subscription checkout"
+        )
 
 
 @router.get("/me/subscription")
 def my_subscription(current_user: dict = Depends(get_current_user)):
     if current_user["role"] != "business_owner":
-        raise HTTPException(status_code=403, detail="Only business owners have subscriptions")
+        raise HTTPException(
+            status_code=403, detail="Only business owners have subscriptions"
+        )
 
     business = _get_owner_business(current_user["id"])
 
@@ -108,9 +134,12 @@ def my_subscription(current_user: dict = Depends(get_current_user)):
     if business.get("stripe_customer_id"):
         try:
             import stripe
+
             stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
             if stripe.api_key:
-                return_url = os.getenv("STRIPE_PORTAL_RETURN_URL", "https://swingbyy.com/account")
+                return_url = os.getenv(
+                    "STRIPE_PORTAL_RETURN_URL", "https://swingbyy.com/account"
+                )
                 portal = stripe.billing_portal.Session.create(
                     customer=business["stripe_customer_id"],
                     return_url=return_url,

@@ -14,6 +14,7 @@ POST /payments/stripe/webhook
     fully paid (Stripe sandbox simulates the cash side; on-platform escrow
     accounting already split via /interests accept). Other event types ack.
 """
+
 from __future__ import annotations
 
 import logging
@@ -63,7 +64,9 @@ def create_checkout(
         raise HTTPException(status_code=400, detail="Booking total_amount must be > 0")
 
     email: Optional[str] = current_user.get("email")
-    description = f"SwingBy — {booking.get('service_category') or 'booking'} #{booking_id[:8]}"
+    description = (
+        f"SwingBy — {booking.get('service_category') or 'booking'} #{booking_id[:8]}"
+    )
 
     session = stripe_service.create_checkout_session(
         booking_id=booking_id,
@@ -114,17 +117,35 @@ async def webhook(request: Request):
         elif business_id:
             # D2.4 — subscription checkout completed
             try:
-                sub_id = data_object.get("subscription") if hasattr(data_object, "get") else None
-                supabase.table("businesses").update({
-                    "subscription_status": "active",
-                    "subscription_id": sub_id,
-                    "subscription_started_at": "now()",
-                }).eq("id", business_id).execute()
+                sub_id = (
+                    data_object.get("subscription")
+                    if hasattr(data_object, "get")
+                    else None
+                )
+                supabase.table("businesses").update(
+                    {
+                        "subscription_status": "active",
+                        "subscription_id": sub_id,
+                        "subscription_started_at": "now()",
+                    }
+                ).eq("id", business_id).execute()
             except Exception:
-                logger.exception("Could not activate subscription for business %s", business_id)
+                logger.exception(
+                    "Could not activate subscription for business %s", business_id
+                )
         else:
-            logger.warning("checkout.session.completed missing booking_id / business_id metadata")
-    elif etype in ("customer.subscription.updated", "customer.subscription.created", "customer.subscription.deleted") and data_object is not None:
+            logger.warning(
+                "checkout.session.completed missing booking_id / business_id metadata"
+            )
+    elif (
+        etype
+        in (
+            "customer.subscription.updated",
+            "customer.subscription.created",
+            "customer.subscription.deleted",
+        )
+        and data_object is not None
+    ):
         _sync_subscription(data_object)
     elif etype == "invoice.payment_failed" and data_object is not None:
         _mark_past_due(data_object)
@@ -139,25 +160,43 @@ def _sync_subscription(sub_obj) -> None:
     try:
         sub_id = sub_obj["id"] if not hasattr(sub_obj, "get") else sub_obj.get("id")
         status = sub_obj.get("status") if hasattr(sub_obj, "get") else sub_obj["status"]
-        customer_id = sub_obj.get("customer") if hasattr(sub_obj, "get") else sub_obj["customer"]
-        current_period_end = sub_obj.get("current_period_end") if hasattr(sub_obj, "get") else None
+        customer_id = (
+            sub_obj.get("customer") if hasattr(sub_obj, "get") else sub_obj["customer"]
+        )
+        current_period_end = (
+            sub_obj.get("current_period_end") if hasattr(sub_obj, "get") else None
+        )
         cancel_at = sub_obj.get("cancel_at") if hasattr(sub_obj, "get") else None
         update = {"subscription_status": status, "subscription_id": sub_id}
         if current_period_end:
             from datetime import datetime, timezone
-            update["subscription_current_period_end"] = datetime.fromtimestamp(current_period_end, tz=timezone.utc).isoformat()
+
+            update["subscription_current_period_end"] = datetime.fromtimestamp(
+                current_period_end, tz=timezone.utc
+            ).isoformat()
         if cancel_at:
             from datetime import datetime, timezone
-            update["subscription_cancel_at"] = datetime.fromtimestamp(cancel_at, tz=timezone.utc).isoformat()
-        supabase.table("businesses").update(update).eq("stripe_customer_id", customer_id).execute()
+
+            update["subscription_cancel_at"] = datetime.fromtimestamp(
+                cancel_at, tz=timezone.utc
+            ).isoformat()
+        supabase.table("businesses").update(update).eq(
+            "stripe_customer_id", customer_id
+        ).execute()
     except Exception:
         logger.exception("Could not sync subscription")
 
 
 def _mark_past_due(invoice_obj) -> None:
     try:
-        customer_id = invoice_obj.get("customer") if hasattr(invoice_obj, "get") else invoice_obj["customer"]
-        supabase.table("businesses").update({"subscription_status": "past_due"}).eq("stripe_customer_id", customer_id).execute()
+        customer_id = (
+            invoice_obj.get("customer")
+            if hasattr(invoice_obj, "get")
+            else invoice_obj["customer"]
+        )
+        supabase.table("businesses").update({"subscription_status": "past_due"}).eq(
+            "stripe_customer_id", customer_id
+        ).execute()
     except Exception:
         logger.exception("Could not mark subscription past_due")
 
@@ -185,6 +224,7 @@ def _mark_payment_paid(booking_id: str, stripe_session_id: str | None) -> None:
     # Email the client a payment receipt — best-effort, never raises
     try:
         from app.services.email import send_payment_receipt
+
         booking_res = (
             supabase.table("bookings")
             .select("client_id, total_amount")
