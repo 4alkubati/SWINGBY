@@ -492,6 +492,22 @@ export default function JobManagementScreen({ navigation, route }) {
                   }
                   showChevron
                 />
+                {isDone && (
+                  <ListItem
+                    title="View receipt"
+                    subtitle="See the invoice + download PDF"
+                    left={<Text style={{ fontSize: 18 }}>🧾</Text>}
+                    onPress={() => navigation.navigate('Invoice', { bookingId: booking.id })}
+                    showChevron
+                  />
+                )}
+                <ListItem
+                  title="Report a problem"
+                  subtitle="Open a dispute for this booking"
+                  left={<Text style={{ fontSize: 18 }}>⚠️</Text>}
+                  onPress={() => navigation.navigate('DisputeFlow', { bookingId: booking.id })}
+                  showChevron
+                />
               </Stack>
             </Stack>
           )}

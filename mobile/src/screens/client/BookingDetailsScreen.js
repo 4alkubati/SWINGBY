@@ -98,11 +98,12 @@ function paymentPillStyle(status) {
 
 function paymentPillLabel(status) {
   switch ((status || '').toLowerCase()) {
-    case 'fully_released':   return 'PAID';
-    case 'partial_released': return 'IN PROGRESS';
-    case 'held':             return 'HELD';
-    case 'refunded':         return 'REFUNDED';
-    default:                 return (status || 'pending').toUpperCase();
+    case 'fully_released':     return 'PAID';
+    case 'partial_released':   return 'IN PROGRESS';
+    case 'held':               return 'HELD';
+    case 'refunded':           return 'REFUNDED';
+    case 'paid_off_platform':  return 'PAID (OFF-PLATFORM)';
+    default:                   return (status || 'pending').toUpperCase();
   }
 }
 
@@ -267,6 +268,24 @@ export default function BookingDetailsScreen({ route, navigation }) {
   };
 
   const [payInFlight, setPayInFlight] = useState(false);
+  const [offPayVisible, setOffPayVisible] = useState(false);
+  const [offPayInFlight, setOffPayInFlight] = useState(false);
+
+  async function submitOffPlatform(method) {
+    if (offPayInFlight) return;
+    setOffPayInFlight(true);
+    try {
+      await api.post(`/bookings/${bookingId}/mark-paid-offplatform`, { method });
+      setOffPayVisible(false);
+      toast.show({ type: 'success', text1: 'Payment recorded' });
+      await fetchBooking();
+    } catch (err) {
+      toast.show({ type: 'error', text1: 'Could not mark paid', text2: err?.message || '' });
+    } finally {
+      setOffPayInFlight(false);
+    }
+  }
+
   const handlePay = async () => {
     if (payInFlight) return;
     setPayInFlight(true);
@@ -509,13 +528,35 @@ export default function BookingDetailsScreen({ route, navigation }) {
           gap: spacing.sm + 2,
         }}
       >
-        {(payment?.status !== 'paid_full' && booking?.status !== 'cancelled') && (
+        {(payment?.status !== 'paid_full' && payment?.status !== 'paid_off_platform' && booking?.status !== 'cancelled') && (
           <Button
             variant="primary"
             label={payInFlight ? 'Opening checkout…' : 'Pay with card'}
             onPress={handlePay}
             disabled={payInFlight}
             icon={<Feather name="credit-card" size={18} color={colors.textPrimary} />}
+          />
+        )}
+
+        {/* D2.3 — off-platform mark-as-paid (only after completion, only if unpaid) */}
+        {booking?.status === 'completed'
+          && payment?.status !== 'paid_full'
+          && payment?.status !== 'paid_off_platform' && (
+          <Button
+            variant="secondary"
+            label="Mark as paid (cash / e-transfer)"
+            onPress={() => setOffPayVisible(true)}
+            icon={<Feather name="dollar-sign" size={18} color={colors.textPrimary} />}
+          />
+        )}
+
+        {/* D2.2 — view receipt after completion */}
+        {booking?.status === 'completed' && (
+          <Button
+            variant="ghost"
+            label="View receipt"
+            onPress={() => navigation.navigate('Invoice', { bookingId })}
+            icon={<Feather name="file-text" size={18} color={colors.textPrimary} />}
           />
         )}
 
@@ -534,7 +575,66 @@ export default function BookingDetailsScreen({ route, navigation }) {
             style={{ minHeight: 44 }}
           />
         )}
+
+        {(booking?.status === 'completed' || booking?.status === 'confirmed' || booking?.status === 'in_progress') && (
+          <Button
+            variant="ghost"
+            label="Report a problem"
+            onPress={() => navigation.navigate('DisputeFlow', { bookingId })}
+            icon={<Feather name="alert-triangle" size={18} color={colors.textPrimary} />}
+            style={{ minHeight: 44 }}
+          />
+        )}
       </View>
+
+      {/* D2.3 — off-platform pay modal */}
+      {offPayVisible && (
+        <Pressable
+          style={{
+            position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end',
+          }}
+          onPress={() => setOffPayVisible(false)}
+        >
+          <Pressable
+            onPress={() => {}}
+            style={{
+              backgroundColor: colors.bg, borderTopLeftRadius: radius.card,
+              borderTopRightRadius: radius.card, padding: spacing.lg,
+              paddingBottom: insets.bottom + spacing.lg, gap: spacing.md,
+            }}
+          >
+            <Text variant="h1">How was it paid?</Text>
+            <Text variant="body" color="secondary">
+              Recording only — SwingBy doesn't touch the money.
+            </Text>
+            <Button
+              label="Cash"
+              onPress={() => submitOffPlatform('cash')}
+              disabled={offPayInFlight}
+              loading={offPayInFlight}
+            />
+            <Button
+              variant="secondary"
+              label="E-transfer"
+              onPress={() => submitOffPlatform('e_transfer')}
+              disabled={offPayInFlight}
+            />
+            <Button
+              variant="ghost"
+              label="Other"
+              onPress={() => submitOffPlatform('other')}
+              disabled={offPayInFlight}
+            />
+            <Button
+              variant="ghost"
+              label="Cancel"
+              onPress={() => setOffPayVisible(false)}
+              disabled={offPayInFlight}
+            />
+          </Pressable>
+        </Pressable>
+      )}
     </View>
   );
 }
