@@ -15,7 +15,6 @@ import QuoteComparisonScreen from '../screens/client/QuoteComparisonScreen';
 import PostJobScreen from '../screens/client/PostJobScreen';
 import ChatScreen from '../screens/messages/ChatScreen';
 import ReviewScreen from '../screens/client/ReviewScreen';
-import MapScreen from '../screens/shared/MapScreen';
 import NotificationsScreen from '../screens/profile/NotificationsScreen';
 import SearchScreen from '../screens/client/SearchScreen';
 import FavoritesScreen from '../screens/client/FavoritesScreen';
@@ -32,6 +31,7 @@ import MessageThreadScreen from '../screens/messages/MessageThreadScreen';
 import CancellationFlowScreen from '../screens/flows/CancellationFlowScreen';
 import PaymentMethodScreen from '../screens/profile/PaymentMethodScreen';
 import DisputeFlowScreen from '../screens/flows/DisputeFlowScreen';
+import InvoiceScreen from '../screens/shared/InvoiceScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -62,7 +62,6 @@ export default function ClientNavigator() {
       <Stack.Screen name="PostJob" component={PostJobScreen} />
       <Stack.Screen name="Chat" component={ChatScreen} />
       <Stack.Screen name="Review" component={ReviewScreen} />
-      <Stack.Screen name="Map" component={MapScreen} />
       <Stack.Screen name="Notifications" component={NotificationsScreen} />
       <Stack.Screen name="Search" component={SearchScreen} />
       <Stack.Screen name="Favorites" component={FavoritesScreen} />
@@ -79,6 +78,7 @@ export default function ClientNavigator() {
       <Stack.Screen name="CancellationFlow" component={CancellationFlowScreen} />
       <Stack.Screen name="PaymentMethod" component={PaymentMethodScreen} />
       <Stack.Screen name="DisputeFlow" component={DisputeFlowScreen} />
+      <Stack.Screen name="Invoice" component={InvoiceScreen} options={{ headerShown: false }} />
     </Stack.Navigator>
     </ErrorBoundary>
   );

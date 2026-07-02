@@ -18,6 +18,14 @@ export function setAuthToken(token) {
   _token = token;
 }
 
+export function getAuthToken() {
+  return _token;
+}
+
+export function getBaseUrl() {
+  return BASE_URL;
+}
+
 /** Register a callback that fires when the API returns 401 (expired/invalid token). */
 export function setUnauthorizedHandler(fn) {
   _onUnauthorized = fn;
