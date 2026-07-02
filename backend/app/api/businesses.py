@@ -172,6 +172,32 @@ def get_nearby_businesses(
 
 @router.get("/me")
 def get_my_business(current_user: dict = Depends(get_current_user)):
+    # Employees resolve to their employer's business (read-only flag for mobile).
+    # Without this, employee logins land in BusinessNavigator and every screen
+    # 403s on its first fetch.
+    if current_user["role"] == "employee":
+        try:
+            emp = (
+                supabase.table("employees")
+                .select("business_id")
+                .eq("user_id", current_user["id"])
+                .eq("is_active", True)
+                .single()
+                .execute()
+            )
+            res = (
+                supabase.table("businesses")
+                .select("*")
+                .eq("id", emp.data["business_id"])
+                .single()
+                .execute()
+            )
+            return {**res.data, "is_employee": True}
+        except Exception:
+            raise HTTPException(
+                status_code=404, detail="No business linked to this employee"
+            )
+
     if current_user["role"] != "business_owner":
         raise HTTPException(
             status_code=403, detail="Only business owners have a business profile"

@@ -10,7 +10,7 @@ swingby
 C:/Users/amrba/OneDrive/Desktop/AMR/CODE/Swingby
 
 ## Last Updated
-2026-06-28 — D2.1 code-complete (backend endpoint + mobile rewrite), awaits Kira push + on-device verify
+2026-07-01 — Bucket C CLEARED: 12 commits pushed (D2.2/D2.3/D2.4 + audit fixes + hygiene + CI repair). Backend CI green for the first time ever. Render serving the new routes.
 
 ## Current Phase
 **Phase 1 — BETA.** Build order moved from PLAN.md (P1–P6 done) to [[../../Roadmap/DOMINOES]] (D2.0–D5). Currently between dominoes:
@@ -32,17 +32,21 @@ C:/Users/amrba/OneDrive/Desktop/AMR/CODE/Swingby
 - **QA:** `backend/scripts/smoke_e2e.py` walks the full beta flow with honest exit codes for confirm-email + seed-creds states.
 
 ## What's Broken (real blockers)
-- **Bucket B — seed accounts missing.** `auth.users` has zero rows for `client@swingby.app`, `business@swingby.app`, `employee@swingby.app`. Documented in `credentials/test-accounts/seed-accounts.md`. Smoke test cannot run against Render until these exist. HUMAN-TODO item.
-- **Bucket B — Stripe keys missing.** `STRIPE_SECRET_KEY` + `STRIPE_WEBHOOK_SECRET` not in Render env. Pay-with-card returns 503 in production. HUMAN-TODO item with 6-step turn-on.
-- **Bucket B — DMARC TXT record missing on swingbyy.com.** Emails risk spam folder. HUMAN-TODO item.
-- **D2.0 walkthrough not done.** No live ground-truth on what the deployed app actually looks like to a tester. Waiting on Kira's iPhone via Expo Go.
-- **Placeholders unset:** Sentry DSN, hCaptcha secret. Google Maps key IS set.
+- **Google Maps key compromised.** The real Android key sat in plaintext in `mobile/app.json` in a PUBLIC repo. Placeholder now committed; Kira must regenerate the key in Google Cloud Console (HUMAN-TODO, blocking).
+- **Emails land in spam despite correct DNS.** SPF+DKIM+DMARC all verified resolving; this is new-domain reputation, not configuration. Mitigations in HUMAN-TODO (postmaster tools, rua, tester "Not spam").
+- **D2.0 walkthrough not done.** No live ground-truth on what the deployed app actually looks like to a tester. Waiting on Kira's iPhone via Expo Go. All 3 seed accounts now work.
+- **Placeholders unset:** Sentry DSN, hCaptcha secret.
+
+## What Got Fixed 2026-07-01
+- Seed accounts verified in Supabase Auth (all 3, employee linked to Bob's Cleaning Co.); employee 403 on `/businesses/me` was a code bug — employees now resolve their employer's business (`is_employee: true` flag).
+- Stripe keys in Render (Kira). DMARC TXT live (Kira).
+- F1 `/payments/mine` + F2 disputes (router + table + RLS) — flow graph reports 0 broken API calls.
+- Backend CI repaired: ruff+black conformance (lint had failed every push since Jun 26), test suite rewritten to current API (26 pass / 0 fail), stub env vars for the test job. `.gitattributes`, Dependabot, real README added.
 
 ## Blocked On
-1. Kira's iPhone for D2.0 walkthrough audit
-2. Kira to create 3 seed accounts in Supabase Auth dashboard (Auto-Confirm ON)
-3. Kira to paste Stripe keys into Render + configure webhook in Stripe dashboard
-4. Kira to push the D2.5 cleanup commit (Bucket C)
+1. Kira's iPhone for D2.0 walkthrough audit (now fully unblocked — accounts + routes live)
+2. Kira to rotate the leaked Google Maps key (public repo = compromised)
+3. Kira: 2-min GitHub security toggles + Dependabot major-bump triage (HUMAN-TODO)
 
 ## Open Broadcasts
 - 2026-06-21 — D1 email lifecycle wired (commit `08715e3`)
@@ -61,11 +65,11 @@ C:/Users/amrba/OneDrive/Desktop/AMR/CODE/Swingby
 - Did NOT commit (Bucket C — Kira's push).
 
 ## Next Action
-1. **Kira:** push the local stack (D2.5 cleanup `1f1801b` + D1 emails `08715e3` + unread-count/web-Places fix `7875b31` + this session's D2.1 commit once approved) — see HUMAN-TODO
-2. **Kira:** walk through Expo Go on iPhone → file bug list to `Roadmap/June/2026-06-26.md` (D2.0); include the new EmployeeProfile trust card in the tap-through
-3. **Kira:** create 3 seed accounts in Supabase Auth (Auto-Confirm ON)
-4. **Kira:** paste Stripe keys into Render + configure webhook
-5. **Claude:** D2.2 invoices (next runnable code domino) — in-app receipt + PDF via reportlab
+1. **Kira:** rotate the Google Maps key (blocking, security)
+2. **Kira:** D2.0 walkthrough on Expo Go iOS → bug list into the daily file; include employee login + Invoice + Plan card in the tap-through
+3. **Kira:** GitHub security toggles (2 min) + close Dependabot major-bump PRs
+4. **Claude:** smoke test against Render with the live seed accounts (`backend/scripts/smoke_e2e.py`), then D2.4 mobile polish per the domino, then D3
+5. **Joint:** Obsidian vault linking pass (plan in `AGENTS/claude/deliverables/repo-audit-2026-07-01.md` §9)
 
 ## Security Gate
 ✅ passing. All migrations via service role; no destructive changes; RLS on every table; 2 pre-existing Supabase WARNs unchanged (job-photos public bucket listing + HIBP password leak protection — both tracked, not regressions). `credentials/` gitignored.
