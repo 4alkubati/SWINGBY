@@ -10,7 +10,7 @@ swingby
 C:/Users/amrba/OneDrive/Desktop/AMR/CODE/Swingby
 
 ## Last Updated
-2026-07-01 — Bucket C CLEARED: 12 commits pushed (D2.2/D2.3/D2.4 + audit fixes + hygiene + CI repair). Backend CI green for the first time ever. Render serving the new routes.
+2026-07-07 — System-review block committed (`d545715`): `.claude/agents/` registered (dispatch is real now), ORCHESTRATOR compacted, memory archived to last-3/OPEN-only, model tiers + MCP capability-naming fixed. Prior: 2026-07-01 Bucket C cleared, 12 commits pushed, backend CI green.
 
 ## Current Phase
 **Phase 1 — BETA.** Build order moved from PLAN.md (P1–P6 done) to [[../../Roadmap/DOMINOES]] (D2.0–D5). Currently between dominoes:

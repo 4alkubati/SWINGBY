@@ -17,28 +17,6 @@ NEXT: <next framed task>
 ---
 ```
 
----
-DATE: 2026-06-24 (LOOP run 7 — dead-code cleanup, 2-file edit)
-PROJECT: swingby
-PHASE: LOOP — picked up run-6's deferred `'404'`-substring cleanup, only remaining Bucket A surface
-DISPATCHED: orchestrator inline (Opus 4.7, no subagent — 2-file targeted edit + verification only)
-ENTRY VERIFICATIONS:
-  - git: same 10-commits-ahead + uncommitted reorg/wiring + untracked trust-layer/Stripe/smoke surface as runs 2–6 (now with run-7 2-file edit on top) ✅
-  - Mobile babel-parse on edited files: `DisputeFlowScreen.js` + `client/BookingDetailsScreen.js` clean ✅
-  - FastAPI boot with stub env: 63 routes; all 5 critical paths present, no import errors ✅
-SHIPPED THIS RUN:
-  - `mobile/src/screens/flows/DisputeFlowScreen.js` — dispute-submit catch-block: replaced `err.message?.includes('404') || err.message?.includes('not found')` with `err.message?.toLowerCase().includes('not found')` + updated comment to call out the api.js unwrap behavior.
-  - `mobile/src/screens/client/BookingDetailsScreen.js` — fetchBooking catch-block: same pattern fix.
-  - `memory/STATUS.md` — Last Updated + Session End Signal rewritten for run 7.
-  - `memory/SESSION_LOG.md` — this checkpoint entry.
-RATIONALE:
-  - `services/api.js:118` rejects with `Promise.reject(new Error(msg))` where `msg = extractMessage(error)`. extractMessage walks `error.response?.data?.detail` first, so the rejected Error's `.message` is the FastAPI detail string only ("Booking not found", "Not Found", etc.) — no HTTP status code, ever. The `'404'` arm was dead in every error path; only the `'not found'` fallback was actually doing the work.
-  - Adding `.toLowerCase()` makes the match robust to FastAPI's default `"Not Found"` (capitalized) detail in addition to handcrafted `"Booking not found"` (lowercase).
-LEARNING-LOOP:
-  - Lesson: when the interceptor flattens `error.response` into a single string `Error.message`, every catch-block heuristic in the app needs to key off detail-substrings, never status codes. Codify: search the codebase for `err.message?.includes('4` / `'5` next time api.js is touched and replace each with detail-substring matching.
-  - Lesson: a run-N "deferred, benign" finding is still a real backlog item. Run 7's whole work was a flagged-but-not-fixed cleanup from run 6 — promoting these notes to actual edits when they're the last Bucket A surface keeps the loop honest about progress.
-NEXT: unchanged for Kira — `git push origin main` → Render deploys → set Stripe envs + seed creds → smoke test green → on-device verify across trust-layer + Pay-with-card flows. Beta DONE-rule is one push + 2 envelopes + on-device verify away.
----
 
 
 ---
@@ -101,4 +79,27 @@ NEEDS KIRA:
 LEARNING-LOOP:
   - Lesson: memory said test creds were testclient/testbusiness@swingby.dev — live DB has business@/client@/employee@swingby.app (`Swingby<Role>2026`). Verify seed accounts against auth.users before smoke tests.
 NEXT: Phase-2 invoicing (business-generated, client pays in-app) per BRIEF-business-flow out-of-scope list.
+---
+
+---
+DATE: 2026-07-07
+PROJECT: swingby
+PHASE: System-review remediation — agent registration + doc compaction (approved block)
+DISPATCHED: orchestrator inline (no subagent — doc/config surface only)
+SHIPPED (commit `d545715`, scoped to AGENTS/ + .claude/agents/ + CLAUDE.md per sync rule):
+  - `.claude/agents/*.md` — 10 registered agent types (thin: frontmatter + "read your BOH/FOH file"); `subagent_type: backend-agent` etc. now resolves. Executors model: sonnet; qa: haiku.
+  - `AGENTS/claude/ORCHESTRATOR.md` — 2,586 → 712 words; current model tiers; he/him; links to gate/loop/council/template instead of duplicating.
+  - `memory/archive/` NEW — SESSION_LOG capped at last 3 (rest → SESSION_LOG-2026.md), MESSAGE_BUS holds 2 OPEN items (9 resolved → MESSAGE_BUS-2026.md), ORCHESTRATOR_ISSUES slimmed to open rows w/ staleness caveat (full audit → archive).
+  - `config/ROUTING.md` — BOH/FOH appendix merged into Layers 1–2; all MCP references by capability (session-scoped prefixes removed here + BOH/FOH + MCP_INVENTORY).
+  - `config/LOOP.md` — never read briefs/deliverables/archive at startup; last-3 log roll rule; he/him.
+  - she→he sweep across skills/, KICKOFF.md, README.md; CLAUDE.md Notion nudge-layer + notion_crm rows; NOTION_SYNC.md committed.
+GATES PASSED:
+  - grep sweep: 0 stale pronouns / model IDs / hardcoded mcp__ prefixes outside archive+deliverables ✅
+  - SESSION_LOG holds exactly 3 sessions; bus holds OPEN only ✅
+  - Harness lists all 10 agent types as dispatchable this session ✅
+NEEDS KIRA (from the review, unchanged):
+  1. Flip 3 Notion rows to Done (F1, F2, the flip-task) — writes blocked for agents.
+  2. D4 due today while D2.0/D3 in progress — push the date or accept slip.
+  3. Optional: `ollama rm llama2 qwen3.6` frees ~27 GB (23 GB model can't fit 8 GB VRAM).
+NEXT: Wire qwen3 overnight-log summarization into the n8n morning brief (parked Notion row) — post-beta unless idle time appears. Build queue unchanged: D2.0 walkthrough (Kira's iPhone) gates D3/D4.
 ---

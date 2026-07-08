@@ -303,3 +303,26 @@ LEARNING-LOOP:
   - Lesson: a second two-stage-review pass on untouched surfaces (booking_events.py, booking_photos.py, LiveStatusTimeline) was net-positive — 1 fix landed plus a documented dead-code path for future cleanup, for ~10 min of read-only auditing. Validates the [[two-stage-review]] skill as worth re-running across passes when no Bucket A code work remains.
 NEXT: unchanged for Kira — `git push origin main` → Render deploys → set Stripe envs + seed creds → smoke test green → on-device verify across trust-layer + Pay-with-card flows.
 ---
+
+---
+DATE: 2026-06-24 (LOOP run 7 — dead-code cleanup, 2-file edit)
+PROJECT: swingby
+PHASE: LOOP — picked up run-6's deferred `'404'`-substring cleanup, only remaining Bucket A surface
+DISPATCHED: orchestrator inline (Opus 4.7, no subagent — 2-file targeted edit + verification only)
+ENTRY VERIFICATIONS:
+  - git: same 10-commits-ahead + uncommitted reorg/wiring + untracked trust-layer/Stripe/smoke surface as runs 2–6 (now with run-7 2-file edit on top) ✅
+  - Mobile babel-parse on edited files: `DisputeFlowScreen.js` + `client/BookingDetailsScreen.js` clean ✅
+  - FastAPI boot with stub env: 63 routes; all 5 critical paths present, no import errors ✅
+SHIPPED THIS RUN:
+  - `mobile/src/screens/flows/DisputeFlowScreen.js` — dispute-submit catch-block: replaced `err.message?.includes('404') || err.message?.includes('not found')` with `err.message?.toLowerCase().includes('not found')` + updated comment to call out the api.js unwrap behavior.
+  - `mobile/src/screens/client/BookingDetailsScreen.js` — fetchBooking catch-block: same pattern fix.
+  - `memory/STATUS.md` — Last Updated + Session End Signal rewritten for run 7.
+  - `memory/SESSION_LOG.md` — this checkpoint entry.
+RATIONALE:
+  - `services/api.js:118` rejects with `Promise.reject(new Error(msg))` where `msg = extractMessage(error)`. extractMessage walks `error.response?.data?.detail` first, so the rejected Error's `.message` is the FastAPI detail string only ("Booking not found", "Not Found", etc.) — no HTTP status code, ever. The `'404'` arm was dead in every error path; only the `'not found'` fallback was actually doing the work.
+  - Adding `.toLowerCase()` makes the match robust to FastAPI's default `"Not Found"` (capitalized) detail in addition to handcrafted `"Booking not found"` (lowercase).
+LEARNING-LOOP:
+  - Lesson: when the interceptor flattens `error.response` into a single string `Error.message`, every catch-block heuristic in the app needs to key off detail-substrings, never status codes. Codify: search the codebase for `err.message?.includes('4` / `'5` next time api.js is touched and replace each with detail-substring matching.
+  - Lesson: a run-N "deferred, benign" finding is still a real backlog item. Run 7's whole work was a flagged-but-not-fixed cleanup from run 6 — promoting these notes to actual edits when they're the last Bucket A surface keeps the loop honest about progress.
+NEXT: unchanged for Kira — `git push origin main` → Render deploys → set Stripe envs + seed creds → smoke test green → on-device verify across trust-layer + Pay-with-card flows. Beta DONE-rule is one push + 2 envelopes + on-device verify away.
+---
