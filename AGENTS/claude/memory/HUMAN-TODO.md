@@ -16,6 +16,9 @@
 
 ## 🔑 Optional / when convenient
 
+- [ ] **(Notion — D4 date vs. sequence)** Notion's "SwingBy" DB has **D4 — Friend/known-trade end-to-end run** due **2026-07-07**, but D2.0 (live walkthrough) and D3 (Expo Go walkthrough) — both prerequisites per `Roadmap/DOMINOES.md` — aren't done. Either push D4's due date in Notion or accept it slips.
+- [ ] **(Notion — stale rows, manual flip needed)** Notion's "SwingBy" DB still shows **F1 `/payments/mine`** and **F2 disputes** as "Not started," but STATUS.md confirms both shipped 2026-07-01. This DB doesn't auto-sync from git yet (see `AGENTS/claude/config/NOTION_SYNC.md`) — flip both rows to Done in Notion, or say the word and a git→Notion sync gets wired next.
+
 - [ ] **(GitHub — 2 minutes of clicking, agent was permission-blocked)** Repo Settings → *Code security and analysis* → enable **Dependabot alerts**, **Secret scanning**, and **Push protection** (all free on public repos). Optional: Settings → Branches → protect `main` from force-push/deletion.
 - [ ] **(GitHub — Dependabot triage)** Dependabot opened its first PRs, including **major** bumps (`@react-navigation/native` 6→7, `async-storage` 2→3, `pytest` 7→9). Do NOT merge the majors blindly — navigation v7 is a breaking migration. Merge patch/minor, close majors until post-beta.
 - [ ] **(Email deliverability — DMARC is done, spam persists = domain reputation)** DNS is verified correct (SPF+DKIM+DMARC all present). Actions that actually move inbox placement:

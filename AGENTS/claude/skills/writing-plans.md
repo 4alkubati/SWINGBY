@@ -12,7 +12,7 @@ A plan is good when an **enthusiastic junior with no context, no taste, and an a
 - **Size: 2–5 minutes of work.** If it's bigger, split it. Small tasks = small blast radius = easy to verify = no fleeing.
 
 ## Why this fits Kira
-She directs agents (who improvise badly) and can't debug (so ambiguity is expensive). A plan this concrete removes both problems: the agent has nothing to invent, and every step self-checks.
+He directs agents (who improvise badly) and can't debug (so ambiguity is expensive). A plan this concrete removes both problems: the agent has nothing to invent, and every step self-checks.
 
 ## Anti-patterns
 - "Refactor the auth flow" → too big, no path, no check. Trash.

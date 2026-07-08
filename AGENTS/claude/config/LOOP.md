@@ -6,8 +6,10 @@
 ## Startup (read once, in order — use PATH-INDEX so you never search)
 1. `../PRODUCT-VISION.md` — what we're building + your role slice (read ONLY your slice).
 2. `config/PATH-INDEX.md` — where every file is. Never grep the repo for paths.
-3. `memory/STATUS.md`, `memory/PLAN.md`, last `SESSION_LOG.md`, `memory/HUMAN-TODO.md`.
+3. `memory/STATUS.md`, `memory/PLAN.md`, `SESSION_LOG.md` (last 3 entries — the file holds only those; older history lives in `memory/archive/`), `memory/HUMAN-TODO.md`.
+   Never read `briefs/`, `deliverables/`, or `memory/archive/` at startup — history, not context.
 4. If `PLAN.md` has no active phased plan → orchestrator drafts one from PRODUCT-VISION (phases + per-task done-rules), then start the loop.
+5. **Notion nudge check** (protocol in `config/NOTION_SYNC.md`) — query the SwingBy database for overdue/blocked/gate-at-risk rows. Run the drift check against STATUS.md before trusting any "Not started" row. Real nudges → append to `memory/HUMAN-TODO.md`; stale rows → note as a sync gap, don't alarm Kira.
 
 ## The loop
 ```
@@ -50,13 +52,13 @@ when no runnable tasks remain:
 - **Every task has a DONE-RULE** before it runs. No done-rule = not ready, send back to planning.
 - **RETRY_CAP = 3** (configurable). A loop can never run forever.
 - **Never pause for routine work.** The only interruptions are Bucket B (parked, non-blocking) and Bucket C (hard stop).
-- **Pre-digest for Kira:** when something blocks, write *what broke / why / the exact next action* — she decides, never debugs.
+- **Pre-digest for Kira:** when something blocks, write *what broke / why / the exact next action* — he decides, never debugs.
 - **Loop Training Mode** (optional, default OFF): ON = pause for approval at each step. Use ONLY to watch a risky new loop closely; normal operation is the autonomous+gated mode above.
 
 ## What Kira sees (not a yes/no marathon)
 - `memory/HUMAN-TODO.md` — the short batched list of "only you can do this," surfaced in the morning brief.
-- Phase checkpoints in `SESSION_LOG.md`.
-- She clears the list in minutes; the agent already did everything around it.
+- Phase checkpoints in `SESSION_LOG.md` (at session close, roll entries beyond the last 3 into `memory/archive/SESSION_LOG-<year>.md`).
+- He clears the list in minutes; the agent already did everything around it.
 
 
 ---

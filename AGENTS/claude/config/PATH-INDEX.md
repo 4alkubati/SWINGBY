@@ -20,7 +20,7 @@
 ## Workers — `workers/` (Cloudflare; waitlist worker)
 
 ## The agent kit — `AGENTS/`
-- `claude/ORCHESTRATOR.md` · `claude/config/` (DISPATCH_GATE, LOOP, ROUTING, MCP_INVENTORY, PATH-INDEX)
+- `claude/ORCHESTRATOR.md` · `claude/config/` (DISPATCH_GATE, LOOP, ROUTING, MCP_INVENTORY, PATH-INDEX, NOTION_SYNC)
 - `claude/memory/` (STATUS, PLAN, SESSION_LOG, MESSAGE_BUS, HUMAN-TODO, ORCHESTRATOR_ISSUES)
 - `claude/skills/`, `claude/automation/`, `claude/PRODUCT-VISION.md`
 - `BOH/` (technical agents) · `FOH/` (marketing/pr/assistant) · briefs: `AGENTS/briefs/BRIEF-*.md`

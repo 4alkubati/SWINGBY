@@ -19,7 +19,7 @@ Kira does not read raw errors. The orchestrator translates every break into thre
 - **Why** (the root cause)
 - **Next prompt** (the exact instruction to give the agent)
 
-Kira decides. She never diagnoses.
+Kira decides. He never diagnoses.
 
 ---
 *Part of [[_SKILLS]] · enforced at [[DISPATCH_GATE]] Layer 6 · used by every [[_BOH]] agent.*

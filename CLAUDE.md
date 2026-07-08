@@ -30,6 +30,8 @@ Dual-sided service marketplace connecting service providers (**Businesses**) wit
 | Payments | Stripe (sandbox wired) — escrow split logic in backend |
 | Maps | Google Maps API (placeholder key, real key for Phase 5) |
 | Push | Expo Push + FCM (post-MVP) |
+| Project nudges | Notion (connected MCP, same tier as Google Calendar) — "SwingBy" database mirrors Roadmap/DOMINOES + Launch Checklist, flags overdue/blocked/gate items. Read-only nudge layer, not source of truth — see `AGENTS/claude/config/NOTION_SYNC.md` |
+| CRM (separate) | `backend/app/services/notion_crm.py` — best-effort sync of new signups to a Notion leads DB via `NOTION_TOKEN`/`NOTION_CRM_DB_ID`. Unrelated to the nudge DB above |
 
 ---
 
@@ -133,6 +135,8 @@ npx expo start --clear
 - Deploy / Rollback → `docs/DEPLOY.md`, `docs/ROLLBACK.md`
 - DB schema → `docs/swingby_database_schema.md`
 - **Code-flow graph → `docs/FLOW_GRAPH.md` + `docs/flow-graph.json`** — every screen ↔ screen edge, backend routes vs mobile calls, orphans in red. **Read this FIRST for any nav / 404 / dead-end question** — cheaper than scanning screen files. Regenerate: `"C:/Python314/python.exe" tools/flow_graph.py`. How-to: `AGENTS/claude/automation/FLOW_GRAPH.md`.
+- **Booking-loop smoke test → `tools/e2e_smoke.py`** — full post→quote→accept→booking→complete journey with response-SHAPE checks against a local backend (`python tools/e2e_smoke.py [base_url]`). **Mandatory before accepting any change to the booking loop** (DISPATCH_GATE Layer 6). Uses the test accounts above.
+- Notion nudge layer → `AGENTS/claude/config/NOTION_SYNC.md` — database ID, schema, query pattern, drift-check rule
 - Orchestrator briefs → `AGENTS/briefs/BRIEF-*.md`
 - New-project scaffolder → `AGENTS/KICKOFF.md` (invoked by the user-level `kira-kickoff` skill)
 - Roadmap → `Roadmap/`

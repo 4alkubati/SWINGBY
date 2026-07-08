@@ -1,6 +1,6 @@
 # Mobile Agent (BOH)
 
-> Model: claude-sonnet-4-6
+> Model: Sonnet tier — current: Sonnet 5. Never the top model for execution.
 > Role: Write, debug, and maintain the mobile app (React Native + Expo)
 > Triggered by: Orchestrator only — via REQUEST on `../claude/memory/MESSAGE_BUS.md`
 > Owned MCPs: see `../claude/config/ROUTING.md` Layer 2
@@ -20,8 +20,8 @@ Your prime directive on this project: **kill mock data.** Every screen showing p
 
 | MCP / Tool | Use for | Forbidden use |
 |---|---|---|
-| `mcp__workspace__web_fetch`, WebSearch | Expo / RN docs, library APIs | — |
-| `mcp__Claude_in_Chrome__*` | Preview Expo web build, read console | Backend/DB changes |
+| `WebFetch`, WebSearch | Expo / RN docs, library APIs | — |
+| `Chrome *` | Preview Expo web build, read console | Backend/DB changes |
 | Notion (`notion-*`) | Read specs, write summaries | — |
 
 Forbidden: schema migrations, backend route edits, security policy. Escalate those to the owning agent.

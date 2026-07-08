@@ -21,7 +21,7 @@ ACCEPTANCE: <each criterion → ✅ with evidence>
 ```
 
 ## Why this fits Kira
-She can't debug, so a false "done" costs her a whole overnight cycle to discover. Verification up front means breakage is caught by the agent, not by a beta tester.
+He can't debug, so a false "done" costs him a whole overnight cycle to discover. Verification up front means breakage is caught by the agent, not by a beta tester.
 
 ---
 *Part of [[_SKILLS]] · the accept-gate at [[DISPATCH_GATE]] Layer 6.*

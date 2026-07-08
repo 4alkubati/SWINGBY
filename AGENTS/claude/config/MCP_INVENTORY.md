@@ -36,7 +36,7 @@
 
 | Server | Key tools | Owner | Use case |
 |---|---|---|---|
-| Notion | `notion-search`, `notion-fetch`, `notion-create-pages`, `notion-update-page`, `notion-create-database`, `notion-create-comment`, `notion-get-comments`, `notion-query-database-view`, `notion-query-meeting-notes`, `notion-get-teams`, `notion-get-users`, `notion-move-pages`, `notion-duplicate-page` | orchestrator (planning) / all (docs) | Specs, PM, meeting notes |
+| Notion | `notion-search`, `notion-fetch`, `notion-query-data-sources`, `notion-create-pages`, `notion-update-page`, `notion-create-database`, `notion-create-comment`, `notion-get-comments`, `notion-query-database-view`, `notion-query-meeting-notes`, `notion-get-teams`, `notion-get-users`, `notion-move-pages`, `notion-duplicate-page` | orchestrator (nudge checks + planning) / all (docs) | **Added 2026-07-06, same tier as Google Calendar.** "SwingBy" database (`collection://7416839b-6a91-48e2-9550-5666834f36ec`) mirrors Roadmap/DOMINOES + Launch Checklist for overdue/blocked/gate nudges. Full protocol → [[NOTION_SYNC]]. Read-only nudge layer — STATUS.md stays source of truth. Separate from `backend/app/services/notion_crm.py` (signup CRM sync, different DB). |
 | Cowork | `create_artifact`, `list_artifacts`, `update_artifact`, `present_files`, `request_cowork_directory`, `allow_cowork_file_delete`, `read_widget_context` | orchestrator (deliverables) | Persistent live views |
 
 ### Scheduling / Ops
@@ -59,7 +59,7 @@
 | Server | Key tools | Owner |
 |---|---|---|
 | WebSearch | `WebSearch` | any agent (for research) |
-| web_fetch | `mcp__workspace__web_fetch` | any agent (specific URL retrieval) |
+| web_fetch | `WebFetch` | any agent (specific URL retrieval) |
 
 ### Travel / Misc (low-priority, leave dormant)
 
@@ -119,7 +119,7 @@ When an agent reports BLOCKED with reason "no tool for this", Orchestrator:
 
 | Combo | Why blocked |
 |---|---|
-| frontend-agent + `mcp__supabase__execute_sql` | Frontend must not touch DB directly — use backend service layer |
+| frontend-agent + `Supabase execute_sql` | Frontend must not touch DB directly — use backend service layer |
 | qa-agent + write operations on production data | QA reads only — destructive tests on isolated branches |
 | security-agent + writing app code | Recommends fixes only — backend/frontend/database execute |
 | any subagent + `mcp__computer-use__*` | Orchestrator-only (cross-app safety) |

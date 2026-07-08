@@ -49,6 +49,7 @@ C:/Users/amrba/OneDrive/Desktop/AMR/CODE/Swingby
 3. Kira: 2-min GitHub security toggles + Dependabot major-bump triage (HUMAN-TODO)
 
 ## Open Broadcasts
+- 2026-07-06 — Notion added to the stack as a nudge layer (like Google Calendar): "SwingBy" DB, protocol in `AGENTS/claude/config/NOTION_SYNC.md`. First check found 2 stale rows (F1/F2 already shipped) + 1 date-vs-sequence risk (D4 due tomorrow, predecessors not done) — both in HUMAN-TODO.
 - 2026-06-21 — D1 email lifecycle wired (commit `08715e3`)
 - 2026-06-24 — Trust layer (events + photos) + Stripe sandbox scaffold (commit `554453b`)
 - 2026-06-25 — Mobile fixes + CHECK bug shipped (commits `214fdb6`, `340e537`)

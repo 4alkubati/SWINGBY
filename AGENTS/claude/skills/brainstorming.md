@@ -14,7 +14,7 @@ Don't jump to building. Step back and ask what's *really* being built:
 5. Save the agreed spec → it becomes the task's 5W+H.
 
 ## Why this fits Kira
-Her failure pattern is fleeing the moment she'd have to commit to an answer that might be wrong (the blank SwingBy template). Brainstorming forces the commitment into small, low-stakes pieces — so the scary "what is this exactly?" gets answered before it can trigger a flee.
+His failure pattern is fleeing the moment he'd have to commit to an answer that might be wrong (the blank SwingBy template). Brainstorming forces the commitment into small, low-stakes pieces — so the scary "what is this exactly?" gets answered before it can trigger a flee.
 
 ---
 *Part of [[_SKILLS]] · feeds [[DISPATCH_GATE]] Layer 1 (frame the 5W+H).*

@@ -17,7 +17,7 @@ Before shipping any user-facing screen or flow (signup, post-a-job, quote, booki
 4. Tie back to the moat: does this screen make trust *visible* (Live Job Status, before/after, escrow)?
 
 ## Why it fits Kira
-She's pre-beta with no real users yet. This is a free, instant proxy — it makes the UX professional and trust-forward before a single real tester sees it, so the beta lands.
+He's pre-beta with no real users yet. This is a free, instant proxy — it makes the UX professional and trust-forward before a single real tester sees it, so the beta lands.
 
 ---
 *Part of [[_SKILLS]] · runs before "done" on user-facing work at [[DISPATCH_GATE]] Layer 6.*

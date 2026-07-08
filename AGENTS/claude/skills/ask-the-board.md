@@ -15,10 +15,10 @@ Before accepting any high-stakes work: a new feature, a schema change, an auth/p
 1. Present the work to all 4 personas.
 2. Each returns: **APPROVE / NEEDS-WORK / REJECT** + one concrete reason.
 3. Tally: all approve → ship · any NEEDS-WORK → fix those specific points first · any REJECT → back to design.
-4. The orchestrator pre-digests the board's notes for Kira: *what to change and why* — she decides, she doesn't debate.
+4. The orchestrator pre-digests the board's notes for Kira: *what to change and why* — he decides, he doesn't debate.
 
 ## Why it fits Kira
-She can't personally code-review or design-review. The board is her senior team — it raises the floor on every piece so the output looks like a real company built it, not a solo founder rushing.
+He can't personally code-review or design-review. The board is his senior team — it raises the floor on every piece so the output looks like a real company built it, not a solo founder rushing.
 
 ---
 *Part of [[_SKILLS]] · runs at [[DISPATCH_GATE]] Layer 6 for high-stakes work · upgrades [[two-stage-review]].*

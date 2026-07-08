@@ -15,7 +15,7 @@ At the close of any complex or non-trivial task (Layer 7 of the gate).
 4. **Nudge to persist.** If the same lesson shows up twice and isn't yet a skill, the orchestrator flags: "this should be a skill." Don't let knowledge stay trapped in one session.
 
 ## Why this fits Kira
-She's running this system for months. Without a learning loop, every overnight run repeats the same mistakes and she re-explains the same things. With it, the kit compounds — agents she barely supervises get more reliable on their own. That directly grows her leverage while she sleeps.
+He's running this system for months. Without a learning loop, every overnight run repeats the same mistakes and he re-explains the same things. With it, the kit compounds — agents he barely supervises get more reliable on their own. That directly grows his leverage while he sleeps.
 
 ## Guardrail
 Don't over-generate skills. One skill per *genuinely reusable* lesson. A skills folder full of near-duplicates is noise — periodically consolidate (merge overlapping skills).

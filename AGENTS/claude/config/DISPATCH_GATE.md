@@ -124,6 +124,7 @@ Mandatory, not optional. The orchestrator checks for the relevant skill before a
 - **Layer 1 (Frame):** run [[brainstorming]] — tease the spec out in small chunks before filling 5W+H.
 - **Layer 2–3 (Train + Plan):** write it with [[writing-plans]] rigor — exact file paths, the complete change, a verification step per station, 2–5 min each.
 - **Layer 6 (Review):** [[two-stage-review]] (spec compliance, then code quality). When anything breaks, [[systematic-debugging]] (4-phase root cause). Accept only via [[verification-before-completion]].
+- **Layer 6 (booking-loop guard):** any change touching `backend/app/api/` or a mobile screen in the post→quote→accept→booking→complete loop is NOT accepted until `python tools/e2e_smoke.py` passes against a locally running backend. It verifies response *shapes*, not just routes — the flow graph can't catch payload drift; this does.
 - **Layer 7 (Next):** run [[learning-loop]] — capture or improve a skill from what was learned, log the lesson. The system gets smarter every cycle.
 
 ## Quality skills wired (from the 6-skills method)

@@ -13,7 +13,7 @@ The center of the vault. Everything links from here.
 - **claude/** — the engine:
   - [[claude/ORCHESTRATOR|ORCHESTRATOR]] — the manager agent
   - [[claude/PRODUCT-VISION|PRODUCT-VISION]] — what we are building (role-sliced)
-  - [[claude/config/_CONFIG|_CONFIG]] — rulebooks: [[claude/config/DISPATCH_GATE|DISPATCH_GATE]], [[claude/config/ROUTING|ROUTING]], [[claude/config/LOOP|LOOP]], [[claude/config/MCP_INVENTORY|MCP_INVENTORY]], [[claude/config/PATH-INDEX|PATH-INDEX]]
+  - [[claude/config/_CONFIG|_CONFIG]] — rulebooks: [[claude/config/DISPATCH_GATE|DISPATCH_GATE]], [[claude/config/ROUTING|ROUTING]], [[claude/config/LOOP|LOOP]], [[claude/config/MCP_INVENTORY|MCP_INVENTORY]], [[claude/config/PATH-INDEX|PATH-INDEX]], [[claude/config/NOTION_SYNC|NOTION_SYNC]]
   - [[claude/memory/_MEMORY|_MEMORY]] — the brain: [[claude/memory/STATUS|STATUS]], [[claude/memory/HUMAN-TODO|HUMAN-TODO]], [[claude/memory/PLAN|PLAN]], [[claude/memory/SESSION_LOG|SESSION_LOG]], [[claude/memory/MESSAGE_BUS|MESSAGE_BUS]], [[claude/memory/ORCHESTRATOR_ISSUES|ORCHESTRATOR_ISSUES]]
   - [[claude/skills/_SKILLS|_SKILLS]] — reusable techniques (debugging, planning, review, design)
   - [[claude/automation/_AUTOMATION|_AUTOMATION]] — n8n morning brief + [[claude/automation/FLOW_GRAPH|FLOW_GRAPH]] scanner

@@ -12,7 +12,7 @@ You hand the agent a source: a URL, a doc, a repo, a transcript, or a brain-dump
 4. Link it from the relevant memory/config so future runs find it via PATH-INDEX, not a re-read.
 
 ## Why it fits Kira
-Her ideas are scattered (chat, marketing/, her head). Ingest-source is how "read all my ideas → compact for the agent" actually happens — once — so every future loop starts smart instead of re-reading the world (and burning tokens).
+His ideas are scattered (chat, marketing/, his head). Ingest-source is how "read all my ideas → compact for the agent" actually happens — once — so every future loop starts smart instead of re-reading the world (and burning tokens).
 
 ## Guardrail
 One source → one compacted home. Don't duplicate. If it updates an existing doc, edit that doc, don't create a second copy.

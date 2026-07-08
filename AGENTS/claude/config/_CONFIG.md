@@ -11,3 +11,4 @@ Back to [[MAP]].
 
 - [[LOOP]] — the autonomous build loop (3-bucket gating)
 - [[PATH-INDEX]] — where every file lives
+- [[NOTION_SYNC]] — Notion nudge layer: database ID, schema, query pattern, drift check
