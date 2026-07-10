@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Check } from '@phosphor-icons/react'
+import { Check, Sparkle } from '@phosphor-icons/react'
 import SEO from '../components/SEO'
 import Button from '../components/Button'
 import Badge from '../components/Badge'
@@ -34,7 +34,9 @@ export default function Pricing() {
 
         {/* Founder pricing banner */}
         <div style={{ background: 'rgba(110,86,247,0.12)', border: '1px solid rgba(110,86,247,0.3)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-xl)', marginBottom: 'var(--space-3xl)', display: 'flex', alignItems: 'center', gap: 'var(--space-lg)' }}>
-          <div style={{ fontSize: '36px' }}>🎉</div>
+          <div style={{ width: 44, height: 44, borderRadius: 12, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(136,120,249,0.15)', color: 'var(--color-accent-soft)', flexShrink: 0 }}>
+            <Sparkle size={22} weight="regular" />
+          </div>
           <div>
             <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, color: 'var(--color-text-primary)', marginBottom: '4px' }}>Founder pricing — first 100 businesses</h2>
             <p style={{ color: 'var(--color-text-secondary)', fontSize: '15px' }}>

@@ -135,15 +135,15 @@ export default function ReferralScreen() {
             style={{
               width: 72,
               height: 72,
-              borderRadius: 36,
+              borderRadius: 20,
               backgroundColor: colors.accentMuted,
               borderWidth: 1,
-              borderColor: colors.accentMuted,
+              borderColor: colors.borderAccent,
               alignItems: 'center',
               justifyContent: 'center',
             }}
           >
-            <Text style={{ fontSize: 34 }}>🎁</Text>
+            <Feather name="gift" size={30} color={colors.accentText} strokeWidth={1.8} />
           </View>
 
           <Text

@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import {
   ArrowRight, Broom, Wrench, Lightning, Plant, PaintBrush, Hammer, Toolbox, Truck,
-  ShieldCheck, CurrencyDollar, Star, MapPin, MapTrifold, Headset,
+  ShieldCheck, ChatCircleText, MapPin, Leaf, Star,
 } from '@phosphor-icons/react'
 import SEO from '../components/SEO'
 import Button from '../components/Button'
@@ -11,45 +11,20 @@ import AppMockupFrame from '../components/AppMockupFrame'
 import styles from './Home.module.css'
 
 const CATEGORIES = [
-  { slug: 'cleaning', name: 'Cleaning', Icon: Broom },
-  { slug: 'plumbing', name: 'Plumbing', Icon: Wrench },
-  { slug: 'electrical', name: 'Electrical', Icon: Lightning },
-  { slug: 'landscaping', name: 'Landscaping', Icon: Plant },
-  { slug: 'painting', name: 'Painting', Icon: PaintBrush },
-  { slug: 'carpentry', name: 'Carpentry', Icon: Hammer },
-  { slug: 'handyman', name: 'Handyman', Icon: Toolbox },
-  { slug: 'moving', name: 'Moving', Icon: Truck },
+  { slug: 'cleaning',    key: 'cleaning',    Icon: Broom },
+  { slug: 'plumbing',    key: 'plumbing',    Icon: Wrench },
+  { slug: 'electrical',  key: 'electrical',  Icon: Lightning },
+  { slug: 'landscaping', key: 'landscaping', Icon: Plant },
+  { slug: 'painting',    key: 'painting',    Icon: PaintBrush },
+  { slug: 'carpentry',   key: 'carpentry',   Icon: Hammer },
+  { slug: 'handyman',    key: 'handyman',    Icon: Toolbox },
+  { slug: 'moving',      key: 'moving',      Icon: Truck },
 ]
 
-const CLIENT_STEPS = [
-  { num: '01', title: 'Post a job', desc: 'Category, address, budget, photos. Two minutes.' },
-  { num: '02', title: 'Get quotes', desc: 'Verified Calgary businesses tap "Express interest" with a price.' },
-  { num: '03', title: 'Book + pay safely', desc: 'Pay through escrow. First 50% releases on confirmation.' },
-  { num: '04', title: 'Done → release + review', desc: 'Confirm complete. Remaining 50% releases (minus 10% SwingBy fee). Leave a review.' },
-]
-
-const BUSINESS_STEPS = [
-  { num: '01', title: 'Sign up + verify', desc: 'Manual verification in 24–48 hours during the Calgary beta.' },
-  { num: '02', title: 'Browse nearby', desc: 'Real jobs sorted by distance and recency. No mystery leads.' },
-  { num: '03', title: 'Quote + win', desc: 'Tap a post, add your price and pitch. Booking unlocks chat + address.' },
-  { num: '04', title: 'Complete + paid', desc: 'You keep 90% after the 10% commission. No subscription, no per-quote fee.' },
-]
-
-const TRUST = [
-  { Icon: ShieldCheck, title: 'Verified businesses', desc: 'Manual license + identity check before any business can quote.' },
-  { Icon: CurrencyDollar, title: 'Escrow protection', desc: 'Your money sits with SwingBy until the job is confirmed done.' },
-  { Icon: MapTrifold, title: 'Canadian-owned', desc: 'Built in Calgary. Data in Canadian regions. Real local support.' },
-  { Icon: Headset, title: 'Real human support', desc: '72-hour dispute review. We can withhold payment until resolved.' },
-  { Icon: Star, title: 'Honest reviews', desc: 'Only confirmed bookings can leave one. Businesses can\'t suppress them.' },
-]
-
-const FAQ = [
-  { q: 'Is SwingBy free for clients?', a: 'Yes. Posting jobs and receiving quotes is free. You pay the agreed price to the business — nothing more. The 10% commission comes out of the business\'s payout, not on top of your bill.' },
-  { q: 'How are businesses verified?', a: 'A SwingBy team member reviews each license and identity manually during the Calgary beta. Automated checks come post-beta once we know the edge cases to catch.' },
-  { q: 'How does payment work?', a: 'Payment is held in escrow when you book. 50% is released on booking confirmation. The remaining 50% releases when you confirm the job is done — minus our 10% fee.' },
-  { q: 'What if I\'m not happy with the work?', a: 'Open a dispute through the app. SwingBy support reviews within 72 hours and can withhold payment until it\'s resolved.' },
-  { q: 'Which cities are supported?', a: 'Live in Calgary today. Other cities will open once we have enough verified businesses to quote there — no fake city pages.' },
-]
+const CLIENT_STEP_KEYS = ['1', '2', '3', '4']
+const BUSINESS_STEP_KEYS = ['1', '2', '3', '4']
+const TRUST_KEYS = ['verified', 'reviews', 'canadian', 'support']
+const FAQ_KEYS = ['free', 'verify', 'payment', 'unhappy', 'cities']
 
 const fadeUp = {
   initial: { opacity: 0, y: 24 },
@@ -60,6 +35,7 @@ const fadeUp = {
 
 export default function Home() {
   const { t } = useTranslation()
+
   return (
     <>
       <SEO
@@ -73,201 +49,323 @@ export default function Home() {
         }}
       />
 
-      {/* Hero */}
+      {/* ─────────────── Hero ─────────────── */}
       <section className={styles.hero}>
         <div className={styles.heroGlow} aria-hidden="true" />
         <div className={styles.heroInner}>
           <motion.div className={styles.heroContent} {...fadeUp}>
-            <div className={styles.heroBadge}><MapPin size={14} weight="fill" /> Now live in Calgary</div>
-            <h1 className={styles.heroTitle}>{t('home.hero.headline')}</h1>
-            <p className={styles.heroSubtitle}>{t('home.hero.sub')}</p>
+            <div className={styles.livePill}>
+              <span className={styles.liveDot} aria-hidden="true" />
+              {t('home.hero.livePill')}
+            </div>
+            <h1 className={styles.heroTitle}>
+              {t('home.hero.headlineLead')}{' '}
+              <span className={styles.accent}>{t('home.hero.headlineAccent')}</span>
+            </h1>
+            <p className={styles.heroSub}>{t('home.hero.sub')}</p>
+
             <div className={styles.heroCtas}>
-              <Link to="/signup"><Button size="lg">Post a job — it&apos;s free</Button></Link>
+              <Link to="/signup"><Button size="lg">{t('home.hero.ctaPrimary')}</Button></Link>
               <Link to="/signup?role=business">
                 <Button variant="secondary" size="lg">
-                  Get more jobs <ArrowRight size={18} />
+                  {t('home.hero.ctaSecondary')} <ArrowRight size={18} weight="regular" />
                 </Button>
               </Link>
+            </div>
+
+            <ul className={styles.heroTrust}>
+              <li><ShieldCheck size={16} weight="regular" className={styles.trustGreen} /> {t('home.hero.trust.verified')}</li>
+              <li><Leaf size={16} weight="regular" className={styles.trustGreen} /> {t('home.hero.trust.escrow')}</li>
+              <li><MapPin size={16} weight="regular" className={styles.trustGreen} /> {t('home.hero.trust.local')}</li>
+            </ul>
+          </motion.div>
+
+          <motion.div className={styles.heroMap} {...fadeUp} transition={{ ...fadeUp.transition, delay: 0.1 }}>
+            <div className={styles.mapGrid} aria-hidden="true" />
+            <svg className={styles.mapRoute} viewBox="0 0 520 520" aria-hidden="true">
+              <path
+                d="M 80 400 C 160 340, 200 260, 260 220 S 400 160, 440 100"
+                fill="none"
+                stroke="#8878F9"
+                strokeWidth="2"
+                strokeDasharray="8 8"
+                strokeLinecap="round"
+              />
+            </svg>
+
+            <span className={styles.mapPin} style={{ top: '75%', left: '15%' }} aria-hidden="true">
+              <span className={styles.mapPinInner} />
+              <span className={styles.mapPinRing} />
+            </span>
+            <span className={styles.mapPinDest} style={{ top: '18%', left: '82%' }} aria-hidden="true">
+              <span className={styles.mapPinDestInner} />
+            </span>
+
+            {/* Floating quote card */}
+            <div className={styles.floatCardQuote}>
+              <div className={styles.floatCardRow}>
+                <div className={styles.floatAvatar} aria-hidden="true" />
+                <div className={styles.floatCardMeta}>
+                  <p className={styles.floatCardName}>Bow River Cleaning</p>
+                  <p className={styles.floatCardRating}>
+                    <Star size={12} weight="fill" className={styles.starIcon} /> 4.9 · 128 reviews
+                  </p>
+                </div>
+                <p className={styles.floatCardPrice}>$180</p>
+              </div>
+              <p className={styles.floatCardSub}>{t('home.hero.floatQuoteSub')}</p>
+            </div>
+
+            {/* Floating tracking card */}
+            <div className={styles.floatCardTrack}>
+              <p className={styles.trackEyebrow}>
+                <span className={styles.liveDot} aria-hidden="true" />
+                {t('home.hero.floatTrackEyebrow')}
+              </p>
+              <p className={styles.trackTitle}>{t('home.hero.floatTrackTitle')}</p>
+              <p className={styles.trackSub}>{t('home.hero.floatTrackSub')}</p>
+            </div>
+
+            <div className={styles.mapInfoBar}>
+              <p><strong>142 {t('home.hero.mapInfoStat')}</strong> {t('home.hero.mapInfoCity')}</p>
+              <Link to="/calgary" className={styles.mapInfoLink}>{t('home.hero.mapInfoLink')} <ArrowRight size={13} weight="regular" /></Link>
             </div>
           </motion.div>
         </div>
       </section>
 
-      {/* Category strip */}
-      <section className={styles.categories}>
-        <div className={styles.container}>
-          <div className={styles.categoryGrid}>
-            {CATEGORIES.map(({ slug, name, Icon }) => (
-              <Link key={slug} to={`/categories/${slug}`} className={styles.categoryCard}>
-                <div className={styles.categoryIcon}><Icon size={28} weight="duotone" /></div>
-                <span className={styles.categoryName}>{name}</span>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Trust strip */}
+      {/* ─────────────── Category grid ─────────────── */}
       <section className={styles.section}>
         <div className={styles.container}>
           <motion.div className={styles.sectionHeader} {...fadeUp}>
-            <h2 className={styles.sectionTitle}>Built on trust</h2>
-            <p className={styles.sectionSubtitle}>Five things we hold ourselves to.</p>
+            <span className={styles.eyebrow}>{t('home.categories.eyebrow')}</span>
+            <h2 className={styles.sectionTitle}>{t('home.categories.title')}</h2>
           </motion.div>
-          <div className={styles.trustGrid}>
-            {TRUST.map(({ Icon, title, desc }, i) => (
-              <motion.div key={title} className={styles.pillar} {...fadeUp} transition={{ ...fadeUp.transition, delay: i * 0.06 }}>
-                <div className={styles.pillarIcon}><Icon size={28} weight="duotone" /></div>
-                <h3 className={styles.pillarTitle}>{title}</h3>
-                <p className={styles.pillarDesc}>{desc}</p>
+          <div className={styles.categoryGrid}>
+            {CATEGORIES.map(({ slug, key, Icon }, i) => (
+              <motion.div
+                key={slug}
+                {...fadeUp}
+                transition={{ ...fadeUp.transition, delay: i * 0.04 }}
+              >
+                <Link to={`/categories/${slug}`} className={styles.categoryCard}>
+                  <span className={styles.categoryIcon}><Icon size={26} weight="regular" /></span>
+                  <span className={styles.categoryName}>{t(`home.categories.items.${key}`)}</span>
+                </Link>
               </motion.div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* How it works — two columns */}
+      {/* ─────────────── How it works ─────────────── */}
       <section className={styles.section}>
         <div className={styles.container}>
           <motion.div className={styles.sectionHeader} {...fadeUp}>
-            <h2 className={styles.sectionTitle}>How SwingBy works</h2>
-            <p className={styles.sectionSubtitle}>Same platform, two flows.</p>
+            <span className={styles.eyebrow}>{t('home.howItWorks.eyebrow')}</span>
+            <h2 className={styles.sectionTitle}>{t('home.howItWorks.title')}</h2>
           </motion.div>
-          <div className={styles.twoCol}>
-            <div className={styles.colCard}>
-              <h3 className={styles.colTitle}>For clients</h3>
-              <ol className={styles.colSteps}>
-                {CLIENT_STEPS.map((s) => (
-                  <li key={s.num}>
-                    <span className={styles.colNum}>{s.num}</span>
-                    <div>
-                      <p className={styles.colStepTitle}>{s.title}</p>
-                      <p className={styles.colStepDesc}>{s.desc}</p>
-                    </div>
-                  </li>
-                ))}
-              </ol>
-              <Link to="/how-it-works/clients" className={styles.colLink}>See the full client flow <ArrowRight size={14} weight="bold" /></Link>
-            </div>
 
-            <div className={styles.colCard}>
-              <h3 className={styles.colTitle}>For businesses</h3>
-              <ol className={styles.colSteps}>
-                {BUSINESS_STEPS.map((s) => (
-                  <li key={s.num}>
-                    <span className={styles.colNum}>{s.num}</span>
+          <div className={styles.twoCol}>
+            <motion.div className={styles.flowCard} {...fadeUp}>
+              <div className={styles.flowHeader}>
+                <span className={styles.flowTag}>{t('home.howItWorks.forClients')}</span>
+                <h3 className={styles.flowTitle}>{t('home.howItWorks.clientTitle')}</h3>
+              </div>
+              <ol className={styles.flowSteps}>
+                {CLIENT_STEP_KEYS.map((k) => (
+                  <li key={k} className={styles.flowStep}>
+                    <span className={styles.flowNum}>0{k}</span>
                     <div>
-                      <p className={styles.colStepTitle}>{s.title}</p>
-                      <p className={styles.colStepDesc}>{s.desc}</p>
+                      <p className={styles.flowStepTitle}>{t(`home.howItWorks.client.${k}.title`)}</p>
+                      <p className={styles.flowStepDesc}>{t(`home.howItWorks.client.${k}.desc`)}</p>
                     </div>
                   </li>
                 ))}
               </ol>
-              <Link to="/how-it-works/businesses" className={styles.colLink}>See the full business flow <ArrowRight size={14} weight="bold" /></Link>
-            </div>
+              <Link to="/how-it-works/clients" className={styles.flowLink}>
+                {t('home.howItWorks.clientLink')} <ArrowRight size={14} weight="regular" />
+              </Link>
+            </motion.div>
+
+            <motion.div className={`${styles.flowCard} ${styles.flowCardBiz}`} {...fadeUp} transition={{ ...fadeUp.transition, delay: 0.1 }}>
+              <div className={styles.flowHeader}>
+                <span className={styles.flowTag}>{t('home.howItWorks.forBusinesses')}</span>
+                <h3 className={styles.flowTitle}>{t('home.howItWorks.businessTitle')}</h3>
+              </div>
+              <ol className={styles.flowSteps}>
+                {BUSINESS_STEP_KEYS.map((k) => (
+                  <li key={k} className={styles.flowStep}>
+                    <span className={styles.flowNum}>0{k}</span>
+                    <div>
+                      <p className={styles.flowStepTitle}>{t(`home.howItWorks.business.${k}.title`)}</p>
+                      <p className={styles.flowStepDesc}>{t(`home.howItWorks.business.${k}.desc`)}</p>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+              <Link to="/how-it-works/businesses" className={styles.flowLink}>
+                {t('home.howItWorks.businessLink')} <ArrowRight size={14} weight="regular" />
+              </Link>
+            </motion.div>
           </div>
         </div>
       </section>
 
-      {/* App preview */}
+      {/* ─────────────── Escrow band ─────────────── */}
       <section className={styles.section}>
         <div className={styles.container}>
-          <div className={styles.appPreview}>
-            <div className={styles.appPreviewCopy}>
-              <h2 className={styles.sectionTitle}>The app — Calgary jobs, one tap away</h2>
-              <p className={styles.sectionSubtitle}>
-                Native iOS and Android. Browse nearby posts, quote without leaving the feed, message safely once a booking is confirmed.
-              </p>
-              <p className={styles.appPreviewMeta}>
-                <span className={styles.appPreviewBadge}>Coming Aug 2026</span>
-                <span className={styles.appPreviewNote}>App store listings open at general launch.</span>
-              </p>
+          <motion.div className={styles.escrowBand} {...fadeUp}>
+            <div className={styles.escrowGlow} aria-hidden="true" />
+            <div className={styles.escrowCopy}>
+              <span className={styles.eyebrowSoft}>{t('home.escrow.eyebrow')}</span>
+              <h2 className={styles.escrowTitle}>{t('home.escrow.title')}</h2>
+              <p className={styles.escrowBody}>{t('home.escrow.body')}</p>
             </div>
-            <div className={styles.appPreviewMockup}>
-              <AppMockupFrame label="Nearby jobs feed" alt="SwingBy app — nearby jobs feed mockup" width={300} />
+
+            <div className={styles.ledger}>
+              <p className={styles.ledgerTitle}>{t('home.escrow.ledgerTitle')}</p>
+              <ul className={styles.ledgerList}>
+                <li>
+                  <div>
+                    <p className={styles.ledgerRowTitle}>{t('home.escrow.row1Title')}</p>
+                    <p className={styles.ledgerRowSub}>{t('home.escrow.row1Sub')}</p>
+                  </div>
+                  <span className={styles.ledgerAmount}>$180</span>
+                </li>
+                <li>
+                  <div>
+                    <p className={styles.ledgerRowTitle}>{t('home.escrow.row2Title')}</p>
+                    <p className={styles.ledgerRowSub}>{t('home.escrow.row2Sub')}</p>
+                  </div>
+                  <span className={`${styles.ledgerAmount} ${styles.money}`}>+$90</span>
+                </li>
+                <li>
+                  <div>
+                    <p className={styles.ledgerRowTitle}>{t('home.escrow.row3Title')}</p>
+                    <p className={styles.ledgerRowSub}>{t('home.escrow.row3Sub')}</p>
+                  </div>
+                  <span className={`${styles.ledgerAmount} ${styles.money}`}>+$90</span>
+                </li>
+              </ul>
             </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ─────────────── Trust row ─────────────── */}
+      <section className={styles.section}>
+        <div className={styles.container}>
+          <motion.div className={styles.sectionHeader} {...fadeUp}>
+            <span className={styles.eyebrow}>{t('home.trust.eyebrow')}</span>
+            <h2 className={styles.sectionTitle}>{t('home.trust.title')}</h2>
+          </motion.div>
+          <div className={styles.trustGrid}>
+            {TRUST_KEYS.map((k, i) => {
+              const iconMap = { verified: ShieldCheck, reviews: Star, canadian: Leaf, support: ChatCircleText }
+              const Icon = iconMap[k]
+              return (
+                <motion.div key={k} className={styles.trustCard} {...fadeUp} transition={{ ...fadeUp.transition, delay: i * 0.06 }}>
+                  <div className={styles.trustIcon}><Icon size={24} weight="regular" /></div>
+                  <h3 className={styles.trustTitle}>{t(`home.trust.items.${k}.title`)}</h3>
+                  <p className={styles.trustDesc}>{t(`home.trust.items.${k}.desc`)}</p>
+                </motion.div>
+              )
+            })}
           </div>
         </div>
       </section>
 
-      {/* Live in Calgary */}
+      {/* ─────────────── Live in Calgary — radar ─────────────── */}
       <section className={styles.section}>
         <div className={styles.container}>
           <motion.div className={styles.cityBlock} {...fadeUp}>
             <div className={styles.cityCopy}>
-              <span className={styles.eyebrow}>Live in Calgary</span>
-              <h2 className={styles.cityTitle}>Built local, before going national.</h2>
-              <p className={styles.cityText}>
-                We&apos;re proving the model in Calgary first. Every business is checked by a real human. Every quote is from someone who can actually do the job in your neighbourhood.
-              </p>
-              <p className={styles.cityText}>
-                <strong>Next on the map:</strong> Edmonton and Red Deer, once Calgary supply is deep enough to support a second city.
-              </p>
-              <Link to="/calgary" className={styles.colLink}>See Calgary coverage <ArrowRight size={14} weight="bold" /></Link>
+              <span className={styles.eyebrow}>{t('home.calgary.eyebrow')}</span>
+              <h2 className={styles.cityTitle}>{t('home.calgary.title')}</h2>
+              <p className={styles.cityText}>{t('home.calgary.body')}</p>
+              <div className={styles.cityNext}>
+                <p className={styles.cityNextLabel}>{t('home.calgary.nextLabel')}</p>
+                <div className={styles.cityChips}>
+                  <span className={styles.cityChip}>Edmonton</span>
+                  <span className={styles.cityChip}>Red Deer</span>
+                </div>
+              </div>
             </div>
-            <div className={styles.cityMap} aria-hidden="true">
-              <svg viewBox="0 0 200 200" role="presentation">
-                <circle cx="100" cy="100" r="80" fill="rgba(110,86,247,0.10)" stroke="var(--color-accent)" strokeDasharray="4 4" />
-                <circle cx="100" cy="100" r="40" fill="rgba(110,86,247,0.18)" />
-                <circle cx="100" cy="100" r="6" fill="var(--color-accent)" />
-                <text x="100" y="130" textAnchor="middle" fill="var(--color-text-secondary)" fontSize="11" fontFamily="Inter, sans-serif">Calgary</text>
-              </svg>
+
+            <div className={styles.radarWrap} aria-hidden="true">
+              <div className={styles.radar}>
+                <span className={`${styles.radarRing} ${styles.ring1}`} />
+                <span className={`${styles.radarRing} ${styles.ring2}`} />
+                <span className={`${styles.radarRing} ${styles.ring3}`} />
+                <span className={styles.radarDashed} />
+                <span className={styles.radarCenter}>
+                  <span className={styles.radarCore} />
+                </span>
+                <span className={styles.radarLabel}>Calgary</span>
+                <span className={styles.radarNextPill}>
+                  <span className={styles.liveDotAccent} /> Edmonton · next
+                </span>
+              </div>
             </div>
           </motion.div>
         </div>
       </section>
 
-      {/* Stories placeholder — honest, no invented quotes */}
+      {/* ─────────────── App section ─────────────── */}
+      <section className={styles.section}>
+        <div className={styles.container}>
+          <motion.div className={styles.appBand} {...fadeUp}>
+            <div className={styles.appCopy}>
+              <span className={styles.eyebrow}>{t('home.app.eyebrow')}</span>
+              <h2 className={styles.appTitle}>{t('home.app.title')}</h2>
+              <p className={styles.appBody}>{t('home.app.body')}</p>
+              <div className={styles.appMeta}>
+                <span className={styles.appBadge}>
+                  <span className={styles.liveDotAccent} />
+                  {t('home.app.comingBadge')}
+                </span>
+                <span className={styles.appNote}>{t('home.app.storeNote')}</span>
+              </div>
+            </div>
+            <div className={styles.appMockup}>
+              <AppMockupFrame label="Nearby jobs feed" alt="SwingBy app — nearby jobs feed mockup" width={260} />
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ─────────────── FAQ ─────────────── */}
       <section className={styles.section}>
         <div className={styles.container}>
           <motion.div className={styles.sectionHeader} {...fadeUp}>
-            <h2 className={styles.sectionTitle}>Real stories landing post-beta</h2>
-            <p className={styles.sectionSubtitle}>
-              We&apos;re holding this space for actual client and business quotes once the beta cohort completes their first bookings. Fake testimonials aren&apos;t our style.
-            </p>
+            <span className={styles.eyebrow}>{t('home.faq.eyebrow')}</span>
+            <h2 className={styles.sectionTitle}>{t('home.faq.title')}</h2>
           </motion.div>
-          <div className={styles.storiesSkeleton}>
-            <div className={styles.storyCard}>
-              <div className={styles.storyDot} />
-              <p className={styles.storyText}>First client story drops once we&apos;ve closed five real bookings.</p>
-            </div>
-            <div className={styles.storyCard}>
-              <div className={styles.storyDot} />
-              <p className={styles.storyText}>First business story drops once one Calgary pro hits five completed jobs.</p>
-            </div>
-            <div className={styles.storyCard}>
-              <div className={styles.storyDot} />
-              <p className={styles.storyText}>Want to be one of the first names here? <Link to="/signup" className={styles.colLink}>Join the beta</Link></p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* FAQ */}
-      <section className={styles.section}>
-        <div className={styles.container}>
-          <motion.h2 className={styles.sectionTitle} {...fadeUp}>Common questions</motion.h2>
           <div className={styles.faqList}>
-            {FAQ.map(({ q, a }, i) => (
-              <motion.details key={q} className={styles.faqItem} {...fadeUp} transition={{ ...fadeUp.transition, delay: i * 0.05 }}>
-                <summary className={styles.faqQ}>{q}</summary>
-                <p className={styles.faqA}>{a}</p>
+            {FAQ_KEYS.map((k, i) => (
+              <motion.details key={k} className={styles.faqItem} {...fadeUp} transition={{ ...fadeUp.transition, delay: i * 0.04 }}>
+                <summary className={styles.faqQ}>{t(`home.faq.items.${k}.q`)}</summary>
+                <p className={styles.faqA}>{t(`home.faq.items.${k}.a`)}</p>
               </motion.details>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Final CTA */}
-      <section className={styles.cta}>
+      {/* ─────────────── Final CTA ─────────────── */}
+      <section className={styles.finalCta}>
+        <div className={styles.finalGlow} aria-hidden="true" />
         <div className={styles.container}>
-          <motion.div className={styles.ctaInner} {...fadeUp}>
-            <h2 className={styles.ctaTitle}>Ready to book your first service?</h2>
-            <p className={styles.ctaSubtitle}>Post a job in two minutes. Free for clients, always.</p>
-            <div className={styles.heroCtas}>
-              <Link to="/signup"><Button size="lg">Get started free</Button></Link>
+          <motion.div className={styles.finalInner} {...fadeUp}>
+            <h2 className={styles.finalTitle}>{t('home.finalCta.title')}</h2>
+            <p className={styles.finalSub}>{t('home.finalCta.sub')}</p>
+            <div className={styles.finalCtas}>
+              <Link to="/signup"><Button size="lg">{t('home.finalCta.primary')}</Button></Link>
               <Link to="/how-it-works/clients">
-                <Button variant="ghost" size="lg">See how it works</Button>
+                <Button variant="secondary" size="lg">
+                  {t('home.finalCta.secondary')} <ArrowRight size={18} weight="regular" />
+                </Button>
               </Link>
             </div>
           </motion.div>

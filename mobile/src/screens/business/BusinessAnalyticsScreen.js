@@ -14,6 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 // victory-native@41 requires Skia + reanimated@4 which conflict with Expo SDK 54.
 // CategoryChart is stubbed with native View bars until we upgrade Expo OR pin
 // victory-native to ~40.x. All other UI on this screen is unaffected.
+import { Feather } from '@expo/vector-icons';
 import { api } from '../../services/api';
 import { SkeletonBox } from '../../components/Skeleton';
 import { RatingStarsDisplay } from '../../components/RatingStars';
@@ -132,7 +133,7 @@ function HeroSkeleton() {
 function EmptyAnalytics() {
   return (
     <View style={styles.emptyFull}>
-      <Text style={styles.emptyIcon}>📊</Text>
+      <Feather name="bar-chart-2" size={40} color={colors.textTertiary} strokeWidth={1.6} style={styles.emptyIcon} />
       <Text style={styles.emptyTitle}>Analytics coming soon</Text>
       <Text style={styles.emptySub}>
         Once you complete jobs, analytics will appear here.
@@ -196,13 +197,13 @@ export default function BusinessAnalyticsScreen({ navigation, route }) {
       <View style={[styles.container, { paddingTop: insets.top }]}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-            <Text style={styles.backBtn}>←</Text>
+            <Feather name="arrow-left" size={20} color={colors.textPrimary} strokeWidth={2} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Analytics</Text>
           <View style={{ width: 40 }} />
         </View>
         <View style={styles.emptyFull}>
-          <Text style={styles.emptyIcon}>⚠️</Text>
+          <Feather name="alert-triangle" size={40} color={colors.warning} strokeWidth={1.6} style={styles.emptyIcon} />
           <Text style={styles.emptyTitle}>Failed to load</Text>
           <Text style={styles.emptySub}>{error}</Text>
           <TouchableOpacity
@@ -222,7 +223,7 @@ export default function BusinessAnalyticsScreen({ navigation, route }) {
       <View style={[styles.container, { paddingTop: insets.top }]}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-            <Text style={styles.backBtn}>←</Text>
+            <Feather name="arrow-left" size={20} color={colors.textPrimary} strokeWidth={2} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Analytics</Text>
           <View style={{ width: 40 }} />
@@ -240,7 +241,7 @@ export default function BusinessAnalyticsScreen({ navigation, route }) {
           onPress={() => navigation.goBack()}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <Text style={styles.backBtn}>←</Text>
+          <Feather name="arrow-left" size={20} color={colors.textPrimary} strokeWidth={2} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Analytics</Text>
         <View style={{ width: 40 }} />

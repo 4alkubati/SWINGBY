@@ -19,7 +19,41 @@ const STATUS_CONFIG = {
   open:        { label: 'Awaiting Quotes', color: colors.accentText,   bg: colors.accentMuted },
   matched:     { label: 'Matched',     color: colors.success,  bg: colors.accentMuted },
   expired:     { label: 'Expired',     color: colors.textSecondary, bg: colors.surfaceAlt },
+  pending:     { label: 'Pending',     color: colors.accentText, bg: colors.accentMuted },
+  accepted:    { label: 'Accepted',    color: colors.success,  bg: colors.accentMuted },
+  rejected:    { label: 'Declined',    color: colors.textSecondary, bg: colors.surfaceAlt },
 };
+
+// Business lens: a sent quote with its status and a fast follow-up path.
+// A declined quote isn't dead — Message reopens the negotiation.
+function QuoteRow({ interest, onMessage }) {
+  const status = STATUS_CONFIG[interest.status] || STATUS_CONFIG.pending;
+  const post = interest.service_posts || {};
+  const clientUser = post.users || {};
+  const clientName = [clientUser.first_name, clientUser.last_name].filter(Boolean).join(' ') || 'Client';
+  const canMessage = post.status === 'open' || post.status === 'matched' || interest.status === 'accepted';
+
+  return (
+    <View style={styles.row}>
+      <View style={styles.rowLeft}>
+        <View style={styles.rowTop}>
+          <Text style={styles.rowTitle} numberOfLines={1}>{post.title || 'Job post'}</Text>
+          <View style={[styles.statusPill, { backgroundColor: status.bg }]}>
+            <Text style={[styles.statusText, { color: status.color }]}>{status.label}</Text>
+          </View>
+        </View>
+        <Text style={styles.rowSub}>
+          {clientName} · ${interest.quoted_price}
+        </Text>
+      </View>
+      {canMessage && (
+        <TouchableOpacity style={styles.actionBtn} onPress={onMessage} activeOpacity={0.8}>
+          <Text style={styles.actionBtnText}>Message</Text>
+        </TouchableOpacity>
+      )}
+    </View>
+  );
+}
 
 function BookingRow({ booking, onPress, onReview, userRole }) {
   const status = STATUS_CONFIG[booking.status] || STATUS_CONFIG.confirmed;
@@ -28,8 +62,9 @@ function BookingRow({ booking, onPress, onReview, userRole }) {
     : (booking.users?.first_name
         ? [booking.users.first_name, booking.users.last_name].filter(Boolean).join(' ')
         : (booking.client_name || 'Client'));
-  const date = booking.scheduled_date
-    ? new Date(booking.scheduled_date).toLocaleDateString('en-CA', { month: 'short', day: 'numeric' })
+  const when = booking.confirmed_date || booking.proposed_date_1;
+  const date = when
+    ? new Date(when).toLocaleDateString('en-CA', { month: 'short', day: 'numeric' })
     : null;
 
   return (
@@ -41,8 +76,8 @@ function BookingRow({ booking, onPress, onReview, userRole }) {
             <Text style={[styles.statusText, { color: status.color }]}>{status.label}</Text>
           </View>
         </View>
-        <Text style={styles.rowSub}>{booking.service_type || 'Service'}</Text>
-        {date && <Text style={styles.rowDate}>{date}{booking.scheduled_time ? ` · ${booking.scheduled_time}` : ''}</Text>}
+        <Text style={styles.rowSub}>{booking.service_posts?.title || booking.service_category || 'Service'}</Text>
+        {date && <Text style={styles.rowDate}>{date}</Text>}
       </View>
       {booking.status === 'completed' && onReview && (
         <TouchableOpacity style={styles.actionBtn} onPress={onReview} activeOpacity={0.8}>
@@ -53,15 +88,18 @@ function BookingRow({ booking, onPress, onReview, userRole }) {
   );
 }
 
-function PostRow({ post, onViewQuotes }) {
+function PostRow({ post, onViewQuotes, onViewBooking }) {
   const status = STATUS_CONFIG[post.status] || STATUS_CONFIG.open;
   const quoteCount = post.interest_count ?? 0;
-  const date = post.preferred_date
-    ? new Date(post.preferred_date).toLocaleDateString('en-CA', { month: 'short', day: 'numeric' })
+  const isMatched = post.status === 'matched';
+  // Matched posts open their booking; open posts open the quote list.
+  const rowAction = isMatched ? onViewBooking : (quoteCount > 0 ? onViewQuotes : undefined);
+  const date = post.created_at
+    ? new Date(post.created_at).toLocaleDateString('en-CA', { month: 'short', day: 'numeric' })
     : null;
 
   return (
-    <TouchableOpacity style={styles.row} onPress={quoteCount > 0 ? onViewQuotes : undefined} activeOpacity={0.8}>
+    <TouchableOpacity style={styles.row} onPress={rowAction} activeOpacity={0.8}>
       <View style={styles.rowLeft}>
         <View style={styles.rowTop}>
           <Text style={styles.rowTitle} numberOfLines={1}>{post.title || 'Job post'}</Text>
@@ -83,6 +121,15 @@ function PostRow({ post, onViewQuotes }) {
           </Text>
         </TouchableOpacity>
       )}
+      {isMatched && onViewBooking && (
+        <TouchableOpacity
+          style={[styles.actionBtn, styles.actionBtnHighlight]}
+          onPress={onViewBooking}
+          activeOpacity={0.8}
+        >
+          <Text style={[styles.actionBtnText, styles.actionBtnTextHighlight]}>View booking</Text>
+        </TouchableOpacity>
+      )}
     </TouchableOpacity>
   );
 }
@@ -92,6 +139,7 @@ export default function MyJobsScreen({ navigation }) {
   const { user } = useAuth();
   const [bookings, setBookings] = useState([]);
   const [posts, setPosts] = useState([]);
+  const [quotes, setQuotes] = useState([]);
   const [tab, setTab] = useState('active');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -104,10 +152,13 @@ export default function MyJobsScreen({ navigation }) {
       const calls = [api.get('/bookings/')];
       if (isClient) {
         calls.push(api.get('/service-posts/my').catch(() => ({ items: [] })));
+      } else {
+        calls.push(api.get('/interests/mine').catch(() => ({ items: [] })));
       }
-      const [bookingRes, postRes] = await Promise.all(calls);
+      const [bookingRes, secondRes] = await Promise.all(calls);
       setBookings(bookingRes?.items || bookingRes || []);
-      if (isClient) setPosts(postRes?.items || postRes || []);
+      if (isClient) setPosts(secondRes?.items || secondRes || []);
+      else setQuotes(secondRes?.items || []);
     } catch (e) {
       setError(e.message || 'Could not load jobs');
     } finally {
@@ -171,18 +222,27 @@ export default function MyJobsScreen({ navigation }) {
       {isClient && openPosts.length > 0 && (
         <View style={styles.postsSection}>
           <Text style={styles.sectionLabel}>Open Posts</Text>
-          {openPosts.map((post) => (
-            <PostRow
-              key={post.id}
-              post={post}
-              onViewQuotes={() =>
-                navigation.navigate('QuoteComparison', {
-                  postId: post.id,
-                  postTitle: post.title,
-                })
-              }
-            />
-          ))}
+          {openPosts.map((post) => {
+            // A matched post's booking (post_id links them) — its real landing page
+            const matchedBooking = bookings.find((b) => b.post_id === post.id);
+            return (
+              <PostRow
+                key={post.id}
+                post={post}
+                onViewQuotes={() =>
+                  navigation.navigate('QuoteComparison', {
+                    postId: post.id,
+                    postTitle: post.title,
+                  })
+                }
+                onViewBooking={
+                  matchedBooking
+                    ? () => navigation.navigate('ActiveBooking', { bookingId: matchedBooking.id })
+                    : undefined
+                }
+              />
+            );
+          })}
           <View style={styles.divider} />
         </View>
       )}
@@ -205,8 +265,45 @@ export default function MyJobsScreen({ navigation }) {
             Past ({past.length})
           </Text>
         </TouchableOpacity>
+        {!isClient && (
+          <TouchableOpacity
+            style={[styles.tabBtn, tab === 'quotes' && styles.tabBtnActive]}
+            onPress={() => setTab('quotes')}
+          >
+            <Text style={[styles.tabText, tab === 'quotes' && styles.tabTextActive]}>
+              Quotes ({quotes.length})
+            </Text>
+          </TouchableOpacity>
+        )}
       </View>
 
+      {tab === 'quotes' && !isClient ? (
+        <FlatList
+          data={quotes}
+          keyExtractor={(q) => q.id}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.list}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor={colors.accent} colors={[colors.accent]} progressBackgroundColor={colors.surface} />}
+          ListEmptyComponent={
+            <EmptyState
+              icon="send"
+              title="No quotes sent yet"
+              body="Quote a job from your Dashboard and it will show up here with its status."
+            />
+          }
+          renderItem={({ item }) => (
+            <QuoteRow
+              interest={item}
+              onMessage={() =>
+                navigation.navigate('Chat', {
+                  interestId: item.id,
+                  otherPartyName: item.service_posts?.users?.first_name || 'Client',
+                })
+              }
+            />
+          )}
+        />
+      ) : (
       <FlatList
         data={shownBookings}
         keyExtractor={(b) => b.id}
@@ -233,12 +330,17 @@ export default function MyJobsScreen({ navigation }) {
               navigation.navigate('Review', {
                 bookingId: item.id,
                 workerId: item.employee_id || item.business_id,
-                workerName: item.employee_name || item.businesses?.business_name || item.business_name || 'Provider',
+                workerName:
+                  [item.employees?.users?.first_name, item.employees?.users?.last_name]
+                    .filter(Boolean).join(' ')
+                  || item.businesses?.business_name
+                  || 'Provider',
               }) : null
             }
           />
         )}
       />
+      )}
     </View>
   );
 }

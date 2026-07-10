@@ -18,6 +18,7 @@ import {
 } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Feather } from '@expo/vector-icons';
 import { api } from '../../services/api';
 import { SkeletonList } from '../../components/Skeleton';
 import { colors } from '../../theme/tokens';
@@ -449,7 +450,7 @@ function InviteModal({ visible, bizId, onClose }) {
 function EmptyTeam({ onInvite }) {
   return (
     <View style={styles.empty}>
-      <Text style={styles.emptyIcon}>👥</Text>
+      <Feather name="users" size={40} color={colors.textTertiary} strokeWidth={1.6} style={styles.emptyIcon} />
       <Text style={styles.emptyTitle}>No employees yet</Text>
       <Text style={styles.emptySub}>Invite teammates to help with bookings.</Text>
       <TouchableOpacity style={styles.saveBtn} onPress={onInvite} activeOpacity={0.85}>
@@ -533,7 +534,7 @@ export default function EmployeeManagementScreen({ navigation, route }) {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-          <Text style={styles.backBtn}>←</Text>
+          <Feather name="arrow-left" size={20} color={colors.textPrimary} strokeWidth={2} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Team</Text>
         <TouchableOpacity
@@ -547,7 +548,7 @@ export default function EmployeeManagementScreen({ navigation, route }) {
 
       {/* Search */}
       <View style={styles.searchBar}>
-        <Text style={styles.searchIcon}>🔍</Text>
+        <Feather name="search" size={16} color={colors.textTertiary} strokeWidth={2} style={styles.searchIcon} />
         <TextInput
           style={styles.searchInput}
           placeholder="Search by name…"
@@ -558,7 +559,7 @@ export default function EmployeeManagementScreen({ navigation, route }) {
         />
         {query.length > 0 && (
           <TouchableOpacity onPress={() => setQuery('')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-            <Text style={styles.searchClear}>✕</Text>
+            <Feather name="x" size={16} color={colors.textTertiary} strokeWidth={2} />
           </TouchableOpacity>
         )}
       </View>

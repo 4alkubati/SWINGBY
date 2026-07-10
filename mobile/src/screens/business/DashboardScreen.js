@@ -1,7 +1,6 @@
 import {
   View,
   ScrollView,
-  FlatList,
   TouchableOpacity,
   StyleSheet,
   RefreshControl,
@@ -9,21 +8,22 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useState, useCallback, useEffect, useRef } from 'react';
+import { Feather } from '@expo/vector-icons';
+
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../services/api';
-import JobCard from '../../components/JobCard';
 import JobOpportunityCard from '../../components/JobOpportunityCard';
 import SendQuoteSheet from '../../components/SendQuoteSheet';
-import { colors, spacing, radius, shadows, motion } from '../../theme/tokens';
+import SectionHeader from '../../components/SectionHeader';
+import EarningsHero from '../../components/EarningsHero';
+import HeaderGlow from '../../components/HeaderGlow';
+
+import { colors, spacing, motion } from '../../theme/tokens';
 import Text from '../../components/Text';
 import Surface from '../../components/Surface';
 import Stack from '../../components/Stack';
-import Inline from '../../components/Inline';
-import Badge from '../../components/Badge';
 import Button from '../../components/Button';
 import { SkeletonBox } from '../../components/Skeleton';
-
-// ─── greeting helper ──────────────────────────────────────────────────────────
 
 function getGreeting() {
   const h = new Date().getHours();
@@ -32,54 +32,18 @@ function getGreeting() {
   return 'Good evening';
 }
 
-// ─── KPI skeleton ─────────────────────────────────────────────────────────────
-
-function KpiSkeleton() {
-  return (
-    <View style={styles.kpiRow}>
-      {[0, 1, 2].map((i) => (
-        <Surface
-          key={i}
-          padding="base"
-          rounded="card"
-          style={styles.kpiCard}
-        >
-          <Stack spacing="xs">
-            <SkeletonBox width={44} height={11} borderRadius={4} />
-            <SkeletonBox width={52} height={26} borderRadius={6} />
-            <SkeletonBox width={36} height={11} borderRadius={4} />
-          </Stack>
-        </Surface>
-      ))}
-    </View>
-  );
+function toInitials(name) {
+  return (name || '')
+    .split(' ')
+    .map((w) => w[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
 }
 
-// ─── Activity feed skeleton ───────────────────────────────────────────────────
-
-function FeedSkeleton({ count = 3 }) {
-  return (
-    <Stack spacing="sm" style={{ paddingHorizontal: spacing.lg }}>
-      {Array.from({ length: count }, (_, i) => (
-        <Surface key={i} padding="base" rounded="card">
-          <Inline justify="space-between">
-            <Stack spacing="xs" style={{ flex: 1 }}>
-              <SkeletonBox width="60%" height={14} borderRadius={4} />
-              <SkeletonBox width="40%" height={12} borderRadius={4} />
-            </Stack>
-            <SkeletonBox width={60} height={24} borderRadius={radius.chip} />
-          </Inline>
-        </Surface>
-      ))}
-    </Stack>
-  );
-}
-
-// ─── Animated KPI card with entry animation ───────────────────────────────────
-
-function KpiCard({ label, value, subLabel, color = 'primary', index = 0 }) {
+function KpiCard({ label, value, sub, index = 0 }) {
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const scaleAnim = useRef(new Animated.Value(0.88)).current;
+  const scaleAnim = useRef(new Animated.Value(0.94)).current;
 
   useEffect(() => {
     Animated.parallel([
@@ -101,123 +65,85 @@ function KpiCard({ label, value, subLabel, color = 'primary', index = 0 }) {
 
   return (
     <Animated.View
-      style={[
-        styles.kpiCard,
-        { opacity: fadeAnim, transform: [{ scale: scaleAnim }] },
-      ]}
+      style={[styles.kpiCard, { opacity: fadeAnim, transform: [{ scale: scaleAnim }] }]}
     >
-      <Surface padding="base" rounded="card" elevation="subtle" style={{ flex: 1 }}>
-        <Stack spacing="xs">
-          <Text variant="label" color="secondary">{label}</Text>
-          <Text variant="display3" color={color} style={{ lineHeight: 30 }}>
-            {value}
-          </Text>
-          {!!subLabel && (
-            <Text variant="caption" color="secondary">{subLabel}</Text>
-          )}
-        </Stack>
-      </Surface>
+      <Text style={styles.kpiLabel} maxFontSizeMultiplier={1.3}>
+        {label}
+      </Text>
+      <Text style={styles.kpiValue} maxFontSizeMultiplier={1.2}>
+        {value}
+      </Text>
+      {!!sub && (
+        <Text style={styles.kpiSub} maxFontSizeMultiplier={1.3}>
+          {sub}
+        </Text>
+      )}
     </Animated.View>
   );
 }
 
-// ─── Activity item (booking row) ──────────────────────────────────────────────
-
-const STATUS_BADGE = {
-  confirmed: { label: 'Confirmed', color: 'accent' },
-  in_progress: { label: 'Active', color: 'success' },
-  completed: { label: 'Done', color: 'success' },
-  cancelled: { label: 'Cancelled', color: 'danger' },
-};
-
-function ActivityItem({ booking, onPress }) {
-  const statusInfo = STATUS_BADGE[booking.status] || { label: booking.status, color: 'accent' };
-  const serviceName = booking.service_post?.title || booking.service?.name || 'Booking';
-  const clientName = booking.client?.first_name
-    ? `${booking.client.first_name} ${booking.client.last_name || ''}`.trim()
-    : 'Client';
-
-  return (
-    <TouchableOpacity activeOpacity={0.75} onPress={onPress}>
-      <Surface padding="base" rounded="card" style={{ gap: spacing.xs }}>
-        <Inline justify="space-between">
-          <Stack spacing={2} style={{ flex: 1, marginRight: spacing.sm }}>
-            <Text variant="smallMedium" color="primary" numberOfLines={1}>
-              {serviceName}
-            </Text>
-            <Text variant="caption" color="secondary">
-              {clientName}
-            </Text>
-          </Stack>
-          <View
-            style={[
-              styles.statusPill,
-              {
-                backgroundColor:
-                  statusInfo.color === 'accent'
-                    ? colors.accentMuted
-                    : statusInfo.color === 'success'
-                    ? 'rgba(46,189,133,0.15)'
-                    : 'rgba(255,92,92,0.15)',
-              },
-            ]}
-          >
-            <Text
-              variant="caption"
-              style={{
-                color:
-                  statusInfo.color === 'accent'
-                    ? colors.accent
-                    : statusInfo.color === 'success'
-                    ? colors.success
-                    : colors.danger,
-                fontFamily: 'Inter_600SemiBold',
-              }}
-            >
-              {statusInfo.label}
-            </Text>
-          </View>
-        </Inline>
-      </Surface>
-    </TouchableOpacity>
-  );
-}
-
-// ─── Main screen ──────────────────────────────────────────────────────────────
+// Stale-while-refetch cache: the dashboard paints instantly from the last
+// payload on reopen while a fresh load runs in the background.
+let _dashboardCache = null;
 
 export default function DashboardScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
 
-  const [bookings, setBookings] = useState([]);
-  const [posts, setPosts] = useState([]);
-  const [business, setBusiness] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [bookings, setBookings] = useState(_dashboardCache?.bookings || []);
+  const [posts, setPosts] = useState(_dashboardCache?.posts || []);
+  const [business, setBusiness] = useState(_dashboardCache?.business || null);
+  const [unreadTotal, setUnreadTotal] = useState(_dashboardCache?.unreadTotal || 0);
+  const [loading, setLoading] = useState(!_dashboardCache);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(false);
   const [selectedPost, setSelectedPost] = useState(null);
   const [sheetVisible, setSheetVisible] = useState(false);
+  const [dismissedIds, setDismissedIds] = useState(new Set());
 
   const load = useCallback(async () => {
     setError(false);
     try {
-      const [b, p, biz] = await Promise.all([
+      const [b, p, biz, threads] = await Promise.all([
         api.get('/bookings/'),
         api.get('/service-posts/'),
         api.get('/businesses/me').catch(() => null),
+        api.get('/messages/threads', { _silent: true }).catch(() => null),
       ]);
-      setBookings(b?.items || b || []);
-      setPosts((p?.items || p || []).filter((post) => post.status === 'open'));
+      const nextBookings = b?.items || b || [];
+      const nextPosts = (p?.items || p || []).filter((post) => post.status === 'open');
+      const nextUnread = (threads?.items || []).reduce(
+        (sum, t) => sum + (t.unread_count || 0),
+        0
+      );
+      setBookings(nextBookings);
+      setPosts(nextPosts);
       setBusiness(biz || null);
+      setUnreadTotal(nextUnread);
+      _dashboardCache = {
+        bookings: nextBookings,
+        posts: nextPosts,
+        business: biz || null,
+        unreadTotal: nextUnread,
+      };
     } catch {
-      setError(true);
+      // With cached data on screen, a background failure shouldn't nuke the UI
+      if (!_dashboardCache) setError(true);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  // Refresh when the tab regains focus — counts stay honest
+  useEffect(() => {
+    const unsub = navigation.addListener('focus', load);
+    return unsub;
+  }, [navigation, load]);
 
   function onRefresh() {
     setRefreshing(true);
@@ -229,15 +155,41 @@ export default function DashboardScreen({ navigation }) {
     setSheetVisible(true);
   }
 
-  const activeBookings = bookings.filter(
-    (b) => b.status === 'confirmed' || b.status === 'in_progress'
-  );
+  function passPost(post) {
+    setDismissedIds((prev) => {
+      const next = new Set(prev);
+      next.add(post.id);
+      return next;
+    });
+  }
 
-  const recentActivity = [...bookings]
-    .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
-    .slice(0, 10);
+  const visiblePosts = posts.filter((p) => !dismissedIds.has(p.id));
 
-  // derived KPI values
+  // What makes money right now: new leads, unanswered messages, unassigned jobs
+  const awaitingAction = bookings.filter(
+    (b) => b.status === 'confirmed' && !b.employee_id
+  ).length;
+  const attentionChips = [
+    visiblePosts.length > 0 && {
+      key: 'leads',
+      icon: 'zap',
+      label: `${visiblePosts.length} new ${visiblePosts.length === 1 ? 'lead' : 'leads'}`,
+      onPress: () => navigation.navigate('Jobs'),
+    },
+    unreadTotal > 0 && {
+      key: 'unread',
+      icon: 'message-circle',
+      label: `${unreadTotal} unread`,
+      onPress: () => navigation.navigate('Messages'),
+    },
+    awaitingAction > 0 && {
+      key: 'awaiting',
+      icon: 'alert-circle',
+      label: `${awaitingAction} awaiting action`,
+      onPress: () => navigation.navigate('Jobs'),
+    },
+  ].filter(Boolean);
+
   const todayBookings = bookings.filter((b) => {
     if (!b.scheduled_at && !b.created_at) return false;
     const d = new Date(b.scheduled_at || b.created_at);
@@ -249,68 +201,76 @@ export default function DashboardScreen({ navigation }) {
     );
   });
 
-  const weekEarnings = bookings
-    .filter((b) => {
-      if (!b.created_at) return false;
-      const d = new Date(b.created_at);
-      const now = new Date();
-      const diff = (now - d) / (1000 * 60 * 60 * 24);
-      return diff <= 7 && (b.status === 'completed' || b.status === 'confirmed');
-    })
-    .reduce((sum, b) => sum + (Number(b.total_price) || 0), 0);
+  const earningsIn = (minDaysAgo, maxDaysAgo) =>
+    bookings
+      .filter((b) => {
+        if (!b.created_at) return false;
+        const diff = (Date.now() - new Date(b.created_at)) / (1000 * 60 * 60 * 24);
+        return diff >= minDaysAgo && diff < maxDaysAgo
+          && (b.status === 'completed' || b.status === 'confirmed');
+      })
+      .reduce((sum, b) => sum + (Number(b.total_amount) || 0), 0);
+
+  const weekEarnings = earningsIn(0, 7);
+  const prevWeekEarnings = earningsIn(7, 14);
+  const deltaPct = prevWeekEarnings > 0
+    ? Math.round(((weekEarnings - prevWeekEarnings) / prevWeekEarnings) * 100)
+    : null;
+
+  // Daily totals for the sparkline — oldest day first
+  const sparkData = Array.from({ length: 7 }, (_, i) => {
+    const daysAgo = 6 - i;
+    return earningsIn(daysAgo, daysAgo + 1);
+  });
+  const hasSparkData = sparkData.some((v) => v > 0);
 
   const avgRating =
-    business?.avg_rating != null
-      ? Number(business.avg_rating).toFixed(1)
-      : null;
+    business?.avg_rating != null ? Number(business.avg_rating).toFixed(1) : null;
+  const reviewCount = business?.review_count ?? 0;
+  const businessName = business?.business_name || 'Your business';
 
-  // ─── Loading skeleton ─────────────────────────────────────────────────────
   if (loading) {
     return (
       <View style={[styles.container, { paddingTop: insets.top }]}>
-        {/* header */}
         <View style={styles.header}>
-          <SkeletonBox width={90} height={26} borderRadius={6} />
-          <SkeletonBox width={34} height={34} borderRadius={radius.avatar} />
+          <View style={{ gap: 4 }}>
+            <SkeletonBox width={90} height={12} borderRadius={4} />
+            <SkeletonBox width={170} height={22} borderRadius={6} />
+          </View>
+          <SkeletonBox width={40} height={40} borderRadius={20} />
         </View>
-        {/* greeting */}
-        <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.base, gap: spacing.xs }}>
-          <SkeletonBox width={110} height={14} borderRadius={4} />
-          <SkeletonBox width={160} height={26} borderRadius={6} />
+        <View style={styles.scrollBody}>
+          <SkeletonBox width="100%" height={172} borderRadius={22} />
+          <View style={{ flexDirection: 'row', gap: spacing.sm, marginTop: spacing.md }}>
+            <SkeletonBox width="50%" height={72} borderRadius={18} />
+            <SkeletonBox width="50%" height={72} borderRadius={18} />
+          </View>
         </View>
-        {/* KPI skeleton */}
-        <View style={{ marginTop: spacing.base }}>
-          <KpiSkeleton />
-        </View>
-        {/* section label skeleton */}
-        <View style={styles.sectionRow}>
-          <SkeletonBox width={120} height={13} borderRadius={4} />
-        </View>
-        {/* feed skeleton */}
-        <FeedSkeleton count={4} />
       </View>
     );
   }
 
-  // ─── Error with retry ────────────────────────────────────────────────────
   if (error) {
     return (
       <View style={[styles.container, { paddingTop: insets.top }]}>
         <View style={styles.header}>
-          <Text variant="display2" style={styles.logoText}>
-            Swing<Text variant="display2" color="accent">By</Text>
-          </Text>
+          <Text style={styles.businessName}>{businessName}</Text>
         </View>
         <View style={styles.centeredState}>
           <Surface padding="lg" rounded="card" style={{ alignItems: 'center', gap: spacing.base }}>
-            <Text variant="h1" style={{ textAlign: 'center' }}>Failed to load dashboard</Text>
+            <Text variant="h1" style={{ textAlign: 'center' }}>
+              Failed to load dashboard
+            </Text>
             <Text variant="small" color="secondary" style={{ textAlign: 'center' }}>
               Check your connection and try again.
             </Text>
             <Button
               variant="primary"
               label="Retry"
-              onPress={() => { setLoading(true); load(); }}
+              onPress={() => {
+                setLoading(true);
+                load();
+              }}
               style={{ alignSelf: 'stretch' }}
             />
           </Surface>
@@ -321,22 +281,43 @@ export default function DashboardScreen({ navigation }) {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      {/* ── App header ──────────────────────────────────────────────────── */}
+      {/* Radial purple glow behind the header, right-aligned */}
+      <HeaderGlow
+        width={520}
+        height={280}
+        offsetTop={-40}
+        align="right"
+        opacity={0.28}
+      />
+
+      {/* Header row */}
       <View style={styles.header}>
-        <Text variant="display2" style={styles.logoText}>
-          Swing<Text variant="display2" color="accent">By</Text>
-        </Text>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.greeting} maxFontSizeMultiplier={1.3}>
+            {getGreeting()}
+          </Text>
+          <Text
+            style={styles.businessName}
+            numberOfLines={1}
+            maxFontSizeMultiplier={1.2}
+          >
+            {businessName}
+          </Text>
+        </View>
+
         <TouchableOpacity
-          style={styles.bellBtn}
-          onPress={() => navigation.navigate('Notifications')}
-          activeOpacity={0.7}
+          style={styles.avatarBtn}
+          onPress={() => navigation.navigate('My Business')}
+          accessibilityRole="button"
+          accessibilityLabel="Open your business"
         >
-          <Text style={{ fontSize: 17 }}>🔔</Text>
+          <Text style={styles.avatarText}>{toInitials(businessName)}</Text>
         </TouchableOpacity>
       </View>
 
       <ScrollView
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollBody}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -345,176 +326,141 @@ export default function DashboardScreen({ navigation }) {
           />
         }
       >
-        {/* ── Greeting ─────────────────────────────────────────────────── */}
-        <View style={styles.greetBlock}>
-          <Text variant="small" color="secondary">{getGreeting()}</Text>
-          <Text variant="display2" color="primary">
-            {user?.first_name || 'There'}
-            <Text variant="display2" color="accent"> .</Text>
-          </Text>
-        </View>
+        {/* Needs-attention strip — the money-first glance */}
+        {attentionChips.length > 0 && (
+          <View style={styles.attentionRow}>
+            {attentionChips.map((chip) => (
+              <TouchableOpacity
+                key={chip.key}
+                style={styles.attentionChip}
+                activeOpacity={0.8}
+                onPress={chip.onPress}
+                accessibilityRole="button"
+                accessibilityLabel={chip.label}
+              >
+                <Feather name={chip.icon} size={14} color={colors.accentText} strokeWidth={2} />
+                <Text style={styles.attentionLabel} maxFontSizeMultiplier={1.2}>
+                  {chip.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
 
-        {/* ── KPI cards row ─────────────────────────────────────────────── */}
+        {/* Earnings hero */}
+        <EarningsHero
+          amount={
+            weekEarnings > 0
+              ? `$${Math.round(weekEarnings).toLocaleString()}`
+              : '$0'
+          }
+          deltaPct={deltaPct}
+          data={hasSparkData ? sparkData : undefined}
+        />
+
+        {/* KPI row (Today / Rating) */}
         <View style={styles.kpiRow}>
           <KpiCard
             index={0}
-            label="Today"
-            value={todayBookings.length}
-            subLabel="bookings"
+            label="TODAY"
+            value={String(todayBookings.length)}
+            sub={todayBookings.length === 1 ? 'booking' : 'bookings'}
           />
           <KpiCard
             index={1}
-            label="This week"
-            value={weekEarnings > 0 ? `£${weekEarnings.toFixed(0)}` : '—'}
-            subLabel="earnings"
-            color={weekEarnings > 0 ? 'success' : 'primary'}
-          />
-          <KpiCard
-            index={2}
-            label="Avg rating"
+            label="RATING"
             value={avgRating ?? '—'}
-            subLabel={business?.review_count ? `${business.review_count} reviews` : 'no reviews'}
-            color="warning"
+            sub={reviewCount ? `${reviewCount} reviews` : 'no reviews yet'}
           />
         </View>
 
-        {/* ── Business tools row (Earnings / Analytics / Team) ─────────── */}
+        {/* New opportunities header */}
+        <View style={styles.sectionHeader}>
+          <SectionHeader
+            variant="heading"
+            title="New opportunities"
+            actionLabel={visiblePosts.length > 0 ? 'See all' : null}
+            onAction={() => navigation.navigate('Jobs')}
+            count={visiblePosts.length}
+          />
+        </View>
+
+        {visiblePosts.length === 0 ? (
+          <Surface padding="lg" rounded="card" style={styles.emptyCard}>
+            <Stack spacing="xs" style={{ alignItems: 'center' }}>
+              <Text variant="bodyMedium" style={{ textAlign: 'center' }}>
+                No open jobs right now
+              </Text>
+              <Text variant="small" color="secondary" style={{ textAlign: 'center' }}>
+                Check back soon for new opportunities.
+              </Text>
+            </Stack>
+          </Surface>
+        ) : (
+          <View style={styles.postsList}>
+            {visiblePosts.slice(0, 1).map((post) => (
+              <JobOpportunityCard
+                key={post.id}
+                post={post}
+                highlighted
+                onSendQuote={() => openQuoteSheet(post)}
+                onPass={() => passPost(post)}
+              />
+            ))}
+            {visiblePosts.slice(1, 3).map((post) => (
+              <JobOpportunityCard
+                key={post.id}
+                post={post}
+                compact
+                onSendQuote={() => openQuoteSheet(post)}
+              />
+            ))}
+          </View>
+        )}
+
+        {/* Business tools row */}
+        <View style={styles.sectionHeader}>
+          <SectionHeader
+            title="BUSINESS TOOLS"
+          />
+        </View>
         <View style={styles.toolsRow}>
           <TouchableOpacity
             style={styles.toolChip}
-            activeOpacity={0.7}
+            activeOpacity={0.8}
             onPress={() => navigation.navigate('Earnings')}
             accessibilityRole="button"
             accessibilityLabel="Open earnings"
           >
-            <Text style={styles.toolEmoji}>💰</Text>
-            <Text variant="caption" color="primary">Earnings</Text>
+            <Feather name="dollar-sign" size={18} color={colors.accentText} strokeWidth={1.8} />
+            <Text style={styles.toolLabel} maxFontSizeMultiplier={1.2}>
+              Earnings
+            </Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.toolChip}
-            activeOpacity={0.7}
+            activeOpacity={0.8}
             onPress={() => navigation.navigate('BusinessAnalytics')}
             accessibilityRole="button"
             accessibilityLabel="Open analytics"
           >
-            <Text style={styles.toolEmoji}>📈</Text>
-            <Text variant="caption" color="primary">Analytics</Text>
+            <Feather name="bar-chart-2" size={18} color={colors.accentText} strokeWidth={1.8} />
+            <Text style={styles.toolLabel} maxFontSizeMultiplier={1.2}>
+              Analytics
+            </Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.toolChip}
-            activeOpacity={0.7}
+            activeOpacity={0.8}
             onPress={() => navigation.navigate('EmployeeManagement')}
             accessibilityRole="button"
             accessibilityLabel="Manage team"
           >
-            <Text style={styles.toolEmoji}>👥</Text>
-            <Text variant="caption" color="primary">Team</Text>
+            <Feather name="users" size={18} color={colors.accentText} strokeWidth={1.8} />
+            <Text style={styles.toolLabel} maxFontSizeMultiplier={1.2}>
+              Team
+            </Text>
           </TouchableOpacity>
-        </View>
-
-        {/* ── Active bookings ───────────────────────────────────────────── */}
-        <View style={[styles.sectionRow, { marginTop: spacing.base }]}>
-          <Text variant="label" color="secondary">Active Bookings</Text>
-          {activeBookings.length > 0 && (
-            <Badge count={activeBookings.length} color="accent" />
-          )}
-        </View>
-
-        {activeBookings.length === 0 ? (
-          <Surface
-            padding="lg"
-            rounded="card"
-            style={styles.emptyCard}
-          >
-            <Stack spacing="xs" style={{ alignItems: 'center' }}>
-              <Text variant="bodyMedium" style={{ textAlign: 'center' }}>
-                No active bookings
-              </Text>
-              <Text variant="small" color="secondary" style={{ textAlign: 'center' }}>
-                Confirmed and in-progress jobs appear here.
-              </Text>
-            </Stack>
-          </Surface>
-        ) : (
-          <FlatList
-            horizontal
-            data={activeBookings}
-            keyExtractor={(b) => String(b.id)}
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.bookingsList}
-            renderItem={({ item }) => (
-              <JobCard
-                booking={item}
-                onPress={() => navigation.navigate('JobManagement', { bookingId: item.id })}
-              />
-            )}
-          />
-        )}
-
-        {/* ── Recent activity feed ──────────────────────────────────────── */}
-        <View style={[styles.sectionRow, { marginTop: spacing.base }]}>
-          <Text variant="label" color="secondary">Recent Activity</Text>
-          {recentActivity.length > 0 && (
-            <Text variant="caption" color="accent">{recentActivity.length} bookings</Text>
-          )}
-        </View>
-
-        {recentActivity.length === 0 ? (
-          <Surface
-            padding="lg"
-            rounded="card"
-            style={styles.emptyCard}
-          >
-            <Stack spacing="xs" style={{ alignItems: 'center' }}>
-              <Text variant="bodyMedium" style={{ textAlign: 'center' }}>
-                No activity yet
-              </Text>
-              <Text variant="small" color="secondary" style={{ textAlign: 'center' }}>
-                Your booking history will show here.
-              </Text>
-            </Stack>
-          </Surface>
-        ) : (
-          <Stack spacing="sm" style={styles.feedList}>
-            {recentActivity.map((booking) => (
-              <ActivityItem
-                key={booking.id}
-                booking={booking}
-                onPress={() => navigation.navigate('JobManagement', { bookingId: booking.id })}
-              />
-            ))}
-          </Stack>
-        )}
-
-        {/* ── New Opportunities ─────────────────────────────────────────── */}
-        <View style={[styles.sectionRow, { marginTop: spacing.base }]}>
-          <Text variant="label" color="secondary">New Opportunities</Text>
-          {posts.length > 0 && (
-            <Text variant="caption" color="accent">{posts.length} open</Text>
-          )}
-        </View>
-
-        <View style={styles.postsList}>
-          {posts.length === 0 ? (
-            <Surface padding="lg" rounded="card" style={styles.emptyCard}>
-              <Stack spacing="xs" style={{ alignItems: 'center' }}>
-                <Text variant="bodyMedium" style={{ textAlign: 'center' }}>
-                  No open jobs right now
-                </Text>
-                <Text variant="small" color="secondary" style={{ textAlign: 'center' }}>
-                  Check back soon for new opportunities.
-                </Text>
-              </Stack>
-            </Surface>
-          ) : (
-            posts.map((post) => (
-              <JobOpportunityCard
-                key={post.id}
-                post={post}
-                onSendQuote={() => openQuoteSheet(post)}
-              />
-            ))
-          )}
         </View>
       </ScrollView>
 
@@ -522,12 +468,19 @@ export default function DashboardScreen({ navigation }) {
         visible={sheetVisible}
         onClose={() => setSheetVisible(false)}
         post={selectedPost}
+        onQuoted={(interest, note) => {
+          // A note seeded a chat thread — take the business straight there
+          if (note) {
+            navigation.navigate('Chat', {
+              interestId: interest.id,
+              otherPartyName: selectedPost?.users?.first_name || 'Client',
+            });
+          }
+        }}
       />
     </View>
   );
 }
-
-// ─── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
   container: {
@@ -539,89 +492,132 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.sm,
-    paddingBottom: spacing.xs,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.md,
+    gap: spacing.md,
   },
-  logoText: {
-    letterSpacing: -1,
+  greeting: {
+    fontSize: 13,
+    color: colors.textSecondary,
   },
-  bellBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: radius.avatar,
-    backgroundColor: colors.surfaceAlt,
-    borderWidth: 1,
-    borderColor: colors.border,
+  businessName: {
+    fontFamily: 'SpaceGrotesk_700Bold',
+    fontSize: 22,
+    lineHeight: 26,
+    letterSpacing: -0.5,
+    color: colors.textPrimary,
+    marginTop: 2,
+  },
+  avatarBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.accentMuted,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  greetBlock: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.base,
-    paddingBottom: spacing.sm,
-    gap: spacing.xs,
+  avatarText: {
+    fontFamily: 'SpaceGrotesk_700Bold',
+    fontSize: 14,
+    color: colors.accentText,
+    letterSpacing: -0.2,
   },
+
+  scrollBody: {
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.xl,
+    gap: spacing.md,
+  },
+
+  attentionRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+  },
+  attentionChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: colors.accentMuted,
+    borderWidth: 1,
+    borderColor: colors.borderAccent,
+    borderRadius: 999,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  attentionLabel: {
+    fontSize: 12.5,
+    fontWeight: '600',
+    color: colors.accentText,
+  },
+
   kpiRow: {
     flexDirection: 'row',
-    paddingHorizontal: spacing.lg,
     gap: spacing.sm,
-    marginTop: spacing.sm,
   },
   kpiCard: {
     flex: 1,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 18,
+    padding: spacing.base,
+    gap: 4,
   },
-  sectionRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.sm,
+  kpiLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    letterSpacing: 1.4,
+    color: colors.textSecondary,
   },
-  bookingsList: {
-    paddingHorizontal: spacing.lg,
-    gap: spacing.md,
-    paddingBottom: spacing.xs,
+  kpiValue: {
+    fontFamily: 'SpaceGrotesk_700Bold',
+    fontSize: 22,
+    lineHeight: 26,
+    letterSpacing: -0.5,
+    color: colors.textPrimary,
   },
-  feedList: {
-    paddingHorizontal: spacing.lg,
+  kpiSub: {
+    fontSize: 12,
+    color: colors.textSecondary,
   },
+
+  sectionHeader: {
+    paddingTop: spacing.sm,
+  },
+
   postsList: {
-    paddingHorizontal: spacing.lg,
     gap: spacing.md,
-    paddingBottom: spacing.xl,
   },
+
   emptyCard: {
-    marginHorizontal: spacing.lg,
+    marginHorizontal: 0,
   },
-  statusPill: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: radius.chip,
-  },
-  centeredState: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: spacing.lg,
-  },
+
   toolsRow: {
     flexDirection: 'row',
-    paddingHorizontal: spacing.lg,
     gap: spacing.sm,
-    marginTop: spacing.md,
   },
   toolChip: {
     flex: 1,
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: radius.card,
-    paddingVertical: spacing.md,
+    borderRadius: 18,
+    paddingVertical: spacing.md + 2,
     alignItems: 'center',
-    gap: spacing.xs,
+    gap: 6,
   },
-  toolEmoji: {
-    fontSize: 20,
+  toolLabel: {
+    fontSize: 12.5,
+    fontWeight: '600',
+    color: colors.textPrimary,
+  },
+
+  centeredState: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.lg,
   },
 });

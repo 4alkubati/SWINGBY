@@ -1,6 +1,21 @@
-import { View, Text, StyleSheet } from 'react-native';
+import React from 'react';
+import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import { Feather } from '@expo/vector-icons';
+import Text from './Text';
+import { colors, spacing, radius } from '../theme/tokens';
 
-export default function FeaturedCard({ name, initials, rating, jobs, distance, category, verified }) {
+// Featured "TOP RATED NEAR YOU" card — 48px initials tile (purple-tinted),
+// name + green Verified pill, ★ rating meta, chevron right.
+export default function FeaturedCard({
+  name,
+  initials,
+  rating,
+  jobs,
+  distance,
+  category,
+  verified,
+  onPress,
+}) {
   const a11yLabel = [
     name,
     verified ? 'Verified provider' : null,
@@ -8,135 +23,151 @@ export default function FeaturedCard({ name, initials, rating, jobs, distance, c
     `${jobs} jobs`,
     distance ? `${distance} away` : null,
     category,
-  ].filter(Boolean).join(', ');
+  ]
+    .filter(Boolean)
+    .join(', ');
 
   return (
-    <View
+    <TouchableOpacity
+      activeOpacity={0.85}
+      onPress={onPress}
       style={styles.container}
-      accessible={true}
+      accessible
+      accessibilityRole="button"
       accessibilityLabel={a11yLabel}
-      accessibilityRole="none"
     >
       <View style={styles.avatar} accessible={false}>
-        <Text style={styles.avatarText} accessibilityElementsHidden={true} importantForAccessibility="no">{initials}</Text>
+        <Text style={styles.avatarText}>{initials}</Text>
       </View>
+
       <View style={styles.info}>
         <View style={styles.nameRow}>
-          <Text style={styles.name} numberOfLines={1} allowFontScaling={true}>{name}</Text>
-          <View style={styles.badge} accessible={false}>
-            <Text style={styles.badgeText} accessibilityElementsHidden={true} importantForAccessibility="no">TOP RATED</Text>
-          </View>
-        </View>
-        <Text style={styles.meta} allowFontScaling={true} maxFontSizeMultiplier={1.3} accessibilityElementsHidden={true} importantForAccessibility="no">
-          <Text style={styles.star}>★ {rating}</Text>
-          <Text>{` · ${jobs} jobs · ${distance}`}</Text>
-        </Text>
-        <View style={styles.tags}>
+          <Text
+            style={styles.name}
+            numberOfLines={1}
+            maxFontSizeMultiplier={1.3}
+          >
+            {name}
+          </Text>
           {verified && (
-            <View style={[styles.tag, styles.tagVerified]} accessible={false}>
-              <Text style={[styles.tagText, styles.tagTextVerified]} accessibilityElementsHidden={true} importantForAccessibility="no">Verified</Text>
+            <View style={styles.verifiedPill} accessible={false}>
+              <Feather
+                name="check"
+                size={11}
+                color={colors.success}
+                style={{ marginRight: 3 }}
+              />
+              <Text style={styles.verifiedText} maxFontSizeMultiplier={1.2}>
+                Verified
+              </Text>
             </View>
           )}
-          {category ? (
-            <View style={styles.tag} accessible={false}>
-              <Text style={styles.tagText} accessibilityElementsHidden={true} importantForAccessibility="no">{category}</Text>
-            </View>
+        </View>
+
+        <View style={styles.metaRow} accessible={false}>
+          <Feather name="star" size={12} color={colors.textPrimary} />
+          <Text style={styles.ratingText} maxFontSizeMultiplier={1.3}>
+            {rating}
+          </Text>
+          <Text style={styles.dotSep} maxFontSizeMultiplier={1.3}>
+            ·
+          </Text>
+          <Text style={styles.metaText} maxFontSizeMultiplier={1.3}>
+            {jobs} jobs
+          </Text>
+          {distance ? (
+            <>
+              <Text style={styles.dotSep} maxFontSizeMultiplier={1.3}>
+                ·
+              </Text>
+              <Text style={styles.metaText} maxFontSizeMultiplier={1.3}>
+                {distance}
+              </Text>
+            </>
           ) : null}
         </View>
       </View>
-    </View>
+
+      <Feather
+        name="chevron-right"
+        size={22}
+        color={colors.textSecondary}
+      />
+    </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#0f1214',
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: '#1e2226',
-    borderRadius: 20,
-    padding: 14,
+    borderColor: colors.border,
+    borderRadius: radius.card,
+    padding: spacing.base,
     flexDirection: 'row',
     alignItems: 'center',
-    marginHorizontal: 22,
-    gap: 12,
+    gap: spacing.md,
   },
   avatar: {
-    width: 54,
-    height: 54,
-    borderRadius: 16,
-    backgroundColor: '#FF5C00',
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: colors.accentMuted,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
   },
   avatarText: {
-    fontWeight: '700',
+    fontFamily: 'SpaceGrotesk_700Bold',
     fontSize: 16,
-    color: '#ffffff',
+    color: colors.accentText,
+    letterSpacing: -0.3,
   },
   info: {
     flex: 1,
+    gap: 4,
   },
   nameRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 4,
-    gap: 6,
-  },
-  name: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#ffffff',
-    flex: 1,
-  },
-  badge: {
-    backgroundColor: 'rgba(255, 92, 0, 0.15)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 92, 0, 0.3)',
-    borderRadius: 20,
-    paddingHorizontal: 9,
-    paddingVertical: 3,
-    flexShrink: 0,
-  },
-  badgeText: {
-    fontSize: 10,
-    color: '#FF8C42',
-    fontWeight: '700',
-  },
-  meta: {
-    fontSize: 12,
-    color: '#9ca3af',
-    fontWeight: '500',
-  },
-  star: {
-    color: '#FF5C00',
-    fontWeight: '700',
-  },
-  tags: {
-    flexDirection: 'row',
-    gap: 6,
-    marginTop: 8,
+    alignItems: 'center',
+    gap: spacing.sm,
     flexWrap: 'wrap',
   },
-  tag: {
-    backgroundColor: '#131618',
-    borderWidth: 1,
-    borderColor: '#2a2e33',
-    borderRadius: 20,
-    paddingHorizontal: 9,
-    paddingVertical: 3,
+  name: {
+    fontSize: 15.5,
+    fontWeight: '600',
+    color: colors.textPrimary,
+    flexShrink: 1,
   },
-  tagVerified: {
-    backgroundColor: 'rgba(34, 197, 94, 0.08)',
-    borderColor: 'rgba(34, 197, 94, 0.25)',
+  verifiedPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(46,189,133,0.14)',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 999,
   },
-  tagText: {
-    fontSize: 10,
-    color: '#9ca3af',
+  verifiedText: {
+    fontSize: 10.5,
+    color: colors.success,
     fontWeight: '600',
   },
-  tagTextVerified: {
-    color: '#4ade80',
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  ratingText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.textPrimary,
+  },
+  dotSep: {
+    color: colors.textSecondary,
+    fontSize: 13,
+  },
+  metaText: {
+    color: colors.textSecondary,
+    fontSize: 13,
   },
 });

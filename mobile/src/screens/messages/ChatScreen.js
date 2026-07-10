@@ -16,6 +16,7 @@ import Animated, {
   FadeOut,
   interpolate,
 } from 'react-native-reanimated';
+import { Feather } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../services/api';
 import Text from '../../components/Text';
@@ -253,9 +254,11 @@ function ChatSkeleton() {
 export default function ChatScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
-  const { bookingId, otherPartyName } = route.params || {};
+  // A chat thread is either a booking thread or a pre-booking quote (interest) thread.
+  const { bookingId, interestId, otherPartyName } = route.params || {};
 
   const [messages, setMessages] = useState([]);
+  const [threadInfo, setThreadInfo] = useState(null); // interest threads: {post_title, quoted_price, status}
   const [text, setText] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -267,8 +270,13 @@ export default function ChatScreen({ navigation, route }) {
   const load = useCallback(async () => {
     setError(null);
     try {
-      const data = await api.get(`/messages/${bookingId}`);
-      setMessages(data || []);
+      const data = interestId
+        ? await api.get(`/messages/interest/${interestId}`)
+        : await api.get(`/messages/${bookingId}`);
+      // API returns { items: [...] } newest-first; the list renders oldest-first
+      const items = Array.isArray(data) ? data : (data?.items || []);
+      setMessages([...items].reverse());
+      if (data?.interest) setThreadInfo(data.interest);
     } catch (err) {
       if (!messages.length) {
         setError(err?.message || 'Could not load messages.');
@@ -277,7 +285,7 @@ export default function ChatScreen({ navigation, route }) {
     } finally {
       setLoading(false);
     }
-  }, [bookingId]);
+  }, [bookingId, interestId]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -293,10 +301,11 @@ export default function ChatScreen({ navigation, route }) {
     setSending(true);
     setText('');
     try {
-      const msg = await api.post('/messages/', {
-        booking_id: bookingId,
+      const res = await api.post('/messages/', {
+        ...(interestId ? { interest_id: interestId } : { booking_id: bookingId }),
         content: trimmed,
       });
+      const msg = res?.data || res;
       setMessages((prev) => [...prev, msg]);
       setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 100);
     } catch {
@@ -313,7 +322,7 @@ export default function ChatScreen({ navigation, route }) {
       <View style={[styles.screen, { paddingTop: insets.top }]}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={8}>
-            <Text variant="h2" color="secondary">←</Text>
+            <Feather name="arrow-left" size={20} color={colors.textPrimary} strokeWidth={2} />
           </TouchableOpacity>
           <Text variant="bodyMedium">{otherPartyName || 'Chat'}</Text>
           <View style={{ width: 32 }} />
@@ -330,14 +339,14 @@ export default function ChatScreen({ navigation, route }) {
       <View style={[styles.screen, { paddingTop: insets.top }]}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={8}>
-            <Text variant="h2" color="secondary">←</Text>
+            <Feather name="arrow-left" size={20} color={colors.textPrimary} strokeWidth={2} />
           </TouchableOpacity>
           <Text variant="bodyMedium">{otherPartyName || 'Chat'}</Text>
           <View style={{ width: 32 }} />
         </View>
         <View style={styles.errorContainer}>
           <View style={[styles.center, { gap: spacing.md }]}>
-            <Text style={{ fontSize: 32 }}>⚠️</Text>
+            <Feather name="alert-triangle" size={32} color={colors.warning} strokeWidth={1.8} />
             <Text variant="small" color="secondary">{error}</Text>
             <Button variant="primary" label="Retry" onPress={load} style={{ minWidth: 120 }} />
           </View>
@@ -361,7 +370,7 @@ export default function ChatScreen({ navigation, route }) {
         style={styles.header}
       >
         <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={8}>
-          <Text variant="h2" color="secondary">←</Text>
+          <Feather name="arrow-left" size={20} color={colors.textPrimary} strokeWidth={2} />
         </TouchableOpacity>
         <View style={styles.headerCenter}>
           <View style={styles.avatarSmall}>
@@ -369,7 +378,17 @@ export default function ChatScreen({ navigation, route }) {
               {(otherPartyName || 'C').charAt(0).toUpperCase()}
             </Text>
           </View>
-          <Text variant="bodyMedium">{otherPartyName || 'Chat'}</Text>
+          <View>
+            <Text variant="bodyMedium">{otherPartyName || 'Chat'}</Text>
+            {threadInfo ? (
+              <Text variant="caption" color="secondary" numberOfLines={1}>
+                {[
+                  threadInfo.post_title,
+                  threadInfo.quoted_price != null ? `$${threadInfo.quoted_price} quoted` : null,
+                ].filter(Boolean).join(' · ')}
+              </Text>
+            ) : null}
+          </View>
         </View>
         <View style={{ width: 32 }} />
       </Surface>
@@ -385,7 +404,7 @@ export default function ChatScreen({ navigation, route }) {
         ListEmptyComponent={
           <View style={styles.emptyChat}>
             <View style={styles.emptyIcon}>
-              <Text style={{ fontSize: 32 }}>💬</Text>
+              <Feather name="message-circle" size={28} color={colors.accentText} strokeWidth={1.8} />
             </View>
             <Text variant="bodyMedium" style={{ textAlign: 'center' }}>
               No messages yet

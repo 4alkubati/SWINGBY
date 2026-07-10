@@ -95,7 +95,7 @@ def list_my_posts(
     try:
         query = (
             supabase.table("service_posts")
-            .select("*")
+            .select("*, interests(count)")
             .eq("client_id", current_user["id"])
         )
         if status:
@@ -106,6 +106,12 @@ def list_my_posts(
             .execute()
         )
         items = res.data or []
+        # Flatten the interests aggregate into interest_count (quote badge in My Jobs)
+        for item in items:
+            agg = item.pop("interests", None)
+            item["interest_count"] = (
+                agg[0].get("count", 0) if isinstance(agg, list) and agg else 0
+            )
         next_offset = offset + limit if len(items) == limit else None
         return {
             "items": items,
@@ -128,7 +134,7 @@ def list_open_posts(
 ):
     try:
         query = supabase.table("service_posts").select(
-            "*, users(first_name, last_name)"
+            "*, users(first_name, last_name, avatar_url)"
         )
         # When no status filter given, default to showing only open posts
         # (preserves existing behaviour); with an explicit status, filter by it
@@ -163,7 +169,7 @@ def get_service_post(post_id: str, current_user: dict = Depends(get_current_user
     try:
         res = (
             supabase.table("service_posts")
-            .select("*, users(first_name, last_name)")
+            .select("*, users(first_name, last_name, avatar_url)")
             .eq("id", post_id)
             .single()
             .execute()

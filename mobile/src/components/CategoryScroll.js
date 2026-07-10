@@ -1,19 +1,23 @@
-import { ScrollView, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import React from 'react';
+import { View, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import { Feather } from '@expo/vector-icons';
+import Text from './Text';
+import { colors, spacing } from '../theme/tokens';
 
-const CATEGORIES = [
-  { id: 'cleaning', label: 'Cleaning', emoji: '✨' },
-  { id: 'plumbing', label: 'Plumbing', emoji: '🔧' },
-  { id: 'moving', label: 'Moving', emoji: '🚚' },
-  { id: 'electrical', label: 'Electric', emoji: '⚡' },
-  { id: 'lawn', label: 'Lawn', emoji: '🌿' },
-  { id: 'painting', label: 'Painting', emoji: '🎨' },
-  { id: 'carpentry', label: 'Carpentry', emoji: '🪚' },
+// Category label + Feather icon name (stroke ~1.8). Replaces emoji taxonomy.
+export const CATEGORIES = [
+  { id: 'cleaning', label: 'Cleaning', icon: 'droplet' },
+  { id: 'plumbing', label: 'Plumbing', icon: 'tool' },
+  { id: 'moving', label: 'Moving', icon: 'truck' },
+  { id: 'electrical', label: 'Electric', icon: 'zap' },
+  { id: 'lawn', label: 'Lawn', icon: 'feather' },
+  { id: 'painting', label: 'Painting', icon: 'edit-3' },
+  { id: 'carpentry', label: 'Carpentry', icon: 'clipboard' },
 ];
 
-const ALL_CATEGORY = { id: 'all', label: 'All', emoji: '🔍' };
+const ALL_CATEGORY = { id: 'all', label: 'All', icon: 'search' };
 
-// prependAll — when true, inserts an "All" chip before the 7 categories.
-// Used by SearchScreen and NearbyMapScreen.
+// Horizontal scroll variant kept for SearchScreen / NearbyMap filter row.
 export default function CategoryScroll({ activeCategory, onSelect, prependAll = false }) {
   const items = prependAll ? [ALL_CATEGORY, ...CATEGORIES] : CATEGORIES;
 
@@ -21,58 +25,149 @@ export default function CategoryScroll({ activeCategory, onSelect, prependAll = 
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
-      contentContainerStyle={styles.container}
+      contentContainerStyle={styles.scrollContainer}
     >
-      {items.map((cat) => (
-        <TouchableOpacity
-          key={cat.id}
-          style={[styles.cat, activeCategory === cat.id && styles.catActive]}
-          onPress={() => onSelect(cat.id)}
-          activeOpacity={0.8}
-          accessibilityRole="button"
-          accessibilityLabel={cat.label}
-          accessibilityState={{ selected: activeCategory === cat.id }}
-        >
-          <Text style={styles.emoji} accessibilityElementsHidden={true} importantForAccessibility="no">{cat.emoji}</Text>
-          <Text style={[styles.label, activeCategory === cat.id && styles.labelActive]} allowFontScaling={true} maxFontSizeMultiplier={1.3}>
-            {cat.label}
-          </Text>
-        </TouchableOpacity>
-      ))}
+      {items.map((cat) => {
+        const active = activeCategory === cat.id;
+        return (
+          <TouchableOpacity
+            key={cat.id}
+            style={[styles.chip, active && styles.chipActive]}
+            onPress={() => onSelect(cat.id)}
+            activeOpacity={0.85}
+            accessibilityRole="button"
+            accessibilityLabel={cat.label}
+            accessibilityState={{ selected: active }}
+          >
+            <Feather
+              name={cat.icon}
+              size={16}
+              color={active ? colors.accentText : colors.textSecondary}
+              strokeWidth={1.8}
+            />
+            <Text
+              style={[styles.label, { color: active ? colors.textPrimary : colors.textSecondary }]}
+              maxFontSizeMultiplier={1.3}
+            >
+              {cat.label}
+            </Text>
+          </TouchableOpacity>
+        );
+      })}
     </ScrollView>
   );
 }
 
+// 4-column grid variant used on the Home screen — 56px icon tiles + label under.
+// pass `data` to override the default list, or `columns` to change column count.
+export function CategoryGrid({
+  activeCategory,
+  onSelect,
+  data = CATEGORIES.slice(0, 3),
+  onMorePress,
+  showMore = true,
+}) {
+  const cells = showMore
+    ? [...data, { id: 'more', label: 'More', icon: 'grid' }]
+    : data;
+
+  return (
+    <View style={styles.grid}>
+      {cells.map((cat) => {
+        const active = activeCategory === cat.id;
+        const isMore = cat.id === 'more';
+        return (
+          <TouchableOpacity
+            key={cat.id}
+            style={styles.cell}
+            activeOpacity={0.85}
+            onPress={() => (isMore ? onMorePress?.() : onSelect?.(cat.id))}
+            accessibilityRole="button"
+            accessibilityLabel={cat.label}
+            accessibilityState={{ selected: active }}
+          >
+            <View
+              style={[
+                styles.tile,
+                active && styles.tileActive,
+              ]}
+            >
+              <Feather
+                name={cat.icon}
+                size={22}
+                color={active ? colors.accentText : colors.textSecondary}
+                strokeWidth={1.8}
+              />
+            </View>
+            <Text
+              style={[
+                styles.gridLabel,
+                { color: active ? colors.textPrimary : colors.textSecondary },
+              ]}
+              maxFontSizeMultiplier={1.2}
+              numberOfLines={1}
+            >
+              {cat.label}
+            </Text>
+          </TouchableOpacity>
+        );
+      })}
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
-  container: {
-    paddingHorizontal: 22,
-    gap: 10,
+  scrollContainer: {
+    paddingHorizontal: spacing.lg,
+    gap: spacing.sm,
     flexDirection: 'row',
   },
-  cat: {
-    backgroundColor: '#0d0f10',
-    borderWidth: 1,
-    borderColor: '#1a1d1f',
-    borderRadius: 16,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
+  chip: {
+    flexDirection: 'row',
     alignItems: 'center',
-    minWidth: 70,
-    gap: 7,
+    gap: 6,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 12,
+    paddingVertical: 9,
+    paddingHorizontal: 12,
   },
-  catActive: {
-    backgroundColor: 'rgba(255, 92, 0, 0.1)',
-    borderColor: 'rgba(255, 92, 0, 0.35)',
-  },
-  emoji: {
-    fontSize: 18,
+  chipActive: {
+    backgroundColor: colors.accentMuted,
+    borderColor: colors.borderAccent,
   },
   label: {
-    fontSize: 11,
-    color: '#9ca3af',
+    fontSize: 12.5,
     fontWeight: '600',
   },
-  labelActive: {
-    color: '#FF8C42',
+  grid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 10,
+  },
+  cell: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 8,
+  },
+  tile: {
+    width: 56,
+    height: 56,
+    borderRadius: 16,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tileActive: {
+    backgroundColor: colors.accentMuted,
+    borderColor: colors.borderAccent,
+  },
+  gridLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    textAlign: 'center',
   },
 });

@@ -18,6 +18,7 @@ import { Feather } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import { Linking, Share } from 'react-native';
 import { api } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 import * as toast from '../../services/toast';
 import * as haptics from '../../services/haptics';
 import BookingStatusTimeline from '../../components/BookingStatusTimeline';
@@ -94,6 +95,11 @@ function paymentPillStyle(status) {
     case 'refunded':         return { bg: colors.danger + '1A',  border: colors.danger + '4D',  text: colors.danger };
     default:                 return { bg: colors.surfaceAlt,     border: colors.border,         text: colors.textSecondary };
   }
+}
+
+function clientDisplayName(booking) {
+  const u = booking?.users ?? {};
+  return [u.first_name, u.last_name].filter(Boolean).join(' ') || 'Client';
 }
 
 function paymentPillLabel(status) {
@@ -203,7 +209,9 @@ function DetailRow({ icon, label, children, onPress }) {
 // ─── Screen ───────────────────────────────────────────────────────────────────
 export default function BookingDetailsScreen({ route, navigation }) {
   const insets = useSafeAreaInsets();
+  const { user } = useAuth();
   const { bookingId } = route.params ?? {};
+  const isProviderView = user?.role === 'business_owner' || user?.role === 'employee';
 
   const [booking, setBooking] = useState(null);
   const [payment, setPayment] = useState(null);
@@ -220,7 +228,25 @@ export default function BookingDetailsScreen({ route, navigation }) {
         api.get(`/bookings/${bookingId}`),
         api.get(`/payments/${bookingId}`).catch(() => null),
       ]);
-      setBooking(bookingData);
+      // Flatten the nested joins into the flat fields this screen renders.
+      const empUser = bookingData?.employees?.users;
+      const biz = bookingData?.businesses;
+      setBooking(bookingData && {
+        ...bookingData,
+        worker: {
+          name: empUser
+            ? [empUser.first_name, empUser.last_name].filter(Boolean).join(' ')
+            : biz?.business_name,
+          role_title: bookingData.employees?.role_title,
+          avatar_url: bookingData.employees?.avatar_url,
+          avg_rating: biz?.avg_rating,
+          review_count: biz?.review_count,
+        },
+        business_name: biz?.business_name ?? null,
+        category: bookingData.service_posts?.title || bookingData.service_category || null,
+        scheduled_at: bookingData.confirmed_date || bookingData.proposed_date_1 || null,
+        address: bookingData.service_posts?.address ?? null,
+      });
       setPayment(paymentData);
       setStatus('ready');
     } catch (err) {
@@ -393,6 +419,42 @@ export default function BookingDetailsScreen({ route, navigation }) {
         {/* Before / After photos — proof of work */}
         <BookingPhotos bookingId={bookingId} />
 
+        {/* Client card — provider view: who the customer is + one-tap message */}
+        {isProviderView && (
+          <Surface elevation="subtle">
+            <Inline spacing="base" align="center">
+              <View style={shadows.subtle}>
+                <Avatar
+                  size="lg"
+                  name={clientDisplayName(booking)}
+                  source={booking?.users?.avatar_url}
+                />
+              </View>
+              <Stack spacing="xs" style={{ flex: 1 }}>
+                <Text variant="label" color="secondary">CLIENT</Text>
+                <Text variant="bodyMedium">{clientDisplayName(booking)}</Text>
+                {!!booking?.address && (
+                  <Text variant="small" color="secondary" numberOfLines={1}>
+                    {booking.address}
+                  </Text>
+                )}
+              </Stack>
+              <ScalePressable
+                onPress={handleMessage}
+                accessibilityRole="button"
+                accessibilityLabel={`Message ${clientDisplayName(booking)}`}
+                style={{
+                  width: 44, height: 44, borderRadius: 22,
+                  backgroundColor: colors.accentMuted,
+                  alignItems: 'center', justifyContent: 'center',
+                }}
+              >
+                <Feather name="message-circle" size={20} color={colors.accentText} />
+              </ScalePressable>
+            </Inline>
+          </Surface>
+        )}
+
         {/* Worker card */}
         <ScalePressable
           accessibilityRole="button"
@@ -528,7 +590,7 @@ export default function BookingDetailsScreen({ route, navigation }) {
           gap: spacing.sm + 2,
         }}
       >
-        {(payment?.status !== 'paid_full' && payment?.status !== 'paid_off_platform' && booking?.status !== 'cancelled') && (
+        {user?.role === 'client' && (payment?.status !== 'paid_full' && payment?.status !== 'paid_off_platform' && booking?.status !== 'cancelled') && (
           <Button
             variant="primary"
             label={payInFlight ? 'Opening checkout…' : 'Pay with card'}

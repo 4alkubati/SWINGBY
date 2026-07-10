@@ -8,6 +8,7 @@ import Animated, {
   withTiming, withSpring, FadeInDown,
 } from 'react-native-reanimated';
 
+import { Feather } from '@expo/vector-icons';
 import { colors, spacing, radius, motion } from '../../theme/tokens';
 import Text from '../../components/Text';
 import TextField from '../../components/TextField';
@@ -140,7 +141,9 @@ export default function SignupScreen({ navigation }) {
       <SafeAreaView style={styles.safe}>
         <View style={styles.confirmWrap}>
           <Animated.View entering={FadeInDown.duration(400).delay(80)} style={styles.confirmInner}>
-            <Text style={styles.confirmIcon}>✉️</Text>
+            <View style={styles.confirmIcon}>
+              <Feather name="mail" size={28} color={colors.accentText} strokeWidth={1.8} />
+            </View>
             <Text style={styles.confirmHeading}>Check your inbox</Text>
             <Text style={styles.confirmBody}>
               We sent a verification link to{' '}
@@ -407,7 +410,17 @@ const styles = StyleSheet.create({
     maxWidth: 320,
     width: '100%',
   },
-  confirmIcon: { fontSize: 56, marginBottom: spacing.sm },
+  confirmIcon: {
+    width: 60,
+    height: 60,
+    borderRadius: 20,
+    backgroundColor: colors.accentMuted,
+    borderWidth: 1,
+    borderColor: colors.borderAccent,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.md,
+  },
   confirmHeading: {
     fontSize: 26,
     fontFamily: 'SpaceGrotesk_700Bold',

@@ -36,9 +36,11 @@ class TestFullBookingFlow:
         8. Mark booking complete → PUT /bookings/{id}/complete
         9. Client submits review → POST /reviews
         """
-        with patch("app.api.auth.supabase") as mock_supabase:
-            # Setup mocks
-            self._setup_auth_mocks(mock_supabase)
+        with patch("app.api.auth.supabase") as mock_supabase, \
+             patch("app.api.auth.supabase_auth") as mock_supabase_auth:
+            # Setup mocks — sign_up lives on the auth-only client, table ops on
+            # the service-role client (see app/supabase_client.py)
+            self._setup_auth_mocks(mock_supabase, mock_supabase_auth)
 
             # Step 1: Client signup
             client_response = test_client.post(
@@ -73,7 +75,7 @@ class TestFullBookingFlow:
         assert client_token or True  # Placeholder assertion
         assert business_token or True
 
-    def _setup_auth_mocks(self, mock_supabase):
+    def _setup_auth_mocks(self, mock_supabase, mock_supabase_auth):
         """Helper to setup common auth mocks."""
         mock_user = MagicMock()
         mock_user.id = "test-id"
@@ -82,5 +84,5 @@ class TestFullBookingFlow:
         mock_res = MagicMock()
         mock_res.user = mock_user
         mock_res.session = mock_session
-        mock_supabase.auth.sign_up.return_value = mock_res
+        mock_supabase_auth.auth.sign_up.return_value = mock_res
         mock_supabase.table.return_value.upsert.return_value.execute.return_value = None

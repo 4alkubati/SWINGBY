@@ -29,7 +29,7 @@ export default function CategoryPage() {
       />
       <div className={styles.container}>
         <div className={styles.pageHero}>
-          <div style={{ color: 'var(--color-accent-text)', marginBottom: '16px' }}><Icon size={48} weight="duotone" /></div>
+          <div style={{ color: 'var(--color-accent-text)', marginBottom: '16px' }}><Icon size={48} weight="regular" /></div>
           <h1 className={styles.pageTitle}>{name} in Calgary</h1>
           <p className={styles.pageSubtitle}>{desc}. Find and book vetted local providers on SwingBy.</p>
           <div style={{ marginTop: 'var(--space-xl)', display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>

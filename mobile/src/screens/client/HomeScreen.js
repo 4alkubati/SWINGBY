@@ -1,49 +1,43 @@
 import {
   View,
   ScrollView,
-  FlatList,
   TouchableOpacity,
   StyleSheet,
   RefreshControl,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { Feather } from '@expo/vector-icons';
 import * as Location from 'expo-location';
+
 import { useAuth } from '../../context/AuthContext';
 import ModeSwitch from '../../components/ModeSwitch';
-import CategoryScroll from '../../components/CategoryScroll';
+import { CategoryGrid } from '../../components/CategoryScroll';
 import FeaturedCard from '../../components/FeaturedCard';
 import NearbyCard from '../../components/NearbyCard';
+import MapPreviewCard from '../../components/MapPreviewCard';
+import HeaderGlow from '../../components/HeaderGlow';
+import SectionHeader from '../../components/SectionHeader';
 import PostJobScreen from './PostJobScreen';
+
 import { api } from '../../services/api';
 import { getUserLocation } from '../../services/location';
-
-// New design-system imports
 import { colors, spacing } from '../../theme/tokens';
 import Text from '../../components/Text';
-import Chip from '../../components/Chip';
 import SearchField from '../../components/SearchField';
 import Stack from '../../components/Stack';
-import Inline from '../../components/Inline';
 import Surface from '../../components/Surface';
 import { SkeletonBox, SkeletonList } from '../../components/Skeleton';
 import EmptyState from '../../components/EmptyState';
 
-// ─── Constants ────────────────────────────────────────────────────────────────
 const CALGARY_FALLBACK = { lat: 51.0447, lng: -114.0719, city: 'Calgary, AB' };
 
-const CATEGORIES = [
-  { id: 'all',        label: 'All',       emoji: '🔍' },
-  { id: 'cleaning',   label: 'Cleaning',  emoji: '✨' },
-  { id: 'plumbing',   label: 'Plumbing',  emoji: '🔧' },
-  { id: 'moving',     label: 'Moving',    emoji: '🚚' },
-  { id: 'electrical', label: 'Electric',  emoji: '⚡' },
-  { id: 'lawn',       label: 'Lawn',      emoji: '🌿' },
-  { id: 'painting',   label: 'Painting',  emoji: '🎨' },
-  { id: 'carpentry',  label: 'Carpentry', emoji: '🪚' },
+const CATEGORY_TILES = [
+  { id: 'cleaning', label: 'Cleaning', icon: 'droplet' },
+  { id: 'plumbing', label: 'Plumbing', icon: 'tool' },
+  { id: 'moving', label: 'Moving', icon: 'truck' },
 ];
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 function computeDistance(lat1, lng1, lat2, lng2) {
   const R = 6371;
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
@@ -76,37 +70,20 @@ async function resolveCity(lat, lng) {
   return CALGARY_FALLBACK.city;
 }
 
-// ─── Skeleton for the featured "Top Rated" card ───────────────────────────────
 function SkeletonFeaturedCard() {
   return (
     <Surface elevation="subtle" style={styles.featuredCardSkeleton}>
-      <Inline spacing="md">
-        <SkeletonBox width={54} height={54} borderRadius={16} />
+      <View style={{ flexDirection: 'row', gap: spacing.md }}>
+        <SkeletonBox width={48} height={48} borderRadius={14} />
         <Stack spacing="xs" style={{ flex: 1 }}>
           <SkeletonBox width="60%" height={14} borderRadius={6} />
           <SkeletonBox width="40%" height={12} borderRadius={6} />
-          <SkeletonBox width="30%" height={10} borderRadius={6} />
         </Stack>
-      </Inline>
+      </View>
     </Surface>
   );
 }
 
-// ─── Section header ───────────────────────────────────────────────────────────
-function SectionHeader({ title, actionLabel, onAction }) {
-  return (
-    <Inline justify="space-between" style={styles.sectionHeader}>
-      <Text variant="label" color="secondary" accessibilityRole="header" maxFontSizeMultiplier={1.4}>{title}</Text>
-      {actionLabel && (
-        <TouchableOpacity activeOpacity={0.7} onPress={onAction} accessibilityRole="button" accessibilityLabel={actionLabel}>
-          <Text variant="smallMedium" color="accent" maxFontSizeMultiplier={1.4}>{actionLabel}</Text>
-        </TouchableOpacity>
-      )}
-    </Inline>
-  );
-}
-
-// ─── HomeScreen ───────────────────────────────────────────────────────────────
 export default function HomeScreen({ navigation }) {
   const [mode, setMode] = useState('browse');
   const insets = useSafeAreaInsets();
@@ -123,7 +100,6 @@ export default function HomeScreen({ navigation }) {
   const [cityLabel, setCityLabel] = useState(CALGARY_FALLBACK.city);
   const coordsRef = useRef(null);
 
-  // ── Data fetching (preserved exactly) ──────────────────────────────────────
   const fetchNearby = useCallback(async () => {
     setBusinessError(null);
     try {
@@ -135,7 +111,6 @@ export default function HomeScreen({ navigation }) {
       }
       coordsRef.current = coords;
 
-      // Resolve city name for the location chip
       const city = await resolveCity(coords.lat, coords.lng);
       setCityLabel(city);
 
@@ -167,7 +142,6 @@ export default function HomeScreen({ navigation }) {
     fetchNearby();
   }, [fetchNearby]);
 
-  // ── Filtering (preserved exactly, extended for search) ─────────────────────
   const categoryFiltered =
     activeCategory === 'all'
       ? businesses
@@ -185,36 +159,40 @@ export default function HomeScreen({ navigation }) {
       )
     : null;
 
-  // ── Navigation (preserved exactly) ─────────────────────────────────────────
   const firstName = user?.first_name || 'there';
 
-  // ── Render ──────────────────────────────────────────────────────────────────
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
+      {/* Faint radial purple glow behind the header */}
+      <HeaderGlow width={480} height={280} offsetTop={-40} align="right" opacity={0.22} />
 
-      {/* ── Fixed Header ───────────────────────────────────────────────────── */}
+      {/* Fixed Header ─ wordmark + bell */}
       <View style={styles.header}>
-        {/* Logo */}
-        <Text variant="h1" style={styles.logo} accessibilityRole="header" accessibilityLabel="SwingBy">
-          Swing<Text variant="h1" color="accent">By</Text>
+        <Text
+          variant="h1"
+          style={styles.logo}
+          accessibilityRole="header"
+          accessibilityLabel="SwingBy"
+        >
+          Swing
+          <Text variant="h1" style={{ color: colors.accentText }}>
+            By
+          </Text>
         </Text>
 
-        {/* Bell button */}
         <TouchableOpacity
           style={styles.bellBtn}
           accessibilityRole="button"
           accessibilityLabel="Notifications"
           onPress={() => navigation.navigate('Notifications')}
         >
-          <Text style={styles.bellIcon} accessible={false}>🔔</Text>
+          <Feather name="bell" size={17} color={colors.textPrimary} strokeWidth={1.8} />
           <View style={styles.notifDot} accessible={false} />
         </TouchableOpacity>
       </View>
 
-      {/* ── Mode switcher ──────────────────────────────────────────────────── */}
       <ModeSwitch mode={mode} onModeChange={setMode} />
 
-      {/* ── Scrollable content (browse mode) ───────────────────────────────── */}
       {mode === 'browse' ? (
         <ScrollView
           style={styles.scroll}
@@ -230,94 +208,123 @@ export default function HomeScreen({ navigation }) {
             />
           }
         >
-          {/* ── Top section: greeting + location chip ────────────────────── */}
-          <Stack spacing="sm" style={styles.topSection}>
-            <Inline spacing="sm" align="center" justify="space-between">
-              <Text variant="display3" maxFontSizeMultiplier={1.4}>Hey {firstName}</Text>
-              <Chip
-                label={`📍  ${cityLabel}`}
-                selected={false}
-                style={styles.locationChip}
-              />
-            </Inline>
-            <Text variant="small" color="secondary">
-              What service are you looking for?
+          {/* Greeting hero */}
+          <View style={styles.greetingSection}>
+            <Text variant="display2" style={styles.heyHeading} maxFontSizeMultiplier={1.3}>
+              Hey {firstName}.
             </Text>
-          </Stack>
+            <View style={styles.locationRow}>
+              <Feather name="map-pin" size={13} color={colors.textSecondary} />
+              <Text variant="small" color="secondary" maxFontSizeMultiplier={1.3}>
+                {cityLabel} · What needs doing?
+              </Text>
+            </View>
+          </View>
 
-          {/* ── SearchField ──────────────────────────────────────────────── */}
-          <SearchField
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            onSubmitEditing={() => navigation.navigate('Search', { q: searchQuery })}
-            placeholder="Search services…"
-            style={styles.searchField}
-          />
-
-          {/* ── Category scroll ──────────────────────────────────────────── */}
-          <SectionHeader title="Categories" />
-          <FlatList
-            data={CATEGORIES}
-            keyExtractor={(item) => item.id}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.categoryList}
-            renderItem={({ item }) => (
-              <Chip
-                label={`${item.emoji}  ${item.label}`}
-                selected={activeCategory === item.id}
-                onPress={() => setActiveCategory(item.id)}
-              />
-            )}
-          />
-
-          {/* ── Top Rated section ────────────────────────────────────────── */}
-          <SectionHeader title="Top Rated" style={styles.sectionSpaced} />
-          {loadingBusinesses ? (
-            <SkeletonFeaturedCard />
-          ) : businessError ? (
-            <Surface elevation="subtle" style={styles.errorSurface}>
-              <Stack spacing="sm" align="center">
-                <Text variant="small" color="danger">{businessError}</Text>
-                <TouchableOpacity
-                  onPress={() => {
-                    setLoadingBusinesses(true);
-                    fetchNearby();
-                  }}
-                  activeOpacity={0.8}
-                  style={styles.retryBtn}
-                  accessibilityRole="button"
-                  accessibilityLabel="Retry loading businesses"
-                >
-                  <Text variant="smallMedium" color="accent" maxFontSizeMultiplier={1.4}>Retry</Text>
-                </TouchableOpacity>
-              </Stack>
-            </Surface>
-          ) : topRated ? (
-            <FeaturedCard
-              name={topRated.business_name}
-              initials={toInitials(topRated.business_name)}
-              rating={topRated.avg_rating?.toFixed(1) ?? '—'}
-              jobs={topRated.review_count ?? 0}
-              distance={topRated._distance}
-              category={topRated.category}
-              verified={topRated.license_status === 'verified'}
+          {/* Search */}
+          <View style={styles.searchWrap}>
+            <SearchField
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              onSubmitEditing={() =>
+                navigation.navigate('Search', { q: searchQuery })
+              }
+              placeholder='Try "deep clean saturday"'
             />
-          ) : null}
+          </View>
 
-          {/* ── Nearby section ───────────────────────────────────────────── */}
-          <SectionHeader
-            title="Nearby"
-            actionLabel="Map view"
-            onAction={() => navigation.navigate('NearbyMap')}
-            style={styles.sectionSpaced}
-          />
+          {/* Category grid — 4 tiles: 3 shortcuts + More */}
+          <View style={styles.categoryWrap}>
+            <CategoryGrid
+              activeCategory={activeCategory}
+              onSelect={setActiveCategory}
+              data={CATEGORY_TILES}
+              onMorePress={() =>
+                navigation.navigate('Search', { q: searchQuery })
+              }
+            />
+          </View>
+
+          {/* Map preview */}
+          <View style={styles.mapWrap}>
+            <MapPreviewCard
+              countLabel={
+                filteredBusinesses.length
+                  ? `${filteredBusinesses.length} pros near you`
+                  : '12 pros near you'
+              }
+              areaLabel={`Kensington · ${cityLabel.split(',')[0] || 'Calgary'}`}
+              onPress={() => navigation.navigate('NearbyMap')}
+            />
+          </View>
+
+          {/* TOP RATED NEAR YOU */}
+          <View style={styles.sectionHeaderWrap}>
+            <SectionHeader
+              title="TOP RATED NEAR YOU"
+              actionLabel="See all"
+              onAction={() => navigation.navigate('NearbyMap')}
+            />
+          </View>
+
+          <View style={styles.cardBlock}>
+            {loadingBusinesses ? (
+              <SkeletonFeaturedCard />
+            ) : businessError ? (
+              <Surface elevation="subtle" style={styles.errorSurface}>
+                <Stack spacing="sm" align="center">
+                  <Text variant="small" color="danger">
+                    {businessError}
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => {
+                      setLoadingBusinesses(true);
+                      fetchNearby();
+                    }}
+                    activeOpacity={0.8}
+                    style={styles.retryBtn}
+                    accessibilityRole="button"
+                    accessibilityLabel="Retry loading businesses"
+                  >
+                    <Text
+                      variant="smallMedium"
+                      style={{ color: colors.accentText }}
+                    >
+                      Retry
+                    </Text>
+                  </TouchableOpacity>
+                </Stack>
+              </Surface>
+            ) : topRated ? (
+              <FeaturedCard
+                name={topRated.business_name}
+                initials={toInitials(topRated.business_name)}
+                rating={topRated.avg_rating?.toFixed(1) ?? '—'}
+                jobs={topRated.review_count ?? 0}
+                distance={topRated._distance}
+                category={topRated.category}
+                verified={topRated.license_status === 'verified'}
+                onPress={() =>
+                  navigation.navigate('BusinessProfile', { businessId: topRated.id })
+                }
+              />
+            ) : null}
+          </View>
+
+          {/* NEARBY */}
+          <View style={styles.sectionHeaderWrap}>
+            <SectionHeader
+              title="NEARBY"
+              actionLabel="Map view"
+              onAction={() => navigation.navigate('NearbyMap')}
+            />
+          </View>
 
           {loadingBusinesses ? (
             <View style={styles.nearbyList}>
               <SkeletonList count={4} />
             </View>
-          ) : businessError ? null /* error already shown above */ : filteredBusinesses.length === 0 ? (
+          ) : businessError ? null : filteredBusinesses.length === 0 ? (
             <EmptyState
               icon="map-pin"
               title="No businesses nearby"
@@ -334,7 +341,7 @@ export default function HomeScreen({ navigation }) {
             />
           ) : (
             <Stack spacing="sm" style={styles.nearbyList}>
-              {filteredBusinesses.map((b, index) => (
+              {filteredBusinesses.map((b) => (
                 <NearbyCard
                   key={b.id}
                   name={b.business_name}
@@ -342,7 +349,6 @@ export default function HomeScreen({ navigation }) {
                   rating={b.avg_rating?.toFixed(1) ?? '—'}
                   jobs={b.review_count ?? 0}
                   distance={b._distance}
-                  avatarStyle={index % 2 === 0 ? 'green' : 'blue'}
                   onPress={() =>
                     navigation.navigate('BusinessProfile', { businessId: b.id })
                   }
@@ -358,14 +364,11 @@ export default function HomeScreen({ navigation }) {
   );
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.bg,
   },
-
-  // Header
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -375,93 +378,97 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xs,
   },
   logo: {
-    letterSpacing: -1,
+    fontFamily: 'SpaceGrotesk_700Bold',
+    fontSize: 21,
+    letterSpacing: -0.4,
   },
   bellBtn: {
-    width: 36,
-    height: 36,
+    width: 38,
+    height: 38,
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: 18,
+    borderRadius: 19,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  bellIcon: {
-    fontSize: 16,
-  },
   notifDot: {
     position: 'absolute',
-    top: 7,
-    right: 7,
-    width: 6,
-    height: 6,
+    top: 8,
+    right: 9,
+    width: 7,
+    height: 7,
     backgroundColor: colors.accent,
-    borderRadius: 3,
+    borderRadius: 4,
     borderWidth: 1.5,
-    borderColor: colors.bg,
+    borderColor: '#0A0B0E',
   },
 
-  // Top section
-  topSection: {
+  greetingSection: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.md,
-    paddingBottom: spacing.xs,
+    paddingBottom: spacing.md,
+    gap: 6,
   },
-  locationChip: {
-    // keeps chip compact, no extra margin
+  heyHeading: {
+    fontFamily: 'SpaceGrotesk_700Bold',
+    fontSize: 32,
+    lineHeight: 36,
+    letterSpacing: -1.2,
+    color: colors.textPrimary,
+  },
+  locationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
 
-  // Search
-  searchField: {
-    marginHorizontal: spacing.lg,
-    marginTop: spacing.sm,
-    marginBottom: spacing.xs,
-  },
-
-  // Sections
-  sectionHeader: {
+  searchWrap: {
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.base,
+    paddingBottom: spacing.md,
+  },
+
+  categoryWrap: {
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.base,
+  },
+
+  mapWrap: {
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.md,
+  },
+
+  sectionHeaderWrap: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
     paddingBottom: spacing.sm,
   },
-  sectionSpaced: {
-    marginTop: spacing.sm,
-  },
 
-  // Category chips
-  categoryList: {
+  cardBlock: {
     paddingHorizontal: spacing.lg,
-    gap: spacing.sm,
-    paddingBottom: spacing.xs,
   },
 
-  // Featured card skeleton wrapper
   featuredCardSkeleton: {
-    marginHorizontal: spacing.lg,
+    marginHorizontal: 0,
   },
 
-  // Error surface
   errorSurface: {
-    marginHorizontal: spacing.lg,
     alignItems: 'center',
     paddingVertical: spacing.base,
   },
   retryBtn: {
     paddingVertical: spacing.xs,
     paddingHorizontal: spacing.md,
-    borderRadius: 8,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: colors.accent,
+    borderColor: colors.borderAccent,
   },
 
-  // Nearby list
   nearbyList: {
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.xs,
   },
 
-  // Scroll
   scroll: {
     flex: 1,
   },

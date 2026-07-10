@@ -87,7 +87,9 @@ def list_my_bookings(
             res = (
                 supabase.table("bookings")
                 .select(
-                    "*, businesses(business_name, category), employees(role_title, avatar_url, users(first_name, last_name))"
+                    "*, businesses(business_name, category, avg_rating), "
+                    "employees(role_title, avatar_url, users(first_name, last_name)), "
+                    "service_posts(title, address)"
                 )
                 .eq("client_id", uid)
                 .order("created_at", desc=True)
@@ -111,7 +113,11 @@ def list_my_bookings(
                 }
             res = (
                 supabase.table("bookings")
-                .select("*, users(first_name, last_name), employees(role_title)")
+                .select(
+                    "*, users(first_name, last_name, avatar_url), "
+                    "employees(role_title, users(first_name, last_name)), "
+                    "service_posts(title, address)"
+                )
                 .eq("business_id", biz.data["id"])
                 .order("created_at", desc=True)
                 .range(offset, offset + limit - 1)
@@ -134,7 +140,10 @@ def list_my_bookings(
                 }
             res = (
                 supabase.table("bookings")
-                .select("*, users(first_name, last_name), businesses(business_name)")
+                .select(
+                    "*, users(first_name, last_name), businesses(business_name), "
+                    "service_posts(title, address)"
+                )
                 .eq("employee_id", emp.data["id"])
                 .order("created_at", desc=True)
                 .range(offset, offset + limit - 1)
@@ -162,7 +171,10 @@ def get_booking(booking_id: str, current_user: dict = Depends(get_current_user))
         res = (
             supabase.table("bookings")
             .select(
-                "*, businesses(business_name, category), employees(role_title, avatar_url, users(first_name, last_name))"
+                "*, users(first_name, last_name, avatar_url), "
+                "businesses(business_name, category, avg_rating, review_count), "
+                "employees(role_title, avatar_url, users(first_name, last_name)), "
+                "service_posts(title, address)"
             )
             .eq("id", booking_id)
             .single()
@@ -413,15 +425,9 @@ def complete_booking(booking_id: str, current_user: dict = Depends(get_current_u
             )
 
     try:
-        # Update booking
-        supabase.table("bookings").update(
-            {
-                "status": "completed",
-                "payment_status": "fully_released",
-            }
-        ).eq("id", booking_id).execute()
-
-        # Release remaining escrow (minus platform cut)
+        # Release remaining escrow FIRST (minus platform cut). If this fails the
+        # booking stays in its current status and the call is safely retryable —
+        # flipping the booking first left completed bookings with stuck escrow.
         payment_res = (
             supabase.table("payments")
             .select("*")
@@ -441,10 +447,20 @@ def complete_booking(booking_id: str, current_user: dict = Depends(get_current_u
                         p["released_to_business"] + final_release, 2
                     ),
                     "escrow_held": 0,
-                    "status": "completed",
+                    # payments_status_check allows: pending | partial | paid_full |
+                    # paid_off_platform | fully_released | refunded | failed
+                    "status": "fully_released",
                     "released_at": datetime.now(timezone.utc).isoformat(),
                 }
             ).eq("id", p["id"]).execute()
+
+        # Update booking
+        supabase.table("bookings").update(
+            {
+                "status": "completed",
+                "payment_status": "fully_released",
+            }
+        ).eq("id", booking_id).execute()
 
         # Email the client a completion notice + review nudge — best-effort
         try:

@@ -32,7 +32,7 @@ export default function ForBusinesses() {
         {/* Value calculator */}
         <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-2xl)', marginBottom: 'var(--space-3xl)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: 'var(--space-xl)' }}>
-            <Calculator size={28} weight="duotone" color="var(--color-accent-text)" />
+            <Calculator size={28} weight="regular" color="var(--color-accent-text)" />
             <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '24px', color: 'var(--color-text-primary)' }}>What could SwingBy earn you?</h2>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-xl)' }}>

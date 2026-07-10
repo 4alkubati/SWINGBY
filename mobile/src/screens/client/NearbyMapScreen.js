@@ -184,14 +184,15 @@ function BusinessSheet({ business, onClose, onViewProfile }) {
           <Text variant="bodyMedium" numberOfLines={1}>
             {business.business_name}
           </Text>
-          <Text variant="small" color="secondary">
-            <Text variant="smallMedium" color="accent">
-              {'★ '}
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+            <Feather name="star" size={12} color={colors.accentText} strokeWidth={2} />
+            <Text variant="smallMedium" style={{ color: colors.accentText }}>
               {business.avg_rating?.toFixed(1) ?? '—'}
             </Text>
-            {'  ·  '}
-            {business.review_count ?? 0} jobs
-          </Text>
+            <Text variant="small" color="secondary">
+              {`  ·  ${business.review_count ?? 0} jobs`}
+            </Text>
+          </View>
           {business.category ? (
             <View
               style={{

@@ -66,7 +66,7 @@ function ErrorState({ onRetry }) {
 // ─── Animated quote card ──────────────────────────────────────────────────────
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-function QuoteListCard({ quote, isRecommended, onSelect, onViewProfile }) {
+function QuoteListCard({ quote, isRecommended, onSelect, onViewProfile, onMessage }) {
   const scale = useSharedValue(1);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -81,7 +81,11 @@ function QuoteListCard({ quote, isRecommended, onSelect, onViewProfile }) {
     scale.value = withSpring(1, { stiffness: 300, damping: 20 });
   };
 
-  const businessName = quote.business_name || 'Business';
+  // The interests API nests business info under `businesses`
+  const biz = quote.businesses || {};
+  const businessName = biz.business_name || 'Business';
+  const rating = biz.avg_rating || 0;
+  const reviewCount = biz.review_count || 0;
 
   return (
     <Animated.View style={animatedStyle}>
@@ -122,18 +126,13 @@ function QuoteListCard({ quote, isRecommended, onSelect, onViewProfile }) {
               </Pressable>
 
               <Inline spacing="xs" align="center">
-                <RatingStarsDisplay rating={quote.avg_rating || 0} size={12} color={colors.warning} />
+                <RatingStarsDisplay rating={rating} size={12} color={colors.warning} />
                 <Text variant="caption" color="secondary">
-                  {quote.avg_rating ? quote.avg_rating.toFixed(1) : '—'}
+                  {rating ? rating.toFixed(1) : '—'}
                 </Text>
-                {quote.job_count > 0 && (
+                {reviewCount > 0 && (
                   <Text variant="caption" color="secondary">
-                    · {quote.job_count} jobs
-                  </Text>
-                )}
-                {quote.distance_km != null && (
-                  <Text variant="caption" color="secondary">
-                    · {Number(quote.distance_km).toFixed(1)} km
+                    · {reviewCount} review{reviewCount > 1 ? 's' : ''}
                   </Text>
                 )}
               </Inline>
@@ -150,6 +149,14 @@ function QuoteListCard({ quote, isRecommended, onSelect, onViewProfile }) {
                 onPress={onSelect}
                 style={styles.selectBtn}
               />
+              {onMessage && (
+                <Button
+                  variant="ghost"
+                  label="Message"
+                  onPress={onMessage}
+                  style={styles.selectBtn}
+                />
+              )}
             </Stack>
           </Inline>
         </Surface>
@@ -161,7 +168,7 @@ function QuoteListCard({ quote, isRecommended, onSelect, onViewProfile }) {
 // ─── Confirm BottomSheet ──────────────────────────────────────────────────────
 function ConfirmSheet({ visible, quote, onConfirm, onClose, confirming }) {
   if (!quote) return null;
-  const businessName = quote.business_name || 'this business';
+  const businessName = quote.businesses?.business_name || 'this business';
 
   return (
     <BottomSheet visible={visible} onClose={onClose} snapPoints={[0.38]}>
@@ -219,10 +226,10 @@ export default function QuoteComparisonScreen({ navigation, route }) {
     setLoadError(false);
     try {
       const data = await api.get(`/interests/post/${postId}`);
-      // sort: score = rating / price (higher is better) — original sort logic
+      // sort: score = rating / price (higher is better); rating nests under businesses
       const sorted = (data || []).sort((a, b) => {
-        const scoreA = (a.avg_rating || 0) / (a.quoted_price || 1);
-        const scoreB = (b.avg_rating || 0) / (b.quoted_price || 1);
+        const scoreA = (a.businesses?.avg_rating || 0) / (a.quoted_price || 1);
+        const scoreB = (b.businesses?.avg_rating || 0) / (b.quoted_price || 1);
         return scoreB - scoreA;
       });
       setQuotes(sorted);
@@ -248,11 +255,16 @@ export default function QuoteComparisonScreen({ navigation, route }) {
     if (!selectedQuote) return;
     setConfirming(true);
     try {
-      const booking = await api.patch(`/interests/${selectedQuote.id}/accept`);
+      // Response shape: { message, booking, payment }
+      const res = await api.patch(`/interests/${selectedQuote.id}/accept`);
+      const bookingId = res?.booking?.id;
       setSheetVisible(false);
-      navigation.replace('ActiveBooking', {
-        bookingId: booking?.booking_id || booking?.id,
-      });
+      if (bookingId) {
+        navigation.replace('ActiveBooking', { bookingId });
+      } else {
+        // Booking was created but id missing — land on My Jobs so it's visible
+        navigation.navigate('ClientTabs', { screen: 'My Jobs' });
+      }
     } catch (err) {
       // Close sheet and surface error inline
       setSheetVisible(false);
@@ -326,6 +338,12 @@ export default function QuoteComparisonScreen({ navigation, route }) {
                 onSelect={() => handleSelectPress(quote)}
                 onViewProfile={() =>
                   navigation.navigate('BusinessProfile', { businessId: quote.business_id })
+                }
+                onMessage={() =>
+                  navigation.navigate('Chat', {
+                    interestId: quote.id,
+                    otherPartyName: quote.businesses?.business_name || 'Business',
+                  })
                 }
               />
             ))}

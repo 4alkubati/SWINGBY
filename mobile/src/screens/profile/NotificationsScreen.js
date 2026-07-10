@@ -1,8 +1,10 @@
 import {
-  View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl,
+  View, FlatList, TouchableOpacity, StyleSheet, RefreshControl,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useState, useEffect, useCallback } from 'react';
+import { Feather } from '@expo/vector-icons';
+import Text from '../../components/Text';
 import { api } from '../../services/api';
 import { colors, spacing } from '../../theme/tokens';
 import { SkeletonList } from '../../components/Skeleton';
@@ -26,10 +28,11 @@ function buildNotifications(bookings, posts) {
     if (b.status === 'confirmed') {
       notifs.push({
         id: `booking-confirmed-${b.id}`,
-        icon: '✅',
+        iconName: 'check-circle',
+        iconTone: 'success',
         title: 'Booking confirmed',
         desc: `Your job has been confirmed.`,
-        time: b.updated_at,
+        time: b.created_at,
         screen: 'ActiveBooking',
         params: { bookingId: b.id },
       });
@@ -37,12 +40,17 @@ function buildNotifications(bookings, posts) {
     if (b.status === 'completed') {
       notifs.push({
         id: `booking-done-${b.id}`,
-        icon: '🎉',
+        iconName: 'award',
+        iconTone: 'accent',
         title: 'Job completed',
         desc: 'Leave a review for your provider.',
-        time: b.updated_at,
+        time: b.created_at,
         screen: 'Review',
-        params: { bookingId: b.id, workerName: b.business_name || 'Provider' },
+        params: {
+          bookingId: b.id,
+          workerId: b.employee_id || b.business_id,
+          workerName: b.businesses?.business_name || 'Provider',
+        },
       });
     }
   });
@@ -51,10 +59,11 @@ function buildNotifications(bookings, posts) {
     if (p.interest_count > 0) {
       notifs.push({
         id: `quotes-${p.id}`,
-        icon: '💰',
+        iconName: 'dollar-sign',
+        iconTone: 'money',
         title: `${p.interest_count} quote${p.interest_count > 1 ? 's' : ''} received`,
         desc: p.title || 'View and compare quotes',
-        time: p.updated_at,
+        time: p.created_at,
         screen: 'QuoteComparison',
         params: { postId: p.id, postTitle: p.title },
       });
@@ -63,6 +72,12 @@ function buildNotifications(bookings, posts) {
 
   return notifs.sort((a, b) => new Date(b.time) - new Date(a.time));
 }
+
+const TONE_MAP = {
+  success: { color: colors.success, bg: 'rgba(46,189,133,0.15)' },
+  accent: { color: colors.accentText, bg: colors.accentMuted },
+  money: { color: colors.success, bg: 'rgba(46,189,133,0.15)' },
+};
 
 export default function NotificationsScreen({ navigation }) {
   const insets = useSafeAreaInsets();
@@ -108,8 +123,8 @@ export default function NotificationsScreen({ navigation }) {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.backBtn}>←</Text>
+        <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={8}>
+          <Feather name="arrow-left" size={20} color={colors.textPrimary} strokeWidth={2} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Notifications</Text>
         <View style={{ width: 32 }} />
@@ -128,20 +143,25 @@ export default function NotificationsScreen({ navigation }) {
             body="Booking updates and messages will appear here."
           />
         }
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            style={styles.notifRow}
-            onPress={() => item.screen && navigation.navigate(item.screen, item.params)}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.notifIcon}>{item.icon}</Text>
-            <View style={styles.notifContent}>
-              <Text style={styles.notifTitle}>{item.title}</Text>
-              <Text style={styles.notifDesc} numberOfLines={1}>{item.desc}</Text>
-            </View>
-            <Text style={styles.notifTime}>{timeAgo(item.time)}</Text>
-          </TouchableOpacity>
-        )}
+        renderItem={({ item }) => {
+          const tone = TONE_MAP[item.iconTone] || TONE_MAP.accent;
+          return (
+            <TouchableOpacity
+              style={styles.notifRow}
+              onPress={() => item.screen && navigation.navigate(item.screen, item.params)}
+              activeOpacity={0.85}
+            >
+              <View style={[styles.notifIcon, { backgroundColor: tone.bg }]}>
+                <Feather name={item.iconName} size={16} color={tone.color} strokeWidth={2} />
+              </View>
+              <View style={styles.notifContent}>
+                <Text style={styles.notifTitle}>{item.title}</Text>
+                <Text style={styles.notifDesc} numberOfLines={1}>{item.desc}</Text>
+              </View>
+              <Text style={styles.notifTime}>{timeAgo(item.time)}</Text>
+            </TouchableOpacity>
+          );
+        }}
       />
     </View>
   );
@@ -153,16 +173,26 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 22, paddingTop: 12, paddingBottom: 8,
   },
-  backBtn: { fontSize: 24, color: colors.textSecondary, width: 32 },
-  headerTitle: { fontSize: 17, fontWeight: '700', color: colors.textPrimary },
+  headerTitle: {
+    fontFamily: 'SpaceGrotesk_700Bold',
+    fontSize: 17,
+    color: colors.textPrimary,
+    letterSpacing: -0.3,
+  },
   list: { paddingHorizontal: 22, paddingBottom: 24 },
   notifRow: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
     paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: colors.border,
   },
-  notifIcon: { fontSize: 24, width: 32, textAlign: 'center' },
+  notifIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   notifContent: { flex: 1 },
   notifTitle: { fontSize: 14, fontWeight: '600', color: colors.textPrimary, marginBottom: 2 },
   notifDesc: { fontSize: 13, color: colors.textSecondary },
-  notifTime: { fontSize: 11, color: colors.textSecondary, fontWeight: '500' },
+  notifTime: { fontSize: 11, color: colors.textTertiary, fontWeight: '500' },
 });

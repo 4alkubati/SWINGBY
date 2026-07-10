@@ -31,6 +31,38 @@ html {
   scroll-padding-top: 80px;
 }
 
+/* Global live-pulse keyframe — 1.8s ring expand for "live" dots */
+@keyframes swPulse {
+  0%   { box-shadow: 0 0 0 0    rgba(46, 189, 133, 0.55); }
+  70%  { box-shadow: 0 0 0 12px rgba(46, 189, 133, 0);    }
+  100% { box-shadow: 0 0 0 0    rgba(46, 189, 133, 0);    }
+}
+
+@keyframes swPulseAccent {
+  0%   { box-shadow: 0 0 0 0    rgba(110, 86, 247, 0.6); }
+  70%  { box-shadow: 0 0 0 18px rgba(110, 86, 247, 0);   }
+  100% { box-shadow: 0 0 0 0    rgba(110, 86, 247, 0);   }
+}
+
+@keyframes swRoute {
+  from { stroke-dashoffset: 320; }
+  to   { stroke-dashoffset: 0; }
+}
+
+@keyframes swFloat {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-6px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
 /* Print styles — booking receipt */
 @media print {
   header, nav, aside, footer,

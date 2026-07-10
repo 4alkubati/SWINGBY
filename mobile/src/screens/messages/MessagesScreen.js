@@ -9,7 +9,6 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAuth } from '../../context/AuthContext';
-import { useUnread } from '../../context/UnreadContext';
 import { api } from '../../services/api';
 import { colors, spacing, radius, shadows, motion } from '../../theme/tokens';
 
@@ -50,7 +49,7 @@ function timeAgo(dateStr) {
 
 const AnimatedPressableRN = Animated.createAnimatedComponent(Pressable);
 
-function ConversationRow({ item, otherParty, unreadCount, onPress }) {
+function ConversationRow({ thread, onPress }) {
   const scale = useSharedValue(1);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -71,6 +70,13 @@ function ConversationRow({ item, otherParty, unreadCount, onPress }) {
     });
   };
 
+  const isQuote = thread.thread_type === 'interest';
+  const otherParty = thread.counterpart_name || 'Chat';
+  const subtitle = isQuote
+    ? [thread.title, thread.quoted_price != null ? `$${thread.quoted_price}` : null]
+        .filter(Boolean).join(' · ')
+    : (thread.title !== otherParty ? thread.title : 'Booking');
+
   return (
     <AnimatedPressableRN
       onPress={onPress}
@@ -90,26 +96,47 @@ function ConversationRow({ item, otherParty, unreadCount, onPress }) {
       ]}
     >
       {/* Avatar */}
-      <Avatar name={otherParty} size="md" />
+      <Avatar name={otherParty} size="md" source={thread.counterpart_avatar} />
 
       {/* Text content */}
       <Stack spacing="xs" style={{ flex: 1 }}>
-        <Text variant="bodyMedium">{otherParty}</Text>
+        <Inline spacing="sm" style={{ alignItems: 'center' }}>
+          <Text variant="bodyMedium" numberOfLines={1} style={{ flexShrink: 1 }}>
+            {otherParty}
+          </Text>
+          <View
+            style={{
+              paddingHorizontal: spacing.sm,
+              paddingVertical: 1,
+              borderRadius: radius.pill,
+              backgroundColor: isQuote ? colors.accentMuted : colors.surfaceAlt,
+            }}
+          >
+            <Text variant="caption" color={isQuote ? 'accent' : 'secondary'}>
+              {isQuote ? 'Quote' : 'Booking'}
+            </Text>
+          </View>
+        </Inline>
         <Text variant="small" color="secondary" numberOfLines={1}>
-          {item.service_type || 'Booking'}
+          {subtitle}
         </Text>
-        <Text variant="caption" color="secondary">
-          Tap to open chat →
+        <Text
+          variant="caption"
+          color="secondary"
+          numberOfLines={1}
+          style={thread.unread_count > 0 ? { color: colors.textPrimary, fontWeight: '600' } : null}
+        >
+          {thread.last_message || 'Tap to open chat →'}
         </Text>
       </Stack>
 
       {/* Right side: time + unread badge */}
       <Stack spacing="xs" align="flex-end">
         <Text variant="caption" color="secondary">
-          {timeAgo(item.updated_at)}
+          {timeAgo(thread.last_at)}
         </Text>
-        {unreadCount > 0 && (
-          <Badge count={unreadCount} color="accent" />
+        {thread.unread_count > 0 && (
+          <Badge count={thread.unread_count} color="accent" />
         )}
       </Stack>
     </AnimatedPressableRN>
@@ -121,9 +148,8 @@ function ConversationRow({ item, otherParty, unreadCount, onPress }) {
 export default function MessagesScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
-  const { unreadByBooking } = useUnread();
 
-  const [bookings, setBookings] = useState([]);
+  const [threads, setThreads] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
@@ -132,14 +158,9 @@ export default function MessagesScreen({ navigation }) {
   const load = useCallback(async () => {
     setError(null);
     try {
-      const data = await api.get('/bookings/');
-      const withChat = (data?.items || data || []).filter(
-        (b) =>
-          b.status === 'confirmed' ||
-          b.status === 'in_progress' ||
-          b.status === 'completed'
-      );
-      setBookings(withChat);
+      // Unified inbox: booking threads + pre-booking quote threads in one call
+      const data = await api.get('/messages/threads');
+      setThreads(data?.items || []);
     } catch (err) {
       setError('Could not load conversations. Check your connection.');
     } finally {
@@ -152,21 +173,22 @@ export default function MessagesScreen({ navigation }) {
     load();
   }, [load]);
 
-  function getOtherParty(booking) {
-    if (user?.role === 'client') {
-      return booking.business_name || 'Business';
-    }
-    return booking.client_name || 'Client';
-  }
+  // Refresh the inbox whenever the tab regains focus (fresh unread state)
+  useEffect(() => {
+    const unsub = navigation.addListener('focus', load);
+    return unsub;
+  }, [navigation, load]);
 
   // Filter conversations by search query
   const filtered = useMemo(() => {
-    if (!query.trim()) return bookings;
+    if (!query.trim()) return threads;
     const q = query.trim().toLowerCase();
-    return bookings.filter((b) =>
-      getOtherParty(b).toLowerCase().includes(q)
+    return threads.filter(
+      (t) =>
+        (t.counterpart_name || '').toLowerCase().includes(q) ||
+        (t.title || '').toLowerCase().includes(q)
     );
-  }, [bookings, query, user]);
+  }, [threads, query]);
 
   // ── Loading state ──
   if (loading) {
@@ -283,13 +305,15 @@ export default function MessagesScreen({ navigation }) {
           body={
             query
               ? `No conversations match "${query}".`
-              : 'Chat opens once a booking is confirmed.'
+              : user?.role === 'client'
+                ? 'Chat opens when a business quotes your job or a booking is confirmed.'
+                : 'Chat opens when you send a quote or a booking is confirmed.'
           }
         />
       ) : (
         <FlatList
           data={filtered}
-          keyExtractor={(b) => String(b.id)}
+          keyExtractor={(t) => `${t.thread_type}-${t.id}`}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: spacing.xl + insets.bottom }}
           refreshControl={
@@ -304,23 +328,19 @@ export default function MessagesScreen({ navigation }) {
               progressBackgroundColor={colors.surface}
             />
           }
-          renderItem={({ item }) => {
-            const otherParty = getOtherParty(item);
-            const unreadCount = unreadByBooking[item.id] || 0;
-            return (
-              <ConversationRow
-                item={item}
-                otherParty={otherParty}
-                unreadCount={unreadCount}
-                onPress={() =>
-                  navigation.navigate('Chat', {
-                    bookingId: item.id,
-                    otherPartyName: otherParty,
-                  })
-                }
-              />
-            );
-          }}
+          renderItem={({ item }) => (
+            <ConversationRow
+              thread={item}
+              onPress={() =>
+                navigation.navigate('Chat', {
+                  ...(item.thread_type === 'interest'
+                    ? { interestId: item.id }
+                    : { bookingId: item.id }),
+                  otherPartyName: item.counterpart_name,
+                })
+              }
+            />
+          )}
         />
       )}
     </View>

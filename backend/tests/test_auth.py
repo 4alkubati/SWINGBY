@@ -27,8 +27,9 @@ class TestSignup:
         - first_name, last_name: non-empty
         - role: 'client' or 'business_owner'
         """
-        with patch("app.api.auth.supabase") as mock_supabase:
-            # Mock successful auth signup
+        with patch("app.api.auth.supabase") as mock_supabase, \
+             patch("app.api.auth.supabase_auth") as mock_supabase_auth:
+            # Mock successful auth signup (sign_up lives on the auth-only client)
             mock_user = MagicMock()
             mock_user.id = "test-user-id"
             mock_session = MagicMock()
@@ -36,7 +37,7 @@ class TestSignup:
             mock_res = MagicMock()
             mock_res.user = mock_user
             mock_res.session = mock_session
-            mock_supabase.auth.sign_up.return_value = mock_res
+            mock_supabase_auth.auth.sign_up.return_value = mock_res
 
             # Mock upsert
             mock_supabase.table.return_value.upsert.return_value.execute.return_value = (
@@ -104,8 +105,9 @@ class TestLogin:
         """
         T81.4: Login with correct credentials should return 200 + access_token.
         """
-        with patch("app.api.auth.supabase") as mock_supabase:
-            # Mock successful login
+        with patch("app.api.auth.supabase") as mock_supabase, \
+             patch("app.api.auth.supabase_auth") as mock_supabase_auth:
+            # Mock successful login (sign_in lives on the auth-only client)
             mock_user = MagicMock()
             mock_user.id = "test-user-id"
             mock_session = MagicMock()
@@ -113,7 +115,7 @@ class TestLogin:
             mock_res = MagicMock()
             mock_res.user = mock_user
             mock_res.session = mock_session
-            mock_supabase.auth.sign_in_with_password.return_value = mock_res
+            mock_supabase_auth.auth.sign_in_with_password.return_value = mock_res
 
             # Mock user data fetch
             mock_supabase.table.return_value.select.return_value.eq.return_value.single.return_value.execute.return_value.data = {
@@ -141,11 +143,11 @@ class TestLogin:
         T81.5: Login with wrong password should return 401.
         Supabase auth will return no session on invalid credentials.
         """
-        with patch("app.api.auth.supabase") as mock_supabase:
+        with patch("app.api.auth.supabase_auth") as mock_supabase_auth:
             # Mock failed login (no session)
             mock_res = MagicMock()
             mock_res.session = None
-            mock_supabase.auth.sign_in_with_password.return_value = mock_res
+            mock_supabase_auth.auth.sign_in_with_password.return_value = mock_res
 
             response = test_client.post(
                 "/auth/login",
@@ -167,11 +169,11 @@ class TestLogin:
         # earlier login tests consume the 5/minute budget. Reset for determinism.
         app.state.limiter.reset()
 
-        with patch("app.api.auth.supabase") as mock_supabase:
+        with patch("app.api.auth.supabase_auth") as mock_supabase_auth:
             # Mock failed login
             mock_res = MagicMock()
             mock_res.session = None
-            mock_supabase.auth.sign_in_with_password.return_value = mock_res
+            mock_supabase_auth.auth.sign_in_with_password.return_value = mock_res
 
             # Make 5 failed attempts
             for i in range(5):

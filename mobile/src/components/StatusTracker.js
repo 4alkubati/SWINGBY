@@ -1,4 +1,7 @@
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, TouchableOpacity, StyleSheet } from 'react-native';
+import { Feather } from '@expo/vector-icons';
+import Text from './Text';
+import { colors, spacing } from '../theme/tokens';
 
 const STAGES = [
   { key: 'on_the_way', label: 'On my way' },
@@ -24,7 +27,7 @@ export default function StatusTracker({ bookingStatus, onAdvance }) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Job Status</Text>
+      <Text style={styles.title}>JOB STATUS</Text>
       <View style={styles.track}>
         {STAGES.map((stage, index) => {
           const isPast = index < current;
@@ -44,14 +47,17 @@ export default function StatusTracker({ bookingStatus, onAdvance }) {
                   isNext && !isComplete && styles.stageNext,
                 ]}
                 onPress={() => handleTap(index)}
-                activeOpacity={isNext && !isComplete ? 0.7 : 1}
+                activeOpacity={isNext && !isComplete ? 0.8 : 1}
               >
+                {isPast && (
+                  <Feather name="check" size={11} color={colors.accentText} strokeWidth={2.6} />
+                )}
                 <Text style={[
                   styles.stageLabel,
                   isPast && styles.stageLabelDone,
                   isActive && styles.stageLabelActive,
                 ]}>
-                  {isPast ? '✓ ' : ''}{stage.label}
+                  {stage.label}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -59,9 +65,12 @@ export default function StatusTracker({ bookingStatus, onAdvance }) {
         })}
       </View>
       {!isComplete && current < 2 && (
-        <Text style={styles.hint}>
-          Tap "{STAGES[current + 1]?.label}" to advance →
-        </Text>
+        <View style={styles.hintRow}>
+          <Text style={styles.hint}>
+            Tap "{STAGES[current + 1]?.label}" to advance
+          </Text>
+          <Feather name="arrow-right" size={12} color={colors.textTertiary} strokeWidth={2} />
+        </View>
       )}
     </View>
   );
@@ -69,20 +78,19 @@ export default function StatusTracker({ bookingStatus, onAdvance }) {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#0d0f10',
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: '#1a1d1f',
-    borderRadius: 18,
-    padding: 16,
-    marginHorizontal: 22,
+    borderColor: colors.border,
+    borderRadius: 20,
+    padding: spacing.base,
+    marginHorizontal: spacing.lg,
     gap: 12,
   },
   title: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#9ca3af',
-    textTransform: 'uppercase',
-    letterSpacing: 1,
+    fontSize: 11,
+    fontWeight: '600',
+    color: colors.textSecondary,
+    letterSpacing: 1.4,
   },
   track: {
     flexDirection: 'row',
@@ -96,41 +104,52 @@ const styles = StyleSheet.create({
   connector: {
     flex: 1,
     height: 2,
-    backgroundColor: '#2a2e33',
+    backgroundColor: colors.border,
     marginHorizontal: 4,
+    borderRadius: 1,
   },
   connectorDone: {
-    backgroundColor: '#4ade80',
+    backgroundColor: colors.accent,
   },
   stage: {
-    backgroundColor: '#131618',
+    backgroundColor: colors.surfaceAlt,
     borderWidth: 1,
-    borderColor: '#2a2e33',
+    borderColor: colors.border,
     borderRadius: 10,
     paddingHorizontal: 10,
     paddingVertical: 8,
     alignItems: 'center',
-    minWidth: 80,
+    justifyContent: 'center',
+    flexDirection: 'row',
+    gap: 4,
+    minWidth: 82,
   },
   stageDone: {
-    backgroundColor: 'rgba(34,197,94,0.1)',
-    borderColor: 'rgba(34,197,94,0.3)',
+    backgroundColor: colors.accentMuted,
+    borderColor: colors.borderAccent,
   },
   stageActive: {
-    backgroundColor: 'rgba(255,92,0,0.15)',
-    borderColor: 'rgba(255,92,0,0.5)',
+    backgroundColor: colors.accentMuted,
+    borderColor: colors.borderAccent,
   },
   stageNext: {
-    borderColor: '#2a2e33',
+    borderColor: colors.border,
     borderStyle: 'dashed',
   },
   stageLabel: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#6b7280',
+    color: colors.textTertiary,
     textAlign: 'center',
+    letterSpacing: 0.3,
   },
-  stageLabelDone: { color: '#4ade80' },
-  stageLabelActive: { color: '#FF8C42' },
-  hint: { fontSize: 12, color: '#6b7280', textAlign: 'center' },
+  stageLabelDone: { color: colors.accentText },
+  stageLabelActive: { color: colors.accentText },
+  hintRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  hint: { fontSize: 12, color: colors.textTertiary },
 });

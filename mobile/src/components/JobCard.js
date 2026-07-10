@@ -1,49 +1,80 @@
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import React from 'react';
+import { View, TouchableOpacity, StyleSheet } from 'react-native';
+import Text from './Text';
+import { colors, spacing } from '../theme/tokens';
 
 const STATUS_CONFIG = {
-  confirmed:   { label: 'Confirmed',   color: '#60a5fa', bg: 'rgba(59,130,246,0.12)' },
-  in_progress: { label: 'In Progress', color: '#FF8C42', bg: 'rgba(255,92,0,0.12)' },
-  completed:   { label: 'Done',        color: '#4ade80', bg: 'rgba(34,197,94,0.12)' },
-  cancelled:   { label: 'Cancelled',   color: '#6b7280', bg: 'rgba(107,114,128,0.12)' },
+  confirmed: { label: 'Confirmed', color: colors.accentText, bg: colors.accentMuted },
+  on_the_way: { label: 'On the way', color: colors.accentText, bg: colors.accentMuted },
+  in_progress: { label: 'In Progress', color: colors.warning, bg: 'rgba(246,178,59,0.15)' },
+  completed: { label: 'Done', color: colors.success, bg: 'rgba(46,189,133,0.15)' },
+  cancelled: { label: 'Cancelled', color: colors.textTertiary, bg: colors.surfaceAlt },
 };
 
 function initials(name = '') {
-  return name.split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2);
+  return name
+    .split(' ')
+    .map((w) => w[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
 }
 
 export default function JobCard({ booking, onPress }) {
   const status = STATUS_CONFIG[booking.status] || STATUS_CONFIG.confirmed;
   const clientName = booking.client_name || booking.client_id || 'Client';
   const date = booking.scheduled_date
-    ? new Date(booking.scheduled_date).toLocaleDateString('en-CA', { month: 'short', day: 'numeric' })
+    ? new Date(booking.scheduled_date).toLocaleDateString('en-CA', {
+        month: 'short',
+        day: 'numeric',
+      })
     : '—';
   const time = booking.scheduled_time || '';
 
   return (
-    <TouchableOpacity style={styles.container} onPress={onPress} activeOpacity={0.8}>
+    <TouchableOpacity
+      style={styles.container}
+      onPress={onPress}
+      activeOpacity={0.85}
+      accessibilityRole="button"
+      accessibilityLabel={`${clientName}, ${status.label}`}
+    >
       <View style={styles.avatarRow}>
         <View style={styles.avatar}>
           <Text style={styles.avatarText}>{initials(clientName)}</Text>
         </View>
         <View style={[styles.statusPill, { backgroundColor: status.bg }]}>
-          <Text style={[styles.statusText, { color: status.color }]}>{status.label}</Text>
+          <Text style={[styles.statusText, { color: status.color }]}>
+            {status.label}
+          </Text>
         </View>
       </View>
-      <Text style={styles.name} numberOfLines={1}>{clientName}</Text>
-      <Text style={styles.meta} numberOfLines={1}>{booking.service_type || 'Service'}</Text>
-      <Text style={styles.date}>{date}{time ? ` · ${time}` : ''}</Text>
+      <Text style={styles.name} numberOfLines={1} maxFontSizeMultiplier={1.3}>
+        {clientName}
+      </Text>
+      <Text
+        style={styles.meta}
+        numberOfLines={1}
+        maxFontSizeMultiplier={1.3}
+      >
+        {booking.service_type || 'Service'}
+      </Text>
+      <Text style={styles.date} maxFontSizeMultiplier={1.3}>
+        {date}
+        {time ? ` · ${time}` : ''}
+      </Text>
     </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#0f1214',
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: '#1e2226',
+    borderColor: colors.border,
     borderRadius: 18,
-    padding: 14,
-    width: 160,
+    padding: spacing.base - 2,
+    width: 168,
     gap: 6,
   },
   avatarRow: {
@@ -56,18 +87,37 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 12,
-    backgroundColor: '#FF5C00',
+    backgroundColor: colors.accentMuted,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarText: { fontSize: 13, fontWeight: '700', color: '#fff' },
+  avatarText: {
+    fontFamily: 'SpaceGrotesk_700Bold',
+    fontSize: 13,
+    color: colors.accentText,
+    letterSpacing: -0.2,
+  },
   statusPill: {
-    borderRadius: 20,
+    borderRadius: 999,
     paddingHorizontal: 8,
     paddingVertical: 3,
   },
-  statusText: { fontSize: 10, fontWeight: '700' },
-  name: { fontSize: 13, fontWeight: '600', color: '#ffffff' },
-  meta: { fontSize: 12, color: '#9ca3af' },
-  date: { fontSize: 11, color: '#6b7280', fontWeight: '500' },
+  statusText: {
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  name: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.textPrimary,
+  },
+  meta: {
+    fontSize: 12,
+    color: colors.textSecondary,
+  },
+  date: {
+    fontSize: 11,
+    color: colors.textTertiary,
+    fontWeight: '500',
+  },
 });

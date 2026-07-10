@@ -5,7 +5,7 @@ const COLS = [
   {
     heading: 'Product',
     links: [
-      { to: '/how-it-works', label: 'How it works' },
+      { to: '/how-it-works/clients', label: 'How it works' },
       { to: '/for-clients', label: 'For clients' },
       { to: '/for-businesses', label: 'For businesses' },
       { to: '/pricing', label: 'Pricing' },
@@ -51,7 +51,7 @@ export default function Footer() {
     <footer className={styles.footer}>
       <div className={styles.inner}>
         <div className={styles.brand}>
-          <Link to="/" className={styles.logo}>SwingBy</Link>
+          <Link to="/" className={styles.logo}>Swing<span className={styles.logoAccent}>By</span></Link>
           <p className={styles.tagline}>The trust layer for local services.</p>
           <p className={styles.location}>Based in Calgary, Alberta.</p>
         </div>
@@ -69,7 +69,7 @@ export default function Footer() {
             </div>
           ))}
           <div className={styles.col}>
-            <h3 className={styles.colHeading}>Follow Us</h3>
+            <h3 className={styles.colHeading}>Follow</h3>
             <ul>
               {SOCIAL.map((s) => (
                 <li key={s.href}>
@@ -83,8 +83,8 @@ export default function Footer() {
         </div>
       </div>
       <div className={styles.bottom}>
-        <p className={styles.copy}>&copy; {new Date().getFullYear()} SwingBy Technologies Inc. All rights reserved.</p>
-        <p className={styles.casl}>SwingBy respects Canada's Anti-Spam Legislation (CASL).</p>
+        <p className={styles.copy}>&copy; {new Date().getFullYear()} SwingBy Technologies Inc. · Built in Calgary, Canada</p>
+        <p className={styles.casl}>Respecting Canada's Anti-Spam Legislation (CASL).</p>
       </div>
     </footer>
   )

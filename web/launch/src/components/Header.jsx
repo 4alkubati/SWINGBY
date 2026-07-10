@@ -63,7 +63,9 @@ export default function Header() {
     <>
       <header className={[styles.header, scrolled ? styles.scrolled : ''].join(' ')}>
         <div className={styles.inner}>
-          <Link to="/" className={styles.logo} aria-label="SwingBy home">SwingBy</Link>
+          <Link to="/" className={styles.logo} aria-label="SwingBy home">
+            Swing<span className={styles.logoAccent}>By</span>
+          </Link>
 
           <nav className={styles.nav} aria-label="Main navigation">
             {NAV_PRIMARY.map((item) => {

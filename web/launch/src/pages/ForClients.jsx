@@ -36,7 +36,7 @@ export default function ForClients() {
             {CATEGORIES.map(({ slug, name, Icon, desc }) => (
               <Link key={slug} to={`/categories/${slug}`} style={{ textDecoration: 'none' }}>
                 <div className={styles.card} style={{ cursor: 'pointer', transition: 'border-color 0.2s', hover: { borderColor: 'var(--color-accent)' } }}>
-                  <div style={{ color: 'var(--color-accent-text)', marginBottom: '12px' }}><Icon size={32} weight="duotone" /></div>
+                  <div style={{ color: 'var(--color-accent-text)', marginBottom: '12px' }}><Icon size={32} weight="regular" /></div>
                   <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, color: 'var(--color-text-primary)', marginBottom: '6px' }}>{name}</h3>
                   <p style={{ fontSize: '14px', color: 'var(--color-text-secondary)' }}>{desc}</p>
                 </div>

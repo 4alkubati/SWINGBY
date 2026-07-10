@@ -23,6 +23,7 @@ import Badge from '../../components/Badge';
 import Button from '../../components/Button';
 import ListItem from '../../components/ListItem';
 import { SkeletonBox } from '../../components/Skeleton';
+import { Feather } from '@expo/vector-icons';
 import { colors, spacing, radius, shadows, motion } from '../../theme/tokens';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -186,7 +187,18 @@ export default function JobManagementScreen({ navigation, route }) {
         api.get(`/bookings/${bookingId}`),
         api.get('/employees/').catch(() => []),
       ]);
-      setBooking(bData);
+      // Flatten the nested joins (users / employees / service_posts) into the
+      // flat fields this screen renders.
+      const empUser = bData?.employees?.users;
+      setBooking(bData && {
+        ...bData,
+        client_name: [bData.users?.first_name, bData.users?.last_name].filter(Boolean).join(' ') || null,
+        employee_name: empUser ? [empUser.first_name, empUser.last_name].filter(Boolean).join(' ') : null,
+        employee_role: bData.employees?.role_title || null,
+        service_type: bData.service_posts?.title || bData.service_category || null,
+        address: bData.service_posts?.address || null,
+        scheduled_date: bData.confirmed_date || bData.proposed_date_1 || null,
+      });
       setEmployees((eData || []).filter((e) => e.is_active));
     } catch (err) {
       setError(err?.message || 'Could not load job details.');
@@ -220,7 +232,9 @@ export default function JobManagementScreen({ navigation, route }) {
       if (stage === 'completed') {
         await api.patch(`/bookings/${bookingId}/complete`);
       } else {
-        await api.patch(`/bookings/${bookingId}/confirm-date`);
+        // Provider heading out — record a live status event. (confirm-date is
+        // the client's action and requires a date; it was wrong here.)
+        await api.post(`/bookings/${bookingId}/events`, { event_type: 'en_route' });
       }
       await load();
     } catch (err) {
@@ -252,7 +266,7 @@ export default function JobManagementScreen({ navigation, route }) {
       <View style={[styles.screen, { paddingTop: insets.top }]}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={8}>
-            <Text variant="h2" color="secondary">←</Text>
+            <Feather name="arrow-left" size={20} color={colors.textPrimary} strokeWidth={2} />
           </TouchableOpacity>
           <SkeletonBox width={140} height={18} borderRadius={6} />
           <View style={{ width: 32 }} />
@@ -268,12 +282,12 @@ export default function JobManagementScreen({ navigation, route }) {
     return (
       <View style={[styles.screen, styles.center, { paddingTop: insets.top }]}>
         <Stack spacing="md" align="center">
-          <Text style={styles.errorIcon}>⚠️</Text>
+          <Feather name="alert-triangle" size={32} color={colors.warning} strokeWidth={1.8} />
           <Text variant="bodyMedium" color="secondary">{error}</Text>
           <Button variant="primary" label="Retry" onPress={load} style={{ minWidth: 120 }} />
           <Button
             variant="ghost"
-            label="← Go back"
+            label="Go back"
             onPress={() => navigation.goBack()}
           />
         </Stack>
@@ -287,9 +301,9 @@ export default function JobManagementScreen({ navigation, route }) {
     return (
       <View style={[styles.screen, styles.center, { paddingTop: insets.top }]}>
         <Stack spacing="md" align="center">
-          <Text variant="display3">📋</Text>
+          <Feather name="clipboard" size={40} color={colors.textTertiary} strokeWidth={1.6} />
           <Text variant="bodyMedium" color="secondary">Booking not found.</Text>
-          <Button variant="ghost" label="← Go back" onPress={() => navigation.goBack()} />
+          <Button variant="ghost" label="Go back" onPress={() => navigation.goBack()} />
         </Stack>
       </View>
     );
@@ -379,7 +393,7 @@ export default function JobManagementScreen({ navigation, route }) {
                   )}
                   {date && (
                     <Text variant="small" color="secondary">
-                      {date}{booking.scheduled_time ? ` · ${booking.scheduled_time}` : ''}
+                      {date} · {new Date(booking.scheduled_date).toLocaleTimeString('en-CA', { hour: 'numeric', minute: '2-digit' })}
                     </Text>
                   )}
                   {booking.total_amount && (
@@ -424,7 +438,8 @@ export default function JobManagementScreen({ navigation, route }) {
               <View style={styles.cardMargin}>
                 <Button
                   variant="secondary"
-                  label="💬  Message client"
+                  label="Message client"
+                  icon={<Feather name="message-circle" size={16} color={colors.textPrimary} strokeWidth={2} />}
                   onPress={() =>
                     navigation.navigate('Chat', {
                       bookingId: booking.id,
@@ -467,14 +482,14 @@ export default function JobManagementScreen({ navigation, route }) {
                     <ListItem
                       title="Advance status"
                       subtitle="Move job to the next stage"
-                      left={<Text style={{ fontSize: 18 }}>▶</Text>}
+                      left={<Feather name="play" size={16} color={colors.accentText} strokeWidth={2} />}
                       onPress={() => handleAdvance(booking.status === 'in_progress' ? 'completed' : 'on_the_way')}
                       showChevron
                     />
                     <ListItem
                       title="Reassign employee"
                       subtitle={booking.employee_id ? booking.employee_name : 'Not assigned yet'}
-                      left={<Text style={{ fontSize: 18 }}>👤</Text>}
+                      left={<Feather name="user" size={16} color={colors.textSecondary} strokeWidth={2} />}
                       onPress={() => setAssignPickerVisible(true)}
                       showChevron
                     />
@@ -483,7 +498,7 @@ export default function JobManagementScreen({ navigation, route }) {
                 <ListItem
                   title="Message client"
                   subtitle="Open the chat"
-                  left={<Text style={{ fontSize: 18 }}>💬</Text>}
+                  left={<Feather name="message-circle" size={16} color={colors.textSecondary} strokeWidth={2} />}
                   onPress={() =>
                     navigation.navigate('Chat', {
                       bookingId: booking.id,
@@ -496,7 +511,7 @@ export default function JobManagementScreen({ navigation, route }) {
                   <ListItem
                     title="View receipt"
                     subtitle="See the invoice + download PDF"
-                    left={<Text style={{ fontSize: 18 }}>🧾</Text>}
+                    left={<Feather name="file-text" size={16} color={colors.textSecondary} strokeWidth={2} />}
                     onPress={() => navigation.navigate('Invoice', { bookingId: booking.id })}
                     showChevron
                   />
@@ -504,7 +519,7 @@ export default function JobManagementScreen({ navigation, route }) {
                 <ListItem
                   title="Report a problem"
                   subtitle="Open a dispute for this booking"
-                  left={<Text style={{ fontSize: 18 }}>⚠️</Text>}
+                  left={<Feather name="alert-triangle" size={16} color={colors.warning} strokeWidth={2} />}
                   onPress={() => navigation.navigate('DisputeFlow', { bookingId: booking.id })}
                   showChevron
                 />
@@ -532,7 +547,7 @@ export default function JobManagementScreen({ navigation, route }) {
 
           {employees.length === 0 ? (
             <Stack spacing="sm" align="center" style={{ paddingVertical: spacing.xl }}>
-              <Text style={{ fontSize: 28 }}>👥</Text>
+              <Feather name="users" size={28} color={colors.textTertiary} strokeWidth={1.8} />
               <Text variant="small" color="secondary">No active employees found.</Text>
             </Stack>
           ) : (
@@ -557,7 +572,7 @@ export default function JobManagementScreen({ navigation, route }) {
                       <Text variant="caption" color="secondary">{item.role_title || 'Staff'}</Text>
                     </Stack>
                     {isCurrent && (
-                      <Text style={[styles.empCheck, { color: colors.success }]}>✓</Text>
+                      <Feather name="check" size={16} color={colors.success} strokeWidth={2.4} />
                     )}
                   </TouchableOpacity>
                 );

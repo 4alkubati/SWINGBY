@@ -7,6 +7,7 @@ import { buttonTap } from '../services/haptics';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
+// "Pass"-style secondary per handoff: surfaceAlt bg, subtle border, muted 600 text.
 const variants = {
   primary: {
     bg: colors.accent,
@@ -14,13 +15,13 @@ const variants = {
     border: 'transparent',
   },
   secondary: {
-    bg: colors.surface,
-    text: colors.textPrimary,
+    bg: colors.surfaceAlt,
+    text: colors.textSecondary,
     border: colors.border,
   },
   ghost: {
     bg: 'transparent',
-    text: colors.accent,
+    text: colors.accentText,
     border: 'transparent',
   },
   danger: {

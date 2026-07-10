@@ -1,9 +1,9 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { View, TextInput, Pressable } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing, radius } from '../theme/tokens';
+import { Feather } from '@expo/vector-icons';
+import { colors, spacing } from '../theme/tokens';
 
-export default function SearchField({ value, onChangeText, placeholder = 'Search...', debounceMs = 300, style, ...props }) {
+export default function SearchField({ value, onChangeText, placeholder = 'Search...', debounceMs = 300, style, showMic = false, ...props }) {
   const [localValue, setLocalValue] = useState(value || '');
   const timerRef = useRef(null);
 
@@ -31,17 +31,17 @@ export default function SearchField({ value, onChangeText, placeholder = 'Search
           flexDirection: 'row',
           alignItems: 'center',
           backgroundColor: colors.surface,
-          borderRadius: radius.input,
+          borderRadius: 14,
           borderWidth: 1,
           borderColor: colors.border,
-          paddingHorizontal: spacing.md,
-          height: 44,
+          paddingHorizontal: spacing.base,
+          height: 52,
           gap: spacing.sm,
         },
         style,
       ]}
     >
-      <Ionicons name="search" size={18} color={colors.textSecondary} accessibilityElementsHidden={true} importantForAccessibility="no" />
+      <Feather name="search" size={18} color={colors.textSecondary} accessibilityElementsHidden={true} importantForAccessibility="no" />
       <TextInput
         value={localValue}
         onChangeText={handleChange}
@@ -52,7 +52,7 @@ export default function SearchField({ value, onChangeText, placeholder = 'Search
         style={{
           flex: 1,
           fontFamily: 'Inter_400Regular',
-          fontSize: 14,
+          fontSize: 15,
           color: colors.textPrimary,
           padding: 0,
         }}
@@ -60,17 +60,18 @@ export default function SearchField({ value, onChangeText, placeholder = 'Search
         returnKeyType="search"
         {...props}
       />
-      {localValue.length > 0 && (
+      {localValue.length > 0 ? (
         <Pressable
           onPress={handleClear}
           hitSlop={8}
           accessibilityRole="button"
           accessibilityLabel="Clear search"
         >
-          <Ionicons name="close-circle" size={18} color={colors.textSecondary} accessibilityElementsHidden={true} importantForAccessibility="no" />
+          <Feather name="x-circle" size={18} color={colors.textSecondary} accessibilityElementsHidden={true} importantForAccessibility="no" />
         </Pressable>
-      )}
-      <Ionicons name="mic-outline" size={18} color={colors.textSecondary} accessibilityElementsHidden={true} importantForAccessibility="no" />
+      ) : showMic ? (
+        <Feather name="mic" size={18} color={colors.textSecondary} accessibilityElementsHidden={true} importantForAccessibility="no" />
+      ) : null}
     </View>
   );
 }

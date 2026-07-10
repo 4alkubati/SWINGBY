@@ -8,24 +8,113 @@
   },
   "home": {
     "hero": {
-      "headline": "Local services, quoted in minutes",
-      "sub": "Post a job, get competitive quotes from verified Calgary businesses, and book with confidence.",
-      "cta": "Post a job — it's free",
-      "ctaSub": "No credit card required"
+      "livePill": "Now live in Calgary",
+      "headlineLead": "Local services, quoted in",
+      "headlineAccent": "minutes.",
+      "sub": "Post a job. Verified Calgary businesses quote it. Book with escrow-protected payments — money moves when the work is done.",
+      "ctaPrimary": "Post a job — it's free",
+      "ctaSecondary": "Get more jobs",
+      "trust": {
+        "verified": "Verified pros only",
+        "escrow": "Escrow-held payments",
+        "local": "Built for Calgary"
+      },
+      "floatQuoteSub": "Quote sent 3 min ago · Ready to book",
+      "floatTrackEyebrow": "On the way",
+      "floatTrackTitle": "Arriving in 12 min",
+      "floatTrackSub": "Bow River Cleaning · Job #4218",
+      "mapInfoStat": "verified pros",
+      "mapInfoCity": "quoting in Calgary today.",
+      "mapInfoLink": "Open map"
     },
-    "howItWorks": "How it works",
-    "step1Title": "Post a job",
-    "step1Desc": "Describe what you need, set a budget, and pick your area. Takes under two minutes.",
-    "step2Title": "Get quotes",
-    "step2Desc": "Verified local businesses send you competitive quotes. Compare ratings, reviews, and prices.",
-    "step3Title": "Book with confidence",
-    "step3Desc": "Accept the best quote. Payment is held in escrow and released on completion.",
-    "trustTitle": "Built on trust",
-    "categories": "Popular categories",
-    "testimonials": "What people are saying",
-    "faqTitle": "Frequently asked questions",
-    "ctaSection": "Ready to get started?",
-    "ctaDesc": "Join thousands of Calgary homeowners getting things done smarter."
+    "categories": {
+      "eyebrow": "Popular categories",
+      "title": "Whatever the job — someone local can quote it.",
+      "items": {
+        "cleaning": "Cleaning",
+        "plumbing": "Plumbing",
+        "electrical": "Electrical",
+        "landscaping": "Landscaping",
+        "painting": "Painting",
+        "carpentry": "Carpentry",
+        "handyman": "Handyman",
+        "moving": "Moving"
+      }
+    },
+    "howItWorks": {
+      "eyebrow": "How SwingBy works",
+      "title": "Same platform, two flows.",
+      "forClients": "For clients",
+      "forBusinesses": "For businesses",
+      "clientTitle": "Post it. Compare it. Book it.",
+      "businessTitle": "Browse. Quote. Get paid.",
+      "clientLink": "See the full client flow",
+      "businessLink": "See the full business flow",
+      "client": {
+        "1": { "title": "Post a job", "desc": "Category, address, budget, photos. Two minutes." },
+        "2": { "title": "Get quotes", "desc": "Verified Calgary businesses tap Express interest with a price." },
+        "3": { "title": "Book + pay safely", "desc": "Pay through escrow. First 50% releases on confirmation." },
+        "4": { "title": "Done → release + review", "desc": "Confirm complete. Remaining 50% releases. Leave a review." }
+      },
+      "business": {
+        "1": { "title": "Sign up + verify", "desc": "Manual verification in 24–48 hours during the Calgary beta." },
+        "2": { "title": "Browse nearby", "desc": "Real jobs sorted by distance and recency. No mystery leads." },
+        "3": { "title": "Quote + win", "desc": "Tap a post, add your price and pitch. Booking unlocks chat + address." },
+        "4": { "title": "Complete + paid", "desc": "You keep 90% after the 10% commission. No subscription, no per-quote fee." }
+      }
+    },
+    "escrow": {
+      "eyebrow": "Escrow protection",
+      "title": "Your money moves only when the work is done.",
+      "body": "SwingBy holds every payment until the job is confirmed — half on booking, half when you approve the finish. If something goes wrong, we can withhold payment until the dispute is resolved.",
+      "ledgerTitle": "How a $180 booking flows",
+      "row1Title": "You book",
+      "row1Sub": "Held in escrow",
+      "row2Title": "Job confirmed",
+      "row2Sub": "50% releases to the business",
+      "row3Title": "You approve the work",
+      "row3Sub": "Final 50% releases, minus 10% fee"
+    },
+    "trust": {
+      "eyebrow": "Built on trust",
+      "title": "Four things we hold ourselves to.",
+      "items": {
+        "verified": { "title": "Verified businesses", "desc": "Manual license + identity check before any business can quote." },
+        "reviews":  { "title": "Honest reviews",       "desc": "Only confirmed bookings can leave one. Businesses can't suppress them." },
+        "canadian": { "title": "Canadian-owned",       "desc": "Built in Calgary. Data in Canadian regions. Real local support." },
+        "support":  { "title": "Real human support",   "desc": "72-hour dispute review. We can withhold payment until resolved." }
+      }
+    },
+    "calgary": {
+      "eyebrow": "Live in Calgary",
+      "title": "Built local, before going national.",
+      "body": "We're proving the model in Calgary first. Every business is checked by a real human. Every quote is from someone who can actually do the job in your neighbourhood.",
+      "nextLabel": "Next on the map"
+    },
+    "app": {
+      "eyebrow": "The app",
+      "title": "Calgary jobs, one tap away.",
+      "body": "Native iOS and Android. Browse nearby posts, quote without leaving the feed, message safely once a booking is confirmed.",
+      "comingBadge": "Coming Aug 2026",
+      "storeNote": "App store listings open at general launch."
+    },
+    "faq": {
+      "eyebrow": "FAQ",
+      "title": "Common questions.",
+      "items": {
+        "free":    { "q": "Is SwingBy free for clients?",              "a": "Yes. Posting jobs and receiving quotes is free. You pay the agreed price to the business — nothing more. The 10% commission comes out of the business's payout, not on top of your bill." },
+        "verify":  { "q": "How are businesses verified?",              "a": "A SwingBy team member reviews each license and identity manually during the Calgary beta. Automated checks come post-beta once we know the edge cases to catch." },
+        "payment": { "q": "How does payment work?",                    "a": "Payment is held in escrow when you book. 50% is released on booking confirmation. The remaining 50% releases when you confirm the job is done — minus our 10% fee." },
+        "unhappy": { "q": "What if I'm not happy with the work?",       "a": "Open a dispute through the app. SwingBy support reviews within 72 hours and can withhold payment until it's resolved." },
+        "cities":  { "q": "Which cities are supported?",               "a": "Live in Calgary today. Other cities open once we have enough verified businesses to quote there — no fake city pages." }
+      }
+    },
+    "finalCta": {
+      "title": "Ready to get it done?",
+      "sub": "Post a job in two minutes. Free for clients — always.",
+      "primary": "Post a job — it's free",
+      "secondary": "See how it works"
+    }
   },
   "common": {
     "learnMore": "Learn more",
@@ -38,6 +127,6 @@
     "back": "Back"
   },
   "footer": {
-    "tagline": "Calgary's local services marketplace."
+    "tagline": "The trust layer for local services."
   }
 }

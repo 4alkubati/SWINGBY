@@ -82,12 +82,6 @@
         "file": "mobile\\src\\screens\\business\\EmployeeProfileScreen.js"
       },
       {
-        "route": "Notifications",
-        "component": "NotificationsScreen",
-        "kind": "Stack",
-        "file": "mobile\\src\\screens\\profile\\NotificationsScreen.js"
-      },
-      {
         "route": "Earnings",
         "component": "EarningsScreen",
         "kind": "Stack",
@@ -158,6 +152,12 @@
         "component": "InvoiceScreen",
         "kind": "Stack",
         "file": "mobile\\src\\screens\\shared\\InvoiceScreen.js"
+      },
+      {
+        "route": "BusinessInvoices",
+        "component": "BusinessInvoicesScreen",
+        "kind": "Stack",
+        "file": "mobile\\src\\screens\\business\\BusinessInvoicesScreen.js"
       }
     ],
     "ClientNavigator": [
@@ -358,217 +358,259 @@
       "from_screen": "SignupScreen",
       "to_route": "Login",
       "method": "navigate",
-      "line": 152
+      "line": 155
     },
     {
       "from_file": "mobile\\src\\screens\\auth\\SignupScreen.js",
       "from_screen": "SignupScreen",
       "to_route": "Login",
       "method": "navigate",
-      "line": 297
+      "line": 300
+    },
+    {
+      "from_file": "mobile\\src\\screens\\business\\BusinessInvoicesScreen.js",
+      "from_screen": "BusinessInvoicesScreen",
+      "to_route": "Invoice",
+      "method": "navigate",
+      "line": 142
     },
     {
       "from_file": "mobile\\src\\screens\\business\\BusinessProfileScreen.js",
       "from_screen": "BusinessProfileScreen",
       "to_route": "EmployeeManagement",
       "method": "navigate",
-      "line": 506
+      "line": 514
     },
     {
       "from_file": "mobile\\src\\screens\\business\\BusinessProfileScreen.js",
       "from_screen": "BusinessProfileScreen",
       "to_route": "EmployeeProfile",
       "method": "navigate",
-      "line": 526
+      "line": 534
     },
     {
       "from_file": "mobile\\src\\screens\\business\\BusinessProfileScreen.js",
       "from_screen": "BusinessProfileScreen",
       "to_route": "NotificationsCenter",
       "method": "navigate",
-      "line": 625
+      "line": 633
     },
     {
       "from_file": "mobile\\src\\screens\\business\\BusinessProfileScreen.js",
       "from_screen": "BusinessProfileScreen",
       "to_route": "PaymentMethod",
       "method": "navigate",
-      "line": 630
+      "line": 638
+    },
+    {
+      "from_file": "mobile\\src\\screens\\business\\BusinessProfileScreen.js",
+      "from_screen": "BusinessProfileScreen",
+      "to_route": "BusinessInvoices",
+      "method": "navigate",
+      "line": 644
     },
     {
       "from_file": "mobile\\src\\screens\\business\\BusinessProfileScreen.js",
       "from_screen": "BusinessProfileScreen",
       "to_route": "Settings",
       "method": "navigate",
-      "line": 635
+      "line": 650
     },
     {
       "from_file": "mobile\\src\\screens\\business\\BusinessProfileScreen.js",
       "from_screen": "BusinessProfileScreen",
       "to_route": "HelpFAQ",
       "method": "navigate",
-      "line": 640
+      "line": 655
     },
     {
       "from_file": "mobile\\src\\screens\\business\\BusinessProfileScreen.js",
       "from_screen": "BusinessProfileScreen",
       "to_route": "PrivacyPolicy",
       "method": "navigate",
-      "line": 645
+      "line": 660
     },
     {
       "from_file": "mobile\\src\\screens\\business\\BusinessProfileScreen.js",
       "from_screen": "BusinessProfileScreen",
       "to_route": "TermsOfService",
       "method": "navigate",
-      "line": 650
+      "line": 665
     },
     {
       "from_file": "mobile\\src\\screens\\business\\BusinessProfileScreen.js",
       "from_screen": "BusinessProfileScreen",
       "to_route": "PostJob",
       "method": "navigate",
-      "line": 680
+      "line": 695
     },
     {
       "from_file": "mobile\\src\\screens\\business\\DashboardScreen.js",
       "from_screen": "DashboardScreen",
-      "to_route": "Notifications",
+      "to_route": "Jobs",
       "method": "navigate",
-      "line": 331
+      "line": 177
+    },
+    {
+      "from_file": "mobile\\src\\screens\\business\\DashboardScreen.js",
+      "from_screen": "DashboardScreen",
+      "to_route": "Messages",
+      "method": "navigate",
+      "line": 183
+    },
+    {
+      "from_file": "mobile\\src\\screens\\business\\DashboardScreen.js",
+      "from_screen": "DashboardScreen",
+      "to_route": "Jobs",
+      "method": "navigate",
+      "line": 189
+    },
+    {
+      "from_file": "mobile\\src\\screens\\business\\DashboardScreen.js",
+      "from_screen": "DashboardScreen",
+      "to_route": "My Business",
+      "method": "navigate",
+      "line": 310
+    },
+    {
+      "from_file": "mobile\\src\\screens\\business\\DashboardScreen.js",
+      "from_screen": "DashboardScreen",
+      "to_route": "Jobs",
+      "method": "navigate",
+      "line": 383
     },
     {
       "from_file": "mobile\\src\\screens\\business\\DashboardScreen.js",
       "from_screen": "DashboardScreen",
       "to_route": "Earnings",
       "method": "navigate",
-      "line": 386
+      "line": 431
     },
     {
       "from_file": "mobile\\src\\screens\\business\\DashboardScreen.js",
       "from_screen": "DashboardScreen",
       "to_route": "BusinessAnalytics",
       "method": "navigate",
-      "line": 396
+      "line": 443
     },
     {
       "from_file": "mobile\\src\\screens\\business\\DashboardScreen.js",
       "from_screen": "DashboardScreen",
       "to_route": "EmployeeManagement",
       "method": "navigate",
-      "line": 406
+      "line": 455
     },
     {
       "from_file": "mobile\\src\\screens\\business\\DashboardScreen.js",
       "from_screen": "DashboardScreen",
-      "to_route": "JobManagement",
+      "to_route": "Chat",
       "method": "navigate",
-      "line": 448
-    },
-    {
-      "from_file": "mobile\\src\\screens\\business\\DashboardScreen.js",
-      "from_screen": "DashboardScreen",
-      "to_route": "JobManagement",
-      "method": "navigate",
-      "line": 483
+      "line": 474
     },
     {
       "from_file": "mobile\\src\\screens\\business\\EmployeeProfileScreen.js",
       "from_screen": "EmployeeProfileScreen",
       "to_route": "BusinessProfile",
       "method": "navigate",
-      "line": 254
+      "line": 256
     },
     {
       "from_file": "mobile\\src\\screens\\business\\JobManagementScreen.js",
       "from_screen": "JobManagementScreen",
       "to_route": "Chat",
       "method": "navigate",
-      "line": 429
+      "line": 444
     },
     {
       "from_file": "mobile\\src\\screens\\business\\JobManagementScreen.js",
       "from_screen": "JobManagementScreen",
       "to_route": "Chat",
       "method": "navigate",
-      "line": 488
+      "line": 503
     },
     {
       "from_file": "mobile\\src\\screens\\business\\JobManagementScreen.js",
       "from_screen": "JobManagementScreen",
       "to_route": "Invoice",
       "method": "navigate",
-      "line": 500
+      "line": 515
     },
     {
       "from_file": "mobile\\src\\screens\\business\\JobManagementScreen.js",
       "from_screen": "JobManagementScreen",
       "to_route": "DisputeFlow",
       "method": "navigate",
-      "line": 508
+      "line": 523
     },
     {
       "from_file": "mobile\\src\\screens\\client\\ActiveBookingScreen.js",
       "from_screen": "ActiveBookingScreen",
       "to_route": "Home",
       "method": "navigate",
-      "line": 208
+      "line": 338
     },
     {
       "from_file": "mobile\\src\\screens\\client\\ActiveBookingScreen.js",
       "from_screen": "ActiveBookingScreen",
       "to_route": "BusinessProfile",
       "method": "navigate",
-      "line": 257
-    },
-    {
-      "from_file": "mobile\\src\\screens\\client\\ActiveBookingScreen.js",
-      "from_screen": "ActiveBookingScreen",
-      "to_route": "CancellationFlow",
-      "method": "navigate",
-      "line": 341
+      "line": 395
     },
     {
       "from_file": "mobile\\src\\screens\\client\\ActiveBookingScreen.js",
       "from_screen": "ActiveBookingScreen",
       "to_route": "Chat",
       "method": "navigate",
-      "line": 356
+      "line": 436
+    },
+    {
+      "from_file": "mobile\\src\\screens\\client\\ActiveBookingScreen.js",
+      "from_screen": "ActiveBookingScreen",
+      "to_route": "Chat",
+      "method": "navigate",
+      "line": 500
+    },
+    {
+      "from_file": "mobile\\src\\screens\\client\\ActiveBookingScreen.js",
+      "from_screen": "ActiveBookingScreen",
+      "to_route": "CancellationFlow",
+      "method": "navigate",
+      "line": 527
     },
     {
       "from_file": "mobile\\src\\screens\\client\\BookingDetailsScreen.js",
       "from_screen": "BookingDetailsScreen",
       "to_route": "MessageThread",
       "method": "navigate",
-      "line": 260
+      "line": 286
     },
     {
       "from_file": "mobile\\src\\screens\\client\\BookingDetailsScreen.js",
       "from_screen": "BookingDetailsScreen",
       "to_route": "CancellationFlow",
       "method": "navigate",
-      "line": 264
+      "line": 290
     },
     {
       "from_file": "mobile\\src\\screens\\client\\BookingDetailsScreen.js",
       "from_screen": "BookingDetailsScreen",
       "to_route": "BusinessProfile",
       "method": "navigate",
-      "line": 416
+      "line": 478
     },
     {
       "from_file": "mobile\\src\\screens\\client\\BookingDetailsScreen.js",
       "from_screen": "BookingDetailsScreen",
       "to_route": "Invoice",
       "method": "navigate",
-      "line": 558
+      "line": 620
     },
     {
       "from_file": "mobile\\src\\screens\\client\\BookingDetailsScreen.js",
       "from_screen": "BookingDetailsScreen",
       "to_route": "DisputeFlow",
       "method": "navigate",
-      "line": 583
+      "line": 645
     },
     {
       "from_file": "mobile\\src\\screens\\client\\FavoritesScreen.js",
@@ -596,63 +638,105 @@
       "from_screen": "HomeScreen",
       "to_route": "Notifications",
       "method": "navigate",
-      "line": 207
+      "line": 187
     },
     {
       "from_file": "mobile\\src\\screens\\client\\HomeScreen.js",
       "from_screen": "HomeScreen",
       "to_route": "Search",
       "method": "navigate",
-      "line": 252
+      "line": 230
+    },
+    {
+      "from_file": "mobile\\src\\screens\\client\\HomeScreen.js",
+      "from_screen": "HomeScreen",
+      "to_route": "Search",
+      "method": "navigate",
+      "line": 243
     },
     {
       "from_file": "mobile\\src\\screens\\client\\HomeScreen.js",
       "from_screen": "HomeScreen",
       "to_route": "NearbyMap",
       "method": "navigate",
-      "line": 312
+      "line": 257
+    },
+    {
+      "from_file": "mobile\\src\\screens\\client\\HomeScreen.js",
+      "from_screen": "HomeScreen",
+      "to_route": "NearbyMap",
+      "method": "navigate",
+      "line": 266
     },
     {
       "from_file": "mobile\\src\\screens\\client\\HomeScreen.js",
       "from_screen": "HomeScreen",
       "to_route": "BusinessProfile",
       "method": "navigate",
-      "line": 347
+      "line": 308
+    },
+    {
+      "from_file": "mobile\\src\\screens\\client\\HomeScreen.js",
+      "from_screen": "HomeScreen",
+      "to_route": "NearbyMap",
+      "method": "navigate",
+      "line": 319
+    },
+    {
+      "from_file": "mobile\\src\\screens\\client\\HomeScreen.js",
+      "from_screen": "HomeScreen",
+      "to_route": "BusinessProfile",
+      "method": "navigate",
+      "line": 353
     },
     {
       "from_file": "mobile\\src\\screens\\client\\MyJobsScreen.js",
       "from_screen": "MyJobsScreen",
       "to_route": "ActiveBooking",
       "method": "navigate",
-      "line": 128
+      "line": 179
     },
     {
       "from_file": "mobile\\src\\screens\\client\\MyJobsScreen.js",
       "from_screen": "MyJobsScreen",
       "to_route": "JobManagement",
       "method": "navigate",
-      "line": 130
+      "line": 181
     },
     {
       "from_file": "mobile\\src\\screens\\client\\MyJobsScreen.js",
       "from_screen": "MyJobsScreen",
       "to_route": "QuoteComparison",
       "method": "navigate",
-      "line": 179
+      "line": 233
+    },
+    {
+      "from_file": "mobile\\src\\screens\\client\\MyJobsScreen.js",
+      "from_screen": "MyJobsScreen",
+      "to_route": "ActiveBooking",
+      "method": "navigate",
+      "line": 240
+    },
+    {
+      "from_file": "mobile\\src\\screens\\client\\MyJobsScreen.js",
+      "from_screen": "MyJobsScreen",
+      "to_route": "Chat",
+      "method": "navigate",
+      "line": 298
     },
     {
       "from_file": "mobile\\src\\screens\\client\\MyJobsScreen.js",
       "from_screen": "MyJobsScreen",
       "to_route": "Review",
       "method": "navigate",
-      "line": 233
+      "line": 330
     },
     {
       "from_file": "mobile\\src\\screens\\client\\NearbyMapScreen.js",
       "from_screen": "NearbyMapScreen",
       "to_route": "BusinessProfile",
       "method": "navigate",
-      "line": 425
+      "line": 426
     },
     {
       "from_file": "mobile\\src\\screens\\client\\PostJobScreen.js",
@@ -666,14 +750,35 @@
       "from_screen": "QuoteComparisonScreen",
       "to_route": "ActiveBooking",
       "method": "replace",
-      "line": 253
+      "line": 263
+    },
+    {
+      "from_file": "mobile\\src\\screens\\client\\QuoteComparisonScreen.js",
+      "from_screen": "QuoteComparisonScreen",
+      "to_route": "ClientTabs",
+      "method": "navigate",
+      "line": 266
+    },
+    {
+      "from_file": "mobile\\src\\screens\\client\\QuoteComparisonScreen.js",
+      "from_screen": "QuoteComparisonScreen",
+      "to_route": "My Jobs",
+      "method": "dispatch",
+      "line": 266
     },
     {
       "from_file": "mobile\\src\\screens\\client\\QuoteComparisonScreen.js",
       "from_screen": "QuoteComparisonScreen",
       "to_route": "BusinessProfile",
       "method": "navigate",
-      "line": 328
+      "line": 340
+    },
+    {
+      "from_file": "mobile\\src\\screens\\client\\QuoteComparisonScreen.js",
+      "from_screen": "QuoteComparisonScreen",
+      "to_route": "Chat",
+      "method": "navigate",
+      "line": 343
     },
     {
       "from_file": "mobile\\src\\screens\\client\\SearchScreen.js",
@@ -687,7 +792,7 @@
       "from_screen": "MessagesScreen",
       "to_route": "Chat",
       "method": "navigate",
-      "line": 316
+      "line": 335
     },
     {
       "from_file": "mobile\\src\\screens\\onboarding\\OnboardingScreen.js",
@@ -722,21 +827,21 @@
       "from_screen": "NotificationsScreen",
       "to_route": "ActiveBooking",
       "method": "dispatch",
-      "line": 33
+      "line": 36
     },
     {
       "from_file": "mobile\\src\\screens\\profile\\NotificationsScreen.js",
       "from_screen": "NotificationsScreen",
       "to_route": "Review",
       "method": "dispatch",
-      "line": 44
+      "line": 48
     },
     {
       "from_file": "mobile\\src\\screens\\profile\\NotificationsScreen.js",
       "from_screen": "NotificationsScreen",
       "to_route": "QuoteComparison",
       "method": "dispatch",
-      "line": 58
+      "line": 67
     },
     {
       "from_file": "mobile\\src\\screens\\profile\\ProfileScreen.js",
@@ -821,6 +926,13 @@
       "to_route": "HelpFAQ",
       "method": "navigate",
       "line": 256
+    },
+    {
+      "from_file": "mobile\\src\\components\\BottomNav.js",
+      "from_screen": "BottomNav",
+      "to_route": "PostJob",
+      "method": "navigate",
+      "line": 123
     }
   ],
   "backend_routes": [
@@ -828,415 +940,433 @@
       "method": "GET",
       "path": "/admin/users",
       "file": "backend\\app\\api\\admin.py",
-      "line": 44
+      "line": 46
     },
     {
       "method": "GET",
       "path": "/admin/bookings",
       "file": "backend\\app\\api\\admin.py",
-      "line": 64
+      "line": 66
     },
     {
       "method": "POST",
       "path": "/admin/suspend-user/{user_id}",
       "file": "backend\\app\\api\\admin.py",
-      "line": 85
+      "line": 87
     },
     {
       "method": "POST",
       "path": "/admin/unsuspend-user/{user_id}",
       "file": "backend\\app\\api\\admin.py",
-      "line": 111
+      "line": 115
     },
     {
       "method": "POST",
       "path": "/admin/force-complete-booking/{booking_id}",
       "file": "backend\\app\\api\\admin.py",
-      "line": 137
+      "line": 143
     },
     {
       "method": "POST",
       "path": "/auth/signup",
       "file": "backend\\app\\api\\auth.py",
-      "line": 187
+      "line": 196
     },
     {
       "method": "POST",
       "path": "/auth/login",
       "file": "backend\\app\\api\\auth.py",
-      "line": 270
+      "line": 289
     },
     {
       "method": "POST",
       "path": "/auth/refresh",
       "file": "backend\\app\\api\\auth.py",
-      "line": 315
+      "line": 342
     },
     {
       "method": "POST",
       "path": "/auth/logout",
       "file": "backend\\app\\api\\auth.py",
-      "line": 338
+      "line": 365
     },
     {
       "method": "POST",
       "path": "/auth/forgot-password",
       "file": "backend\\app\\api\\auth.py",
-      "line": 358
+      "line": 385
     },
     {
       "method": "GET",
       "path": "/auth/me",
       "file": "backend\\app\\api\\auth.py",
-      "line": 382
+      "line": 411
     },
     {
       "method": "PATCH",
       "path": "/auth/me",
       "file": "backend\\app\\api\\auth.py",
-      "line": 392
+      "line": 446
     },
     {
       "method": "POST",
       "path": "/bookings/{booking_id}/events",
       "file": "backend\\app\\api\\booking_events.py",
-      "line": 142
+      "line": 145
     },
     {
       "method": "GET",
       "path": "/bookings/{booking_id}/events",
       "file": "backend\\app\\api\\booking_events.py",
-      "line": 187
+      "line": 190
     },
     {
       "method": "POST",
       "path": "/bookings/{booking_id}/photos",
       "file": "backend\\app\\api\\booking_photos.py",
-      "line": 122
+      "line": 123
     },
     {
       "method": "GET",
       "path": "/bookings/{booking_id}/photos",
       "file": "backend\\app\\api\\booking_photos.py",
-      "line": 159
+      "line": 160
     },
     {
       "method": "GET",
       "path": "/bookings/",
       "file": "backend\\app\\api\\bookings.py",
-      "line": 58
+      "line": 75
     },
     {
       "method": "GET",
       "path": "/bookings/{booking_id}",
       "file": "backend\\app\\api\\bookings.py",
-      "line": 113
+      "line": 168
     },
     {
       "method": "PATCH",
       "path": "/bookings/{booking_id}/assign-employee",
       "file": "backend\\app\\api\\bookings.py",
-      "line": 131
+      "line": 191
     },
     {
       "method": "PATCH",
       "path": "/bookings/{booking_id}/confirm-date",
       "file": "backend\\app\\api\\bookings.py",
-      "line": 180
+      "line": 259
     },
     {
       "method": "PATCH",
       "path": "/bookings/{booking_id}/complete",
       "file": "backend\\app\\api\\bookings.py",
-      "line": 267
+      "line": 375
     },
     {
       "method": "PATCH",
       "path": "/bookings/{booking_id}/cancel",
       "file": "backend\\app\\api\\bookings.py",
-      "line": 356
+      "line": 504
     },
     {
       "method": "POST",
       "path": "/businesses/",
       "file": "backend\\app\\api\\businesses.py",
-      "line": 61
+      "line": 67
     },
     {
       "method": "GET",
       "path": "/businesses/nearby",
       "file": "backend\\app\\api\\businesses.py",
-      "line": 79
+      "line": 96
     },
     {
       "method": "GET",
       "path": "/businesses/me",
       "file": "backend\\app\\api\\businesses.py",
-      "line": 147
+      "line": 173
     },
     {
       "method": "GET",
       "path": "/businesses/me/analytics",
       "file": "backend\\app\\api\\businesses.py",
-      "line": 158
+      "line": 220
     },
     {
       "method": "GET",
       "path": "/businesses/",
       "file": "backend\\app\\api\\businesses.py",
-      "line": 308
+      "line": 380
     },
     {
       "method": "GET",
       "path": "/businesses/{business_id}",
       "file": "backend\\app\\api\\businesses.py",
-      "line": 328
+      "line": 405
     },
     {
       "method": "PATCH",
       "path": "/businesses/{business_id}",
       "file": "backend\\app\\api\\businesses.py",
-      "line": 337
+      "line": 420
     },
     {
       "method": "POST",
       "path": "/contact/",
       "file": "backend\\app\\api\\contact.py",
-      "line": 37
+      "line": 38
     },
     {
       "method": "POST",
       "path": "/disputes/",
       "file": "backend\\app\\api\\disputes.py",
-      "line": 86
+      "line": 87
     },
     {
       "method": "GET",
       "path": "/disputes/mine",
       "file": "backend\\app\\api\\disputes.py",
-      "line": 128
+      "line": 140
     },
     {
       "method": "PATCH",
       "path": "/disputes/{dispute_id}/resolve",
       "file": "backend\\app\\api\\disputes.py",
-      "line": 160
+      "line": 187
     },
     {
       "method": "POST",
       "path": "/employees/",
       "file": "backend\\app\\api\\employees.py",
-      "line": 45
+      "line": 56
     },
     {
       "method": "GET",
       "path": "/employees/",
       "file": "backend\\app\\api\\employees.py",
-      "line": 87
+      "line": 112
     },
     {
       "method": "PATCH",
       "path": "/employees/{employee_id}/deactivate",
       "file": "backend\\app\\api\\employees.py",
-      "line": 108
+      "line": 135
     },
     {
       "method": "PATCH",
       "path": "/employees/{employee_id}/reactivate",
       "file": "backend\\app\\api\\employees.py",
-      "line": 133
+      "line": 171
     },
     {
       "method": "GET",
       "path": "/employees/business/{business_id}",
       "file": "backend\\app\\api\\employees.py",
-      "line": 158
+      "line": 207
     },
     {
       "method": "GET",
       "path": "/employees/{employee_id}/profile",
       "file": "backend\\app\\api\\employees.py",
-      "line": 175
+      "line": 228
     },
     {
       "method": "POST",
       "path": "/interests/",
       "file": "backend\\app\\api\\interests.py",
-      "line": 24
+      "line": 26
+    },
+    {
+      "method": "GET",
+      "path": "/interests/mine",
+      "file": "backend\\app\\api\\interests.py",
+      "line": 154
     },
     {
       "method": "GET",
       "path": "/interests/post/{post_id}",
       "file": "backend\\app\\api\\interests.py",
-      "line": 119
+      "line": 190
     },
     {
       "method": "PATCH",
       "path": "/interests/{interest_id}/accept",
       "file": "backend\\app\\api\\interests.py",
-      "line": 144
+      "line": 227
     },
     {
       "method": "PATCH",
       "path": "/interests/{interest_id}/reject",
       "file": "backend\\app\\api\\interests.py",
-      "line": 300
+      "line": 418
     },
     {
       "method": "GET",
       "path": "/bookings/{booking_id}/invoice",
       "file": "backend\\app\\api\\invoices.py",
-      "line": 128
+      "line": 153
     },
     {
       "method": "GET",
       "path": "/bookings/{booking_id}/invoice.pdf",
       "file": "backend\\app\\api\\invoices.py",
-      "line": 133
+      "line": 158
     },
     {
       "method": "GET",
       "path": "/me/export",
       "file": "backend\\app\\api\\me.py",
-      "line": 40
+      "line": 42
     },
     {
       "method": "DELETE",
       "path": "/me",
       "file": "backend\\app\\api\\me.py",
-      "line": 139
+      "line": 133
     },
     {
       "method": "POST",
       "path": "/messages/",
       "file": "backend\\app\\api\\messages.py",
-      "line": 52
+      "line": 194
+    },
+    {
+      "method": "GET",
+      "path": "/messages/threads",
+      "file": "backend\\app\\api\\messages.py",
+      "line": 276
     },
     {
       "method": "GET",
       "path": "/messages/unread-count",
       "file": "backend\\app\\api\\messages.py",
-      "line": 111
+      "line": 379
+    },
+    {
+      "method": "GET",
+      "path": "/messages/interest/{interest_id}",
+      "file": "backend\\app\\api\\messages.py",
+      "line": 414
     },
     {
       "method": "GET",
       "path": "/messages/{booking_id}",
       "file": "backend\\app\\api\\messages.py",
-      "line": 126
+      "line": 460
     },
     {
       "method": "GET",
       "path": "/payments/mine",
       "file": "backend\\app\\api\\payments.py",
-      "line": 19
+      "line": 25
     },
     {
       "method": "GET",
       "path": "/payments/{booking_id}",
       "file": "backend\\app\\api\\payments.py",
-      "line": 75
+      "line": 93
     },
     {
       "method": "POST",
       "path": "/bookings/{booking_id}/mark-paid-offplatform",
       "file": "backend\\app\\api\\payments_offplatform.py",
-      "line": 34
+      "line": 35
     },
     {
       "method": "POST",
       "path": "/payments/stripe/checkout/{booking_id}",
       "file": "backend\\app\\api\\payments_stripe.py",
-      "line": 39
+      "line": 40
     },
     {
       "method": "POST",
       "path": "/payments/stripe/webhook",
       "file": "backend\\app\\api\\payments_stripe.py",
-      "line": 77
+      "line": 80
     },
     {
       "method": "POST",
       "path": "/push-tokens/register",
       "file": "backend\\app\\api\\push_tokens.py",
-      "line": 19
+      "line": 21
     },
     {
       "method": "POST",
       "path": "/reviews/",
       "file": "backend\\app\\api\\reviews.py",
-      "line": 31
+      "line": 33
     },
     {
       "method": "GET",
       "path": "/reviews/business/{business_id}",
       "file": "backend\\app\\api\\reviews.py",
-      "line": 103
+      "line": 129
     },
     {
       "method": "GET",
       "path": "/reviews/client/{client_id}",
       "file": "backend\\app\\api\\reviews.py",
-      "line": 120
+      "line": 148
     },
     {
       "method": "POST",
       "path": "/service-posts/",
       "file": "backend\\app\\api\\service_posts.py",
-      "line": 48
+      "line": 50
     },
     {
       "method": "GET",
       "path": "/service-posts/my",
       "file": "backend\\app\\api\\service_posts.py",
-      "line": 72
+      "line": 84
     },
     {
       "method": "GET",
       "path": "/service-posts/",
       "file": "backend\\app\\api\\service_posts.py",
-      "line": 103
+      "line": 127
     },
     {
       "method": "GET",
       "path": "/service-posts/{post_id}",
       "file": "backend\\app\\api\\service_posts.py",
-      "line": 140
+      "line": 167
     },
     {
       "method": "DELETE",
       "path": "/service-posts/{post_id}",
       "file": "backend\\app\\api\\service_posts.py",
-      "line": 155
+      "line": 182
     },
     {
       "method": "POST",
       "path": "/businesses/me/subscribe",
       "file": "backend\\app\\api\\subscriptions.py",
-      "line": 46
+      "line": 55
     },
     {
       "method": "GET",
       "path": "/businesses/me/subscription",
       "file": "backend\\app\\api\\subscriptions.py",
-      "line": 100
+      "line": 124
     },
     {
       "method": "POST",
       "path": "/uploads/image",
       "file": "backend\\app\\api\\uploads.py",
-      "line": 17
+      "line": 23
     },
     {
       "method": "DELETE",
       "path": "/uploads/image",
       "file": "backend\\app\\api\\uploads.py",
-      "line": 54
+      "line": 60
     },
     {
       "method": "POST",
       "path": "/waitlist/",
       "file": "backend\\app\\api\\waitlist.py",
-      "line": 47
+      "line": 51
     }
   ],
   "api_calls": [
@@ -1244,187 +1374,205 @@
       "from_file": "mobile\\src\\screens\\auth\\ForgotPasswordScreen.js",
       "method": "POST",
       "path": "/auth/forgot-password",
-      "line": 28
+      "line": 29
     },
     {
       "from_file": "mobile\\src\\screens\\business\\BusinessAnalyticsScreen.js",
       "method": "GET",
       "path": "/businesses/me/analytics",
-      "line": 161
+      "line": 162
+    },
+    {
+      "from_file": "mobile\\src\\screens\\business\\BusinessInvoicesScreen.js",
+      "method": "GET",
+      "path": "/bookings/?limit=100",
+      "line": 73
     },
     {
       "from_file": "mobile\\src\\screens\\business\\BusinessProfileScreen.js",
       "method": "GET",
-      "path": "/businesses/${resolvedId}",
-      "line": 234
+      "path": "/businesses/${businessId}",
+      "line": 231
     },
     {
       "from_file": "mobile\\src\\screens\\business\\BusinessProfileScreen.js",
       "method": "GET",
-      "path": "/employees/business/${resolvedId}",
-      "line": 235
+      "path": "/businesses/me",
+      "line": 232
     },
     {
       "from_file": "mobile\\src\\screens\\business\\BusinessProfileScreen.js",
       "method": "GET",
-      "path": "/reviews/business/${resolvedId}",
-      "line": 236
+      "path": "/employees/business/${id}",
+      "line": 239
+    },
+    {
+      "from_file": "mobile\\src\\screens\\business\\BusinessProfileScreen.js",
+      "method": "GET",
+      "path": "/reviews/business/${id}",
+      "line": 240
     },
     {
       "from_file": "mobile\\src\\screens\\business\\BusinessProfileScreen.js",
       "method": "GET",
       "path": "/businesses/me/subscription",
-      "line": 238
+      "line": 242
     },
     {
       "from_file": "mobile\\src\\screens\\business\\BusinessProfileScreen.js",
       "method": "PATCH",
-      "path": "/businesses/${resolvedId}",
-      "line": 261
+      "path": "/businesses/${bizId}",
+      "line": 265
     },
     {
       "from_file": "mobile\\src\\screens\\business\\BusinessProfileScreen.js",
       "method": "PATCH",
       "path": "/employees/${emp.id}/deactivate",
-      "line": 303
+      "line": 307
     },
     {
       "from_file": "mobile\\src\\screens\\business\\BusinessProfileScreen.js",
       "method": "PATCH",
       "path": "/employees/${emp.id}/reactivate",
-      "line": 305
+      "line": 309
     },
     {
       "from_file": "mobile\\src\\screens\\business\\BusinessProfileScreen.js",
       "method": "POST",
       "path": "/businesses/me/subscribe",
-      "line": 605
+      "line": 613
     },
     {
       "from_file": "mobile\\src\\screens\\business\\DashboardScreen.js",
       "method": "GET",
       "path": "/bookings/",
-      "line": 205
+      "line": 108
     },
     {
       "from_file": "mobile\\src\\screens\\business\\DashboardScreen.js",
       "method": "GET",
       "path": "/service-posts/",
-      "line": 206
+      "line": 109
     },
     {
       "from_file": "mobile\\src\\screens\\business\\DashboardScreen.js",
       "method": "GET",
       "path": "/businesses/me",
-      "line": 207
+      "line": 110
+    },
+    {
+      "from_file": "mobile\\src\\screens\\business\\DashboardScreen.js",
+      "method": "GET",
+      "path": "/messages/threads",
+      "line": 111
     },
     {
       "from_file": "mobile\\src\\screens\\business\\EarningsScreen.js",
       "method": "GET",
       "path": "/payments/mine",
-      "line": 152
+      "line": 145
     },
     {
       "from_file": "mobile\\src\\screens\\business\\EmployeeManagementScreen.js",
       "method": "PATCH",
       "path": "/employees/${employee.id}/reactivate",
-      "line": 128
+      "line": 129
     },
     {
       "from_file": "mobile\\src\\screens\\business\\EmployeeManagementScreen.js",
       "method": "PATCH",
       "path": "/employees/${employee.id}/deactivate",
-      "line": 130
+      "line": 131
     },
     {
       "from_file": "mobile\\src\\screens\\business\\EmployeeManagementScreen.js",
       "method": "POST",
       "path": "/employees/",
-      "line": 260
+      "line": 261
     },
     {
       "from_file": "mobile\\src\\screens\\business\\EmployeeManagementScreen.js",
       "method": "GET",
       "path": "/employees/",
-      "line": 479
+      "line": 480
     },
     {
       "from_file": "mobile\\src\\screens\\business\\EmployeeManagementScreen.js",
       "method": "PATCH",
       "path": "/employees/${employee.id}/reactivate",
-      "line": 507
+      "line": 508
     },
     {
       "from_file": "mobile\\src\\screens\\business\\EmployeeManagementScreen.js",
       "method": "PATCH",
       "path": "/employees/${employee.id}/deactivate",
-      "line": 509
+      "line": 510
     },
     {
       "from_file": "mobile\\src\\screens\\business\\EmployeeProfileScreen.js",
       "method": "GET",
       "path": "/employees/${employeeId}/profile",
-      "line": 138
+      "line": 140
     },
     {
       "from_file": "mobile\\src\\screens\\business\\JobManagementScreen.js",
       "method": "GET",
       "path": "/bookings/${bookingId}",
-      "line": 186
+      "line": 187
     },
     {
       "from_file": "mobile\\src\\screens\\business\\JobManagementScreen.js",
       "method": "GET",
       "path": "/employees/",
-      "line": 187
+      "line": 188
     },
     {
       "from_file": "mobile\\src\\screens\\business\\JobManagementScreen.js",
       "method": "PATCH",
       "path": "/bookings/${bookingId}/complete",
-      "line": 221
+      "line": 233
     },
     {
       "from_file": "mobile\\src\\screens\\business\\JobManagementScreen.js",
-      "method": "PATCH",
-      "path": "/bookings/${bookingId}/confirm-date",
-      "line": 223
+      "method": "POST",
+      "path": "/bookings/${bookingId}/events",
+      "line": 237
     },
     {
       "from_file": "mobile\\src\\screens\\business\\JobManagementScreen.js",
       "method": "PATCH",
       "path": "/bookings/${bookingId}/assign-employee",
-      "line": 237
+      "line": 251
     },
     {
       "from_file": "mobile\\src\\screens\\client\\ActiveBookingScreen.js",
       "method": "GET",
       "path": "/bookings/${bookingId}",
-      "line": 133
+      "line": 272
     },
     {
       "from_file": "mobile\\src\\screens\\client\\BookingDetailsScreen.js",
       "method": "GET",
       "path": "/bookings/${bookingId}",
-      "line": 220
+      "line": 228
     },
     {
       "from_file": "mobile\\src\\screens\\client\\BookingDetailsScreen.js",
       "method": "GET",
       "path": "/payments/${bookingId}",
-      "line": 221
+      "line": 229
     },
     {
       "from_file": "mobile\\src\\screens\\client\\BookingDetailsScreen.js",
       "method": "POST",
       "path": "/bookings/${bookingId}/mark-paid-offplatform",
-      "line": 278
+      "line": 304
     },
     {
       "from_file": "mobile\\src\\screens\\client\\BookingDetailsScreen.js",
       "method": "POST",
       "path": "/payments/stripe/checkout/${bookingId}",
-      "line": 293
+      "line": 319
     },
     {
       "from_file": "mobile\\src\\screens\\client\\FavoritesScreen.js",
@@ -1436,25 +1584,31 @@
       "from_file": "mobile\\src\\screens\\client\\HomeScreen.js",
       "method": "GET",
       "path": "/businesses/nearby",
-      "line": 142
+      "line": 117
     },
     {
       "from_file": "mobile\\src\\screens\\client\\MyJobsScreen.js",
       "method": "GET",
       "path": "/bookings/",
-      "line": 104
+      "line": 152
     },
     {
       "from_file": "mobile\\src\\screens\\client\\MyJobsScreen.js",
       "method": "GET",
       "path": "/service-posts/my",
-      "line": 106
+      "line": 154
+    },
+    {
+      "from_file": "mobile\\src\\screens\\client\\MyJobsScreen.js",
+      "method": "GET",
+      "path": "/interests/mine",
+      "line": 156
     },
     {
       "from_file": "mobile\\src\\screens\\client\\NearbyMapScreen.js",
       "method": "GET",
       "path": "/businesses/nearby",
-      "line": 394
+      "line": 395
     },
     {
       "from_file": "mobile\\src\\screens\\client\\PostJobScreen.js",
@@ -1466,13 +1620,13 @@
       "from_file": "mobile\\src\\screens\\client\\QuoteComparisonScreen.js",
       "method": "GET",
       "path": "/interests/post/${postId}",
-      "line": 221
+      "line": 228
     },
     {
       "from_file": "mobile\\src\\screens\\client\\QuoteComparisonScreen.js",
       "method": "PATCH",
       "path": "/interests/${selectedQuote.id}/accept",
-      "line": 251
+      "line": 259
     },
     {
       "from_file": "mobile\\src\\screens\\client\\ReviewScreen.js",
@@ -1501,20 +1655,26 @@
     {
       "from_file": "mobile\\src\\screens\\messages\\ChatScreen.js",
       "method": "GET",
+      "path": "/messages/interest/${interestId}",
+      "line": 274
+    },
+    {
+      "from_file": "mobile\\src\\screens\\messages\\ChatScreen.js",
+      "method": "GET",
       "path": "/messages/${bookingId}",
-      "line": 270
+      "line": 275
     },
     {
       "from_file": "mobile\\src\\screens\\messages\\ChatScreen.js",
       "method": "POST",
       "path": "/messages/",
-      "line": 296
+      "line": 304
     },
     {
       "from_file": "mobile\\src\\screens\\messages\\MessagesScreen.js",
       "method": "GET",
-      "path": "/bookings/",
-      "line": 135
+      "path": "/messages/threads",
+      "line": 162
     },
     {
       "from_file": "mobile\\src\\screens\\messages\\MessageThreadScreen.js",
@@ -1532,7 +1692,7 @@
       "from_file": "mobile\\src\\screens\\messages\\MessageThreadScreen.js",
       "method": "POST",
       "path": "/messages/",
-      "line": 190
+      "line": 192
     },
     {
       "from_file": "mobile\\src\\screens\\onboarding\\BusinessSetupScreen.js",
@@ -1544,13 +1704,13 @@
       "from_file": "mobile\\src\\screens\\profile\\NotificationsScreen.js",
       "method": "GET",
       "path": "/bookings/",
-      "line": 76
+      "line": 91
     },
     {
       "from_file": "mobile\\src\\screens\\profile\\NotificationsScreen.js",
       "method": "GET",
       "path": "/service-posts/my",
-      "line": 77
+      "line": 92
     },
     {
       "from_file": "mobile\\src\\screens\\profile\\ProfileEditScreen.js",
@@ -1610,13 +1770,19 @@
       "from_file": "mobile\\src\\components\\ReviewSubmitSheet.js",
       "method": "POST",
       "path": "/reviews/",
-      "line": 52
+      "line": 43
     },
     {
       "from_file": "mobile\\src\\components\\SendQuoteSheet.js",
       "method": "POST",
       "path": "/interests/",
-      "line": 23
+      "line": 41
+    },
+    {
+      "from_file": "mobile\\src\\components\\SendQuoteSheet.js",
+      "method": "POST",
+      "path": "/messages/",
+      "line": 53
     },
     {
       "from_file": "mobile\\src\\services\\auth.js",

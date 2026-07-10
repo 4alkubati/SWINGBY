@@ -1,30 +1,21 @@
-// T46 — ReviewSubmitSheet
-// Bottom-sheet modal for submitting a post-booking review.
-// Props:
-//   visible        — boolean
-//   onClose        — () => void
-//   bookingId      — string
-//   revieweeName   — string
-//   revieweeAvatar — string | null (URL, unused in this design; initials shown instead)
-//   onSubmitted    — () => void (called on success before onClose)
 import React, { useState } from 'react';
 import {
   Modal,
   View,
-  Text,
   TextInput,
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
   KeyboardAvoidingView,
-  Platform,
   TouchableWithoutFeedback,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Text from './Text';
 import { api } from '../services/api';
 import * as toast from '../services/toast';
 import * as haptics from '../services/haptics';
 import { RatingStarsInput } from './RatingStars';
+import { colors, spacing } from '../theme/tokens';
 
 function toInitials(name) {
   return (name || '??').split(' ').slice(0, 2).map((w) => w[0]).join('').toUpperCase();
@@ -79,7 +70,6 @@ export default function ReviewSubmitSheet({
       animationType="slide"
       onRequestClose={handleClose}
     >
-      {/* Backdrop */}
       <TouchableWithoutFeedback onPress={handleClose}>
         <View style={styles.backdrop} />
       </TouchableWithoutFeedback>
@@ -90,21 +80,15 @@ export default function ReviewSubmitSheet({
         pointerEvents="box-none"
       >
         <View style={[styles.sheet, { paddingBottom: insets.bottom + 20 }]}>
-          {/* Handle bar */}
           <View style={styles.handle} />
 
-          {/* Avatar */}
-          <View style={styles.avatarWrap}>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarInitials}>{toInitials(revieweeName)}</Text>
-            </View>
+          <View style={styles.avatar}>
+            <Text style={styles.avatarInitials}>{toInitials(revieweeName)}</Text>
           </View>
 
-          {/* Name */}
           <Text style={styles.name}>{revieweeName}</Text>
           <Text style={styles.sub}>How did they do?</Text>
 
-          {/* Stars — large, 40pt */}
           <View style={styles.starsWrap}>
             <RatingStarsInput value={rating} onChange={setRating} size={40} />
           </View>
@@ -115,11 +99,10 @@ export default function ReviewSubmitSheet({
             </Text>
           )}
 
-          {/* Comment */}
           <TextInput
             style={styles.commentInput}
             placeholder="Leave an optional comment…"
-            placeholderTextColor="#3a424c"
+            placeholderTextColor={colors.textTertiary}
             value={comment}
             onChangeText={setComment}
             multiline
@@ -129,7 +112,6 @@ export default function ReviewSubmitSheet({
           />
           <Text style={styles.charCount}>{comment.length} / 2000</Text>
 
-          {/* CTA */}
           <TouchableOpacity
             style={[styles.submitBtn, !canSubmit && styles.submitBtnDisabled]}
             onPress={handleSubmit}
@@ -150,21 +132,21 @@ export default function ReviewSubmitSheet({
 const styles = StyleSheet.create({
   backdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.65)',
+    backgroundColor: colors.overlayScrim,
   },
   sheetWrap: {
     flex: 1,
     justifyContent: 'flex-end',
   },
   sheet: {
-    backgroundColor: '#0d0f10',
+    backgroundColor: colors.surface,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     borderTopWidth: 1,
     borderLeftWidth: 1,
     borderRightWidth: 1,
-    borderColor: '#1a1d1f',
-    paddingHorizontal: 24,
+    borderColor: colors.border,
+    paddingHorizontal: spacing.lg,
     paddingTop: 12,
     alignItems: 'center',
     gap: 14,
@@ -173,86 +155,75 @@ const styles = StyleSheet.create({
     width: 40,
     height: 4,
     borderRadius: 2,
-    backgroundColor: '#2a2e33',
+    backgroundColor: colors.border,
     marginBottom: 4,
   },
-
-  avatarWrap: {
-    shadowColor: 'rgba(255,92,0,0.35)',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 1,
-    shadowRadius: 12,
-    elevation: 8,
-  },
   avatar: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: '#FF5C00',
+    width: 68,
+    height: 68,
+    borderRadius: 20,
+    backgroundColor: colors.accentMuted,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarInitials: { fontSize: 24, fontWeight: '700', color: '#ffffff' },
-
-  name: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#ffffff',
+  avatarInitials: {
+    fontFamily: 'SpaceGrotesk_700Bold',
+    fontSize: 22,
+    color: colors.accentText,
     letterSpacing: -0.4,
+  },
+  name: {
+    fontFamily: 'SpaceGrotesk_700Bold',
+    fontSize: 20,
+    color: colors.textPrimary,
+    letterSpacing: -0.5,
     textAlign: 'center',
     marginTop: -4,
   },
   sub: {
-    fontSize: 14,
-    color: '#9ca3af',
+    fontSize: 13,
+    color: colors.textSecondary,
     marginTop: -8,
     textAlign: 'center',
   },
-
   starsWrap: {
     paddingVertical: 4,
   },
   ratingHint: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
-    color: '#FF8C42',
+    color: colors.accentText,
     marginTop: -8,
     textAlign: 'center',
+    letterSpacing: 0.3,
   },
-
   commentInput: {
     width: '100%',
-    backgroundColor: '#131618',
+    backgroundColor: colors.surfaceAlt,
     borderWidth: 1,
-    borderColor: '#2a2e33',
+    borderColor: colors.border,
     borderRadius: 14,
     padding: 14,
     fontSize: 14,
-    color: '#f0ede8',
+    color: colors.textPrimary,
     minHeight: 90,
     lineHeight: 21,
   },
   charCount: {
     alignSelf: 'flex-end',
     fontSize: 11,
-    color: '#3a424c',
+    color: colors.textTertiary,
     marginTop: -10,
   },
-
   submitBtn: {
     width: '100%',
-    backgroundColor: '#FF5C00',
-    borderRadius: 14,
+    backgroundColor: colors.accent,
+    borderRadius: 12,
     paddingVertical: 15,
     alignItems: 'center',
     minHeight: 50,
     marginTop: 4,
-    shadowColor: 'rgba(255,92,0,0.35)',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 1,
-    shadowRadius: 10,
-    elevation: 6,
   },
   submitBtnDisabled: { opacity: 0.4 },
-  submitBtnText: { fontSize: 16, fontWeight: '700', color: '#ffffff' },
+  submitBtnText: { fontSize: 15, fontWeight: '700', color: '#ffffff', letterSpacing: 0.1 },
 });

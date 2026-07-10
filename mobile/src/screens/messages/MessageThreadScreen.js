@@ -93,7 +93,7 @@ function MessageBubble({ item, isMe }) {
         </Text>
       </View>
       <Text style={[styles.msgTime, isMe ? styles.msgTimeRight : styles.msgTimeLeft]}>
-        {msgTime(item.created_at ?? item.timestamp)}
+        {msgTime(item.sent_at ?? item.created_at ?? item.timestamp)}
         {item._optimistic && '  ·  sending…'}
       </Text>
     </View>
@@ -134,16 +134,17 @@ export default function MessageThreadScreen({ route, navigation }) {
       const params = { limit: 50 };
       if (before) params.before = before;
       const data = await api.get(`/messages/${bookingId}`, { params });
-      const items = Array.isArray(data) ? data : (data?.messages ?? []);
-      const nextCursor = data?.next_cursor ?? null;
+      // API shape: { items: [...newest-first], next_before } — render oldest-first
+      const raw = Array.isArray(data) ? data : (data?.items ?? []);
+      const items = [...raw].reverse();
 
       if (before) {
         setMessages((prev) => [...items, ...prev]);
       } else {
         setMessages(items);
       }
-      setCursor(nextCursor);
-      setHasMore(!!nextCursor);
+      setCursor(data?.next_before ?? null);
+      setHasMore(raw.length === params.limit);
     } catch {
       // swallow — empty state will show
     }
@@ -187,10 +188,12 @@ export default function MessageThreadScreen({ route, navigation }) {
 
     try {
       await haptics.buttonTap();
-      const sent = await api.post('/messages/', {
+      // API shape: { message: 'Sent', data: {...row} }
+      const res = await api.post('/messages/', {
         booking_id: bookingId,
         content: text,
       });
+      const sent = res?.data || res;
       // replace optimistic with real
       setMessages((prev) =>
         prev.map((m) => (m.id === tempId ? { ...sent, _optimistic: false } : m))
@@ -214,9 +217,22 @@ export default function MessageThreadScreen({ route, navigation }) {
 
   // ── derived ──
   const otherName = (() => {
-    if (!bookingMeta || !user) return 'Worker';
-    const w = bookingMeta.worker ?? bookingMeta.employee ?? {};
-    return w.name ?? w.full_name ?? bookingMeta.client_name ?? 'Worker';
+    if (!bookingMeta || !user) return 'Chat';
+    // Counterpart depends on who's looking: client sees the business/employee,
+    // provider sees the client. Joins come nested from /bookings/{id}.
+    if (user.role === 'client') {
+      const empUser = bookingMeta.employees?.users;
+      return (
+        (empUser && [empUser.first_name, empUser.last_name].filter(Boolean).join(' '))
+        || bookingMeta.businesses?.business_name
+        || 'Provider'
+      );
+    }
+    const clientUser = bookingMeta.users;
+    return (
+      (clientUser && [clientUser.first_name, clientUser.last_name].filter(Boolean).join(' '))
+      || 'Client'
+    );
   })();
 
   const bookingStatus = bookingMeta?.status ?? 'confirmed';

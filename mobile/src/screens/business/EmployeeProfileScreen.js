@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { Feather } from '@expo/vector-icons';
 import { api } from '../../services/api';
 import { colors, spacing, radius, shadows } from '../../theme/tokens';
 import Text from '../../components/Text';
@@ -114,8 +115,9 @@ function StatItem({ value, label, sub, isFirst }) {
 function VerifiedBadge({ businessName }) {
   return (
     <View style={styles.verifiedPill}>
-      <Text variant="caption" color="primary" style={{ color: colors.success, fontWeight: '600' }}>
-        ✓ Verified by {businessName}
+      <Feather name="check-circle" size={12} color={colors.success} strokeWidth={2.2} />
+      <Text variant="caption" style={{ color: colors.success, fontWeight: '600' }}>
+        Verified by {businessName}
       </Text>
     </View>
   );
@@ -337,12 +339,15 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
   },
   verifiedPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
     paddingVertical: spacing.xs,
     paddingHorizontal: spacing.sm,
     borderRadius: radius.chip,
     borderWidth: 1,
-    borderColor: colors.success,
-    backgroundColor: colors.bg,
+    borderColor: 'rgba(46,189,133,0.4)',
+    backgroundColor: 'rgba(46,189,133,0.12)',
   },
   companyLink: {
     paddingVertical: spacing.xs,

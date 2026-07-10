@@ -1,11 +1,12 @@
-// T70 — LanguageSelector bottom-sheet modal
 import React, { useRef, useEffect } from 'react';
 import {
-  View, Text, TouchableOpacity, Modal, Animated,
+  View, TouchableOpacity, Modal, Animated,
   StyleSheet, Dimensions, TouchableWithoutFeedback,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import Text from './Text';
 import i18n, { setLocale } from '../i18n';
+import { colors, spacing } from '../theme/tokens';
 
 const SCREEN_HEIGHT = Dimensions.get('window').height;
 
@@ -51,7 +52,6 @@ export default function LanguageSelector({ visible, onClose, currentLocale }) {
       </TouchableWithoutFeedback>
 
       <Animated.View style={[styles.sheet, { transform: [{ translateY }] }]}>
-        {/* Handle */}
         <View style={styles.handle} />
 
         <Text style={styles.title}>Select Language</Text>
@@ -64,7 +64,7 @@ export default function LanguageSelector({ visible, onClose, currentLocale }) {
                 key={lang.code}
                 style={[styles.row, selected && styles.rowActive]}
                 onPress={() => handleSelect(lang.code)}
-                activeOpacity={0.75}
+                activeOpacity={0.85}
               >
                 <View style={styles.rowText}>
                   <Text style={[styles.langLabel, selected && styles.langLabelActive]}>
@@ -73,7 +73,7 @@ export default function LanguageSelector({ visible, onClose, currentLocale }) {
                   <Text style={styles.langSub}>{lang.label}</Text>
                 </View>
                 {selected && (
-                  <Feather name="check" size={18} color="#FF5C00" />
+                  <Feather name="check" size={18} color={colors.accentText} strokeWidth={2.4} />
                 )}
               </TouchableOpacity>
             );
@@ -83,7 +83,7 @@ export default function LanguageSelector({ visible, onClose, currentLocale }) {
         <TouchableOpacity
           style={styles.cancelBtn}
           onPress={() => onClose(null)}
-          activeOpacity={0.75}
+          activeOpacity={0.85}
         >
           <Text style={styles.cancelText}>Cancel</Text>
         </TouchableOpacity>
@@ -95,36 +95,36 @@ export default function LanguageSelector({ visible, onClose, currentLocale }) {
 const styles = StyleSheet.create({
   backdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: colors.overlayScrim,
   },
   sheet: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: '#0d0f10',
+    backgroundColor: colors.surface,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     borderTopWidth: 1,
-    borderColor: '#1a1d1f',
+    borderColor: colors.border,
     paddingBottom: 32,
     paddingTop: 12,
-    paddingHorizontal: 22,
+    paddingHorizontal: spacing.lg,
   },
   handle: {
     width: 40,
     height: 4,
     borderRadius: 2,
-    backgroundColor: '#2a2e33',
+    backgroundColor: colors.border,
     alignSelf: 'center',
-    marginBottom: 20,
+    marginBottom: spacing.lg,
   },
   title: {
+    fontFamily: 'SpaceGrotesk_700Bold',
     fontSize: 18,
-    fontWeight: '700',
-    color: '#ffffff',
+    color: colors.textPrimary,
     letterSpacing: -0.5,
-    marginBottom: 16,
+    marginBottom: spacing.md,
   },
   list: {
     gap: 8,
@@ -133,17 +133,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#131618',
+    backgroundColor: colors.surfaceAlt,
     borderWidth: 1,
-    borderColor: '#1a1d1f',
+    borderColor: colors.border,
     borderRadius: 14,
     paddingHorizontal: 16,
     paddingVertical: 14,
     minHeight: 56,
   },
   rowActive: {
-    backgroundColor: 'rgba(255,92,0,0.10)',
-    borderColor: 'rgba(255,92,0,0.25)',
+    backgroundColor: colors.accentMuted,
+    borderColor: colors.borderAccent,
   },
   rowText: {
     gap: 2,
@@ -151,28 +151,28 @@ const styles = StyleSheet.create({
   langLabel: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#f0ede8',
+    color: colors.textPrimary,
   },
   langLabelActive: {
-    color: '#ffffff',
+    color: colors.textPrimary,
   },
   langSub: {
     fontSize: 12,
-    color: '#6b7280',
+    color: colors.textSecondary,
   },
   cancelBtn: {
-    marginTop: 16,
-    backgroundColor: '#131618',
+    marginTop: spacing.md,
+    backgroundColor: colors.surfaceAlt,
     borderWidth: 1,
-    borderColor: '#2a2e33',
-    borderRadius: 14,
+    borderColor: colors.border,
+    borderRadius: 12,
     paddingVertical: 14,
     alignItems: 'center',
     minHeight: 44,
   },
   cancelText: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '600',
-    color: '#9ca3af',
+    color: colors.textSecondary,
   },
 });

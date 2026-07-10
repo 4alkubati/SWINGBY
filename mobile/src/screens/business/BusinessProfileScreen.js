@@ -219,21 +219,25 @@ export default function BusinessProfileScreen({ navigation, route }) {
   // Scroll-based header animation
   const scrollY = useSharedValue(0);
 
-  const resolvedId = businessId || user?.business_id;
+  // Resolved business id. Starts from the route param or the auth payload,
+  // but when neither is present (e.g. stale cached user without business_id)
+  // we fall back to GET /businesses/me and resolve it from the response.
+  const [bizId, setBizId] = useState(businessId || user?.business_id || null);
 
   const load = useCallback(async () => {
-    if (!resolvedId) {
-      setError(true);
-      setLoading(false);
-      return;
-    }
     setError(false);
     try {
-      const isOwn = !businessId || businessId === user?.business_id;
-      const [biz, emps, revs, sub] = await Promise.all([
-        api.get(`/businesses/${resolvedId}`),
-        api.get(`/employees/business/${resolvedId}`).catch(() => []),
-        api.get(`/reviews/business/${resolvedId}`).catch(() => []),
+      const biz = businessId
+        ? await api.get(`/businesses/${businessId}`)
+        : await api.get('/businesses/me');
+      const id = biz?.id;
+      if (!id) throw new Error('No business found');
+      setBizId(id);
+
+      const isOwn = !businessId || businessId === id;
+      const [emps, revs, sub] = await Promise.all([
+        api.get(`/employees/business/${id}`).catch(() => []),
+        api.get(`/reviews/business/${id}`).catch(() => []),
         isOwn && user?.role === 'business_owner'
           ? api.get('/businesses/me/subscription').catch(() => null)
           : Promise.resolve(null),
@@ -251,14 +255,14 @@ export default function BusinessProfileScreen({ navigation, route }) {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [resolvedId]);
+  }, [businessId, user?.role]);
 
   useEffect(() => { load(); }, [load]);
 
   async function handleSave() {
     setSaving(true);
     try {
-      await api.patch(`/businesses/${resolvedId}`, {
+      await api.patch(`/businesses/${bizId}`, {
         business_name: editName,
         category: editCategory,
         service_radius_km: parseInt(editRadius, 10),
@@ -344,13 +348,17 @@ export default function BusinessProfileScreen({ navigation, route }) {
 
       {/* ── Top nav bar ── */}
       <Inline justify="space-between" style={styles.navBar}>
-        <Button
-          variant="ghost"
-          label=""
-          icon={<Feather name="arrow-left" size={20} color={colors.textSecondary} />}
-          onPress={() => navigation.goBack()}
-          style={styles.iconBtn}
-        />
+        {navigation.canGoBack() ? (
+          <Button
+            variant="ghost"
+            label=""
+            icon={<Feather name="arrow-left" size={20} color={colors.textSecondary} />}
+            onPress={() => navigation.goBack()}
+            style={styles.iconBtn}
+          />
+        ) : (
+          <View style={styles.iconBtn} />
+        )}
         {isOwner && !editMode && (
           <Button
             variant="ghost"
@@ -523,7 +531,7 @@ export default function BusinessProfileScreen({ navigation, route }) {
                   emp={emp}
                   editMode={editMode}
                   onToggle={() => toggleEmployee(emp)}
-                  onPress={() => navigation.navigate('EmployeeProfile', { employeeId: emp.id, businessId: resolvedId })}
+                  onPress={() => navigation.navigate('EmployeeProfile', { employeeId: emp.id, businessId: bizId })}
                 />
               ))}
             </View>
@@ -632,6 +640,13 @@ export default function BusinessProfileScreen({ navigation, route }) {
                   <Text variant="body" style={styles.acctLabel}>Payment methods</Text>
                   <Feather name="chevron-right" size={16} color={colors.textSecondary} />
                 </TouchableOpacity>
+                {user?.role === 'business_owner' && (
+                  <TouchableOpacity style={styles.acctRow} activeOpacity={0.7} onPress={() => navigation.navigate('BusinessInvoices')}>
+                    <Feather name="file-text" size={18} color={colors.textSecondary} />
+                    <Text variant="body" style={styles.acctLabel}>Invoices</Text>
+                    <Feather name="chevron-right" size={16} color={colors.textSecondary} />
+                  </TouchableOpacity>
+                )}
                 <TouchableOpacity style={styles.acctRow} activeOpacity={0.7} onPress={() => navigation.navigate('Settings')}>
                   <Feather name="settings" size={18} color={colors.textSecondary} />
                   <Text variant="body" style={styles.acctLabel}>Settings</Text>
@@ -677,7 +692,7 @@ export default function BusinessProfileScreen({ navigation, route }) {
         <View style={[styles.bookBar, { paddingBottom: Math.max(insets.bottom, spacing.base) }]}>
           <Button
             label="Book now"
-            onPress={() => navigation.navigate('PostJob', { businessId: resolvedId })}
+            onPress={() => navigation.navigate('PostJob', { businessId: bizId })}
             style={styles.bookBtn}
           />
         </View>

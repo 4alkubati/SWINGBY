@@ -151,6 +151,42 @@ def express_interest(
         raise HTTPException(status_code=400, detail="Could not express interest")
 
 
+@router.get("/mine")
+def list_my_interests(current_user: dict = Depends(get_current_user)):
+    """Business owner's sent quotes with post + client context (Jobs tab)."""
+    if current_user["role"] != "business_owner":
+        raise HTTPException(
+            status_code=403, detail="Only business owners can view their quotes"
+        )
+
+    biz_res = (
+        supabase.table("businesses")
+        .select("id")
+        .eq("owner_id", current_user["id"])
+        .single()
+        .execute()
+    )
+    if not biz_res.data:
+        return {"items": []}
+
+    try:
+        res = (
+            supabase.table("interests")
+            .select(
+                "*, service_posts(id, title, category, status, address, "
+                "users(first_name, last_name, avatar_url))"
+            )
+            .eq("business_id", biz_res.data["id"])
+            .order("created_at", desc=True)
+            .limit(100)
+            .execute()
+        )
+        return {"items": res.data or []}
+    except Exception:
+        logger.exception("Could not list my interests")
+        raise HTTPException(status_code=400, detail="Could not list quotes")
+
+
 @router.get("/post/{post_id}")
 def list_interests_on_post(
     post_id: str, current_user: dict = Depends(get_current_user)
@@ -275,6 +311,15 @@ def accept_interest(interest_id: str, current_user: dict = Depends(get_current_u
         )
         booking = booking_res.data[0]
 
+        # Carry the pre-booking quote conversation into the booking thread —
+        # stamped messages surface under the booking in /messages/threads.
+        try:
+            supabase.table("messages").update({"booking_id": booking["id"]}).eq(
+                "interest_id", interest_id
+            ).execute()
+        except Exception:
+            pass  # thread migration is best-effort
+
         payment_res = (
             supabase.table("payments")
             .insert(
@@ -377,7 +422,7 @@ def reject_interest(interest_id: str, current_user: dict = Depends(get_current_u
 
     int_res = (
         supabase.table("interests")
-        .select("post_id, status")
+        .select("post_id, status, business_id")
         .eq("id", interest_id)
         .single()
         .execute()
@@ -403,6 +448,26 @@ def reject_interest(interest_id: str, current_user: dict = Depends(get_current_u
         supabase.table("interests").update({"status": "rejected"}).eq(
             "id", interest_id
         ).execute()
+
+        # Tell the business — a declined quote is a follow-up opportunity,
+        # not a dead end (the chat thread stays open while the post is open).
+        try:
+            biz_owner_res = (
+                supabase.table("businesses")
+                .select("owner_id")
+                .eq("id", int_res.data["business_id"])
+                .single()
+                .execute()
+            )
+            if biz_owner_res.data:
+                send_push_to_user(
+                    biz_owner_res.data["owner_id"],
+                    "Quote not selected",
+                    "Your quote wasn't chosen this time — you can still message the client to follow up.",
+                )
+        except Exception:
+            pass  # push failure must not break the request
+
         return {"message": "Interest rejected"}
     except Exception:
         logger.exception("Could not reject interest")

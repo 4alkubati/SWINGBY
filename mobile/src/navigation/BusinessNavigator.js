@@ -17,7 +17,6 @@ import JobManagementScreen from '../screens/business/JobManagementScreen';
 import ChatScreen from '../screens/messages/ChatScreen';
 import EmployeeManagementScreen from '../screens/business/EmployeeManagementScreen';
 import EmployeeProfileScreen from '../screens/business/EmployeeProfileScreen';
-import NotificationsScreen from '../screens/profile/NotificationsScreen';
 import EarningsScreen from '../screens/business/EarningsScreen';
 import BusinessAnalyticsScreen from '../screens/business/BusinessAnalyticsScreen';
 import SettingsScreen from '../screens/shared/SettingsScreen';
@@ -30,15 +29,16 @@ import MessageThreadScreen from '../screens/messages/MessageThreadScreen';
 import PaymentMethodScreen from '../screens/profile/PaymentMethodScreen';
 import DisputeFlowScreen from '../screens/flows/DisputeFlowScreen';
 import InvoiceScreen from '../screens/shared/InvoiceScreen';
+import BusinessInvoicesScreen from '../screens/business/BusinessInvoicesScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
 const BUSINESS_TABS = [
-  { name: 'Dashboard', icon: '📊' },
-  { name: 'Jobs', icon: '📄' },
-  { name: 'Messages', icon: '💬' },
-  { name: 'My Business', icon: '🏢' },
+  { name: 'Dashboard' },
+  { name: 'Jobs' },
+  { name: 'Messages' },
+  { name: 'My Business' },
 ];
 
 function BusinessTabs() {
@@ -101,7 +101,6 @@ export default function BusinessNavigator() {
       <Stack.Screen name="Chat" component={ChatScreen} />
       <Stack.Screen name="EmployeeManagement" component={EmployeeManagementScreen} />
       <Stack.Screen name="EmployeeProfile" component={EmployeeProfileScreen} />
-      <Stack.Screen name="Notifications" component={NotificationsScreen} />
       <Stack.Screen name="Earnings" component={EarningsScreen} />
       <Stack.Screen name="BusinessAnalytics" component={BusinessAnalyticsScreen} />
       <Stack.Screen name="Settings" component={SettingsScreen} />
@@ -114,6 +113,7 @@ export default function BusinessNavigator() {
       <Stack.Screen name="PaymentMethod" component={PaymentMethodScreen} />
       <Stack.Screen name="DisputeFlow" component={DisputeFlowScreen} />
       <Stack.Screen name="Invoice" component={InvoiceScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="BusinessInvoices" component={BusinessInvoicesScreen} />
     </Stack.Navigator>
     </ErrorBoundary>
   );

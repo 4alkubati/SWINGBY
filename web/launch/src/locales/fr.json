@@ -8,24 +8,113 @@
   },
   "home": {
     "hero": {
-      "headline": "Services locaux, devis en quelques minutes",
-      "sub": "Publiez une tâche, recevez des devis d'entreprises vérifiées à Calgary et réservez en toute confiance.",
-      "cta": "Publier une tâche — c'est gratuit",
-      "ctaSub": "Aucune carte de crédit requise"
+      "livePill": "En ligne à Calgary",
+      "headlineLead": "Services locaux, devis en",
+      "headlineAccent": "quelques minutes.",
+      "sub": "Publiez une tâche. Des entreprises de Calgary vérifiées la chiffrent. Réservez avec un paiement sous séquestre — l'argent circule quand le travail est fait.",
+      "ctaPrimary": "Publier une tâche — c'est gratuit",
+      "ctaSecondary": "Obtenir plus de contrats",
+      "trust": {
+        "verified": "Uniquement des pros vérifiés",
+        "escrow": "Paiement sous séquestre",
+        "local": "Conçu pour Calgary"
+      },
+      "floatQuoteSub": "Devis envoyé il y a 3 min · Prêt à réserver",
+      "floatTrackEyebrow": "En route",
+      "floatTrackTitle": "Arrive dans 12 min",
+      "floatTrackSub": "Bow River Cleaning · Contrat #4218",
+      "mapInfoStat": "pros vérifiés",
+      "mapInfoCity": "actifs à Calgary aujourd'hui.",
+      "mapInfoLink": "Ouvrir la carte"
     },
-    "howItWorks": "Comment ça marche",
-    "step1Title": "Publiez une tâche",
-    "step1Desc": "Décrivez ce dont vous avez besoin, fixez un budget et choisissez votre zone. Moins de deux minutes.",
-    "step2Title": "Recevez des devis",
-    "step2Desc": "Des entreprises locales vérifiées vous envoient des devis compétitifs. Comparez les évaluations et les prix.",
-    "step3Title": "Réservez en toute confiance",
-    "step3Desc": "Acceptez le meilleur devis. Le paiement est mis sous séquestre et libéré à la fin.",
-    "trustTitle": "Fondé sur la confiance",
-    "categories": "Catégories populaires",
-    "testimonials": "Ce que disent les gens",
-    "faqTitle": "Questions fréquentes",
-    "ctaSection": "Prêt à commencer?",
-    "ctaDesc": "Rejoignez des milliers de propriétaires de Calgary qui font les choses plus intelligemment."
+    "categories": {
+      "eyebrow": "Catégories populaires",
+      "title": "Peu importe la tâche — quelqu'un peut la chiffrer.",
+      "items": {
+        "cleaning": "Ménage",
+        "plumbing": "Plomberie",
+        "electrical": "Électricité",
+        "landscaping": "Aménagement",
+        "painting": "Peinture",
+        "carpentry": "Menuiserie",
+        "handyman": "Bricolage",
+        "moving": "Déménagement"
+      }
+    },
+    "howItWorks": {
+      "eyebrow": "Comment ça marche",
+      "title": "Une plateforme, deux parcours.",
+      "forClients": "Pour les clients",
+      "forBusinesses": "Pour les entreprises",
+      "clientTitle": "Publiez. Comparez. Réservez.",
+      "businessTitle": "Parcourez. Chiffrez. Encaissez.",
+      "clientLink": "Voir le parcours client complet",
+      "businessLink": "Voir le parcours entreprise complet",
+      "client": {
+        "1": { "title": "Publiez une tâche", "desc": "Catégorie, adresse, budget, photos. Deux minutes." },
+        "2": { "title": "Recevez des devis", "desc": "Des entreprises vérifiées à Calgary manifestent leur intérêt avec un prix." },
+        "3": { "title": "Réservez en toute sécurité", "desc": "Payez via le séquestre. 50 % à la confirmation." },
+        "4": { "title": "Terminé → paiement + avis", "desc": "Confirmez la fin. Les 50 % restants sont libérés. Laissez un avis." }
+      },
+      "business": {
+        "1": { "title": "Inscrivez-vous + vérifiez", "desc": "Vérification manuelle en 24 à 48 heures pendant la bêta." },
+        "2": { "title": "Parcourez à proximité", "desc": "De vraies tâches triées par distance et récence." },
+        "3": { "title": "Chiffrez + gagnez", "desc": "Ajoutez votre prix et votre argumentaire. La réservation débloque le chat." },
+        "4": { "title": "Terminé + payé", "desc": "Vous gardez 90 % après la commission de 10 %. Sans abonnement." }
+      }
+    },
+    "escrow": {
+      "eyebrow": "Protection séquestre",
+      "title": "Votre argent ne bouge que lorsque le travail est fait.",
+      "body": "SwingBy conserve chaque paiement jusqu'à la confirmation — la moitié à la réservation, la moitié à l'approbation. En cas de problème, nous pouvons retenir le paiement.",
+      "ledgerTitle": "Flux d'une réservation de 180 $",
+      "row1Title": "Vous réservez",
+      "row1Sub": "Fonds sous séquestre",
+      "row2Title": "Contrat confirmé",
+      "row2Sub": "50 % libérés à l'entreprise",
+      "row3Title": "Vous approuvez le travail",
+      "row3Sub": "50 % finaux libérés, moins 10 % de frais"
+    },
+    "trust": {
+      "eyebrow": "Fondé sur la confiance",
+      "title": "Quatre engagements que nous tenons.",
+      "items": {
+        "verified": { "title": "Entreprises vérifiées", "desc": "Vérification manuelle de la licence et de l'identité avant tout devis." },
+        "reviews":  { "title": "Avis honnêtes",         "desc": "Seules les réservations confirmées peuvent laisser un avis." },
+        "canadian": { "title": "Propriété canadienne",  "desc": "Conçu à Calgary. Données dans des régions canadiennes." },
+        "support":  { "title": "Vrai soutien humain",   "desc": "Examen des litiges en 72 heures. Paiement retenu si nécessaire." }
+      }
+    },
+    "calgary": {
+      "eyebrow": "En ligne à Calgary",
+      "title": "Local d'abord, national ensuite.",
+      "body": "Nous prouvons le modèle à Calgary. Chaque entreprise est vérifiée par un vrai humain. Chaque devis vient de quelqu'un qui peut vraiment faire le travail près de chez vous.",
+      "nextLabel": "Prochaines villes"
+    },
+    "app": {
+      "eyebrow": "L'application",
+      "title": "Les contrats de Calgary, à portée de main.",
+      "body": "iOS et Android natif. Parcourez les tâches à proximité, chiffrez sans quitter le flux, discutez en toute sécurité.",
+      "comingBadge": "Disponible en août 2026",
+      "storeNote": "Fiches App Store à la sortie générale."
+    },
+    "faq": {
+      "eyebrow": "FAQ",
+      "title": "Questions fréquentes.",
+      "items": {
+        "free":    { "q": "SwingBy est-il gratuit pour les clients?",           "a": "Oui. Publier des tâches et recevoir des devis est gratuit. Vous payez seulement le prix convenu. La commission de 10 % vient du paiement de l'entreprise." },
+        "verify":  { "q": "Comment les entreprises sont-elles vérifiées?",      "a": "Un membre de l'équipe SwingBy examine chaque licence et identité manuellement pendant la bêta de Calgary." },
+        "payment": { "q": "Comment fonctionne le paiement?",                    "a": "Le paiement est sous séquestre à la réservation. 50 % à la confirmation, 50 % à l'approbation finale — moins nos 10 %." },
+        "unhappy": { "q": "Et si je ne suis pas satisfait?",                    "a": "Ouvrez un litige dans l'application. Le soutien SwingBy répond en 72 heures et peut retenir le paiement." },
+        "cities":  { "q": "Quelles villes sont couvertes?",                     "a": "En ligne à Calgary aujourd'hui. Les autres villes ouvriront quand nous aurons assez d'entreprises vérifiées." }
+      }
+    },
+    "finalCta": {
+      "title": "Prêt à faire avancer les choses?",
+      "sub": "Publiez une tâche en deux minutes. Gratuit pour les clients — toujours.",
+      "primary": "Publier une tâche — c'est gratuit",
+      "secondary": "Voir comment ça marche"
+    }
   },
   "common": {
     "learnMore": "En savoir plus",
@@ -38,6 +127,6 @@
     "back": "Retour"
   },
   "footer": {
-    "tagline": "La marketplace des services locaux à Calgary."
+    "tagline": "La couche de confiance des services locaux."
   }
 }

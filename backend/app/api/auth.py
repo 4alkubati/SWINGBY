@@ -29,7 +29,7 @@ from fastapi import APIRouter, HTTPException, Depends, Request
 from pydantic import BaseModel, Field, field_validator, EmailStr
 from typing import Optional
 
-from app.supabase_client import supabase
+from app.supabase_client import supabase, supabase_auth
 from app.deps import get_current_user
 from app.limiter import limiter  # shared limiter — see app/limiter.py
 from app.config import settings
@@ -218,7 +218,10 @@ def signup(request: Request, data: SignupRequest):
 
     try:
         # 1. Create Supabase Auth user
-        res = supabase.auth.sign_up(
+        # supabase_auth (NOT supabase): sign_up creates a session, and a session
+        # on the service-role client silently downgrades all table queries to
+        # the new user's RLS context. See supabase_client.py.
+        res = supabase_auth.auth.sign_up(
             {
                 "email": str(data.email),
                 "password": data.password,
@@ -296,7 +299,8 @@ def login(request: Request, data: LoginRequest):
     _check_lockout(email, ip)
 
     try:
-        res = supabase.auth.sign_in_with_password(
+        # supabase_auth (NOT supabase) — see supabase_client.py for why.
+        res = supabase_auth.auth.sign_in_with_password(
             {
                 "email": email,
                 "password": data.password,
@@ -347,7 +351,8 @@ def refresh_token(request: Request, data: RefreshRequest):
     Rate-limited to 10/minute per IP.
     """
     try:
-        res = supabase.auth.refresh_session(data.refresh_token)
+        # supabase_auth (NOT supabase) — see supabase_client.py for why.
+        res = supabase_auth.auth.refresh_session(data.refresh_token)
         if not res.session:
             raise HTTPException(status_code=401, detail="Could not refresh session")
         return {
@@ -422,7 +427,25 @@ def get_me(current_user: dict = Depends(get_current_user)):
         "avatar_url",
         "created_at",
     }
-    return {k: v for k, v in current_user.items() if k in safe_fields}
+    profile = {k: v for k, v in current_user.items() if k in safe_fields}
+
+    # Business owners need business_id so the mobile "My Business" tab can
+    # resolve their business without a second round-trip.
+    if current_user.get("role") == "business_owner":
+        try:
+            biz = (
+                supabase.table("businesses")
+                .select("id")
+                .eq("owner_id", current_user["id"])
+                .limit(1)
+                .execute()
+            )
+            profile["business_id"] = biz.data[0]["id"] if biz.data else None
+        except Exception:
+            logger.warning("get_me business lookup failed", user_id=current_user["id"])
+            profile["business_id"] = None
+
+    return profile
 
 
 @router.patch("/me")

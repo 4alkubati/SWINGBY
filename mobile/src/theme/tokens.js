@@ -5,15 +5,26 @@ export const colors = {
   border: '#1F232B',
   textPrimary: '#F4F6FA',
   textSecondary: '#8B92A0',
+  textTertiary: '#565D6B',
   accent: '#6E56F7',
   accentMuted: '#2A2247',
   // Lightened accent for foreground text on dark backgrounds; passes AA (6.10:1 on bg).
   accentText: '#8878F9',
   // Darkened accent for button backgrounds with textPrimary label; passes AA (4.56:1).
   accentBtn: '#6D55F6',
+  // Softer purple used for eyebrows on purple-tinted surfaces (earnings hero).
+  accentSoft: '#B0A4FB',
+  // Purple-tinted border used to mark new / highlighted cards.
+  borderAccent: 'rgba(136,120,249,0.25)',
   success: '#2EBD85',
   warning: '#F6B23B',
   danger: '#FF5C5C',
+  // Map preview gradient stops (top → bottom).
+  mapBgTop: '#0D1017',
+  mapBgMid: '#101623',
+  mapBgBottom: '#0E1320',
+  // Solid overlay for glass-lite pill on map (rgba(10,11,14,0.78)).
+  overlayScrim: 'rgba(10,11,14,0.78)',
 };
 
 export const spacing = {
@@ -52,6 +63,22 @@ export const shadows = {
     shadowOpacity: 0.32,
     shadowRadius: 24,
     elevation: 12,
+  },
+  // Purple halo used behind the floating "Post a job" CTA on the client bottom nav.
+  accentGlow: {
+    shadowColor: '#6E56F7',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.4,
+    shadowRadius: 24,
+    elevation: 12,
+  },
+  // Big drop shadow used by the status card that overlaps the map hero.
+  card: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.5,
+    shadowRadius: 40,
+    elevation: 16,
   },
 };
 

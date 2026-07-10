@@ -4,6 +4,7 @@ import {
 } from 'react-native';
 import { useState } from 'react';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+import { Feather } from '@expo/vector-icons';
 import { colors, spacing, radius } from '../../theme/tokens';
 import Text from '../../components/Text';
 import TextField from '../../components/TextField';
@@ -50,7 +51,9 @@ export default function ForgotPasswordScreen({ navigation }) {
 
           {sent ? (
             <Animated.View entering={FadeInDown.duration(400)} style={styles.successCard}>
-              <Text style={styles.successIcon}>✓</Text>
+              <View style={styles.successIconWrap}>
+                <Feather name="check" size={28} color={colors.success} strokeWidth={2.6} />
+              </View>
               <Text style={styles.title}>Check your inbox</Text>
               <Text style={styles.subtitle}>
                 We've sent a password reset link to{'\n'}
@@ -176,10 +179,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     marginBottom: spacing.xl,
   },
-  successIcon: {
-    fontSize: 52,
-    color: colors.success,
-    fontFamily: 'SpaceGrotesk_700Bold',
+  successIconWrap: {
+    width: 56,
+    height: 56,
+    borderRadius: 18,
+    backgroundColor: 'rgba(46,189,133,0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(46,189,133,0.35)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.md,
   },
   emailHighlight: {
     fontFamily: 'Inter_600SemiBold',

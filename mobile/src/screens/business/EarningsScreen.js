@@ -29,37 +29,30 @@ const RANGES = [
   { key: 'ytd', label: 'YTD' },
 ];
 
-// ─── Placeholder data generator ───────────────────────────────────────────────
-function generatePlaceholder(range) {
+function rangeDays(range) {
   const now = new Date();
-  let days;
   switch (range) {
-    case 'week':    days = 7;  break;
-    case '3months': days = 90; break;
-    case 'ytd':     days = Math.floor((now - new Date(now.getFullYear(), 0, 1)) / 86400000); break;
-    default:        days = 30; break;
+    case 'week':    return 7;
+    case '3months': return 90;
+    case 'ytd':     return Math.floor((now - new Date(now.getFullYear(), 0, 1)) / 86400000);
+    default:        return 30;
   }
-
-  const points = [];
-  for (let i = days; i >= 0; i--) {
-    const d = new Date(now);
-    d.setDate(d.getDate() - i);
-    // Some days have jobs, some don't
-    if (Math.random() > 0.35) {
-      const amount = Math.round((50 + Math.random() * 250) * 100) / 100;
-      points.push({ x: d, y: amount });
-    }
-  }
-  return points;
 }
 
-function aggregateStats(data) {
-  if (!data.length) return { total: 0, count: 0, avg: 0, pending: 0, fees: 0 };
-  const total = data.reduce((s, d) => s + d.y, 0);
-  const count = data.length;
-  const avg = total / count;
-  const pending = Math.round(total * 0.08 * 100) / 100;
-  const fees = Math.round(total * 0.05 * 100) / 100;
+// Real numbers from the payments table — released money, held escrow, platform cut.
+function aggregateStats(payments) {
+  if (!payments.length) return { total: 0, count: 0, avg: 0, pending: 0, fees: 0 };
+  const total = payments.reduce((s, p) => s + (parseFloat(p.released_to_business) || 0), 0);
+  const count = payments.length;
+  const avg = count ? total / count : 0;
+  const pending = payments.reduce(
+    (s, p) =>
+      s + (['held', 'partial', 'partial_released'].includes(p.status)
+        ? (parseFloat(p.escrow_held) || 0)
+        : 0),
+    0
+  );
+  const fees = payments.reduce((s, p) => s + (parseFloat(p.platform_cut) || 0), 0);
   return { total, count, avg, pending, fees };
 }
 
@@ -143,33 +136,40 @@ function HeroSkeleton() {
 export default function EarningsScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   const [range, setRange] = useState('month');
-  const [chartData, setChartData] = useState([]);
+  const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
       const data = await api.get('/payments/mine');
-      const raw = Array.isArray(data) ? data : (data?.items ?? []);
-      if (raw.length) {
-        const parsed = raw.map((d) => ({
-          x: new Date(d.created_at || d.bookings?.completed_at || d.bookings?.scheduled_date),
-          y: parseFloat(d.released_to_business ?? d.total_charged ?? 0),
-        })).filter((p) => !Number.isNaN(p.x?.getTime()));
-        setChartData(parsed);
-      } else {
-        setChartData(generatePlaceholder(range));
-      }
+      setPayments(Array.isArray(data) ? data : (data?.items ?? []));
     } catch {
-      setChartData(generatePlaceholder(range));
+      setPayments([]);
     } finally {
       setLoading(false);
     }
-  }, [range]);
+  }, []);
 
   useEffect(() => { load(); }, [load]);
 
-  const stats = aggregateStats(chartData);
+  const cutoff = Date.now() - rangeDays(range) * 86400000;
+  const inRange = payments.filter((p) => {
+    const t = new Date(
+      p.created_at || p.bookings?.completed_at || p.bookings?.scheduled_date
+    ).getTime();
+    return !Number.isNaN(t) && t >= cutoff;
+  });
+
+  const chartData = inRange
+    .map((p) => ({
+      x: new Date(p.created_at || p.bookings?.completed_at || p.bookings?.scheduled_date),
+      y: parseFloat(p.released_to_business ?? p.total_charged ?? 0),
+    }))
+    .filter((pt) => !Number.isNaN(pt.x?.getTime()))
+    .sort((a, b) => a.x - b.x);
+
+  const stats = aggregateStats(inRange);
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -201,7 +201,9 @@ export default function EarningsScreen({ navigation }) {
         ) : (
           <View style={styles.hero}>
             <Text style={styles.heroAmount}>{formatMoney(stats.total)}</Text>
-            <Text style={styles.heroSub}>{stats.count} jobs this month</Text>
+            <Text style={styles.heroSub}>
+              {stats.count} {stats.count === 1 ? 'job' : 'jobs'} · {RANGES.find((r) => r.key === range)?.label.toLowerCase()}
+            </Text>
           </View>
         )}
 

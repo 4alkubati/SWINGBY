@@ -32,7 +32,7 @@ export default function CategoriesIndex() {
             {CATEGORIES.map(({ slug, name, Icon, desc }) => (
               <Link key={slug} to={`/categories/${slug}`} style={{ textDecoration: 'none' }}>
                 <div className={styles.card} style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
-                  <div style={{ color: 'var(--color-accent-text)', flexShrink: 0 }}><Icon size={28} weight="duotone" /></div>
+                  <div style={{ color: 'var(--color-accent-text)', flexShrink: 0 }}><Icon size={28} weight="regular" /></div>
                   <div>
                     <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, color: 'var(--color-text-primary)', marginBottom: '4px' }}>{name}</h3>
                     <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)' }}>{desc}</p>

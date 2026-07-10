@@ -1,14 +1,17 @@
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, TouchableOpacity, StyleSheet } from 'react-native';
+import { Feather } from '@expo/vector-icons';
+import Text from './Text';
+import { colors, spacing } from '../theme/tokens';
 
 function initials(name = '') {
   return name.split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2);
 }
 
 const STATUS_CONFIG = {
-  confirmed:   { label: 'Confirmed',   color: '#60a5fa', bg: 'rgba(59,130,246,0.12)' },
-  in_progress: { label: 'On the way',  color: '#FF8C42', bg: 'rgba(255,92,0,0.12)' },
-  completed:   { label: 'Done',        color: '#4ade80', bg: 'rgba(34,197,94,0.12)' },
-  cancelled:   { label: 'Cancelled',   color: '#6b7280', bg: 'rgba(107,114,128,0.12)' },
+  confirmed:   { label: 'Confirmed',  color: colors.accentText, bg: colors.accentMuted },
+  in_progress: { label: 'On the way', color: colors.accentText, bg: colors.accentMuted },
+  completed:   { label: 'Done',       color: colors.success,    bg: 'rgba(46,189,133,0.15)' },
+  cancelled:   { label: 'Cancelled',  color: colors.textTertiary, bg: colors.surfaceAlt },
 };
 
 export default function WorkerTrustCard({ booking, onViewBusiness }) {
@@ -21,32 +24,31 @@ export default function WorkerTrustCard({ booking, onViewBusiness }) {
 
   return (
     <View style={styles.container}>
-      {/* Large avatar */}
       <View style={styles.avatar}>
         <Text style={styles.avatarText}>{initials(workerName)}</Text>
       </View>
 
-      {/* Status pill */}
       <View style={[styles.statusPill, { backgroundColor: status.bg }]}>
         <Text style={[styles.statusText, { color: status.color }]}>{status.label}</Text>
       </View>
 
-      {/* Identity */}
       <Text style={styles.workerName}>{workerName}</Text>
       {roleTitle ? <Text style={styles.roleTitle}>{roleTitle}</Text> : null}
 
-      {/* Company */}
       {companyName ? (
-        <TouchableOpacity onPress={onViewBusiness} activeOpacity={0.7}>
-          <Text style={styles.company}>{companyName} →</Text>
+        <TouchableOpacity onPress={onViewBusiness} activeOpacity={0.75} style={styles.companyRow}>
+          <Text style={styles.company}>{companyName}</Text>
+          <Feather name="chevron-right" size={14} color={colors.accentText} strokeWidth={2.2} />
         </TouchableOpacity>
       ) : null}
 
-      {/* Stats */}
       {(rating || jobCount) ? (
         <View style={styles.statsRow}>
           {rating != null && (
-            <Text style={styles.stat}><Text style={styles.star}>★</Text> {Number(rating).toFixed(1)}</Text>
+            <View style={styles.statInline}>
+              <Feather name="star" size={13} color={colors.accentText} strokeWidth={2} />
+              <Text style={styles.stat}>{Number(rating).toFixed(1)}</Text>
+            </View>
           )}
           {jobCount != null && (
             <Text style={styles.statMuted}>{jobCount} jobs</Text>
@@ -59,41 +61,52 @@ export default function WorkerTrustCard({ booking, onViewBusiness }) {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#0f1214',
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: '#1e2226',
+    borderColor: colors.border,
     borderRadius: 20,
-    padding: 20,
-    marginHorizontal: 22,
+    padding: spacing.lg,
+    marginHorizontal: spacing.lg,
     alignItems: 'center',
     gap: 8,
   },
   avatar: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: '#FF5C00',
+    width: 68,
+    height: 68,
+    borderRadius: 20,
+    backgroundColor: colors.accentMuted,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 4,
-    shadowColor: '#FF5C00',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    elevation: 6,
   },
-  avatarText: { fontSize: 24, fontWeight: '700', color: '#ffffff' },
+  avatarText: {
+    fontFamily: 'SpaceGrotesk_700Bold',
+    fontSize: 22,
+    color: colors.accentText,
+    letterSpacing: -0.4,
+  },
   statusPill: {
-    borderRadius: 20,
-    paddingHorizontal: 12,
+    borderRadius: 999,
+    paddingHorizontal: 10,
     paddingVertical: 4,
   },
-  statusText: { fontSize: 12, fontWeight: '700' },
-  workerName: { fontSize: 20, fontWeight: '700', color: '#ffffff', letterSpacing: -0.3 },
-  roleTitle: { fontSize: 13, color: '#9ca3af' },
-  company: { fontSize: 13, color: '#FF8C42', fontWeight: '600' },
-  statsRow: { flexDirection: 'row', gap: 14, marginTop: 4 },
-  stat: { fontSize: 14, color: '#ffffff', fontWeight: '600' },
-  star: { color: '#FF5C00' },
-  statMuted: { fontSize: 14, color: '#9ca3af' },
+  statusText: { fontSize: 11, fontWeight: '700', letterSpacing: 0.2 },
+  workerName: {
+    fontFamily: 'SpaceGrotesk_700Bold',
+    fontSize: 20,
+    color: colors.textPrimary,
+    letterSpacing: -0.5,
+  },
+  roleTitle: { fontSize: 13, color: colors.textSecondary },
+  companyRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    marginTop: 2,
+  },
+  company: { fontSize: 13, color: colors.accentText, fontWeight: '600' },
+  statsRow: { flexDirection: 'row', gap: 14, marginTop: 4, alignItems: 'center' },
+  statInline: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  stat: { fontSize: 13, color: colors.textPrimary, fontWeight: '600' },
+  statMuted: { fontSize: 13, color: colors.textSecondary },
 });

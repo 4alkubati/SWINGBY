@@ -25,7 +25,6 @@ flowchart LR
     Chat["Chat"]
     EmployeeManagement["EmployeeManagement"]
     EmployeeProfile["EmployeeProfile"]
-    Notifications["Notifications"]
     Earnings["Earnings"]
     BusinessAnalytics["BusinessAnalytics"]
     Settings["Settings"]
@@ -38,6 +37,7 @@ flowchart LR
     PaymentMethod["PaymentMethod"]
     DisputeFlow["DisputeFlow"]
     Invoice["Invoice"]
+    BusinessInvoices["BusinessInvoices"]
   end
   subgraph ClientNavigator
     Home["Home"]
@@ -75,28 +75,32 @@ flowchart LR
   Login --> ForgotPassword
   Login --> Signup
   Signup --> Login
+  BusinessInvoices --> Invoice
   My_Business --> EmployeeManagement
   My_Business --> EmployeeProfile
   My_Business --> NotificationsCenter
   My_Business --> PaymentMethod
+  My_Business --> BusinessInvoices
   My_Business --> Settings
   My_Business --> HelpFAQ
   My_Business --> PrivacyPolicy
   My_Business --> TermsOfService
   My_Business --> PostJob
-  Dashboard --> Notifications
+  Dashboard --> Jobs
+  Dashboard --> Messages
+  Dashboard --> My_Business
   Dashboard --> Earnings
   Dashboard --> BusinessAnalytics
   Dashboard --> EmployeeManagement
-  Dashboard --> JobManagement
+  Dashboard --> Chat
   EmployeeProfile --> BusinessProfile
   JobManagement --> Chat
   JobManagement --> Invoice
   JobManagement --> DisputeFlow
   ActiveBooking --> Home
   ActiveBooking --> BusinessProfile
-  ActiveBooking --> CancellationFlow
   ActiveBooking --> Chat
+  ActiveBooking --> CancellationFlow
   BookingDetails --> MessageThread
   BookingDetails --> CancellationFlow
   BookingDetails --> BusinessProfile
@@ -111,11 +115,15 @@ flowchart LR
   Jobs --> ActiveBooking
   Jobs --> JobManagement
   Jobs --> QuoteComparison
+  Jobs --> Chat
   Jobs --> Review
   NearbyMap --> BusinessProfile
   PostJob --> QuoteComparison
   QuoteComparison --> ActiveBooking
+  QuoteComparison --> ClientTabs
+  QuoteComparison --> My_Jobs
   QuoteComparison --> BusinessProfile
+  QuoteComparison --> Chat
   Search --> BusinessProfile
   Messages --> Chat
   Onboarding --> Login
@@ -137,6 +145,7 @@ flowchart LR
   Settings --> PrivacyPolicy
   Settings --> TermsOfService
   Settings --> HelpFAQ
+  BottomNav --> PostJob
 ```
 
 
@@ -168,6 +177,6 @@ Mobile calls to endpoints **not exposed by the backend** (path params normalized
 
 - Navigators: **4**  
 - Registered screens: **55**  
-- Navigation edges: **69**  
-- Backend routes: **69**  
-- Mobile API calls: **70**  
+- Navigation edges: **85**  
+- Backend routes: **72**  
+- Mobile API calls: **76**  
