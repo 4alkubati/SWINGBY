@@ -15,6 +15,9 @@ ALLOWED_CONTENT_TYPES = {
     "image/png",
     "image/webp",
     "image/gif",
+    # iPhone default photo format — without this every iOS upload 400s.
+    "image/heic",
+    "image/heif",
 }
 MAX_BYTES = 10 * 1024 * 1024  # 10 MB
 BUCKET = "job-photos"
@@ -39,7 +42,7 @@ async def upload_image(
     ext = "jpg"
     if file.filename and "." in file.filename:
         ext = file.filename.rsplit(".", 1)[-1].lower()
-        if ext not in {"jpg", "jpeg", "png", "webp", "gif"}:
+        if ext not in {"jpg", "jpeg", "png", "webp", "gif", "heic", "heif"}:
             ext = "jpg"
 
     path = f"posts/{current_user['id']}/{uuid.uuid4()}.{ext}"
