@@ -94,6 +94,20 @@ backdrop tap to close
 
 ---
 
+## Live Pulse (Jet × Pulse)
+
+Used on live/realtime indicators only: "ON THE WAY" status, live map pins, notification dot.
+
+```
+dot: 8–9px, accent #6E56F7
+ring: expands 0 → ~9px beyond dot, opacity 1 → 0
+loop: 1.8s, infinite (reanimated withRepeat)
+```
+
+Exempt from the 400ms duration cap below — it is ambient state signaling, not a user-initiated transition.
+
+---
+
 ## Forbidden
 
 - No bounces (overdamped springs only — damping ≥ 20)

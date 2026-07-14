@@ -1,85 +1,78 @@
 # STATUS — Current Project State
 
 > Rewritten by Orchestrator at the end of every session. Single source of truth for right now.
-> Rewritten 2026-06-27 (D2.5 cleanup): stripped 9 stale frozen-on-Kira appends from runs 15–23. The 4 mobile fixes + CHECK bug they kept claiming were uncommitted are SHIPPED (commits `214fdb6`, `340e537`). The loop was lying.
+> Rewritten 2026-07-14: honest re-baseline after a ~7-day slip on the tester chain (D4 never ran). July day files Jul 14–31 re-dated to match; Jet × Pulse design handoff filed into `design/`. Prior rewrite 2026-07-07.
 
 ## Active Project
 swingby
 
 ## Repo Path
-C:/Users/amrba/OneDrive/Desktop/AMR/CODE/Swingby
+`/home/l3thal/agents/projects/swingby` (Linux). NOTE: prior STATUS + CLAUDE.md local-dev commands reference the old Windows path (`C:/Users/amrba/...`, `C:/Python314/python.exe`) — update CLAUDE.md Local Dev section when convenient.
 
 ## Last Updated
-2026-07-07 — System-review block committed (`d545715`): `.claude/agents/` registered (dispatch is real now), ORCHESTRATOR compacted, memory archived to last-3/OPEN-only, model tiers + MCP capability-naming fixed. Prior: 2026-07-01 Bucket C cleared, 12 commits pushed, backend CI green.
+2026-07-14 — Roadmap re-plan session: STATUS re-baselined, Jul 14–31 day files re-dated (tester chain → Jul 15–19, store prep → Jul 20–24, legal/polish/submit → Jul 25–31), Jet × Pulse handoff moved to `design/handoff-jet-pulse/` with `design/tokens.md` + `MOTION.md` synced to the tokens already live in `mobile/src/theme/tokens.js`.
 
 ## Current Phase
-**Phase 1 — BETA.** Build order moved from PLAN.md (P1–P6 done) to [[../../Roadmap/DOMINOES]] (D2.0–D5). Currently between dominoes:
+**Phase 1 — BETA**, still gated on the D2.0/D3 human walkthrough. Domino truth (frontmatter verified 2026-07-14):
 - ✅ D1 — Email sends (commit `08715e3`)
-- ✅ D2 — Kill mock data (verified zero mock strings in `mobile/src/screens/`)
-- 🟡 D2.0 — Live walkthrough audit (waits on Kira's iPhone)
-- 🟡 D2.5 — STATUS/HUMAN-TODO/daily files cleanup (in progress this turn)
-- ⬜ D2.1–D2.4 — employee trust card, invoices, off-platform pay, business subscription
-- ⬜ D3/D4/D5 — Expo Go walkthrough → friend tester → paid testers
+- ✅ D2 — Kill mock data
+- 🟡 D2.1 — Employee trust card: code-complete since 2026-07-07, `in-progress`, awaits on-device verify
+- ⬜ D2.0 / D2.2 / D2.3 / D2.4 / D2.5 — `pending`
+- ⬜ D3 (Expo Go walkthrough) / D4 (friend tester) — `pending`. **D4 was calendared for Jul 7; it has not happened.**
+- ⏸ D5 — `deferred`
 
-## Phase Status
-🟢 BUILD-READY — D2.1 employee trust card code-complete this session (backend `GET /employees/{id}/profile` + mobile EmployeeProfileScreen rewrite). Awaits Kira push to ship to Render + on-device verify. D2.2 (invoices) is next runnable code domino. D2.0 still waits on Kira's iPhone walkthrough.
+Signal worth noting: commits `70d165a` "pre-engine baseline" (Jul 9) and `9575fd3` "fix(uploads): accept HEIC/HEIF — iPhone default photo format" (Jul 10) imply real-device iPhone testing started around Jul 10, but no session log, domino log entry, or day-file checkbox recorded it. If a partial walkthrough happened, its findings live only in Kira's head — capture them into D2.0/D3 `📖 Log`.
+
+## Slip Accounting (why the re-plan)
+- Calendar said by Jul 13: two friend testers completed bookings, majors fixed, 10 outreach messages sent, feedback form live. None checked off.
+- Actual: chain stalled at the same human gate as Jul 7 (D2.0 walkthrough). Last commit Jul 10, last session log Jul 7.
+- Re-plan keeps the July win condition (store-ready build, Stripe live, submit by Jul 31) by compressing W3/W4 and merging light ops days. See `Roadmap/July/README.md` re-plan note.
 
 ## What's Working (deployed surface)
-- **Backend (LIVE on Render `swingbyy-api.onrender.com`):** 50 routes — `/uploads/image`, `/bookings/{id}/events` (POST + GET), `/bookings/{id}/photos` (POST + GET), `/payments/stripe/checkout/{id}` (POST), `/payments/stripe/webhook` (POST), `/contact/`, full auth surface. Stripe routes return 503 with clear remediation copy until keys set in Render env.
-- **Database:** Supabase 10 tables + `booking_events` + `booking_photos` + 5 lifecycle email triggers wired. RLS on every table. `bookings.payment_status` CHECK extended to allow `refunded` (commit `340e537`).
-- **Email:** Resend wired. Branded magic link delivers from `team@swingbyy.com`. 5 lifecycle emails on signup, booking confirm (both sides), forgot password, contact form.
-- **Mobile (code complete, awaits on-device verify in D2.0):** Live status timeline + actions + before/after photos wired into `JobManagementScreen` (provider) and `BookingDetailsScreen` (client). Pay-with-card button posts to Stripe Checkout. `paymentPillStyle`/`paymentPillLabel` aligned to schema enum (commit `214fdb6`).
-- **QA:** `backend/scripts/smoke_e2e.py` walks the full beta flow with honest exit codes for confirm-email + seed-creds states.
+- **Backend (LIVE on Render `swingbyy-api.onrender.com`):** 65 routes incl. `/employees/{id}/profile`, `/messages/unread-count`, unified `/messages/threads` (pre-booking quote chat), `/interests/mine`, uploads (now HEIC/HEIF), booking events/photos, Stripe checkout + webhook.
+- **Database:** Supabase 10 tables + `booking_events` + `booking_photos` + `messages_interest_threads` migration applied. RLS on every table. 5 lifecycle email triggers.
+- **Email:** Resend wired, branded magic link from `team@swingbyy.com`.
+- **Mobile:** Jet × Pulse repolish tokens live in `theme/tokens.js` (textTertiary, accentSoft, borderAccent, mapBg stops, accentGlow/card shadows). Business-flow session (Jul 3) shipped: unified inbox, quote-with-note chat, dashboard real earnings + sparkline, invoices screens, needs-attention chips.
+- **QA:** `backend/scripts/smoke_e2e.py` + `tools/e2e_smoke.py` booking-loop smoke; flow graph reports 0 broken edges.
 
 ## What's Broken (real blockers)
-- **Google Maps key compromised.** The real Android key sat in plaintext in `mobile/app.json` in a PUBLIC repo. Placeholder now committed; Kira must regenerate the key in Google Cloud Console (HUMAN-TODO, blocking).
-- **Emails land in spam despite correct DNS.** SPF+DKIM+DMARC all verified resolving; this is new-domain reputation, not configuration. Mitigations in HUMAN-TODO (postmaster tools, rua, tester "Not spam").
-- **D2.0 walkthrough not done.** No live ground-truth on what the deployed app actually looks like to a tester. Waiting on Kira's iPhone via Expo Go. All 3 seed accounts now work.
+- **Google Maps key compromised** — leaked in public repo, placeholder committed; Kira must regenerate (open since Jul 1).
+- **Emails land in spam** — new-domain reputation, DNS verified correct. Mitigations in HUMAN-TODO.
+- **D2.0/D3 walkthrough unlogged** — no recorded ground truth of the deployed app from a tester's seat.
 - **Placeholders unset:** Sentry DSN, hCaptcha secret.
+- **Latent:** `reviews.reviewee_type` CHECK lacks `'employee'` — D2.1 endpoint returns 0 reviews until a migration + review-target picker land (parked, separate domino).
 
-## What Got Fixed 2026-07-01
-- Seed accounts verified in Supabase Auth (all 3, employee linked to Bob's Cleaning Co.); employee 403 on `/businesses/me` was a code bug — employees now resolve their employer's business (`is_employee: true` flag).
-- Stripe keys in Render (Kira). DMARC TXT live (Kira).
-- F1 `/payments/mine` + F2 disputes (router + table + RLS) — flow graph reports 0 broken API calls.
-- Backend CI repaired: ruff+black conformance (lint had failed every push since Jun 26), test suite rewritten to current API (26 pass / 0 fail), stub env vars for the test job. `.gitattributes`, Dependabot, real README added.
-
-## Blocked On
-1. Kira's iPhone for D2.0 walkthrough audit (now fully unblocked — accounts + routes live)
-2. Kira to rotate the leaked Google Maps key (public repo = compromised)
-3. Kira: 2-min GitHub security toggles + Dependabot major-bump triage (HUMAN-TODO)
+## Blocked On (all Kira)
+1. D2.0/D3 walkthrough (~1 hr) — the single gate holding D4 and the whole re-dated calendar
+2. Rotate the leaked Google Maps key
+3. GitHub security toggles + Dependabot major-bump triage (2 min)
+4. Commit + push the 2026-07-14 re-plan (this STATUS, day files, `design/` filing)
 
 ## Open Broadcasts
-- 2026-07-06 — Notion added to the stack as a nudge layer (like Google Calendar): "SwingBy" DB, protocol in `AGENTS/claude/config/NOTION_SYNC.md`. First check found 2 stale rows (F1/F2 already shipped) + 1 date-vs-sequence risk (D4 due tomorrow, predecessors not done) — both in HUMAN-TODO.
-- 2026-06-21 — D1 email lifecycle wired (commit `08715e3`)
-- 2026-06-24 — Trust layer (events + photos) + Stripe sandbox scaffold (commit `554453b`)
-- 2026-06-25 — Mobile fixes + CHECK bug shipped (commits `214fdb6`, `340e537`)
-- 2026-06-26 — DOMINOES plan created; D2.0–D2.5 scoped
-- 2026-06-27 — D2.4 NEEDS-KIRA locked: customer 10% + business membership ($30 solo / $80 team / Enterprise), gate on Accept
+- 2026-07-14 — July calendar re-dated; Jet × Pulse handoff filed into `design/handoff-jet-pulse/`; design token docs now match `tokens.js`
+- 2026-07-06 — Notion nudge layer live (`AGENTS/claude/config/NOTION_SYNC.md`); Notion dates now lag the re-plan — flag rows when next synced
+- 2026-06-27 — D2.4 monetization locked: customer 10% + business membership ($30 solo / $80 team), gate on Accept
 
 ## Last Agent Run
-**2026-06-27 — D2.5 housekeeping + D2.4 decisions captured (inline, Claude Opus 4.7):**
-- Read DOMINOES + STATUS + HUMAN-TODO + PRODUCT-VISION + LOOP + 9 memory files.
-- Captured Kira's D2.4 monetization model into the domino file.
-- Rewrote this STATUS to reflect git-log truth instead of run-15–23 noise.
-- Rewrote HUMAN-TODO to tick off shipped items + add D2.4 outcomes.
-- Backfilled `Roadmap/June/` daily files for Jun 21–30 (stubs for gap days + real 06-26 + 06-27 + placeholders).
-- Did NOT commit (Bucket C — Kira's push).
+**2026-07-14 — Roadmap re-plan + design filing (inline, Claude Sonnet 5):**
+- Filed `App design polish tips/design_handoff_swingby_polish/` → `design/handoff-jet-pulse/`; synced `design/tokens.md` (10 color tokens, 2 shadows, Jet × Pulse rules section) + `design/MOTION.md` (Live Pulse spec) to match code.
+- Cross-checked calendar vs dominoes vs git: found the 7-day slip, re-dated Jul 14–31 day files, annotated slipped Jul 7–13 files, updated July README.
+- Rewrote this STATUS. Did NOT commit (Bucket C — Kira's push).
 
 ## Next Action
-1. **Kira:** rotate the Google Maps key (blocking, security)
-2. **Kira:** D2.0 walkthrough on Expo Go iOS → bug list into the daily file; include employee login + Invoice + Plan card in the tap-through
-3. **Kira:** GitHub security toggles (2 min) + close Dependabot major-bump PRs
-4. **Claude:** smoke test against Render with the live seed accounts (`backend/scripts/smoke_e2e.py`), then D2.4 mobile polish per the domino, then D3
-5. **Joint:** Obsidian vault linking pass (plan in `AGENTS/claude/deliverables/repo-audit-2026-07-01.md` §9)
+1. **Kira (today, Jul 14):** catch-up gate day per `Roadmap/July/2026-07-14.md` — walkthrough + Maps key + GitHub toggles + D2.1 on-device verify
+2. **Kira:** push the re-plan commit
+3. **Claude:** D2.2 invoices polish per domino spec (code-runnable, no Kira blocker) once dispatch resumes
+4. **Joint:** capture any Jul 10 walkthrough findings into D2.0/D3 logs before they evaporate
 
 ## Security Gate
-✅ passing. All migrations via service role; no destructive changes; RLS on every table; 2 pre-existing Supabase WARNs unchanged (job-photos public bucket listing + HIBP password leak protection — both tracked, not regressions). `credentials/` gitignored.
+✅ passing. No schema or endpoint changes this session (docs/roadmap only). Maps key rotation still outstanding (Kira). `credentials/` gitignored.
 
 ## Session End Signal
-🟢 BUILD-READY — STATUS lie corrected, D2.4 unblocked. Next session can start D2.1 immediately without re-deriving context.
+🟢 BUILD-READY — calendar and STATUS now match repo truth. Next session can dispatch D2.2 or hotfix walkthrough findings without re-deriving context.
 
 ## Waiting On
-Bucket B/C items in [[HUMAN-TODO]]. No autonomous loop is required for the build to advance — Claude can pick up D2.1 in any direction. The loop was previously hammering frozen-on-Kira because STATUS was lying about what was uncommitted; it now reflects real state.
+Kira's catch-up day (Jul 14 file). The re-dated calendar only holds if D2.0/D3 clears by Jul 15 morning — every later date keys off the D4 run on Jul 15.
 
 ---
 *[[MAP]] · single source of truth for "what is true right now" · rewritten by [[ORCHESTRATOR]] each session*
