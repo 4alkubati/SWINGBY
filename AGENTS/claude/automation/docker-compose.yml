@@ -1,0 +1,26 @@
+# n8n — local automation host (morning brief → Telegram)
+# Up:      docker compose -f AGENTS/claude/automation/docker-compose.yml up -d
+# Secrets: .claude/secrets/n8n.env (TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID) — recreate after editing.
+# UI:      http://localhost:5678 (owner login in credentials/api-keys/n8n.md)
+services:
+  n8n:
+    image: docker.n8n.io/n8nio/n8n
+    container_name: swingby-n8n
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    environment:
+      - GENERIC_TIMEZONE=America/Edmonton   # Calgary — cron "5 6 * * *" fires 06:05 local
+      - TZ=America/Edmonton
+      - N8N_BLOCK_ENV_ACCESS_IN_NODE=false  # workflow reads TELEGRAM_* via $env
+      - NODE_FUNCTION_ALLOW_BUILTIN=fs      # Compile Brief node reads memory/*.md
+      - N8N_SECURE_COOKIE=false             # plain http on localhost
+      - N8N_DIAGNOSTICS_ENABLED=false
+    env_file:
+      - ../../../.claude/secrets/n8n.env
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ../../..:/data/swingby:ro           # repo read-only — brief reads AGENTS/claude/memory/
+
+volumes:
+  n8n_data:

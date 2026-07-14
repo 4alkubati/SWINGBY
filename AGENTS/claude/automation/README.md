@@ -1,24 +1,28 @@
-# automation — local n8n
+# automation — local n8n (Docker)
 
-## morning_brief.workflow.json
+## Stack (live since 2026-07-14)
 
-The "make coffee, come back to a plan" workflow. Runs each morning on your locally-hosted n8n.
+- **`docker-compose.yml`** — runs n8n as container `swingby-n8n` on http://localhost:5678 (owner login in `credentials/api-keys/n8n.md`). Repo mounted read-only at `/data/swingby`; Telegram secrets injected from `.claude/secrets/n8n.env`.
+- **`morning_brief.workflow.json`** — imported AND active (id `MorningBriefSwing`). Re-import after editing:
+  `docker exec swingby-n8n n8n import:workflow --input=/data/swingby/AGENTS/claude/automation/morning_brief.workflow.json && docker restart swingby-n8n`
+- **`send-test-brief.sh`** — fires the brief right now (delivery test without waiting for morning).
+- **`run-overnight.sh`** — the overnight build loop (`claude -p` on LOOP.md, auto-resumes after usage-limit resets). Works the 🌙 Tonight queue in `memory/PLAN.md`.
 
-### What it does (node by node)
+## Morning Brief — node by node
 
-1. **Schedule Trigger** — fires daily at 06:05 (edit the cron to your wake time).
-2. **Read Overnight Status** — reads `AGENTS/claude/memory/STATUS.md` + last `SESSION_LOG.md` entry (what the BOH agents shipped overnight).
-3. **Gmail — Unread** — pulls unread/important threads needing a reply.
-4. **Social Analytics** — placeholder HTTP node: point it at your analytics source (Plausible API, IG/FB Graph, etc.).
-5. **Compile Brief (Code node)** — merges all inputs into the Morning Image Brief format from `DISPATCH_GATE.md` Layer 5.
-6. **Deliver** — placeholder: send the brief to yourself (email/Telegram/Notion). Wire to your channel of choice.
+1. **Schedule 06:05** — cron `5 6 * * *`, fires 06:05 America/Edmonton (container `GENERIC_TIMEZONE`).
+2. **Compile Brief** (Code node, `fs` allowed) — reads `memory/STATUS.md` (Session End Signal + Next Action), `memory/HUMAN-TODO.md` (⛔ Blocking items), `memory/SESSION_LOG.md` (last NEXT line), and the tail of `automation/overnight.log`.
+3. **Telegram — Send Brief** (HTTP node) — POSTs to the Bot API using `$env.TELEGRAM_BOT_TOKEN` / `$env.TELEGRAM_CHAT_ID` from the container env. No n8n credential store involved.
 
-### Import + wire
+## Secrets
 
-1. n8n → Workflows → Import from File → select `morning_brief.workflow.json`.
-2. Attach credentials on the Gmail node (and any HTTP node that needs auth).
-3. Update the **Read Overnight Status** file path to wherever `agent-os/memory/` lives on your machine.
-4. Set the cron to your wake time. Activate.
+`.claude/secrets/n8n.env` (gitignored; template committed next to it):
+```
+TELEGRAM_BOT_TOKEN=   ← @BotFather (the pre-2026-07 token leaked — use a fresh bot)
+TELEGRAM_CHAT_ID=     ← @userinfobot
+```
+After editing: `docker compose -f AGENTS/claude/automation/docker-compose.yml up -d --force-recreate`, then `bash AGENTS/claude/automation/send-test-brief.sh` to verify.
 
-### Note
-Nodes are scaffolds with sensible defaults — credentials and exact endpoints are yours to attach. The workflow imports cleanly without them; it just won't execute until creds are 
+## Deferred (unchanged)
+
+Gmail inbox + social analytics branches were dropped from the workflow until their credentials exist (Gmail OAuth = the Google Cloud rabbit hole per GEN-1 Step 10). Add them back as parallel branches into Compile Brief when ready.

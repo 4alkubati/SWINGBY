@@ -1,7 +1,8 @@
 {
-  "name": "Morning Brief — agent-os",
+  "id": "MorningBriefSwing",
+  "name": "Morning Brief — SwingBy",
   "active": false,
-  "settings": { "executionOrder": "v1" },
+  "settings": { "executionOrder": "v1", "timezone": "America/Edmonton" },
   "pinData": {},
   "nodes": [
     {
@@ -16,75 +17,33 @@
     },
     {
       "parameters": {
-        "operation": "read",
-        "fileSelector": "=/ABSOLUTE/PATH/TO/agent-os/memory/STATUS.md",
-        "options": {}
-      },
-      "id": "node-read-status",
-      "name": "Read Overnight Status",
-      "type": "n8n-nodes-base.readWriteFile",
-      "typeVersion": 1,
-      "position": [ -420, 180 ]
-    },
-    {
-      "parameters": {
-        "resource": "message",
-        "operation": "getAll",
-        "returnAll": false,
-        "limit": 15,
-        "filters": { "readStatus": "unread" },
-        "options": {}
-      },
-      "id": "node-gmail",
-      "name": "Gmail — Unread",
-      "type": "n8n-nodes-base.gmail",
-      "typeVersion": 2.1,
-      "position": [ -420, 360 ],
-      "notes": "Attach Gmail OAuth2 credentials"
-    },
-    {
-      "parameters": {
-        "url": "https://REPLACE-WITH-YOUR-ANALYTICS-ENDPOINT",
-        "options": {}
-      },
-      "id": "node-social",
-      "name": "Social Analytics",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [ -420, 540 ],
-      "notes": "Point at Plausible / IG / FB Graph API. Attach creds if needed."
-    },
-    {
-      "parameters": {
-        "jsCode": "// Compile the Morning Image Brief (DISPATCH_GATE Layer 5 format)\n// Inputs arrive from the three upstream branches; adapt field access to your sources.\n\nconst status = $('Read Overnight Status').first()?.json?.data || 'No overnight status found.';\nconst emails = $('Gmail — Unread').all().map(e => e.json) || [];\nconst social = $('Social Analytics').first()?.json || {};\n\nconst inboxLines = emails.length\n  ? emails.map((e, i) => `   ${i + 1}. ${e.From || e.from || 'unknown'} — ${e.Subject || e.subject || '(no subject)'}  [approve/edit/skip]`).join('\\n')\n  : '   (inbox clear)';\n\nconst brief = [\n  `☀️ MORNING BRIEF — ${new Date().toISOString().slice(0,10)}`,\n  ``,\n  `BUILD (overnight): see STATUS — ${String(status).split('\\n').find(l => l.includes('Last Agent Run')) || 'review STATUS.md'}`,\n  `SOCIAL: ${JSON.stringify(social).slice(0, 200)}`,\n  `INBOX (${emails.length} need you):`,\n  inboxLines,\n  ``,\n  `ONE THING: <orchestrator fills the single most important action>`\n].join('\\n');\n\nreturn [{ json: { brief } }];"
+        "jsCode": "// Compile the Morning Brief from agent memory (repo mounted read-only at /data/swingby).\nconst fs = require('fs');\nconst read = (p) => { try { return fs.readFileSync(p, 'utf8'); } catch (e) { return ''; } };\nconst MEM = '/data/swingby/AGENTS/claude/memory/';\n\nconst status = read(MEM + 'STATUS.md');\nconst todo   = read(MEM + 'HUMAN-TODO.md');\nconst slog   = read(MEM + 'SESSION_LOG.md');\nconst onlog  = read('/data/swingby/AGENTS/claude/automation/overnight.log');\n\n// Grab the body of a '## Heading' section.\nconst section = (src, heading) => {\n  const esc = heading.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&');\n  const m = new RegExp('^## .*' + esc + '.*$', 'm').exec(src);\n  if (!m) return '';\n  const rest = src.slice(m.index + m[0].length);\n  const next = rest.search(/^## /m);\n  return (next === -1 ? rest : rest.slice(0, next)).trim();\n};\n\nconst blockers = section(todo, 'Blocking')\n  .split('\\n')\n  .filter((l) => l.startsWith('- [ ]'))\n  .map((l) => l.replace(/^- \\[ \\] \\*\\*(.+?)\\*\\*.*$/, '• $1').slice(0, 160));\n\nconst loopNext = (slog.match(/^NEXT:.*$/gm) || []).pop() || '';\nconst overnightTail = onlog\n  ? onlog.trim().split('\\n').slice(-8).join('\\n')\n  : '(overnight loop did not run)';\n\nconst today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Edmonton' });\nconst brief = [\n  '☀️ SWINGBY MORNING BRIEF — ' + today,\n  '',\n  'SIGNAL: ' + (section(status, 'Session End Signal') || 'no signal — read STATUS.md'),\n  '',\n  '— NEXT ACTIONS (STATUS) —',\n  section(status, 'Next Action') || '(none recorded)',\n  '',\n  '— BLOCKING, ONLY YOU (HUMAN-TODO) —',\n  blockers.length ? blockers.join('\\n') : '(clear)',\n  '',\n  '— OVERNIGHT LOOP (log tail) —',\n  overnightTail,\n  '',\n  loopNext ? 'LOOP ' + loopNext : ''\n].join('\\n').trim();\n\nreturn [{ json: { brief: brief.slice(0, 3900) } }];"
       },
       "id": "node-compile",
       "name": "Compile Brief",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [ -180, 360 ]
+      "position": [ -380, 300 ]
     },
     {
-      "parameters": {},
-      "id": "node-deliver",
-      "name": "Deliver Brief (wire to your channel)",
-      "type": "n8n-nodes-base.noOp",
-      "typeVersion": 1,
-      "position": [ 60, 360 ],
-      "notes": "Replace with Gmail send / Telegram / Notion / Slack node to receive the brief."
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_BOT_TOKEN }}/sendMessage",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ chat_id: $env.TELEGRAM_CHAT_ID, text: $json.brief, disable_web_page_preview: true }) }}",
+        "options": {}
+      },
+      "id": "node-telegram",
+      "name": "Telegram — Send Brief",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [ -120, 300 ],
+      "notes": "Token + chat ID come from container env (.claude/secrets/n8n.env) — no n8n credential needed."
     }
   ],
   "connections": {
-    "Schedule 06:05": {
-      "main": [ [
-        { "node": "Read Overnight Status", "type": "main", "index": 0 },
-        { "node": "Gmail — Unread", "type": "main", "index": 0 },
-        { "node": "Social Analytics", "type": "main", "index": 0 }
-      ] ]
-    },
-    "Read Overnight Status": { "main": [ [ { "node": "Compile Brief", "type": "main", "index": 0 } ] ] },
-    "Gmail — Unread": { "main": [ [ { "node": "Compile Brief", "type": "main", "index": 0 } ] ] },
-    "Social Analytics": { "main": [ [ { "node": "Compile Brief", "type": "main", "index": 0 } ] ] },
-    "Compile Brief": { "main": [ [ { "node": "Deliver Brief (wire to your channel)", "type": "main", "index": 0 } ] ] }
+    "Schedule 06:05": { "main": [ [ { "node": "Compile Brief", "type": "main", "index": 0 } ] ] },
+    "Compile Brief": { "main": [ [ { "node": "Telegram — Send Brief", "type": "main", "index": 0 } ] ] }
   }
 }

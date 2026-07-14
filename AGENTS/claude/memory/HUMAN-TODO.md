@@ -5,6 +5,13 @@
 
 ## ⛔ Blocking (loop stuck until done)
 
+- [ ] **(Tonight, ~3 min — Telegram token, or no morning brief)** n8n is live in Docker (`swingby-n8n`, http://localhost:5678, login in `credentials/api-keys/n8n.md`) with the Morning Brief workflow active at 06:05 America/Edmonton. Dry-run verified end-to-end; the ONLY missing piece is the bot token (old one leaked — make a fresh bot):
+  1. Telegram → @BotFather → `/newbot` → copy the token.
+  2. @userinfobot → send anything → copy your Id. Send your new bot one "hi".
+  3. Paste both into `.claude/secrets/n8n.env`, then:
+     `docker compose -f AGENTS/claude/automation/docker-compose.yml up -d --force-recreate`
+  4. Verify now: `bash AGENTS/claude/automation/send-test-brief.sh` → brief arrives on your phone.
+
 - [ ] **(Bucket B — rotate + secret the Google Maps key)** `mobile/app.json` had the real Android Maps key in plaintext (`AIzaSyDW…nyJw`) — flagged as **H1** in the 2026-07-01 audit. **The repo is PUBLIC, so treat the old key as fully compromised.** Placeholder is now committed; Kira must:
   1. Google Cloud Console → API keys → find the leaked key → **Regenerate** (invalidates the old value).
   2. New key → restrict by Android package `com.swingby.app` + SHA-1 fingerprint from Play Console / EAS credentials.

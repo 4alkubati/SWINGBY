@@ -4,7 +4,21 @@
 > **Mode: AUTONOMOUS + GATED** per `config/LOOP.md`. 3-bucket gate (A: just do it · B: park to HUMAN-TODO · C: hard-stop).
 
 ## Project: SwingBy
-## Repo: C:/Users/amrba/OneDrive/Desktop/AMR/CODE/Swingby
+## Repo: /home/l3thal/agents/projects/swingby
+
+---
+
+## 🌙 Tonight — overnight queue (queued 2026-07-14, run via `automation/run-overnight.sh`)
+
+> Work in order. Every task Bucket A unless noted. Never push, never deploy, never send.
+
+| # | Task | Route | DONE-RULE |
+|---|---|---|---|
+| 1 | **D2.2 — Invoices** per `Roadmap/dominoes/D2.2-invoices.md` (in-app Receipt screen + downloadable PDF for completed bookings, both roles) | backend-agent + mobile-agent | Domino done-rule: receipt shows line items/totals/platform cut/parties; PDF endpoint returns a real PDF; babel + FastAPI boot gates green |
+| 2 | **QA regression** — `python tools/e2e_smoke.py` against local backend + regenerate flow graph (`python tools/flow_graph.py`) | qa-agent | Smoke exits 0; flow graph 0 broken edges/API calls; any break filed to HUMAN-TODO with repro |
+| 3 | **D4 tester kit (draft)** — one-page tester brief + bug-capture sheet supporting `Roadmap/dominoes/D4-friend-tester.md` (Jul 15 run) | marketing-agent (draft only) | Docs exist under Roadmap/dominoes/ or marketing/; nothing sent |
+| 4 | **Beta-tester recruiting message + 5 outreach targets** (PLAN FOH backlog item) | marketing-agent (draft only) | Drafts in marketing/; sending = Bucket C, never auto |
+| — | NOT tonight: `reviews.reviewee_type` employee migration (schema change unattended = no), any git push (Bucket C), anything touching live Render/Supabase state | | |
 
 ## Goal (beta DONE)
 A real tester installs the app, signs up, gets a branded email, posts/finds a job, books, **sees Live Job Status**, completes it, leaves a review — on a real device, payment in sandbox.
