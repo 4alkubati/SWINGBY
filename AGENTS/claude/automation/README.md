@@ -15,7 +15,7 @@
    - **1/4 ☀️ header + 🔧 BACKEND** — SIGNAL line + backend bullets
    - **2/4 📱 FRONTEND / MOBILE** — mobile bullets
    - **3/4 🧑 HUMAN TODO** — this-morning + blocking checkboxes + Next Actions
-   - **4/4 🌙 NIGHT RECAP** — mixed/other bullets, prose notes, loop log tail, LOOP NEXT
+   - **4/4 🌙 NIGHT RECAP** — mixed/other bullets **reduced to headlines** (text before the first `:`, ≤60 chars — detail stays in STATUS.md), loop log tail, LOOP NEXT
    Splitting: if STATUS.md has a `## Morning Brief` section with `### Backend` / `### Frontend` / `### Recap` subsections, those are used verbatim (preferred — orchestrator can write it at session end). Otherwise the Session End Signal bullets are bucketed by keyword; bullets matching both/neither go to the recap.
 3. **Telegram — Send Brief** (HTTP node) — one `sendMessage` per item, 800 ms apart so order holds. Token per item: `$env[item.tokenVar] || $env.TELEGRAM_BOT_TOKEN`.
 
