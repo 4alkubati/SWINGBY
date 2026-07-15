@@ -14,7 +14,7 @@
 
 ## 🔑 Optional / when convenient
 
-- [ ] **(D2.0 findings capture, ~10 min)** Kira confirmed (2026-07-15) the D2.0 iPhone walkthrough happened ~Jul 9–11 (evidence: commits `70d165a`, `9575fd3` HEIC fix). Only the HEIC bug was filed — dump any OTHER bugs/confusions you remember into `Roadmap/dominoes/D2.0-live-walkthrough.md` 📖 Log before they evaporate.
+- [ ] **(D2.0 retest, ~15 min on iPhone)** Full walkthrough triage recovered from the laptop (4 bugs, `Roadmap/July/2026-07-09.md`). Retest the two open ones against Render: (1) 🔴 quote under Plumbing lands in Lawncare feed — if still broken this is the top code fix; (2) 🔴 match → conversation appears in Messages — backend UUID-guard fix deployed 2026-07-15, may already be resolved. (🟢 My Jobs card offset can wait.)
 
 - [ ] **(Notion — D4 date vs. sequence)** Notion's "SwingBy" DB has **D4 — Friend/known-trade end-to-end run** due **2026-07-07**, but D2.0 (live walkthrough) and D3 (Expo Go walkthrough) — both prerequisites per `Roadmap/DOMINOES.md` — aren't done. Either push D4's due date in Notion or accept it slips.
 - [ ] **(Notion — stale rows, manual flip needed)** Notion's "SwingBy" DB still shows **F1 `/payments/mine`** and **F2 disputes** as "Not started," but STATUS.md confirms both shipped 2026-07-01. This DB doesn't auto-sync from git yet (see `AGENTS/claude/config/NOTION_SYNC.md`) — flip both rows to Done in Notion, or say the word and a git→Notion sync gets wired next.

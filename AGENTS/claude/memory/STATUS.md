@@ -10,7 +10,7 @@ swingby
 `/home/l3thal/agents/projects/swingby` (Linux). NOTE: prior STATUS + CLAUDE.md local-dev commands reference the old Windows path (`C:/Users/amrba/...`, `C:/Python314/python.exe`) — update CLAUDE.md Local Dev section when convenient.
 
 ## Last Updated
-2026-07-15 (late night Jul 14 MDT) — Morning-brief session: Telegram delivery FIXED + verified (bot @L3thallbot, brief lands on Kira's phone, 06:05 daily). Kira confirmed the D2.0 walkthrough actually happened ~Jul 9–11 (retro-logged in the domino) — D3/D4 unblocked. Three stray agent sessions killed. Prior rewrite 2026-07-14 (re-plan).
+2026-07-15 (late night Jul 14 MDT) — Morning-brief session: Telegram delivery FIXED + verified (bot @L3thallbot, 06:05 daily). LAPTOP RESCUE: week of unpushed Jul 9–12 work recovered via git bundle + merged (`d350295`) — full D2.0 walkthrough triage (4 bugs), Jul 11 Sentry fixes (UUID guard on /messages, Stripe price fail-fast, Sentry noise filter), Jul 10–12 polish sweep across 40 mobile screens. Backend pytest 23✅/3 skipped; 113 mobile files parse clean; pushed → Render redeploying. Prior rewrite 2026-07-14 (re-plan).
 
 ## Current Phase
 **Phase 1 — BETA**, gate cleared: D2.0 walkthrough confirmed done (Kira, 2026-07-15 — retro-logged). Domino truth:
@@ -39,7 +39,7 @@ Signal worth noting: commits `70d165a` "pre-engine baseline" (Jul 9) and `9575fd
 ## What's Broken (real blockers)
 - **Google Maps key compromised** — leaked in public repo, placeholder committed; Kira must regenerate (open since Jul 1).
 - **Emails land in spam** — new-domain reputation, DNS verified correct. Mitigations in HUMAN-TODO.
-- **D2.0 findings mostly uncaptured** — walkthrough happened (~Jul 9–11) but only the HEIC bug was filed; other findings live in Kira's head. D3 still needs its own logged run.
+- **D2.0 triage: 2 bugs still open** (full table recovered from laptop → `Roadmap/July/2026-07-09.md`, merged `d350295`): 🔴 quote posts to wrong category (Plumbing→Lawncare) — needs fix; 🔴 match creates no Messages conversation — UUID-guard fix deployed 2026-07-15, needs on-device retest. D3 still needs its own logged run.
 - **Placeholders unset:** Sentry DSN, hCaptcha secret.
 - **Latent:** `reviews.reviewee_type` CHECK lacks `'employee'` — D2.1 endpoint returns 0 reviews until a migration + review-target picker land (parked, separate domino).
 

@@ -121,3 +121,19 @@ NEEDS KIRA:
   3. D3 walkthrough + D4 tester (Jul 15) — the calendar keys off these now.
 NEXT: D2.2 invoices polish (code-runnable). D2.0 gate CLEARED — D3/D4 are Kira's next moves per the re-dated calendar.
 ---
+
+---
+DATE: 2026-07-15 (second block — laptop rescue)
+PROJECT: swingby
+PHASE: Laptop work rescue + merge + verify
+DISPATCHED: orchestrator inline
+SHIPPED:
+  - Discovered the laptop repo (OneDrive) held a WEEK of unpushed Jul 9–12 work; GitHub push from laptop failed (auth, silent exit 128) → rescued via git bundle over LAN scp, branch `laptop-jul10-polish-sweep` pushed from server, merged as `d350295`.
+  - Recovered: full D2.0 walkthrough triage (4 bugs, Roadmap/July/2026-07-09.md), Jul 11 two-track plan + backend fixes (UUID guard on /messages routes, Stripe prod_/price_ fail-fast, Sentry RemoteProtocolError filter), Jul 10–12 polish sweep (~40 mobile screens, ledger in memory/POLISH-SWEEP-2026-07-10.md).
+  - Merge conflicts resolved: Jul 9/10/11 day files keep recovered content with corrected slip banners; design/handoff-jet-pulse/ rename kept over laptop deletion.
+  - Gates: backend pytest 23 pass / 3 skip (Docker python:3.14-slim, dummy env); 113 mobile files parse clean (@babel/parser); pushed → Render auto-deployed; UUID-guard probe 404 ✅; tools/e2e_smoke.py vs Render: ALL 22 PASS incl. quote-chat→booking-thread migration.
+NEEDS KIRA:
+  1. iPhone retest of walkthrough bugs 1 (quote→wrong category) + 2 (match→Messages thread; API level now passes).
+  2. Laptop git push auth is broken (silent exit 128) — fix GitHub sign-in on laptop, and move repo out of OneDrive (caused index.lock + likely the auth weirdness).
+NEXT: Fix walkthrough bug 1 (category mapping on quote/post create) — top open 🔴. Then D2.2 invoices polish. D3/D4 remain Kira's gate.
+---
