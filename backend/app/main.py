@@ -19,11 +19,30 @@ if settings.SENTRY_DSN:
     import sentry_sdk
     from sentry_sdk.integrations.fastapi import FastApiIntegration
 
+    def _sentry_before_send(event, hint):
+        # Drop httpx.RemoteProtocolError — client disconnects / HTTP/2 drops
+        # are noise, not actionable bugs. See Roadmap 2026-07-11 A3.
+        exc_info = hint.get("exc_info") if hint else None
+        if exc_info:
+            exc_type = exc_info[0]
+            if exc_type is not None:
+                try:
+                    import httpx
+
+                    if issubclass(exc_type, httpx.RemoteProtocolError):
+                        return None
+                except ImportError:
+                    pass
+                if exc_type.__name__ == "RemoteProtocolError":
+                    return None
+        return event
+
     sentry_sdk.init(
         dsn=settings.SENTRY_DSN,
         traces_sample_rate=0.10,
         environment=os.getenv("ENV", "development"),
         integrations=[FastApiIntegration()],
+        before_send=_sentry_before_send,
     )
 
 from fastapi import FastAPI

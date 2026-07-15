@@ -86,13 +86,12 @@ function formatTime(iso) {
 }
 
 function paymentPillStyle(status) {
-  // bookings.payment_status enum per CHECK: held | partial_released | fully_released.
-  // 'refunded' shipped only if Kira extends the CHECK (HUMAN-TODO).
+  // Purple text uses accentText for AA contrast on dark. Held/partial = live-state purple; fully_released = success green.
   switch ((status || '').toLowerCase()) {
-    case 'fully_released':   return { bg: colors.success + '1F', border: colors.success + '4D', text: colors.success };
-    case 'partial_released': return { bg: colors.accent + '1A',  border: colors.accent + '40',  text: colors.accent };
-    case 'held':             return { bg: colors.accent + '1A',  border: colors.accent + '40',  text: colors.accent };
-    case 'refunded':         return { bg: colors.danger + '1A',  border: colors.danger + '4D',  text: colors.danger };
+    case 'fully_released':   return { bg: colors.success + '24', border: colors.success + '4D', text: colors.success };
+    case 'partial_released': return { bg: colors.accent + '24',  border: colors.borderAccent,   text: colors.accentText };
+    case 'held':             return { bg: colors.accent + '24',  border: colors.borderAccent,   text: colors.accentText };
+    case 'refunded':         return { bg: colors.danger + '24',  border: colors.danger + '4D',  text: colors.danger };
     default:                 return { bg: colors.surfaceAlt,     border: colors.border,         text: colors.textSecondary };
   }
 }
@@ -181,7 +180,7 @@ function DetailRow({ icon, label, children, onPress }) {
       spacing="sm"
       style={{ paddingVertical: spacing.sm + 2 }}
     >
-      <Feather name={icon} size={15} color={colors.accent} />
+      <Feather name={icon} size={15} color={colors.textSecondary} strokeWidth={1.8} />
       <Text variant="small" color="secondary" style={{ width: 72 }}>
         {label}
       </Text>
@@ -534,7 +533,7 @@ export default function BookingDetailsScreen({ route, navigation }) {
               <Text
                 variant="small"
                 numberOfLines={2}
-                style={{ textAlign: 'right', color: colors.accent, textDecorationLine: 'underline' }}
+                style={{ textAlign: 'right', color: colors.accentText, textDecorationLine: 'underline' }}
               >
                 {booking?.address ?? '—'}
               </Text>
@@ -545,7 +544,7 @@ export default function BookingDetailsScreen({ route, navigation }) {
             {/* Price row */}
             <DetailRow icon="dollar-sign" label="Price">
               <Inline spacing="sm" align="center" justify="flex-end">
-                <Text variant="display3" maxFontSizeMultiplier={1.4}>
+                <Text variant="display3" maxFontSizeMultiplier={1.4} style={{ color: colors.success, fontVariant: ['tabular-nums'] }}>
                   ${parseFloat(booking?.quoted_price ?? booking?.price ?? 0).toFixed(2)}
                 </Text>
                 <View

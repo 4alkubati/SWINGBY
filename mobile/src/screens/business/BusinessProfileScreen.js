@@ -111,7 +111,7 @@ function ReviewCard({ review }) {
     <Surface elevation="subtle" style={styles.reviewCard}>
       <Inline justify="space-between" style={{ marginBottom: spacing.sm }}>
         <Text variant="smallMedium">{review.reviewer?.first_name || 'Client'}</Text>
-        <RatingStarsDisplay rating={review.rating || 0} size={12} color={colors.accent} />
+        <RatingStarsDisplay rating={review.rating || 0} size={12} color={colors.warning} />
       </Inline>
       {review.comment ? (
         <Text variant="small" color="secondary" style={{ lineHeight: 20 }}>
@@ -459,7 +459,7 @@ export default function BusinessProfileScreen({ navigation, route }) {
                   <Inline spacing="md">
                     {business?.avg_rating != null && (
                       <Inline spacing="xs">
-                        <RatingStarsDisplay rating={Number(business.avg_rating)} size={14} color={colors.accent} />
+                        <RatingStarsDisplay rating={Number(business.avg_rating)} size={14} color={colors.warning} />
                         <Text variant="smallMedium">{Number(business.avg_rating).toFixed(1)}</Text>
                       </Inline>
                     )}
@@ -590,7 +590,7 @@ export default function BusinessProfileScreen({ navigation, route }) {
                       {subscription.tier === 'team' ? 'Team ($80/mo)' : subscription.tier === 'enterprise' ? 'Enterprise' : 'Solo ($30/mo)'}
                     </Text>
                     <View style={[styles.subPill, subscription.status === 'active' ? styles.subActive : subscription.status === 'past_due' ? styles.subPastDue : styles.subTrialing]}>
-                      <Text variant="caption" style={{ color: '#fff' }}>{(subscription.status || 'trialing').toUpperCase()}</Text>
+                      <Text variant="caption" style={[styles.subPillText, subscription.status === 'active' ? styles.subActiveText : subscription.status === 'past_due' ? styles.subPastDueText : styles.subTrialingText]}>{(subscription.status || 'trialing').toUpperCase()}</Text>
                     </View>
                   </Inline>
                   {subscription.current_period_end ? (
@@ -833,12 +833,16 @@ const styles = StyleSheet.create({
   },
   bookBtn:      {},
 
-  // D2.4 subscription pill
+  // D2.4 subscription pill — tint bg + full-color text per POLISH-TIPS §2
   subPill: {
     paddingHorizontal: spacing.sm, paddingVertical: 2,
     borderRadius: radius.pill,
   },
-  subActive:   { backgroundColor: colors.success },
-  subTrialing: { backgroundColor: colors.accent },
-  subPastDue:  { backgroundColor: colors.danger },
+  subActive:   { backgroundColor: 'rgba(46,189,133,0.14)' },
+  subTrialing: { backgroundColor: colors.accentMuted },
+  subPastDue:  { backgroundColor: 'rgba(255,92,92,0.14)' },
+  subPillText: { fontWeight: '700', letterSpacing: 0.8 },
+  subActiveText:   { color: colors.success },
+  subTrialingText: { color: colors.accentText },
+  subPastDueText:  { color: colors.danger },
 });

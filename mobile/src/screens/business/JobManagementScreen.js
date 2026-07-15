@@ -324,8 +324,8 @@ export default function JobManagementScreen({ navigation, route }) {
     <View style={[styles.screen, { paddingTop: insets.top }]}>
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={8}>
-          <Text variant="h2" color="secondary">←</Text>
+        <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={8} accessibilityRole="button" accessibilityLabel="Back">
+          <Feather name="arrow-left" size={20} color={colors.textSecondary} strokeWidth={1.8} />
         </TouchableOpacity>
         <Text variant="bodyMedium" numberOfLines={1} style={{ flex: 1, textAlign: 'center' }}>
           {booking.service_type || 'Job'}
@@ -397,7 +397,7 @@ export default function JobManagementScreen({ navigation, route }) {
                     </Text>
                   )}
                   {booking.total_amount && (
-                    <Text variant="smallMedium" color="accent">
+                    <Text variant="smallMedium" style={{ color: colors.success, fontFamily: 'SpaceGrotesk_700Bold', fontVariant: ['tabular-nums'] }}>
                       ${booking.total_amount} total
                     </Text>
                   )}

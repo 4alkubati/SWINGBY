@@ -17,7 +17,7 @@ import { SkeletonCard } from '../../components/Skeleton';
 
 const PAYMENT_BADGES = {
   fully_released:   { label: 'Paid',     color: colors.success },
-  partial_released: { label: 'Partial',  color: colors.accent },
+  partial_released: { label: 'Partial',  color: colors.accentText },
   refunded:         { label: 'Refunded', color: colors.danger },
 };
 
@@ -46,14 +46,14 @@ function InvoiceRow({ booking, onPress }) {
             </Text>
           </Stack>
           <Stack spacing={2} style={{ alignItems: 'flex-end' }}>
-            <Text variant="bodyMedium">
+            <Text variant="bodyMedium" style={{ color: colors.success, fontFamily: 'SpaceGrotesk_700Bold', fontVariant: ['tabular-nums'] }}>
               ${Number(booking.total_amount || 0).toLocaleString()}
             </Text>
             <View style={[styles.pill, { backgroundColor: badge.color + '22' }]}>
               <Text variant="caption" style={{ color: badge.color }}>{badge.label}</Text>
             </View>
           </Stack>
-          <Feather name="chevron-right" size={16} color={colors.textSecondary} />
+          <Feather name="chevron-right" size={16} color={colors.textSecondary} strokeWidth={1.8} />
         </Inline>
       </Surface>
     </TouchableOpacity>

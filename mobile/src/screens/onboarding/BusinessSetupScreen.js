@@ -11,6 +11,7 @@ import Text from '../../components/Text';
 import TextField from '../../components/TextField';
 import Button from '../../components/Button';
 import Chip from '../../components/Chip';
+import HeaderGlow from '../../components/HeaderGlow';
 import { api } from '../../services/api';
 import { show as showToast } from '../../services/toast';
 
@@ -62,6 +63,7 @@ export default function BusinessSetupScreen({ onComplete }) {
 
   return (
     <SafeAreaView style={styles.safe}>
+      <HeaderGlow width={480} height={280} offsetTop={-40} align="right" opacity={0.24} />
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -208,6 +210,7 @@ const styles = StyleSheet.create({
   title: {
     fontFamily: 'SpaceGrotesk_700Bold',
     fontSize: 28,
+    letterSpacing: -1,
     color: colors.textPrimary,
     marginBottom: spacing.sm,
   },

@@ -210,7 +210,7 @@ export default function DisputeFlowScreen({ route, navigation }) {
                       toast.show({ type: 'info', text1: 'Coming soon', text2: 'Photo upload is not yet available.' })
                     }
                   >
-                    <Feather name="camera" size={24} color={colors.accent} />
+                    <Feather name="camera" size={22} color={colors.accentText} strokeWidth={1.8} />
                     <Text style={styles.photoLabel}>Add photo</Text>
                   </TouchableOpacity>
                 ))}
@@ -276,9 +276,9 @@ const styles = StyleSheet.create({
   stepLabel: {
     fontSize: 11,
     fontFamily: 'Inter_600SemiBold',
-    color: colors.accent,
+    color: colors.accentText,
     textTransform: 'uppercase',
-    letterSpacing: 1.0,
+    letterSpacing: 1.4,
   },
   stepTitle: {
     fontSize: 22,
@@ -336,7 +336,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: 14,
+    borderRadius: 12,
     padding: 14,
     fontSize: 15,
     color: colors.textPrimary,
@@ -368,7 +368,7 @@ const styles = StyleSheet.create({
     gap: 6,
     backgroundColor: colors.accent + '0A', // ~4% opacity
   },
-  photoLabel: { fontSize: 11, fontFamily: 'Inter_600SemiBold', color: colors.accent },
+  photoLabel: { fontSize: 11, fontFamily: 'Inter_600SemiBold', color: colors.accentText },
 
   bottomBar: {
     paddingHorizontal: 16,
@@ -379,15 +379,10 @@ const styles = StyleSheet.create({
   },
   nextBtn: {
     backgroundColor: colors.accent,
-    borderRadius: 14,
+    borderRadius: 12,
     paddingVertical: 15,
     alignItems: 'center',
     minHeight: 50,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 1,
-    shadowRadius: 10,
-    elevation: 6,
   },
   nextBtnDisabled: { opacity: 0.45 },
   nextBtnText: { fontSize: 16, fontFamily: 'Inter_600SemiBold', color: colors.textPrimary },

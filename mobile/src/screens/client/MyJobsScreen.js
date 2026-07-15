@@ -12,15 +12,15 @@ import EmptyState from '../../components/EmptyState';
 import Text from '../../components/Text';
 
 const STATUS_CONFIG = {
-  confirmed:   { label: 'Confirmed',   color: colors.accent,   bg: colors.accentMuted },
-  in_progress: { label: 'In Progress', color: colors.accent,   bg: colors.accentMuted },
-  completed:   { label: 'Done',        color: colors.success,  bg: colors.accentMuted },
+  confirmed:   { label: 'Confirmed',   color: colors.accentText,    bg: colors.accentMuted },
+  in_progress: { label: 'In Progress', color: colors.accentText,    bg: colors.accentMuted },
+  completed:   { label: 'Done',        color: colors.success,       bg: 'rgba(46,189,133,0.14)' },
   cancelled:   { label: 'Cancelled',   color: colors.textSecondary, bg: colors.surfaceAlt },
-  open:        { label: 'Awaiting Quotes', color: colors.accentText,   bg: colors.accentMuted },
-  matched:     { label: 'Matched',     color: colors.success,  bg: colors.accentMuted },
+  open:        { label: 'Awaiting Quotes', color: colors.accentText, bg: colors.accentMuted },
+  matched:     { label: 'Matched',     color: colors.success,       bg: 'rgba(46,189,133,0.14)' },
   expired:     { label: 'Expired',     color: colors.textSecondary, bg: colors.surfaceAlt },
-  pending:     { label: 'Pending',     color: colors.accentText, bg: colors.accentMuted },
-  accepted:    { label: 'Accepted',    color: colors.success,  bg: colors.accentMuted },
+  pending:     { label: 'Pending',     color: colors.accentText,    bg: colors.accentMuted },
+  accepted:    { label: 'Accepted',    color: colors.success,       bg: 'rgba(46,189,133,0.14)' },
   rejected:    { label: 'Declined',    color: colors.textSecondary, bg: colors.surfaceAlt },
 };
 
@@ -43,7 +43,7 @@ function QuoteRow({ interest, onMessage }) {
           </View>
         </View>
         <Text style={styles.rowSub}>
-          {clientName} · ${interest.quoted_price}
+          {clientName} · <Text style={styles.priceInline}>${interest.quoted_price}</Text>
         </Text>
       </View>
       {canMessage && (
@@ -351,8 +351,8 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: 22, fontFamily: 'SpaceGrotesk_700Bold', color: colors.textPrimary, letterSpacing: -0.5 },
   postsSection: { paddingHorizontal: 22 },
   sectionLabel: {
-    fontSize: 11, color: colors.accentText, fontFamily: 'Inter_600SemiBold',
-    textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 4,
+    fontSize: 11, color: colors.textSecondary, fontFamily: 'Inter_600SemiBold',
+    textTransform: 'uppercase', letterSpacing: 1.4, marginBottom: 8,
   },
   divider: { height: 1, backgroundColor: colors.border, marginVertical: 12 },
   tabs: {
@@ -375,14 +375,21 @@ const styles = StyleSheet.create({
   statusText: { fontSize: 10, fontFamily: 'Inter_600SemiBold' },
   rowSub: { fontSize: 13, fontFamily: 'Inter_400Regular', color: colors.textSecondary },
   rowDate: { fontSize: 12, fontFamily: 'Inter_400Regular', color: colors.textSecondary },
+  priceInline: {
+    color: colors.success,
+    fontFamily: 'SpaceGrotesk_700Bold',
+    fontVariant: ['tabular-nums'],
+  },
   actionBtn: {
-    backgroundColor: colors.accentMuted, borderWidth: 1,
-    borderColor: colors.border, borderRadius: 10,
+    backgroundColor: colors.surfaceAlt, borderWidth: 1,
+    borderColor: colors.border, borderRadius: 12,
     paddingHorizontal: 12, paddingVertical: 7,
+    minHeight: 32,
+    alignItems: 'center', justifyContent: 'center',
   },
   actionBtnHighlight: {
-    backgroundColor: colors.accentMuted, borderColor: colors.border,
+    backgroundColor: colors.accentMuted, borderColor: colors.borderAccent,
   },
-  actionBtnText: { fontSize: 12, fontFamily: 'Inter_600SemiBold', color: colors.accent },
+  actionBtnText: { fontSize: 12, fontFamily: 'Inter_600SemiBold', color: colors.textSecondary },
   actionBtnTextHighlight: { color: colors.accentText },
 });

@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react';
 import Animated, {
   useSharedValue, useAnimatedStyle, withSpring,
 } from 'react-native-reanimated';
+import { Feather } from '@expo/vector-icons';
 
 import Text from '../../components/Text';
 import Button from '../../components/Button';
@@ -14,6 +15,7 @@ import Surface from '../../components/Surface';
 import Stack from '../../components/Stack';
 import Inline from '../../components/Inline';
 import BottomSheet from '../../components/BottomSheet';
+import EmptyState from '../../components/EmptyState';
 import { SkeletonCard } from '../../components/Skeleton';
 import { RatingStarsDisplay } from '../../components/RatingStars';
 
@@ -32,14 +34,14 @@ function QuoteSkeletons() {
 }
 
 // ─── Empty state ─────────────────────────────────────────────────────────────
-function EmptyState() {
+function QuotesEmpty() {
   return (
     <View style={styles.emptyContainer}>
-      <Text style={styles.emptyIllustration}>{'( ⏳ )'}</Text>
-      <Text variant="h1" style={styles.emptyTitle}>No quotes yet</Text>
-      <Text variant="body" color="secondary" style={styles.emptyDesc}>
-        Businesses in your area will respond shortly.{'\n'}Check back in a few minutes.
-      </Text>
+      <EmptyState
+        icon="clock"
+        title="No quotes yet"
+        body={"Businesses in your area will respond shortly.\nCheck back in a few minutes."}
+      />
     </View>
   );
 }
@@ -48,16 +50,11 @@ function EmptyState() {
 function ErrorState({ onRetry }) {
   return (
     <View style={styles.emptyContainer}>
-      <Text style={styles.emptyIllustration}>{'( ✕ )'}</Text>
-      <Text variant="h1" style={styles.emptyTitle}>Could not load quotes</Text>
-      <Text variant="body" color="secondary" style={styles.emptyDesc}>
-        Something went wrong while fetching quotes.
-      </Text>
-      <Button
-        label="Try again"
-        variant="secondary"
-        onPress={onRetry}
-        style={styles.retryBtn}
+      <EmptyState
+        icon="alert-triangle"
+        title="Could not load quotes"
+        body="Something went wrong while fetching quotes."
+        action={{ label: 'Try again', onPress: onRetry }}
       />
     </View>
   );
@@ -140,7 +137,7 @@ function QuoteListCard({ quote, isRecommended, onSelect, onViewProfile, onMessag
 
             {/* Price + Select */}
             <Stack spacing="xs" align="flex-end">
-              <Text variant="h1" color="accent">
+              <Text variant="h1" style={styles.priceValue}>
                 ${quote.quoted_price}
               </Text>
               <Button
@@ -179,7 +176,7 @@ function ConfirmSheet({ visible, quote, onConfirm, onClose, confirming }) {
             You're about to book{' '}
             <Text variant="bodyMedium">{businessName}</Text>
             {' '}for{' '}
-            <Text variant="bodyMedium" color="accent">${quote.quoted_price}</Text>.
+            <Text variant="bodyMedium" style={styles.priceInline}>${quote.quoted_price}</Text>.
           </Text>
         </Stack>
 
@@ -283,8 +280,8 @@ export default function QuoteComparisonScreen({ navigation, route }) {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <View style={styles.header}>
-        <Pressable onPress={() => navigation.goBack()} hitSlop={12} style={styles.backBtn}>
-          <Text variant="h2" color="secondary">←</Text>
+        <Pressable onPress={() => navigation.goBack()} hitSlop={12} style={styles.backBtn} accessibilityLabel="Back" accessibilityRole="button">
+          <Feather name="arrow-left" size={20} color={colors.textSecondary} strokeWidth={1.8} />
         </Pressable>
         <Stack spacing="xs" style={styles.headerCenter}>
           <Text variant="h1" style={styles.headerTitle}>
@@ -307,7 +304,7 @@ export default function QuoteComparisonScreen({ navigation, route }) {
       ) : loadError ? (
         <ErrorState onRetry={loadQuotes} />
       ) : quotes.length === 0 ? (
-        <EmptyState />
+        <QuotesEmpty />
       ) : (
         <ScrollView
           showsVerticalScrollIndicator={false}
@@ -398,13 +395,13 @@ const styles = StyleSheet.create({
   // Quote card
   quoteCard: { overflow: 'hidden' },
   quoteCardRecommended: {
-    borderColor: colors.accent,
+    borderColor: colors.borderAccent,
   },
   bestBadge: {
     alignSelf: 'flex-start',
     backgroundColor: colors.accentMuted,
     borderWidth: 1,
-    borderColor: colors.accent,
+    borderColor: colors.borderAccent,
     borderRadius: radius.pill,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
@@ -416,22 +413,23 @@ const styles = StyleSheet.create({
     minWidth: 80,
   },
 
+  // Price
+  priceValue: {
+    color: colors.success,
+    fontVariant: ['tabular-nums'],
+  },
+  priceInline: {
+    color: colors.success,
+    fontFamily: 'SpaceGrotesk_700Bold',
+  },
+
   // Empty / error
   emptyContainer: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: spacing.xl,
-    gap: spacing.md,
   },
-  emptyIllustration: {
-    fontSize: 40,
-    color: colors.textSecondary,
-    fontFamily: 'SpaceGrotesk_700Bold',
-  },
-  emptyTitle: { textAlign: 'center' },
-  emptyDesc: { textAlign: 'center', lineHeight: 22 },
-  retryBtn: { marginTop: spacing.sm },
 
   // BottomSheet inner content
   sheetInner: {

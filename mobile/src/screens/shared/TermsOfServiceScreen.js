@@ -100,15 +100,15 @@ export default function TermsOfServiceScreen() {
           background="alt"
           rounded="card"
           padding="base"
-          style={{ alignItems: 'center', borderColor: colors.accentMuted }}
+          style={{ alignItems: 'center', borderColor: colors.borderAccent }}
         >
-          <Feather name="file-text" size={16} color={colors.accent} style={{ marginBottom: spacing.xs }} />
+          <Feather name="file-text" size={16} strokeWidth={1.8} color={colors.accentText} style={{ marginBottom: spacing.xs }} />
           <Text variant="bodyMedium" style={{ marginBottom: spacing.xs }}>Legal questions?</Text>
           <Text variant="small" color="secondary" style={{ textAlign: 'center' }}>
             Email{' '}
-            <Text variant="small" color="accent">legal@swingbyy.com</Text>
+            <Text variant="small" style={{ color: colors.accentText }}>legal@swingbyy.com</Text>
             {' '}or{' '}
-            <Text variant="small" color="accent">4alkubati@gmail.com</Text>
+            <Text variant="small" style={{ color: colors.accentText }}>4alkubati@gmail.com</Text>
           </Text>
         </Surface>
       </ScrollView>

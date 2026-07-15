@@ -6,7 +6,7 @@ import Animated, {
   withSpring,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { Feather } from '@expo/vector-icons';
 
 import Text from '../../components/Text';
 import Stack from '../../components/Stack';
@@ -103,7 +103,7 @@ export default function ReviewScreen({ navigation, route }) {
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           style={{ width: 32, alignItems: 'flex-start' }}
         >
-          <Ionicons name="chevron-back" size={24} color={colors.textSecondary} />
+          <Feather name="arrow-left" size={20} color={colors.textSecondary} strokeWidth={1.8} />
         </TouchableOpacity>
 
         <Text variant="h2" style={{ flex: 1, textAlign: 'center' }}>

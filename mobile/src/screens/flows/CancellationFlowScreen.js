@@ -93,7 +93,7 @@ export default function CancellationFlowScreen({ route, navigation }) {
           {/* Warning icon + headline */}
           <View style={styles.warningRow}>
             <View style={styles.warningIconWrap}>
-              <Feather name="alert-triangle" size={28} color={colors.accent} />
+              <Feather name="alert-triangle" size={28} color={colors.warning} strokeWidth={1.8} />
             </View>
           </View>
           <Text style={styles.headline}>Cancel this booking?</Text>
@@ -111,7 +111,7 @@ export default function CancellationFlowScreen({ route, navigation }) {
               {pct >= 0.5 ? ' (within 48h of scheduled date)' : ''}.
             </Text>
             <View style={styles.penaltyTip}>
-              <Feather name="info" size={13} color={colors.accent} />
+              <Feather name="info" size={13} color={colors.accentText} strokeWidth={1.8} />
               <Text style={styles.penaltyTipText}>
                 {pct >= 0.5
                   ? 'Within 48h of your booking — 50% fee applies.'
@@ -206,10 +206,10 @@ const styles = StyleSheet.create({
   warningIconWrap: {
     width: 68,
     height: 68,
-    borderRadius: 22,
-    backgroundColor: colors.accent + '1A', // ~10% opacity
+    borderRadius: 20,
+    backgroundColor: 'rgba(246,178,59,0.14)',
     borderWidth: 1,
-    borderColor: colors.accent + '40', // ~25% opacity
+    borderColor: 'rgba(246,178,59,0.4)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -234,7 +234,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.danger + '40', // ~25% opacity
-    borderRadius: 18,
+    borderRadius: 20,
     padding: 20,
     marginTop: 8,
     alignItems: 'center',
@@ -245,7 +245,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_600SemiBold',
     color: colors.danger,
     textTransform: 'uppercase',
-    letterSpacing: 1.0,
+    letterSpacing: 1.4,
   },
   penaltyAmount: {
     fontSize: 46,
@@ -274,14 +274,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.accent + '33', // ~20% opacity
   },
-  penaltyTipText: { fontSize: 12, color: colors.accent, flex: 1, lineHeight: 17 },
+  penaltyTipText: { fontSize: 12, color: colors.accentText, flex: 1, lineHeight: 17 },
 
   sectionLabel: {
     fontSize: 11,
     fontFamily: 'Inter_600SemiBold',
     color: colors.textSecondary,
     textTransform: 'uppercase',
-    letterSpacing: 0.8,
+    letterSpacing: 1.4,
     marginTop: spacing.sm,
   },
   reasonList: { gap: 8 },
@@ -343,15 +343,10 @@ const styles = StyleSheet.create({
   },
   confirmBtn: {
     backgroundColor: colors.danger,
-    borderRadius: 14,
+    borderRadius: 12,
     paddingVertical: 15,
     alignItems: 'center',
     minHeight: 50,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 1,
-    shadowRadius: 10,
-    elevation: 6,
   },
   confirmBtnDisabled: { opacity: 0.45 },
   confirmBtnText: { fontSize: 15, fontFamily: 'Inter_600SemiBold', color: colors.textPrimary },

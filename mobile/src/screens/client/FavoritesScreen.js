@@ -73,7 +73,7 @@ function HeartButton({ onPress }) {
         },
       ]}
     >
-      <Feather name="heart" size={18} color={colors.accent} />
+      <Feather name="heart" size={18} color={colors.accentText} strokeWidth={1.8} />
     </AnimatedPressable>
   );
 }

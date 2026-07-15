@@ -112,7 +112,14 @@ function ConversationRow({ thread, onPress }) {
               backgroundColor: isQuote ? colors.accentMuted : colors.surfaceAlt,
             }}
           >
-            <Text variant="caption" color={isQuote ? 'accent' : 'secondary'}>
+            <Text
+              variant="caption"
+              style={{
+                color: isQuote ? colors.accentText : colors.textSecondary,
+                fontWeight: '600',
+                letterSpacing: 0.4,
+              }}
+            >
               {isQuote ? 'Quote' : 'Booking'}
             </Text>
           </View>

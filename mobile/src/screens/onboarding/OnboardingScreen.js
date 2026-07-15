@@ -1,12 +1,13 @@
 import React, { useRef, useState, useCallback } from 'react';
 import { View, FlatList, Dimensions, Pressable, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { Feather } from '@expo/vector-icons';
 import Animated, { FadeIn, FadeOut, FadeInDown } from 'react-native-reanimated';
 import * as SecureStore from '../../services/storage';
 import { colors, spacing, radius } from '../../theme/tokens';
 import Text from '../../components/Text';
 import Button from '../../components/Button';
+import HeaderGlow from '../../components/HeaderGlow';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 const ONBOARDING_KEY = 'has_seen_onboarding';
@@ -14,19 +15,19 @@ const ONBOARDING_KEY = 'has_seen_onboarding';
 const SLIDES = [
   {
     id: '1',
-    icon: 'search-outline',
+    icon: 'search',
     title: 'Find trusted professionals',
     subtitle: 'Browse nearby verified service providers in your area',
   },
   {
     id: '2',
-    icon: 'document-text-outline',
+    icon: 'file-text',
     title: 'Post a job, get quotes',
     subtitle: 'Describe what you need and compare competitive quotes',
   },
   {
     id: '3',
-    icon: 'shield-checkmark-outline',
+    icon: 'shield',
     title: 'Book with confidence',
     subtitle: 'Secure payments and verified providers protect every booking',
   },
@@ -36,7 +37,7 @@ function SlideItem({ item }) {
   return (
     <View style={styles.slide}>
       <View style={styles.iconCircle}>
-        <Ionicons name={item.icon} size={80} color={colors.accent} />
+        <Feather name={item.icon} size={72} color={colors.accentText} strokeWidth={1.8} />
       </View>
       <View style={styles.slideText}>
         <Text style={styles.slideTitle} accessibilityRole="header" maxFontSizeMultiplier={1.4}>
@@ -74,7 +75,7 @@ export default function OnboardingScreen({ navigation }) {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      <View style={styles.glowOrb} />
+      <HeaderGlow width={480} height={280} offsetTop={-40} align="left" opacity={0.26} />
 
       {/* Skip */}
       {!isLast && (
@@ -152,17 +153,6 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   flex: { flex: 1 },
 
-  glowOrb: {
-    position: 'absolute',
-    top: -100,
-    left: -60,
-    width: 260,
-    height: 260,
-    borderRadius: 130,
-    backgroundColor: colors.accentMuted,
-    opacity: 0.3,
-  },
-
   skipWrap: {
     position: 'absolute',
     right: spacing.lg,
@@ -234,6 +224,6 @@ const styles = StyleSheet.create({
   nextBtnText: {
     fontSize: 15,
     fontFamily: 'Inter_600SemiBold',
-    color: colors.textPrimary,
+    color: colors.textSecondary,
   },
 });

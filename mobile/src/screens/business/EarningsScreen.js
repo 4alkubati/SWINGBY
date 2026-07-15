@@ -15,6 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 // which conflict with Expo SDK 54 (RN 0.81). Chart is stubbed with a placeholder
 // until we upgrade Expo OR pin victory-native to ~40.x (older API). All other
 // EarningsScreen UI (hero, stats grid, range chips) is unaffected.
+import { Feather } from '@expo/vector-icons';
 import { api } from '../../services/api';
 import { SkeletonBox } from '../../components/Skeleton';
 import { colors } from '../../theme/tokens';
@@ -117,7 +118,7 @@ function StatCard({ label, value, accent }) {
   return (
     <View style={styles.statCard}>
       <Text style={styles.statLabel}>{label}</Text>
-      <Text style={[styles.statValue, accent && { color: colors.accent }]}>{value}</Text>
+      <Text style={[styles.statValue, accent && { color: colors.success }]}>{value}</Text>
     </View>
   );
 }
@@ -178,8 +179,11 @@ export default function EarningsScreen({ navigation }) {
         <TouchableOpacity
           onPress={() => navigation.goBack()}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          accessibilityLabel="Back"
+          accessibilityRole="button"
+          style={{ width: 40 }}
         >
-          <Text style={styles.backBtn}>←</Text>
+          <Feather name="arrow-left" size={20} color={colors.textSecondary} strokeWidth={1.8} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Earnings</Text>
         <TouchableOpacity
@@ -301,9 +305,11 @@ const styles = StyleSheet.create({
   heroSkeleton: { alignItems: 'center', paddingTop: 24, paddingBottom: 8, gap: 8 },
   heroAmount: {
     fontSize: 48,
+    fontFamily: 'SpaceGrotesk_700Bold',
     fontWeight: '700',
-    color: colors.accent,
+    color: colors.success,
     letterSpacing: -1.5,
+    fontVariant: ['tabular-nums'],
   },
   heroSub: { fontSize: 14, color: colors.textSecondary, marginTop: 4 },
 
@@ -389,10 +395,10 @@ const styles = StyleSheet.create({
   },
   statLabel: {
     fontSize: 11,
-    fontWeight: '700',
+    fontWeight: '600',
     color: colors.textSecondary,
     textTransform: 'uppercase',
-    letterSpacing: 0.8,
+    letterSpacing: 1.4,
   },
   statValue: {
     fontSize: 20,

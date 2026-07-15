@@ -156,7 +156,7 @@ const bubbleStyles = StyleSheet.create({
     gap: 4,
   },
   bubbleMine: {
-    backgroundColor: colors.accent,
+    backgroundColor: colors.accentBtn,
     borderBottomRightRadius: 4,
     ...shadows.subtle,
   },
@@ -214,7 +214,7 @@ function SendButton({ onPress, disabled, loading }) {
       activeOpacity={1}
     >
       <Animated.View style={[sendBtnStyles.btn, animatedStyle]}>
-        <Text variant="h2" style={{ color: colors.textPrimary, lineHeight: 22 }}>↑</Text>
+        <Feather name="arrow-up" size={20} color={colors.textPrimary} strokeWidth={1.8} />
       </Animated.View>
     </TouchableOpacity>
   );
@@ -374,7 +374,10 @@ export default function ChatScreen({ navigation, route }) {
         </TouchableOpacity>
         <View style={styles.headerCenter}>
           <View style={styles.avatarSmall}>
-            <Text variant="caption" color="accent" style={{ fontWeight: '700' }}>
+            <Text
+              variant="caption"
+              style={{ color: colors.accentText, fontWeight: '700' }}
+            >
               {(otherPartyName || 'C').charAt(0).toUpperCase()}
             </Text>
           </View>

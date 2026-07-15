@@ -164,8 +164,8 @@ export default function EmployeeProfileScreen({ navigation, route }) {
     return (
       <View style={[styles.container, { paddingTop: insets.top }]}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={8}>
-            <Text variant="display3" color="secondary">←</Text>
+          <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={8} accessibilityRole="button" accessibilityLabel="Back">
+            <Feather name="arrow-left" size={20} color={colors.textSecondary} strokeWidth={1.8} />
           </TouchableOpacity>
           <Text variant="bodyMedium">Profile</Text>
           <View style={{ width: 32 }} />
@@ -257,9 +257,9 @@ export default function EmployeeProfileScreen({ navigation, route }) {
                 activeOpacity={0.7}
                 style={styles.companyLink}
               >
-                <Inline spacing="xs">
+                <Inline spacing="xs" align="center">
                   <Text variant="caption" color="accent">{businessName}</Text>
-                  <Text variant="caption" color="accent">→</Text>
+                  <Feather name="arrow-right" size={12} color={colors.accentText} strokeWidth={1.8} />
                 </Inline>
               </TouchableOpacity>
             ) : null}
