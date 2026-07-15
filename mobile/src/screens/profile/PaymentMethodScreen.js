@@ -197,7 +197,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_600SemiBold',
     color: colors.textSecondary,
     textTransform: 'uppercase',
-    letterSpacing: 0.8,
+    letterSpacing: 1.4,
     marginBottom: -8,
   },
 
@@ -205,7 +205,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: 18,
+    borderRadius: 20,
     paddingVertical: 8,
     minHeight: 160,
   },
@@ -217,13 +217,13 @@ const styles = StyleSheet.create({
     gap: 8,
     backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: colors.accentMuted, // rgba(255,92,0,0.35) → accentMuted approximates the tinted border
-    borderRadius: 14,
+    borderColor: colors.borderAccent,
+    borderRadius: 12,
     paddingVertical: 15,
     minHeight: 50,
     opacity: 0.65, // visually disabled
   },
-  addBtnText: { fontSize: 15, fontFamily: 'Inter_600SemiBold', color: colors.accent },
+  addBtnText: { fontSize: 15, fontFamily: 'Inter_600SemiBold', color: colors.accentText },
 
   footer: {
     fontSize: 12,

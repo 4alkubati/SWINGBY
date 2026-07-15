@@ -378,10 +378,10 @@ const styles = StyleSheet.create({
   // Section title
   sectionTitle: {
     fontSize: 11,
-    fontWeight: '700',
+    fontWeight: '600',
     color: colors.textSecondary,
     textTransform: 'uppercase',
-    letterSpacing: 1.2,
+    letterSpacing: 1.4,
     paddingHorizontal: 22,
     marginBottom: 10,
     marginTop: 20,
@@ -404,10 +404,10 @@ const styles = StyleSheet.create({
   },
   metricLabel: {
     fontSize: 11,
-    fontWeight: '700',
+    fontWeight: '600',
     color: colors.textSecondary,
     textTransform: 'uppercase',
-    letterSpacing: 0.8,
+    letterSpacing: 1.4,
   },
   metricValue: {
     fontSize: 28,
@@ -513,7 +513,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  reviewAvatarText: { fontSize: 14, fontWeight: '700', color: colors.accent },
+  reviewAvatarText: { fontSize: 14, fontWeight: '700', color: colors.accentText },
   reviewMeta: { flex: 1 },
   reviewName: { fontSize: 14, fontWeight: '600', color: colors.textPrimary },
   reviewDate: { fontSize: 11, color: colors.textSecondary },
@@ -542,7 +542,7 @@ const styles = StyleSheet.create({
   retryBtn: {
     marginTop: 8,
     backgroundColor: colors.accent,
-    borderRadius: 14,
+    borderRadius: 12,
     paddingVertical: 13,
     paddingHorizontal: 32,
     minHeight: 48,

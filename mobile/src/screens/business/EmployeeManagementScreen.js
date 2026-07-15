@@ -34,10 +34,10 @@ function toInitials(name = '') {
 }
 
 const AVATAR_GRADIENTS = [
-  { bg: colors.accentMuted, color: colors.accent },
-  { bg: colors.success + '1A', color: colors.success },
-  { bg: colors.accentMuted, color: colors.accent },
-  { bg: colors.warning + '1A', color: colors.warning },
+  { bg: colors.accentMuted, color: colors.accentText },
+  { bg: 'rgba(46,189,133,0.14)', color: colors.success },
+  { bg: colors.accentMuted, color: colors.accentText },
+  { bg: 'rgba(246,178,59,0.14)', color: colors.warning },
 ];
 
 function avatarStyle(index) {
@@ -84,7 +84,7 @@ function EmployeeRow({ employee, index, onPress, onToggle, toggling }) {
       )}
 
       {/* Chevron */}
-      <Text style={styles.chevron}>›</Text>
+      <Feather name="chevron-right" size={18} color={colors.textSecondary} strokeWidth={1.8} style={styles.chevron} />
     </TouchableOpacity>
   );
 }
@@ -636,10 +636,10 @@ const styles = StyleSheet.create({
   backBtn: { fontSize: 24, color: colors.textSecondary, width: 40 },
   headerTitle: { fontSize: 20, fontWeight: '700', color: colors.textPrimary, letterSpacing: -0.5 },
   inviteBtn: {
-    backgroundColor: colors.accent + '1F', // ~12% opacity
+    backgroundColor: colors.accentMuted,
     borderWidth: 1,
-    borderColor: colors.accent + '4D', // ~30% opacity
-    borderRadius: 20,
+    borderColor: colors.borderAccent,
+    borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 7,
     minWidth: 44,
@@ -647,7 +647,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  inviteBtnText: { fontSize: 13, fontWeight: '700', color: colors.accent },
+  inviteBtnText: { fontSize: 13, fontWeight: '600', color: colors.accentText },
 
   // Search
   searchBar: {
@@ -697,7 +697,7 @@ const styles = StyleSheet.create({
   rowRole: { fontSize: 12, color: colors.textSecondary, fontWeight: '500' },
   rowToggleArea: { marginRight: 8 },
   rowSwitch: { marginRight: 2 },
-  chevron: { fontSize: 22, color: colors.textSecondary, marginLeft: 4 },
+  chevron: { marginLeft: 4 },
 
   // Empty
   empty: {
@@ -744,10 +744,10 @@ const styles = StyleSheet.create({
   sheetField: { gap: 8 },
   sheetLabel: {
     fontSize: 11,
-    fontWeight: '700',
+    fontWeight: '600',
     color: colors.textSecondary,
     textTransform: 'uppercase',
-    letterSpacing: 0.8,
+    letterSpacing: 1.4,
   },
   sheetReadOnly: {
     backgroundColor: colors.surfaceAlt,
@@ -796,12 +796,12 @@ const styles = StyleSheet.create({
   inviteLinkBox: {
     backgroundColor: colors.surfaceAlt,
     borderWidth: 1,
-    borderColor: colors.accent + '40', // ~25% opacity
+    borderColor: colors.borderAccent,
     borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 13,
   },
-  inviteLinkText: { fontSize: 13, color: colors.accent, fontWeight: '500' },
+  inviteLinkText: { fontSize: 13, color: colors.accentText, fontWeight: '500' },
 
   // Add employee modal extras
   addModalInviteToggle: {
@@ -810,7 +810,7 @@ const styles = StyleSheet.create({
   },
   addModalInviteToggleText: {
     fontSize: 13,
-    color: colors.accent,
+    color: colors.accentText,
     fontWeight: '600',
   },
   addModalCancel: {
@@ -825,17 +825,12 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
 
-  // Save button (shared)
+  // Save button (shared) — 12px radius per spec, no resting shadow
   saveBtn: {
     backgroundColor: colors.accent,
-    borderRadius: 14,
+    borderRadius: 12,
     paddingVertical: 15,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 8,
-    elevation: 8,
     minHeight: 52,
     justifyContent: 'center',
   },

@@ -197,14 +197,14 @@ export default function ReferralScreen() {
               style={{
                 backgroundColor: colors.accentMuted,
                 borderWidth: 1,
-                borderColor: colors.accentMuted,
+                borderColor: colors.borderAccent,
                 borderRadius: radius.chip,
                 paddingHorizontal: spacing.sm + 2,
                 paddingVertical: spacing.xs,
               }}
             >
-              <Feather name="copy" size={14} color={colors.accent} />
-              <Text variant="smallMedium" color="accent">
+              <Feather name="copy" size={14} color={colors.accentText} strokeWidth={1.8} />
+              <Text variant="smallMedium" style={{ color: colors.accentText }}>
                 Tap to copy
               </Text>
             </Inline>
@@ -230,7 +230,7 @@ export default function ReferralScreen() {
                   borderRadius: 12,
                   backgroundColor: colors.accentMuted,
                   borderWidth: 1,
-                  borderColor: colors.accentMuted,
+                  borderColor: colors.borderAccent,
                   alignItems: 'center',
                   justifyContent: 'center',
                   flexShrink: 0,
@@ -238,7 +238,7 @@ export default function ReferralScreen() {
               >
                 <Text
                   variant="caption"
-                  style={{ color: colors.accent, fontWeight: '700' }}
+                  style={{ color: colors.accentText, fontWeight: '700' }}
                 >
                   {i + 1}
                 </Text>

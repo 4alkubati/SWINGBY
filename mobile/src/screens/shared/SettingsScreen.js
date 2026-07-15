@@ -321,7 +321,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.card,
   },
   sectionLabel: {
-    letterSpacing: 1.2,
+    letterSpacing: 1.4,
     textTransform: 'uppercase',
     fontSize: 11,
     paddingHorizontal: spacing.base,
@@ -353,7 +353,7 @@ const styles = StyleSheet.create({
   },
   localeChipText: {
     fontWeight: '700',
-    color: colors.accent,
+    color: colors.accentText,
     letterSpacing: 0.5,
   },
   versionText: {

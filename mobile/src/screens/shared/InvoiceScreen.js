@@ -165,7 +165,16 @@ export default function InvoiceScreen({ navigation, route }) {
               </Inline>
               <Inline justify="space-between">
                 <Text variant="bodyMedium">Total charged</Text>
-                <Text variant="bodyMedium" color="accent">{money(totals?.total_charged)}</Text>
+                <Text
+                  variant="bodyMedium"
+                  style={{
+                    color: colors.success,
+                    fontFamily: 'SpaceGrotesk_700Bold',
+                    fontVariant: ['tabular-nums'],
+                  }}
+                >
+                  {money(totals?.total_charged)}
+                </Text>
               </Inline>
             </Stack>
           </Surface>

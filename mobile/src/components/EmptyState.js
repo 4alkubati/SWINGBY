@@ -37,7 +37,7 @@ export default function EmptyState({
     <View style={styles.container}>
       {/* Icon */}
       <Animated.View style={[styles.iconWrapper, pulseStyle]}>
-        <Feather name={icon} size={32} color={colors.accent} />
+        <Feather name={icon} size={32} color={colors.accentText} strokeWidth={1.8} />
       </Animated.View>
 
       {/* Title */}
@@ -74,7 +74,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     backgroundColor: colors.accentMuted,
     borderWidth: 1,
-    borderColor: colors.accent + '40',
+    borderColor: colors.borderAccent,
     alignItems: 'center',
     justifyContent: 'center',
   },

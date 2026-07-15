@@ -1,5 +1,6 @@
 import logging
 from datetime import datetime, timezone
+from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Depends, Query
 from pydantic import BaseModel, Field, field_validator, model_validator
@@ -11,6 +12,15 @@ from app.services.push import send_push_to_user
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+
+def _require_uuid(value: str, label: str) -> None:
+    """Guard so non-UUID path params (e.g. "threads" hitting /{booking_id})
+    return 404 instead of blowing up Postgres with an invalid uuid cast."""
+    try:
+        UUID(str(value))
+    except (ValueError, TypeError, AttributeError):
+        raise HTTPException(status_code=404, detail=f"{label} not found")
 
 
 # ── Schemas ───────────────────────────────────────────────────────────────────
@@ -420,6 +430,7 @@ def get_interest_messages(
     ),
     current_user: dict = Depends(get_current_user),
 ):
+    _require_uuid(interest_id, "Quote thread")
     interest = _get_interest_thread(interest_id)
     _assert_interest_access(interest, current_user)
 
@@ -466,6 +477,7 @@ def get_messages(
     ),
     current_user: dict = Depends(get_current_user),
 ):
+    _require_uuid(booking_id, "Booking")
     booking_res = (
         supabase.table("bookings").select("*").eq("id", booking_id).single().execute()
     )

@@ -14,6 +14,7 @@ import Text from '../../components/Text';
 import TextField from '../../components/TextField';
 import Button from '../../components/Button';
 import Tabs from '../../components/Tabs';
+import HeaderGlow from '../../components/HeaderGlow';
 import { useAuth } from '../../context/AuthContext';
 
 function isValidEmail(email) {
@@ -140,6 +141,7 @@ export default function SignupScreen({ navigation }) {
     return (
       <SafeAreaView style={styles.safe}>
         <View style={styles.confirmWrap}>
+          <HeaderGlow width={480} height={280} offsetTop={-40} align="center" opacity={0.24} />
           <Animated.View entering={FadeInDown.duration(400).delay(80)} style={styles.confirmInner}>
             <View style={styles.confirmIcon}>
               <Feather name="mail" size={28} color={colors.accentText} strokeWidth={1.8} />
@@ -150,13 +152,13 @@ export default function SignupScreen({ navigation }) {
               <Text style={styles.confirmEmail}>{emailForConfirm}</Text>.
               {'\n'}Tap it to activate your SwingBy account.
             </Text>
-            <TouchableOpacity
-              style={styles.confirmBackBtn}
-              onPress={() => navigation.navigate('Login')}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.confirmBackBtnText}>Back to login</Text>
-            </TouchableOpacity>
+            <View style={styles.confirmActions}>
+              <Button
+                variant="primary"
+                label="Back to login"
+                onPress={() => navigation.navigate('Login')}
+              />
+            </View>
           </Animated.View>
         </View>
       </SafeAreaView>
@@ -175,7 +177,7 @@ export default function SignupScreen({ navigation }) {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <View style={styles.glowOrb} />
+          <HeaderGlow width={480} height={280} offsetTop={-40} align="left" opacity={0.28} />
 
           {/* Hero */}
           <Animated.View entering={FadeInDown.duration(400).delay(80)} style={styles.hero}>
@@ -324,22 +326,11 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xl,
   },
 
-  glowOrb: {
-    position: 'absolute',
-    top: -120,
-    left: -80,
-    width: 280,
-    height: 280,
-    borderRadius: 140,
-    backgroundColor: colors.accentMuted,
-    opacity: 0.35,
-  },
-
   hero: { alignItems: 'center', marginBottom: spacing['2xl'] },
   brandMark: {
     fontSize: 48,
     fontFamily: 'SpaceGrotesk_700Bold',
-    color: colors.accent,
+    color: colors.accentText,
     marginBottom: spacing.md,
   },
   title: {
@@ -439,21 +430,9 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_600SemiBold',
     color: colors.textPrimary,
   },
-  confirmBackBtn: {
+  confirmActions: {
     marginTop: spacing.lg,
-    backgroundColor: colors.accent,
-    borderRadius: radius.md,
-    paddingVertical: 14,
-    paddingHorizontal: 40,
-    minHeight: 52,
-    alignItems: 'center',
-    justifyContent: 'center',
     width: '100%',
-  },
-  confirmBackBtnText: {
-    fontSize: 16,
-    fontFamily: 'Inter_600SemiBold',
-    color: colors.textPrimary,
   },
 
   footer: { marginTop: spacing.xl, alignItems: 'center' },

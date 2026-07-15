@@ -9,6 +9,7 @@ import { colors, spacing, radius } from '../../theme/tokens';
 import Text from '../../components/Text';
 import TextField from '../../components/TextField';
 import Button from '../../components/Button';
+import HeaderGlow from '../../components/HeaderGlow';
 import { api } from '../../services/api';
 
 export default function ForgotPasswordScreen({ navigation }) {
@@ -46,13 +47,12 @@ export default function ForgotPasswordScreen({ navigation }) {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {/* Decorative glow */}
-          <View style={styles.glowOrb} />
+          <HeaderGlow width={480} height={280} offsetTop={-40} align="right" opacity={0.28} />
 
           {sent ? (
             <Animated.View entering={FadeInDown.duration(400)} style={styles.successCard}>
               <View style={styles.successIconWrap}>
-                <Feather name="check" size={28} color={colors.success} strokeWidth={2.6} />
+                <Feather name="check" size={28} color={colors.success} strokeWidth={1.8} />
               </View>
               <Text style={styles.title}>Check your inbox</Text>
               <Text style={styles.subtitle}>
@@ -117,7 +117,10 @@ export default function ForgotPasswordScreen({ navigation }) {
               accessibilityRole="button"
               accessibilityLabel="Back to login"
             >
-              <Text style={styles.footerText}>← Back to login</Text>
+              <View style={styles.footerRow}>
+                <Feather name="arrow-left" size={14} color={colors.accentText} strokeWidth={1.8} />
+                <Text style={styles.footerText}>Back to login</Text>
+              </View>
             </Pressable>
           </Animated.View>
         </ScrollView>
@@ -136,22 +139,11 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xl,
   },
 
-  glowOrb: {
-    position: 'absolute',
-    top: -120,
-    right: -80,
-    width: 280,
-    height: 280,
-    borderRadius: 140,
-    backgroundColor: colors.accentMuted,
-    opacity: 0.35,
-  },
-
   hero: { alignItems: 'center', marginBottom: spacing['2xl'] },
   brandMark: {
     fontSize: 48,
     fontFamily: 'SpaceGrotesk_700Bold',
-    color: colors.accent,
+    color: colors.accentText,
     marginBottom: spacing.md,
   },
   title: {
@@ -208,6 +200,11 @@ const styles = StyleSheet.create({
   },
 
   footer: { marginTop: spacing.xl, alignItems: 'center' },
+  footerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
   footerText: {
     fontSize: 14,
     fontFamily: 'Inter_600SemiBold',

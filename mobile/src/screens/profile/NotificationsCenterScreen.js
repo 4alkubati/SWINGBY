@@ -118,7 +118,8 @@ function NotifItem({ item, onPress }) {
         <Feather
           name={iconForType(item.type)}
           size={18}
-          color={item.read ? colors.textSecondary : colors.accent}
+          strokeWidth={1.8}
+          color={item.read ? colors.textSecondary : colors.accentText}
         />
       </View>
 
@@ -233,7 +234,7 @@ export default function NotificationsCenterScreen({ navigation }) {
             onPress={markAllRead}
             hitSlop={{ top: spacing.sm, bottom: spacing.sm, left: spacing.sm, right: spacing.sm }}
           >
-            <Text variant="smallMedium" color="accent">Mark all read</Text>
+            <Text variant="smallMedium" style={{ color: colors.accentText }}>Mark all read</Text>
           </Pressable>
         )}
       </Inline>

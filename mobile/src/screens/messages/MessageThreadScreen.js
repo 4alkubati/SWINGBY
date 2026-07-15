@@ -43,11 +43,11 @@ function toInitials(name) {
 
 function statusChipStyle(status) {
   switch ((status || '').toLowerCase()) {
-    case 'on_the_way':  return { bg: colors.accentMuted, text: colors.accent };
-    case 'in_progress': return { bg: colors.accentMuted, text: colors.accent };
-    case 'completed':   return { bg: colors.accentMuted, text: colors.success }; // success tint
-    case 'cancelled':   return { bg: colors.accentMuted, text: colors.danger };
-    default:            return { bg: colors.accentMuted, text: colors.accent };
+    case 'on_the_way':  return { bg: colors.accentMuted, text: colors.accentText };
+    case 'in_progress': return { bg: colors.accentMuted, text: colors.accentText };
+    case 'completed':   return { bg: 'rgba(46,189,133,0.14)', text: colors.success };
+    case 'cancelled':   return { bg: 'rgba(255,92,92,0.14)', text: colors.danger };
+    default:            return { bg: colors.accentMuted, text: colors.accentText };
   }
 }
 
@@ -355,11 +355,11 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: colors.accent,
+    backgroundColor: colors.accentMuted,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  headerAvatarText: { fontSize: 13, fontWeight: '700', color: colors.textPrimary },
+  headerAvatarText: { fontSize: 13, fontWeight: '700', color: colors.accentText },
   headerName: { fontSize: 15, fontWeight: '700', color: colors.textPrimary, letterSpacing: -0.3 },
   statusChip: {
     alignSelf: 'flex-start',
@@ -386,7 +386,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
   },
   bubbleMe: {
-    backgroundColor: colors.accent,
+    backgroundColor: colors.accentBtn,
     borderBottomRightRadius: 4,
   },
   bubbleThem: {
@@ -441,7 +441,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: 18,
+    borderRadius: 12,
     paddingHorizontal: 14,
     paddingTop: 11,
     paddingBottom: 11,

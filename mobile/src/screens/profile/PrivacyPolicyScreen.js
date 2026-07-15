@@ -103,15 +103,15 @@ export default function PrivacyPolicyScreen() {
           background="alt"
           rounded="card"
           padding="base"
-          style={{ alignItems: 'center', borderColor: colors.accentMuted }}
+          style={{ alignItems: 'center', borderColor: colors.borderAccent }}
         >
-          <Feather name="mail" size={16} color={colors.accent} style={{ marginBottom: spacing.xs }} />
+          <Feather name="mail" size={16} strokeWidth={1.8} color={colors.accentText} style={{ marginBottom: spacing.xs }} />
           <Text variant="bodyMedium" style={{ marginBottom: spacing.xs }}>Questions?</Text>
           <Text variant="small" color="secondary" style={{ textAlign: 'center' }}>
             Email us at{' '}
-            <Text variant="small" color="accent">privacy@swingbyy.com</Text>
+            <Text variant="small" style={{ color: colors.accentText }}>privacy@swingbyy.com</Text>
             {' '}or{' '}
-            <Text variant="small" color="accent">4alkubati@gmail.com</Text>
+            <Text variant="small" style={{ color: colors.accentText }}>4alkubati@gmail.com</Text>
           </Text>
         </Surface>
       </ScrollView>

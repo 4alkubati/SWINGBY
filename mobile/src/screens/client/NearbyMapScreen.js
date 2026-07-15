@@ -120,7 +120,7 @@ function BusinessPin({ name }) {
       >
         <Text
           variant="caption"
-          style={{ fontSize: 11, fontWeight: '700', color: colors.accent }}
+          style={{ fontSize: 11, fontWeight: '700', color: colors.accentText }}
         >
           {(name || '').slice(0, 2).toUpperCase()}
         </Text>
@@ -352,7 +352,7 @@ function MapOverlayButton({ onPress, active, children, hitSlop }) {
           height: 44,
           backgroundColor: active ? colors.accentMuted : colors.surface,
           borderWidth: 1,
-          borderColor: active ? colors.accent : colors.border,
+          borderColor: active ? colors.borderAccent : colors.border,
           borderRadius: radius.pill,
           alignItems: 'center',
           justifyContent: 'center',
@@ -517,7 +517,8 @@ export default function NearbyMapScreen({ navigation }) {
           <Feather
             name="filter"
             size={18}
-            color={activeCategory !== 'all' ? colors.accent : colors.textPrimary}
+            strokeWidth={1.8}
+            color={activeCategory !== 'all' ? colors.accentText : colors.textPrimary}
           />
         </MapOverlayButton>
       </View>

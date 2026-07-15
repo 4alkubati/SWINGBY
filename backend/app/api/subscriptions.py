@@ -62,6 +62,24 @@ def subscribe(current_user: dict = Depends(get_current_user)):
     business = _get_owner_business(current_user["id"])
     tier, price_id = _resolve_tier_and_price(business["id"])
 
+    # Fail-fast: env var must hold a Price ID (price_...), not a Product ID (prod_...).
+    # Stripe rejects prod_... in line_items.price with a cryptic "No such price" error.
+    if price_id and price_id.startswith("prod_"):
+        env_name = "STRIPE_PRICE_SOLO" if tier == "solo" else "STRIPE_PRICE_TEAM"
+        logger.error(
+            "%s is set to a Product ID (%s); Stripe requires a Price ID (price_...)",
+            env_name,
+            price_id,
+        )
+        raise HTTPException(
+            status_code=500,
+            detail=(
+                f"{env_name} is misconfigured: expected a Stripe Price ID "
+                f"(price_...), got a Product ID ({price_id}). "
+                "Open the Product in Stripe Dashboard and copy its Price ID."
+            ),
+        )
+
     if not price_id:
         supabase.table("businesses").update(
             {

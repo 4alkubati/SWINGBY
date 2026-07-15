@@ -65,9 +65,9 @@ const styles = StyleSheet.create({
   scroll: { padding: spacing.lg, paddingBottom: spacing.xl * 2 },
   eyebrow: {
     fontFamily: 'Inter_600SemiBold',
-    fontSize: 12,
-    color: colors.accent,
-    letterSpacing: 1.5,
+    fontSize: 11,
+    color: colors.accentText,
+    letterSpacing: 1.4,
     textTransform: 'uppercase',
     marginBottom: spacing.xs,
   },

@@ -5,7 +5,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useState } from 'react';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { Ionicons } from '@expo/vector-icons';
+import { Feather } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 import { updateMe } from '../../services/auth';
 import { colors, spacing, radius } from '../../theme/tokens';
@@ -32,10 +32,10 @@ function MenuRow({ icon, label, onPress, danger }) {
       accessibilityLabel={label}
     >
       <View style={styles.menuLeft}>
-        <Ionicons name={icon} size={20} color={danger ? colors.danger : colors.textSecondary} />
+        <Feather name={icon} size={20} strokeWidth={1.8} color={danger ? colors.danger : colors.textSecondary} />
         <Text style={[styles.menuLabel, danger && { color: colors.danger }]}>{label}</Text>
       </View>
-      <Ionicons name="chevron-forward" size={16} color={colors.textSecondary} />
+      <Feather name="chevron-right" size={18} strokeWidth={1.8} color={colors.textSecondary} />
     </Pressable>
   );
 }
@@ -205,17 +205,17 @@ export default function ProfileScreen({ navigation }) {
             {/* Menu */}
             <Animated.View entering={FadeInDown.duration(400).delay(240)} style={styles.menuCard}>
               {user?.role === 'client' && (
-                <MenuRow icon="heart-outline" label="Favorites" onPress={() => navigation.navigate('Favorites')} />
+                <MenuRow icon="heart" label="Favorites" onPress={() => navigation.navigate('Favorites')} />
               )}
-              <MenuRow icon="notifications-outline" label="Notifications" onPress={() => navigation.navigate('NotificationsCenter')} />
-              <MenuRow icon="card-outline" label="Payment methods" onPress={() => navigation.navigate('PaymentMethod')} />
+              <MenuRow icon="bell" label="Notifications" onPress={() => navigation.navigate('NotificationsCenter')} />
+              <MenuRow icon="credit-card" label="Payment methods" onPress={() => navigation.navigate('PaymentMethod')} />
               {user?.role === 'client' && (
-                <MenuRow icon="gift-outline" label="Invite friends" onPress={() => navigation.navigate('ReferralScreen')} />
+                <MenuRow icon="gift" label="Invite friends" onPress={() => navigation.navigate('ReferralScreen')} />
               )}
-              <MenuRow icon="settings-outline" label="Settings" onPress={() => navigation.navigate('Settings')} />
-              <MenuRow icon="help-circle-outline" label="Help & FAQ" onPress={() => navigation.navigate('HelpFAQ')} />
-              <MenuRow icon="shield-checkmark-outline" label="Privacy Policy" onPress={() => navigation.navigate('PrivacyPolicy')} />
-              <MenuRow icon="document-text-outline" label="Terms of Service" onPress={() => navigation.navigate('TermsOfService')} />
+              <MenuRow icon="settings" label="Settings" onPress={() => navigation.navigate('Settings')} />
+              <MenuRow icon="help-circle" label="Help & FAQ" onPress={() => navigation.navigate('HelpFAQ')} />
+              <MenuRow icon="shield" label="Privacy Policy" onPress={() => navigation.navigate('PrivacyPolicy')} />
+              <MenuRow icon="file-text" label="Terms of Service" onPress={() => navigation.navigate('TermsOfService')} />
             </Animated.View>
 
             {/* Logout */}
@@ -233,7 +233,7 @@ export default function ProfileScreen({ navigation }) {
                   ? <ActivityIndicator color={colors.danger} />
                   : (
                     <View style={styles.logoutInner}>
-                      <Ionicons name="log-out-outline" size={18} color={colors.danger} />
+                      <Feather name="log-out" size={18} strokeWidth={1.8} color={colors.danger} />
                       <Text style={styles.logoutText}>Log out</Text>
                     </View>
                   )}
@@ -261,7 +261,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.accentMuted, borderRadius: radius.chip,
     paddingHorizontal: spacing.md, paddingVertical: spacing.xs + 2,
   },
-  editBtnText: { fontSize: 13, fontFamily: 'Inter_600SemiBold', color: colors.accent },
+  editBtnText: { fontSize: 13, fontFamily: 'Inter_600SemiBold', color: colors.accentText },
   content: { paddingHorizontal: spacing.lg, paddingTop: spacing.sm, paddingBottom: spacing.xl, gap: spacing.base },
 
   identityCard: {
@@ -269,24 +269,24 @@ const styles = StyleSheet.create({
     borderRadius: radius.card, padding: spacing.lg, alignItems: 'center', gap: spacing.sm,
   },
   avatar: {
-    width: 72, height: 72, borderRadius: 36, backgroundColor: colors.accent,
+    width: 72, height: 72, borderRadius: 36, backgroundColor: colors.accentMuted,
     alignItems: 'center', justifyContent: 'center',
   },
-  avatarText: { fontSize: 26, fontFamily: 'SpaceGrotesk_700Bold', color: colors.textPrimary },
+  avatarText: { fontSize: 26, fontFamily: 'SpaceGrotesk_700Bold', color: colors.accentText },
   name: { fontSize: 20, fontFamily: 'SpaceGrotesk_700Bold', color: colors.textPrimary },
   email: { fontSize: 14, fontFamily: 'Inter_400Regular', color: colors.textSecondary },
   rolePill: {
     backgroundColor: colors.accentMuted, borderRadius: radius.pill,
     paddingHorizontal: spacing.md, paddingVertical: spacing.xs,
   },
-  roleText: { fontSize: 12, fontFamily: 'Inter_600SemiBold', color: colors.accent },
+  roleText: { fontSize: 12, fontFamily: 'Inter_600SemiBold', color: colors.accentText },
 
   editFields: { width: '100%', gap: spacing.sm },
   editRow: { flexDirection: 'row', gap: spacing.sm },
   editHalf: { flex: 1, gap: spacing.xs },
   editLabel: {
-    fontSize: 10, fontFamily: 'Inter_600SemiBold', color: colors.textSecondary,
-    textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: spacing.xs,
+    fontSize: 11, fontFamily: 'Inter_600SemiBold', color: colors.textSecondary,
+    textTransform: 'uppercase', letterSpacing: 1.4, marginBottom: spacing.xs,
   },
   editInput: {
     backgroundColor: colors.surfaceAlt, borderWidth: 1, borderColor: colors.border,

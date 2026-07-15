@@ -10,7 +10,7 @@ import Animated, {
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
 import * as ImagePicker from 'expo-image-picker';
-import { Ionicons } from '@expo/vector-icons';
+import { Feather } from '@expo/vector-icons';
 
 import Text from '../../components/Text';
 import TextField from '../../components/TextField';
@@ -169,7 +169,7 @@ function PhotoPicker({ photos, setPhotos, uploading, setUploading }) {
                 accessibilityLabel={`Remove photo ${i + 1}`}
               >
                 <View style={styles.thumbRemoveInner}>
-                  <Ionicons name="close" size={11} color="#fff" />
+                  <Feather name="x" size={11} color={colors.textPrimary} strokeWidth={2} />
                 </View>
               </TouchableOpacity>
             </View>
@@ -194,7 +194,7 @@ function PhotoPicker({ photos, setPhotos, uploading, setUploading }) {
             </Stack>
           ) : (
             <Stack spacing="xs" style={styles.photoBoxContent}>
-              <Ionicons name="camera-outline" size={26} color={colors.accent} />
+              <Feather name="camera" size={22} color={colors.accentText} strokeWidth={1.8} />
               <Text variant="label" color="accent">
                 {photos.length > 0 ? `Add more (${photos.length}/${MAX_PHOTOS})` : 'Upload photos'}
               </Text>
@@ -677,7 +677,7 @@ export default function PostJobScreen() {
             {!isFirstStep ? (
               <Button
                 variant="ghost"
-                label="← Back"
+                label="Back"
                 onPress={goBack}
                 style={styles.navBtn}
               />
@@ -685,7 +685,7 @@ export default function PostJobScreen() {
               <View style={styles.navBtn} />
             )}
             <Button
-              label={step === TOTAL_STEPS - 2 ? 'Review →' : 'Next →'}
+              label={step === TOTAL_STEPS - 2 ? 'Review' : 'Next'}
               onPress={goForward}
               disabled={photoUploading}
               style={styles.navBtn}
@@ -696,7 +696,7 @@ export default function PostJobScreen() {
         {isLastStep && (
           <Button
             variant="ghost"
-            label="← Edit details"
+            label="Edit details"
             onPress={goBack}
             style={styles.backOnConfirm}
           />

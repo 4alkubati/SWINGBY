@@ -227,9 +227,8 @@ export default function HelpFAQScreen() {
             {"Can't find what you need? "}
             <Text
               variant="body"
-              color="accent"
               onPress={() => Linking.openURL('mailto:4alkubati@gmail.com')}
-              style={{ fontWeight: '600' }}
+              style={{ color: colors.accentText, fontWeight: '600' }}
             >
               Contact us
             </Text>
