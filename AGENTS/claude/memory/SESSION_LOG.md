@@ -137,3 +137,20 @@ NEEDS KIRA:
   2. Laptop git push auth is broken (silent exit 128) — fix GitHub sign-in on laptop, and move repo out of OneDrive (caused index.lock + likely the auth weirdness).
 NEXT: Fix walkthrough bug 1 (category mapping on quote/post create) — top open 🔴. Then D2.2 invoices polish. D3/D4 remain Kira's gate.
 ---
+
+---
+DATE: 2026-07-15 (third block — live test + Phase CAT plan + overnight launch)
+PROJECT: swingby
+PHASE: On-device retest → root cause → approved plan → overnight dispatch
+DISPATCHED: 2× Explore + 1× Plan subagents (planning); overnight loop launched (Opus orchestrator → backend/mobile/qa agents)
+SHIPPED:
+  - Kira live-tested (Expo Go via scp'd screenshots): bug #1 CONFIRMED live — "Deep massage" post offered to lawncare business. Root cause is NOT a relabel: (a) GET /service-posts/ has zero category matching (every business sees every post), (b) three divergent category lists (PostJobScreen 7 labels / BusinessSetup 8 / CategoryScroll lowercase ids incl broken 'lawn') make browse filters silently return zero.
+  - Also confirmed: GestureHandlerRootView missing from App.js (GestureDetector used in BottomSheet/Modal/SwipeableRow), 5 files import deprecated SafeAreaView from 'react-native'. VirtualizedList warning: NO offender in current tree (stale laptop bundle — recheck after pull).
+  - Kira's product decisions: feed = own category + "close" categories; taxonomy unification = my call. Approved plan = memory/PLAN.md **Phase CAT** + 🌙 Tonight queue (rewritten with agent routes + DONE-RULEs).
+  - run-overnight.sh: orchestrator pinned to Opus (claude-opus-4-8, OVERNIGHT_MODEL override), KIRA.md added to startup order, explicit delegate-don't-code directive.
+NEEDS KIRA:
+  1. Morning: approve push when READY-TO-PUSH (then Render smoke + on-device verify).
+  2. Send updated KIRA.md (scp to AGENTS/claude/KIRA.md — existing file already wired first in orchestrator startup).
+  3. Laptop: fix GitHub push auth; move repo out of OneDrive.
+NEXT: Morning session = review overnight output → push → prod smoke → Kira on-device verify. Then D2.2 invoices if not done overnight; D3/D4 remain the calendar gate.
+---

@@ -70,10 +70,11 @@ Signal worth noting: commits `70d165a` "pre-engine baseline" (Jul 9) and `9575fd
 ✅ passing. No schema or endpoint changes this session (docs/roadmap only). Maps key rotation still outstanding (Kira). `credentials/` gitignored.
 
 ## Session End Signal
-🟢 BUILD-READY — morning brief delivering (06:05 daily, verified on Kira's phone), D2.0 gate cleared + retro-logged, agents cleaned up. Next session can dispatch D2.2 immediately.
+🌙 OVERNIGHT QUEUED — Kira live-tested on device (Jul 15 ~10:40 PM): confirmed bug #1 (no category matching — lawncare sees cleaning/massage posts) + missing GestureHandlerRootView + 5 deprecated SafeAreaView imports. Approved plan is PLAN.md **Phase CAT** (canonical taxonomy + business-feed filter own+RELATED+General). Overnight loop launched with Opus orchestrator delegating to backend/mobile/qa agents. Local gates only tonight — NO push.
 
-## Waiting On
-Kira's D3 walkthrough + D4 tester run (Jul 15 per re-dated calendar) — every later date keys off D4.
+## Waiting On (morning)
+1. **Kira: approve push** when STATUS says READY-TO-PUSH → push → Render autodeploy → `python3 tools/e2e_smoke.py https://swingbyy-api.onrender.com` (must ALL PASS incl. new feed check) → on-device re-verify (lawncare feed clean, gesture error gone after pull).
+2. D3 walkthrough + D4 tester run — every later calendar date keys off D4.
 
 ---
 *[[MAP]] · single source of truth for "what is true right now" · rewritten by [[ORCHESTRATOR]] each session*

@@ -8,17 +8,33 @@
 
 ---
 
-## 🌙 Tonight — overnight queue (queued 2026-07-14, run via `automation/run-overnight.sh`)
+## 🌙 Tonight — overnight queue (queued 2026-07-15 late night, Kira-approved run via `automation/run-overnight.sh`, orchestrator on Opus)
 
-> Work in order. Every task Bucket A unless noted. Never push, never deploy, never send.
+> Work in order. Every task Bucket A unless noted. Never push, never deploy, never send. Orchestrator = brain/plan-maker; dispatch implementation to the named agents. Full spec: **Phase CAT below** (approved plan 2026-07-15).
 
 | # | Task | Route | DONE-RULE |
 |---|---|---|---|
-| 1 | **D2.2 — Invoices** per `Roadmap/dominoes/D2.2-invoices.md` (in-app Receipt screen + downloadable PDF for completed bookings, both roles) | backend-agent + mobile-agent | Domino done-rule: receipt shows line items/totals/platform cut/parties; PDF endpoint returns a real PDF; babel + FastAPI boot gates green |
-| 2 | **QA regression** — `python tools/e2e_smoke.py` against local backend + regenerate flow graph (`python tools/flow_graph.py`) | qa-agent | Smoke exits 0; flow graph 0 broken edges/API calls; any break filed to HUMAN-TODO with repro |
-| 3 | **D4 tester kit (draft)** — one-page tester brief + bug-capture sheet supporting `Roadmap/dominoes/D4-friend-tester.md` (Jul 15 run) | marketing-agent (draft only) | Docs exist under Roadmap/dominoes/ or marketing/; nothing sent |
-| 4 | **Beta-tester recruiting message + 5 outreach targets** (PLAN FOH backlog item) | marketing-agent (draft only) | Drafts in marketing/; sending = Bucket C, never auto |
-| — | NOT tonight: `reviews.reviewee_type` employee migration (schema change unattended = no), any git push (Bucket C), anything touching live Render/Supabase state | | |
+| 1 | **CAT-1 backend** — new `backend/app/categories.py` + `service_posts.py` (normalize on create, `ilike` on `?category=`, business-feed auto-filter own+RELATED+General) + normalize in `businesses.py`. Spec in Phase CAT. | backend-agent | `py_compile` clean; docker pytest green — 23 existing + new tests all pass |
+| 2 | **CAT-2 backend tests** — call-recording in `tests/conftest.py` SupabaseTableStub (backward-compatible) + new `tests/test_service_posts.py` (~8 cases in Phase CAT) | backend-agent | Docker pytest: full suite green, zero existing-test regressions |
+| 3 | **CAT-3 mobile taxonomy** — new `mobile/src/constants/categories.js` (8 entries, `landscaping` replaces `lawn`, adds `handyman`); consume in `CategoryScroll.js` (import + re-export `CATEGORIES`), `PostJobScreen.js:39`, `BusinessSetupScreen.js:20`. NO changes to Home/Search/NearbyMap/Dashboard screens. | mobile-agent | Babel parse of all mobile/src: 0 errors; grep confirms no remaining `'lawn'` id or local category arrays in the 3 touched files |
+| 4 | **CAT-4 RN fixes** — wrap `mobile/App.js` root in `<GestureHandlerRootView style={{flex:1}}>` (import from react-native-gesture-handler); switch `SafeAreaView` import to `react-native-safe-area-context` in AdminScreen, LoginScreen, SignupScreen, ForgotPasswordScreen, BusinessSetupScreen | mobile-agent | Babel parse 0 errors; grep: no `SafeAreaView` imported from `'react-native'` remains in mobile/src |
+| 5 | **CAT-5 smoke prep** — `tools/e2e_smoke.py`: post category `"cleaning"` → `"Cleaning"`; ADD feed-visibility check (business token GET `/service-posts/` → new post id present). Do NOT run against Render tonight (deploy is morning, Kira-gated). | qa-agent | Script py_compiles; diff reviewed against Phase CAT spec |
+| 6 | **QA regression** — docker pytest full suite + babel parse full mobile/src + `python tools/flow_graph.py` regenerate | qa-agent | All green; flow graph 0 broken edges; any break filed to HUMAN-TODO with repro |
+| 7 | **D2.2 — Invoices** per `Roadmap/dominoes/D2.2-invoices.md` (in-app Receipt screen + downloadable PDF for completed bookings, both roles) — only if 1–6 fully green with retries to spare | backend-agent + mobile-agent | Domino done-rule: receipt shows line items/totals/platform cut/parties; PDF endpoint returns a real PDF; babel + FastAPI boot gates green |
+| 8 | **D4 tester kit (draft)** — one-page tester brief + bug-capture sheet supporting `Roadmap/dominoes/D4-friend-tester.md` | marketing-agent (draft only) | Docs exist under Roadmap/dominoes/ or marketing/; nothing sent |
+| — | NOT tonight: git push (Bucket C — morning, Kira-gated; when 1–6 green write READY-TO-PUSH to STATUS), Render/Supabase live state, `reviews.reviewee_type` migration, running e2e_smoke against Render (needs the push first) | | |
+
+## Phase CAT — Category matching + taxonomy unification (approved 2026-07-15)
+
+**Why:** Kira's on-device retest confirmed walkthrough bug #1 — every business sees every open post (lawncare quoted a cleaning job; "Deep massage" labeled Carpentry). Three divergent category lists (`PostJobScreen.js:39` 7 labels · `BusinessSetupScreen.js:20` 8 labels · `CategoryScroll.js:8` lowercase ids incl. broken `lawn`) make browse filters silently return nothing. Kira's decision: business feed = own category + close categories.
+
+**Canonical rule:** `id = label.toLowerCase()`, DB stores capitalized label. Matches existing rows; `ilike` covers legacy lowercase (smoke-created `'cleaning'`); zero migration.
+
+- **`backend/app/categories.py`**: `CANONICAL_CATEGORIES = [Cleaning, Plumbing, Electrical, Landscaping, Painting, Carpentry, Moving, Handyman]`; `GENERAL="General"`; `normalize_category(v)` case-insensitive snap to canonical, unknown passes through stripped; `RELATED` symmetric+conservative: Handyman↔[Carpentry, Painting, Plumbing, Electrical], Carpentry↔Painting, Cleaning/Landscaping/Moving unlinked; `allowed_categories_for(cat)=[own]+RELATED[own]+[General]`. Unit-test symmetry + canonical keys.
+- **`service_posts.py`**: create stores `normalize_category(...)`; `?category=` uses `.ilike` (escape `%_\`), param precedence over auto-filter; business auto-filter: no param + role business_owner → look up `businesses.category` by owner_id → `query.or_("category.ilike.X,...")` over allowed. Degrade to UNFILTERED on: no business row, lookup failure, category failing `^[A-Za-z ]+$`. Employees unfiltered for now (comment).
+- **Tests** (`tests/test_service_posts.py`, pattern from `test_businesses.py`, `mock_supabase.table.side_effect` for two tables): Handyman owner → or_ contains own+related+General ilikes; no business row → no or_; client role → no lookup; `?category=cleaning` → ilike `Cleaning`, no or_; POST create `"cleaning"` → insert recorded `"Cleaning"`; unit tests on RELATED/normalize.
+- **Morning (Kira-gated, NOT tonight):** push → Render autodeploy → `python3 tools/e2e_smoke.py https://swingbyy-api.onrender.com` ALL PASS incl. new feed check → Kira on-device: lawncare dashboard shows only Landscaping(+General) posts; gesture error gone after pull.
+- **Risks:** feed quieter by design (RELATED dict is the knob); General visible to all (intended); VirtualizedList warning had NO offender in current tree — stale laptop bundle, re-verify after Kira pulls.
 
 ## Goal (beta DONE)
 A real tester installs the app, signs up, gets a branded email, posts/finds a job, books, **sees Live Job Status**, completes it, leaves a review — on a real device, payment in sandbox.
