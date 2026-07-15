@@ -11,6 +11,7 @@ A regex-based scanner that reads every navigator, screen, backend router, and mo
 - **Script:** `tools/flow_graph.py` (Python 3.14)
 - **Human report:** `docs/FLOW_GRAPH.md` — Mermaid diagram (orphans are red), broken nav edges, per-nav orphans, broken API calls, inventory counts
 - **Machine data:** `docs/flow-graph.json` — same data, structured. Read this in-session instead of scanning 20 screen files.
+- **Visual page:** `tools/flow_artifact.py` — renders the JSON as a self-contained HTML page ("SwingBy Flow Atlas": per-navigator mermaid tabs, health pills, filterable edge index). Published as a Claude Artifact at https://claude.ai/code/artifact/9fdb1a32-1cb8-43bd-903f-ee5fcdba87ce — after regenerating, ask Claude to republish to that same URL.
 
 ## When to use it
 
