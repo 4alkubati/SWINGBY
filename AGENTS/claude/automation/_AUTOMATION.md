@@ -8,4 +8,4 @@ Back to [[MAP]].
 - `run-overnight.sh` — overnight build loop; works the 🌙 Tonight queue in [[PLAN]].
 - [[FLOW_GRAPH]] — mobile + backend code-flow scanner. **Read the graph FIRST** for any nav / 404 / dead-end question. Regenerate with `python tools/flow_graph.py`.
 
-The morning workflow reads [[STATUS]] + [[HUMAN-TODO]] + [[SESSION_LOG]] + the overnight log tail and sends the compiled brief to Telegram (format per [[DISPATCH_GATE]] Layer 5). Email + social branches return when their creds exist.
+The morning workflow reads [[STATUS]] + [[HUMAN-TODO]] + [[SESSION_LOG]] + the overnight log tail and sends **4 Telegram messages** (1/4 ☀️+🔧 Backend · 2/4 📱 Frontend · 3/4 🧑 Human TODO · 4/4 🌙 Night Recap — format per [[DISPATCH_GATE]] Layer 5, split contract in [[README]]). Optional per-section bot tokens make each section post as its own bot. Email + social branches return when their creds exist.

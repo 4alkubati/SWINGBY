@@ -104,7 +104,7 @@ All RLS enabled. Schema details in `docs/swingby_database_schema.md`.
 
 **Backend** (from `backend/`):
 ```
-"C:/Python314/python.exe" -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+python3 -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 **Mobile** (from `mobile/`):
@@ -114,7 +114,7 @@ npx expo start --clear
 
 **`.env` keys** (backend): `DATABASE_URL`, `SECRET_KEY`, `SUPABASE_URL`, `SUPABASE_KEY`, `SUPABASE_SERVICE_KEY` (required — hard-fails without it), `RESEND_API_KEY`, `STRIPE_SECRET_KEY`.
 
-**Machine info:** LAN IP `10.0.0.53` → physical-device URL `http://10.0.0.53:8000`. Android emulator → `http://10.0.2.2:8000`. Both via `EXPO_PUBLIC_API_URL` in `mobile/.env`.
+**Machine info:** Linux box, LAN IP `10.0.0.168` → physical-device URL `http://10.0.0.168:8000`. Android emulator → `http://10.0.2.2:8000`. Both via `EXPO_PUBLIC_API_URL` in `mobile/.env`.
 
 ---
 
@@ -134,7 +134,7 @@ npx expo start --clear
 - Running locally → `docs/RUNNING_LOCALLY.md`
 - Deploy / Rollback → `docs/DEPLOY.md`, `docs/ROLLBACK.md`
 - DB schema → `docs/swingby_database_schema.md`
-- **Code-flow graph → `docs/FLOW_GRAPH.md` + `docs/flow-graph.json`** — every screen ↔ screen edge, backend routes vs mobile calls, orphans in red. **Read this FIRST for any nav / 404 / dead-end question** — cheaper than scanning screen files. Regenerate: `"C:/Python314/python.exe" tools/flow_graph.py`. How-to: `AGENTS/claude/automation/FLOW_GRAPH.md`.
+- **Code-flow graph → `docs/FLOW_GRAPH.md` + `docs/flow-graph.json`** — every screen ↔ screen edge, backend routes vs mobile calls, orphans in red. **Read this FIRST for any nav / 404 / dead-end question** — cheaper than scanning screen files. Regenerate: `python3 tools/flow_graph.py`. How-to: `AGENTS/claude/automation/FLOW_GRAPH.md`.
 - **Booking-loop smoke test → `tools/e2e_smoke.py`** — full post→quote→accept→booking→complete journey with response-SHAPE checks against a local backend (`python tools/e2e_smoke.py [base_url]`). **Mandatory before accepting any change to the booking loop** (DISPATCH_GATE Layer 6). Uses the test accounts above.
 - Notion nudge layer → `AGENTS/claude/config/NOTION_SYNC.md` — database ID, schema, query pattern, drift-check rule
 - Orchestrator briefs → `AGENTS/briefs/BRIEF-*.md`
