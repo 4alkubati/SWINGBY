@@ -10,15 +10,16 @@ swingby
 `/home/l3thal/agents/projects/swingby` (Linux). NOTE: prior STATUS + CLAUDE.md local-dev commands reference the old Windows path (`C:/Users/amrba/...`, `C:/Python314/python.exe`) — update CLAUDE.md Local Dev section when convenient.
 
 ## Last Updated
-2026-07-14 — Roadmap re-plan session: STATUS re-baselined, Jul 14–31 day files re-dated (tester chain → Jul 15–19, store prep → Jul 20–24, legal/polish/submit → Jul 25–31), Jet × Pulse handoff moved to `design/handoff-jet-pulse/` with `design/tokens.md` + `MOTION.md` synced to the tokens already live in `mobile/src/theme/tokens.js`.
+2026-07-15 (late night Jul 14 MDT) — Morning-brief session: Telegram delivery FIXED + verified (bot @L3thallbot, brief lands on Kira's phone, 06:05 daily). Kira confirmed the D2.0 walkthrough actually happened ~Jul 9–11 (retro-logged in the domino) — D3/D4 unblocked. Three stray agent sessions killed. Prior rewrite 2026-07-14 (re-plan).
 
 ## Current Phase
-**Phase 1 — BETA**, still gated on the D2.0/D3 human walkthrough. Domino truth (frontmatter verified 2026-07-14):
+**Phase 1 — BETA**, gate cleared: D2.0 walkthrough confirmed done (Kira, 2026-07-15 — retro-logged). Domino truth:
 - ✅ D1 — Email sends (commit `08715e3`)
 - ✅ D2 — Kill mock data
+- ✅ D2.0 — Live walkthrough: done ~Jul 9–11 per Kira (evidence `70d165a`, `9575fd3`); findings beyond HEIC fix still in Kira's head (HUMAN-TODO capture item)
 - 🟡 D2.1 — Employee trust card: code-complete since 2026-07-07, `in-progress`, awaits on-device verify
-- ⬜ D2.0 / D2.2 / D2.3 / D2.4 / D2.5 — `pending`
-- ⬜ D3 (Expo Go walkthrough) / D4 (friend tester) — `pending`. **D4 was calendared for Jul 7; it has not happened.**
+- ⬜ D2.2 / D2.3 / D2.4 / D2.5 — `pending`
+- ⬜ D3 (Expo Go walkthrough) / D4 (friend tester) — `pending`, now UNBLOCKED. **D4 was calendared for Jul 7; it has not happened.**
 - ⏸ D5 — `deferred`
 
 Signal worth noting: commits `70d165a` "pre-engine baseline" (Jul 9) and `9575fd3` "fix(uploads): accept HEIC/HEIF — iPhone default photo format" (Jul 10) imply real-device iPhone testing started around Jul 10, but no session log, domino log entry, or day-file checkbox recorded it. If a partial walkthrough happened, its findings live only in Kira's head — capture them into D2.0/D3 `📖 Log`.
@@ -38,15 +39,15 @@ Signal worth noting: commits `70d165a` "pre-engine baseline" (Jul 9) and `9575fd
 ## What's Broken (real blockers)
 - **Google Maps key compromised** — leaked in public repo, placeholder committed; Kira must regenerate (open since Jul 1).
 - **Emails land in spam** — new-domain reputation, DNS verified correct. Mitigations in HUMAN-TODO.
-- **D2.0/D3 walkthrough unlogged** — no recorded ground truth of the deployed app from a tester's seat.
+- **D2.0 findings mostly uncaptured** — walkthrough happened (~Jul 9–11) but only the HEIC bug was filed; other findings live in Kira's head. D3 still needs its own logged run.
 - **Placeholders unset:** Sentry DSN, hCaptcha secret.
 - **Latent:** `reviews.reviewee_type` CHECK lacks `'employee'` — D2.1 endpoint returns 0 reviews until a migration + review-target picker land (parked, separate domino).
 
 ## Blocked On (all Kira)
-1. D2.0/D3 walkthrough (~1 hr) — the single gate holding D4 and the whole re-dated calendar
+1. D3 Expo Go walkthrough + D4 friend-tester run (D2.0 gate cleared 2026-07-15 — calendar keys off D4 now)
 2. Rotate the leaked Google Maps key
 3. GitHub security toggles + Dependabot major-bump triage (2 min)
-4. Commit + push the 2026-07-14 re-plan (this STATUS, day files, `design/` filing)
+4. Commit + push the 2026-07-14 re-plan + this session's brief/walkthrough updates
 
 ## Open Broadcasts
 - 2026-07-14 — July calendar re-dated; Jet × Pulse handoff filed into `design/handoff-jet-pulse/`; design token docs now match `tokens.js`
@@ -60,19 +61,19 @@ Signal worth noting: commits `70d165a` "pre-engine baseline" (Jul 9) and `9575fd
 - Rewrote this STATUS. Did NOT commit (Bucket C — Kira's push).
 
 ## Next Action
-1. **Kira (today, Jul 14):** catch-up gate day per `Roadmap/July/2026-07-14.md` — walkthrough + Maps key + GitHub toggles + D2.1 on-device verify
-2. **Kira:** push the re-plan commit
-3. **Claude:** D2.2 invoices polish per domino spec (code-runnable, no Kira blocker) once dispatch resumes
-4. **Joint:** capture any Jul 10 walkthrough findings into D2.0/D3 logs before they evaporate
+1. **Kira (Jul 15):** D3 Expo Go walkthrough + line up D4 friend tester (per re-dated calendar) · Maps key rotation · GitHub toggles · D2.1 on-device verify
+2. **Kira (~10 min):** dump remaining D2.0 walkthrough findings into the domino log (only HEIC got filed)
+3. **Kira:** push the re-plan + tonight's brief/walkthrough updates
+4. **Claude:** D2.2 invoices polish per domino spec (code-runnable, no Kira blocker) once dispatch resumes
 
 ## Security Gate
 ✅ passing. No schema or endpoint changes this session (docs/roadmap only). Maps key rotation still outstanding (Kira). `credentials/` gitignored.
 
 ## Session End Signal
-🟢 BUILD-READY — calendar and STATUS now match repo truth. Next session can dispatch D2.2 or hotfix walkthrough findings without re-deriving context.
+🟢 BUILD-READY — morning brief delivering (06:05 daily, verified on Kira's phone), D2.0 gate cleared + retro-logged, agents cleaned up. Next session can dispatch D2.2 immediately.
 
 ## Waiting On
-Kira's catch-up day (Jul 14 file). The re-dated calendar only holds if D2.0/D3 clears by Jul 15 morning — every later date keys off the D4 run on Jul 15.
+Kira's D3 walkthrough + D4 tester run (Jul 15 per re-dated calendar) — every later date keys off D4.
 
 ---
 *[[MAP]] · single source of truth for "what is true right now" · rewritten by [[ORCHESTRATOR]] each session*

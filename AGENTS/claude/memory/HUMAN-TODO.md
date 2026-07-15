@@ -5,13 +5,6 @@
 
 ## ⛔ Blocking (loop stuck until done)
 
-- [ ] **(Tonight, ~3 min — Telegram token, or no morning brief)** n8n is live in Docker (`swingby-n8n`, http://localhost:5678, login in `credentials/api-keys/n8n.md`) with the Morning Brief workflow active at 06:05 America/Edmonton. Dry-run verified end-to-end; the ONLY missing piece is the bot token (old one leaked — make a fresh bot):
-  1. Telegram → @BotFather → `/newbot` → copy the token.
-  2. @userinfobot → send anything → copy your Id. Send your new bot one "hi".
-  3. Paste both into `.claude/secrets/n8n.env`, then:
-     `docker compose -f AGENTS/claude/automation/docker-compose.yml up -d --force-recreate`
-  4. Verify now: `bash AGENTS/claude/automation/send-test-brief.sh` → brief arrives on your phone.
-
 - [ ] **(Bucket B — rotate + secret the Google Maps key)** `mobile/app.json` had the real Android Maps key in plaintext (`AIzaSyDW…nyJw`) — flagged as **H1** in the 2026-07-01 audit. **The repo is PUBLIC, so treat the old key as fully compromised.** Placeholder is now committed; Kira must:
   1. Google Cloud Console → API keys → find the leaked key → **Regenerate** (invalidates the old value).
   2. New key → restrict by Android package `com.swingby.app` + SHA-1 fingerprint from Play Console / EAS credentials.
@@ -19,9 +12,9 @@
   4. Update `mobile/app.json` build channel to read from the EAS secret, OR keep the placeholder and inject via `expo prebuild` env if using bare RN.
   5. Verify next EAS build succeeds and Maps renders on Android.
 
-- [ ] **(Bucket B — D2.0 walkthrough)** Tap through every screen of the SwingBy mobile app on **Expo Go iOS pointed at Render**, file bug list to `Roadmap/June/2026-06-26.md`. Steps in `Roadmap/dominoes/D2.0-live-walkthrough.md`. All three seed accounts now work (employee `/businesses/me` fix shipped 2026-07-01) — include an employee-login pass in the walkthrough.
-
 ## 🔑 Optional / when convenient
+
+- [ ] **(D2.0 findings capture, ~10 min)** Kira confirmed (2026-07-15) the D2.0 iPhone walkthrough happened ~Jul 9–11 (evidence: commits `70d165a`, `9575fd3` HEIC fix). Only the HEIC bug was filed — dump any OTHER bugs/confusions you remember into `Roadmap/dominoes/D2.0-live-walkthrough.md` 📖 Log before they evaporate.
 
 - [ ] **(Notion — D4 date vs. sequence)** Notion's "SwingBy" DB has **D4 — Friend/known-trade end-to-end run** due **2026-07-07**, but D2.0 (live walkthrough) and D3 (Expo Go walkthrough) — both prerequisites per `Roadmap/DOMINOES.md` — aren't done. Either push D4's due date in Notion or accept it slips.
 - [ ] **(Notion — stale rows, manual flip needed)** Notion's "SwingBy" DB still shows **F1 `/payments/mine`** and **F2 disputes** as "Not started," but STATUS.md confirms both shipped 2026-07-01. This DB doesn't auto-sync from git yet (see `AGENTS/claude/config/NOTION_SYNC.md`) — flip both rows to Done in Notion, or say the word and a git→Notion sync gets wired next.
@@ -44,6 +37,8 @@
 
 ## ✅ Done
 
+- ✅ **Telegram morning brief LIVE (2026-07-14 evening)** — fresh bot @L3thallbot wired, chat_id fixed (was the bot's own id), test brief delivered to Kira's phone (execution 5). Fires daily 06:05 America/Edmonton.
+- ✅ **D2.0 walkthrough (per Kira, done ~Jul 9–11)** — confirmed 2026-07-15; iPhone real-device pass produced the HEIC/HEIF fix (`9575fd3`). Findings capture parked in Optional above.
 - ✅ **Bucket C push (2026-07-01)** — 12 commits landed: D2.2 invoices, D2.3 off-platform pay, D2.4 subscriptions, F1 `/payments/mine`, F2 disputes, hygiene sweep, lint conformance, test-suite repair, CI env fix, `.gitattributes`, Dependabot, real README. Render redeployed — new routes verified live.
 - ✅ **Backend CI green (2026-07-01)** — first passing run ever; lint had failed on every push since it was added.
 - ✅ **Seed accounts** — all 3 exist in Supabase Auth with profiles + employee linked to Bob's Cleaning Co. Employee 403 was a code bug (`/businesses/me` owner-only), fixed.

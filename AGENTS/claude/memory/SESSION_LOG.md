@@ -103,3 +103,21 @@ NEEDS KIRA (from the review, unchanged):
   3. Optional: `ollama rm llama2 qwen3.6` frees ~27 GB (23 GB model can't fit 8 GB VRAM).
 NEXT: Wire qwen3 overnight-log summarization into the n8n morning brief (parked Notion row) — post-beta unless idle time appears. Build queue unchanged: D2.0 walkthrough (Kira's iPhone) gates D3/D4.
 ---
+
+---
+DATE: 2026-07-15
+PROJECT: swingby
+PHASE: Automation — morning brief live + memory truth-up
+DISPATCHED: orchestrator inline (no subagent)
+SHIPPED:
+  - Telegram morning brief FIXED + verified: token was split/incomplete in `.claude/secrets/n8n.env`, chat_id was the bot's own id → corrected to Kira's personal chat id (lives only in `.claude/secrets/n8n.env`, gitignored), container recreated, test brief delivered (execution 5). Fires 06:05 America/Edmonton daily.
+  - `send-test-brief.sh` — waits on n8n /healthz after container recreate (was flaky).
+  - Killed 3 stray agent sessions (Jul 13 pts/2, cd379f39, faf80e73).
+  - Host clock verified NTP-synced; lid-close suspend verified disabled (live in logind); docker restart policy `unless-stopped` → brief survives reboot. n8n does NOT catch up missed runs — laptop must be awake at 06:05.
+  - D2.0 walkthrough retro-closed per Kira (happened ~Jul 9–11, evidence `70d165a`/`9575fd3`) — domino frontmatter → done, log entry added, STATUS + HUMAN-TODO updated.
+NEEDS KIRA:
+  1. Optional: mask sleep targets so the laptop can never suspend (`sudo systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target`).
+  2. ~10 min: dump remaining D2.0 findings into the domino 📖 Log (only HEIC was filed).
+  3. D3 walkthrough + D4 tester (Jul 15) — the calendar keys off these now.
+NEXT: D2.2 invoices polish (code-runnable). D2.0 gate CLEARED — D3/D4 are Kira's next moves per the re-dated calendar.
+---

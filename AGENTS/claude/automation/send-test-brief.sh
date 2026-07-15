@@ -5,6 +5,13 @@
 set -euo pipefail
 cd "$(dirname "$0")/../../.."   # repo root
 
+# n8n takes ~15s to serve REST after a container (re)create — wait for it.
+for _ in $(seq 1 30); do
+  curl -sf http://localhost:5678/healthz >/dev/null 2>&1 && break
+  sleep 2
+done
+sleep 3   # healthz goes green slightly before /rest does
+
 PASS=$(grep -oP 'Password: \K.*' credentials/api-keys/n8n.md)
 JAR=$(mktemp)
 trap 'rm -f "$JAR"' EXIT
