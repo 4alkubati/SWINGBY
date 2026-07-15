@@ -3,17 +3,12 @@ import { View, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import Text from './Text';
 import { colors, spacing } from '../theme/tokens';
+import { CATEGORIES as CANONICAL_CATEGORIES } from '../constants/categories';
 
 // Category label + Feather icon name (stroke ~1.8). Replaces emoji taxonomy.
-export const CATEGORIES = [
-  { id: 'cleaning', label: 'Cleaning', icon: 'droplet' },
-  { id: 'plumbing', label: 'Plumbing', icon: 'tool' },
-  { id: 'moving', label: 'Moving', icon: 'truck' },
-  { id: 'electrical', label: 'Electric', icon: 'zap' },
-  { id: 'lawn', label: 'Lawn', icon: 'feather' },
-  { id: 'painting', label: 'Painting', icon: 'edit-3' },
-  { id: 'carpentry', label: 'Carpentry', icon: 'clipboard' },
-];
+// Re-exported (not redefined) so existing importers (SearchScreen, NearbyMap)
+// keep working off the single canonical taxonomy in ../constants/categories.
+export const CATEGORIES = CANONICAL_CATEGORIES;
 
 const ALL_CATEGORY = { id: 'all', label: 'All', icon: 'search' };
 

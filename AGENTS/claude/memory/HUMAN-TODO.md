@@ -3,6 +3,15 @@
 > The loop parks here anything only a human can do, and keeps working on everything else. Surfaced in the morning brief. Each item has the exact action.
 > Cleaned 2026-07-01 (post-audit execution): Bucket C push DONE (12 commits on `main` through the CI fix), seed accounts DONE, Stripe keys DONE, DMARC DONE. Added GitHub security toggles + Dependabot triage.
 
+## 🌅 This morning — Phase CAT overnight output is READY-TO-PUSH
+
+Overnight loop finished clean (category matching + taxonomy unification + RN fixes). All local gates green (pytest 35/3, babel 115/0, flow graph 0 broken). Nothing pushed — your call.
+
+- [ ] **(Bucket C — approve + push)** Working tree has 14 modified + 5 new files (full list in `STATUS.md` → "Waiting On"). Review, then push `main`. This fixes walkthrough **bug #1** (lawncare business seeing cleaning/massage posts) at the root: business feed now filters to own category + related + General.
+- [ ] **(Bucket B — verify after Render autodeploy)** `python3 tools/e2e_smoke.py https://swingbyy-api.onrender.com` must ALL PASS (incl. the new business-feed check). Then on-device (Expo Go, after pull): lawncare dashboard shows only Landscaping(+General) posts; the gesture-handler error is gone.
+- [ ] **(Bucket B — D2.2 PDF, optional)** Once a sandbox booking is completed on Render: open a completed booking → "View receipt" → "Download PDF" → confirm the PDF opens in iOS Safari with all fields. (Code is done; this is the only unverified piece.)
+- [ ] **(D4 tester kit is drafted)** `Roadmap/dominoes/D4-tester-brief.md` + `D4-bug-capture-sheet.md` are ready — fill the `{{EXPO_LINK}}` placeholder when you line up a tester.
+
 ## ⛔ Blocking (loop stuck until done)
 
 - [ ] **(Bucket B — rotate + secret the Google Maps key)** `mobile/app.json` had the real Android Maps key in plaintext (`AIzaSyDW…nyJw`) — flagged as **H1** in the 2026-07-01 audit. **The repo is PUBLIC, so treat the old key as fully compromised.** Placeholder is now committed; Kira must:

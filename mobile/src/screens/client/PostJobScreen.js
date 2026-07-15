@@ -22,6 +22,7 @@ import Inline from '../../components/Inline';
 
 import { api, uploadFile } from '../../services/api';
 import { colors, spacing, radius } from '../../theme/tokens';
+import { CATEGORY_LABELS as CATEGORIES } from '../../constants/categories';
 
 const GOOGLE_PLACES_KEY = process.env.EXPO_PUBLIC_GOOGLE_PLACES_KEY || '';
 
@@ -34,12 +35,6 @@ function formatTime(date) {
   const hour12 = h % 12 || 12;
   return `${hour12}:${String(m).padStart(2, '0')} ${ampm}`;
 }
-
-// ─── Constants ────────────────────────────────────────────────────────────────
-const CATEGORIES = [
-  'Cleaning', 'Plumbing', 'Electrical',
-  'Landscaping', 'Painting', 'Carpentry', 'Moving',
-];
 
 const STEPS = ['Category', 'Details', 'Budget', 'Confirm'];
 const TOTAL_STEPS = STEPS.length;

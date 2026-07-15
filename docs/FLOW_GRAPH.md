@@ -72,10 +72,28 @@ flowchart LR
   end
   subgraph transitions
   end
+  Signup --> Login
   Login --> ForgotPassword
   Login --> Signup
-  Signup --> Login
-  BusinessInvoices --> Invoice
+  Onboarding --> Login
+  Settings --> ProfileEdit
+  Settings --> PrivacyPolicy
+  Settings --> TermsOfService
+  Settings --> HelpFAQ
+  Profile --> Favorites
+  Profile --> NotificationsCenter
+  Profile --> PaymentMethod
+  Profile --> ReferralScreen
+  Profile --> Settings
+  Profile --> HelpFAQ
+  Profile --> PrivacyPolicy
+  Profile --> TermsOfService
+  Notifications --> ActiveBooking
+  Notifications --> Review
+  Notifications --> QuoteComparison
+  NotificationsCenter --> QuoteComparison
+  NotificationsCenter --> MessageThread
+  NotificationsCenter --> BookingDetails
   My_Business --> EmployeeManagement
   My_Business --> EmployeeProfile
   My_Business --> NotificationsCenter
@@ -93,21 +111,17 @@ flowchart LR
   Dashboard --> BusinessAnalytics
   Dashboard --> EmployeeManagement
   Dashboard --> Chat
+  BusinessInvoices --> Invoice
   EmployeeProfile --> BusinessProfile
   JobManagement --> Chat
   JobManagement --> Invoice
   JobManagement --> DisputeFlow
+  Favorites --> Home
+  Favorites --> BusinessProfile
   ActiveBooking --> Home
   ActiveBooking --> BusinessProfile
   ActiveBooking --> Chat
   ActiveBooking --> CancellationFlow
-  BookingDetails --> MessageThread
-  BookingDetails --> CancellationFlow
-  BookingDetails --> BusinessProfile
-  BookingDetails --> Invoice
-  BookingDetails --> DisputeFlow
-  Favorites --> Home
-  Favorites --> BusinessProfile
   Home --> Notifications
   Home --> Search
   Home --> NearbyMap
@@ -117,34 +131,20 @@ flowchart LR
   Jobs --> QuoteComparison
   Jobs --> Chat
   Jobs --> Review
-  NearbyMap --> BusinessProfile
-  PostJob --> QuoteComparison
+  Search --> BusinessProfile
   QuoteComparison --> ActiveBooking
   QuoteComparison --> ClientTabs
   QuoteComparison --> My_Jobs
   QuoteComparison --> BusinessProfile
   QuoteComparison --> Chat
-  Search --> BusinessProfile
+  NearbyMap --> BusinessProfile
+  PostJob --> QuoteComparison
+  BookingDetails --> MessageThread
+  BookingDetails --> CancellationFlow
+  BookingDetails --> BusinessProfile
+  BookingDetails --> Invoice
+  BookingDetails --> DisputeFlow
   Messages --> Chat
-  Onboarding --> Login
-  NotificationsCenter --> QuoteComparison
-  NotificationsCenter --> MessageThread
-  NotificationsCenter --> BookingDetails
-  Notifications --> ActiveBooking
-  Notifications --> Review
-  Notifications --> QuoteComparison
-  Profile --> Favorites
-  Profile --> NotificationsCenter
-  Profile --> PaymentMethod
-  Profile --> ReferralScreen
-  Profile --> Settings
-  Profile --> HelpFAQ
-  Profile --> PrivacyPolicy
-  Profile --> TermsOfService
-  Settings --> ProfileEdit
-  Settings --> PrivacyPolicy
-  Settings --> TermsOfService
-  Settings --> HelpFAQ
   BottomNav --> PostJob
 ```
 

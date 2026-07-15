@@ -1,4 +1,5 @@
-import { SafeAreaView, ScrollView, View, StyleSheet, Linking, Alert } from 'react-native';
+import { ScrollView, View, StyleSheet, Linking, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import Text from '../../components/Text';

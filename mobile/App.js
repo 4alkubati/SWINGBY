@@ -36,6 +36,7 @@ if (sentryEnabled) {
 }
 
 import { NavigationContainer } from '@react-navigation/native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { View, ActivityIndicator } from 'react-native';
@@ -88,22 +89,24 @@ function App() {
   if (!fontsLoaded && !fontError) return null;
 
   return (
-    <SafeAreaProvider>
-      <ThemeProvider>
-        <StatusBar style="light" />
-        <OfflineBanner />
-        <AuthProvider>
-          <BookingProvider>
-            <UnreadProvider>
-              <NavigationContainer linking={linkingConfig}>
-                <RootNavigator />
-              </NavigationContainer>
-            </UnreadProvider>
-          </BookingProvider>
-        </AuthProvider>
-        <Toast config={toastConfig} />
-      </ThemeProvider>
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <ThemeProvider>
+          <StatusBar style="light" />
+          <OfflineBanner />
+          <AuthProvider>
+            <BookingProvider>
+              <UnreadProvider>
+                <NavigationContainer linking={linkingConfig}>
+                  <RootNavigator />
+                </NavigationContainer>
+              </UnreadProvider>
+            </BookingProvider>
+          </AuthProvider>
+          <Toast config={toastConfig} />
+        </ThemeProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }
 

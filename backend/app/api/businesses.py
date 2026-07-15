@@ -6,6 +6,7 @@ import structlog
 from fastapi import APIRouter, HTTPException, Depends, Query, Request
 from pydantic import BaseModel, Field, field_validator
 from typing import Optional
+from app.categories import normalize_category
 from app.deps import get_current_user
 from app.supabase_client import supabase
 from app.limiter import limiter
@@ -86,6 +87,8 @@ def create_business(
 
     try:
         payload = {"owner_id": current_user["id"], **data.model_dump(exclude_none=True)}
+        if payload.get("category"):
+            payload["category"] = normalize_category(payload["category"])
         res = supabase.table("businesses").insert(payload).execute()
         return {"message": "Business created", "business": res.data[0]}
     except Exception:
@@ -443,6 +446,8 @@ def update_business(
     update_data = {k: v for k, v in data.model_dump().items() if v is not None}
     if not update_data:
         raise HTTPException(status_code=400, detail="No fields provided to update")
+    if update_data.get("category"):
+        update_data["category"] = normalize_category(update_data["category"])
 
     try:
         res = (

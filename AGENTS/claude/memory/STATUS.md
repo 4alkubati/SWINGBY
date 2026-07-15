@@ -10,7 +10,7 @@ swingby
 `/home/l3thal/agents/projects/swingby` (Linux). NOTE: prior STATUS + CLAUDE.md local-dev commands reference the old Windows path (`C:/Users/amrba/...`, `C:/Python314/python.exe`) — update CLAUDE.md Local Dev section when convenient.
 
 ## Last Updated
-2026-07-15 (late night Jul 14 MDT) — Morning-brief session: Telegram delivery FIXED + verified (bot @L3thallbot, 06:05 daily). LAPTOP RESCUE: week of unpushed Jul 9–12 work recovered via git bundle + merged (`d350295`) — full D2.0 walkthrough triage (4 bugs), Jul 11 Sentry fixes (UUID guard on /messages, Stripe price fail-fast, Sentry noise filter), Jul 10–12 polish sweep across 40 mobile screens. Backend pytest 23✅/3 skipped; 113 mobile files parse clean; pushed → Render redeploying. Prior rewrite 2026-07-14 (re-plan).
+2026-07-15 (overnight) — **Phase CAT overnight loop COMPLETE, READY-TO-PUSH** (see Session End Signal). Category matching + taxonomy unification + RN fixes shipped to working tree, all local gates green, no push. Prior same-day: Morning-brief session: Telegram delivery FIXED + verified (bot @L3thallbot, 06:05 daily). LAPTOP RESCUE: week of unpushed Jul 9–12 work recovered via git bundle + merged (`d350295`) — full D2.0 walkthrough triage (4 bugs), Jul 11 Sentry fixes (UUID guard on /messages, Stripe price fail-fast, Sentry noise filter), Jul 10–12 polish sweep across 40 mobile screens. Backend pytest 23✅/3 skipped; 113 mobile files parse clean; pushed → Render redeploying. Prior rewrite 2026-07-14 (re-plan).
 
 ## Current Phase
 **Phase 1 — BETA**, gate cleared: D2.0 walkthrough confirmed done (Kira, 2026-07-15 — retro-logged). Domino truth:
@@ -39,7 +39,7 @@ Signal worth noting: commits `70d165a` "pre-engine baseline" (Jul 9) and `9575fd
 ## What's Broken (real blockers)
 - **Google Maps key compromised** — leaked in public repo, placeholder committed; Kira must regenerate (open since Jul 1).
 - **Emails land in spam** — new-domain reputation, DNS verified correct. Mitigations in HUMAN-TODO.
-- **D2.0 triage: 2 bugs still open** (full table recovered from laptop → `Roadmap/July/2026-07-09.md`, merged `d350295`): 🔴 quote posts to wrong category (Plumbing→Lawncare) — needs fix; 🔴 match creates no Messages conversation — UUID-guard fix deployed 2026-07-15, needs on-device retest. D3 still needs its own logged run.
+- **D2.0 triage bugs:** 🟢 quote posts to wrong category (bug #1 — lawncare saw cleaning/massage posts): **FIX CODED in Phase CAT** (working tree, READY-TO-PUSH) — awaits deploy + on-device verify; 🔴 match creates no Messages conversation — UUID-guard fix deployed 2026-07-15, needs on-device retest. D3 still needs its own logged run.
 - **Placeholders unset:** Sentry DSN, hCaptcha secret.
 - **Latent:** `reviews.reviewee_type` CHECK lacks `'employee'` — D2.1 endpoint returns 0 reviews until a migration + review-target picker land (parked, separate domino).
 
@@ -70,11 +70,23 @@ Signal worth noting: commits `70d165a` "pre-engine baseline" (Jul 9) and `9575fd
 ✅ passing. No schema or endpoint changes this session (docs/roadmap only). Maps key rotation still outstanding (Kira). `credentials/` gitignored.
 
 ## Session End Signal
-🌙 OVERNIGHT QUEUED — Kira live-tested on device (Jul 15 ~10:40 PM): confirmed bug #1 (no category matching — lawncare sees cleaning/massage posts) + missing GestureHandlerRootView + 5 deprecated SafeAreaView imports. Approved plan is PLAN.md **Phase CAT** (canonical taxonomy + business-feed filter own+RELATED+General). Overnight loop launched with Opus orchestrator delegating to backend/mobile/qa agents. Local gates only tonight — NO push.
+✅ **ALL-TASKS-COMPLETE** (Tonight queue fully worked) · handoff state = **READY-TO-PUSH** — Phase CAT overnight loop COMPLETE (Opus orchestrator → backend/mobile/qa/marketing agents). All local gates green, NO push made (Bucket C — Kira's morning call). Delivered:
+- **CAT-1/2 backend** (`categories.py` new + `service_posts.py`/`businesses.py`/`conftest.py` + `test_service_posts.py`): canonical taxonomy, normalize-on-create, `ilike` on `?category=` (wildcard-escaped), business-feed auto-filter = own+RELATED+General via `.or_()`, degrades to unfiltered on any lookup failure. **Docker pytest: 35 passed / 3 skipped** (was 23/3 — +12 new), black clean, py_compile clean.
+- **CAT-3/4 mobile**: single canonical `constants/categories.js` (8 entries, `landscaping` replaces broken `lawn`, +Handyman); CategoryScroll re-exports it; PostJob + BusinessSetup consume it. `GestureHandlerRootView` wraps App.js root; 5 files switched `SafeAreaView` → `react-native-safe-area-context`. **Babel: 115 files / 0 errors**; grep clean (no `'lawn'`, no RN `SafeAreaView`).
+- **CAT-5 smoke prep**: `e2e_smoke.py` posts `"cleaning"` → expects `"Cleaning"` + new business-feed-visibility check. Edit-only (NOT run vs Render tonight).
+- **CAT-6 regression**: pytest 35/3 · babel 115/0 · **flow graph 0 broken edges / 0 broken API**.
+- **CAT-7 D2.2 invoices**: VERIFIED already code-complete (JSON + PDF endpoints auth-gated + registered; InvoiceScreen both roles w/ states; "View receipt" on BookingDetails + JobManagement; BusinessInvoices list). Only open item = on-device PDF-in-Safari render (Bucket B, needs Render + a completed booking). No rebuild — working code left intact.
+- **CAT-8 D4 tester kit (draft)**: `Roadmap/dominoes/D4-tester-brief.md` + `D4-bug-capture-sheet.md`. Nothing sent.
 
-## Waiting On (morning)
-1. **Kira: approve push** when STATUS says READY-TO-PUSH → push → Render autodeploy → `python3 tools/e2e_smoke.py https://swingbyy-api.onrender.com` (must ALL PASS incl. new feed check) → on-device re-verify (lawncare feed clean, gesture error gone after pull).
-2. D3 walkthrough + D4 tester run — every later calendar date keys off D4.
+One backend sub-agent crashed mid-run on a transient API error; resumed from transcript and finished clean (no retry-cap hit). No push/deploy/live-Supabase this session.
+
+## Waiting On (morning — all Kira)
+1. **Approve push.** Change inventory (14 modified + 5 new):
+   - backend: `app/categories.py`(new), `app/api/service_posts.py`, `app/api/businesses.py`, `tests/conftest.py`, `tests/test_service_posts.py`(new)
+   - mobile: `App.js`, `src/constants/categories.js`(new), `components/CategoryScroll.js`, `screens/client/PostJobScreen.js`, `screens/onboarding/BusinessSetupScreen.js`, `screens/admin/AdminScreen.js`, `screens/auth/{Login,Signup,ForgotPassword}Screen.js`
+   - tools/docs: `tools/e2e_smoke.py`, `docs/FLOW_GRAPH.md` + `docs/flow-graph.json` (CAT-6 regen — include or drop, harmless), `Roadmap/dominoes/D4-tester-brief.md`(new) + `D4-bug-capture-sheet.md`(new)
+2. After push → Render autodeploy → `python3 tools/e2e_smoke.py https://swingbyy-api.onrender.com` (must ALL PASS incl. new feed check) → on-device re-verify: **lawncare dashboard shows only Landscaping(+General) posts** (bug #1 fixed) + **gesture error gone after pull**.
+3. D3 walkthrough + D4 tester run — every later calendar date keys off D4. Tester kit is drafted and waiting.
 
 ---
 *[[MAP]] · single source of truth for "what is true right now" · rewritten by [[ORCHESTRATOR]] each session*

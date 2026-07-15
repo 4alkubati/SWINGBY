@@ -8,7 +8,9 @@
 
 ---
 
-## 🌙 Tonight — overnight queue (queued 2026-07-15 late night, Kira-approved run via `automation/run-overnight.sh`, orchestrator on Opus)
+## 🌙 Tonight — overnight queue ✅ COMPLETE (executed 2026-07-15 overnight, Opus orchestrator) — READY-TO-PUSH
+
+> **STATUS: all tasks done, all local gates green, NO push (Bucket C = Kira's morning).** Results: CAT-1/2 ✅ (pytest 35/3, black clean) · CAT-3/4 ✅ (babel 115/0) · CAT-5 ✅ (edit-only) · CAT-6 ✅ (pytest 35/3 · babel 115/0 · flow graph 0 broken) · CAT-7 ✅ AUDITED already code-complete (on-device PDF = Bucket B) · CAT-8 ✅ drafted. Detail in STATUS.md + SESSION_LOG (fourth block). Morning: Kira reviews READY-TO-PUSH → push → Render smoke → on-device verify.
 
 > Work in order. Every task Bucket A unless noted. Never push, never deploy, never send. Orchestrator = brain/plan-maker; dispatch implementation to the named agents. Full spec: **Phase CAT below** (approved plan 2026-07-15).
 
@@ -23,6 +25,29 @@
 | 7 | **D2.2 — Invoices** per `Roadmap/dominoes/D2.2-invoices.md` (in-app Receipt screen + downloadable PDF for completed bookings, both roles) — only if 1–6 fully green with retries to spare | backend-agent + mobile-agent | Domino done-rule: receipt shows line items/totals/platform cut/parties; PDF endpoint returns a real PDF; babel + FastAPI boot gates green |
 | 8 | **D4 tester kit (draft)** — one-page tester brief + bug-capture sheet supporting `Roadmap/dominoes/D4-friend-tester.md` | marketing-agent (draft only) | Docs exist under Roadmap/dominoes/ or marketing/; nothing sent |
 | — | NOT tonight: git push (Bucket C — morning, Kira-gated; when 1–6 green write READY-TO-PUSH to STATUS), Render/Supabase live state, `reviews.reviewee_type` migration, running e2e_smoke against Render (needs the push first) | | |
+
+## 🌞 Today — 2026-07-15 daytime (Kira at work, phone only)
+
+> Written 2026-07-15 morning session. Everything left on the critical path is Kira-gated (Bucket B/C); Claude's daytime lane is tooling + prep only.
+
+**Claude — done this session (Bucket A):**
+- ✅ Morning brief → **4-message format** (☀️+🔧 Backend · 📱 Frontend · 🧑 Human TODO · 🌙 Night Recap), multi-bot ready via optional `TELEGRAM_BOT_TOKEN_{BACKEND,FRONTEND,HUMAN,NIGHT}` env vars. Re-imported, re-activated, live-tested (execution 8, 4× ok). Docs: `automation/README.md`.
+- ✅ CLAUDE.md Local Dev truth-up: Windows paths → `python3`, LAN IP `10.0.0.53` → `10.0.0.168`.
+- ✅ Today plan (this section) + plan pushed to Telegram.
+
+**Kira — from phone at work (optional, ~5 min each):**
+- Review the push inventory (in the 🧑 HUMAN TODO Telegram message / STATUS "Waiting On") so the evening push is a rubber-stamp.
+- If multi-bot brief wanted: @BotFather → `/newbot` ×4 → paste tokens into `.claude/secrets/n8n.env` (names above) → tell Claude "recreate n8n" tonight. Note: Telegram bots cannot read other bots' messages — this is presentation (per-section name/avatar), coordination stays in n8n.
+- GitHub security toggles (Dependabot alerts, secret scanning, push protection) — 2 min in the phone browser.
+
+**Kira — evening gate chain (order matters):**
+1. Approve + push `main` (14 modified + 5 new — list in STATUS "Waiting On") → Render autodeploy.
+2. `python3 tools/e2e_smoke.py https://swingbyy-api.onrender.com` — ALL PASS incl. new business-feed check.
+3. On-device (Expo Go after pull): lawncare feed shows only Landscaping(+General) · gesture error gone · D2.1 trust card · D2.2 PDF receipt (needs a completed booking).
+4. D3 walkthrough per `Roadmap/dominoes/D3-expo-go-walkthrough.md` → line up D4 tester (kit drafted, fill `{{EXPO_LINK}}`).
+5. Maps key rotation (⛔ Bucket B blocker, steps in HUMAN-TODO).
+
+**Claude — next dispatch (when Kira green-lights):** post-push regression vs Render; then next domino per DOMINOES.md.
 
 ## Phase CAT — Category matching + taxonomy unification (approved 2026-07-15)
 

@@ -95,6 +95,14 @@ def main():
     if not check("create post", s == 200, str(s)):
         return finish()
     post_id = res["post"]["id"]
+    check("category normalized to Cleaning",
+          res.get("post", {}).get("category") == "Cleaning")
+
+    # 1b. Verify post visible in business feed for same category
+    s, feed = call("GET", "/service-posts/", btok)
+    check("list service posts", s == 200, str(s))
+    feed_post_ids = [p.get("id") for p in feed.get("items", [])]
+    check("newly created post visible in business feed", post_id in feed_post_ids)
 
     # 2. Business quotes it
     s, res = call("POST", "/interests/", btok, {"post_id": post_id, "quoted_price": 180})

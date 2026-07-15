@@ -1,8 +1,9 @@
 import React, { useState, useRef } from 'react';
 import {
-  SafeAreaView, KeyboardAvoidingView, ScrollView,
+  KeyboardAvoidingView, ScrollView,
   Platform, Pressable, TouchableOpacity, View, StyleSheet,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, {
   useSharedValue, useAnimatedStyle,
   withTiming, withSpring, FadeInDown,

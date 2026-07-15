@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import {
-  SafeAreaView, ScrollView, KeyboardAvoidingView, Platform, View, StyleSheet,
+  ScrollView, KeyboardAvoidingView, Platform, View, StyleSheet,
   ActivityIndicator,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
 
@@ -14,13 +15,9 @@ import Chip from '../../components/Chip';
 import HeaderGlow from '../../components/HeaderGlow';
 import { api } from '../../services/api';
 import { show as showToast } from '../../services/toast';
+import { CATEGORY_LABELS as CATEGORIES } from '../../constants/categories';
 
 const GOOGLE_PLACES_KEY = process.env.EXPO_PUBLIC_GOOGLE_PLACES_KEY || '';
-
-const CATEGORIES = [
-  'Cleaning', 'Plumbing', 'Electrical',
-  'Landscaping', 'Painting', 'Carpentry', 'Moving', 'Handyman',
-];
 
 const RADIUS_PRESETS = [10, 25, 50, 100];
 

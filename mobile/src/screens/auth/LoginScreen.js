@@ -1,7 +1,8 @@
 import {
-  SafeAreaView, KeyboardAvoidingView, Platform, ScrollView, View, Pressable,
+  KeyboardAvoidingView, Platform, ScrollView, View, Pressable,
   StyleSheet,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState } from 'react';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useAuth } from '../../context/AuthContext';

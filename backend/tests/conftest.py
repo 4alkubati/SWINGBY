@@ -32,11 +32,17 @@ class SupabaseTableStub:
             "update": update_data,
         }
         self._mode = "select"
+        # Call recording — every chained method call, in order, as (name, args, kwargs).
+        self.calls = []
+        # Convenience: the most recent payload passed to .insert(...), so a
+        # test can assert on what would have been written.
+        self.inserted = None
 
     def __getattr__(self, name):
         if name == "execute":
 
             def _execute():
+                self.calls.append(("execute", (), {}))
                 data = self._data[self._mode]
                 count = len(data) if isinstance(data, list) else None
                 return SimpleNamespace(data=data, count=count)
@@ -44,8 +50,11 @@ class SupabaseTableStub:
             return _execute
 
         def _call(*args, **kwargs):
+            self.calls.append((name, args, kwargs))
             if name in ("select", "insert", "update", "upsert", "delete"):
                 self._mode = name if name in self._data else self._mode
+            if name == "insert" and args:
+                self.inserted = args[0]
             return self
 
         return _call

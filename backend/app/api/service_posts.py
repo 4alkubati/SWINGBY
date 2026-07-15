@@ -1,14 +1,23 @@
 import logging
+import re
 
 from fastapi import APIRouter, HTTPException, Depends, Query
 from pydantic import BaseModel, Field, field_validator
 from typing import Optional, Literal, List
+from app.categories import allowed_categories_for, normalize_category
 from app.deps import get_current_user
 from app.supabase_client import supabase
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+_BUSINESS_CATEGORY_RE = re.compile(r"^[A-Za-z ]+$")
+
+
+def _escape_ilike(v: str) -> str:
+    """Backslash-escape ilike wildcard chars so a literal value can't act as one."""
+    return v.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
 
 
 # ── Schemas ───────────────────────────────────────────────────────────────────
@@ -64,7 +73,7 @@ def create_service_post(
                     "client_id": current_user["id"],
                     "title": data.title,
                     "description": data.description,
-                    "category": data.category,
+                    "category": normalize_category(data.category),
                     "budget": data.budget,
                     "lat": data.lat,
                     "lng": data.lng,
@@ -144,7 +153,30 @@ def list_open_posts(
             query = query.eq("status", "open")
 
         if category:
-            query = query.eq("category", category.strip())
+            # Explicit param takes precedence over the auto-filter below.
+            query = query.ilike("category", _escape_ilike(category.strip()))
+        elif current_user["role"] == "business_owner":
+            try:
+                biz_res = (
+                    supabase.table("businesses")
+                    .select("category")
+                    .eq("owner_id", current_user["id"])
+                    .limit(1)
+                    .execute()
+                )
+                rows = biz_res.data or []
+                biz_category = rows[0].get("category") if rows else None
+                if biz_category and _BUSINESS_CATEGORY_RE.match(biz_category):
+                    allowed = allowed_categories_for(biz_category)
+                    query = query.or_(",".join(f"category.ilike.{c}" for c in allowed))
+                # else: degrade to unfiltered (unknown/unsafe category value)
+            except Exception:
+                # Never let a lookup failure 500 the feed — degrade to unfiltered.
+                logger.warning("business_category_lookup_failed", exc_info=True)
+        elif current_user["role"] == "employee":
+            # Employees are intentionally unfiltered for now — no per-employee
+            # category assignment exists yet; revisit once it does.
+            pass
 
         res = (
             query.order("created_at", desc=True)
