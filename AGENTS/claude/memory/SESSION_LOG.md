@@ -79,3 +79,19 @@ LEARNING-LOOP:
   - Lesson: a transient API-error crash of a sub-agent is recoverable without restarting the task — SendMessage resumes it from its transcript with context intact. Re-derive the landed working-tree state first (git status + file existence) and hand the agent an explicit "here's what did/didn't land, finish from here" so it doesn't redo completed edits.
 NEXT: Morning = Kira reviews READY-TO-PUSH → push → prod smoke → on-device verify. Post-verify: D2.2 on-device PDF check (Bucket B); D3/D4 remain the calendar gate. No further autonomous build queued — awaiting Kira.
 ---
+
+---
+DATE: 2026-07-16 (early AM — Phase CAT push + prod verify)
+PROJECT: swingby
+PHASE: Phase CAT ship — push approval, deploy, prod smoke
+DISPATCHED: orchestrator inline (no subagents)
+SHIPPED:
+  - Session resumed after interruption; confirmed no orphaned agents (overnight loop had finished clean). Working tree verified intact vs READY-TO-PUSH inventory (py_compile OK, greps clean).
+  - Kira approved push (+ laptop sync). Committed Phase CAT as `0ef7cd7` (24 files, 1347+/772-) and pushed to main.
+  - Render autodeploy → `tools/e2e_smoke.py` vs swingbyy-api.onrender.com: **25/25 ALL PASS on first attempt**, incl. new Phase CAT checks (category normalized to "Cleaning"; new post visible in business feed).
+NEEDS KIRA:
+  1. On-device verify (Expo Go pull): lawncare dashboard = Landscaping(+General) only; gesture-handler error gone.
+  2. Laptop: `git pull origin main` in the OneDrive repo (reads work); fix push auth + move repo out of OneDrive.
+  3. D3 walkthrough + D4 tester (kit drafted, waiting).
+NEXT: Kira on-device verify closes bug #1. Then D2.2 on-device PDF check (Bucket B), D3/D4 calendar gate. No autonomous build queued.
+---

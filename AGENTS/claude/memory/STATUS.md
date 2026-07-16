@@ -10,7 +10,7 @@ swingby
 `/home/l3thal/agents/projects/swingby` (Linux). NOTE: prior STATUS + CLAUDE.md local-dev commands reference the old Windows path (`C:/Users/amrba/...`, `C:/Python314/python.exe`) — update CLAUDE.md Local Dev section when convenient.
 
 ## Last Updated
-2026-07-15 (overnight) — **Phase CAT overnight loop COMPLETE, READY-TO-PUSH** (see Session End Signal). Category matching + taxonomy unification + RN fixes shipped to working tree, all local gates green, no push. Prior same-day: Morning-brief session: Telegram delivery FIXED + verified (bot @L3thallbot, 06:05 daily). LAPTOP RESCUE: week of unpushed Jul 9–12 work recovered via git bundle + merged (`d350295`) — full D2.0 walkthrough triage (4 bugs), Jul 11 Sentry fixes (UUID guard on /messages, Stripe price fail-fast, Sentry noise filter), Jul 10–12 polish sweep across 40 mobile screens. Backend pytest 23✅/3 skipped; 113 mobile files parse clean; pushed → Render redeploying. Prior rewrite 2026-07-14 (re-plan).
+2026-07-16 (early AM) — **Phase CAT PUSHED + DEPLOYED + PROD SMOKE ALL PASS.** Kira approved push; committed `0ef7cd7` → Render autodeploy → `tools/e2e_smoke.py` vs `swingbyy-api.onrender.com`: **25/25 PASS first attempt**, incl. new checks (category normalized to "Cleaning", new post visible in business feed). Remaining: Kira on-device verify (lawncare feed = Landscaping+General only; gesture error gone) + laptop `git pull`. Prior: Phase CAT overnight loop COMPLETE (see Session End Signal). Category matching + taxonomy unification + RN fixes shipped to working tree, all local gates green, no push. Prior same-day: Morning-brief session: Telegram delivery FIXED + verified (bot @L3thallbot, 06:05 daily). LAPTOP RESCUE: week of unpushed Jul 9–12 work recovered via git bundle + merged (`d350295`) — full D2.0 walkthrough triage (4 bugs), Jul 11 Sentry fixes (UUID guard on /messages, Stripe price fail-fast, Sentry noise filter), Jul 10–12 polish sweep across 40 mobile screens. Backend pytest 23✅/3 skipped; 113 mobile files parse clean; pushed → Render redeploying. Prior rewrite 2026-07-14 (re-plan).
 
 ## Current Phase
 **Phase 1 — BETA**, gate cleared: D2.0 walkthrough confirmed done (Kira, 2026-07-15 — retro-logged). Domino truth:
@@ -70,7 +70,7 @@ Signal worth noting: commits `70d165a` "pre-engine baseline" (Jul 9) and `9575fd
 ✅ passing. No schema or endpoint changes this session (docs/roadmap only). Maps key rotation still outstanding (Kira). `credentials/` gitignored.
 
 ## Session End Signal
-✅ **ALL-TASKS-COMPLETE** (Tonight queue fully worked) · handoff state = **READY-TO-PUSH** — Phase CAT overnight loop COMPLETE (Opus orchestrator → backend/mobile/qa/marketing agents). All local gates green, NO push made (Bucket C — Kira's morning call). Delivered:
+✅ **ALL-TASKS-COMPLETE** · handoff state = **PUSHED + DEPLOYED + SMOKE-GREEN** (2026-07-16: Kira approved, `0ef7cd7` pushed, Render deployed, prod smoke 25/25 PASS). Prior overnight state: Phase CAT overnight loop COMPLETE (Opus orchestrator → backend/mobile/qa/marketing agents). All local gates green, NO push made (Bucket C — Kira's morning call). Delivered:
 - **CAT-1/2 backend** (`categories.py` new + `service_posts.py`/`businesses.py`/`conftest.py` + `test_service_posts.py`): canonical taxonomy, normalize-on-create, `ilike` on `?category=` (wildcard-escaped), business-feed auto-filter = own+RELATED+General via `.or_()`, degrades to unfiltered on any lookup failure. **Docker pytest: 35 passed / 3 skipped** (was 23/3 — +12 new), black clean, py_compile clean.
 - **CAT-3/4 mobile**: single canonical `constants/categories.js` (8 entries, `landscaping` replaces broken `lawn`, +Handyman); CategoryScroll re-exports it; PostJob + BusinessSetup consume it. `GestureHandlerRootView` wraps App.js root; 5 files switched `SafeAreaView` → `react-native-safe-area-context`. **Babel: 115 files / 0 errors**; grep clean (no `'lawn'`, no RN `SafeAreaView`).
 - **CAT-5 smoke prep**: `e2e_smoke.py` posts `"cleaning"` → expects `"Cleaning"` + new business-feed-visibility check. Edit-only (NOT run vs Render tonight).
@@ -80,13 +80,11 @@ Signal worth noting: commits `70d165a` "pre-engine baseline" (Jul 9) and `9575fd
 
 One backend sub-agent crashed mid-run on a transient API error; resumed from transcript and finished clean (no retry-cap hit). No push/deploy/live-Supabase this session.
 
-## Waiting On (morning — all Kira)
-1. **Approve push.** Change inventory (14 modified + 5 new):
-   - backend: `app/categories.py`(new), `app/api/service_posts.py`, `app/api/businesses.py`, `tests/conftest.py`, `tests/test_service_posts.py`(new)
-   - mobile: `App.js`, `src/constants/categories.js`(new), `components/CategoryScroll.js`, `screens/client/PostJobScreen.js`, `screens/onboarding/BusinessSetupScreen.js`, `screens/admin/AdminScreen.js`, `screens/auth/{Login,Signup,ForgotPassword}Screen.js`
-   - tools/docs: `tools/e2e_smoke.py`, `docs/FLOW_GRAPH.md` + `docs/flow-graph.json` (CAT-6 regen — include or drop, harmless), `Roadmap/dominoes/D4-tester-brief.md`(new) + `D4-bug-capture-sheet.md`(new)
-2. After push → Render autodeploy → `python3 tools/e2e_smoke.py https://swingbyy-api.onrender.com` (must ALL PASS incl. new feed check) → on-device re-verify: **lawncare dashboard shows only Landscaping(+General) posts** (bug #1 fixed) + **gesture error gone after pull**.
-3. D3 walkthrough + D4 tester run — every later calendar date keys off D4. Tester kit is drafted and waiting.
+## Waiting On (all Kira)
+1. ~~Approve push~~ ✅ DONE 2026-07-16 (`0ef7cd7`). ~~Render smoke~~ ✅ 25/25 PASS.
+2. **On-device re-verify:** lawncare dashboard shows only Landscaping(+General) posts (bug #1 fixed) + gesture error gone after Expo Go pull.
+3. **Laptop sync:** in Git Bash on laptop, `cd /c/Users/amrba/OneDrive/Desktop/AMR/10-SWINGBY/Swingby && git pull origin main` (reads work; if `index.lock`, pause OneDrive, delete lock, retry). Still outstanding: fix laptop push auth + move repo out of OneDrive.
+4. D3 walkthrough + D4 tester run — every later calendar date keys off D4. Tester kit is drafted and waiting.
 
 ---
 *[[MAP]] · single source of truth for "what is true right now" · rewritten by [[ORCHESTRATOR]] each session*
