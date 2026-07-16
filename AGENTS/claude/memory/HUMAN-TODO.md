@@ -3,12 +3,17 @@
 > The loop parks here anything only a human can do, and keeps working on everything else. Surfaced in the morning brief. Each item has the exact action.
 > Cleaned 2026-07-01 (post-audit execution): Bucket C push DONE (12 commits on `main` through the CI fix), seed accounts DONE, Stripe keys DONE, DMARC DONE. Added GitHub security toggles + Dependabot triage.
 
-## 🌅 This morning — Phase CAT overnight output is READY-TO-PUSH
+## 🌅 This morning (2026-07-17) — Phase UBER overnight output
 
-Overnight loop finished clean (category matching + taxonomy unification + RN fixes). All local gates green (pytest 35/3, babel 115/0, flow graph 0 broken). Nothing pushed — your call.
+If the loop wrote READY-TO-PUSH to STATUS.md:
 
-- [ ] **(Bucket C — approve + push)** Working tree has 14 modified + 5 new files (full list in `STATUS.md` → "Waiting On"). Review, then push `main`. This fixes walkthrough **bug #1** (lawncare business seeing cleaning/massage posts) at the root: business feed now filters to own category + related + General.
-- [ ] **(Bucket B — verify after Render autodeploy)** `python3 tools/e2e_smoke.py https://swingbyy-api.onrender.com` must ALL PASS (incl. the new business-feed check). Then on-device (Expo Go, after pull): lawncare dashboard shows only Landscaping(+General) posts; the gesture-handler error is gone.
+- [ ] **(Bucket C — approve + push)** Review the Phase UBER diff (employee-create fix, BookingDetails nav, confirm-date handshake card, date_confirmed event, browse-first Home, General category, docs). Push `main` → Render autodeploys.
+- [ ] **(Bucket B — verify after deploy)** `python3 tools/e2e_smoke.py https://swingbyy-api.onrender.com` ALL PASS. Then **Android on-device**: add an employee (was 409-broken), open BookingDetails from My Jobs, accept a proposed time from the chat handshake card, see `date_confirmed` on the timeline, Home opens browse-first, post an off-taxonomy job → lands in General.
+- [ ] **(Product decision — ASAP vs required)** Should a booking be completable with NO confirmed date? Options: require confirmation always / keep optional / require but add an "ASAP" quick-confirm. Tonight ships the handshake UI but keeps it optional pending your call.
+- [ ] **(Telegram debrief redesign)** You said the report is too clanky — send over the folder + the "everything about me" context and the brief gets rebuilt around it. Parked until that arrives.
+
+Done earlier (2026-07-16 early AM): Phase CAT pushed (`0ef7cd7`), Render deployed, prod smoke 25/25 PASS.
+- [ ] **(Bucket B — still open from CAT)** On-device: lawncare dashboard shows only Landscaping(+General) posts; gesture-handler error gone. (Laptop copy is stale — the VirtualizedList console error you screenshotted lives there, not in main.)
 - [ ] **(Bucket B — D2.2 PDF, optional)** Once a sandbox booking is completed on Render: open a completed booking → "View receipt" → "Download PDF" → confirm the PDF opens in iOS Safari with all fields. (Code is done; this is the only unverified piece.)
 - [ ] **(D4 tester kit is drafted)** `Roadmap/dominoes/D4-tester-brief.md` + `D4-bug-capture-sheet.md` are ready — fill the `{{EXPO_LINK}}` placeholder when you line up a tester.
 
