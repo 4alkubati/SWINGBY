@@ -23,6 +23,7 @@ import * as toast from '../../services/toast';
 import * as haptics from '../../services/haptics';
 import BookingStatusTimeline from '../../components/BookingStatusTimeline';
 import LiveStatusTimeline from '../../components/LiveStatusTimeline';
+import ConfirmDateCard from '../../components/ConfirmDateCard';
 import BookingPhotos from '../../components/BookingPhotos';
 import { RatingStarsDisplay } from '../../components/RatingStars';
 import { SkeletonBox } from '../../components/Skeleton';
@@ -403,6 +404,10 @@ export default function BookingDetailsScreen({ route, navigation }) {
         }}
         showsVerticalScrollIndicator={false}
       >
+        {/* Confirm-date handshake — pinned when the business has proposed dates
+            and the client hasn't confirmed one yet (UBER-3) */}
+        <ConfirmDateCard bookingId={bookingId} booking={booking} onConfirmed={fetchBooking} />
+
         {/* Status timeline card */}
         <Surface
           elevation="subtle"

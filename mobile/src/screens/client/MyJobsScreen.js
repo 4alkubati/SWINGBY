@@ -4,6 +4,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useState, useEffect, useCallback } from 'react';
+import { Feather } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../services/api';
 import { colors, spacing } from '../../theme/tokens';
@@ -55,7 +56,7 @@ function QuoteRow({ interest, onMessage }) {
   );
 }
 
-function BookingRow({ booking, onPress, onReview, userRole }) {
+function BookingRow({ booking, onPress, onReview, onDetails, userRole }) {
   const status = STATUS_CONFIG[booking.status] || STATUS_CONFIG.confirmed;
   const otherParty = userRole === 'client'
     ? (booking.businesses?.business_name || booking.business_name || 'Business')
@@ -79,11 +80,28 @@ function BookingRow({ booking, onPress, onReview, userRole }) {
         <Text style={styles.rowSub}>{booking.service_posts?.title || booking.service_category || 'Service'}</Text>
         {date && <Text style={styles.rowDate}>{date}</Text>}
       </View>
-      {booking.status === 'completed' && onReview && (
-        <TouchableOpacity style={styles.actionBtn} onPress={onReview} activeOpacity={0.8}>
-          <Text style={styles.actionBtnText}>Review</Text>
-        </TouchableOpacity>
-      )}
+      <View style={styles.rowActions}>
+        {booking.status === 'completed' && onReview && (
+          <TouchableOpacity style={styles.actionBtn} onPress={onReview} activeOpacity={0.8}>
+            <Text style={styles.actionBtnText}>Review</Text>
+          </TouchableOpacity>
+        )}
+        {/* UBER-2(a) — Pay with card / live timeline live on BookingDetails,
+            which was previously unreachable from My Jobs. This chevron opens
+            it without disturbing the row's existing tap → ActiveBooking flow. */}
+        {onDetails && (
+          <TouchableOpacity
+            style={styles.detailsBtn}
+            onPress={onDetails}
+            activeOpacity={0.8}
+            accessibilityRole="button"
+            accessibilityLabel="View booking details"
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Feather name="chevron-right" size={18} color={colors.textSecondary} />
+          </TouchableOpacity>
+        )}
+      </View>
     </TouchableOpacity>
   );
 }
@@ -326,6 +344,7 @@ export default function MyJobsScreen({ navigation }) {
             booking={item}
             userRole={user?.role}
             onPress={() => handleBookingPress(item)}
+            onDetails={isClient ? () => navigation.navigate('BookingDetails', { bookingId: item.id }) : undefined}
             onReview={isClient ? () =>
               navigation.navigate('Review', {
                 bookingId: item.id,
@@ -375,6 +394,11 @@ const styles = StyleSheet.create({
   statusText: { fontSize: 10, fontFamily: 'Inter_600SemiBold' },
   rowSub: { fontSize: 13, fontFamily: 'Inter_400Regular', color: colors.textSecondary },
   rowDate: { fontSize: 12, fontFamily: 'Inter_400Regular', color: colors.textSecondary },
+  rowActions: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  detailsBtn: {
+    width: 32, height: 32, borderRadius: 16,
+    alignItems: 'center', justifyContent: 'center',
+  },
   priceInline: {
     color: colors.success,
     fontFamily: 'SpaceGrotesk_700Bold',

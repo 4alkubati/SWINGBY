@@ -38,6 +38,29 @@ def normalize_category(v: str) -> str:
     return _CANONICAL_BY_LOWER.get(stripped.lower(), stripped)
 
 
+def resolve_create_category(v: str) -> str:
+    """
+    Category resolution for POST /service-posts/ (create) only.
+
+    Snaps to a canonical trade label on match (via normalize_category);
+    anything unmatched — including off-taxonomy values like "Reiki" or an
+    explicit case-variant of "general" — snaps to GENERAL ("General")
+    instead of being stored verbatim. This is the Amr decision from the
+    2026-07-16 QA audit: keep the trades taxonomy tight, catch everything
+    else in one searchable bucket.
+
+    Deliberately NOT folded into normalize_category() itself: that function
+    also backs the `?category=` search/auto-filter path (list_open_posts /
+    allowed_categories_for), which must keep accepting arbitrary search
+    strings unchanged — snapping there would silently rewrite what a caller
+    searched for. Only the create path snaps.
+    """
+    norm = normalize_category(v)
+    if norm in CANONICAL_CATEGORIES:
+        return norm
+    return GENERAL
+
+
 # Conservative, symmetric relatedness pairs. Listed once per pair; the loop
 # below mirrors each pair into both directions so RELATED is guaranteed
 # symmetric by construction (not by hand-maintained duplication).

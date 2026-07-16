@@ -83,7 +83,7 @@ All RLS enabled. Schema details in `docs/swingby_database_schema.md`.
 - **One USERS table, four roles** — role checked per route
 - **INTERESTS as spam shield** — no direct contact before client accepts
 - **post_id nullable on BOOKINGS** — supports both post-and-match AND direct geo-browse flows
-- **MESSAGES locked to confirmed BOOKINGS** — no pre-booking chat
+- **MESSAGES span the quote → booking arc** — pre-booking chat is live on quote/interest threads (unified `/messages/threads`, smoke-covered), then continues on the booking once accepted. Not gated behind a confirmed booking.
 - **LICENSE_STATUS manual** — pending → manual verify by SwingBy team (auto post-MVP)
 - **service_role key backend-only** — never direct Supabase from frontend
 - **Haversine geo-browse** — bounding box pre-filter in Supabase + exact distance in Python (no PostGIS needed for MVP)

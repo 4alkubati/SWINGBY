@@ -21,8 +21,17 @@ import Chip from '../../components/Chip';
 import Inline from '../../components/Inline';
 
 import { api, uploadFile } from '../../services/api';
+import i18n from '../../i18n';
 import { colors, spacing, radius } from '../../theme/tokens';
 import { CATEGORY_LABELS as CATEGORIES } from '../../constants/categories';
+
+// UBER-6 — off-taxonomy jobs (e.g. massage) file under "General" instead of
+// getting shoehorned into a trades category. This is deliberately NOT added
+// to constants/categories.js — that file is the canonical 8-category list
+// shared with CategoryScroll and BusinessSetupScreen (browse filters + the
+// business-side category a business can register under). "General" is a
+// client-post-only escape hatch, so it lives here, local to the picker.
+const OTHER_CATEGORY = 'General';
 
 const GOOGLE_PLACES_KEY = process.env.EXPO_PUBLIC_GOOGLE_PLACES_KEY || '';
 
@@ -224,6 +233,15 @@ function StepCategory({ category, setCategory }) {
               onPress={() => setCategory(cat === category ? '' : cat)}
             />
           ))}
+          {/* UBER-6 — explicit escape hatch for off-taxonomy jobs. Submits
+              category "General" so they stay visible/findable to all
+              businesses instead of getting shoehorned into a trade. */}
+          <Chip
+            key={OTHER_CATEGORY}
+            label={i18n.t('postJob.categoryOther')}
+            selected={category === OTHER_CATEGORY}
+            onPress={() => setCategory(category === OTHER_CATEGORY ? '' : OTHER_CATEGORY)}
+          />
         </Inline>
       </Stack>
     </StepPanel>

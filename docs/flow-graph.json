@@ -701,35 +701,49 @@
       "from_screen": "ActiveBookingScreen",
       "to_route": "Home",
       "method": "navigate",
-      "line": 338
+      "line": 339
     },
     {
       "from_file": "mobile/src/screens/client/ActiveBookingScreen.js",
       "from_screen": "ActiveBookingScreen",
       "to_route": "BusinessProfile",
       "method": "navigate",
-      "line": 395
+      "line": 396
     },
     {
       "from_file": "mobile/src/screens/client/ActiveBookingScreen.js",
       "from_screen": "ActiveBookingScreen",
       "to_route": "Chat",
       "method": "navigate",
-      "line": 436
+      "line": 437
+    },
+    {
+      "from_file": "mobile/src/screens/client/ActiveBookingScreen.js",
+      "from_screen": "ActiveBookingScreen",
+      "to_route": "BookingDetails",
+      "method": "navigate",
+      "line": 503
     },
     {
       "from_file": "mobile/src/screens/client/ActiveBookingScreen.js",
       "from_screen": "ActiveBookingScreen",
       "to_route": "Chat",
       "method": "navigate",
-      "line": 500
+      "line": 515
     },
     {
       "from_file": "mobile/src/screens/client/ActiveBookingScreen.js",
       "from_screen": "ActiveBookingScreen",
       "to_route": "CancellationFlow",
       "method": "navigate",
-      "line": 527
+      "line": 542
+    },
+    {
+      "from_file": "mobile/src/screens/client/HomeScreen.js",
+      "from_screen": "HomeScreen",
+      "to_route": "PostJob",
+      "method": "navigate",
+      "line": 22
     },
     {
       "from_file": "mobile/src/screens/client/HomeScreen.js",
@@ -743,91 +757,98 @@
       "from_screen": "HomeScreen",
       "to_route": "Search",
       "method": "navigate",
-      "line": 230
+      "line": 227
     },
     {
       "from_file": "mobile/src/screens/client/HomeScreen.js",
       "from_screen": "HomeScreen",
       "to_route": "Search",
       "method": "navigate",
-      "line": 243
+      "line": 240
     },
     {
       "from_file": "mobile/src/screens/client/HomeScreen.js",
       "from_screen": "HomeScreen",
       "to_route": "NearbyMap",
       "method": "navigate",
-      "line": 257
+      "line": 254
     },
     {
       "from_file": "mobile/src/screens/client/HomeScreen.js",
       "from_screen": "HomeScreen",
       "to_route": "NearbyMap",
       "method": "navigate",
-      "line": 266
+      "line": 263
     },
     {
       "from_file": "mobile/src/screens/client/HomeScreen.js",
       "from_screen": "HomeScreen",
       "to_route": "BusinessProfile",
       "method": "navigate",
-      "line": 308
+      "line": 305
     },
     {
       "from_file": "mobile/src/screens/client/HomeScreen.js",
       "from_screen": "HomeScreen",
       "to_route": "NearbyMap",
       "method": "navigate",
-      "line": 319
+      "line": 316
     },
     {
       "from_file": "mobile/src/screens/client/HomeScreen.js",
       "from_screen": "HomeScreen",
       "to_route": "BusinessProfile",
       "method": "navigate",
-      "line": 353
+      "line": 350
     },
     {
       "from_file": "mobile/src/screens/client/MyJobsScreen.js",
       "from_screen": "MyJobsScreen",
       "to_route": "ActiveBooking",
       "method": "navigate",
-      "line": 179
+      "line": 197
     },
     {
       "from_file": "mobile/src/screens/client/MyJobsScreen.js",
       "from_screen": "MyJobsScreen",
       "to_route": "JobManagement",
       "method": "navigate",
-      "line": 181
+      "line": 199
     },
     {
       "from_file": "mobile/src/screens/client/MyJobsScreen.js",
       "from_screen": "MyJobsScreen",
       "to_route": "QuoteComparison",
       "method": "navigate",
-      "line": 233
+      "line": 251
     },
     {
       "from_file": "mobile/src/screens/client/MyJobsScreen.js",
       "from_screen": "MyJobsScreen",
       "to_route": "ActiveBooking",
       "method": "navigate",
-      "line": 240
+      "line": 258
     },
     {
       "from_file": "mobile/src/screens/client/MyJobsScreen.js",
       "from_screen": "MyJobsScreen",
       "to_route": "Chat",
       "method": "navigate",
-      "line": 298
+      "line": 316
+    },
+    {
+      "from_file": "mobile/src/screens/client/MyJobsScreen.js",
+      "from_screen": "MyJobsScreen",
+      "to_route": "BookingDetails",
+      "method": "navigate",
+      "line": 347
     },
     {
       "from_file": "mobile/src/screens/client/MyJobsScreen.js",
       "from_screen": "MyJobsScreen",
       "to_route": "Review",
       "method": "navigate",
-      "line": 330
+      "line": 349
     },
     {
       "from_file": "mobile/src/screens/client/SearchScreen.js",
@@ -883,42 +904,42 @@
       "from_screen": "PostJobScreen",
       "to_route": "QuoteComparison",
       "method": "navigate",
-      "line": 593
+      "line": 611
     },
     {
       "from_file": "mobile/src/screens/client/BookingDetailsScreen.js",
       "from_screen": "BookingDetailsScreen",
       "to_route": "MessageThread",
       "method": "navigate",
-      "line": 285
+      "line": 286
     },
     {
       "from_file": "mobile/src/screens/client/BookingDetailsScreen.js",
       "from_screen": "BookingDetailsScreen",
       "to_route": "CancellationFlow",
       "method": "navigate",
-      "line": 289
+      "line": 290
     },
     {
       "from_file": "mobile/src/screens/client/BookingDetailsScreen.js",
       "from_screen": "BookingDetailsScreen",
       "to_route": "BusinessProfile",
       "method": "navigate",
-      "line": 477
+      "line": 482
     },
     {
       "from_file": "mobile/src/screens/client/BookingDetailsScreen.js",
       "from_screen": "BookingDetailsScreen",
       "to_route": "Invoice",
       "method": "navigate",
-      "line": 619
+      "line": 624
     },
     {
       "from_file": "mobile/src/screens/client/BookingDetailsScreen.js",
       "from_screen": "BookingDetailsScreen",
       "to_route": "DisputeFlow",
       "method": "navigate",
-      "line": 644
+      "line": 649
     },
     {
       "from_file": "mobile/src/screens/messages/MessagesScreen.js",
@@ -1012,13 +1033,13 @@
       "method": "POST",
       "path": "/bookings/{booking_id}/events",
       "file": "backend/app/api/booking_events.py",
-      "line": 145
+      "line": 146
     },
     {
       "method": "GET",
       "path": "/bookings/{booking_id}/events",
       "file": "backend/app/api/booking_events.py",
-      "line": 190
+      "line": 191
     },
     {
       "method": "POST",
@@ -1060,13 +1081,13 @@
       "method": "PATCH",
       "path": "/bookings/{booking_id}/complete",
       "file": "backend/app/api/bookings.py",
-      "line": 375
+      "line": 394
     },
     {
       "method": "PATCH",
       "path": "/bookings/{booking_id}/cancel",
       "file": "backend/app/api/bookings.py",
-      "line": 508
+      "line": 527
     },
     {
       "method": "POST",
@@ -1144,31 +1165,31 @@
       "method": "GET",
       "path": "/employees/",
       "file": "backend/app/api/employees.py",
-      "line": 112
+      "line": 119
     },
     {
       "method": "PATCH",
       "path": "/employees/{employee_id}/deactivate",
       "file": "backend/app/api/employees.py",
-      "line": 135
+      "line": 142
     },
     {
       "method": "PATCH",
       "path": "/employees/{employee_id}/reactivate",
       "file": "backend/app/api/employees.py",
-      "line": 171
+      "line": 178
     },
     {
       "method": "GET",
       "path": "/employees/business/{business_id}",
       "file": "backend/app/api/employees.py",
-      "line": 207
+      "line": 214
     },
     {
       "method": "GET",
       "path": "/employees/{employee_id}/profile",
       "file": "backend/app/api/employees.py",
-      "line": 228
+      "line": 235
     },
     {
       "method": "POST",
@@ -1614,7 +1635,7 @@
       "from_file": "mobile/src/screens/client/ActiveBookingScreen.js",
       "method": "GET",
       "path": "/bookings/${bookingId}",
-      "line": 272
+      "line": 273
     },
     {
       "from_file": "mobile/src/screens/client/HomeScreen.js",
@@ -1626,19 +1647,19 @@
       "from_file": "mobile/src/screens/client/MyJobsScreen.js",
       "method": "GET",
       "path": "/bookings/",
-      "line": 152
+      "line": 170
     },
     {
       "from_file": "mobile/src/screens/client/MyJobsScreen.js",
       "method": "GET",
       "path": "/service-posts/my",
-      "line": 154
+      "line": 172
     },
     {
       "from_file": "mobile/src/screens/client/MyJobsScreen.js",
       "method": "GET",
       "path": "/interests/mine",
-      "line": 156
+      "line": 174
     },
     {
       "from_file": "mobile/src/screens/client/SearchScreen.js",
@@ -1668,67 +1689,67 @@
       "from_file": "mobile/src/screens/client/PostJobScreen.js",
       "method": "POST",
       "path": "/service-posts/",
-      "line": 578
+      "line": 596
     },
     {
       "from_file": "mobile/src/screens/client/BookingDetailsScreen.js",
       "method": "GET",
       "path": "/bookings/${bookingId}",
-      "line": 227
+      "line": 228
     },
     {
       "from_file": "mobile/src/screens/client/BookingDetailsScreen.js",
       "method": "GET",
       "path": "/payments/${bookingId}",
-      "line": 228
+      "line": 229
     },
     {
       "from_file": "mobile/src/screens/client/BookingDetailsScreen.js",
       "method": "POST",
       "path": "/bookings/${bookingId}/mark-paid-offplatform",
-      "line": 303
+      "line": 304
     },
     {
       "from_file": "mobile/src/screens/client/BookingDetailsScreen.js",
       "method": "POST",
       "path": "/payments/stripe/checkout/${bookingId}",
-      "line": 318
+      "line": 319
     },
     {
       "from_file": "mobile/src/screens/messages/MessageThreadScreen.js",
       "method": "GET",
       "path": "/bookings/${bookingId}",
-      "line": 125
+      "line": 126
     },
     {
       "from_file": "mobile/src/screens/messages/MessageThreadScreen.js",
       "method": "GET",
       "path": "/messages/${bookingId}",
-      "line": 136
+      "line": 139
     },
     {
       "from_file": "mobile/src/screens/messages/MessageThreadScreen.js",
       "method": "POST",
       "path": "/messages/",
-      "line": 192
+      "line": 195
     },
     {
       "from_file": "mobile/src/screens/messages/ChatScreen.js",
       "method": "GET",
       "path": "/messages/interest/${interestId}",
-      "line": 274
+      "line": 275
     },
     {
       "from_file": "mobile/src/screens/messages/ChatScreen.js",
       "method": "GET",
       "path": "/messages/${bookingId}",
-      "line": 275
+      "line": 276
     },
     {
       "from_file": "mobile/src/screens/messages/ChatScreen.js",
       "method": "POST",
       "path": "/messages/",
-      "line": 304
+      "line": 305
     },
     {
       "from_file": "mobile/src/screens/messages/MessagesScreen.js",
@@ -1771,6 +1792,18 @@
       "method": "POST",
       "path": "/bookings/${bookingId}/events",
       "line": 74
+    },
+    {
+      "from_file": "mobile/src/components/ConfirmDateCard.js",
+      "method": "GET",
+      "path": "/bookings/${bookingId}",
+      "line": 55
+    },
+    {
+      "from_file": "mobile/src/components/ConfirmDateCard.js",
+      "method": "PATCH",
+      "path": "/bookings/${bookingId}/confirm-date",
+      "line": 73
     },
     {
       "from_file": "mobile/src/components/BookingPhotos.js",

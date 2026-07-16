@@ -11,14 +11,15 @@ import { Feather } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 
 import { useAuth } from '../../context/AuthContext';
-import ModeSwitch from '../../components/ModeSwitch';
 import { CategoryGrid } from '../../components/CategoryScroll';
 import FeaturedCard from '../../components/FeaturedCard';
 import NearbyCard from '../../components/NearbyCard';
 import MapPreviewCard from '../../components/MapPreviewCard';
 import HeaderGlow from '../../components/HeaderGlow';
 import SectionHeader from '../../components/SectionHeader';
-import PostJobScreen from './PostJobScreen';
+// UBER-5: Home is browse-first now — PostJobScreen is no longer hosted here
+// behind a toggle. It stays reachable from the bottom nav's "Post" tab
+// (BottomNav → navigation.navigate('PostJob'), registered in ClientNavigator).
 
 import { api } from '../../services/api';
 import { getUserLocation } from '../../services/location';
@@ -85,7 +86,6 @@ function SkeletonFeaturedCard() {
 }
 
 export default function HomeScreen({ navigation }) {
-  const [mode, setMode] = useState('browse');
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
 
@@ -191,10 +191,7 @@ export default function HomeScreen({ navigation }) {
         </TouchableOpacity>
       </View>
 
-      <ModeSwitch mode={mode} onModeChange={setMode} />
-
-      {mode === 'browse' ? (
-        <ScrollView
+      <ScrollView
           style={styles.scroll}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
@@ -357,9 +354,6 @@ export default function HomeScreen({ navigation }) {
             </Stack>
           )}
         </ScrollView>
-      ) : (
-        <PostJobScreen />
-      )}
     </View>
   );
 }

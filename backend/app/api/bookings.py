@@ -296,6 +296,25 @@ def confirm_date(
         )
         updated_booking = res.data[0]
 
+        # Record the handshake on the live timeline — best-effort, must not
+        # break the request if it fails (mirrors the notification try/except
+        # below).
+        try:
+            supabase.table("booking_events").insert(
+                {
+                    "booking_id": booking_id,
+                    "actor_id": current_user["id"],
+                    "event_type": "date_confirmed",
+                    "note": f"Confirmed date: {data.confirmed_date}",
+                }
+            ).execute()
+        except Exception:
+            logger.warning(
+                "Could not record date_confirmed booking_event for %s",
+                booking_id,
+                exc_info=True,
+            )
+
         # Notify both client and business owner — best-effort
         try:
             full_booking = (

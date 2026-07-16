@@ -429,3 +429,48 @@ NEEDS KIRA:
   3. D3 walkthrough + D4 tester (Jul 15) — the calendar keys off these now.
 NEXT: D2.2 invoices polish (code-runnable). D2.0 gate CLEARED — D3/D4 are Kira's next moves per the re-dated calendar.
 ---
+
+---
+DATE: 2026-07-15 (second block — laptop rescue)
+PROJECT: swingby
+PHASE: Laptop work rescue + merge + verify
+DISPATCHED: orchestrator inline
+SHIPPED:
+  - Discovered the laptop repo (OneDrive) held a WEEK of unpushed Jul 9–12 work; GitHub push from laptop failed (auth, silent exit 128) → rescued via git bundle over LAN scp, branch `laptop-jul10-polish-sweep` pushed from server, merged as `d350295`.
+  - Recovered: full D2.0 walkthrough triage (4 bugs, Roadmap/July/2026-07-09.md), Jul 11 two-track plan + backend fixes (UUID guard on /messages routes, Stripe prod_/price_ fail-fast, Sentry RemoteProtocolError filter), Jul 10–12 polish sweep (~40 mobile screens, ledger in memory/POLISH-SWEEP-2026-07-10.md).
+  - Merge conflicts resolved: Jul 9/10/11 day files keep recovered content with corrected slip banners; design/handoff-jet-pulse/ rename kept over laptop deletion.
+  - Gates: backend pytest 23 pass / 3 skip (Docker python:3.14-slim, dummy env); 113 mobile files parse clean (@babel/parser); pushed → Render auto-deployed; UUID-guard probe 404 ✅; tools/e2e_smoke.py vs Render: ALL 22 PASS incl. quote-chat→booking-thread migration.
+NEEDS KIRA:
+  1. iPhone retest of walkthrough bugs 1 (quote→wrong category) + 2 (match→Messages thread; API level now passes).
+  2. Laptop git push auth is broken (silent exit 128) — fix GitHub sign-in on laptop, and move repo out of OneDrive (caused index.lock + likely the auth weirdness).
+NEXT: Fix walkthrough bug 1 (category mapping on quote/post create) — top open 🔴. Then D2.2 invoices polish. D3/D4 remain Kira's gate.
+---
+
+---
+DATE: 2026-07-15 (third block — live test + Phase CAT plan + overnight launch)
+PROJECT: swingby
+PHASE: On-device retest → root cause → approved plan → overnight dispatch
+DISPATCHED: 2× Explore + 1× Plan subagents (planning); overnight loop launched (Opus orchestrator → backend/mobile/qa agents)
+SHIPPED:
+  - Kira live-tested (Expo Go via scp'd screenshots): bug #1 CONFIRMED live — "Deep massage" post offered to lawncare business. Root cause is NOT a relabel: (a) GET /service-posts/ has zero category matching (every business sees every post), (b) three divergent category lists (PostJobScreen 7 labels / BusinessSetup 8 / CategoryScroll lowercase ids incl broken 'lawn') make browse filters silently return zero.
+  - Also confirmed: GestureHandlerRootView missing from App.js (GestureDetector used in BottomSheet/Modal/SwipeableRow), 5 files import deprecated SafeAreaView from 'react-native'. VirtualizedList warning: NO offender in current tree (stale laptop bundle — recheck after pull).
+  - Kira's product decisions: feed = own category + "close" categories; taxonomy unification = my call. Approved plan = memory/PLAN.md **Phase CAT** + 🌙 Tonight queue (rewritten with agent routes + DONE-RULEs).
+  - run-overnight.sh: orchestrator pinned to Opus (claude-opus-4-8, OVERNIGHT_MODEL override), KIRA.md added to startup order, explicit delegate-don't-code directive.
+NEEDS KIRA:
+  1. Morning: approve push when READY-TO-PUSH (then Render smoke + on-device verify).
+  2. Send updated KIRA.md (scp to AGENTS/claude/KIRA.md — existing file already wired first in orchestrator startup).
+  3. Laptop: fix GitHub push auth; move repo out of OneDrive.
+NEXT: Morning session = review overnight output → push → prod smoke → Kira on-device verify. Then D2.2 invoices if not done overnight; D3/D4 remain the calendar gate.
+---
+
+---
+DATE: 2026-07-15 (fourth block — Phase CAT overnight loop executed)
+PROJECT: swingby
+PHASE: Phase CAT — category matching + taxonomy unification + RN fixes (overnight, Opus orchestrator)
+DISPATCHED: backend-agent (CAT-1/2, Sonnet), mobile-agent (CAT-3/4, Sonnet), qa-agent (CAT-5 + CAT-6, Haiku), marketing-agent (CAT-8, Sonnet). Backend + mobile + CAT-5 ran in parallel; CAT-6 after; CAT-8 in parallel.
+SHIPPED (working tree, later committed 0ef7cd7): NEW app/categories.py (CANONICAL_CATEGORIES, normalize_category, symmetric RELATED, allowed_categories_for); service_posts.py normalize-on-create + ilike search + business-owner auto-filter (degrades safely); businesses.py normalize on create/update; conftest.py call recording; NEW tests/test_service_posts.py (9). Mobile: NEW src/constants/categories.js (8 canonical, landscaping replaces 'lawn', +Handyman); CategoryScroll re-export; PostJob + BusinessSetup consume canonical; App.js GestureHandlerRootView wrap; SafeAreaView → safe-area-context in 5 files. e2e_smoke.py category assertion + feed-visibility check. D4 tester kit drafts.
+GATES: docker pytest 35/3, black clean, py_compile clean; babel 115/0; flow graph 0 broken. CAT-7 (D2.2 invoices) AUDITED already code-complete.
+NEEDS KIRA: approve+push (done 0ef7cd7); on-device lawncare-feed + gesture verify; D3/D4.
+LEARNING-LOOP: audit before you build (CAT-7 was already done — a 4-grep audit saved a rebuild); a transient sub-agent crash is recoverable via SendMessage from its transcript without restarting the task.
+NEXT: Morning = Kira reviews READY-TO-PUSH → push → prod smoke → on-device verify. D3/D4 remain the calendar gate.
+---

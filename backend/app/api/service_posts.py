@@ -4,7 +4,7 @@ import re
 from fastapi import APIRouter, HTTPException, Depends, Query
 from pydantic import BaseModel, Field, field_validator
 from typing import Optional, Literal, List
-from app.categories import allowed_categories_for, normalize_category
+from app.categories import allowed_categories_for, resolve_create_category
 from app.deps import get_current_user
 from app.supabase_client import supabase
 
@@ -73,7 +73,7 @@ def create_service_post(
                     "client_id": current_user["id"],
                     "title": data.title,
                     "description": data.description,
-                    "category": normalize_category(data.category),
+                    "category": resolve_create_category(data.category),
                     "budget": data.budget,
                     "lat": data.lat,
                     "lng": data.lng,

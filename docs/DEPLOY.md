@@ -57,7 +57,7 @@ Click **Create Web Service**. Render runs the Docker build, then `uvicorn`.
 First build: ~3–5 min.
 
 ### Step 4 — Verify liveness
-When status reads **Live**, Render shows the URL (e.g. `https://swingby-api.onrender.com`).
+When status reads **Live**, Render shows the URL (the live service is `https://swingbyy-api.onrender.com` — note the double-y; the single-y `swingby-api.onrender.com` is not a live server).
 
 Open `/healthz` in a browser — should return `{"status":"ok"}` instantly.
 Open `/health` — returns `{"status":"ok","database":"connected"}` once DB env vars are correct.
@@ -65,7 +65,7 @@ Open `/health` — returns `{"status":"ok","database":"connected"}` once DB env 
 ### Step 5 — Wire mobile + web to the live URL
 ```
 # mobile/.env
-EXPO_PUBLIC_API_URL=https://swingby-api.onrender.com
+EXPO_PUBLIC_API_URL=https://swingbyy-api.onrender.com
 
 # web/pre-launch/.env.production — leave existing VITE_API_URL=https://api.swingbyy.com
 # (api.swingbyy.com is the Worker, not Render — keep them separate)

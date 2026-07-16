@@ -18,7 +18,12 @@ from unittest.mock import patch
 
 import pytest
 
-from app.categories import CANONICAL_CATEGORIES, RELATED, normalize_category
+from app.categories import (
+    CANONICAL_CATEGORIES,
+    RELATED,
+    normalize_category,
+    resolve_create_category,
+)
 from app.deps import get_current_user
 from app.main import app
 from tests.conftest import SupabaseTableStub
@@ -226,6 +231,44 @@ class TestCreateServicePostNormalizesCategory:
             assert response.status_code in [200, 201]
             assert posts_stub.inserted["category"] == "Cleaning"
 
+    def test_create_post_unknown_category_snaps_to_general(
+        self, test_client, as_client
+    ):
+        """
+        UBER-6: an off-taxonomy category (e.g. "Reiki") must be stored as
+        "General" on create, not passed through verbatim — see the Amr
+        decision in docs/qa-audit-2026-07-16-uber-flow.md. Search
+        (?category=) is unaffected — see TestExplicitCategoryParamPrecedence.
+        """
+        posts_stub = SupabaseTableStub(
+            insert_data=[
+                {
+                    "id": "post-2",
+                    "client_id": "client-1",
+                    "title": "Need a Reiki session",
+                    "category": "General",
+                    "budget": 80,
+                    "status": "open",
+                }
+            ]
+        )
+
+        with patch("app.api.service_posts.supabase") as mock_supabase:
+            mock_supabase.table.return_value = posts_stub
+
+            response = test_client.post(
+                "/service-posts/",
+                json={
+                    "title": "Need a Reiki session",
+                    "category": "Reiki",
+                    "budget": 80,
+                },
+                headers={"Authorization": "Bearer test-token"},
+            )
+
+            assert response.status_code in [200, 201]
+            assert posts_stub.inserted["category"] == "General"
+
 
 class TestCategoriesUnit:
     """Unit tests on app.categories — no HTTP involved."""
@@ -241,3 +284,13 @@ class TestCategoriesUnit:
         assert normalize_category(" CLEANING ") == "Cleaning"
         assert normalize_category("Cleaning") == "Cleaning"
         assert normalize_category("Massage") == "Massage"
+
+    def test_resolve_create_category_snaps_unknown_and_general_variants(self):
+        # Canonical match still resolves normally.
+        assert resolve_create_category("cleaning") == "Cleaning"
+        # Off-taxonomy values snap to General instead of passing through.
+        assert resolve_create_category("Reiki") == "General"
+        assert resolve_create_category("Massage") == "General"
+        # Explicit General, any casing, snaps cleanly too.
+        assert resolve_create_category("general") == "General"
+        assert resolve_create_category("GENERAL") == "General"

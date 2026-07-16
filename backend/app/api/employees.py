@@ -75,7 +75,14 @@ def create_employee(
         )
         emp_user_id = auth_res.user.id
 
-        supabase.table("users").insert(
+        # A DB trigger on auth.users auto-inserts a bare public.users row
+        # (role='client', empty names) the moment create_user() runs above —
+        # so an INSERT here collides with a 409. upsert (matches PK by
+        # default) overwrites that trigger row with the real employee
+        # profile and succeeds whether or not the trigger already fired.
+        # Same pattern already used in app/api/auth.py signup for the same
+        # trigger.
+        supabase.table("users").upsert(
             {
                 "id": emp_user_id,
                 "first_name": data.first_name,

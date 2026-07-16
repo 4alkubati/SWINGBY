@@ -27,6 +27,7 @@ import { api } from '../../services/api';
 import * as toast from '../../services/toast';
 import * as haptics from '../../services/haptics';
 import EmptyState from '../../components/EmptyState';
+import ConfirmDateCard from '../../components/ConfirmDateCard';
 import { colors } from '../../theme/tokens';
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
@@ -120,12 +121,14 @@ export default function MessageThreadScreen({ route, navigation }) {
   const typingTimer = useRef(null);
 
   // ── fetch booking meta ──
-  useEffect(() => {
+  const loadBookingMeta = useCallback(() => {
     if (!bookingId) return;
     api.get(`/bookings/${bookingId}`)
       .then((d) => setBookingMeta(d))
       .catch(() => { /* non-fatal */ });
   }, [bookingId]);
+
+  useEffect(() => { loadBookingMeta(); }, [loadBookingMeta]);
 
   // ── initial message load ──
   const loadMessages = useCallback(async (before = null) => {
@@ -262,6 +265,15 @@ export default function MessageThreadScreen({ route, navigation }) {
 
         <View style={{ width: 36 }} />
       </View>
+
+      {/* Pinned confirm-date handshake card (UBER-3) — client only, renders
+          nothing until the business has proposed dates. Waits for bookingMeta
+          (already fetched above) instead of letting the card double-fetch. */}
+      {!!bookingId && !!bookingMeta && (
+        <View style={{ paddingHorizontal: 16, paddingTop: 12 }}>
+          <ConfirmDateCard bookingId={bookingId} booking={bookingMeta} onConfirmed={loadBookingMeta} />
+        </View>
+      )}
 
       <KeyboardAvoidingView
         style={styles.flex}

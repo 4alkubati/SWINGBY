@@ -22,6 +22,8 @@ cd backend
 pip install -r requirements.txt
 ```
 
+> **Note (this desktop box):** there is no `backend/.env` here, so the backend won't boot locally (it hard-fails without `SUPABASE_SERVICE_KEY`). To exercise the API from this machine, hit the live Render service `https://swingbyy-api.onrender.com` with the test accounts in `CLAUDE.md` — but the login endpoint is rate-limited to **5 requests/min/IP**, so space out auth calls.
+
 Create `backend/.env` from the template below (ask a teammate for the real values):
 
 ```

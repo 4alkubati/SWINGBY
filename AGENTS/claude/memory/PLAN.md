@@ -8,7 +8,9 @@
 
 ---
 
-## 🌙 Tonight — overnight queue (2026-07-16 → 17) — Phase UBER
+## 🌙 Tonight — overnight queue (2026-07-16 → 17) — Phase UBER ✅ COMPLETE (executed overnight 398502, re-verified + closed 2026-07-17) — READY-TO-PUSH
+
+> **STATUS: all 8 tasks done in the working tree, local gates green, NO push (Bucket C = Kira's morning).** Executed overnight (Opus orchestrator 398502): UBER-1 employee upsert ✅ · UBER-2 BookingDetails reachable ✅ · UBER-3 confirm-date handshake card ✅ · UBER-4 date_confirmed event ✅ · UBER-5 browse-first Home ✅ · UBER-6 General catch-all ✅ · UBER-7 docs ✅ · UBER-8 QA regression ✅. Overnight gates: pytest 36/3 · babel 115/0 · flow graph 0 broken. Re-verified 2026-07-17 (flow graph 0 broken re-run · py_compile clean on all 8 changed backend files · i18n 6/6 EN/FR/AR · ConfirmDateCard in 3 hosts · first confirm-date PATCH caller); pytest+babel not re-runnable on this box (no docker/pip/node_modules — audit #9). Detail in STATUS.md + SESSION_LOG. Morning: Kira reviews READY-TO-PUSH → push → Render smoke → Android on-device verify.
 
 > **Source:** full Uber-flow audit `docs/qa-audit-2026-07-16-uber-flow.md` (prod-verified 2026-07-16; extended flow test passes once an employee exists). Kira approved this queue + order in the evening session. Work in order; every task Bucket A unless noted. Never push, never deploy, never send (push is Kira's morning — he now has an Android phone and will on-device test right after pushing). Booking-loop code changes: local gates tonight (pytest + babel + flow graph); `tools/e2e_smoke.py` vs Render is the MORNING gate after Kira pushes (same pattern as Phase CAT).
 

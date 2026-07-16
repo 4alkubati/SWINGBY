@@ -90,6 +90,17 @@ const translations = {
     'faq.q4': 'What if a job goes wrong?',
     'faq.q5': 'How do I become a business?',
     'faq.q6': 'How do I delete my account?',
+
+    // Booking — confirm-date handshake (chat thread + booking details)
+    'booking.proposedDatesHeading': 'Business proposed these times',
+    'booking.confirmedFor': 'Confirmed for %{date}',
+    'booking.dateConfirmedToast': 'Date confirmed',
+    'booking.confirmDateErrorToast': 'Could not confirm date',
+    'booking.viewFullDetails': 'View full details',
+    'booking.detailsAction': 'Details',
+
+    // Post a job — category picker
+    'postJob.categoryOther': 'Other / General',
   },
 
   'fr-CA': {
@@ -175,6 +186,17 @@ const translations = {
     'faq.q4': "Que se passe-t-il si un travail tourne mal?",
     'faq.q5': 'Comment devenir une entreprise?',
     'faq.q6': 'Comment supprimer mon compte?',
+
+    // Booking — confirm-date handshake (chat thread + booking details)
+    'booking.proposedDatesHeading': "L'entreprise a proposé ces horaires",
+    'booking.confirmedFor': 'Confirmé pour le %{date}',
+    'booking.dateConfirmedToast': 'Date confirmée',
+    'booking.confirmDateErrorToast': 'Impossible de confirmer la date',
+    'booking.viewFullDetails': 'Voir tous les détails',
+    'booking.detailsAction': 'Détails',
+
+    // Post a job — category picker
+    'postJob.categoryOther': 'Autre / Général',
   },
 
   // ── Arabic (RTL) — skeleton keys, translator TODO ──────────────────────
@@ -261,6 +283,17 @@ const translations = {
     'faq.q4': 'ماذا يحدث إذا ساءت الأمور؟',
     'faq.q5': 'كيف أصبح صاحب عمل؟',
     'faq.q6': 'كيف أحذف حسابي؟',
+
+    // Booking — confirm-date handshake (chat thread + booking details)
+    'booking.proposedDatesHeading': 'اقترحت الشركة هذه الأوقات',
+    'booking.confirmedFor': 'تم التأكيد بتاريخ %{date}',
+    'booking.dateConfirmedToast': 'تم تأكيد التاريخ',
+    'booking.confirmDateErrorToast': 'تعذر تأكيد التاريخ',
+    'booking.viewFullDetails': 'عرض كل التفاصيل',
+    'booking.detailsAction': 'التفاصيل',
+
+    // Post a job — category picker
+    'postJob.categoryOther': 'أخرى / عام',
   },
 };
 

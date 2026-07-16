@@ -18,6 +18,7 @@ import { Feather } from '@expo/vector-icons';
 import Svg, { Defs, Rect, LinearGradient, Stop } from 'react-native-svg';
 
 import { api } from '../../services/api';
+import i18n from '../../i18n';
 import BookingStatusTimeline from '../../components/BookingStatusTimeline';
 import { MapCanvas, MapPin, MapRoute } from '../../components/MapPreviewCard';
 import PulseDot from '../../components/PulseDot';
@@ -488,6 +489,20 @@ export default function ActiveBookingScreen({ navigation, route }) {
                   />
                 )}
               </View>
+            </SpringCard>
+
+            {/* Full booking details — Pay with card, live status timeline,
+                off-platform mark-as-paid, and the confirm-date handshake card
+                all live on BookingDetails, which was previously unreachable
+                from here (UBER-2b). */}
+            <SpringCard delay={110} style={styles.hPad}>
+              <Button
+                variant="ghost"
+                label={i18n.t('booking.viewFullDetails')}
+                icon={<Feather name="file-text" size={17} color={colors.textPrimary} />}
+                onPress={() => navigation.navigate('BookingDetails', { bookingId: booking.id })}
+                style={styles.messageAction}
+              />
             </SpringCard>
 
             {/* Secondary chat button */}

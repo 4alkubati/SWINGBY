@@ -23,6 +23,7 @@ import Text from '../../components/Text';
 import Surface from '../../components/Surface';
 import Inline from '../../components/Inline';
 import Button from '../../components/Button';
+import ConfirmDateCard from '../../components/ConfirmDateCard';
 import { SkeletonBox } from '../../components/Skeleton';
 import { colors, spacing, radius, shadows, motion } from '../../theme/tokens';
 
@@ -395,6 +396,14 @@ export default function ChatScreen({ navigation, route }) {
         </View>
         <View style={{ width: 32 }} />
       </Surface>
+
+      {/* Pinned confirm-date handshake card (UBER-3) — booking threads only,
+          client-only, renders nothing until the business has proposed dates */}
+      {!!bookingId && (
+        <View style={{ paddingHorizontal: spacing.base, paddingTop: spacing.sm }}>
+          <ConfirmDateCard bookingId={bookingId} />
+        </View>
+      )}
 
       {/* ── Messages list ──────────────────────────────────────────────────── */}
       <FlatList
