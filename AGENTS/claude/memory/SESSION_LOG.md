@@ -80,3 +80,19 @@ CLOSED: STATUS.md rewritten (Last Updated + Session End Signal → ALL-TASKS-COM
 NEEDS KIRA (all Bucket B/C, itemized in HUMAN-TODO 2026-07-17): (C) approve + push 20 modified + 2 new (+ KIRA.md deletion) → (B) e2e_smoke vs Render ALL PASS → Android on-device (add employee, BookingDetails from My Jobs, accept a time from the chat handshake, date_confirmed on timeline, browse-first Home, off-taxonomy → General); (product) ASAP-vs-required confirm-date decision; (ops) run-overnight.sh livelock fix.
 NEXT: Kira reviews READY-TO-PUSH → push → prod smoke → on-device verify. Then D3 walkthrough + D4 tester (kit drafted). No further autonomous build queued — queue is complete; everything left is Kira-gated.
 ---
+
+---
+DATE: 2026-07-17 (late — live debugging session with Kira)
+PROJECT: swingby
+PHASE: BETA — unblock Kira's walkthrough + automation upgrades
+DISPATCHED: 2 Explore agents (automation map, handshake gating); rest inline
+SHIPPED:
+  - PROD OUTAGE FIX: bookings.date_proposed_by FK made users() embeds ambiguous (PGRST201) → /bookings/, /messages/threads, /messages/unread-count 400'd. Pinned to bookings_client_id_fkey in backend/app/api/{bookings,messages}.py, pushed w/ the stranded handshake commits (77720d7). All four dashboard endpoints verified 200 on Render.
+  - i18n FIX: flat dotted keys never resolved in i18n-js v4 (any locale) — NUL defaultSeparator in mobile/src/i18n.js (16521a8); all keys verified en/fr-CA/ar. This was hiding the handshake card behind [missing] boxes on Kira's fr-CA phone.
+  - mobile/.env created on desktop (was missing → 127.0.0.1 fallback).
+  - swingby_doctor.sh + SessionEnd/SessionStart hooks (user-level): post-session prod + repo health check, report to brain/logs + memory/DOCTOR-LATEST.md (c615fb0).
+  - Morning brief restyled (friendly bullets, emoji headers) + phase/doctor/blockers detail; test-sent (execution 13); 06:05 schedule re-armed (4fe9c9d).
+  - Design handoff: 31-screen mock atlas filed to design/handoff-mocks-2026-07-17/ w/ README.
+NEEDS KIRA: on-device verify tomorrow (handshake card text, dashboard, new brief at 06:05); judge brief voice; ASAP-vs-required confirm-date decision still open.
+NEXT: tmux session — write 31-screen execution spec from the mock atlas, dispatch agents (incl. quote-chat header, SafeArea on PostJob wizard, mocked presence/read receipts). Then n8n work-pulse workflow + email read/send workflows.
+---
