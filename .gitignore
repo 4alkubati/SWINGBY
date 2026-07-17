@@ -59,5 +59,6 @@ AGENTS/claude/KIRA.md
 # Transient orchestrator artifacts — never commit
 AGENTS/claude/.scratch/
 AGENTS/claude/automation/overnight.log
+AGENTS/claude/automation/.overnight.lock
 AGENTS/claude/automation/*.log
 AGENTS/claude/memory/DOCTOR-LATEST.md
