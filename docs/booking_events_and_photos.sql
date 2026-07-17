@@ -21,6 +21,7 @@ create table if not exists public.booking_events (
     booking_id  uuid not null references public.bookings(id) on delete cascade,
     actor_id    uuid not null references public.users(id) on delete restrict,
     event_type  text not null check (event_type in (
+        'date_confirmed',
         'en_route',
         'arrived',
         'started',

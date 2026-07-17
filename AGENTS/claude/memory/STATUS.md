@@ -37,17 +37,20 @@ Signal worth noting: commits `70d165a` "pre-engine baseline" (Jul 9) and `9575fd
 - **QA:** `backend/scripts/smoke_e2e.py` + `tools/e2e_smoke.py` booking-loop smoke; flow graph reports 0 broken edges.
 
 ## What's Broken (real blockers)
-- **Google Maps key compromised** — leaked in public repo, placeholder committed; Kira must regenerate (open since Jul 1).
+- **App must survive Kira's own 15-min run** — he hits an error after 2–5 min; Jul 15 screenshots traced to the STALE LAPTOP build (fixed in main). Needs one clean self-run from fresh main before D4 tester outreach resumes.
+- ~~Google Maps key compromised~~ ✅ CLOSED 2026-07-17 — key rotated + repo made private (Kira).
 - **Emails land in spam** — new-domain reputation, DNS verified correct. Mitigations in HUMAN-TODO.
 - **D2.0 triage bugs:** 🟢 quote posts to wrong category (bug #1 — lawncare saw cleaning/massage posts): **FIX CODED in Phase CAT** (working tree, READY-TO-PUSH) — awaits deploy + on-device verify; 🔴 match creates no Messages conversation — UUID-guard fix deployed 2026-07-15, needs on-device retest. D3 still needs its own logged run.
 - **Placeholders unset:** Sentry DSN, hCaptcha secret.
 - **Latent:** `reviews.reviewee_type` CHECK lacks `'employee'` — D2.1 endpoint returns 0 reviews until a migration + review-target picker land (parked, separate domino).
 
 ## Blocked On (all Kira)
-1. D3 Expo Go walkthrough + D4 friend-tester run (D2.0 gate cleared 2026-07-15 — calendar keys off D4 now)
-2. Rotate the leaked Google Maps key
+1. **One clean 15-min self-run from fresh main on the Android phone** — gates D4; laptop copy is stale, don't test from it
+2. Android on-device verify of UBER + CAT fixes (~10 min, itemized in HUMAN-TODO)
 3. GitHub security toggles + Dependabot major-bump triage (2 min)
-4. Commit + push the 2026-07-14 re-plan + this session's brief/walkthrough updates
+4. Product decision: ASAP-vs-required for confirm-date
+
+2026-07-17 (Claude session): Phase UBER verified on prod — smoke 25/25 + targeted UBER test ALL PASS; fixed `booking_events` CHECK constraint missing `'date_confirmed'` (Supabase migration applied, re-verified). Maps key rotated + repo private (Kira) — H1 closed. July calendar populated in Google Calendar (AM day-plans Jul 17–31 + nightly 21:00 loop reminder).
 
 ## Open Broadcasts
 - 2026-07-14 — July calendar re-dated; Jet × Pulse handoff filed into `design/handoff-jet-pulse/`; design token docs now match `tokens.js`
@@ -61,10 +64,10 @@ Signal worth noting: commits `70d165a` "pre-engine baseline" (Jul 9) and `9575fd
 - Rewrote this STATUS. Did NOT commit (Bucket C — Kira's push).
 
 ## Next Action
-1. **Kira (Jul 15):** D3 Expo Go walkthrough + line up D4 friend tester (per re-dated calendar) · Maps key rotation · GitHub toggles · D2.1 on-device verify
-2. **Kira (~10 min):** dump remaining D2.0 walkthrough findings into the domino log (only HEIC got filed)
-3. **Kira:** push the re-plan + tonight's brief/walkthrough updates
-4. **Claude:** D2.2 invoices polish per domino spec (code-runnable, no Kira blocker) once dispatch resumes
+1. **Kira:** 15-min self-run from FRESH main on the Android phone (not the laptop copy) — if any error appears, screenshot → brain/inbox, the loop fixes it that night. This gates D4.
+2. **Kira (~10 min):** Android on-device verify of UBER + CAT fixes (itemized in HUMAN-TODO)
+3. **Kira (1 line):** ASAP-vs-required decision for confirm-date
+4. **Claude (tonight):** fix whatever the self-run surfaces; if nothing, D2.2 invoices polish per domino spec
 
 ## Security Gate
 ✅ passing. No schema or endpoint changes this session (docs/roadmap only). Maps key rotation still outstanding (Kira). `credentials/` gitignored.

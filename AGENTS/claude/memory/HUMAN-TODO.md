@@ -7,10 +7,11 @@
 
 If the loop wrote READY-TO-PUSH to STATUS.md:
 
-- [ ] **(Bucket C — approve + push)** Review the Phase UBER diff (employee-create fix, BookingDetails nav, confirm-date handshake card, date_confirmed event, browse-first Home, General category, docs). Push `main` → Render autodeploys.
-- [ ] **(Bucket B — verify after deploy)** `python3 tools/e2e_smoke.py https://swingbyy-api.onrender.com` ALL PASS. Then **Android on-device**: add an employee (was 409-broken), open BookingDetails from My Jobs, accept a proposed time from the chat handshake card, see `date_confirmed` on the timeline, Home opens browse-first, post an off-taxonomy job → lands in General.
+- [x] ~~(Bucket C — approve + push)~~ ✅ DONE — `f6a4a9d` pushed, Render deployed.
+- [x] ~~(Bucket B — smoke after deploy)~~ ✅ DONE 2026-07-17 (Claude): prod smoke 25/25 PASS **+ targeted UBER test ALL PASS** (employee-create 200, assign→confirm-date→in_progress, `date_confirmed` on timeline, off-taxonomy→General). Found + fixed one leftover: `booking_events` CHECK constraint lacked `'date_confirmed'` — migration `booking_events_allow_date_confirmed` applied to Supabase, re-verified green.
+- [ ] **(Bucket B — Android on-device, ~10 min)** Add an employee (was 409-broken), open BookingDetails from My Jobs, accept a proposed time from the chat handshake card, see the confirmation on the timeline, Home opens browse-first, post an off-taxonomy job → lands in General. **Use a FRESH pull of main — NOT the laptop copy** (the Jul 15 screenshots in brain/inbox are all stale-laptop bugs already fixed in main).
 - [ ] **(Product decision — ASAP vs required)** Should a booking be completable with NO confirmed date? Options: require confirmation always / keep optional / require but add an "ASAP" quick-confirm. Tonight ships the handshake UI but keeps it optional pending your call.
-- [ ] **(Telegram debrief redesign)** You said the report is too clanky — send over the folder + the "everything about me" context and the brief gets rebuilt around it. Parked until that arrives.
+- [x] ~~(Telegram debrief redesign)~~ ✅ DONE 2026-07-17 — rebuilt around `brain/KIRA.md` (folder is on the server): decisions pulled to the top of the action message, task sub-steps included (no more mid-sentence cut-offs), repo jargon tags stripped, raw stack traces never shown. Tomorrow's 06:05 brief is the first with the new voice — say if it still reads clanky.
 
 Done earlier (2026-07-16 early AM): Phase CAT pushed (`0ef7cd7`), Render deployed, prod smoke 25/25 PASS.
 - [ ] **(Bucket B — still open from CAT)** On-device: lawncare dashboard shows only Landscaping(+General) posts; gesture-handler error gone. (Laptop copy is stale — the VirtualizedList console error you screenshotted lives there, not in main.)
@@ -19,12 +20,9 @@ Done earlier (2026-07-16 early AM): Phase CAT pushed (`0ef7cd7`), Render deploye
 
 ## ⛔ Blocking (loop stuck until done)
 
-- [ ] **(Bucket B — rotate + secret the Google Maps key)** `mobile/app.json` had the real Android Maps key in plaintext (`AIzaSyDW…nyJw`) — flagged as **H1** in the 2026-07-01 audit. **The repo is PUBLIC, so treat the old key as fully compromised.** Placeholder is now committed; Kira must:
-  1. Google Cloud Console → API keys → find the leaked key → **Regenerate** (invalidates the old value).
-  2. New key → restrict by Android package `com.swingby.app` + SHA-1 fingerprint from Play Console / EAS credentials.
-  3. `eas secret:create --scope project --name EXPO_PUBLIC_GOOGLE_MAPS_KEY_ANDROID --value AIza...` (needs your Expo login).
-  4. Update `mobile/app.json` build channel to read from the EAS secret, OR keep the placeholder and inject via `expo prebuild` env if using bare RN.
-  5. Verify next EAS build succeeds and Maps renders on Android.
+- [ ] **(App must survive YOUR 15-min run before any tester)** Kira reports an error after 2–5 min of use — but the Jul 15 screenshots (brain/inbox IMG_1399–1401) are all from the **stale laptop build** (OneDrive paths in the call stack; VirtualizedLists error + wrong-category feed are both already fixed in main). D4 tester outreach is PAUSED until: (1) run the app from a **fresh pull of main** on the Android phone, (2) 15-min self-walkthrough survives clean, (3) if any error still appears, screenshot it → `brain/inbox/` and the loop fixes it that night.
+
+Done 2026-07-17: ~~rotate the Google Maps key~~ ✅ key rotated + **repo is now PRIVATE** (per Kira). H1 closed.
 
 ## 🔑 Optional / when convenient
 
@@ -40,7 +38,7 @@ Done earlier (2026-07-16 early AM): Phase CAT pushed (`0ef7cd7`), Render deploye
   2. Upgrade DMARC to `v=DMARC1; p=none; rua=mailto:dmarc@swingbyy.com`, then `p=quarantine` after a clean week.
   3. Register https://postmaster.google.com for swingbyy.com.
   4. Run one email through mail-tester.com — fix anything under 9/10.
-- [ ] **(Repo visibility decision)** The GitHub repo is **public**: marketing strategy, investor folder, pricing docs, and CLAUDE.md (incl. `testclient@swingby.dev` test creds + infra IDs) are world-readable. Either make the repo private (Settings → General → Danger Zone) or accept and rotate anything sensitive. If those `.dev` test creds exist in Supabase Auth, disable or rotate them.
+- [x] ~~(Repo visibility decision)~~ ✅ DONE 2026-07-17 — repo made **private** (per Kira). Test creds + infra IDs no longer world-readable; rotating the `.dev` test creds is now optional hygiene.
 - [ ] **(D2.4 confirm — default if silent)** Beta posture for business subscription. Current default: **track-only during beta** (every business stays `trialing`, no Stripe charge until public launch). If you'd rather flip Stripe Checkout on during beta so testers actually subscribe with a test card — say so and we'll wire it in D2.4 step 1.
 - [ ] **Install impeccable design skill** (free). In Git Bash from repo root: `npx impeccable@latest` OR download the Claude Code ZIP from impeccable.style → extract so it lands at `Swingby/.claude/skills/impeccable/`. Then the design-agent uses `/impeccable shape|audit|critique|polish`. Skill pointer already wired: `AGENTS/claude/skills/impeccable-design.md`.
 - [ ] **Qwen 3 overnight wiring (deferred 2026-06-27)** — local Qwen drains memory. Strategy locked: fallback on Anthropic limit hit (Claude default, Qwen takes the cycle that would otherwise sleep 15 min). Revisit when memory situation is sorted — smaller local Qwen variant, OpenRouter, or DashScope.

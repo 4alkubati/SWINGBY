@@ -11,13 +11,13 @@
 ## Morning Brief — node by node (4-message format since 2026-07-15)
 
 1. **Schedule 06:05** — cron `5 6 * * *`, fires 06:05 America/Edmonton (container `GENERIC_TIMEZONE`).
-2. **Compile Brief** (Code node, `fs` allowed) — reads `memory/STATUS.md`, `memory/HUMAN-TODO.md` (🌅 This-morning + ⛔ Blocking checkboxes), `memory/SESSION_LOG.md` (last NEXT line), and the tail of `automation/overnight.log`. Emits **4 items → 4 Telegram messages**:
+2. **Compile Brief** (Code node, `fs` allowed) — reads `memory/STATUS.md`, `memory/HUMAN-TODO.md` (🌅 This-morning + ⛔ Blocking checkboxes), `memory/SESSION_LOG.md` (last NEXT line), and the tail of `automation/overnight.log`. **Sanitises everything** before sending: strips all Markdown/Obsidian noise (`**bold**`, `` `code` ``, `###`, `[[wikilinks]]`, `- [ ]`, `·` → `—`) AND leading `(Bucket X — …)`-style jargon tags, clips each line on a word/sentence boundary (never mid-word), and formats as clean `•` bullets under bold section headers (Telegram HTML — see node 3). **KIRA.md voice pass (2026-07-17,** per `~/brain/KIRA.md`**):** message 3 leads with a **Decide today** block (any task matching /decision|decide|your call/), tasks carry up to 3 numbered sub-steps (multi-line checkboxes no longer end mid-sentence), checked-off items are skipped entirely, and the log tail never shows raw stack-trace lines. Emits **4 items → 4 Telegram messages**:
    - **1/4 ☀️ header + 🔧 BACKEND** — SIGNAL line + backend bullets
    - **2/4 📱 FRONTEND / MOBILE** — mobile bullets
    - **3/4 🧑 HUMAN TODO** — this-morning + blocking checkboxes + Next Actions
    - **4/4 🌙 NIGHT RECAP** — mixed/other bullets **reduced to headlines** (text before the first `:`, ≤60 chars — detail stays in STATUS.md), loop log tail, LOOP NEXT
    Splitting: if STATUS.md has a `## Morning Brief` section with `### Backend` / `### Frontend` / `### Recap` subsections, those are used verbatim (preferred — orchestrator can write it at session end). Otherwise the Session End Signal bullets are bucketed by keyword; bullets matching both/neither go to the recap.
-3. **Telegram — Send Brief** (HTTP node) — one `sendMessage` per item, 800 ms apart so order holds. Token per item: `$env[item.tokenVar] || $env.TELEGRAM_BOT_TOKEN`.
+3. **Telegram — Send Brief** (HTTP node) — one `sendMessage` per item, 800 ms apart so order holds, `parse_mode: HTML` (bold headers render; the Compile node HTML-escapes all dynamic text). Token per item: `$env[item.tokenVar] || $env.TELEGRAM_BOT_TOKEN`.
 
 ## Secrets
 
