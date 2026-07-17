@@ -398,7 +398,7 @@ export default function ChatScreen({ navigation, route }) {
       </Surface>
 
       {/* Pinned confirm-date handshake card (UBER-3) — booking threads only,
-          client-only, renders nothing until the business has proposed dates */}
+          two-sided: either party proposes times, the other accepts */}
       {!!bookingId && (
         <View style={{ paddingHorizontal: spacing.base, paddingTop: spacing.sm }}>
           <ConfirmDateCard bookingId={bookingId} />

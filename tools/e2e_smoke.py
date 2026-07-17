@@ -160,6 +160,30 @@ def main():
           any(t.get("thread_type") == "booking" and t.get("id") == booking_id
               for t in threads.get("items", [])))
 
+    # 8b. Date handshake — client proposes times, business accepts one
+    #     (two-sided handshake: the proposer can never confirm their own times)
+    prop_iso = "2026-08-01T10:00:00"
+    s, _ = call("PATCH", f"/bookings/{booking_id}/propose-dates", ctok,
+                {"proposed_date_1": prop_iso})
+    check("client proposes times", s == 200, str(s))
+
+    s, res = call("PATCH", f"/bookings/{booking_id}/confirm-date", ctok,
+                  {"confirmed_date": prop_iso})
+    check("proposer blocked from self-confirm (403)", s == 403, str(s))
+
+    s, res = call("PATCH", f"/bookings/{booking_id}/confirm-date", btok,
+                  {"confirmed_date": prop_iso})
+    check("business accepts proposed time", s == 200, str(s))
+    check("booking in_progress after handshake",
+          (res.get("booking") or {}).get("status") == "in_progress",
+          str((res.get("booking") or {}).get("status")))
+
+    s, ev = call("GET", f"/bookings/{booking_id}/events", ctok)
+    ev_types = [e.get("event_type") for e in ev.get("items", [])]
+    check("timeline has dates_proposed + date_confirmed",
+          "dates_proposed" in ev_types and "date_confirmed" in ev_types,
+          str(ev_types))
+
     # 9. Business advances: en_route event, then complete (releases escrow)
     s, _ = call("POST", f"/bookings/{booking_id}/events", btok, {"event_type": "en_route"})
     check("business posts en_route event", s == 200, str(s))

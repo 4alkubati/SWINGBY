@@ -43,6 +43,7 @@ router = APIRouter()
 # ── Schemas ──────────────────────────────────────────────────────────────────
 
 _ALLOWED_EVENT_TYPES = {
+    "dates_proposed",
     "date_confirmed",
     "en_route",
     "arrived",

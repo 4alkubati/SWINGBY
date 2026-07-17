@@ -404,8 +404,8 @@ export default function BookingDetailsScreen({ route, navigation }) {
         }}
         showsVerticalScrollIndicator={false}
       >
-        {/* Confirm-date handshake — pinned when the business has proposed dates
-            and the client hasn't confirmed one yet (UBER-3) */}
+        {/* Confirm-date handshake — two-sided: either party proposes times in
+            the chat, the other accepts (UBER-3 + HANDSHAKE-2WAY) */}
         <ConfirmDateCard bookingId={bookingId} booking={booking} onConfirmed={fetchBooking} />
 
         {/* Status timeline card */}

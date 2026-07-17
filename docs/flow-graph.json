@@ -1033,13 +1033,13 @@
       "method": "POST",
       "path": "/bookings/{booking_id}/events",
       "file": "backend/app/api/booking_events.py",
-      "line": 146
+      "line": 147
     },
     {
       "method": "GET",
       "path": "/bookings/{booking_id}/events",
       "file": "backend/app/api/booking_events.py",
-      "line": 191
+      "line": 192
     },
     {
       "method": "POST",
@@ -1057,37 +1057,43 @@
       "method": "GET",
       "path": "/bookings/",
       "file": "backend/app/api/bookings.py",
-      "line": 75
+      "line": 115
     },
     {
       "method": "GET",
       "path": "/bookings/{booking_id}",
       "file": "backend/app/api/bookings.py",
-      "line": 168
+      "line": 208
     },
     {
       "method": "PATCH",
       "path": "/bookings/{booking_id}/assign-employee",
       "file": "backend/app/api/bookings.py",
-      "line": 191
+      "line": 231
+    },
+    {
+      "method": "PATCH",
+      "path": "/bookings/{booking_id}/propose-dates",
+      "file": "backend/app/api/bookings.py",
+      "line": 303
     },
     {
       "method": "PATCH",
       "path": "/bookings/{booking_id}/confirm-date",
       "file": "backend/app/api/bookings.py",
-      "line": 259
+      "line": 412
     },
     {
       "method": "PATCH",
       "path": "/bookings/{booking_id}/complete",
       "file": "backend/app/api/bookings.py",
-      "line": 394
+      "line": 560
     },
     {
       "method": "PATCH",
       "path": "/bookings/{booking_id}/cancel",
       "file": "backend/app/api/bookings.py",
-      "line": 527
+      "line": 693
     },
     {
       "method": "POST",
@@ -1797,13 +1803,19 @@
       "from_file": "mobile/src/components/ConfirmDateCard.js",
       "method": "GET",
       "path": "/bookings/${bookingId}",
-      "line": 55
+      "line": 84
     },
     {
       "from_file": "mobile/src/components/ConfirmDateCard.js",
       "method": "PATCH",
       "path": "/bookings/${bookingId}/confirm-date",
-      "line": 73
+      "line": 102
+    },
+    {
+      "from_file": "mobile/src/components/ConfirmDateCard.js",
+      "method": "PATCH",
+      "path": "/bookings/${bookingId}/propose-dates",
+      "line": 126
     },
     {
       "from_file": "mobile/src/components/BookingPhotos.js",

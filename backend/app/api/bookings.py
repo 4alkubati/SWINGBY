@@ -23,10 +23,16 @@ class AssignEmployee(BaseModel):
     proposed_date_3: Optional[str] = Field(None, max_length=500)
 
 
+class ProposeDates(BaseModel):
+    proposed_date_1: str = Field(..., min_length=1, max_length=500)  # ISO-8601
+    proposed_date_2: Optional[str] = Field(None, max_length=500)
+    proposed_date_3: Optional[str] = Field(None, max_length=500)
+
+
 class ConfirmDate(BaseModel):
     confirmed_date: str = Field(
         ..., max_length=500
-    )  # client picks one of the proposed dates
+    )  # the accepting side picks one of the proposed dates
 
 
 class CancelBooking(BaseModel):
@@ -67,6 +73,40 @@ def _assert_booking_access(booking: dict, current_user: dict):
             return
 
     raise HTTPException(status_code=403, detail="Access denied")
+
+
+def _assert_handshake_party(booking: dict, current_user: dict) -> None:
+    """403 unless the caller is the booking's client or the owner of its business.
+
+    The date handshake runs between exactly these two parties — employees and
+    admins are not part of it.
+    """
+    role = current_user["role"]
+    uid = current_user["id"]
+
+    if role == "client":
+        if booking["client_id"] != uid:
+            raise HTTPException(status_code=403, detail="This is not your booking")
+        return
+
+    if role == "business_owner":
+        biz = (
+            supabase.table("businesses")
+            .select("id")
+            .eq("owner_id", uid)
+            .single()
+            .execute()
+        )
+        if biz.data and biz.data["id"] == booking["business_id"]:
+            return
+        raise HTTPException(
+            status_code=403, detail="This booking doesn't belong to your business"
+        )
+
+    raise HTTPException(
+        status_code=403,
+        detail="Only the client or the business can schedule a booking",
+    )
 
 
 # ── Endpoints ─────────────────────────────────────────────────────────────────
@@ -242,6 +282,10 @@ def assign_employee(
         update_payload["proposed_date_2"] = data.proposed_date_2
     if data.proposed_date_3:
         update_payload["proposed_date_3"] = data.proposed_date_3
+    if any((data.proposed_date_1, data.proposed_date_2, data.proposed_date_3)):
+        # Track the proposer so /confirm-date can enforce the handshake rule
+        # (the other side accepts, never the proposer).
+        update_payload["date_proposed_by"] = current_user["id"]
 
     try:
         res = (
@@ -256,30 +300,152 @@ def assign_employee(
         raise HTTPException(status_code=400, detail="Could not assign employee")
 
 
-@router.patch("/{booking_id}/confirm-date")
-def confirm_date(
+@router.patch("/{booking_id}/propose-dates")
+def propose_dates(
     booking_id: str,
-    data: ConfirmDate,
+    data: ProposeDates,
     current_user: dict = Depends(get_current_user),
 ):
-    """Client confirms one of the proposed dates — moves booking to in_progress."""
-    if current_user["role"] != "client":
-        raise HTTPException(status_code=403, detail="Only clients can confirm dates")
+    """Either side of the booking proposes up to 3 times (the chat handshake).
 
+    Kira's design: after a quote is accepted, the CLIENT sends the handshake
+    from their side of the chat and the BUSINESS approves it — but either
+    party may propose; whoever did NOT propose accepts one of the times via
+    PATCH /confirm-date. Re-proposing overwrites the previous slate (a
+    counter-offer).
+    """
     booking_res = (
         supabase.table("bookings")
-        .select("client_id, status")
+        .select("client_id, business_id, status")
         .eq("id", booking_id)
         .single()
         .execute()
     )
     if not booking_res.data:
         raise HTTPException(status_code=404, detail="Booking not found")
-    if booking_res.data["client_id"] != current_user["id"]:
-        raise HTTPException(status_code=403, detail="This is not your booking")
-    if booking_res.data["status"] != "confirmed":
+    booking = booking_res.data
+
+    _assert_handshake_party(booking, current_user)
+
+    if booking["status"] != "confirmed":
+        raise HTTPException(
+            status_code=400,
+            detail="Times can only be proposed while the booking awaits a confirmed date",
+        )
+
+    try:
+        res = (
+            supabase.table("bookings")
+            .update(
+                {
+                    "proposed_date_1": data.proposed_date_1,
+                    "proposed_date_2": data.proposed_date_2,
+                    "proposed_date_3": data.proposed_date_3,
+                    "date_proposed_by": current_user["id"],
+                }
+            )
+            .eq("id", booking_id)
+            .execute()
+        )
+        updated_booking = res.data[0]
+
+        # Record the proposal on the live timeline — best-effort, mirrors the
+        # date_confirmed insert below.
+        try:
+            dates = [
+                d
+                for d in (
+                    data.proposed_date_1,
+                    data.proposed_date_2,
+                    data.proposed_date_3,
+                )
+                if d
+            ]
+            supabase.table("booking_events").insert(
+                {
+                    "booking_id": booking_id,
+                    "actor_id": current_user["id"],
+                    "event_type": "dates_proposed",
+                    "note": "Proposed times: " + ", ".join(dates),
+                }
+            ).execute()
+        except Exception:
+            logger.warning(
+                "Could not record dates_proposed booking_event for %s",
+                booking_id,
+                exc_info=True,
+            )
+
+        # Nudge the other side — best-effort
+        try:
+            if current_user["role"] == "client":
+                biz_owner_res = (
+                    supabase.table("businesses")
+                    .select("owner_id")
+                    .eq("id", booking["business_id"])
+                    .single()
+                    .execute()
+                )
+                other_uid = biz_owner_res.data["owner_id"] if biz_owner_res.data else None
+            else:
+                other_uid = booking["client_id"]
+            if other_uid:
+                send_push_to_user(
+                    other_uid,
+                    "New times proposed",
+                    "Pick a time to confirm your booking",
+                )
+        except Exception:
+            pass  # notification failure must not break the request
+
+        return {
+            "message": "Times proposed — waiting for the other side to accept",
+            "booking": updated_booking,
+        }
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception("Could not propose dates for booking %s", booking_id)
+        raise HTTPException(status_code=400, detail="Could not propose dates")
+
+
+@router.patch("/{booking_id}/confirm-date")
+def confirm_date(
+    booking_id: str,
+    data: ConfirmDate,
+    current_user: dict = Depends(get_current_user),
+):
+    """The side that did NOT propose accepts a time — moves booking to in_progress."""
+    booking_res = (
+        supabase.table("bookings")
+        .select("client_id, business_id, status, date_proposed_by")
+        .eq("id", booking_id)
+        .single()
+        .execute()
+    )
+    if not booking_res.data:
+        raise HTTPException(status_code=404, detail="Booking not found")
+    booking = booking_res.data
+
+    _assert_handshake_party(booking, current_user)
+
+    if booking["status"] != "confirmed":
         raise HTTPException(
             status_code=400, detail="Booking is not in 'confirmed' state"
+        )
+
+    # Handshake rule: the proposer can never accept their own times.
+    proposer = booking.get("date_proposed_by")
+    if proposer and proposer == current_user["id"]:
+        raise HTTPException(
+            status_code=403,
+            detail="You proposed these times — waiting for the other side to accept",
+        )
+    if not proposer and current_user["role"] != "client":
+        # Legacy bookings (proposer untracked): the dates came from the
+        # business via assign-employee, so only the client may accept.
+        raise HTTPException(
+            status_code=403, detail="Waiting for the client to accept a proposed time"
         )
 
     try:

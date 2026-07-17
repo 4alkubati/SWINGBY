@@ -50,7 +50,7 @@ Signal worth noting: commits `70d165a` "pre-engine baseline" (Jul 9) and `9575fd
 3. GitHub security toggles + Dependabot major-bump triage (2 min)
 4. Product decision: ASAP-vs-required for confirm-date
 
-2026-07-17 (Claude session): Phase UBER verified on prod — smoke 25/25 + targeted UBER test ALL PASS; fixed `booking_events` CHECK constraint missing `'date_confirmed'` (Supabase migration applied, re-verified). Maps key rotated + repo private (Kira) — H1 closed. July calendar populated in Google Calendar (AM day-plans Jul 17–31 + nightly 21:00 loop reminder).
+2026-07-17 (Claude session): Phase UBER verified on prod — smoke 25/25 + targeted UBER test ALL PASS; fixed `booking_events` CHECK constraint missing `'date_confirmed'` (Supabase migration applied, re-verified). Maps key rotated + repo private (Kira) — H1 closed. July calendar populated in Google Calendar (AM day-plans Jul 17–31 + nightly 21:00 loop reminder). **HANDSHAKE-2WAY shipped (Kira's correction: client sends the handshake, business approves):** new `PATCH /bookings/{id}/propose-dates` (either party; proposer tracked in new `bookings.date_proposed_by` — migration applied), `confirm-date` now two-sided with proposer-can't-self-confirm rule, `dates_proposed` timeline event, ConfirmDateCard rebuilt (propose UI w/ date-time picker + waiting state + accept chips, both roles, EN/FR/AR). Gates: docker pytest 44/3 · babel 115/0 · flow graph 0 broken. e2e_smoke extended w/ handshake steps (passes vs Render only AFTER push). Committed locally, NOT pushed (Bucket C).
 
 ## Open Broadcasts
 - 2026-07-14 — July calendar re-dated; Jet × Pulse handoff filed into `design/handoff-jet-pulse/`; design token docs now match `tokens.js`

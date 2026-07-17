@@ -93,6 +93,14 @@ const translations = {
 
     // Booking — confirm-date handshake (chat thread + booking details)
     'booking.proposedDatesHeading': 'Business proposed these times',
+    'booking.proposedTimesHeading': 'Proposed times — tap one to accept',
+    'booking.waitingOtherSide': 'Times sent — waiting for the other side to accept',
+    'booking.proposeTimesHeading': 'Agree on a time',
+    'booking.proposeTimes': 'Propose a time',
+    'booking.addAnotherTime': 'Add another time',
+    'booking.sendProposal': 'Send proposal',
+    'booking.proposalSentToast': 'Times proposed',
+    'booking.proposeErrorToast': 'Could not send proposed times',
     'booking.confirmedFor': 'Confirmed for %{date}',
     'booking.dateConfirmedToast': 'Date confirmed',
     'booking.confirmDateErrorToast': 'Could not confirm date',
@@ -189,6 +197,14 @@ const translations = {
 
     // Booking — confirm-date handshake (chat thread + booking details)
     'booking.proposedDatesHeading': "L'entreprise a proposé ces horaires",
+    'booking.proposedTimesHeading': 'Horaires proposés — touchez pour accepter',
+    'booking.waitingOtherSide': "Horaires envoyés — en attente de l'autre partie",
+    'booking.proposeTimesHeading': 'Convenir d’un horaire',
+    'booking.proposeTimes': 'Proposer un horaire',
+    'booking.addAnotherTime': 'Ajouter un autre horaire',
+    'booking.sendProposal': 'Envoyer la proposition',
+    'booking.proposalSentToast': 'Horaires proposés',
+    'booking.proposeErrorToast': "Impossible d'envoyer les horaires",
     'booking.confirmedFor': 'Confirmé pour le %{date}',
     'booking.dateConfirmedToast': 'Date confirmée',
     'booking.confirmDateErrorToast': 'Impossible de confirmer la date',
@@ -286,6 +302,14 @@ const translations = {
 
     // Booking — confirm-date handshake (chat thread + booking details)
     'booking.proposedDatesHeading': 'اقترحت الشركة هذه الأوقات',
+    'booking.proposedTimesHeading': 'الأوقات المقترحة — اضغط للقبول',
+    'booking.waitingOtherSide': 'تم إرسال الأوقات — بانتظار موافقة الطرف الآخر',
+    'booking.proposeTimesHeading': 'الاتفاق على وقت',
+    'booking.proposeTimes': 'اقترح وقتًا',
+    'booking.addAnotherTime': 'أضف وقتًا آخر',
+    'booking.sendProposal': 'إرسال الاقتراح',
+    'booking.proposalSentToast': 'تم اقتراح الأوقات',
+    'booking.proposeErrorToast': 'تعذر إرسال الأوقات المقترحة',
     'booking.confirmedFor': 'تم التأكيد بتاريخ %{date}',
     'booking.dateConfirmedToast': 'تم تأكيد التاريخ',
     'booking.confirmDateErrorToast': 'تعذر تأكيد التاريخ',

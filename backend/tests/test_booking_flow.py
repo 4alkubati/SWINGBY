@@ -172,3 +172,152 @@ class TestConfirmDateRecordsTimelineEvent:
         payload = insert_calls[0][1][0]
         assert payload["event_type"] == "date_confirmed"
         assert payload["booking_id"] == "booking-1"
+
+
+BUSINESS = {
+    "id": "owner-1",
+    "role": "business_owner",
+    "first_name": "Bob",
+    "last_name": "Owner",
+    "email": "owner@example.com",
+}
+
+
+@pytest.fixture
+def as_business():
+    app.dependency_overrides[get_current_user] = lambda: BUSINESS
+    yield BUSINESS
+    app.dependency_overrides.pop(get_current_user, None)
+
+
+class TestDateHandshake:
+    """
+    The confirm-date handshake is two-sided (Kira, 2026-07-17): after a quote
+    is accepted, either party proposes times via PATCH /propose-dates and the
+    OTHER party accepts one via PATCH /confirm-date. The proposer can never
+    accept their own times.
+    """
+
+    def _stubs(self, booking_row):
+        return {
+            "bookings": SupabaseTableStub(
+                select_data=booking_row,
+                update_data=[{**booking_row, "id": "booking-1"}],
+            ),
+            "booking_events": SupabaseTableStub(insert_data=[{"id": "evt-1"}]),
+            "businesses": SupabaseTableStub(select_data={"id": "biz-1", "owner_id": "owner-1"}),
+            "users": SupabaseTableStub(select_data=None),
+        }
+
+    def _patch(self, stubs):
+        patcher = patch("app.api.bookings.supabase")
+        mock_supabase = patcher.start()
+        mock_supabase.table.side_effect = lambda name: stubs[name]
+        return patcher
+
+    def test_client_proposes_dates(self, test_client, as_client):
+        stubs = self._stubs(
+            {"client_id": "client-1", "business_id": "biz-1", "status": "confirmed"}
+        )
+        p = self._patch(stubs)
+        try:
+            with patch("app.api.bookings.send_push_to_user"):
+                response = test_client.patch(
+                    "/bookings/booking-1/propose-dates",
+                    json={"proposed_date_1": "2026-08-01T10:00:00Z"},
+                    headers={"Authorization": "Bearer test-token"},
+                )
+        finally:
+            p.stop()
+
+        assert response.status_code == 200, response.text
+        update_calls = [c for c in stubs["bookings"].calls if c[0] == "update"]
+        assert len(update_calls) == 1
+        payload = update_calls[0][1][0]
+        assert payload["date_proposed_by"] == "client-1"
+        assert payload["proposed_date_1"] == "2026-08-01T10:00:00Z"
+        event = stubs["booking_events"].inserted
+        assert event["event_type"] == "dates_proposed"
+
+    def test_business_confirms_client_proposed_date(self, test_client, as_business):
+        stubs = self._stubs(
+            {
+                "client_id": "client-1",
+                "business_id": "biz-1",
+                "status": "confirmed",
+                "date_proposed_by": "client-1",
+            }
+        )
+        p = self._patch(stubs)
+        try:
+            with patch("app.api.bookings.send_push_to_user"):
+                response = test_client.patch(
+                    "/bookings/booking-1/confirm-date",
+                    json={"confirmed_date": "2026-08-01T10:00:00Z"},
+                    headers={"Authorization": "Bearer test-token"},
+                )
+        finally:
+            p.stop()
+
+        assert response.status_code == 200, response.text
+        event = stubs["booking_events"].inserted
+        assert event["event_type"] == "date_confirmed"
+
+    def test_proposer_cannot_confirm_own_dates(self, test_client, as_client):
+        stubs = self._stubs(
+            {
+                "client_id": "client-1",
+                "business_id": "biz-1",
+                "status": "confirmed",
+                "date_proposed_by": "client-1",
+            }
+        )
+        p = self._patch(stubs)
+        try:
+            response = test_client.patch(
+                "/bookings/booking-1/confirm-date",
+                json={"confirmed_date": "2026-08-01T10:00:00Z"},
+                headers={"Authorization": "Bearer test-token"},
+            )
+        finally:
+            p.stop()
+
+        assert response.status_code == 403, response.text
+
+    def test_business_cannot_confirm_legacy_untracked_proposal(
+        self, test_client, as_business
+    ):
+        # No date_proposed_by on the row: dates came from assign-employee
+        # before proposer tracking existed — only the client may accept.
+        stubs = self._stubs(
+            {"client_id": "client-1", "business_id": "biz-1", "status": "confirmed"}
+        )
+        p = self._patch(stubs)
+        try:
+            response = test_client.patch(
+                "/bookings/booking-1/confirm-date",
+                json={"confirmed_date": "2026-08-01T10:00:00Z"},
+                headers={"Authorization": "Bearer test-token"},
+            )
+        finally:
+            p.stop()
+
+        assert response.status_code == 403, response.text
+
+    def test_propose_requires_awaiting_confirmation_state(
+        self, test_client, as_client
+    ):
+        stubs = self._stubs(
+            {"client_id": "client-1", "business_id": "biz-1", "status": "in_progress"}
+        )
+        p = self._patch(stubs)
+        try:
+            response = test_client.patch(
+                "/bookings/booking-1/propose-dates",
+                json={"proposed_date_1": "2026-08-01T10:00:00Z"},
+                headers={"Authorization": "Bearer test-token"},
+            )
+        finally:
+            p.stop()
+
+        assert response.status_code == 400, response.text

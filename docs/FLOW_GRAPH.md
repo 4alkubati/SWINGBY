@@ -181,5 +181,5 @@ Mobile calls to endpoints **not exposed by the backend** (path params normalized
 - Navigators: **4**  
 - Registered screens: **55**  
 - Navigation edges: **88**  
-- Backend routes: **72**  
-- Mobile API calls: **78**  
+- Backend routes: **73**  
+- Mobile API calls: **79**  
