@@ -326,6 +326,10 @@ const i18n = new I18n(translations);
 // Default fallback
 i18n.defaultLocale = 'en';
 i18n.enableFallback = true;
+// Our keys are flat strings containing dots ('booking.proposeTimes'). i18n-js v4
+// splits scopes on '.' into a nested path, so every lookup missed — in every
+// locale. NUL can't appear in a key, so this makes each key one flat segment.
+i18n.defaultSeparator = String.fromCharCode(0);
 
 // Restore persisted locale on import (fire-and-forget)
 (async () => {
