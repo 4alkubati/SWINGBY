@@ -60,3 +60,4 @@ AGENTS/claude/KIRA.md
 AGENTS/claude/.scratch/
 AGENTS/claude/automation/overnight.log
 AGENTS/claude/automation/*.log
+AGENTS/claude/memory/DOCTOR-LATEST.md

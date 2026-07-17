@@ -95,4 +95,6 @@ fi
 
 printf '%s\n' "$REPORT" > "$LATEST"
 printf '%s\n\n' "$REPORT" >> "$DAILY"
+# Copy for the morning brief — n8n only sees the repo mount, not ~/brain (gitignored)
+printf '%s\n' "$REPORT" > "$REPO/AGENTS/claude/memory/DOCTOR-LATEST.md"
 exit 0
