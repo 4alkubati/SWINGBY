@@ -7,6 +7,11 @@
   `docker exec swingby-n8n n8n import:workflow --input=/data/swingby/AGENTS/claude/automation/morning_brief.workflow.json && docker restart swingby-n8n`
 - **`send-test-brief.sh`** — fires the brief right now (delivery test without waiting for morning).
 - **`run-overnight.sh`** — the overnight build loop (`claude -p` on LOOP.md, auto-resumes after usage-limit resets). Works the 🌙 Tonight queue in `memory/PLAN.md`.
+  **Human-unblock resume (2026-07-17 v2):** `WAITING-ON-HUMAN` in STATUS.md no longer ends the loop — it pauses in a zero-token file poll (every 5 min, up to 48 h). The loop wakes and continues autonomously the moment any of these happens:
+  1. Kira checks off / edits the ⛔ item in `memory/HUMAN-TODO.md` (any change to the file),
+  2. the `WAITING-ON-HUMAN` marker is removed from `memory/STATUS.md` (e.g. by a live session), or
+  3. `touch AGENTS/claude/automation/RESUME` (force-wake; file is consumed).
+  On wake the orchestrator's first duty is the UNBLOCK CHECK: blocking asks done → clear the marker, log "unblocked by Kira", resume the queue; still blocked → exit cheap and the runner re-pauses (these short cycles are exempt from the fast-fail counter). After 48 h with no unblock the loop ends; restart with `bash AGENTS/claude/automation/run-overnight.sh`.
 
 ## Morning Brief — node by node (4-message format since 2026-07-15)
 

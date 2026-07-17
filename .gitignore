@@ -60,5 +60,6 @@ AGENTS/claude/KIRA.md
 AGENTS/claude/.scratch/
 AGENTS/claude/automation/overnight.log
 AGENTS/claude/automation/.overnight.lock
+AGENTS/claude/automation/RESUME
 AGENTS/claude/automation/*.log
 AGENTS/claude/memory/DOCTOR-LATEST.md
