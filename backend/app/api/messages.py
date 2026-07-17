@@ -180,7 +180,7 @@ def _accessible_thread_ids(current_user: dict):
         if biz_id:
             booking_rows = (
                 supabase.table("bookings")
-                .select("id, status, client_id, users(first_name, last_name, avatar_url)")
+                .select("id, status, client_id, users!bookings_client_id_fkey(first_name, last_name, avatar_url)")
                 .eq("business_id", biz_id)
                 .execute()
             ).data or []

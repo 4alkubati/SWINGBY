@@ -154,7 +154,7 @@ def list_my_bookings(
             res = (
                 supabase.table("bookings")
                 .select(
-                    "*, users(first_name, last_name, avatar_url), "
+                    "*, users!bookings_client_id_fkey(first_name, last_name, avatar_url), "
                     "employees(role_title, users(first_name, last_name)), "
                     "service_posts(title, address)"
                 )
@@ -181,7 +181,7 @@ def list_my_bookings(
             res = (
                 supabase.table("bookings")
                 .select(
-                    "*, users(first_name, last_name), businesses(business_name), "
+                    "*, users!bookings_client_id_fkey(first_name, last_name), businesses(business_name), "
                     "service_posts(title, address)"
                 )
                 .eq("employee_id", emp.data["id"])
@@ -211,7 +211,7 @@ def get_booking(booking_id: str, current_user: dict = Depends(get_current_user))
         res = (
             supabase.table("bookings")
             .select(
-                "*, users(first_name, last_name, avatar_url), "
+                "*, users!bookings_client_id_fkey(first_name, last_name, avatar_url), "
                 "businesses(business_name, category, avg_rating, review_count), "
                 "employees(role_title, avatar_url, users(first_name, last_name)), "
                 "service_posts(title, address)"
