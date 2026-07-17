@@ -1,115 +1,89 @@
 # STATUS — Current Project State
 
 > Rewritten by Orchestrator at the end of every session. Single source of truth for right now.
-> Rewritten 2026-07-14: honest re-baseline after a ~7-day slip on the tester chain (D4 never ran). July day files Jul 14–31 re-dated to match; Jet × Pulse design handoff filed into `design/`. Prior rewrite 2026-07-07.
+> Rewritten 2026-07-17 overnight (Fable orchestrator — Kira's "you run and decide" session). Prior rewrite 2026-07-17 late (outage + i18n session).
 
 ## Active Project
 swingby
 
 ## Repo Path
-`/home/l3thal/agents/projects/swingby` (Linux). NOTE: prior STATUS + CLAUDE.md local-dev commands reference the old Windows path (`C:/Users/amrba/...`, `C:/Python314/python.exe`) — update CLAUDE.md Local Dev section when convenient.
+`/home/l3thal/agents/projects/swingby` (Linux)
 
 ## Morning Brief
 
 ### Backend
-- Prod OUTAGE found + fixed: the handshake migration added a second FK to users on bookings, breaking every `users(...)` PostgREST embed (PGRST201) — /bookings/, /messages/threads, /messages/unread-count all 400'd. Pinned embeds to `bookings_client_id_fkey`, pushed, Render deployed, all four dashboard endpoints 200 (`77720d7`).
-- Root cause of the outage: DB migrated while the handshake code sat UNPUSHED on the desktop. New rule: migrations ship only with pushed code.
-- Session doctor now runs after every Claude session (SessionEnd hook): checks unpushed commits, mobile/.env, prod health, and the 4 dashboard endpoints as a real business login (`c615fb0`).
+- No backend code changed tonight (UI + ops + audit session). Prod re-verified green: doctor 7/7 PASS, health 200, all four dashboard endpoints 200 as a real business login.
+- Supabase checked directly: both Jul 17 migrations confirmed applied (`booking_events_allow_date_confirmed`, `date_handshake_proposer_tracking`) — the handshake's DB side is fully live. Security advisors: no missing RLS; 3 known WARNs tracked (HIBP toggle for Kira, disputes-fn search_path, job-photos bucket listing).
+- Nice signal from Kira's screenshots: the booking-confirmed email landed in the **Inbox**, not spam (from hello@swingbyy.com).
 
 ### Frontend
-- i18n was broken in EVERY language — i18n-js v4 splits dotted keys, ours are flat, so no t() ever resolved. Kira's fr-CA phone showed raw [missing] boxes — this is what hid the handshake card. One-line NUL-separator fix, all keys verified en/fr-CA/ar (`16521a8`).
-- mobile/.env was missing on the desktop (app fell back to 127.0.0.1 = the phone itself). Created, gitignored as before; laptop needs `cp .env.example .env` after pull.
-- Design handoff imported: 31-screen mock atlas → `design/handoff-mocks-2026-07-17/`. Execution spec + agent dispatch = next session (tmux).
-- New bugs spotted from Kira's screenshots: PostJob wizard step tabs render under the status bar (SafeArea).
+- FIXED: PostJob wizard step tabs no longer render under the status-bar clock (SafeArea insets, same idiom as sibling screens).
+- FIXED: Chat header now shows the other party's real name even when the opening screen forgets to pass it — self-heals from the booking payload. All 8 existing callers audited (all already pass the name).
+- **31-screen design execution spec is written**: `AGENTS/claude/deliverables/design-exec-spec-2026-07-18.md` — 63 items (2 P0 · 26 P1 · 35 P2) with a wave-ordered implementation plan. The 2 P0s: employee reviews show a placeholder (needs the `reviewee_type` migration) and Referral stats are hardcoded zeros (no backend). One product call needed before dispatch: the "Job Management" mock is actually Dashboard's lead feed (spec entry #26).
+- QA regression 5/5 PASS (babel 115/0 via docker · flow graph 0 broken · all grep gates).
 
 ### Recap
-- Morning brief restyled: friendly bullets, emoji headers, phase + doctor verdict + Blocked On now included. Test-sent OK (execution 13), 06:05 schedule re-armed.
-- Kira's real 2-account flow WORKED end to end (quote → accept → booking-confirmed email) — he was blocked only by the invisible-card i18n bug.
-- Kira pulled main on the laptop; on-device verify TOMORROW.
+- **Memory verified AND tested end-to-end** (Kira's ask): git clean+pushed at session start, prod endpoints live-checked, n8n brief confirmed active (06:05 Edmonton, container up), doctor hooks confirmed wired, migrations confirmed in Supabase, flow graph re-run, all 9 inbox screenshots triaged (all were evidence of already-fixed or already-queued bugs), 2 stale auto-memories corrected, 10 stale issue-tracker rows deleted after grep-proofing each against code (June CRITICAL section is now empty).
+- Message bus drained: 2 stale June items archived with resolutions; tonight's 3 REQUESTs dispatched and RESOLVED with review notes.
+- run-overnight.sh livelock FIXED (flock lockfile + WAITING-ON-HUMAN break + fast-fail backoff) — the 397885 all-night respawn can't happen again.
+- "Never started" ledger sent to Kira's Telegram (2 messages, delivered): every discussed-but-unbuilt item, with the 4 decisions pulled to the top (also in HUMAN-TODO → Decisions batch).
+- **Nothing committed (Bucket C = Kira's push).** Working tree: 2 mobile fixes, design spec, run-overnight fix, .gitignore line, memory files.
 
 ## Last Updated
-2026-07-17 late session (Claude, live w/ Kira): **prod outage fixed + i18n fixed + brief restyled + doctor live.** Dashboard 400s traced to ambiguous PostgREST embeds after `date_proposed_by` FK landed in prod DB ahead of its code (now pushed together); i18n flat-key bug hid the handshake card behind [missing] boxes on Kira's fr-CA phone — both fixed and pushed (`77720d7`, `16521a8`). Morning brief rebuilt in friendly voice + detail (phase, doctor verdict, blockers), test-sent, schedule active. swingby_doctor.sh runs post-session via hook; report mirrors to memory/DOCTOR-LATEST.md for the brief. 31-screen mock atlas filed to `design/handoff-mocks-2026-07-17/` — implementation spec + agent dispatch next session (Kira starting tmux). Prior: (post-overnight close-out) — **Phase UBER COMPLETE + re-verified + READY-TO-PUSH.** The overnight loop (398502) shipped all 8 UBER tasks to the working tree and appended SESSION_LOG but never closed STATUS (it still read "QUEUED"). This session re-verified the output and closed memory: read every produced backend + mobile file directly, re-ran the flow graph (**0 broken edges**, new MyJobs→BookingDetails + ActiveBooking→BookingDetails edges present), py_compiled all 8 changed backend files (clean), and confirmed i18n EN/FR/AR keys (6/6) + ConfirmDateCard wired into all 3 host screens + the first-ever mobile `PATCH /confirm-date` caller. **Verification limit (honest):** docker pytest + babel could NOT be re-run on this desktop box — no docker access, no pip/venv, mobile `node_modules` absent (exactly audit item #9). Those gates were green in the overnight run (pytest 36/3, babel 115/0) against a byte-identical tree; the real runtime gate is the morning e2e_smoke vs Render after Kira pushes. **Nothing committed (Bucket C = Kira's push).** Prior: **Uber-flow audit** (`docs/qa-audit-2026-07-16-uber-flow.md`) surfaced the 3 P0s; Kira decisions: confirm-date = handshake card in the chat thread; Home browse-first with Post-a-job at bottom; off-taxonomy → General (searchable). Kira has an ANDROID PHONE now — on-device verify right after each morning push. Telegram brief redesign PARKED — Kira is sending a folder + personal context first. Prior: **Phase CAT PUSHED + DEPLOYED + PROD SMOKE ALL PASS.** Kira approved push; committed `0ef7cd7` → Render autodeploy → `tools/e2e_smoke.py` vs `swingbyy-api.onrender.com`: **25/25 PASS first attempt**, incl. new checks (category normalized to "Cleaning", new post visible in business feed). Remaining: Kira on-device verify (lawncare feed = Landscaping+General only; gesture error gone) + laptop `git pull`. Prior: Phase CAT overnight loop COMPLETE (see Session End Signal). Category matching + taxonomy unification + RN fixes shipped to working tree, all local gates green, no push. Prior same-day: Morning-brief session: Telegram delivery FIXED + verified (bot @L3thallbot, 06:05 daily). LAPTOP RESCUE: week of unpushed Jul 9–12 work recovered via git bundle + merged (`d350295`) — full D2.0 walkthrough triage (4 bugs), Jul 11 Sentry fixes (UUID guard on /messages, Stripe price fail-fast, Sentry noise filter), Jul 10–12 polish sweep across 40 mobile screens. Backend pytest 23✅/3 skipped; 113 mobile files parse clean; pushed → Render redeploying. Prior rewrite 2026-07-14 (re-plan).
+2026-07-17 overnight (Fable orchestrator): full company audit + Phase POLISH-SPEC executed same-session. Verified every memory claim against reality (prod, Supabase, n8n, hooks, git, inbox); drained the bus; dispatched design-agent (31-screen exec spec), mobile-agent (wizard SafeArea + chat header), qa-agent (5/5 regression) with full bus comms; fixed the overnight-runner livelock; sent the never-started ledger to Telegram; corrected stale trackers/memories (incl. domino truth below — D2.2/D2.3/D2.4 shipped Jul 1 but still showed pending). Prior: 2026-07-17 late (live w/ Kira) — prod outage fixed (PostgREST embed ambiguity, `77720d7`), i18n resurrected in all 3 locales (`16521a8`), morning brief restyled + re-armed, session doctor live, 31-screen mock atlas filed. Prior: Phase UBER complete + prod-verified (employee-create 409 fix, BookingDetails reachable, confirm-date handshake now two-way per Kira's correction `9f1280d`, browse-first Home, General catch-all). Older history: SESSION_LOG + archive.
 
 ## Current Phase
-**Phase 1 — BETA**, gate cleared: D2.0 walkthrough confirmed done (Kira, 2026-07-15 — retro-logged). Domino truth:
-- ✅ D1 — Email sends (commit `08715e3`)
+**Phase 1 — BETA.** Domino truth (corrected tonight — D2.5's exact job):
+- ✅ D1 — Email sends (`08715e3`); lifecycle emails landing in Inbox as of Jul 16
 - ✅ D2 — Kill mock data
-- ✅ D2.0 — Live walkthrough: done ~Jul 9–11 per Kira (evidence `70d165a`, `9575fd3`); findings beyond HEIC fix still in Kira's head (HUMAN-TODO capture item)
-- 🟡 D2.1 — Employee trust card: code-complete since 2026-07-07, `in-progress`, awaits on-device verify
-- ⬜ D2.2 / D2.3 / D2.4 / D2.5 — `pending`
-- ⬜ D3 (Expo Go walkthrough) / D4 (friend tester) — `pending`, now UNBLOCKED. **D4 was calendared for Jul 7; it has not happened.**
-- ⏸ D5 — `deferred`
-
-Signal worth noting: commits `70d165a` "pre-engine baseline" (Jul 9) and `9575fd3` "fix(uploads): accept HEIC/HEIF — iPhone default photo format" (Jul 10) imply real-device iPhone testing started around Jul 10, but no session log, domino log entry, or day-file checkbox recorded it. If a partial walkthrough happened, its findings live only in Kira's head — capture them into D2.0/D3 `📖 Log`.
-
-## Slip Accounting (why the re-plan)
-- Calendar said by Jul 13: two friend testers completed bookings, majors fixed, 10 outreach messages sent, feedback form live. None checked off.
-- Actual: chain stalled at the same human gate as Jul 7 (D2.0 walkthrough). Last commit Jul 10, last session log Jul 7.
-- Re-plan keeps the July win condition (store-ready build, Stripe live, submit by Jul 31) by compressing W3/W4 and merging light ops days. See `Roadmap/July/README.md` re-plan note.
+- ✅ D2.0 — Live walkthrough (Kira, ~Jul 9–11; findings beyond HEIC in Kira's head — capture item stands)
+- 🟡 D2.1 — Employee trust card: code-complete; NOTE the D2.1 review endpoint stays empty until the employee-review migration lands (also design-spec P0)
+- 🟡 D2.2 — Invoices: shipped Jul 1 (`0ef7cd7` re-audit CAT-7 confirmed code-complete); only on-device PDF check open
+- ✅ D2.3 — Off-platform pay: shipped Jul 1
+- 🟡 D2.4 — Business subscription: shipped Jul 1; beta posture decision open (default track-only)
+- 🔄 D2.5 — Status cleanup: largely executed tonight (this rewrite + tracker re-verify); close after Kira reads
+- ⬜ D3 (Expo Go walkthrough) / D4 (friend tester) — gated on Kira's clean 15-min self-run
+- ⏸ D5 — deferred
 
 ## What's Working (deployed surface)
-- **Backend (LIVE on Render `swingbyy-api.onrender.com`):** 65 routes incl. `/employees/{id}/profile`, `/messages/unread-count`, unified `/messages/threads` (pre-booking quote chat), `/interests/mine`, uploads (now HEIC/HEIF), booking events/photos, Stripe checkout + webhook.
-- **Database:** Supabase 10 tables + `booking_events` + `booking_photos` + `messages_interest_threads` migration applied. RLS on every table. 5 lifecycle email triggers.
-- **Email:** Resend wired, branded magic link from `team@swingbyy.com`.
-- **Mobile:** Jet × Pulse repolish tokens live in `theme/tokens.js` (textTertiary, accentSoft, borderAccent, mapBg stops, accentGlow/card shadows). Business-flow session (Jul 3) shipped: unified inbox, quote-with-note chat, dashboard real earnings + sparkline, invoices screens, needs-attention chips.
-- **QA:** `backend/scripts/smoke_e2e.py` + `tools/e2e_smoke.py` booking-loop smoke; flow graph reports 0 broken edges.
+- **Backend (LIVE on Render `swingbyy-api.onrender.com`):** 65+ routes incl. two-way confirm-date handshake (`/propose-dates` + `/confirm-date`), unified `/messages/threads`, uploads (HEIC/HEIF), booking events/photos + `date_confirmed` timeline, Stripe checkout + webhook, `/businesses/me/analytics`. Sentry alerting works (it caught the Jul 17 outage in real time).
+- **Database:** Supabase 10 tables + booking_events/photos + disputes; RLS everywhere; 15 migrations incl. both Jul 17 handshake migrations. 5 lifecycle email triggers.
+- **Mobile:** i18n live in EN/fr-CA/AR (flat-key fix `16521a8`); handshake ConfirmDateCard two-way; browse-first Home; BookingDetails reachable; wizard SafeArea + chat-header identity fixed tonight (working tree).
+- **Automation:** 06:05 Telegram brief (verified active tonight); post-session doctor (7/7 PASS); overnight runner now livelock-proof (working tree).
+- **QA:** e2e_smoke covers post→quote→accept→handshake→complete; flow graph 0 broken edges.
 
 ## What's Broken (real blockers)
-- **App must survive Kira's own 15-min run** — 2026-07-17: the three real causes of the "stuck after 2–5 min / no dashboard" reports were found and FIXED (prod PostgREST embed outage `77720d7`, missing mobile/.env fallback to 127.0.0.1, i18n dead in all locales `16521a8`). Kira pulled main; one clean on-device run tomorrow is the remaining gate before D4.
-- ~~Google Maps key compromised~~ ✅ CLOSED 2026-07-17 — key rotated + repo made private (Kira).
-- **Emails land in spam** — new-domain reputation, DNS verified correct. Mitigations in HUMAN-TODO.
-- **D2.0 triage bugs:** 🟢 quote posts to wrong category (bug #1 — lawncare saw cleaning/massage posts): **FIX CODED in Phase CAT** (working tree, READY-TO-PUSH) — awaits deploy + on-device verify; 🔴 match creates no Messages conversation — UUID-guard fix deployed 2026-07-15, needs on-device retest. D3 still needs its own logged run.
-- **Placeholders unset:** Sentry DSN, hCaptcha secret.
-- **Latent:** `reviews.reviewee_type` CHECK lacks `'employee'` — D2.1 endpoint returns 0 reviews until a migration + review-target picker land (parked, separate domino).
+- **App must survive Kira's own 15-min run** — the three root causes of the "stuck after 2–5 min" reports are all fixed and deployed (embed outage, missing mobile/.env, dead i18n). One clean on-device run from fresh main is the remaining gate before D4.
+- **Emails can still land in spam for new recipients** — domain reputation (though Jul 16's booking email hit Kira's Inbox). Mitigations in HUMAN-TODO.
+- **Employee reviews dead-end** — `reviews.reviewee_type` CHECK lacks `'employee'` + no review-target picker (design-spec P0; needs migration + UI; ship together with code per the Jul 17 rule).
+- **Placeholders unset:** mobile Sentry DSN (backend Sentry IS live), hCaptcha secret.
 
 ## Blocked On (all Kira)
-1. **One clean 15-min self-run from fresh main on the Android phone** — gates D4; laptop copy is stale, don't test from it
-2. Android on-device verify of UBER + CAT fixes (~10 min, itemized in HUMAN-TODO)
-3. GitHub security toggles + Dependabot major-bump triage (2 min)
-4. Product decision: ASAP-vs-required for confirm-date
-
-2026-07-17 (Claude session): Phase UBER verified on prod — smoke 25/25 + targeted UBER test ALL PASS; fixed `booking_events` CHECK constraint missing `'date_confirmed'` (Supabase migration applied, re-verified). Maps key rotated + repo private (Kira) — H1 closed. July calendar populated in Google Calendar (AM day-plans Jul 17–31 + nightly 21:00 loop reminder). **HANDSHAKE-2WAY shipped (Kira's correction: client sends the handshake, business approves):** new `PATCH /bookings/{id}/propose-dates` (either party; proposer tracked in new `bookings.date_proposed_by` — migration applied), `confirm-date` now two-sided with proposer-can't-self-confirm rule, `dates_proposed` timeline event, ConfirmDateCard rebuilt (propose UI w/ date-time picker + waiting state + accept chips, both roles, EN/FR/AR). Gates: docker pytest 44/3 · babel 115/0 · flow graph 0 broken. e2e_smoke extended w/ handshake steps (passes vs Render only AFTER push). Committed locally, NOT pushed (Bucket C).
+1. **One clean 15-min self-run from fresh main on the Android phone** — gates D4.
+2. Handshake on-device verify (~10 min, itemized in HUMAN-TODO 2026-07-18).
+3. **Decisions batch (4 one-liners, sent to Telegram + HUMAN-TODO):** confirm-date policy · Referral build-or-hide · D2.4 beta billing posture · invite card drop-or-build. Plus spec #26 JobManagement product call before that entry is built.
+4. GitHub Dependabot toggle + majors triage (2 min).
 
 ## Open Broadcasts
-- 2026-07-14 — July calendar re-dated; Jet × Pulse handoff filed into `design/handoff-jet-pulse/`; design token docs now match `tokens.js`
-- 2026-07-06 — Notion nudge layer live (`AGENTS/claude/config/NOTION_SYNC.md`); Notion dates now lag the re-plan — flag rows when next synced
-- 2026-06-27 — D2.4 monetization locked: customer 10% + business membership ($30 solo / $80 team), gate on Accept
+- 2026-07-17 — Issue tracker re-baselined against code (10 stale rows deleted, CRITICAL empty, L13–L15 added); message bus drained to OPEN-only.
+- 2026-07-14 — July calendar re-dated; Jet × Pulse handoff filed into `design/handoff-jet-pulse/`.
+- 2026-07-06 — Notion nudge layer live; Notion dates lag the re-plan — flag rows when next synced.
+- 2026-06-27 — D2.4 monetization locked: customer 10% + business membership ($30 solo / $80 team), gate on Accept.
 
 ## Last Agent Run
-**2026-07-14 — Roadmap re-plan + design filing (inline, Claude Sonnet 5):**
-- Filed `App design polish tips/design_handoff_swingby_polish/` → `design/handoff-jet-pulse/`; synced `design/tokens.md` (10 color tokens, 2 shadows, Jet × Pulse rules section) + `design/MOTION.md` (Live Pulse spec) to match code.
-- Cross-checked calendar vs dominoes vs git: found the 7-day slip, re-dated Jul 14–31 day files, annotated slipped Jul 7–13 files, updated July README.
-- Rewrote this STATUS. Did NOT commit (Bucket C — Kira's push).
+**2026-07-17 overnight — Phase POLISH-SPEC (Fable orchestrator; design-agent + mobile-agent Sonnet, qa-agent Haiku):** all 3 bus REQUESTs dispatched, executed, reviewed (diffs read directly), RESOLVED. Output in working tree, nothing committed (Bucket C).
 
 ## Next Action
-1. **Kira:** 15-min self-run from FRESH main on the Android phone (not the laptop copy) — if any error appears, screenshot → brain/inbox, the loop fixes it that night. This gates D4.
-2. **Kira (~10 min):** Android on-device verify of UBER + CAT fixes (itemized in HUMAN-TODO)
-3. **Kira (1 line):** ASAP-vs-required decision for confirm-date
-4. **Claude (tonight):** fix whatever the self-run surfaces; if nothing, D2.2 invoices polish per domino spec
+1. **Kira (morning):** read this + the Telegram ledger → approve + push the working tree → 15-min self-run from fresh main → answer the 4-decision batch (+ spec #26 call).
+2. **Claude (next session):** dispatch design-spec Wave 1 (shared components NearbyCard/TextField/TrendDelta + client-side P1s); employee-review migration + picker once Kira confirms; JobManagement entry only after the #26 call.
+3. **Then:** D3 walkthrough → D4 tester (kit drafted, outreach stays PAUSED until the 15-min run is clean).
 
 ## Security Gate
-✅ passing. No schema or endpoint changes this session (docs/roadmap only). Maps key rotation still outstanding (Kira). `credentials/` gitignored.
+✅ passing — no endpoints or schema changed tonight; advisors show no missing RLS; no secrets in the tree (grep-checked as part of review); `.env`s gitignored.
 
 ## Session End Signal
-✅ **PROD-GREEN · HANDSHAKE UNBLOCKED · DESIGN ATLAS FILED** (2026-07-17 late) — prod outage fixed and deployed (dashboard endpoints all 200), i18n fixed so the handshake card finally shows real text, morning brief restyled + test-sent, session doctor live post-session, 31-screen design atlas in repo. Everything pushed (`16521a8` = HEAD). Next session: execution spec for the design atlas + agent dispatch (Kira in tmux), then email workflows. Kira verifies handshake on-device tomorrow.
-Prior signal ✅ **ALL-TASKS-COMPLETE · PHASE-UBER-COMPLETE · READY-TO-PUSH** (2026-07-17 close-out) — the Tonight queue (UBER-1..8) is fully done in the working tree, re-verified this session (flow graph 0 broken · py_compile clean on all 8 changed backend files · i18n 6/6 EN/FR/AR · ConfirmDateCard wired into 3 hosts · first mobile confirm-date PATCH caller). Overnight gates (pytest 36/3, babel 115/0) not re-runnable on this box — see Last Updated. **Uncommitted, 20 modified + 2 new + KIRA.md deleted.** Everything remaining is Kira-gated (Bucket C push → Bucket B Android on-device verify), already itemized in HUMAN-TODO 2026-07-17. No further autonomous build queued.
-Prior signal 🌙 **PHASE-UBER QUEUED** (2026-07-16 evening) — Tonight queue in PLAN.md from the full Uber-flow audit (`docs/qa-audit-2026-07-16-uber-flow.md`): 3 P0s (employee-create 409 broken in prod · BookingDetails unreachable · no confirm-date UI) + handshake-in-chat design, browse-first Home, General catch-all, docs cleanup. Prod re-verified today: standard smoke 25/25 PASS + extended flow (assign→confirm-date→Stripe checkout→events→complete→review) passes end-to-end once an employee exists. Prior state (Phase CAT): **PHASE-CAT-COMPLETE** · **PUSHED + DEPLOYED + SMOKE-GREEN** (2026-07-16 early AM: Kira approved, `0ef7cd7` pushed, Render deployed, prod smoke 25/25 PASS). Prior overnight state: Phase CAT overnight loop COMPLETE (Opus orchestrator → backend/mobile/qa/marketing agents). All local gates green, NO push made (Bucket C — Kira's morning call). Delivered:
-- **CAT-1/2 backend** (`categories.py` new + `service_posts.py`/`businesses.py`/`conftest.py` + `test_service_posts.py`): canonical taxonomy, normalize-on-create, `ilike` on `?category=` (wildcard-escaped), business-feed auto-filter = own+RELATED+General via `.or_()`, degrades to unfiltered on any lookup failure. **Docker pytest: 35 passed / 3 skipped** (was 23/3 — +12 new), black clean, py_compile clean.
-- **CAT-3/4 mobile**: single canonical `constants/categories.js` (8 entries, `landscaping` replaces broken `lawn`, +Handyman); CategoryScroll re-exports it; PostJob + BusinessSetup consume it. `GestureHandlerRootView` wraps App.js root; 5 files switched `SafeAreaView` → `react-native-safe-area-context`. **Babel: 115 files / 0 errors**; grep clean (no `'lawn'`, no RN `SafeAreaView`).
-- **CAT-5 smoke prep**: `e2e_smoke.py` posts `"cleaning"` → expects `"Cleaning"` + new business-feed-visibility check. Edit-only (NOT run vs Render tonight).
-- **CAT-6 regression**: pytest 35/3 · babel 115/0 · **flow graph 0 broken edges / 0 broken API**.
-- **CAT-7 D2.2 invoices**: VERIFIED already code-complete (JSON + PDF endpoints auth-gated + registered; InvoiceScreen both roles w/ states; "View receipt" on BookingDetails + JobManagement; BusinessInvoices list). Only open item = on-device PDF-in-Safari render (Bucket B, needs Render + a completed booking). No rebuild — working code left intact.
-- **CAT-8 D4 tester kit (draft)**: `Roadmap/dominoes/D4-tester-brief.md` + `D4-bug-capture-sheet.md`. Nothing sent.
-
-One backend sub-agent crashed mid-run on a transient API error; resumed from transcript and finished clean (no retry-cap hit). No push/deploy/live-Supabase this session.
-
-## Waiting On (all Kira) — full itemized list in HUMAN-TODO "🌅 This morning (2026-07-17)"
-0. **(Bucket C) Approve + push Phase UBER** — 20 modified + 2 new (+ KIRA.md deletion). Then (Bucket B) `python3 tools/e2e_smoke.py https://swingbyy-api.onrender.com` ALL PASS → Android on-device: add employee (was 409), open BookingDetails from My Jobs, accept a proposed time from the chat handshake card, see date_confirmed on timeline, browse-first Home, off-taxonomy post → General.
-0b. **(Product decision) ASAP-vs-required for confirm-date** — UBER ships the handshake but keeps confirmation optional; Kira's call.
-1. ~~Approve CAT push~~ ✅ DONE 2026-07-16 (`0ef7cd7`). ~~Render smoke~~ ✅ 25/25 PASS.
-2. **On-device re-verify (CAT):** lawncare dashboard shows only Landscaping(+General) posts (bug #1 fixed) + gesture error gone after Expo Go pull.
-3. **Laptop sync:** in Git Bash on laptop, `cd /c/Users/amrba/OneDrive/Desktop/AMR/10-SWINGBY/Swingby && git pull origin main` (reads work; if `index.lock`, pause OneDrive, delete lock, retry). Still outstanding: fix laptop push auth + move repo out of OneDrive.
-4. D3 walkthrough + D4 tester run — every later calendar date keys off D4. Tester kit is drafted and waiting.
+✅ **AUDIT-CLEAN · SPEC-READY · FIXES-GREEN · WAITING-ON-HUMAN** (2026-07-17 overnight) — memory verified+tested, bus drained, POLISH-SPEC complete (spec + 2 UI fixes + QA 5/5), overnight runner livelock-proofed, never-started ledger on Kira's phone. Working tree uncommitted = Kira's morning push. Everything actionable left is the decisions batch + on-device verifies (HUMAN-TODO). No further autonomous build queued tonight.
+Prior signal ✅ **PROD-GREEN · HANDSHAKE UNBLOCKED · DESIGN ATLAS FILED** (2026-07-17 late) — prod outage fixed + deployed, i18n fixed in 3 languages, brief restyled, doctor live, atlas filed; everything pushed (`10738c7` = HEAD).
 
 ---
 *[[MAP]] · single source of truth for "what is true right now" · rewritten by [[ORCHESTRATOR]] each session*

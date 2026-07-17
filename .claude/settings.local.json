@@ -41,7 +41,9 @@
       "Bash(taskkill //F //FI \"WINDOWTITLE eq *\" //IM bash.exe)",
       "Bash(curl -s -o /dev/null -w \"HTTP %{http_code} · total %{time_total}s\\\\n\" --max-time 30 https://swingbyy-api.onrender.com/health)",
       "Bash(curl -s -o /dev/null -w \"HTTP %{http_code} · total %{time_total}s\\\\n\" --max-time 30 https://swingbyy-api.onrender.com/)",
-      "mcp__57a2c292-e06b-48d6-b671-1313ed55f997__notion-update-page"
+      "mcp__57a2c292-e06b-48d6-b671-1313ed55f997__notion-update-page",
+      "Read(//home/l3thal/agents/**)",
+      "Read(//home/l3thal/brain/**)"
     ]
   }
 }

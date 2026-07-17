@@ -904,7 +904,7 @@
       "from_screen": "PostJobScreen",
       "to_route": "QuoteComparison",
       "method": "navigate",
-      "line": 611
+      "line": 613
     },
     {
       "from_file": "mobile/src/screens/client/BookingDetailsScreen.js",
@@ -1695,7 +1695,7 @@
       "from_file": "mobile/src/screens/client/PostJobScreen.js",
       "method": "POST",
       "path": "/service-posts/",
-      "line": 596
+      "line": 598
     },
     {
       "from_file": "mobile/src/screens/client/BookingDetailsScreen.js",
@@ -1742,20 +1742,26 @@
     {
       "from_file": "mobile/src/screens/messages/ChatScreen.js",
       "method": "GET",
+      "path": "/bookings/${bookingId}",
+      "line": 298
+    },
+    {
+      "from_file": "mobile/src/screens/messages/ChatScreen.js",
+      "method": "GET",
       "path": "/messages/interest/${interestId}",
-      "line": 275
+      "line": 314
     },
     {
       "from_file": "mobile/src/screens/messages/ChatScreen.js",
       "method": "GET",
       "path": "/messages/${bookingId}",
-      "line": 276
+      "line": 315
     },
     {
       "from_file": "mobile/src/screens/messages/ChatScreen.js",
       "method": "POST",
       "path": "/messages/",
-      "line": 305
+      "line": 344
     },
     {
       "from_file": "mobile/src/screens/messages/MessagesScreen.js",

@@ -182,4 +182,4 @@ Mobile calls to endpoints **not exposed by the backend** (path params normalized
 - Registered screens: **55**  
 - Navigation edges: **88**  
 - Backend routes: **73**  
-- Mobile API calls: **79**  
+- Mobile API calls: **80**  

@@ -8,7 +8,26 @@
 
 ---
 
-## 🌙 Tonight — overnight queue (2026-07-16 → 17) — Phase UBER ✅ COMPLETE (executed overnight 398502, re-verified + closed 2026-07-17) — READY-TO-PUSH
+## 🌙 Tonight — overnight queue (2026-07-17 → 18) — Phase POLISH-SPEC ✅ COMPLETE (same session)
+
+> **STATUS: all 4 tasks done, reviewed, bus items RESOLVED. Working tree holds the output — NO push (Bucket C = Kira's morning).** SPEC-1 ✅ (design-exec-spec-2026-07-18.md, 31 files / 63 items / 2 P0 · 26 P1 · 35 P2 · JobManagement mock mismatch flagged for product call) · FIX-1 ✅ (wizard SafeArea) · FIX-2 ✅ (chat header self-heal; all 8 callers verified) · QA-1 ✅ 5/5 PASS (babel 115/0 docker, flow graph 0 broken, grep gates). Bonus (orchestrator inline): run-overnight.sh livelock fix (flock + WAITING-ON-HUMAN break + fast-fail backoff).
+>
+> **Next session (frame, Layer 7):** after Kira's morning push + decisions batch → dispatch design-spec **Wave 1**: the 2 P0s need decisions/backend first (employee-review migration = database-agent + picker UI; referral = build-or-hide call), so Wave 1 = shared-component P1s (NearbyCard verified/category props, TextField maxLength counter, TrendDelta) + client-side P1 batch per the spec's "Recommended implementation order". Get the JobManagement (#26) product call from Kira BEFORE any work on that entry.
+>
+> Dispatched by the 2026-07-17 overnight orchestrator session (Fable, live — Kira said "you run and decide"). Everything Bucket A; never push/deploy/send. Booking-loop guard: none of these touch the post→quote→accept→complete API path (UI-only + docs), so e2e_smoke is NOT re-triggered; QA gate = babel (docker node:20) + flow graph.
+> 5W+H, obstacle trains, and acceptance live in the bus REQUESTs (20260717-1001..1003, all RESOLVED with review notes).
+
+| # | Task | Route | DONE-RULE |
+|---|---|---|---|
+| 1 | **SPEC-1 — 31-screen execution spec** from `design/handoff-mocks-2026-07-17/swingby-mocks-standalone.html`: per screen — target file, gap list vs current implementation, P0 (broken/jarring) / P1 (quick polish) / P2 (later), token additions, and mock-data callouts (presence/read receipts behind a marked mock service). Spec only, NO production code. | design-agent (Sonnet) | `AGENTS/claude/deliverables/design-exec-spec-2026-07-18.md` exists, covers all 31 labeled screens, each with file path + concrete change list + priority; readable standalone |
+| 2 | **FIX-1 — PostJob wizard SafeArea**: step tabs (CATEGORY/DETAILS/BUDGET/CONFIRM) render under the status bar (Kira screenshot IMG_1412). Pad the wizard header via react-native-safe-area-context. | mobile-agent (Sonnet) | babel parse (docker node:20) 0 errors; wizard header uses safe-area insets; no `SafeAreaView` from 'react-native' introduced |
+| 3 | **FIX-2 — chat header identity**: ChatScreen falls back to generic "Chat" + "C" avatar when callers omit `otherPartyName` (route.params, ChatScreen.js:328/345/386). Fix every `navigate('Chat')` caller to pass it; add in-screen fallback (derive from threadInfo/booking fetch) so the header self-heals. | mobile-agent (Sonnet) | babel 0 errors; grep shows all Chat navigations pass otherPartyName or screen derives it; no new hardcoded English (i18n 3 locales if new strings) |
+| 4 | **QA-1 — regression**: babel parse full mobile/src + App.js via docker node:20; `python3 tools/flow_graph.py` regen; grep gates from FIX-1/2. | qa-agent (Haiku), after 2–3 | 0 babel errors; 0 broken edges; report to bus |
+| — | NOT tonight: implementing the 31-screen spec (next session, Kira reviews spec first); email/n8n work-pulse workflows (Kira hasn't dropped the email files yet); any push (Bucket C). | | |
+
+**Morning (Kira-gated):** review spec + fixes → push → on-device: wizard tabs clear of the clock, chat header shows the other party's name.
+
+## 🌙 Prior — overnight queue (2026-07-16 → 17) — Phase UBER ✅ COMPLETE (executed overnight 398502, re-verified + closed 2026-07-17) — READY-TO-PUSH
 
 > **STATUS: all 8 tasks done in the working tree, local gates green, NO push (Bucket C = Kira's morning).** Executed overnight (Opus orchestrator 398502): UBER-1 employee upsert ✅ · UBER-2 BookingDetails reachable ✅ · UBER-3 confirm-date handshake card ✅ · UBER-4 date_confirmed event ✅ · UBER-5 browse-first Home ✅ · UBER-6 General catch-all ✅ · UBER-7 docs ✅ · UBER-8 QA regression ✅. Overnight gates: pytest 36/3 · babel 115/0 · flow graph 0 broken. Re-verified 2026-07-17 (flow graph 0 broken re-run · py_compile clean on all 8 changed backend files · i18n 6/6 EN/FR/AR · ConfirmDateCard in 3 hosts · first confirm-date PATCH caller); pytest+babel not re-runnable on this box (no docker/pip/node_modules — audit #9). Detail in STATUS.md + SESSION_LOG. Morning: Kira reviews READY-TO-PUSH → push → Render smoke → Android on-device verify.
 

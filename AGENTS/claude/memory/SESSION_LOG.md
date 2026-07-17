@@ -17,53 +17,6 @@ NEXT: <next framed task>
 ---
 ```
 
-
-
-
----
-DATE: 2026-07-16 (early AM — Phase CAT push + prod verify)
-PROJECT: swingby
-PHASE: Phase CAT ship — push approval, deploy, prod smoke
-DISPATCHED: orchestrator inline (no subagents)
-SHIPPED:
-  - Session resumed after interruption; confirmed no orphaned agents (overnight loop had finished clean). Working tree verified intact vs READY-TO-PUSH inventory (py_compile OK, greps clean).
-  - Kira approved push (+ laptop sync). Committed Phase CAT as `0ef7cd7` (24 files, 1347+/772-) and pushed to main.
-  - Render autodeploy → `tools/e2e_smoke.py` vs swingbyy-api.onrender.com: **25/25 ALL PASS on first attempt**, incl. new Phase CAT checks (category normalized to "Cleaning"; new post visible in business feed).
-NEEDS KIRA:
-  1. On-device verify (Expo Go pull): lawncare dashboard = Landscaping(+General) only; gesture-handler error gone.
-  2. Laptop: `git pull origin main` in the OneDrive repo (reads work); fix push auth + move repo out of OneDrive.
-  3. D3 walkthrough + D4 tester (kit drafted, waiting).
-NEXT: Kira on-device verify closes bug #1. Then D2.2 on-device PDF check (Bucket B), D3/D4 calendar gate. No autonomous build queued.
----
-
----
-DATE: 2026-07-16 (overnight — Phase UBER executed)
-PROJECT: swingby
-PHASE: Phase UBER — Uber-flow P0 fixes + handshake UI + browse-first + General catch-all (overnight, Opus orchestrator 398502)
-DISPATCHED: backend-agent (UBER-1/4/6b, Sonnet), mobile-agent (UBER-2/3/5/6m, Sonnet), qa-agent (UBER-8, Haiku). Backend + mobile ran in parallel (disjoint dirs); docs UBER-7 inline; QA after both.
-CONCURRENCY INCIDENT (resolved): the prior overnight spawn (397885) had hard-stopped citing a "collision" with interactive session 391236, so run-overnight.sh was respawning orchestrators (~30s livelock, no work, burning Opus). Investigated: 391236 was a DORMANT interactive terminal — no children, Sl+ idle, ZERO repo/memory writes in 79 min. An idle terminal is not a competing executor. Proceeded as sole executor (completing the queue → ALL-TASKS-COMPLETE is the only clean exit from the run-overnight loop). Verified run-overnight (397875) is my ancestor before touching anything; killed nothing. Logged the run-overnight livelock bug for a fix (see NEEDS KIRA).
-SHIPPED (working tree, NOT committed — Bucket C = Kira's morning push; 20 modified + 2 new + KIRA.md deleted):
-  - UBER-1 (employees.py): employee-create 409 fixed — auth.users trigger pre-creates the public.users row, so the old .insert() collided (broken for every business). Now .upsert() on id (role='employee' + names), mirroring the same fix already in auth.py:250. Employees insert untouched. New test tests/test_employees.py (trigger-row → upsert succeeds, no .insert).
-  - UBER-4 (booking_events.py + bookings.py): added "date_confirmed" to _ALLOWED_EVENT_TYPES; confirm_date now inserts a single date_confirmed booking_event (line 303, own try/except so a timeline-write failure can't break confirm-date). Confirmation stays OPTIONAL. Test in test_booking_flow.py. Verified exactly ONE insert (no double-write despite concurrent mobile read).
-  - UBER-6 (categories.py + service_posts.py): new resolve_create_category() snaps unmatched/off-taxonomy values (e.g. "Reiki") + case-variants of "general" to GENERAL on CREATE only; normalize_category() untouched so ?category= search still accepts arbitrary strings. Test: "Reiki" create → "General".
-  - UBER-2 (MyJobsScreen.js, ActiveBookingScreen.js): BookingDetails now reachable — chevron on MyJobs booking rows + "View full details" button on ActiveBooking, both navigate('BookingDetails', {bookingId}). Route confirmed vs ClientNavigator; existing ActiveBooking flow intact.
-  - UBER-3 (new components/ConfirmDateCard.js + ChatScreen/MessageThreadScreen/BookingDetailsScreen + i18n EN/FR/AR): confirm-date HANDSHAKE card (client-only). Booking with proposed_date_1..3 and no confirmed_date → pinned card with per-date Accept chips → PATCH /bookings/{id}/confirm-date {confirmed_date} (first caller in mobile; was 0) → flips to "Confirmed for …". Renders on the chat thread(s) + BookingDetails; renders nothing on no-data/error.
-  - UBER-5 (HomeScreen.js): Home is browse-first — removed the top Browse/Post ModeSwitch + inline <PostJobScreen/>. Post-a-job stays reachable via the bottom-nav raised "Post" tab (BottomNav → PostJob, verified). PostJobScreen untouched.
-  - UBER-6 mobile (PostJobScreen.js): explicit "Other / General" chip (OTHER_CATEGORY='General', kept out of the canonical-8 constants) submitting category "General".
-  - UBER-7 docs (orchestrator inline): DEPLOY.md swingby-api → swingbyy-api (single-y = dead host); CLAUDE.md "MESSAGES locked to confirmed BOOKINGS" reworded (pre-booking quote-thread chat is live + smoke-covered); RUNNING_LOCALLY.md note that this box has no backend/.env → verify vs prod with test accounts (login 5/min/IP).
-GATES (all local, all green):
-  - Docker pytest (python:3.11-slim, stub env): 36 passed / 3 skipped (baseline 35/3 + 4 new; ignoring test_smoke_prod + k6). py_compile clean; black --check clean on all changed files.
-  - Babel parse mobile/src + App.js: 115 files + App.js / 0 errors.
-  - Flow graph regen: 0 broken edges / 0 orphans / 0 broken API. New edges present: MyJobsScreen → BookingDetails, ActiveBookingScreen → BookingDetails.
-REVIEW: Orchestrator read the produced backend files directly (not just agent reports) — confirmed single date_confirmed insert, upsert idempotency, resolve_create_category (canonical passes through, unknown → General, search path untouched), and mobile nav/PATCH/handshake grep proofs. Minor: mobile left one unused i18n key (booking.detailsAction) — harmless, flagged for optional cleanup.
-NEEDS KIRA (morning, all Bucket B/C — already itemized in HUMAN-TODO 2026-07-17 section):
-  1. (Bucket C) Approve + push — 20 modified + 2 new (+ KIRA.md deletion, now canonical at /home/l3thal/brain/KIRA.md). READY-TO-PUSH.
-  2. (Bucket B) After Render autodeploy: python3 tools/e2e_smoke.py https://swingbyy-api.onrender.com ALL PASS → Android on-device: add employee (was 409), open BookingDetails from My Jobs, accept a proposed time from the chat handshake card, see date_confirmed on timeline, browse-first Home, post an off-taxonomy job → lands in General.
-  3. (Product decision) ASAP-vs-required for confirm-date — tonight ships the handshake but keeps confirmation optional; your call parked in HUMAN-TODO.
-  4. (Ops) run-overnight.sh livelock bug — it respawns forever when a spawn hard-stops (only breaks on ALL-TASKS-COMPLETE, no concurrency guard). Add a lockfile + a WAITING-ON-HUMAN/backoff break so a future collision doesn't burn Opus all night.
-NEXT: Kira reviews READY-TO-PUSH → push → prod smoke → Android on-device verify. Then D3 walkthrough + D4 tester (kit drafted). No further autonomous build queued.
----
-
 ---
 DATE: 2026-07-17 (Phase UBER re-verify + memory close-out)
 PROJECT: swingby
@@ -96,3 +49,27 @@ SHIPPED:
 NEEDS KIRA: on-device verify tomorrow (handshake card text, dashboard, new brief at 06:05); judge brief voice; ASAP-vs-required confirm-date decision still open.
 NEXT: tmux session — write 31-screen execution spec from the mock atlas, dispatch agents (incl. quote-chat header, SafeArea on PostJob wizard, mocked presence/read receipts). Then n8n work-pulse workflow + email read/send workflows.
 ---
+
+---
+DATE: 2026-07-17 (overnight — full audit + Phase POLISH-SPEC, Fable orchestrator)
+PROJECT: swingby
+PHASE: BETA — company handover audit ("you run and decide") + design-spec phase
+DISPATCHED: design-agent (SPEC-1, Sonnet), mobile-agent (FIX-1/2, Sonnet), qa-agent (QA-1, Haiku) — all via bus REQUESTs 20260717-1001..1003, all reviewed + RESOLVED same session.
+VERIFIED (memory tested against reality, per Kira's ask):
+  - git clean + pushed (HEAD 10738c7 = origin); prod health 200; doctor 7/7 PASS; mobile/.env → prod URL; SessionEnd/SessionStart doctor hooks live in ~/.claude/settings.json.
+  - n8n: swingby-n8n up, MorningBriefSwing ACTIVE, cron 5 6 * * * America/Edmonton — 06:05 brief armed.
+  - Supabase: both Jul 17 migrations applied (booking_events date_confirmed CHECK, date_proposed_by); advisors show no missing RLS (3 known WARNs). e2e_smoke vs prod NOT run (permission classifier blocked prod-write; read-only journey via doctor covers it, smoke was 25/25 earlier same day).
+  - brain/inbox: all 9 screenshots triaged — outage Sentry email, pre-fix i18n [missing] evidence, mock-atlas captures, working chat, booking email IN INBOX (not spam); mocks html identical to filed copy; nothing unprocessed. Safe-to-delete list parked to HUMAN-TODO (Bucket C).
+  - Auto-memories corrected: uber-flow-audit (CHECK-constraint claim + brief-parked claim stale), overnight-collision (fix now shipped); MEMORY.md index synced.
+  - ORCHESTRATOR_ISSUES re-baselined: 10 rows grep-proofed as resolved and deleted (C5/C7/C8/C9/H1/H4/H5/H6/H7/H10); CRITICAL empty; C4/C6 → LOW; L13–L15 added (interest-thread name field, advisor WARNs, hello@ vs team@ sender split).
+SHIPPED (working tree, NOT committed — Bucket C):
+  - design-exec-spec-2026-07-18.md: 31 screens / 63 items (2 P0 · 26 P1 · 35 P2), waves ordered, mockPresence.js boundary, #26 JobManagement mock/target mismatch flagged for product call.
+  - PostJobScreen.js SafeArea insets (wizard tabs off the clock); ChatScreen.js headerName self-heal (all 8 callers audited). QA 5/5 (babel 115/0 docker · flow graph 0 broken · greps).
+  - run-overnight.sh livelock fix: flock lockfile + WAITING-ON-HUMAN break + fast-fail backoff (3×<120s stops the loop); lockfile gitignored.
+  - MESSAGE_BUS drained (2 June items archived w/ resolutions); HUMAN-TODO decisions batch + GitHub-private note; PLAN POLISH-SPEC queue closed + Wave 1 framed.
+SENT: never-started ledger → Kira's Telegram (2 msgs, delivered): 4 decisions on top, product + ops never-started lists, 2-min clicks.
+NEEDS KIRA: morning push; 15-min self-run (gates D4); handshake on-device verify; decisions batch (confirm-date · referral · D2.4 posture · invite card) + spec #26 call; Dependabot toggle/triage.
+LEARNED (learning-loop): (1) trackers + memories rot fast — 10 of 16 issue rows were already fixed in code; grep-proof every row before dispatching from it (rule now baked into ORCHESTRATOR_ISSUES header). (2) Rolling SESSION_LOG by splitting on the entry delimiter eats the header template (it contains the same delimiter inside a code fence) — anchor rolls on real DATE values, not the bare delimiter.
+NEXT: after push + decisions → dispatch design-spec Wave 1 (NearbyCard/TextField/TrendDelta + client-side P1s); employee-review migration+picker per decision; then D3/D4 chain.
+---
+

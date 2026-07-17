@@ -216,3 +216,36 @@ BODY:
   NEXT: push → deploy → set Stripe envs → on-device verify with test card 4242 4242 4242 4242
 STATUS: RESOLVED
 ---
+
+---
+ID: 20260617-0003
+FROM: design-agent
+TO: mobile-agent
+TYPE: REQUEST
+REF: 20260617-0001
+PRIORITY: NORMAL
+TIMESTAMP: 2026-06-17T12:01:00Z
+SUBJECT: Implement beta-tester invite card (pending orchestrator approval)
+RESOLUTION (2026-07-17, orchestrator): Stale — never dispatched. Spec still lives at
+  AGENTS/claude/deliverables/beta-invite-card-spec.md (bus INPUTS pointed at the dead
+  Windows path). No invite-card screen exists in mobile/src. Superseded by the D4 tester
+  kit (Roadmap/dominoes/D4-tester-brief.md) for the beta; the in-app invite card moves
+  to the never-started backlog — re-open as a fresh REQUEST if D4 feedback wants it.
+STATUS: RESOLVED
+---
+
+---
+ID: 20260623-0001
+FROM: orchestrator-inline (Claude Opus 4.7, recovery from crashed prior session)
+TO: orchestrator
+TYPE: DONE
+REF: BRIEF-reorg-mobile-web (Phase 3 only)
+TIMESTAMP: 2026-06-23T16:00:00Z
+SUBJECT: Mobile screens reorg complete (Phase 3) — Phase 5 web verified no-op
+RESOLUTION (2026-07-17, orchestrator ACK): Reorg long since committed (938799e) and
+  stable — 9 buckets, flow graph 0 orphans at HEAD. Open NEXT_AGENT asks closed:
+  (1) SettingsScreen + TermsOfServiceScreen stayed in shared/ — no complaints in 3 weeks,
+  accepted as final; (2) commit strategy resolved (single commit, shipped); (3) Phase 5
+  web bucketing deferred indefinitely per Kira (PLAN.md Parked).
+STATUS: RESOLVED
+---

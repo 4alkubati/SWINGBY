@@ -11,6 +11,14 @@ If the loop wrote READY-TO-PUSH to STATUS.md:
 - [x] ~~(Bucket B — smoke after deploy)~~ ✅ DONE 2026-07-17 (Claude): prod smoke 25/25 PASS **+ targeted UBER test ALL PASS** (employee-create 200, assign→confirm-date→in_progress, `date_confirmed` on timeline, off-taxonomy→General). Found + fixed one leftover: `booking_events` CHECK constraint lacked `'date_confirmed'` — migration `booking_events_allow_date_confirmed` applied to Supabase, re-verified green.
 - [x] ~~(Bucket C — push)~~ ✅ DONE 2026-07-17 late (Claude): pushed with the prod-outage fix; Render deployed; dashboard endpoints verified 200.
 
+## 🎯 Decisions batch (2026-07-17 overnight audit — one line each, also sent to your Telegram)
+
+- [ ] **Confirm-date:** require always / keep optional / require + "ASAP" quick-confirm?
+- [ ] **ReferralScreen:** in the app, zero backend — build for beta or hide the screen?
+- [ ] **D2.4 beta billing:** confirm default track-only (no real charge until launch) or flip Checkout on?
+- [ ] **Beta invite card** (spec'd Jun 17, never built; D4 tester kit covers it): drop or build?
+- [ ] **Inbox cleanup OK?** brain/inbox items now fully processed and safe to delete on your word: `swingby-rescue.bundle` (merged `d350295`), IMG_1399–1401 (stale-laptop bugs, all fixed), the Jul 16 screenshot/mock files (filed to `design/handoff-mocks-2026-07-17/` / bugs fixed or queued).
+
 ## 🌅 This morning (2026-07-18)
 
 - [ ] **(Bucket B — verify the fixes, ~10 min)** On the phone (laptop already pulled main; run `cd mobile && cp .env.example .env` if .env missing, then `npx expo start --clear`): open your lawn booking chat → the handshake card now shows real text ("Proposer un horaire" on your French phone). Propose times as client → approve from the business account. Also confirm the business dashboard loads.
@@ -39,7 +47,7 @@ Done 2026-07-17: ~~rotate the Google Maps key~~ ✅ key rotated + **repo is now 
 - [ ] **(Notion — D4 date vs. sequence)** Notion's "SwingBy" DB has **D4 — Friend/known-trade end-to-end run** due **2026-07-07**, but D2.0 (live walkthrough) and D3 (Expo Go walkthrough) — both prerequisites per `Roadmap/DOMINOES.md` — aren't done. Either push D4's due date in Notion or accept it slips.
 - [ ] **(Notion — stale rows, manual flip needed)** Notion's "SwingBy" DB still shows **F1 `/payments/mine`** and **F2 disputes** as "Not started," but STATUS.md confirms both shipped 2026-07-01. This DB doesn't auto-sync from git yet (see `AGENTS/claude/config/NOTION_SYNC.md`) — flip both rows to Done in Notion, or say the word and a git→Notion sync gets wired next.
 
-- [ ] **(GitHub — 2 minutes of clicking, agent was permission-blocked)** Repo Settings → *Code security and analysis* → enable **Dependabot alerts**, **Secret scanning**, and **Push protection** (all free on public repos). Optional: Settings → Branches → protect `main` from force-push/deletion.
+- [ ] **(GitHub — 2 minutes of clicking, agent was permission-blocked)** Repo Settings → *Code security and analysis* → enable **Dependabot alerts**. NOTE (updated 2026-07-17): the repo is now **private**, so secret scanning + push protection are no longer free (they need GH Advanced Security) — Dependabot alerts still are. Optional: Settings → Branches → protect `main` from force-push/deletion.
 - [ ] **(GitHub — Dependabot triage)** Dependabot opened its first PRs, including **major** bumps (`@react-navigation/native` 6→7, `async-storage` 2→3, `pytest` 7→9). Do NOT merge the majors blindly — navigation v7 is a breaking migration. Merge patch/minor, close majors until post-beta.
 - [ ] **(Email deliverability — DMARC is done, spam persists = domain reputation)** DNS is verified correct (SPF+DKIM+DMARC all present). Actions that actually move inbox placement:
   1. Every beta tester: mark "Not spam" + add `team@swingbyy.com` to contacts (fastest fix).
