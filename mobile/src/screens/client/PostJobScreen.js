@@ -4,6 +4,7 @@ import {
 } from 'react-native';
 import { useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   useSharedValue, useAnimatedStyle, withSpring, withTiming, Easing,
 } from 'react-native-reanimated';
@@ -526,6 +527,7 @@ function StepConfirm({ category, description, address, budget, date, time, photo
 // ─── Main screen ─────────────────────────────────────────────────────────────
 export default function PostJobScreen() {
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
 
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('');
@@ -624,7 +626,7 @@ export default function PostJobScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={styles.wrapper}
+      style={[styles.wrapper, { paddingTop: insets.top }]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView

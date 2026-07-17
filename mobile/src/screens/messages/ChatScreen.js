@@ -250,6 +250,27 @@ function ChatSkeleton() {
   );
 }
 
+// A booking thread's own endpoint (/messages/{bookingId}) carries no
+// participant identity, so the self-heal below (when otherPartyName wasn't
+// passed by the caller) reads it off the booking payload instead — same
+// client/business/employee lens MessageThreadScreen already uses.
+function deriveBookingCounterpart(bookingMeta, role) {
+  if (!bookingMeta) return null;
+  if (role === 'client') {
+    const empUser = bookingMeta.employees?.users;
+    return (
+      (empUser && [empUser.first_name, empUser.last_name].filter(Boolean).join(' '))
+      || bookingMeta.businesses?.business_name
+      || null
+    );
+  }
+  const clientUser = bookingMeta.users;
+  return (
+    (clientUser && [clientUser.first_name, clientUser.last_name].filter(Boolean).join(' '))
+    || null
+  );
+}
+
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 
 export default function ChatScreen({ navigation, route }) {
@@ -260,6 +281,7 @@ export default function ChatScreen({ navigation, route }) {
 
   const [messages, setMessages] = useState([]);
   const [threadInfo, setThreadInfo] = useState(null); // interest threads: {post_title, quoted_price, status}
+  const [bookingMeta, setBookingMeta] = useState(null); // booking threads: self-heal source for the header name
   const [text, setText] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -267,6 +289,23 @@ export default function ChatScreen({ navigation, route }) {
   const [isTyping, setIsTyping] = useState(false); // simulated typing indicator state
 
   const listRef = useRef(null);
+
+  // Self-heal: the caller didn't pass a name — fetch the booking payload
+  // (already used elsewhere, e.g. MessageThreadScreen) so the header isn't
+  // stuck on the generic fallback. Only fires when the param is missing.
+  useEffect(() => {
+    if (!bookingId || otherPartyName) return;
+    api.get(`/bookings/${bookingId}`)
+      .then((data) => setBookingMeta(data))
+      .catch(() => { /* best-effort — header keeps its fallback */ });
+  }, [bookingId, otherPartyName]);
+
+  // Resolved header identity: caller-provided name wins; otherwise self-heal
+  // from data this screen already fetches (booking payload / interest thread info).
+  const headerName = otherPartyName
+    || deriveBookingCounterpart(bookingMeta, user?.role)
+    || threadInfo?.post_title
+    || null;
 
   const load = useCallback(async () => {
     setError(null);
@@ -325,7 +364,7 @@ export default function ChatScreen({ navigation, route }) {
           <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={8}>
             <Feather name="arrow-left" size={20} color={colors.textPrimary} strokeWidth={2} />
           </TouchableOpacity>
-          <Text variant="bodyMedium">{otherPartyName || 'Chat'}</Text>
+          <Text variant="bodyMedium">{headerName || 'Chat'}</Text>
           <View style={{ width: 32 }} />
         </View>
         <ChatSkeleton />
@@ -342,7 +381,7 @@ export default function ChatScreen({ navigation, route }) {
           <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={8}>
             <Feather name="arrow-left" size={20} color={colors.textPrimary} strokeWidth={2} />
           </TouchableOpacity>
-          <Text variant="bodyMedium">{otherPartyName || 'Chat'}</Text>
+          <Text variant="bodyMedium">{headerName || 'Chat'}</Text>
           <View style={{ width: 32 }} />
         </View>
         <View style={styles.errorContainer}>
@@ -379,11 +418,11 @@ export default function ChatScreen({ navigation, route }) {
               variant="caption"
               style={{ color: colors.accentText, fontWeight: '700' }}
             >
-              {(otherPartyName || 'C').charAt(0).toUpperCase()}
+              {(headerName || 'C').charAt(0).toUpperCase()}
             </Text>
           </View>
           <View>
-            <Text variant="bodyMedium">{otherPartyName || 'Chat'}</Text>
+            <Text variant="bodyMedium">{headerName || 'Chat'}</Text>
             {threadInfo ? (
               <Text variant="caption" color="secondary" numberOfLines={1}>
                 {[
