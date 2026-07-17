@@ -13,14 +13,12 @@
   3. `touch AGENTS/claude/automation/RESUME` (force-wake; file is consumed).
   On wake the orchestrator's first duty is the UNBLOCK CHECK: blocking asks done → clear the marker, log "unblocked by Kira", resume the queue; still blocked → exit cheap and the runner re-pauses (these short cycles are exempt from the fast-fail counter). After 48 h with no unblock the loop ends; restart with `bash AGENTS/claude/automation/run-overnight.sh`.
 
-## Morning Brief — node by node (4-message format since 2026-07-15)
+## Morning Brief — node by node (2-message format since 2026-07-17)
 
 1. **Schedule 06:05** — cron `5 6 * * *`, fires 06:05 America/Edmonton (container `GENERIC_TIMEZONE`).
-2. **Compile Brief** (Code node, `fs` allowed) — reads `memory/STATUS.md`, `memory/HUMAN-TODO.md` (🌅 This-morning + ⛔ Blocking checkboxes), `memory/SESSION_LOG.md` (last NEXT line), and the tail of `automation/overnight.log`. **Sanitises everything** before sending: strips all Markdown/Obsidian noise (`**bold**`, `` `code` ``, `###`, `[[wikilinks]]`, `- [ ]`, `·` → `—`) AND leading `(Bucket X — …)`-style jargon tags, clips each line on a word/sentence boundary (never mid-word), and formats as clean `•` bullets under bold section headers (Telegram HTML — see node 3). **KIRA.md voice pass (2026-07-17,** per `~/brain/KIRA.md`**):** message 3 leads with a **Decide today** block (any task matching /decision|decide|your call/), tasks carry up to 3 numbered sub-steps (multi-line checkboxes no longer end mid-sentence), checked-off items are skipped entirely, and the log tail never shows raw stack-trace lines. Emits **4 items → 4 Telegram messages**:
-   - **1/4 ☀️ header + 🔧 BACKEND** — SIGNAL line + backend bullets
-   - **2/4 📱 FRONTEND / MOBILE** — mobile bullets
-   - **3/4 🧑 HUMAN TODO** — this-morning + blocking checkboxes + Next Actions
-   - **4/4 🌙 NIGHT RECAP** — mixed/other bullets **reduced to headlines** (text before the first `:`, ≤60 chars — detail stays in STATUS.md), loop log tail, LOOP NEXT
+2. **Compile Brief** (Code node, `fs` allowed) — reads `memory/STATUS.md`, `memory/HUMAN-TODO.md` (ALL 🌅 This-morning sections + 🎯 Decisions + ⛔ Blocking — dated duplicates included), `memory/SESSION_LOG.md` (last NEXT line), `memory/DOCTOR-LATEST.md`. **Sanitises everything** before sending: strips all Markdown/Obsidian noise (`**bold**`, `` `code` ``, `###`, `[[wikilinks]]`, `- [ ]`, `·` → `—`) AND leading `(Bucket X — …)`-style jargon tags, clips each line on a word/sentence boundary (never mid-word), Telegram-HTML-escapes dynamic text only. **Trimmed 2026-07-17 per Kira ("works but more detailed than needed"):** headline bullets only (~140 chars), hard caps (backend 4 · mobile 4 · recap 3 · decisions 3 · do-items 4 · blocking 3), no sub-steps, no raw build-log tail, checked-off items skipped. Emits **2 items → 2 Telegram messages**:
+   - **1/2 ☀️ Where we stand** — SIGNAL line + phase + doctor health verdict, then 🔧 Backend / 📱 Mobile / 🌙 Also-overnight headlines + LOOP NEXT. Ends `Detail: STATUS.md`.
+   - **2/2 ✅ Your moves** — 🎯 Decide (decision items pulled to top, /decision|decide|your call/), ☑️ Do this morning, ⛔ Blocked. Ends `Full steps: HUMAN-TODO.md`.
    Splitting: if STATUS.md has a `## Morning Brief` section with `### Backend` / `### Frontend` / `### Recap` subsections, those are used verbatim (preferred — orchestrator can write it at session end). Otherwise the Session End Signal bullets are bucketed by keyword; bullets matching both/neither go to the recap.
 3. **Telegram — Send Brief** (HTTP node) — one `sendMessage` per item, 800 ms apart so order holds, `parse_mode: HTML` (bold headers render; the Compile node HTML-escapes all dynamic text). Token per item: `$env[item.tokenVar] || $env.TELEGRAM_BOT_TOKEN`.
 
