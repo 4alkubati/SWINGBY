@@ -55,10 +55,9 @@ git add mobile/src/screens/ mobile/src/components/ mobile/app.json
 git rm -f mobile/src/screens/shared/MapScreen.js mobile/src/screens/shared/MapScreen.web.js 2>/dev/null || true
 git commit -m "fix(mobile): screen polish, dead-end wiring, remove MapScreen (dupe of NearbyMap), Maps key placeholder"
 
-echo "--- 6/7 · Roadmap + docs + AGENTS + tools ---"
+echo "--- 6/7 · Roadmap + docs + tools ---"
 git add Roadmap/ \
         docs/ \
-        AGENTS/ \
         CLAUDE.md \
         .gitignore \
         .vscode/ \

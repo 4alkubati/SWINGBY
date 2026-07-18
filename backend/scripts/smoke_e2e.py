@@ -107,7 +107,7 @@ def signup_or_login(
                 f"\n[smoke] 401 logging in as {email}. The seed account does not "
                 f"exist in Supabase Auth (or the password is wrong). Create it via "
                 f"Supabase dashboard → Authentication → Users → Add user, with "
-                f"'Auto Confirm User' ON. See AGENTS/claude/memory/HUMAN-TODO.md.",
+                f"'Auto Confirm User' ON. See ~/brain/projects/swingby/claude/memory/HUMAN-TODO.md.",
                 file=sys.stderr,
             )
             sys.exit(6)

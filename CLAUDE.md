@@ -30,7 +30,7 @@ Dual-sided service marketplace connecting service providers (**Businesses**) wit
 | Payments | Stripe (sandbox wired) — escrow split logic in backend |
 | Maps | Google Maps API (placeholder key, real key for Phase 5) |
 | Push | Expo Push + FCM (post-MVP) |
-| Project nudges | Notion (connected MCP, same tier as Google Calendar) — "SwingBy" database mirrors Roadmap/DOMINOES + Launch Checklist, flags overdue/blocked/gate items. Read-only nudge layer, not source of truth — see `AGENTS/claude/config/NOTION_SYNC.md` |
+| Project nudges | Notion (connected MCP, same tier as Google Calendar) — "SwingBy" database mirrors Roadmap/DOMINOES + Launch Checklist, flags overdue/blocked/gate items. Read-only nudge layer, not source of truth — see `~/brain/projects/swingby/claude/config/NOTION_SYNC.md` |
 | CRM (separate) | `backend/app/services/notion_crm.py` — best-effort sync of new signups to a Notion leads DB via `NOTION_TOKEN`/`NOTION_CRM_DB_ID`. Unrelated to the nudge DB above |
 
 ---
@@ -47,7 +47,7 @@ SwingBy/
 │   └── admin/      Platform analytics
 ├── workers/        Cloudflare Workers
 ├── docs/           API.md, SECURITY.md, SESSIONS.md, RUNNING_LOCALLY.md, DEPLOY.md, ROLLBACK.md, schema, RLS, ops
-├── AGENTS/         Orchestrator briefs (BOH, FOH, claude memory)
+├── AGENTS          gitignored symlink → ~/brain/projects/swingby/ (agent kit: orchestrator, BOH/FOH, memory — lives in the brain)
 ├── design/         Mockups, system
 ├── marketing/      Content, emails, social
 └── CLAUDE.md       this file
@@ -134,11 +134,13 @@ npx expo start --clear
 - Running locally → `docs/RUNNING_LOCALLY.md`
 - Deploy / Rollback → `docs/DEPLOY.md`, `docs/ROLLBACK.md`
 - DB schema → `docs/swingby_database_schema.md`
-- **Code-flow graph → `docs/FLOW_GRAPH.md` + `docs/flow-graph.json`** — every screen ↔ screen edge, backend routes vs mobile calls, orphans in red. **Read this FIRST for any nav / 404 / dead-end question** — cheaper than scanning screen files. Regenerate: `python3 tools/flow_graph.py`. How-to: `AGENTS/claude/automation/FLOW_GRAPH.md`.
+- **Code-flow graph → `docs/FLOW_GRAPH.md` + `docs/flow-graph.json`** — every screen ↔ screen edge, backend routes vs mobile calls, orphans in red. **Read this FIRST for any nav / 404 / dead-end question** — cheaper than scanning screen files. Regenerate: `python3 tools/flow_graph.py`. How-to: `~/brain/projects/swingby/claude/automation/FLOW_GRAPH.md`.
 - **Booking-loop smoke test → `tools/e2e_smoke.py`** — full post→quote→accept→booking→complete journey with response-SHAPE checks against a local backend (`python tools/e2e_smoke.py [base_url]`). **Mandatory before accepting any change to the booking loop** (DISPATCH_GATE Layer 6). Uses the test accounts above.
-- Notion nudge layer → `AGENTS/claude/config/NOTION_SYNC.md` — database ID, schema, query pattern, drift-check rule
-- Orchestrator briefs → `AGENTS/briefs/BRIEF-*.md`
-- New-project scaffolder → `AGENTS/KICKOFF.md` (invoked by the user-level `kira-kickoff` skill)
+- Notion nudge layer → `~/brain/projects/swingby/claude/config/NOTION_SYNC.md` — database ID, schema, query pattern, drift-check rule
+- Orchestrator briefs → `~/brain/projects/swingby/briefs/BRIEF-*.md`
+- New-project scaffolder → `~/brain/docs/KICKOFF.md` (invoked by the user-level `kira-kickoff` skill)
 - Roadmap → `Roadmap/`
 
-**Sync rule:** agent-behavior changes (gates, routing, loop, skills) are edited in `AGENTS/` and committed BEFORE being applied in a live session.
+**The brain:** the agent kit lives at `~/brain/projects/swingby/` (its own git repo); this repo keeps a gitignored `AGENTS` symlink pointing there, so `AGENTS/...` paths still resolve on this box.
+
+**Sync rule:** agent-behavior changes (gates, routing, loop, skills) are edited in `~/brain/projects/swingby/` and committed to the brain's git BEFORE being applied in a live session.

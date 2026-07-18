@@ -63,3 +63,4 @@ AGENTS/claude/automation/.overnight.lock
 AGENTS/claude/automation/RESUME
 AGENTS/claude/automation/*.log
 AGENTS/claude/memory/DOCTOR-LATEST.md
+AGENTS
