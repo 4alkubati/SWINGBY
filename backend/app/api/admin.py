@@ -8,6 +8,9 @@ T27  Admin user/booking management:
      - POST /admin/unsuspend-user/{user_id}
      - POST /admin/force-complete-booking/{booking_id}
 
+CARD-07 Monitoring verification:
+     - GET  /admin/monitoring-probe
+
 Rate limit: 30/minute per IP for all admin endpoints.
 
 NOTE: `users.is_suspended boolean default false` column must exist in the DB.
@@ -168,3 +171,35 @@ def force_complete_booking(
     except Exception:
         logger.exception("admin.force_complete_booking failed", booking_id=booking_id)
         raise HTTPException(status_code=400, detail="Could not complete booking")
+
+
+@router.get("/monitoring-probe")
+@limiter.limit("5/minute")
+def monitoring_probe(
+    request: Request,
+    current_user: dict = Depends(require_admin),
+):
+    """
+    CARD-07 — deliberate, admin-only test error for Sentry verification.
+
+    Intentionally left UNCAUGHT (no try/except): the goal is to reach
+    FastAPI's default 500 path and let Sentry's FastApiIntegration capture
+    a real unhandled exception exactly as it would for a genuine bug, not a
+    manually-called capture_message(). Proves the live prod SENTRY_DSN
+    actually ingests errors end-to-end, on demand.
+
+    Safe: admin-gated (403 for non-admin), rate-limited (5/min), touches no
+    data, no side effects besides one log line + one exception. If
+    SENTRY_DSN is unset in this environment, this just 500s with no capture
+    (unchanged behavior for the caller either way).
+
+    Usage once deployed:
+      curl -H "Authorization: Bearer <admin-jwt>" \
+        https://swingbyy-api.onrender.com/admin/monitoring-probe
+      -> expect HTTP 500, then check the Sentry issues stream for
+         "CARD-07 monitoring probe" within ~1 minute.
+    """
+    logger.info("card07.monitoring_probe.fired", admin_id=current_user["id"])
+    raise RuntimeError(
+        "CARD-07 monitoring probe — deliberate test error, safe to ignore"
+    )
