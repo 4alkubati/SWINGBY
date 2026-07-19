@@ -69,6 +69,7 @@ flowchart LR
     PaymentMethod["PaymentMethod"]
     DisputeFlow["DisputeFlow"]
     Invoice["Invoice"]
+    MyDisputes["MyDisputes"]
   end
   subgraph transitions
   end
@@ -118,10 +119,12 @@ flowchart LR
   JobManagement --> DisputeFlow
   Favorites --> Home
   Favorites --> BusinessProfile
+  MyDisputes --> BookingDetails
   ActiveBooking --> Home
   ActiveBooking --> BusinessProfile
   ActiveBooking --> Chat
   ActiveBooking --> BookingDetails
+  ActiveBooking --> MyDisputes
   ActiveBooking --> CancellationFlow
   Home --> PostJob
   Home --> Notifications
@@ -179,7 +182,7 @@ Mobile calls to endpoints **not exposed by the backend** (path params normalized
 ## Inventory
 
 - Navigators: **4**  
-- Registered screens: **55**  
-- Navigation edges: **88**  
-- Backend routes: **73**  
-- Mobile API calls: **80**  
+- Registered screens: **56**  
+- Navigation edges: **94**  
+- Backend routes: **75**  
+- Mobile API calls: **86**  
