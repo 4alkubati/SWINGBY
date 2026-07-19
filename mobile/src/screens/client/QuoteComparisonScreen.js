@@ -20,6 +20,8 @@ import { SkeletonCard } from '../../components/Skeleton';
 import { RatingStarsDisplay } from '../../components/RatingStars';
 
 import { api } from '../../services/api';
+import * as toast from '../../services/toast';
+import i18n from '../../i18n';
 import { colors, spacing, radius } from '../../theme/tokens';
 
 // ─── Skeleton list for loading state ─────────────────────────────────────────
@@ -63,7 +65,7 @@ function ErrorState({ onRetry }) {
 // ─── Animated quote card ──────────────────────────────────────────────────────
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-function QuoteListCard({ quote, isRecommended, onSelect, onViewProfile, onMessage }) {
+function QuoteListCard({ quote, isRecommended, onSelect, onViewProfile, onMessage, onDecline, declining }) {
   const scale = useSharedValue(1);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -154,6 +156,16 @@ function QuoteListCard({ quote, isRecommended, onSelect, onViewProfile, onMessag
                   style={styles.selectBtn}
                 />
               )}
+              {onDecline && (
+                <Button
+                  variant="ghost"
+                  label={i18n.t('quotes.decline')}
+                  onPress={onDecline}
+                  loading={declining}
+                  disabled={declining}
+                  style={[styles.selectBtn, styles.declineBtn]}
+                />
+              )}
             </Stack>
           </Inline>
         </Surface>
@@ -217,6 +229,9 @@ export default function QuoteComparisonScreen({ navigation, route }) {
   const [sheetVisible, setSheetVisible] = useState(false);
   const [selectedQuote, setSelectedQuote] = useState(null);
 
+  // Decline state — tracks which quote id is mid-flight so its button can spin
+  const [decliningId, setDecliningId] = useState(null);
+
   // ── Load quotes (original API logic preserved) ──────────────────────────────
   async function loadQuotes() {
     setLoading(true);
@@ -275,6 +290,37 @@ export default function QuoteComparisonScreen({ navigation, route }) {
 
   // Inline confirm error
   const [confirmError, setConfirmError] = useState('');
+
+  // ── Decline a quote — G1 (GAP-AUDIT #1). PATCH /interests/{id}/reject exists
+  // on the backend but had no mobile caller; businesses' pending quotes hung
+  // forever. Optimistic removal, restored at its original index on failure.
+  async function handleDecline(quote) {
+    if (decliningId) return;
+    const previousQuotes = quotes;
+    const index = quotes.findIndex((q) => q.id === quote.id);
+    setDecliningId(quote.id);
+    setQuotes((prev) => prev.filter((q) => q.id !== quote.id));
+    try {
+      await api.patch(`/interests/${quote.id}/reject`);
+      toast.show({ type: 'success', text1: i18n.t('quotes.declined') });
+    } catch (err) {
+      // Error-safe restore — put the quote back where it was.
+      setQuotes((prev) => {
+        const restored = [...prev];
+        restored.splice(Math.max(0, index), 0, quote);
+        return restored;
+      });
+      toast.show({
+        type: 'error',
+        text1: i18n.t('quotes.declineError'),
+        text2: err?.message || '',
+      });
+      // fall back to the untouched original list in case of index drift
+      if (index === -1) setQuotes(previousQuotes);
+    } finally {
+      setDecliningId(null);
+    }
+  }
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -342,6 +388,8 @@ export default function QuoteComparisonScreen({ navigation, route }) {
                     otherPartyName: quote.businesses?.business_name || 'Business',
                   })
                 }
+                onDecline={() => handleDecline(quote)}
+                declining={decliningId === quote.id}
               />
             ))}
           </Stack>
@@ -411,6 +459,10 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xs,
     paddingHorizontal: spacing.md,
     minWidth: 80,
+  },
+  declineBtn: {
+    borderWidth: 1,
+    borderColor: colors.danger + '4D',
   },
 
   // Price
