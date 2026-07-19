@@ -19,6 +19,7 @@ import * as Clipboard from 'expo-clipboard';
 import { Linking, Share } from 'react-native';
 import { api } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+import i18n from '../../i18n';
 import * as toast from '../../services/toast';
 import * as haptics from '../../services/haptics';
 import BookingStatusTimeline from '../../components/BookingStatusTimeline';
@@ -111,6 +112,71 @@ function paymentPillLabel(status) {
     case 'paid_off_platform':  return 'PAID (OFF-PLATFORM)';
     default:                   return (status || 'pending').toUpperCase();
   }
+}
+
+// ─── Escrow milestones (read-only) ─────────────────────────────────────────────
+// GAP-AUDIT #10 — payments.escrow_held / released_to_business are tracked by
+// the backend (interests.py accept → 50% released; bookings.py complete_booking
+// → remaining released) but no screen ever surfaced them. Pure display, zero
+// writes to any payment endpoint.
+function EscrowMilestones({ payment }) {
+  if (!payment) return null;
+
+  const totalCharged = parseFloat(payment.total_charged ?? 0);
+  const releasedToBusiness = parseFloat(payment.released_to_business ?? 0);
+  const escrowHeld = parseFloat(payment.escrow_held ?? 0);
+  const payStatus = (payment.status || '').toLowerCase();
+
+  const fundsHeld = totalCharged > 0;
+  const halfReleased = releasedToBusiness > 0 || ['partial', 'fully_released'].includes(payStatus);
+  const fullyReleased = payStatus === 'fully_released' && escrowHeld === 0;
+
+  const steps = [
+    { key: 'held', label: i18n.t('escrow.fundsHeld'), done: fundsHeld },
+    { key: 'half', label: i18n.t('escrow.halfReleased'), done: halfReleased },
+    { key: 'full', label: i18n.t('escrow.fullReleased'), done: fullyReleased },
+  ];
+
+  return (
+    <Surface elevation="subtle">
+      <Stack spacing="sm">
+        <Inline spacing="xs" align="center">
+          <Feather name="lock" size={14} color={colors.textSecondary} strokeWidth={1.8} />
+          <Text variant="label" color="secondary" accessibilityRole="header">
+            {i18n.t('escrow.title')}
+          </Text>
+        </Inline>
+
+        {steps.map((step, i) => (
+          <Inline key={step.key} spacing="sm" align="center">
+            <Feather
+              name={step.done ? 'check-circle' : 'circle'}
+              size={16}
+              color={step.done ? colors.success : colors.textSecondary}
+              strokeWidth={1.8}
+            />
+            <Text
+              variant="small"
+              color={step.done ? 'primary' : 'secondary'}
+              style={{ flex: 1 }}
+            >
+              {step.label}
+            </Text>
+            {i === 1 && halfReleased && (
+              <Text variant="caption" color="secondary">
+                ${releasedToBusiness.toFixed(2)}
+              </Text>
+            )}
+            {i === 2 && fullyReleased && (
+              <Text variant="caption" color="secondary">
+                ${totalCharged.toFixed(2)}
+              </Text>
+            )}
+          </Inline>
+        ))}
+      </Stack>
+    </Surface>
+  );
 }
 
 // ─── Skeleton layout ──────────────────────────────────────────────────────────
@@ -573,6 +639,9 @@ export default function BookingDetailsScreen({ route, navigation }) {
             </DetailRow>
           </Stack>
         </Surface>
+
+        {/* Escrow milestones — read-only (GAP-AUDIT #10) */}
+        <EscrowMilestones payment={payment} />
 
         {/* Spacer for bottom bar */}
         <View style={{ height: 120 }} />
