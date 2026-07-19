@@ -57,11 +57,15 @@ export default function CancellationFlowScreen({ route, navigation }) {
     await haptics.warningTap();
     setSubmitting(true);
     try {
-      await api.patch(`/bookings/${bookingId}/cancel`, {
+      // GAP-AUDIT-2026-07-18 #66 — the server computes its own authoritative
+      // penalty (bookings.py) and ignores any client-supplied penalty_amount,
+      // so don't send one; render whatever the response returns instead of
+      // our local estimate (falling back to the local calc only if omitted).
+      const res = await api.patch(`/bookings/${bookingId}/cancel`, {
         reason: finalReason,
-        penalty_amount: amount,
       });
-      toast.show({ type: 'info', text1: 'Booking cancelled', text2: `A $${amount.toFixed(2)} fee applies.` });
+      const finalAmount = typeof res?.penalty_amount === 'number' ? res.penalty_amount : amount;
+      toast.show({ type: 'info', text1: 'Booking cancelled', text2: `A $${finalAmount.toFixed(2)} fee applies.` });
       navigation.popToTop();
     } catch (err) {
       toast.show({ type: 'error', text1: 'Could not cancel', text2: err.message });
