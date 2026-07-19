@@ -45,7 +45,10 @@
       "Read(//home/l3thal/agents/**)",
       "Read(//home/l3thal/brain/**)",
       "Bash(git -C /home/l3thal/agents/projects/swingby status --porcelain)",
-      "Bash(git -C /home/l3thal/agents/projects/swingby diff --stat)"
+      "Bash(git -C /home/l3thal/agents/projects/swingby diff --stat)",
+      "Bash(.venv/bin/python -c \"import psycopg2; print\\('psycopg2', psycopg2.__version__\\)\")",
+      "Bash(.venv/bin/python -c \"import psycopg; print\\('psycopg3', psycopg.__version__\\)\")",
+      "Bash(git *)"
     ]
   }
 }
