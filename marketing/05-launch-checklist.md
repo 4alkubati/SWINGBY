@@ -11,7 +11,7 @@
 - [ ] Web app deployed to production domain (swingbyy.com or chosen domain)
 - [ ] End-to-end test: signup → post job → business expresses interest → accept → message → complete → review (on real device, not simulator)
 - [ ] Backend deployed to Render/Fly.io with health check green
-- [ ] Supabase production project has RLS verified (0 advisor warnings) — already ✅
+- [ ] Supabase production project has RLS verified — RLS itself is on for all tables, but 0 advisor warnings is NOT true as of 2026-07-19: 1 open security advisor remains (HIBP leaked-password protection, dashboard-only toggle — see `docs/SECURITY.md`). Re-run `mcp__claude_ai_Supabase__get_advisors` before checking this box.
 - [ ] Stripe (or chosen processor) account approved and webhook tested
 - [ ] Error monitoring (Sentry) reporting events from mobile + web + backend
 - [ ] Analytics (PostHog / Plausible) firing key events: signup, post, interest, booking, completion
