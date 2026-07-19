@@ -32,6 +32,7 @@ import CancellationFlowScreen from '../screens/flows/CancellationFlowScreen';
 import PaymentMethodScreen from '../screens/profile/PaymentMethodScreen';
 import DisputeFlowScreen from '../screens/flows/DisputeFlowScreen';
 import InvoiceScreen from '../screens/shared/InvoiceScreen';
+import MyDisputesScreen from '../screens/client/MyDisputesScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -79,6 +80,7 @@ export default function ClientNavigator() {
       <Stack.Screen name="PaymentMethod" component={PaymentMethodScreen} />
       <Stack.Screen name="DisputeFlow" component={DisputeFlowScreen} />
       <Stack.Screen name="Invoice" component={InvoiceScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="MyDisputes" component={MyDisputesScreen} />
     </Stack.Navigator>
     </ErrorBoundary>
   );

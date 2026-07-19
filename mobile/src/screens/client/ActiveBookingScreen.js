@@ -521,6 +521,19 @@ export default function ActiveBookingScreen({ navigation, route }) {
               />
             </SpringCard>
 
+            {/* My disputes — GAP-AUDIT #6. GET /disputes/mine existed with
+                zero mobile callers; this is the entry point into the new
+                read-only disputes list. */}
+            <SpringCard delay={160} style={styles.hPad}>
+              <Button
+                variant="ghost"
+                label={i18n.t('disputes.viewLink')}
+                icon={<Feather name="shield" size={17} color={colors.textPrimary} />}
+                onPress={() => navigation.navigate('MyDisputes')}
+                style={styles.messageAction}
+              />
+            </SpringCard>
+
             {/* Escrow caption */}
             <View style={styles.escrowRow}>
               <Feather name="lock" size={12.5} color={colors.textSecondary} />

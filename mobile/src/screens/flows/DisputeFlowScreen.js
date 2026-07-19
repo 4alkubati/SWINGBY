@@ -11,14 +11,20 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  Image,
+  Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
-import { api } from '../../services/api';
+import * as ImagePicker from 'expo-image-picker';
+import { api, uploadFile } from '../../services/api';
 import * as toast from '../../services/toast';
 import * as haptics from '../../services/haptics';
+import i18n from '../../i18n';
 import { colors, spacing, radius } from '../../theme/tokens';
 import Text from '../../components/Text';
+
+const MAX_PHOTOS = 3;
 
 const ISSUE_TYPES = [
   { key: 'not_completed', label: 'Work not completed' },
@@ -55,6 +61,10 @@ export default function DisputeFlowScreen({ route, navigation }) {
   const [issueType, setIssueType] = useState('');
   const [description, setDescription] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  // G12 (GAP-AUDIT #12) — photos uploaded via POST /uploads/image, each
+  // { uri (local, for the thumbnail), url (remote, persisted) }.
+  const [photos, setPhotos] = useState([]);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
   const descLen = description.trim().length;
   const descValid = descLen >= 30 && descLen <= 2000;
@@ -74,14 +84,70 @@ export default function DisputeFlowScreen({ route, navigation }) {
     }
   };
 
+  async function handlePickPhoto() {
+    if (uploadingPhoto || photos.length >= MAX_PHOTOS) return;
+
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (perm.status !== 'granted') {
+      Alert.alert(i18n.t('common.error'), i18n.t('dispute.photoPermission'));
+      return;
+    }
+
+    const remaining = MAX_PHOTOS - photos.length;
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsMultipleSelection: true,
+      selectionLimit: remaining,
+      quality: 0.85,
+      exif: false,
+    });
+    if (result.canceled || !result.assets?.length) return;
+
+    setUploadingPhoto(true);
+    const uploaded = [];
+    for (const asset of result.assets) {
+      try {
+        const ext = (asset.uri.split('.').pop() || 'jpg').toLowerCase();
+        const mimeType = asset.mimeType || `image/${ext === 'jpg' ? 'jpeg' : ext}`;
+        const data = await uploadFile('/uploads/image', {
+          uri: asset.uri,
+          type: mimeType,
+          name: asset.fileName || `dispute_${Date.now()}.${ext}`,
+        });
+        uploaded.push({ uri: asset.uri, url: data.url });
+      } catch (err) {
+        toast.show({ type: 'error', text1: i18n.t('dispute.photoUploadError'), text2: err?.message || '' });
+      }
+    }
+    setPhotos((prev) => [...prev, ...uploaded].slice(0, MAX_PHOTOS));
+    setUploadingPhoto(false);
+  }
+
+  function removePhoto(index) {
+    setPhotos((prev) => prev.filter((_, i) => i !== index));
+  }
+
   const handleSubmit = async () => {
     await haptics.buttonTap();
     setSubmitting(true);
     try {
+      // disputes.description is the only free-text field the backend model
+      // exposes (no photo_urls column on the `disputes` table — see
+      // docs/swingby_database_schema.md §13) — carry the uploaded image URLs
+      // by appending them to the description so admins reviewing the dispute
+      // (GET /disputes/mine, PATCH .../resolve) can still see the evidence.
+      const photoBlock = photos.length
+        ? `\n\nPhotos:\n${photos.map((p) => p.url).join('\n')}`
+        : '';
+      // Trim the free-text part (not the URL block) if the combo would blow
+      // past the 2000-char DB check — keeps every photo URL intact.
+      const trimmedDescription = description.trim().slice(0, Math.max(0, 2000 - photoBlock.length));
+      const fullDescription = `${trimmedDescription}${photoBlock}`;
+
       await api.post('/disputes/', {
         booking_id: bookingId,
         issue_type: issueType,
-        description: description.trim(),
+        description: fullDescription,
       });
       toast.show({
         type: 'success',
@@ -197,23 +263,40 @@ export default function DisputeFlowScreen({ route, navigation }) {
           {step === 3 && (
             <>
               <Text style={styles.stepTitle}>Attach photos</Text>
-              <Text style={styles.stepBody}>
-                Optional — add up to 3 photos as evidence. Photo upload will be enabled in a future update.
-              </Text>
+              <Text style={styles.stepBody}>{i18n.t('dispute.photosOptional')}</Text>
               <View style={styles.photoGrid}>
-                {[0, 1, 2].map((i) => (
+                {photos.map((photo, i) => (
+                  <View key={photo.url || i} style={styles.photoThumbWrapper}>
+                    <Image source={{ uri: photo.uri }} style={styles.photoThumb} />
+                    <TouchableOpacity
+                      style={styles.photoRemove}
+                      onPress={() => removePhoto(i)}
+                      hitSlop={{ top: 6, right: 6, bottom: 6, left: 6 }}
+                      accessibilityLabel={`Remove photo ${i + 1}`}
+                    >
+                      <Feather name="x" size={12} color={colors.textPrimary} strokeWidth={2} />
+                    </TouchableOpacity>
+                  </View>
+                ))}
+                {photos.length < MAX_PHOTOS && (
                   <TouchableOpacity
-                    key={i}
                     style={styles.photoPlaceholder}
                     activeOpacity={0.75}
-                    onPress={() =>
-                      toast.show({ type: 'info', text1: 'Coming soon', text2: 'Photo upload is not yet available.' })
-                    }
+                    disabled={uploadingPhoto}
+                    onPress={handlePickPhoto}
+                    accessibilityRole="button"
+                    accessibilityLabel={i18n.t('dispute.addPhoto')}
                   >
-                    <Feather name="camera" size={22} color={colors.accentText} strokeWidth={1.8} />
-                    <Text style={styles.photoLabel}>Add photo</Text>
+                    {uploadingPhoto ? (
+                      <ActivityIndicator color={colors.accentText} size="small" />
+                    ) : (
+                      <>
+                        <Feather name="camera" size={22} color={colors.accentText} strokeWidth={1.8} />
+                        <Text style={styles.photoLabel}>{i18n.t('dispute.addPhoto')}</Text>
+                      </>
+                    )}
                   </TouchableOpacity>
-                ))}
+                )}
               </View>
             </>
           )}
@@ -224,9 +307,9 @@ export default function DisputeFlowScreen({ route, navigation }) {
         {/* CTA — sticky bottom */}
         <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 12 }]}>
           <TouchableOpacity
-            style={[styles.nextBtn, (!canAdvance() || submitting) && styles.nextBtnDisabled]}
+            style={[styles.nextBtn, (!canAdvance() || submitting || uploadingPhoto) && styles.nextBtnDisabled]}
             onPress={handleNext}
-            disabled={!canAdvance() || submitting}
+            disabled={!canAdvance() || submitting || uploadingPhoto}
             activeOpacity={0.85}
           >
             {submitting
@@ -355,9 +438,10 @@ const styles = StyleSheet.create({
   charCountOver: { color: colors.danger },
   charHint: { fontSize: 12, color: colors.warning },
 
-  photoGrid: { flexDirection: 'row', gap: 12, marginTop: 4 },
+  photoGrid: { flexDirection: 'row', gap: 12, marginTop: 4, flexWrap: 'wrap' },
   photoPlaceholder: {
     flex: 1,
+    minWidth: 90,
     aspectRatio: 1,
     borderWidth: 1.5,
     borderColor: colors.accent + '66', // ~40% opacity
@@ -369,6 +453,29 @@ const styles = StyleSheet.create({
     backgroundColor: colors.accent + '0A', // ~4% opacity
   },
   photoLabel: { fontSize: 11, fontFamily: 'Inter_600SemiBold', color: colors.accentText },
+  photoThumbWrapper: {
+    flex: 1,
+    minWidth: 90,
+    aspectRatio: 1,
+    position: 'relative',
+  },
+  photoThumb: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 14,
+    backgroundColor: colors.surfaceAlt,
+  },
+  photoRemove: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 
   bottomBar: {
     paddingHorizontal: 16,
