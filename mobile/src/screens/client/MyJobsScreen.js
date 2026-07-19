@@ -7,10 +7,15 @@ import { useState, useEffect, useCallback } from 'react';
 import { Feather } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../services/api';
-import { colors, spacing } from '../../theme/tokens';
+import { colors, spacing, radius } from '../../theme/tokens';
 import { SkeletonList } from '../../components/Skeleton';
 import EmptyState from '../../components/EmptyState';
 import Text from '../../components/Text';
+import Surface from '../../components/Surface';
+import Stack from '../../components/Stack';
+import Inline from '../../components/Inline';
+import Avatar from '../../components/Avatar';
+import Tabs from '../../components/Tabs';
 
 const STATUS_CONFIG = {
   confirmed:   { label: 'Confirmed',   color: colors.accentText,    bg: colors.accentMuted },
@@ -35,24 +40,27 @@ function QuoteRow({ interest, onMessage }) {
   const canMessage = post.status === 'open' || post.status === 'matched' || interest.status === 'accepted';
 
   return (
-    <View style={styles.row}>
-      <View style={styles.rowLeft}>
-        <View style={styles.rowTop}>
-          <Text style={styles.rowTitle} numberOfLines={1}>{post.title || 'Job post'}</Text>
-          <View style={[styles.statusPill, { backgroundColor: status.bg }]}>
-            <Text style={[styles.statusText, { color: status.color }]}>{status.label}</Text>
-          </View>
+    <Surface elevation="subtle" rounded="card" padding="base" style={styles.card}>
+      <Inline spacing="md">
+        <Avatar name={clientName} size="sm" />
+        <View style={{ flex: 1 }}>
+          <Inline justify="space-between" style={{ marginBottom: 2 }}>
+            <Text style={styles.rowTitle} numberOfLines={1}>{post.title || 'Job post'}</Text>
+            <View style={[styles.statusPill, { backgroundColor: status.bg }]}>
+              <Text style={[styles.statusText, { color: status.color }]}>{status.label}</Text>
+            </View>
+          </Inline>
+          <Text style={styles.rowSub}>
+            {clientName} · <Text style={styles.priceInline}>${interest.quoted_price}</Text>
+          </Text>
+          {canMessage && (
+            <TouchableOpacity style={styles.actionBtnInline} onPress={onMessage} activeOpacity={0.8}>
+              <Text style={styles.actionBtnText}>Message</Text>
+            </TouchableOpacity>
+          )}
         </View>
-        <Text style={styles.rowSub}>
-          {clientName} · <Text style={styles.priceInline}>${interest.quoted_price}</Text>
-        </Text>
-      </View>
-      {canMessage && (
-        <TouchableOpacity style={styles.actionBtn} onPress={onMessage} activeOpacity={0.8}>
-          <Text style={styles.actionBtnText}>Message</Text>
-        </TouchableOpacity>
-      )}
-    </View>
+      </Inline>
+    </Surface>
   );
 }
 
@@ -69,39 +77,44 @@ function BookingRow({ booking, onPress, onReview, onDetails, userRole }) {
     : null;
 
   return (
-    <TouchableOpacity style={styles.row} onPress={onPress} activeOpacity={0.8}>
-      <View style={styles.rowLeft}>
-        <View style={styles.rowTop}>
-          <Text style={styles.rowTitle} numberOfLines={1}>{otherParty}</Text>
-          <View style={[styles.statusPill, { backgroundColor: status.bg }]}>
-            <Text style={[styles.statusText, { color: status.color }]}>{status.label}</Text>
+    <TouchableOpacity onPress={onPress} activeOpacity={0.8}>
+      <Surface elevation="subtle" rounded="card" padding="base" style={styles.card}>
+        <Inline spacing="md">
+          <Avatar name={otherParty} size="sm" />
+          <View style={{ flex: 1 }}>
+            <Inline justify="space-between" style={{ marginBottom: 2 }}>
+              <Text style={styles.rowTitle} numberOfLines={1}>{otherParty}</Text>
+              <View style={[styles.statusPill, { backgroundColor: status.bg }]}>
+                <Text style={[styles.statusText, { color: status.color }]}>{status.label}</Text>
+              </View>
+            </Inline>
+            <Text style={styles.rowSub}>{booking.service_posts?.title || booking.service_category || 'Service'}</Text>
+            {date && <Text style={styles.rowDate}>{date}</Text>}
           </View>
-        </View>
-        <Text style={styles.rowSub}>{booking.service_posts?.title || booking.service_category || 'Service'}</Text>
-        {date && <Text style={styles.rowDate}>{date}</Text>}
-      </View>
-      <View style={styles.rowActions}>
-        {booking.status === 'completed' && onReview && (
-          <TouchableOpacity style={styles.actionBtn} onPress={onReview} activeOpacity={0.8}>
-            <Text style={styles.actionBtnText}>Review</Text>
-          </TouchableOpacity>
-        )}
-        {/* UBER-2(a) — Pay with card / live timeline live on BookingDetails,
-            which was previously unreachable from My Jobs. This chevron opens
-            it without disturbing the row's existing tap → ActiveBooking flow. */}
-        {onDetails && (
-          <TouchableOpacity
-            style={styles.detailsBtn}
-            onPress={onDetails}
-            activeOpacity={0.8}
-            accessibilityRole="button"
-            accessibilityLabel="View booking details"
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <Feather name="chevron-right" size={18} color={colors.textSecondary} />
-          </TouchableOpacity>
-        )}
-      </View>
+          <View style={styles.rowActions}>
+            {booking.status === 'completed' && onReview && (
+              <TouchableOpacity style={styles.actionBtn} onPress={onReview} activeOpacity={0.8}>
+                <Text style={styles.actionBtnText}>Review</Text>
+              </TouchableOpacity>
+            )}
+            {/* UBER-2(a) — Pay with card / live timeline live on BookingDetails,
+                which was previously unreachable from My Jobs. This chevron opens
+                it without disturbing the row's existing tap → ActiveBooking flow. */}
+            {onDetails && (
+              <TouchableOpacity
+                style={styles.detailsBtn}
+                onPress={onDetails}
+                activeOpacity={0.8}
+                accessibilityRole="button"
+                accessibilityLabel="View booking details"
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Feather name="chevron-right" size={18} color={colors.textSecondary} />
+              </TouchableOpacity>
+            )}
+          </View>
+        </Inline>
+      </Surface>
     </TouchableOpacity>
   );
 }
@@ -117,37 +130,42 @@ function PostRow({ post, onViewQuotes, onViewBooking }) {
     : null;
 
   return (
-    <TouchableOpacity style={styles.row} onPress={rowAction} activeOpacity={0.8}>
-      <View style={styles.rowLeft}>
-        <View style={styles.rowTop}>
-          <Text style={styles.rowTitle} numberOfLines={1}>{post.title || 'Job post'}</Text>
-          <View style={[styles.statusPill, { backgroundColor: status.bg }]}>
-            <Text style={[styles.statusText, { color: status.color }]}>{status.label}</Text>
+    <TouchableOpacity onPress={rowAction} activeOpacity={0.8}>
+      <Surface elevation="subtle" rounded="card" padding="base" style={styles.card}>
+        <Inline spacing="md">
+          <Avatar name={post.title || 'Job'} size="sm" />
+          <View style={{ flex: 1 }}>
+            <Inline justify="space-between" style={{ marginBottom: 2 }}>
+              <Text style={styles.rowTitle} numberOfLines={1}>{post.title || 'Job post'}</Text>
+              <View style={[styles.statusPill, { backgroundColor: status.bg }]}>
+                <Text style={[styles.statusText, { color: status.color }]}>{status.label}</Text>
+              </View>
+            </Inline>
+            <Text style={styles.rowSub}>{post.category || 'General'}</Text>
+            {date && <Text style={styles.rowDate}>{date}</Text>}
           </View>
-        </View>
-        <Text style={styles.rowSub}>{post.category || 'General'}</Text>
-        {date && <Text style={styles.rowDate}>{date}</Text>}
-      </View>
-      {post.status === 'open' && (
-        <TouchableOpacity
-          style={[styles.actionBtn, quoteCount > 0 && styles.actionBtnHighlight]}
-          onPress={onViewQuotes}
-          activeOpacity={0.8}
-        >
-          <Text style={[styles.actionBtnText, quoteCount > 0 && styles.actionBtnTextHighlight]}>
-            {quoteCount > 0 ? `${quoteCount} quote${quoteCount > 1 ? 's' : ''}` : 'No quotes'}
-          </Text>
-        </TouchableOpacity>
-      )}
-      {isMatched && onViewBooking && (
-        <TouchableOpacity
-          style={[styles.actionBtn, styles.actionBtnHighlight]}
-          onPress={onViewBooking}
-          activeOpacity={0.8}
-        >
-          <Text style={[styles.actionBtnText, styles.actionBtnTextHighlight]}>View booking</Text>
-        </TouchableOpacity>
-      )}
+          {post.status === 'open' && (
+            <TouchableOpacity
+              style={[styles.actionBtn, quoteCount > 0 && styles.actionBtnHighlight]}
+              onPress={onViewQuotes}
+              activeOpacity={0.8}
+            >
+              <Text style={[styles.actionBtnText, quoteCount > 0 && styles.actionBtnTextHighlight]}>
+                {quoteCount > 0 ? `${quoteCount} quote${quoteCount > 1 ? 's' : ''}` : 'No quotes'}
+              </Text>
+            </TouchableOpacity>
+          )}
+          {isMatched && onViewBooking && (
+            <TouchableOpacity
+              style={[styles.actionBtn, styles.actionBtnHighlight]}
+              onPress={onViewBooking}
+              activeOpacity={0.8}
+            >
+              <Text style={[styles.actionBtnText, styles.actionBtnTextHighlight]}>View booking</Text>
+            </TouchableOpacity>
+          )}
+        </Inline>
+      </Surface>
     </TouchableOpacity>
   );
 }
@@ -266,33 +284,16 @@ export default function MyJobsScreen({ navigation }) {
       )}
 
       {/* Bookings tab switcher */}
-      <View style={styles.tabs}>
-        <TouchableOpacity
-          style={[styles.tabBtn, tab === 'active' && styles.tabBtnActive]}
-          onPress={() => setTab('active')}
-        >
-          <Text style={[styles.tabText, tab === 'active' && styles.tabTextActive]}>
-            Active ({active.length})
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tabBtn, tab === 'past' && styles.tabBtnActive]}
-          onPress={() => setTab('past')}
-        >
-          <Text style={[styles.tabText, tab === 'past' && styles.tabTextActive]}>
-            Past ({past.length})
-          </Text>
-        </TouchableOpacity>
-        {!isClient && (
-          <TouchableOpacity
-            style={[styles.tabBtn, tab === 'quotes' && styles.tabBtnActive]}
-            onPress={() => setTab('quotes')}
-          >
-            <Text style={[styles.tabText, tab === 'quotes' && styles.tabTextActive]}>
-              Quotes ({quotes.length})
-            </Text>
-          </TouchableOpacity>
-        )}
+      <View style={styles.tabsWrap}>
+        <Tabs
+          tabs={
+            isClient
+              ? [`Active (${active.length})`, `Past (${past.length})`]
+              : [`Active (${active.length})`, `Past (${past.length})`, `Quotes (${quotes.length})`]
+          }
+          activeIndex={(isClient ? ['active', 'past'] : ['active', 'past', 'quotes']).indexOf(tab)}
+          onChange={(idx) => setTab((isClient ? ['active', 'past'] : ['active', 'past', 'quotes'])[idx])}
+        />
       </View>
 
       {tab === 'quotes' && !isClient ? (
@@ -374,21 +375,9 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase', letterSpacing: 1.4, marginBottom: 8,
   },
   divider: { height: 1, backgroundColor: colors.border, marginVertical: 12 },
-  tabs: {
-    flexDirection: 'row', marginHorizontal: 22, marginBottom: 8,
-    backgroundColor: colors.surface, borderRadius: 12, padding: 3, borderWidth: 1, borderColor: colors.border,
-  },
-  tabBtn: { flex: 1, paddingVertical: 9, borderRadius: 10, alignItems: 'center' },
-  tabBtnActive: { backgroundColor: colors.surfaceAlt, borderWidth: 1, borderColor: colors.border },
-  tabText: { fontSize: 13, fontFamily: 'Inter_600SemiBold', color: colors.textSecondary },
-  tabTextActive: { color: colors.textPrimary },
-  list: { paddingHorizontal: 22, paddingBottom: 24 },
-  row: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: colors.border,
-  },
-  rowLeft: { flex: 1, gap: 3 },
-  rowTop: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  tabsWrap: { marginHorizontal: 22, marginBottom: 8 },
+  list: { paddingHorizontal: 22, paddingBottom: 24, gap: spacing.sm },
+  card: { marginBottom: 0 },
   rowTitle: { fontSize: 15, fontFamily: 'Inter_600SemiBold', color: colors.textPrimary, flex: 1 },
   statusPill: { borderRadius: 20, paddingHorizontal: 8, paddingVertical: 3 },
   statusText: { fontSize: 10, fontFamily: 'Inter_600SemiBold' },
@@ -413,6 +402,10 @@ const styles = StyleSheet.create({
   },
   actionBtnHighlight: {
     backgroundColor: colors.accentMuted, borderColor: colors.borderAccent,
+  },
+  actionBtnInline: {
+    alignSelf: 'flex-start',
+    marginTop: spacing.xs,
   },
   actionBtnText: { fontSize: 12, fontFamily: 'Inter_600SemiBold', color: colors.textSecondary },
   actionBtnTextHighlight: { color: colors.accentText },

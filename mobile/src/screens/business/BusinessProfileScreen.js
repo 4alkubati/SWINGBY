@@ -11,6 +11,7 @@ import Animated, {
 import { Feather } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../services/api';
+import { getUserLocation } from '../../services/location';
 import { colors, spacing, radius, shadows, motion } from '../../theme/tokens';
 import Text from '../../components/Text';
 import Button from '../../components/Button';
@@ -21,8 +22,50 @@ import Surface from '../../components/Surface';
 import Stack from '../../components/Stack';
 import Inline from '../../components/Inline';
 import Card from '../../components/Card';
+import ProgressBar from '../../components/ProgressBar';
 import { SkeletonBox, SkeletonCard } from '../../components/Skeleton';
 import { RatingStarsDisplay } from '../../components/RatingStars';
+import i18n from '../../i18n';
+
+// Haversine distance in km — same formula as SearchScreen's local helper
+// (not shared/exported anywhere today; duplicated here rather than editing
+// that off-limits file).
+function computeDistanceKm(lat1, lng1, lat2, lng2) {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLng / 2) *
+      Math.sin(dLng / 2);
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+// Owner-view profile-completeness meter. Every check reads a field already
+// fetched on `business` — zero backend dependency. "jobs done" stat is
+// deliberately NOT computed here (see BusinessProfileScreen gap notes) since
+// the spec flagged its exact meaning (reviews vs. total bookings) as
+// ambiguous and unconfirmed by product/backend.
+function computeProfileCompleteness(business) {
+  const checks = [
+    !!business?.business_name,
+    !!business?.category,
+    !!business?.description,
+    !!business?.service_radius_km,
+    Array.isArray(business?.photos) && business.photos.length > 0,
+    Array.isArray(business?.services) && business.services.length > 0,
+  ];
+  const done = checks.filter(Boolean).length;
+  const pct = Math.round((done / checks.length) * 100);
+  let tip = null;
+  if (!business?.description) tip = i18n.t('businessProfile.completenessTipDescription');
+  else if (!(Array.isArray(business?.photos) && business.photos.length > 0)) tip = i18n.t('businessProfile.completenessTipPhotos');
+  else if (!(Array.isArray(business?.services) && business.services.length > 0)) tip = i18n.t('businessProfile.completenessTipServices');
+  else if (!business?.service_radius_km) tip = i18n.t('businessProfile.completenessTipRadius');
+  return { pct, tip };
+}
 
 const AnimatedScrollView = Animated.createAnimatedComponent(ScrollView);
 
@@ -224,6 +267,20 @@ export default function BusinessProfileScreen({ navigation, route }) {
   // we fall back to GET /businesses/me and resolve it from the response.
   const [bizId, setBizId] = useState(businessId || user?.business_id || null);
 
+  const isOwnProfile = !businessId || businessId === user?.business_id;
+  const isOwner = user?.role === 'business_owner' && isOwnProfile;
+
+  // Distance-from-viewer (public view only) — best-effort, never blocks the
+  // profile from rendering. Same "silent catch, distance simply omitted"
+  // idiom as SearchScreen's location fetch.
+  const [viewerCoords, setViewerCoords] = useState(null);
+  useEffect(() => {
+    if (isOwnProfile) return;
+    getUserLocation()
+      .then(setViewerCoords)
+      .catch(() => setViewerCoords(null));
+  }, [isOwnProfile]);
+
   const load = useCallback(async () => {
     setError(false);
     try {
@@ -315,9 +372,6 @@ export default function BusinessProfileScreen({ navigation, route }) {
       Alert.alert('Error', err.message);
     }
   }
-
-  const isOwnProfile = !businessId || businessId === user?.business_id;
-  const isOwner = user?.role === 'business_owner' && isOwnProfile;
 
   // ─── Scroll-based header shrink animation ──────────────────────────────────
   const scrollHandler = useAnimatedScrollHandler((event) => {
@@ -468,6 +522,19 @@ export default function BusinessProfileScreen({ navigation, route }) {
                         {business.review_count} {business.review_count === 1 ? 'review' : 'reviews'}
                       </Text>
                     )}
+                    {/* Distance from viewer — public view only, real data (viewer
+                        coords + business lat/lng), never shown as a fabricated
+                        stat. "Jobs done" from the mock's 3-stat row is deliberately
+                        NOT added here — see BusinessProfileScreen report notes:
+                        ambiguous whether it should equal review_count or a
+                        distinct total_bookings field, unconfirmed by product. */}
+                    {!isOwnProfile && viewerCoords && typeof business?.lat === 'number' && typeof business?.lng === 'number' && (
+                      <Text variant="small" color="secondary">
+                        {i18n.t('businessProfile.distanceAway', {
+                          km: computeDistanceKm(viewerCoords.lat, viewerCoords.lng, business.lat, business.lng).toFixed(1),
+                        })}
+                      </Text>
+                    )}
                   </Inline>
 
                   {/* Category chip */}
@@ -488,6 +555,27 @@ export default function BusinessProfileScreen({ navigation, route }) {
               )}
             </Stack>
           </Animated.View>
+
+          {/* ── Owner-view profile-completeness meter ── */}
+          {isOwner && !editMode && business && (() => {
+            const { pct, tip } = computeProfileCompleteness(business);
+            return (
+              <View style={styles.hPad}>
+                <Surface elevation="subtle" padding="base" rounded="card">
+                  <Stack spacing="sm">
+                    <Inline justify="space-between">
+                      <Text variant="smallMedium">{i18n.t('businessProfile.completenessLabel')}</Text>
+                      <Text variant="smallMedium" color="accent">{pct}%</Text>
+                    </Inline>
+                    <ProgressBar value={pct} />
+                    {tip ? (
+                      <Text variant="caption" color="secondary">{tip}</Text>
+                    ) : null}
+                  </Stack>
+                </Surface>
+              </View>
+            );
+          })()}
 
           {/* ── Services / Tags chips row ── */}
           {!editMode && business?.services && business.services.length > 0 && (

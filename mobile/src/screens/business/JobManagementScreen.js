@@ -22,9 +22,13 @@ import Inline from '../../components/Inline';
 import Badge from '../../components/Badge';
 import Button from '../../components/Button';
 import ListItem from '../../components/ListItem';
-import { SkeletonBox } from '../../components/Skeleton';
+import EmptyState from '../../components/EmptyState';
+import JobOpportunityCard from '../../components/JobOpportunityCard';
+import SendQuoteSheet from '../../components/SendQuoteSheet';
+import { SkeletonBox, SkeletonList } from '../../components/Skeleton';
 import { Feather } from '@expo/vector-icons';
 import { colors, spacing, radius, shadows, motion } from '../../theme/tokens';
+import i18n from '../../i18n';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -126,15 +130,20 @@ function withAlpha(hexColor, alpha) {
   return hexColor + alpha;
 }
 
-function StatusChip({ status }) {
-  const color = STATUS_COLORS[status] || colors.textSecondary;
+// Accepts either a booking `status` key (existing usage — colors/label come
+// from STATUS_COLORS/STATUS_LABELS) or an explicit `label`+`color` override
+// (used by the Jobs-list mode for interest statuses, which have their own
+// pending/accepted/rejected vocabulary, not the booking one).
+function StatusChip({ status, label, color: colorOverride }) {
+  const color = colorOverride || STATUS_COLORS[status] || colors.textSecondary;
+  const text = label || STATUS_LABELS[status] || status;
   return (
     <View style={[chipStyles.wrap, {
       borderColor: withAlpha(color, '55'),
       backgroundColor: withAlpha(color, '18'),
     }]}>
       <View style={[chipStyles.dot, { backgroundColor: color }]} />
-      <Text variant="caption" style={{ color }}>{STATUS_LABELS[status] || status}</Text>
+      <Text variant="caption" style={{ color }}>{text}</Text>
     </View>
   );
 }
@@ -156,9 +165,12 @@ const chipStyles = StyleSheet.create({
   },
 });
 
-// ─── Main Screen ──────────────────────────────────────────────────────────────
+// ─── Per-booking detail/status screen (bookingId present) ─────────────────────
+// Unchanged from the original single-purpose JobManagementScreen — Live Job
+// Status actions, employee assignment, etc. Only the wiring at the bottom of
+// this file changed (routed to via the default export's branch).
 
-export default function JobManagementScreen({ navigation, route }) {
+function JobDetailScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
   const { bookingId } = route.params || {};
 
@@ -583,6 +595,316 @@ export default function JobManagementScreen({ navigation, route }) {
       </Modal>
     </View>
   );
+}
+
+// ─── Jobs list / lead-triage screen (no bookingId — Business "Jobs" tab) ──────
+// Handoff-mock content (DQ-6 QA-07, Kira's product call 2026-07-18, exec-spec
+// entry #26): a "Jobs" header with a New/Quoted/Scheduled segmented filter and
+// a scrollable feed. New-lead cards + the send-quote sheet already existed in
+// polished form on DashboardScreen (JobOpportunityCard + SendQuoteSheet) —
+// reused here, not rebuilt. Tapping a Scheduled row opens the existing
+// per-booking JobDetailScreen above via the same route (`JobManagement`,
+// {bookingId}), so nothing about the detail/status flow changes.
+
+const INTEREST_STATUS_COLOR = {
+  pending: colors.warning,
+  accepted: colors.success,
+  rejected: colors.textSecondary,
+};
+const INTEREST_STATUS_LABEL = {
+  pending: 'jobManagement.interestPending',
+  accepted: 'jobManagement.interestAccepted',
+  rejected: 'jobManagement.interestRejected',
+};
+
+const LIST_FILTERS = ['new', 'quoted', 'scheduled'];
+
+function QuoteListRow({ interest, onMessage }) {
+  const post = interest.service_posts || {};
+  const clientUser = post.users || {};
+  const clientName = [clientUser.first_name, clientUser.last_name].filter(Boolean).join(' ') || 'Client';
+  const color = INTEREST_STATUS_COLOR[interest.status] || colors.textSecondary;
+  const labelKey = INTEREST_STATUS_LABEL[interest.status];
+  const canMessage = post.status === 'open' || post.status === 'matched' || interest.status === 'accepted';
+
+  return (
+    <Surface elevation="subtle" rounded="card" padding="base" style={listStyles.rowCard}>
+      <Inline justify="space-between" style={{ marginBottom: spacing.xs }}>
+        <Text variant="smallMedium" numberOfLines={1} style={{ flex: 1 }}>{post.title || 'Job post'}</Text>
+        <StatusChip label={labelKey ? i18n.t(labelKey) : interest.status} color={color} />
+      </Inline>
+      <Text variant="small" color="secondary">
+        {clientName} · <Text variant="smallMedium" style={{ color: colors.success, fontFamily: 'SpaceGrotesk_700Bold' }}>${interest.quoted_price}</Text>
+      </Text>
+      {canMessage && (
+        <Button
+          variant="ghost"
+          label={i18n.t('jobManagement.messageAction')}
+          onPress={onMessage}
+          style={{ alignSelf: 'flex-start', paddingHorizontal: 0, marginTop: spacing.xs }}
+        />
+      )}
+    </Surface>
+  );
+}
+
+function ScheduledListRow({ booking, onPress }) {
+  const clientName = booking.users?.first_name
+    ? [booking.users.first_name, booking.users.last_name].filter(Boolean).join(' ')
+    : (booking.client_name || 'Client');
+  const when = booking.confirmed_date || booking.proposed_date_1;
+  const date = when
+    ? new Date(when).toLocaleDateString('en-CA', { month: 'short', day: 'numeric' })
+    : null;
+
+  return (
+    <TouchableOpacity onPress={onPress} activeOpacity={0.8}>
+      <Surface elevation="subtle" rounded="card" padding="base" style={listStyles.rowCard}>
+        <Inline justify="space-between" style={{ marginBottom: spacing.xs }}>
+          <Text variant="smallMedium" numberOfLines={1} style={{ flex: 1 }}>{clientName}</Text>
+          <StatusChip status={booking.status} />
+        </Inline>
+        <Text variant="small" color="secondary">
+          {booking.service_posts?.title || booking.service_category || 'Service'}
+          {date ? ` · ${date}` : ''}
+        </Text>
+      </Surface>
+    </TouchableOpacity>
+  );
+}
+
+function JobsListScreen({ navigation }) {
+  const insets = useSafeAreaInsets();
+
+  const [posts, setPosts] = useState([]);
+  const [quotes, setQuotes] = useState([]);
+  const [scheduled, setScheduled] = useState([]);
+  const [dismissedIds, setDismissedIds] = useState(new Set());
+  const [filter, setFilter] = useState('new');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [selectedPost, setSelectedPost] = useState(null);
+  const [sheetVisible, setSheetVisible] = useState(false);
+
+  const load = useCallback(async () => {
+    setError(null);
+    try {
+      const [p, i, b] = await Promise.all([
+        api.get('/service-posts/').catch(() => ({ items: [] })),
+        api.get('/interests/mine').catch(() => ({ items: [] })),
+        api.get('/bookings/').catch(() => ({ items: [] })),
+      ]);
+      const openPosts = (p?.items || p || []).filter((post) => post.status === 'open');
+      const allBookings = b?.items || b || [];
+      setPosts(openPosts);
+      setQuotes(i?.items || i || []);
+      setScheduled(allBookings.filter((bk) => bk.status !== 'cancelled'));
+    } catch (err) {
+      setError(err?.message || 'Could not load jobs.');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    const unsub = navigation.addListener('focus', load);
+    return unsub;
+  }, [navigation, load]);
+
+  const visiblePosts = posts.filter((p) => !dismissedIds.has(p.id));
+
+  function openQuoteSheet(post) {
+    setSelectedPost(post);
+    setSheetVisible(true);
+  }
+  function passPost(post) {
+    setDismissedIds((prev) => new Set(prev).add(post.id));
+  }
+
+  const FILTER_LABEL_KEY = {
+    new: 'jobManagement.filterNew',
+    quoted: 'jobManagement.filterQuoted',
+    scheduled: 'jobManagement.filterScheduled',
+  };
+  const FILTER_COUNT = { new: visiblePosts.length, quoted: quotes.length, scheduled: scheduled.length };
+
+  if (loading) {
+    return (
+      <View style={[styles.screen, { paddingTop: insets.top }]}>
+        <View style={listStyles.header}>
+          <Text variant="display3">{i18n.t('jobManagement.title')}</Text>
+        </View>
+        <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.sm }}>
+          <SkeletonList count={4} />
+        </View>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={[styles.screen, styles.center, { paddingTop: insets.top }]}>
+        <Stack spacing="md" align="center">
+          <Feather name="alert-triangle" size={32} color={colors.warning} strokeWidth={1.8} />
+          <Text variant="bodyMedium" color="secondary">{i18n.t('jobManagement.errorTitle')}</Text>
+          <Text variant="small" color="secondary" style={{ textAlign: 'center' }}>{error}</Text>
+          <Button variant="primary" label={i18n.t('common.retry')} onPress={load} style={{ minWidth: 120 }} />
+        </Stack>
+      </View>
+    );
+  }
+
+  return (
+    <View style={[styles.screen, { paddingTop: insets.top }]}>
+      <View style={listStyles.header}>
+        <Text variant="display3">{i18n.t('jobManagement.title')}</Text>
+      </View>
+
+      <View style={listStyles.filterRow}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={listStyles.filterScroll}>
+          {LIST_FILTERS.map((f) => (
+            <Chip
+              key={f}
+              label={`${i18n.t(FILTER_LABEL_KEY[f])} (${FILTER_COUNT[f]})`}
+              selected={filter === f}
+              onPress={() => setFilter(f)}
+            />
+          ))}
+        </ScrollView>
+      </View>
+
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={listStyles.content}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => { setRefreshing(true); load(); }}
+            tintColor={colors.accent}
+          />
+        }
+      >
+        {filter === 'new' && (
+          visiblePosts.length === 0 ? (
+            <EmptyState
+              icon="inbox"
+              title={i18n.t('jobManagement.emptyNewTitle')}
+              body={i18n.t('jobManagement.emptyNewBody')}
+            />
+          ) : (
+            <Stack spacing="md">
+              {visiblePosts.map((post) => (
+                <JobOpportunityCard
+                  key={post.id}
+                  post={post}
+                  onSendQuote={() => openQuoteSheet(post)}
+                  onPass={() => passPost(post)}
+                />
+              ))}
+            </Stack>
+          )
+        )}
+
+        {filter === 'quoted' && (
+          quotes.length === 0 ? (
+            <EmptyState
+              icon="send"
+              title={i18n.t('jobManagement.emptyQuotedTitle')}
+              body={i18n.t('jobManagement.emptyQuotedBody')}
+            />
+          ) : (
+            <Stack spacing="md">
+              {quotes.map((q) => (
+                <QuoteListRow
+                  key={q.id}
+                  interest={q}
+                  onMessage={() =>
+                    navigation.navigate('Chat', {
+                      interestId: q.id,
+                      otherPartyName: q.service_posts?.users?.first_name || 'Client',
+                    })
+                  }
+                />
+              ))}
+            </Stack>
+          )
+        )}
+
+        {filter === 'scheduled' && (
+          scheduled.length === 0 ? (
+            <EmptyState
+              icon="calendar"
+              title={i18n.t('jobManagement.emptyScheduledTitle')}
+              body={i18n.t('jobManagement.emptyScheduledBody')}
+            />
+          ) : (
+            <Stack spacing="md">
+              {scheduled.map((b) => (
+                <ScheduledListRow
+                  key={b.id}
+                  booking={b}
+                  onPress={() => navigation.navigate('JobManagement', { bookingId: b.id })}
+                />
+              ))}
+            </Stack>
+          )
+        )}
+      </ScrollView>
+
+      <SendQuoteSheet
+        visible={sheetVisible}
+        onClose={() => setSheetVisible(false)}
+        post={selectedPost}
+        onQuoted={(interest, note) => {
+          load();
+          if (note) {
+            navigation.navigate('Chat', {
+              interestId: interest.id,
+              otherPartyName: selectedPost?.users?.first_name || 'Client',
+            });
+          }
+        }}
+      />
+    </View>
+  );
+}
+
+const listStyles = StyleSheet.create({
+  header: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
+  },
+  filterRow: {
+    paddingBottom: spacing.sm,
+  },
+  filterScroll: {
+    paddingHorizontal: spacing.lg,
+    gap: spacing.sm,
+  },
+  content: {
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.xl * 2,
+  },
+  rowCard: {
+    marginBottom: 0,
+  },
+});
+
+// ─── Default export — branches on whether a specific booking was opened ──────
+// No bookingId (Business "Jobs" tab root) → the lead-triage feed above.
+// bookingId present (existing navigation.navigate('JobManagement', {bookingId})
+// call from the Scheduled row, formerly from MyJobsScreen) → unchanged
+// per-booking detail/status manager.
+export default function JobManagementScreen({ navigation, route }) {
+  const { bookingId } = route.params || {};
+  if (!bookingId) {
+    return <JobsListScreen navigation={navigation} />;
+  }
+  return <JobDetailScreen navigation={navigation} route={route} />;
 }
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
