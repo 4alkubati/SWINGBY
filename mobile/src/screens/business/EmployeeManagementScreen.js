@@ -46,8 +46,8 @@ function avatarStyle(index) {
 
 // ─── EmployeeRow ──────────────────────────────────────────────────────────────
 function EmployeeRow({ employee, index, onPress, onToggle, toggling }) {
-  const fullName = employee.user
-    ? `${employee.user.first_name} ${employee.user.last_name}`
+  const fullName = employee.users
+    ? `${employee.users.first_name} ${employee.users.last_name}`
     : employee.name || 'Employee';
   const { bg, color } = avatarStyle(index);
 
@@ -139,8 +139,8 @@ function EmployeeEditModal({ employee, visible, onClose, onSaved }) {
     }
   }
 
-  const fullName = employee?.user
-    ? `${employee.user.first_name} ${employee.user.last_name}`
+  const fullName = employee?.users
+    ? `${employee.users.first_name} ${employee.users.last_name}`
     : employee?.name || 'Employee';
 
   return (
@@ -490,8 +490,8 @@ export default function EmployeeManagementScreen({ navigation, route }) {
 
   const filtered = employees.filter((e) => {
     if (!query.trim()) return true;
-    const name = e.user
-      ? `${e.user.first_name} ${e.user.last_name}`
+    const name = e.users
+      ? `${e.users.first_name} ${e.users.last_name}`
       : e.name || '';
     return name.toLowerCase().includes(query.toLowerCase());
   });
