@@ -11,6 +11,7 @@ import { updateMe } from '../../services/auth';
 import { colors, spacing, radius } from '../../theme/tokens';
 import Text from '../../components/Text';
 import Button from '../../components/Button';
+import i18n from '../../i18n';
 
 function initials(user) {
   if (!user) return '?';
@@ -23,19 +24,26 @@ const ROLE_LABEL = {
   employee: 'Employee',
 };
 
-function MenuRow({ icon, label, onPress, danger }) {
+function MenuRow({ icon, label, onPress, danger, badge }) {
   return (
     <Pressable
       onPress={onPress}
       style={({ pressed }) => [styles.menuRow, pressed && styles.menuRowPressed]}
       accessibilityRole="button"
-      accessibilityLabel={label}
+      accessibilityLabel={badge ? `${label}, ${badge}` : label}
     >
       <View style={styles.menuLeft}>
         <Feather name={icon} size={20} strokeWidth={1.8} color={danger ? colors.danger : colors.textSecondary} />
         <Text style={[styles.menuLabel, danger && { color: colors.danger }]}>{label}</Text>
       </View>
-      <Feather name="chevron-right" size={18} strokeWidth={1.8} color={colors.textSecondary} />
+      <View style={styles.menuRight}>
+        {badge ? (
+          <View style={styles.menuBadge}>
+            <Text style={styles.menuBadgeText}>{badge}</Text>
+          </View>
+        ) : null}
+        <Feather name="chevron-right" size={18} strokeWidth={1.8} color={colors.textSecondary} />
+      </View>
     </Pressable>
   );
 }
@@ -210,7 +218,12 @@ export default function ProfileScreen({ navigation }) {
               <MenuRow icon="bell" label="Notifications" onPress={() => navigation.navigate('NotificationsCenter')} />
               <MenuRow icon="credit-card" label="Payment methods" onPress={() => navigation.navigate('PaymentMethod')} />
               {user?.role === 'client' && (
-                <MenuRow icon="gift" label="Invite friends" onPress={() => navigation.navigate('ReferralScreen')} />
+                <MenuRow
+                  icon="gift"
+                  label="Invite friends"
+                  badge={i18n.t('profile.inviteBadge')}
+                  onPress={() => navigation.navigate('ReferralScreen')}
+                />
               )}
               <MenuRow icon="settings" label="Settings" onPress={() => navigation.navigate('Settings')} />
               <MenuRow icon="help-circle" label="Help & FAQ" onPress={() => navigation.navigate('HelpFAQ')} />
@@ -320,6 +333,12 @@ const styles = StyleSheet.create({
   menuRowPressed: { backgroundColor: colors.surfaceAlt },
   menuLeft: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   menuLabel: { fontSize: 15, fontFamily: 'Inter_400Regular', color: colors.textPrimary },
+  menuRight: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  menuBadge: {
+    backgroundColor: colors.accentMuted, borderRadius: radius.pill,
+    paddingHorizontal: spacing.sm, paddingVertical: 2,
+  },
+  menuBadgeText: { fontSize: 11, fontFamily: 'Inter_600SemiBold', color: colors.accentText },
 
   logoutBtn: {
     borderWidth: 1, borderColor: colors.danger,

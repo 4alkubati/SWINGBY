@@ -1,7 +1,7 @@
 // T50 — ProfileEditScreen (UX polish pass)
 import React, { useState } from 'react';
 import {
-  View, ScrollView, KeyboardAvoidingView, Platform, Pressable,
+  View, ScrollView, KeyboardAvoidingView, Platform, Pressable, ActivityIndicator, Alert,
 } from 'react-native';
 import Animated, {
   useSharedValue, useAnimatedStyle, withSpring,
@@ -9,9 +9,11 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 
 import { useAuth } from '../../context/AuthContext';
-import { api } from '../../services/api';
+import { api, uploadFile } from '../../services/api';
+import i18n from '../../i18n';
 import { show as showToast } from '../../services/toast';
 import { buttonTap } from '../../services/haptics';
 import { RatingStarsDisplay } from '../../components/RatingStars';
@@ -37,6 +39,8 @@ export default function ProfileEditScreen() {
   const [lastName, setLastName] = useState(user?.last_name ?? '');
   const [phone, setPhone] = useState(user?.phone ?? '');
   const [saving, setSaving] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState(user?.avatar_url ?? null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
   // Avatar spring micro-interaction
   const avatarScale = useSharedValue(1);
@@ -58,9 +62,49 @@ export default function ProfileEditScreen() {
     });
   };
 
-  const handleAvatarPress = () => {
-    buttonTap();
-    showToast({ type: 'info', text1: 'Photo upload coming soon' });
+  // G11 (GAP-AUDIT #11) — POST /uploads/image + users.avatar_url both existed
+  // on the backend with no mobile caller; this screen showed a "coming soon"
+  // toast instead of wiring them together.
+  const handleAvatarPress = async () => {
+    if (uploadingPhoto) return;
+    await buttonTap();
+
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (perm.status !== 'granted') {
+      Alert.alert(i18n.t('common.error'), i18n.t('profile.photoPermission'));
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      quality: 0.85,
+      exif: false,
+      allowsEditing: true,
+      aspect: [1, 1],
+    });
+    if (result.canceled || !result.assets?.length) return;
+
+    const asset = result.assets[0];
+    const ext = (asset.uri.split('.').pop() || 'jpg').toLowerCase();
+    const mimeType = asset.mimeType || `image/${ext === 'jpg' ? 'jpeg' : ext}`;
+
+    setUploadingPhoto(true);
+    try {
+      const up = await uploadFile('/uploads/image', {
+        uri: asset.uri,
+        type: mimeType,
+        name: asset.fileName || `avatar_${Date.now()}.${ext}`,
+      });
+
+      const updated = await api.patch('/auth/me', { avatar_url: up.url });
+      updateUser(updated.user);
+      setAvatarUrl(up.url);
+      showToast({ type: 'success', text1: i18n.t('profile.photoUpdated') });
+    } catch (err) {
+      showToast({ type: 'error', text1: i18n.t('profile.photoUploadError'), text2: err?.message || '' });
+    } finally {
+      setUploadingPhoto(false);
+    }
   };
 
   async function handleSave() {
@@ -83,7 +127,10 @@ export default function ProfileEditScreen() {
         last_name: trimLast,
         phone: phone.trim() || null,
       });
-      updateUser(updated);
+      // PATCH /auth/me returns {message, user} — spreading the envelope
+      // directly into the user object left name/phone edits invisible until
+      // re-login. Unwrap .user (same fix as the avatar-save path above).
+      updateUser(updated.user);
       showToast({ type: 'success', text1: 'Profile updated' });
       navigation.goBack();
     } catch (err) {
@@ -158,9 +205,28 @@ export default function ProfileEditScreen() {
             >
               <Avatar
                 name={fullName || '?'}
+                source={avatarUrl}
                 size="xl"
                 style={shadows.subtle}
               />
+              {/* Uploading spinner overlay */}
+              {uploadingPhoto && (
+                <View
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    borderRadius: radius.pill,
+                    backgroundColor: 'rgba(0,0,0,0.4)',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <ActivityIndicator color={colors.textPrimary} size="small" />
+                </View>
+              )}
               {/* Camera badge overlay */}
               <View
                 style={{
@@ -182,7 +248,9 @@ export default function ProfileEditScreen() {
               </View>
             </AnimatedPressable>
 
-            <Text variant="caption" color="secondary">Tap to change photo</Text>
+            <Text variant="caption" color="secondary">
+              {uploadingPhoto ? i18n.t('profile.photoUploading') : 'Tap to change photo'}
+            </Text>
 
             {/* Rating row (if available) */}
             {user?.avg_rating != null && (
