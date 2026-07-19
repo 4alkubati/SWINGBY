@@ -160,6 +160,34 @@ const translations = {
     'dispute.photoPermission': 'Allow SwingBy to access your photos to attach evidence.',
     'dispute.addPhoto': 'Add photo',
     'dispute.photosOptional': 'Optional — add up to 3 photos as evidence.',
+
+    // Business profile — distance + completeness meter (missing-key audit)
+    'businessProfile.distanceAway': '%{km} km away',
+    'businessProfile.completenessLabel': 'Profile completeness',
+    'businessProfile.completenessTipDescription': 'Add a description to help clients find you.',
+    'businessProfile.completenessTipPhotos': 'Add photos of your work to build trust.',
+    'businessProfile.completenessTipServices': 'List the services you offer.',
+    'businessProfile.completenessTipRadius': 'Set your service radius so clients nearby can find you.',
+
+    // Job management — business "Jobs" tab (New/Quoted/Scheduled) (missing-key audit)
+    'jobManagement.title': 'Jobs',
+    'jobManagement.errorTitle': 'Could not load your jobs',
+    'jobManagement.messageAction': 'Message',
+    'jobManagement.interestPending': 'Pending',
+    'jobManagement.interestAccepted': 'Accepted',
+    'jobManagement.interestRejected': 'Declined',
+    'jobManagement.filterNew': 'New',
+    'jobManagement.filterQuoted': 'Quoted',
+    'jobManagement.filterScheduled': 'Scheduled',
+    'jobManagement.emptyNewTitle': 'No new leads',
+    'jobManagement.emptyNewBody': 'New job posts near you will show up here.',
+    'jobManagement.emptyQuotedTitle': 'No quotes sent yet',
+    'jobManagement.emptyQuotedBody': 'Quotes you send on new leads will appear here.',
+    'jobManagement.emptyScheduledTitle': 'No scheduled jobs',
+    'jobManagement.emptyScheduledBody': 'Jobs you have booked will appear here.',
+
+    // Profile — invite friends badge (missing-key audit)
+    'profile.inviteBadge': 'New',
   },
 
   'fr-CA': {
@@ -315,6 +343,34 @@ const translations = {
     'dispute.photoPermission': 'Autorisez SwingBy à accéder à vos photos pour joindre des preuves.',
     'dispute.addPhoto': 'Ajouter une photo',
     'dispute.photosOptional': 'Facultatif — ajoutez jusqu\'à 3 photos comme preuve.',
+
+    // Business profile — distance + completeness meter (missing-key audit)
+    'businessProfile.distanceAway': 'À %{km} km',
+    'businessProfile.completenessLabel': 'Complétude du profil',
+    'businessProfile.completenessTipDescription': 'Ajoutez une description pour aider les clients à vous trouver.',
+    'businessProfile.completenessTipPhotos': 'Ajoutez des photos de vos travaux pour bâtir la confiance.',
+    'businessProfile.completenessTipServices': 'Énumérez les services que vous offrez.',
+    'businessProfile.completenessTipRadius': "Définissez votre rayon de service pour que les clients à proximité puissent vous trouver.",
+
+    // Job management — business "Jobs" tab (New/Quoted/Scheduled) (missing-key audit)
+    'jobManagement.title': 'Travaux',
+    'jobManagement.errorTitle': 'Impossible de charger vos travaux',
+    'jobManagement.messageAction': 'Message',
+    'jobManagement.interestPending': 'En attente',
+    'jobManagement.interestAccepted': 'Accepté',
+    'jobManagement.interestRejected': 'Refusé',
+    'jobManagement.filterNew': 'Nouveaux',
+    'jobManagement.filterQuoted': 'Devis envoyés',
+    'jobManagement.filterScheduled': 'Planifiés',
+    'jobManagement.emptyNewTitle': 'Aucun nouveau prospect',
+    'jobManagement.emptyNewBody': 'Les nouvelles publications près de vous apparaîtront ici.',
+    'jobManagement.emptyQuotedTitle': 'Aucun devis envoyé',
+    'jobManagement.emptyQuotedBody': 'Les devis que vous envoyez sur de nouveaux prospects apparaîtront ici.',
+    'jobManagement.emptyScheduledTitle': 'Aucun travail planifié',
+    'jobManagement.emptyScheduledBody': 'Les travaux que vous avez réservés apparaîtront ici.',
+
+    // Profile — invite friends badge (missing-key audit)
+    'profile.inviteBadge': 'Nouveau',
   },
 
   // ── Arabic (RTL) — skeleton keys, translator TODO ──────────────────────
@@ -471,6 +527,34 @@ const translations = {
     'dispute.photoPermission': 'اسمح لـ SwingBy بالوصول إلى صورك لإرفاق الأدلة.',
     'dispute.addPhoto': 'إضافة صورة',
     'dispute.photosOptional': 'اختياري — أضف حتى 3 صور كدليل.',
+
+    // Business profile — distance + completeness meter (missing-key audit)
+    'businessProfile.distanceAway': 'على بعد %{km} كم',
+    'businessProfile.completenessLabel': 'اكتمال الملف الشخصي',
+    'businessProfile.completenessTipDescription': 'أضف وصفاً لمساعدة العملاء في العثور عليك.',
+    'businessProfile.completenessTipPhotos': 'أضف صوراً لأعمالك لبناء الثقة.',
+    'businessProfile.completenessTipServices': 'اذكر الخدمات التي تقدمها.',
+    'businessProfile.completenessTipRadius': 'حدد نطاق خدمتك ليتمكن العملاء القريبون من العثور عليك.',
+
+    // Job management — business "Jobs" tab (New/Quoted/Scheduled) (missing-key audit)
+    'jobManagement.title': 'الأعمال',
+    'jobManagement.errorTitle': 'تعذر تحميل أعمالك',
+    'jobManagement.messageAction': 'رسالة',
+    'jobManagement.interestPending': 'قيد الانتظار',
+    'jobManagement.interestAccepted': 'مقبول',
+    'jobManagement.interestRejected': 'مرفوض',
+    'jobManagement.filterNew': 'جديد',
+    'jobManagement.filterQuoted': 'عروض مرسلة',
+    'jobManagement.filterScheduled': 'مجدول',
+    'jobManagement.emptyNewTitle': 'لا توجد فرص جديدة',
+    'jobManagement.emptyNewBody': 'ستظهر هنا المنشورات الجديدة القريبة منك.',
+    'jobManagement.emptyQuotedTitle': 'لم يتم إرسال أي عرض بعد',
+    'jobManagement.emptyQuotedBody': 'ستظهر هنا العروض التي ترسلها على الفرص الجديدة.',
+    'jobManagement.emptyScheduledTitle': 'لا توجد أعمال مجدولة',
+    'jobManagement.emptyScheduledBody': 'ستظهر هنا الأعمال التي حجزتها.',
+
+    // Profile — invite friends badge (missing-key audit)
+    'profile.inviteBadge': 'جديد',
   },
 };
 
