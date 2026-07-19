@@ -128,6 +128,56 @@ def _assert_interest_access(interest: dict, current_user: dict):
     )
 
 
+def _quote_context_for_booking(booking: dict) -> Optional[dict]:
+    """
+    DQ-4 continuity: the pre-booking quote's job title + quoted price, so the
+    booking chat header keeps the same context the quote thread showed.
+
+    accept_interest() already re-parents the quote thread's message rows onto
+    the booking (stamps booking_id alongside the existing interest_id — see
+    interests.py), so GET /messages/{booking_id} already returns the full
+    message history unbroken. What's still missing without this is the
+    "<job title> · $X quoted" context line ChatScreen renders from
+    `threadInfo` — that block only ever arrived via GET /messages/interest/*,
+    so it went blank the moment the thread flipped from interest_id to
+    booking_id routing, which is what read as "a new chat" in QA.
+
+    Returns the same shape as the `interest` key in get_interest_messages()
+    so the existing mobile ChatScreen (`data?.interest` → threadInfo) picks
+    it up with no client-side change. Best-effort / read-only: returns None
+    for direct geo-browse bookings with no post_id, or on any lookup error —
+    never blocks the message list itself.
+    """
+    post_id = booking.get("post_id")
+    if not post_id:
+        return None
+    try:
+        res = (
+            supabase.table("interests")
+            .select("id, status, quoted_price, service_posts(title, status)")
+            .eq("post_id", post_id)
+            .eq("business_id", booking["business_id"])
+            .eq("status", "accepted")
+            .limit(1)
+            .execute()
+        )
+        rows = res.data or []
+        if not rows:
+            return None
+        row = rows[0]
+        post = row.get("service_posts") or {}
+        return {
+            "id": row["id"],
+            "status": row["status"],
+            "quoted_price": row.get("quoted_price"),
+            "post_title": post.get("title"),
+            "post_status": post.get("status"),
+        }
+    except Exception:
+        logger.warning("quote_context_lookup_failed", exc_info=True)
+        return None
+
+
 def _mark_read(thread_field: str, thread_id: str, uid: str):
     """Mark everything in the thread not sent by the reader as read."""
     try:
@@ -218,10 +268,14 @@ def send_message(data: MessageSend, current_user: dict = Depends(get_current_use
             raise HTTPException(status_code=404, detail="Booking not found")
 
         booking = booking_res.data
-        if booking["status"] not in ("confirmed", "in_progress"):
+        # GAP #65: /messages/threads lists completed bookings as chattable
+        # threads (see list_threads below), so a completed booking must stay
+        # sendable here too — a listed thread that 400s on send is the bug.
+        # Product ruling: keep it sendable, not read-only.
+        if booking["status"] not in ("confirmed", "in_progress", "completed"):
             raise HTTPException(
                 status_code=400,
-                detail="Messages are only available on confirmed or in-progress bookings",
+                detail="Messages are only available on confirmed, in-progress, or completed bookings",
             )
         _assert_message_access(booking, current_user)
 
@@ -505,6 +559,7 @@ def get_messages(
             "limit": limit,
             "before": before,
             "next_before": next_before,
+            "interest": _quote_context_for_booking(booking_res.data),
         }
     except Exception:
         logger.exception("Could not retrieve messages")
