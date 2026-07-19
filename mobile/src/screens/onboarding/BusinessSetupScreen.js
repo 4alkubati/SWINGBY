@@ -146,7 +146,15 @@ export default function BusinessSetupScreen({ onComplete }) {
                     separator: { backgroundColor: colors.border },
                   }}
                   textInputProps={{
-                    value: address,
+                    // Do NOT pass `value` — the library's TextInput is
+                    // internally controlled (value={stateText}) and its
+                    // render spreads {...textInputProps} after that prop, so
+                    // an external `value` silently wins and the field goes
+                    // fully externally-controlled. On Android that fights the
+                    // IME's composing-text span on every keystroke and makes
+                    // the box untypable (iOS has no such mechanic, so it
+                    // "worked" there). onChangeText alone mirrors the typed
+                    // text into `address` without taking over control.
                     onChangeText: setAddress,
                     autoCapitalize: 'words',
                   }}
@@ -154,6 +162,13 @@ export default function BusinessSetupScreen({ onComplete }) {
                   fetchDetails={true}
                   minLength={3}
                   keepResultsAfterBlur
+                  // DQ-5 (Android address input unusable) — see matching
+                  // comment in PostJobScreen.js StepDetails: the results
+                  // FlatList is scrollable by default and nested inside this
+                  // screen's ScrollView, which is the "VirtualizedList nested
+                  // in ScrollView" anti-pattern that Android handles far worse
+                  // than iOS. disableScroll gives all scrolling to the parent.
+                  disableScroll
                 />
               </View>
             ) : (

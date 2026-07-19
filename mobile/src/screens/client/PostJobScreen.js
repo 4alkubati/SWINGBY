@@ -2,7 +2,7 @@ import {
   View, ScrollView, KeyboardAvoidingView, Platform, StyleSheet, Modal,
   TouchableOpacity, ActivityIndicator, Alert, Image,
 } from 'react-native';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
@@ -252,7 +252,7 @@ function StepCategory({ category, setCategory }) {
 // ─── Step 1: Details ─────────────────────────────────────────────────────────
 function StepDetails({
   description, setDescription, address, setAddress, descError,
-  setAddressLat, setAddressLng,
+  setAddressLat, setAddressLng, placesRef,
   photos, setPhotos, photoUploading, setPhotoUploading,
 }) {
   return (
@@ -284,6 +284,7 @@ function StepDetails({
                 Address (where's the job?)
               </Text>
               <GooglePlacesAutocomplete
+                ref={placesRef}
                 placeholder="123 Main St SW, Calgary"
                 onPress={(data, details = null) => {
                   setAddress(data.description);
@@ -313,7 +314,18 @@ function StepDetails({
                   separator: { backgroundColor: colors.border },
                 }}
                 textInputProps={{
-                  value: address,
+                  // Do NOT pass `value` here — the library's own textInput is
+                  // controlled internally (value={stateText}) and its render
+                  // spreads {...textInputProps} AFTER that, so an external
+                  // `value` silently wins and the field becomes externally
+                  // controlled. On Android, forcing the native EditText's
+                  // controlled value back on every keystroke fights the IME's
+                  // composing-text/predictive-suggestion span and makes the
+                  // box effectively untypable (works fine on iOS, which has no
+                  // such composing-text mechanic). onChangeText alone is
+                  // enough to mirror the typed text into `address`; resetting
+                  // the field programmatically goes through the exposed ref
+                  // (placesRef.current.setAddressText) instead of `value`.
                   onChangeText: setAddress,
                   autoCapitalize: 'words',
                 }}
@@ -321,6 +333,17 @@ function StepDetails({
                 fetchDetails={true}
                 minLength={3}
                 keepResultsAfterBlur
+                // DQ-5 (Android address input unusable): the library's own
+                // results dropdown is a FlatList with scrollEnabled=true by
+                // default — nested inside this screen's own ScrollView, that's
+                // the classic "VirtualizedList nested in a ScrollView with the
+                // same orientation" case, which Android's stricter nested-scroll
+                // gesture arbitration turns into broken touch/typing on the
+                // field (iOS tolerates the nesting far better). disableScroll
+                // hands all scrolling to the parent ScrollView so the two never
+                // fight for the touch responder; individual suggestion rows
+                // stay tappable (that's a separate concern from list-scrolling).
+                disableScroll
               />
             </View>
           ) : (
@@ -351,8 +374,19 @@ function StepBudget({ budget, setBudget, date, setDate, time, setTime }) {
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [pickerTime, setPickerTime] = useState(new Date());
 
-  function onTimeChange(_, selected) {
-    if (Platform.OS === 'android') setShowTimePicker(false);
+  function onTimeChange(event, selected) {
+    if (Platform.OS === 'android') {
+      // Android picker is a one-shot dialog: hide it always, and commit the
+      // chosen value inside onChange when the user taps OK (event.type === 'set').
+      // 'dismissed' just closes without changing the value.
+      setShowTimePicker(false);
+      if (event?.type === 'set' && selected) {
+        setPickerTime(selected);
+        setTime(formatTime(selected));
+      }
+      return;
+    }
+    // iOS inline spinner: keep the draft until the user taps Done (confirmTime).
     if (selected) setPickerTime(selected);
   }
 
@@ -544,6 +578,7 @@ export default function PostJobScreen() {
   const [step, setStep] = useState(0);
   const [direction, setDirection] = useState(1);
   const [descError, setDescError] = useState('');
+  const placesRef = useRef(null);
 
   function goForward() {
     if (step === 1) {
@@ -602,6 +637,10 @@ export default function PostJobScreen() {
       setDescription('');
       setCategory('');
       setAddress('');
+      // The Places field is (deliberately) not driven by `value` anymore —
+      // see the comment in StepDetails — so clearing `address` alone won't
+      // clear the visible text. Reset via the library's own imperative API.
+      placesRef.current?.setAddressText('');
       setAddressLat(null);
       setAddressLng(null);
       setBudget('');
@@ -653,6 +692,7 @@ export default function PostJobScreen() {
               setAddress={setAddress}
               setAddressLat={setAddressLat}
               setAddressLng={setAddressLng}
+              placesRef={placesRef}
               descError={descError}
               photos={photos}
               setPhotos={setPhotos}
