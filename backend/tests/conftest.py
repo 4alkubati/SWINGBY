@@ -9,10 +9,27 @@ Provides:
 """
 
 from types import SimpleNamespace
+from unittest.mock import MagicMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
 from app.main import app
+
+
+@pytest.fixture(autouse=True)
+def _no_real_analytics_calls():
+    """
+    CARD-23 GOAL 4: several routes (signup, accept_interest, complete_booking)
+    fire a best-effort Plausible event via app.services.analytics.track_event.
+    Autouse + session-independent so no test accidentally makes a real
+    network call to plausible.io just by exercising one of those routes
+    without remembering to mock analytics itself. Individual tests can still
+    nest their own patch on the same target to assert call shape (the inner
+    patch just takes over for the duration of its `with` block).
+    """
+    with patch("app.services.analytics.httpx.post") as mock_post:
+        mock_post.return_value = MagicMock(status_code=202)
+        yield mock_post
 
 
 class SupabaseTableStub:

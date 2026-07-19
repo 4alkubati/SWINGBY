@@ -412,6 +412,15 @@ def accept_interest(interest_id: str, current_user: dict = Depends(get_current_u
         except Exception:
             pass  # notification failure must not break the request
 
+        # Funnel event (K7 — no-analytics) — best-effort, never blocks accept
+        from app.services.analytics import track_event
+
+        track_event(
+            "Booking Created",
+            url_path="/booking/created",
+            props={"category": post.get("category")},
+        )
+
         return {
             "message": "Interest accepted — booking and payment created",
             "booking": booking,

@@ -680,6 +680,15 @@ def complete_booking(booking_id: str, current_user: dict = Depends(get_current_u
         except Exception:
             pass
 
+        # Funnel event (K7 — no-analytics) — best-effort, never blocks completion
+        from app.services.analytics import track_event
+
+        track_event(
+            "Booking Completed",
+            url_path="/booking/completed",
+            props={"category": booking.get("service_category")},
+        )
+
         return {
             "message": "Booking completed — full payment released (minus platform fee)"
         }
