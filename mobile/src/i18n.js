@@ -160,6 +160,17 @@ const translations = {
     'dispute.photoPermission': 'Allow SwingBy to access your photos to attach evidence.',
     'dispute.addPhoto': 'Add photo',
     'dispute.photosOptional': 'Optional — add up to 3 photos as evidence.',
+
+    // Rebook — one-tap repeat booking from a completed job (CARD-12)
+    'rebook.button': 'Rebook',
+    'rebook.bannerTitle': 'Rebooking %{business}',
+    'rebook.descriptionTemplate': 'Rebooking %{business} — same job as last time. Add any new details below.',
+
+    // Favorites — save a business for later (CARD-12)
+    'favorites.add': 'Save to favorites',
+    'favorites.remove': 'Remove from favorites',
+    'favorites.added': 'Saved to favorites',
+    'favorites.removed': 'Removed from favorites',
   },
 
   'fr-CA': {
@@ -315,6 +326,17 @@ const translations = {
     'dispute.photoPermission': 'Autorisez SwingBy à accéder à vos photos pour joindre des preuves.',
     'dispute.addPhoto': 'Ajouter une photo',
     'dispute.photosOptional': 'Facultatif — ajoutez jusqu\'à 3 photos comme preuve.',
+
+    // Rebook — one-tap repeat booking from a completed job (CARD-12)
+    'rebook.button': 'Réserver à nouveau',
+    'rebook.bannerTitle': 'Nouvelle réservation avec %{business}',
+    'rebook.descriptionTemplate': 'Nouvelle réservation avec %{business} — même travail que la dernière fois. Ajoutez des détails ci-dessous.',
+
+    // Favorites — save a business for later (CARD-12)
+    'favorites.add': 'Ajouter aux favoris',
+    'favorites.remove': 'Retirer des favoris',
+    'favorites.added': 'Ajouté aux favoris',
+    'favorites.removed': 'Retiré des favoris',
   },
 
   // ── Arabic (RTL) — skeleton keys, translator TODO ──────────────────────
@@ -471,6 +493,17 @@ const translations = {
     'dispute.photoPermission': 'اسمح لـ SwingBy بالوصول إلى صورك لإرفاق الأدلة.',
     'dispute.addPhoto': 'إضافة صورة',
     'dispute.photosOptional': 'اختياري — أضف حتى 3 صور كدليل.',
+
+    // Rebook — one-tap repeat booking from a completed job (CARD-12)
+    'rebook.button': 'إعادة الحجز',
+    'rebook.bannerTitle': 'إعادة حجز %{business}',
+    'rebook.descriptionTemplate': 'إعادة حجز %{business} — نفس العمل السابق. أضف أي تفاصيل جديدة أدناه.',
+
+    // Favorites — save a business for later (CARD-12)
+    'favorites.add': 'حفظ في المفضلة',
+    'favorites.remove': 'إزالة من المفضلة',
+    'favorites.added': 'تم الحفظ في المفضلة',
+    'favorites.removed': 'تمت الإزالة من المفضلة',
   },
 };
 
