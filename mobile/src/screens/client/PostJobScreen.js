@@ -46,6 +46,28 @@ function formatTime(date) {
   return `${hour12}:${String(m).padStart(2, '0')} ${ampm}`;
 }
 
+// GAP-AUDIT-2026-07-18 #64 — the wizard has no title field, so the create
+// payload used to send the full description as the title verbatim. Derive a
+// short one instead: first 60 chars of the (whitespace-collapsed) description,
+// with an ellipsis if it was truncated.
+function deriveTitle(text) {
+  const collapsed = text.trim().replace(/\s+/g, ' ');
+  if (collapsed.length <= 60) return collapsed;
+  return `${collapsed.slice(0, 60).trimEnd()}…`;
+}
+
+// GAP-AUDIT-2026-07-18 #63 — the "Preferred date" field is free text (no
+// structured date picker), so best-effort parse date+time into an ISO-8601
+// string for the backend's plain-string preferred_date column. If it can't
+// be parsed, omit the field rather than send garbage.
+function derivePreferredDate(dateText, timeText) {
+  const raw = [dateText, timeText].filter((s) => s && s.trim()).join(' ').trim();
+  if (!raw) return undefined;
+  const parsed = new Date(raw);
+  if (Number.isNaN(parsed.getTime())) return undefined;
+  return parsed.toISOString();
+}
+
 const STEPS = ['Category', 'Details', 'Budget', 'Confirm'];
 const TOTAL_STEPS = STEPS.length;
 
@@ -620,7 +642,7 @@ export default function PostJobScreen() {
     setSubmitting(true);
     try {
       const payload = {
-        title: description.trim(),
+        title: deriveTitle(description),
         description: description.trim(),
         category: category || 'General',
         budget: parsedBudget,
@@ -628,6 +650,7 @@ export default function PostJobScreen() {
         lat: addressLat ?? undefined,
         lng: addressLng ?? undefined,
         image_urls: photos.map((p) => p.url),
+        preferred_date: derivePreferredDate(date, time),
       };
 
       const data = await api.post('/service-posts/', payload);
