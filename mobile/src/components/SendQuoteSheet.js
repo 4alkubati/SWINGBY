@@ -1,11 +1,13 @@
 import {
-  View, TextInput, TouchableOpacity, Modal, StyleSheet,
+  View, TextInput, TouchableOpacity, Modal, ScrollView, StyleSheet,
   TouchableWithoutFeedback, ActivityIndicator, KeyboardAvoidingView,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Text from './Text';
+import SwImage from './SwImage';
+import i18n from '../i18n';
 import { api } from '../services/api';
 import { colors, spacing } from '../theme/tokens';
 
@@ -19,6 +21,7 @@ export default function SendQuoteSheet({ visible, onClose, post, onQuoted }) {
   const [sent, setSent] = useState(false);
 
   const clientFirstName = post?.users?.first_name;
+  const photos = Array.isArray(post?.image_urls) ? post.image_urls.filter(Boolean) : [];
 
   // Pre-fill the last price quoted for this category — most businesses quote
   // the same service at the same rate; this saves the slowest input.
@@ -109,6 +112,28 @@ export default function SendQuoteSheet({ visible, onClose, post, onQuoted }) {
                   post.preferred_time || null,
                 ].filter(Boolean).join(' · ') || null}
               </Text>
+            </View>
+          )}
+
+          {photos.length > 0 && (
+            <View>
+              <Text style={styles.fieldLabel}>
+                {i18n.t('jobCard.photosLabel', { count: photos.length })}
+              </Text>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.photoRow}
+              >
+                {photos.map((url, i) => (
+                  <SwImage
+                    key={url || i}
+                    source={{ uri: url }}
+                    style={styles.photoThumb}
+                    accessibilityLabel={i18n.t('jobCard.photoAlt', { index: i + 1, count: photos.length })}
+                  />
+                ))}
+              </ScrollView>
             </View>
           )}
 
@@ -208,6 +233,16 @@ const styles = StyleSheet.create({
   },
   jobTitle: { fontSize: 15, fontWeight: '600', color: colors.textPrimary },
   jobMeta: { fontSize: 13, color: colors.textSecondary },
+  photoRow: {
+    gap: spacing.sm,
+    paddingVertical: 2,
+  },
+  photoThumb: {
+    width: 72,
+    height: 72,
+    borderRadius: 10,
+    backgroundColor: colors.background,
+  },
   fieldLabel: {
     fontSize: 11,
     color: colors.textSecondary,

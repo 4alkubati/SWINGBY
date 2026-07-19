@@ -1,9 +1,11 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, ScrollView, StyleSheet } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import Text from './Text';
 import Button from './Button';
 import Avatar from './Avatar';
+import SwImage from './SwImage';
+import i18n from '../i18n';
 import { colors, spacing, radius } from '../theme/tokens';
 
 // Business "new opportunity" card. Highlighted (new) variant uses purple-tinted border.
@@ -25,6 +27,9 @@ export default function JobOpportunityCard({
   const metaParts = [category, distanceKm ? `${distanceKm} km` : null, ageLabel]
     .filter(Boolean)
     .join(' · ');
+
+  const photos = Array.isArray(post.image_urls) ? post.image_urls.filter(Boolean) : [];
+  const photoCount = photos.length;
 
   if (compact) {
     return (
@@ -50,6 +55,15 @@ export default function JobOpportunityCard({
             </Text>
           ) : null}
         </View>
+        {photoCount > 0 && (
+          <View
+            style={styles.compactPhotoBadge}
+            accessibilityLabel={i18n.t('jobCard.photosLabel', { count: photoCount })}
+          >
+            <Feather name="camera" size={12} color={colors.textSecondary} />
+            <Text variant="caption" color="secondary">{photoCount}</Text>
+          </View>
+        )}
         <Button
           variant="ghost"
           label="Quote →"
@@ -109,6 +123,23 @@ export default function JobOpportunityCard({
           </View>
         </View>
       ) : null}
+
+      {photoCount > 0 && (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.photoRow}
+        >
+          {photos.map((url, i) => (
+            <SwImage
+              key={url || i}
+              source={{ uri: url }}
+              style={styles.photoThumb}
+              accessibilityLabel={i18n.t('jobCard.photoAlt', { index: i + 1, count: photoCount })}
+            />
+          ))}
+        </ScrollView>
+      )}
 
       <View style={styles.buttonRow}>
         <Button
@@ -192,6 +223,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.sm,
   },
+  photoRow: {
+    gap: spacing.sm,
+  },
+  photoThumb: {
+    width: 64,
+    height: 64,
+    borderRadius: radius.card,
+    backgroundColor: colors.surfaceAlt,
+  },
   buttonRow: {
     flexDirection: 'row',
     gap: spacing.sm,
@@ -216,6 +256,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: colors.textPrimary,
+  },
+  compactPhotoBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
   },
   quoteLink: {
     paddingVertical: 4,
