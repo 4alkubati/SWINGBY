@@ -174,7 +174,7 @@
 | `id` | `uuid` PK, default `gen_random_uuid()` | |
 | `booking_id` | `uuid NOT NULL` FK → `bookings.id` ON DELETE CASCADE | |
 | `actor_id` | `uuid NOT NULL` FK → `users.id` ON DELETE RESTRICT | |
-| `event_type` | `text NOT NULL` CHECK | Migration CHECK list: `'dates_proposed', 'date_confirmed', 'en_route', 'arrived', 'started', 'paused', 'resumed', 'completed', 'cancelled_event'`. |
+| `event_type` | `text NOT NULL` CHECK | Migration CHECK list: `'dates_proposed', 'date_confirmed', 'en_route', 'arrived', 'started', 'paused', 'resumed', 'completed', 'cancelled_event'`. `docs/booking_events_event_type_extend.sql` (CARD-02, **not yet applied live**) adds `'dispute_opened', 'dispute_resolved', 'paid_offplatform'`. |
 | `note` | `text`, nullable | |
 | `lat` / `lng` | `double precision`, nullable | |
 | `created_at` | `timestamptz NOT NULL DEFAULT now()` | |
@@ -189,6 +189,12 @@ Index: `booking_events_booking_id_created_at_idx (booking_id, created_at)`.
 > erroring against the live CHECK constraint today. Both call sites wrap the insert in `try/except` and only
 > log a warning on failure, so a live failure would not surface loudly. **Recommend the next agent with
 > Supabase access runs `get_advisors`/`execute_sql` to check the live CHECK definition and reconcile.**
+>
+> **CARD-02 (2026-07-19):** fix written as `docs/booking_events_event_type_extend.sql`, verified against a
+> local Postgres 16 in `backend/tests/test_booking_events_check.py` (pre-migration inserts violate the
+> CHECK; post-migration all three insert and surface in the timeline query). **Not yet applied to the live
+> project** — still needs `apply_migration` after approval, and the live-CHECK reconciliation above still
+> applies before running it.
 
 **RLS:** `authenticated` SELECT only if a party to the parent booking (client / business owner / assigned employee, via subquery join). No INSERT/UPDATE/DELETE policy for `authenticated` — writes are `service_role`-only. RLS enabled.
 
