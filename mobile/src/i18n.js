@@ -107,8 +107,59 @@ const translations = {
     'booking.viewFullDetails': 'View full details',
     'booking.detailsAction': 'Details',
 
+    // Job opportunity card / quote sheet — client-uploaded photos (business side)
+    'jobCard.photosLabel': 'Photos (%{count})',
+    'jobCard.photoAlt': 'Job photo %{index} of %{count}',
+
     // Post a job — category picker
     'postJob.categoryOther': 'Other / General',
+
+    // Search — name-based business search
+    'search.placeholder': 'Search businesses, categories…',
+    'search.recent': 'RECENT',
+    'search.idleTitle': 'Search local pros',
+    'search.idleBody': 'Type a business name or category',
+    'search.noMatchesTitle': 'No matches',
+    'search.noMatchesBody': 'No results for "%{query}"',
+    'search.clear': 'Clear search',
+    'search.errorTitle': 'Network error',
+
+    // Quotes — decline (GAP-AUDIT #1)
+    'quotes.decline': 'Decline',
+    'quotes.declined': 'Quote declined',
+    'quotes.declineError': 'Could not decline quote',
+
+    // Disputes — my disputes list (GAP-AUDIT #6)
+    'disputes.title': 'My Disputes',
+    'disputes.empty': 'No disputes',
+    'disputes.emptyBody': "You haven't filed or received any disputes.",
+    'disputes.loadError': 'Could not load disputes',
+    'disputes.statusOpen': 'Open',
+    'disputes.statusUnderReview': 'Under review',
+    'disputes.statusResolved': 'Resolved',
+    'disputes.statusDismissed': 'Dismissed',
+    'disputes.filedByYou': 'Filed by you',
+    'disputes.filedAgainstYou': 'Filed against you',
+    'disputes.viewLink': 'My disputes',
+
+    // Escrow milestones — read-only (GAP-AUDIT #10)
+    'escrow.title': 'Payment protection',
+    'escrow.fundsHeld': 'Funds held in escrow',
+    'escrow.halfReleased': '50% released on confirm',
+    'escrow.fullReleased': 'Released on completion',
+
+    // Profile photo upload (GAP-AUDIT #11)
+    'profile.photoUploading': 'Uploading photo…',
+    'profile.photoUpdated': 'Photo updated',
+    'profile.photoUploadError': 'Could not upload photo',
+    'profile.photoPermission': 'Allow SwingBy to access your photos to set a profile picture.',
+
+    // Dispute photo upload (GAP-AUDIT #12)
+    'dispute.photoUploading': 'Uploading…',
+    'dispute.photoUploadError': 'Could not upload photo',
+    'dispute.photoPermission': 'Allow SwingBy to access your photos to attach evidence.',
+    'dispute.addPhoto': 'Add photo',
+    'dispute.photosOptional': 'Optional — add up to 3 photos as evidence.',
   },
 
   'fr-CA': {
@@ -211,8 +262,59 @@ const translations = {
     'booking.viewFullDetails': 'Voir tous les détails',
     'booking.detailsAction': 'Détails',
 
+    // Job opportunity card / quote sheet — client-uploaded photos (business side)
+    'jobCard.photosLabel': 'Photos (%{count})',
+    'jobCard.photoAlt': 'Photo du travail %{index} sur %{count}',
+
     // Post a job — category picker
     'postJob.categoryOther': 'Autre / Général',
+
+    // Search — name-based business search
+    'search.placeholder': 'Rechercher des entreprises, catégories…',
+    'search.recent': 'RÉCENTS',
+    'search.idleTitle': 'Trouver des pros locaux',
+    'search.idleBody': "Saisissez un nom d'entreprise ou une catégorie",
+    'search.noMatchesTitle': 'Aucun résultat',
+    'search.noMatchesBody': 'Aucun résultat pour « %{query} »',
+    'search.clear': 'Effacer la recherche',
+    'search.errorTitle': 'Erreur réseau',
+
+    // Quotes — decline (GAP-AUDIT #1)
+    'quotes.decline': 'Refuser',
+    'quotes.declined': 'Devis refusé',
+    'quotes.declineError': 'Impossible de refuser le devis',
+
+    // Disputes — my disputes list (GAP-AUDIT #6)
+    'disputes.title': 'Mes litiges',
+    'disputes.empty': 'Aucun litige',
+    'disputes.emptyBody': "Vous n'avez déposé ou reçu aucun litige.",
+    'disputes.loadError': 'Impossible de charger les litiges',
+    'disputes.statusOpen': 'Ouvert',
+    'disputes.statusUnderReview': 'En cours de révision',
+    'disputes.statusResolved': 'Résolu',
+    'disputes.statusDismissed': 'Rejeté',
+    'disputes.filedByYou': 'Déposé par vous',
+    'disputes.filedAgainstYou': 'Déposé contre vous',
+    'disputes.viewLink': 'Mes litiges',
+
+    // Escrow milestones — read-only (GAP-AUDIT #10)
+    'escrow.title': 'Protection du paiement',
+    'escrow.fundsHeld': 'Fonds détenus en entiercement',
+    'escrow.halfReleased': '50 % libéré à la confirmation',
+    'escrow.fullReleased': 'Libéré à la fin du travail',
+
+    // Profile photo upload (GAP-AUDIT #11)
+    'profile.photoUploading': 'Téléchargement de la photo…',
+    'profile.photoUpdated': 'Photo mise à jour',
+    'profile.photoUploadError': 'Impossible de télécharger la photo',
+    'profile.photoPermission': 'Autorisez SwingBy à accéder à vos photos pour définir une photo de profil.',
+
+    // Dispute photo upload (GAP-AUDIT #12)
+    'dispute.photoUploading': 'Téléchargement…',
+    'dispute.photoUploadError': 'Impossible de télécharger la photo',
+    'dispute.photoPermission': 'Autorisez SwingBy à accéder à vos photos pour joindre des preuves.',
+    'dispute.addPhoto': 'Ajouter une photo',
+    'dispute.photosOptional': 'Facultatif — ajoutez jusqu\'à 3 photos comme preuve.',
   },
 
   // ── Arabic (RTL) — skeleton keys, translator TODO ──────────────────────
@@ -316,8 +418,59 @@ const translations = {
     'booking.viewFullDetails': 'عرض كل التفاصيل',
     'booking.detailsAction': 'التفاصيل',
 
+    // Job opportunity card / quote sheet — client-uploaded photos (business side)
+    'jobCard.photosLabel': 'الصور (%{count})',
+    'jobCard.photoAlt': 'صورة العمل %{index} من %{count}',
+
     // Post a job — category picker
     'postJob.categoryOther': 'أخرى / عام',
+
+    // Search — name-based business search
+    'search.placeholder': 'ابحث عن الشركات أو الفئات…',
+    'search.recent': 'الأخيرة',
+    'search.idleTitle': 'ابحث عن محترفين محليين',
+    'search.idleBody': 'اكتب اسم شركة أو فئة',
+    'search.noMatchesTitle': 'لا توجد نتائج',
+    'search.noMatchesBody': 'لا نتائج لـ "%{query}"',
+    'search.clear': 'مسح البحث',
+    'search.errorTitle': 'خطأ في الشبكة',
+
+    // Quotes — decline (GAP-AUDIT #1)
+    'quotes.decline': 'رفض',
+    'quotes.declined': 'تم رفض العرض',
+    'quotes.declineError': 'تعذر رفض العرض',
+
+    // Disputes — my disputes list (GAP-AUDIT #6)
+    'disputes.title': 'نزاعاتي',
+    'disputes.empty': 'لا توجد نزاعات',
+    'disputes.emptyBody': 'لم تقدم أو تستلم أي نزاعات.',
+    'disputes.loadError': 'تعذر تحميل النزاعات',
+    'disputes.statusOpen': 'مفتوح',
+    'disputes.statusUnderReview': 'قيد المراجعة',
+    'disputes.statusResolved': 'تم الحل',
+    'disputes.statusDismissed': 'مرفوض',
+    'disputes.filedByYou': 'قدمته أنت',
+    'disputes.filedAgainstYou': 'قُدّم ضدك',
+    'disputes.viewLink': 'نزاعاتي',
+
+    // Escrow milestones — read-only (GAP-AUDIT #10)
+    'escrow.title': 'حماية الدفع',
+    'escrow.fundsHeld': 'الأموال محتجزة كضمان',
+    'escrow.halfReleased': 'تم تحرير 50% عند التأكيد',
+    'escrow.fullReleased': 'تم التحرير عند الاكتمال',
+
+    // Profile photo upload (GAP-AUDIT #11)
+    'profile.photoUploading': 'جارٍ رفع الصورة…',
+    'profile.photoUpdated': 'تم تحديث الصورة',
+    'profile.photoUploadError': 'تعذر رفع الصورة',
+    'profile.photoPermission': 'اسمح لـ SwingBy بالوصول إلى صورك لتعيين صورة الملف الشخصي.',
+
+    // Dispute photo upload (GAP-AUDIT #12)
+    'dispute.photoUploading': 'جارٍ الرفع…',
+    'dispute.photoUploadError': 'تعذر رفع الصورة',
+    'dispute.photoPermission': 'اسمح لـ SwingBy بالوصول إلى صورك لإرفاق الأدلة.',
+    'dispute.addPhoto': 'إضافة صورة',
+    'dispute.photosOptional': 'اختياري — أضف حتى 3 صور كدليل.',
   },
 };
 
