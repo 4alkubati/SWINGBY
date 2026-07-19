@@ -32,6 +32,12 @@ class ServicePostCreate(BaseModel):
     lng: Optional[float] = Field(None, ge=-180.0, le=180.0)
     address: Optional[str] = Field(None, max_length=300)
     image_urls: Optional[List[str]] = Field(default_factory=list, max_length=5)
+    # GAP-AUDIT-2026-07-18 #63: wizard already collects this, PATCH already
+    # accepts it (ServicePostUpdate below) — create was the only gap. Mirrors
+    # bookings.py's date-string idiom (plain ISO-8601 string, no strict
+    # datetime parsing). Column added via docs/service_posts_preferred_date.sql
+    # (FILED, not yet applied).
+    preferred_date: Optional[str] = Field(None, max_length=64)
 
     @field_validator("title", "category", mode="before")
     @classmethod
@@ -46,6 +52,45 @@ class ServicePostCreate(BaseModel):
     def validate_image_urls(cls, v):
         if v is None:
             return []
+        if not isinstance(v, list):
+            raise ValueError("image_urls must be a list")
+        if len(v) > 5:
+            raise ValueError("Maximum 5 images per post")
+        return [str(url).strip() for url in v if url]
+
+
+class ServicePostUpdate(BaseModel):
+    """
+    PATCH /service-posts/{post_id} body. Editable fields only — see
+    GAP-AUDIT-2026-07-18 #3. category is deliberately NOT editable here.
+
+    preferred_date mirrors bookings.py's date-string idiom (plain ISO-8601
+    string, no strict datetime parsing) — column added via
+    docs/service_posts_preferred_date.sql (FILED, not yet applied; see
+    GAP-AUDIT-2026-07-18 #63, which this PATCH surfaces on the edit side).
+    """
+
+    title: Optional[str] = Field(None, min_length=3, max_length=120)
+    description: Optional[str] = Field(None, max_length=2000)
+    budget: Optional[float] = Field(None, gt=0, le=1_000_000)
+    address: Optional[str] = Field(None, max_length=300)
+    image_urls: Optional[List[str]] = Field(None, max_length=5)
+    preferred_date: Optional[str] = Field(None, max_length=64)
+
+    @field_validator("title", mode="before")
+    @classmethod
+    def strip_title(cls, v):
+        if v is not None:
+            v = str(v).strip()
+            if not v:
+                raise ValueError("Field cannot be blank")
+        return v
+
+    @field_validator("image_urls", mode="before")
+    @classmethod
+    def validate_image_urls(cls, v):
+        if v is None:
+            return None
         if not isinstance(v, list):
             raise ValueError("image_urls must be a list")
         if len(v) > 5:
@@ -79,6 +124,7 @@ def create_service_post(
                     "lng": data.lng,
                     "address": data.address,
                     "image_urls": data.image_urls or [],
+                    "preferred_date": data.preferred_date,
                     "status": "open",
                 }
             )
@@ -209,6 +255,57 @@ def get_service_post(post_id: str, current_user: dict = Depends(get_current_user
         return res.data
     except Exception:
         raise HTTPException(status_code=404, detail="Post not found")
+
+
+@router.patch("/{post_id}")
+def update_service_post(
+    post_id: str,
+    data: ServicePostUpdate,
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Client-only edit of a posted job — GAP-AUDIT-2026-07-18 #3. Owner-only
+    and open-status-only (same guard shape as DELETE /{post_id} below):
+    once an interest has been accepted and the post has left 'open', edits
+    are rejected.
+    """
+    if current_user["role"] != "client":
+        raise HTTPException(
+            status_code=403, detail="Only clients can edit their posts"
+        )
+
+    post = (
+        supabase.table("service_posts")
+        .select("client_id, status")
+        .eq("id", post_id)
+        .single()
+        .execute()
+    )
+    if not post.data:
+        raise HTTPException(status_code=404, detail="Post not found")
+    if post.data["client_id"] != current_user["id"]:
+        raise HTTPException(status_code=403, detail="You don't own this post")
+    if post.data["status"] != "open":
+        raise HTTPException(
+            status_code=400,
+            detail=f"Cannot edit a post with status '{post.data['status']}'",
+        )
+
+    update_fields = data.model_dump(exclude_unset=True)
+    if not update_fields:
+        raise HTTPException(status_code=400, detail="No fields provided to update")
+
+    try:
+        res = (
+            supabase.table("service_posts")
+            .update(update_fields)
+            .eq("id", post_id)
+            .execute()
+        )
+        return {"message": "Post updated", "post": res.data[0]}
+    except Exception:
+        logger.exception("Could not update service post")
+        raise HTTPException(status_code=400, detail="Could not update service post")
 
 
 @router.delete("/{post_id}")

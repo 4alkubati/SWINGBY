@@ -269,6 +269,180 @@ class TestCreateServicePostNormalizesCategory:
             assert response.status_code in [200, 201]
             assert posts_stub.inserted["category"] == "General"
 
+    def test_create_post_writes_preferred_date_into_insert_payload(
+        self, test_client, as_client
+    ):
+        """
+        GAP-AUDIT-2026-07-18 #63: the wizard collects a preferred date/time
+        but ServicePostCreate had no such field and the insert payload never
+        carried it, so the value was silently discarded. Pin that POST
+        /service-posts/ now accepts preferred_date and writes it into the
+        insert dict (list/detail already return it via select("*") once the
+        FILED migration in docs/service_posts_preferred_date.sql is applied).
+        """
+        posts_stub = SupabaseTableStub(
+            insert_data=[
+                {
+                    "id": "post-3",
+                    "client_id": "client-1",
+                    "title": "Need a plumber",
+                    "category": "Plumbing",
+                    "budget": 150,
+                    "status": "open",
+                    "preferred_date": "2026-08-01T10:00:00Z",
+                }
+            ]
+        )
+
+        with patch("app.api.service_posts.supabase") as mock_supabase:
+            mock_supabase.table.return_value = posts_stub
+
+            response = test_client.post(
+                "/service-posts/",
+                json={
+                    "title": "Need a plumber",
+                    "category": "Plumbing",
+                    "budget": 150,
+                    "preferred_date": "2026-08-01T10:00:00Z",
+                },
+                headers={"Authorization": "Bearer test-token"},
+            )
+
+            assert response.status_code in [200, 201]
+            assert posts_stub.inserted["preferred_date"] == "2026-08-01T10:00:00Z"
+            assert response.json()["post"]["preferred_date"] == "2026-08-01T10:00:00Z"
+
+
+class TestUpdateServicePost:
+    """
+    PATCH /service-posts/{post_id} — GAP-AUDIT-2026-07-18 #3. Owner-only,
+    open-status-only edit of title/description/budget/address/image_urls/
+    preferred_date.
+    """
+
+    def test_non_client_role_rejected(self, test_client, as_owner):
+        response = test_client.patch(
+            "/service-posts/post-1",
+            json={"title": "New title here"},
+            headers={"Authorization": "Bearer test-token"},
+        )
+        assert response.status_code == 403
+
+    def test_non_owner_rejected(self, test_client, as_client):
+        stub = SupabaseTableStub(
+            select_data={"client_id": "someone-else", "status": "open"}
+        )
+        with patch("app.api.service_posts.supabase") as mock_supabase:
+            mock_supabase.table.return_value = stub
+
+            response = test_client.patch(
+                "/service-posts/post-1",
+                json={"title": "New title here"},
+                headers={"Authorization": "Bearer test-token"},
+            )
+
+        assert response.status_code == 403
+
+    def test_post_not_found_returns_404(self, test_client, as_client):
+        stub = SupabaseTableStub(select_data=None)
+        with patch("app.api.service_posts.supabase") as mock_supabase:
+            mock_supabase.table.return_value = stub
+
+            response = test_client.patch(
+                "/service-posts/post-1",
+                json={"title": "New title here"},
+                headers={"Authorization": "Bearer test-token"},
+            )
+
+        assert response.status_code == 404
+
+    def test_non_open_status_rejected(self, test_client, as_client):
+        stub = SupabaseTableStub(
+            select_data={"client_id": "client-1", "status": "matched"}
+        )
+        with patch("app.api.service_posts.supabase") as mock_supabase:
+            mock_supabase.table.return_value = stub
+
+            response = test_client.patch(
+                "/service-posts/post-1",
+                json={"title": "New title here"},
+                headers={"Authorization": "Bearer test-token"},
+            )
+
+        assert response.status_code == 400
+
+    def test_no_fields_provided_rejected(self, test_client, as_client):
+        stub = SupabaseTableStub(
+            select_data={"client_id": "client-1", "status": "open"}
+        )
+        with patch("app.api.service_posts.supabase") as mock_supabase:
+            mock_supabase.table.return_value = stub
+
+            response = test_client.patch(
+                "/service-posts/post-1",
+                json={},
+                headers={"Authorization": "Bearer test-token"},
+            )
+
+        assert response.status_code == 400
+
+    def test_happy_path_updates_editable_fields(self, test_client, as_client):
+        stub = SupabaseTableStub(
+            select_data={"client_id": "client-1", "status": "open"},
+            update_data=[
+                {
+                    "id": "post-1",
+                    "title": "Updated title",
+                    "budget": 250,
+                    "preferred_date": "2026-08-01T10:00:00Z",
+                    "status": "open",
+                }
+            ],
+        )
+        with patch("app.api.service_posts.supabase") as mock_supabase:
+            mock_supabase.table.return_value = stub
+
+            response = test_client.patch(
+                "/service-posts/post-1",
+                json={
+                    "title": "Updated title",
+                    "budget": 250,
+                    "preferred_date": "2026-08-01T10:00:00Z",
+                },
+                headers={"Authorization": "Bearer test-token"},
+            )
+
+        assert response.status_code == 200, response.text
+        update_calls = [c for c in stub.calls if c[0] == "update"]
+        assert len(update_calls) == 1
+        payload = update_calls[0][1][0]
+        assert payload == {
+            "title": "Updated title",
+            "budget": 250,
+            "preferred_date": "2026-08-01T10:00:00Z",
+        }
+        assert response.json()["post"]["title"] == "Updated title"
+
+    def test_category_is_not_an_editable_field(self, test_client, as_client):
+        """category is intentionally excluded from ServicePostUpdate — a
+        category key in the body is silently ignored, not applied."""
+        stub = SupabaseTableStub(
+            select_data={"client_id": "client-1", "status": "open"},
+            update_data=[{"id": "post-1", "title": "New title here"}],
+        )
+        with patch("app.api.service_posts.supabase") as mock_supabase:
+            mock_supabase.table.return_value = stub
+
+            response = test_client.patch(
+                "/service-posts/post-1",
+                json={"title": "New title here", "category": "plumbing"},
+                headers={"Authorization": "Bearer test-token"},
+            )
+
+        assert response.status_code == 200, response.text
+        update_calls = [c for c in stub.calls if c[0] == "update"]
+        assert "category" not in update_calls[0][1][0]
+
 
 class TestCategoriesUnit:
     """Unit tests on app.categories — no HTTP involved."""
