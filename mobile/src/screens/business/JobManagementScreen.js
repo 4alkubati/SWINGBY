@@ -25,6 +25,7 @@ import ListItem from '../../components/ListItem';
 import EmptyState from '../../components/EmptyState';
 import JobOpportunityCard from '../../components/JobOpportunityCard';
 import SendQuoteSheet from '../../components/SendQuoteSheet';
+import ReviewSubmitSheet from '../../components/ReviewSubmitSheet';
 import { SkeletonBox, SkeletonList } from '../../components/Skeleton';
 import { Feather } from '@expo/vector-icons';
 import { colors, spacing, radius, shadows, motion } from '../../theme/tokens';
@@ -183,6 +184,11 @@ function JobDetailScreen({ navigation, route }) {
   const [advancing, setAdvancing] = useState(false);
   const [assignPickerVisible, setAssignPickerVisible] = useState(false);
   const [assigning, setAssigning] = useState(false);
+  const [reviewSheetVisible, setReviewSheetVisible] = useState(false);
+  // Local-only: backend still enforces one review per (booking, reviewer) —
+  // this just hides the action immediately after a successful submit so the
+  // owner isn't invited to double-tap it in the same session.
+  const [justReviewed, setJustReviewed] = useState(false);
 
   // View state
   const [activeTab, setActiveTab] = useState(0); // 0 = Details, 1 = Status
@@ -528,6 +534,15 @@ function JobDetailScreen({ navigation, route }) {
                     showChevron
                   />
                 )}
+                {isDone && !justReviewed && (
+                  <ListItem
+                    title="Review client"
+                    subtitle="Rate how this job went"
+                    left={<Feather name="star" size={16} color={colors.textSecondary} strokeWidth={2} />}
+                    onPress={() => setReviewSheetVisible(true)}
+                    showChevron
+                  />
+                )}
                 <ListItem
                   title="Report a problem"
                   subtitle="Open a dispute for this booking"
@@ -593,6 +608,17 @@ function JobDetailScreen({ navigation, route }) {
           )}
         </View>
       </Modal>
+
+      {/* Business → client review — GAP-AUDIT M3: ReviewSubmitSheet existed
+          but was mounted nowhere. This is the business-side counterpart to
+          the client's ReviewScreen (client -> business/employee). */}
+      <ReviewSubmitSheet
+        visible={reviewSheetVisible}
+        onClose={() => setReviewSheetVisible(false)}
+        bookingId={booking.id}
+        revieweeName={booking.client_name || 'Client'}
+        onSubmitted={() => setJustReviewed(true)}
+      />
     </View>
   );
 }

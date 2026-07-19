@@ -62,10 +62,13 @@ export default function ReviewScreen({ navigation, route }) {
     setError('');
     setSubmitting(true);
     try {
+      // POST /reviews/ (backend/app/api/reviews.py) ignores any reviewee_id /
+      // reviewee_type in the body — it derives the target from the caller's
+      // role + the booking row server-side (client -> business_id, and, when
+      // the booking has an assigned employee, a second review row targeting
+      // that employee too). `workerId`/`workerName` here are display-only.
       await api.post('/reviews/', {
         booking_id: bookingId,
-        reviewee_id: workerId,
-        reviewee_type: 'business',
         rating,
         comment: comment.trim() || null,
       });

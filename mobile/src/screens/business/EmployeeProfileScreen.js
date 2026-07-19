@@ -123,6 +123,28 @@ function VerifiedBadge({ businessName }) {
   );
 }
 
+// ─── Review card — same shape as BusinessProfileScreen's, response is
+// GET /reviews/employee/{user_id} → [{ id, rating, comment, users: {
+// first_name, last_name } }] (backend/app/api/reviews.py::get_employee_reviews,
+// nested `users` = the reviewer, via the reviews.reviewer_id FK — the only
+// true FK reviews has to users; reviewee_id is polymorphic and unjoined) ──
+
+function EmployeeReviewCard({ review }) {
+  return (
+    <Surface elevation="subtle" rounded="card" padding="base" style={{ marginHorizontal: spacing.lg }}>
+      <Inline justify="space-between" style={{ marginBottom: spacing.xs }}>
+        <Text variant="smallMedium">{review.users?.first_name || 'Client'}</Text>
+        <RatingStarsDisplay rating={review.rating || 0} size={12} />
+      </Inline>
+      {review.comment ? (
+        <Text variant="small" color="secondary" style={{ lineHeight: 20 }}>
+          {review.comment}
+        </Text>
+      ) : null}
+    </Surface>
+  );
+}
+
 // ─── Main screen ──────────────────────────────────────────────────────────────
 
 export default function EmployeeProfileScreen({ navigation, route }) {
@@ -130,6 +152,7 @@ export default function EmployeeProfileScreen({ navigation, route }) {
   const { employeeId } = route.params || {};
 
   const [profile, setProfile] = useState(null);
+  const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(false);
@@ -139,6 +162,15 @@ export default function EmployeeProfileScreen({ navigation, route }) {
     try {
       const data = await api.get(`/employees/${employeeId}/profile`);
       setProfile(data || null);
+      // Real review list — reviewee_id for reviewee_type='employee' is the
+      // employee's users.id, same key /employees/{id}/profile already
+      // aggregates avg_rating/review_count against.
+      if (data?.user_id) {
+        const revs = await api.get(`/reviews/employee/${data.user_id}`).catch(() => []);
+        setReviews(revs || []);
+      } else {
+        setReviews([]);
+      }
     } catch {
       setError(true);
     } finally {
@@ -293,7 +325,7 @@ export default function EmployeeProfileScreen({ navigation, route }) {
           <Text variant="label" color="secondary">Reviews</Text>
         </View>
 
-        {reviewCount === 0 ? (
+        {reviews.length === 0 ? (
           <Surface padding="lg" rounded="card" style={styles.emptyCard}>
             <Stack spacing="sm" style={{ alignItems: 'center' }}>
               <Text variant="h1" style={{ textAlign: 'center' }}>No reviews yet</Text>
@@ -303,12 +335,11 @@ export default function EmployeeProfileScreen({ navigation, route }) {
             </Stack>
           </Surface>
         ) : (
-          <Surface padding="lg" rounded="card" style={styles.emptyCard}>
-            <Text variant="small" color="secondary" style={{ textAlign: 'center' }}>
-              {reviewCount} review{reviewCount === 1 ? '' : 's'} — list coming with the
-              client→employee review flow.
-            </Text>
-          </Surface>
+          <Stack spacing="sm">
+            {reviews.map((rev) => (
+              <EmployeeReviewCard key={rev.id} review={rev} />
+            ))}
+          </Stack>
         )}
       </ScrollView>
     </View>
