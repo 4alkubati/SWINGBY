@@ -4,6 +4,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel, Field
 from typing import Optional
 from app.deps import get_current_user
+from app.privacy import mask_service_post_row
 from app.supabase_client import supabase
 from app.services.push import send_push_to_user
 
@@ -181,7 +182,15 @@ def list_my_interests(current_user: dict = Depends(get_current_user)):
             .limit(100)
             .execute()
         )
-        return {"items": res.data or []}
+        items = res.data or []
+        # CARD-23: a pending/rejected quote must not carry the client's full
+        # address or last name — only an ACCEPTED interest means a booking
+        # exists and the client has consented to share that.
+        for item in items:
+            post = item.get("service_posts")
+            if post and item.get("status") != "accepted":
+                item["service_posts"] = mask_service_post_row(post)
+        return {"items": items}
     except Exception:
         logger.exception("Could not list my interests")
         raise HTTPException(status_code=400, detail="Could not list quotes")

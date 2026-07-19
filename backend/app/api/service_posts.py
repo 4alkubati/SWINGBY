@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field, field_validator
 from typing import Optional, Literal, List
 from app.categories import allowed_categories_for, resolve_create_category
 from app.deps import get_current_user
+from app.privacy import mask_service_post_row
 from app.supabase_client import supabase
 
 logger = logging.getLogger(__name__)
@@ -230,6 +231,16 @@ def list_open_posts(
             .execute()
         )
         items = res.data or []
+        # CARD-23: mask full address + client last name for everyone except
+        # the post's own owner. Feed posts are pre-acceptance by construction
+        # (a matched/accepted post leaves 'open'), so there is no "winning
+        # business" exception to make here — that unmasked view lives on the
+        # booking (bookings.py), which already works and is untouched.
+        uid = current_user["id"]
+        items = [
+            item if item.get("client_id") == uid else mask_service_post_row(item)
+            for item in items
+        ]
         next_offset = offset + limit if len(items) == limit else None
         return {
             "items": items,
@@ -252,7 +263,15 @@ def get_service_post(post_id: str, current_user: dict = Depends(get_current_user
             .single()
             .execute()
         )
-        return res.data
+        if not res.data:
+            raise HTTPException(status_code=404, detail="Post not found")
+        # CARD-23: same masking rule as the feed — owner sees their own post
+        # unmasked, everyone else gets locality-only address + first name only.
+        if res.data.get("client_id") == current_user["id"]:
+            return res.data
+        return mask_service_post_row(res.data)
+    except HTTPException:
+        raise
     except Exception:
         raise HTTPException(status_code=404, detail="Post not found")
 
