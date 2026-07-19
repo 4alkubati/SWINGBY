@@ -562,10 +562,14 @@ def complete_booking(booking_id: str, current_user: dict = Depends(get_current_u
     """
     Business owner or assigned employee marks job complete.
 
-    Payment logic:
+    Payment logic — CARD-21 Uber model:
       - Booking: status → completed, payment_status → fully_released
-      - Payment: release remaining 50 % escrow minus 10 % platform cut.
-        e.g. $100 total: $50 already released, now release $40, SwingBy keeps $10.
+      - Payment: this is the FIRST and ONLY point the business gets paid.
+        The full amount was captured and held on the platform balance at
+        Stripe Checkout confirmation (payments_stripe.py webhook). Here we
+        release business_share = total_charged - platform_cut (90% of
+        total), escrow_held → 0. e.g. $100 total: business gets $90, SwingBy
+        keeps $10 — none of it released before this call.
     """
     if current_user["role"] not in ("business_owner", "employee"):
         raise HTTPException(
@@ -622,15 +626,12 @@ def complete_booking(booking_id: str, current_user: dict = Depends(get_current_u
         )
         if payment_res.data:
             p = payment_res.data
-            # already_released = 50 %, platform_cut = 10 % → final release = 40 %
-            final_release = round(
-                p["total_charged"] - p["platform_cut"] - p["released_to_business"], 2
-            )
+            # CARD-21 — nothing was released before this call. The business's
+            # entire share comes out of the platform-held capture, in one shot.
+            business_share = round(p["total_charged"] - p["platform_cut"], 2)
             supabase.table("payments").update(
                 {
-                    "released_to_business": round(
-                        p["released_to_business"] + final_release, 2
-                    ),
+                    "released_to_business": business_share,
                     "escrow_held": 0,
                     # payments_status_check allows: pending | partial | paid_full |
                     # paid_off_platform | fully_released | refunded | failed
@@ -638,6 +639,18 @@ def complete_booking(booking_id: str, current_user: dict = Depends(get_current_u
                     "released_at": datetime.now(timezone.utc).isoformat(),
                 }
             ).eq("id", p["id"]).execute()
+
+            # CARD-21 money ledger — best-effort, never blocks completion.
+            try:
+                from app.services import money_ledger
+
+                money_ledger.record_release(
+                    booking_id=booking_id, actual_business_share_released=business_share
+                )
+            except Exception:
+                logger.warning(
+                    "Could not record ledger release for booking %s", booking_id, exc_info=True
+                )
 
         # Update booking
         supabase.table("bookings").update(
@@ -699,8 +712,14 @@ def cancel_booking(
     """
     Cancel a booking. Penalty logic (proximity to confirmed_date):
       - No confirmed date set   → no penalty
-      - > 48 h before date      → 25 % penalty  (business keeps 25 % of total)
-      - ≤ 48 h before date      → 50 % penalty  (business keeps 50 % of total)
+      - > 48 h before date      → 25 % penalty  (platform keeps 25 % of total)
+      - ≤ 48 h before date      → 50 % penalty  (platform keeps 50 % of total)
+
+    CARD-21 Uber model: cancellation only ever happens before completion, so
+    the business has NEVER received a cent (it's only paid out at
+    /{booking_id}/complete) — there is nothing to claw back from it. The
+    refund comes entirely out of the platform-held Stripe capture:
+    client gets back (total - penalty); the platform keeps the penalty.
     """
     booking_res = (
         supabase.table("bookings").select("*").eq("id", booking_id).single().execute()
@@ -753,18 +772,86 @@ def cancel_booking(
             }
         ).execute()
 
-        # Update payment record
+        # Update payment record — CARD-21: refund what was actually captured,
+        # out of the platform balance. released_to_business is always still 0
+        # here (cancel is blocked once status == 'completed'), so there is
+        # nothing on the business side to touch.
         payment_res = (
             supabase.table("payments")
-            .select("id")
+            .select("id, status, total_charged, escrow_held")
             .eq("booking_id", booking_id)
             .single()
             .execute()
         )
         if payment_res.data:
-            supabase.table("payments").update({"status": "refunded"}).eq(
+            p = payment_res.data
+            was_captured = p.get("status") == "paid_full" and float(p.get("escrow_held") or 0) > 0
+            refund_amount = round(float(p.get("total_charged") or 0) - penalty_amount, 2)
+            refund_amount = max(refund_amount, 0.0)
+            stripe_refund_id = None
+
+            if was_captured and refund_amount > 0:
+                try:
+                    from app.services import money_ledger, stripe_service
+
+                    ledger_row = money_ledger.get_ledger_row(booking_id)  # best-effort lookup
+                    payment_intent_id = (
+                        (ledger_row or {}).get("stripe_payment_intent_id")
+                        if ledger_row
+                        else None
+                    )
+                    if payment_intent_id:
+                        refund = stripe_service.create_refund(
+                            payment_intent_id=payment_intent_id,
+                            amount_cad=refund_amount,
+                            reason="requested_by_customer",
+                        )
+                        stripe_refund_id = refund.get("id")
+                    else:
+                        logger.warning(
+                            "Booking %s payment was captured but no stripe_payment_intent_id "
+                            "on the ledger — cannot issue an automatic Stripe refund. "
+                            "Refund must be actioned manually in the Stripe dashboard.",
+                            booking_id,
+                        )
+                except HTTPException:
+                    # Stripe not configured / refund call failed — log and
+                    # continue; the booking still cancels, refund needs a
+                    # manual follow-up. Never break cancellation on a refund
+                    # failure — the client still needs their booking closed.
+                    logger.exception(
+                        "Stripe refund failed for booking %s — needs manual refund", booking_id
+                    )
+                except Exception:
+                    logger.exception(
+                        "Unexpected error issuing refund for booking %s", booking_id
+                    )
+
+            supabase.table("payments").update(
+                {
+                    "status": "refunded",
+                    "escrow_held": 0,
+                    # released_to_business intentionally untouched — always 0
+                    # pre-completion under the Uber model.
+                }
+            ).eq(
                 "id", payment_res.data["id"]
             ).execute()
+
+            # CARD-21 money ledger — best-effort, never blocks cancellation.
+            try:
+                from app.services import money_ledger
+
+                money_ledger.record_refund(
+                    booking_id=booking_id,
+                    stripe_refund_id=stripe_refund_id,
+                    actual_refund_amount=refund_amount if was_captured else 0.0,
+                    expected_penalty=penalty_amount,
+                )
+            except Exception:
+                logger.warning(
+                    "Could not record ledger refund for booking %s", booking_id, exc_info=True
+                )
 
         # Email the OTHER party (whoever didn't cancel) — best-effort
         try:

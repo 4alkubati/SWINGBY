@@ -290,7 +290,6 @@ def accept_interest(interest_id: str, current_user: dict = Depends(get_current_u
 
         total_amount = float(interest["quoted_price"] or post["budget"])
         platform_fee = round(total_amount * 0.10, 2)
-        half = round(total_amount * 0.50, 2)
 
         booking_res = (
             supabase.table("bookings")
@@ -304,7 +303,13 @@ def accept_interest(interest_id: str, current_user: dict = Depends(get_current_u
                     "commission_rate": 0.10,
                     "platform_fee": platform_fee,
                     "status": "confirmed",
-                    "payment_status": "partial_released",
+                    # CARD-21 — Uber model: nothing has been paid or released
+                    # yet. Money only becomes 'held' once Stripe Checkout
+                    # completes (payments_stripe.py webhook), and only
+                    # reaches the business at completion. Requires
+                    # docs/bookings_payment_status_add_pending.sql (FILED,
+                    # not yet applied — 'pending' isn't in the live CHECK).
+                    "payment_status": "pending",
                 }
             )
             .execute()
@@ -320,20 +325,43 @@ def accept_interest(interest_id: str, current_user: dict = Depends(get_current_u
         except Exception:
             pass  # thread migration is best-effort
 
+        # CARD-21 — Uber model: the payment row is opened at $0 held / $0
+        # released. Stripe Checkout (client-initiated separately) captures
+        # the full amount; the webhook flips this to 'paid_full' with the
+        # FULL amount held (escrow_held = total_charged). Nothing reaches
+        # the business until /bookings/{id}/complete.
         payment_res = (
             supabase.table("payments")
             .insert(
                 {
                     "booking_id": booking["id"],
                     "total_charged": total_amount,
-                    "escrow_held": half,
-                    "released_to_business": half,
+                    "escrow_held": 0,
+                    "released_to_business": 0,
                     "platform_cut": platform_fee,
-                    "status": "partial",
+                    "status": "pending",
                 }
             )
             .execute()
         )
+        payment = payment_res.data[0]
+
+        # CARD-21 — open the money ledger row (expected numbers only; no
+        # Stripe objects exist yet). Best-effort: a ledger failure must never
+        # block the accept flow.
+        try:
+            from app.services import money_ledger
+
+            money_ledger.create_ledger_row(
+                booking_id=booking["id"],
+                payment_id=payment.get("id"),
+                total_amount=total_amount,
+                commission_rate=0.10,
+            )
+        except Exception:
+            logger.warning(
+                "Could not open money ledger row for booking %s", booking["id"], exc_info=True
+            )
 
         # Notify the business owner and client (push + email) — best-effort
         try:

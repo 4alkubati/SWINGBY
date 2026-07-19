@@ -166,6 +166,10 @@ from app.api.admin import router as admin_router
 
 app.include_router(admin_router, prefix="/admin", tags=["admin"])
 
+from app.api.money_ledger import router as money_ledger_router
+
+app.include_router(money_ledger_router, prefix="/admin/ledger", tags=["money-ledger"])
+
 from app.api.me import router as me_router
 
 app.include_router(me_router, prefix="/me", tags=["me"])

@@ -101,6 +101,149 @@ def create_checkout_session(
     return {"id": session["id"], "url": session["url"]}
 
 
+def create_refund(
+    *,
+    payment_intent_id: str,
+    amount_cad: float,
+    reason: str | None = None,
+    metadata: dict[str, str] | None = None,
+) -> dict[str, Any]:
+    """
+    Refund part or all of a captured PaymentIntent, out of the PLATFORM's own
+    Stripe balance — never a clawback from the business (the business never
+    receives funds until `complete_booking`, so there's nothing to claw back).
+
+    Returns: dict with keys {id, status, amount}. Raises HTTPException(503) if
+    Stripe is not configured, HTTPException(502) if the refund call fails.
+    """
+    try:
+        stripe = _require_stripe()
+    except StripeNotConfigured as exc:
+        raise HTTPException(status_code=503, detail=str(exc))
+
+    amount_cents = int(round(amount_cad * 100))
+    if amount_cents <= 0:
+        raise HTTPException(status_code=400, detail="refund amount must be > 0")
+
+    kwargs: dict[str, Any] = {
+        "payment_intent": payment_intent_id,
+        "amount": amount_cents,
+    }
+    if reason:
+        kwargs["reason"] = reason
+    if metadata:
+        kwargs["metadata"] = metadata
+
+    try:
+        refund = stripe.Refund.create(**kwargs)
+    except Exception:
+        logger.exception(
+            "stripe.Refund.create failed for payment_intent %s", payment_intent_id
+        )
+        raise HTTPException(status_code=502, detail="Could not create Stripe refund")
+
+    return {"id": refund["id"], "status": refund["status"], "amount": refund["amount"]}
+
+
+def create_transfer(
+    *,
+    destination_account_id: str,
+    amount_cad: float,
+    transfer_group: str | None = None,
+    metadata: dict[str, str] | None = None,
+) -> dict[str, Any]:
+    """
+    Move the business's completed-job share from the platform balance to a
+    connected Stripe account.
+
+    NOT wired into any live endpoint yet — SwingBy has no Stripe Connect
+    onboarding flow, so no business row has a connected account id to target.
+    This is a forward-compatible primitive for the card that adds Connect
+    onboarding; unit-tested here so the money math is provable ahead of that
+    work. Calling this against a real destination requires STRIPE_SECRET_KEY
+    plus a live `acct_...` id.
+
+    Returns: dict with keys {id, status, amount}. Raises HTTPException(503) if
+    Stripe is not configured, HTTPException(502) if the transfer call fails.
+    """
+    try:
+        stripe = _require_stripe()
+    except StripeNotConfigured as exc:
+        raise HTTPException(status_code=503, detail=str(exc))
+
+    amount_cents = int(round(amount_cad * 100))
+    if amount_cents <= 0:
+        raise HTTPException(status_code=400, detail="transfer amount must be > 0")
+
+    kwargs: dict[str, Any] = {
+        "amount": amount_cents,
+        "currency": "cad",
+        "destination": destination_account_id,
+    }
+    if transfer_group:
+        kwargs["transfer_group"] = transfer_group
+    if metadata:
+        kwargs["metadata"] = metadata
+
+    try:
+        transfer = stripe.Transfer.create(**kwargs)
+    except Exception:
+        logger.exception(
+            "stripe.Transfer.create failed for destination %s", destination_account_id
+        )
+        raise HTTPException(status_code=502, detail="Could not create Stripe transfer")
+
+    return {"id": transfer["id"], "status": "created", "amount": transfer["amount"]}
+
+
+def retrieve_payment_intent(payment_intent_id: str) -> dict[str, Any] | None:
+    """
+    Fetch the actual captured amount / status for reconciliation (money
+    ledger). Returns None (never raises) if Stripe is unavailable or the
+    lookup fails — reconciliation is a best-effort verification layer, it
+    must not break the caller.
+    """
+    try:
+        stripe = _require_stripe()
+    except StripeNotConfigured:
+        return None
+    try:
+        pi = stripe.PaymentIntent.retrieve(payment_intent_id)
+    except Exception:
+        logger.warning(
+            "stripe.PaymentIntent.retrieve failed for %s", payment_intent_id, exc_info=True
+        )
+        return None
+    return {
+        "id": pi["id"],
+        "status": pi["status"],
+        "amount": pi["amount"],
+        "amount_received": pi.get("amount_received"),
+        "latest_charge": pi.get("latest_charge"),
+    }
+
+
+def retrieve_charge_fee(charge_id: str) -> float | None:
+    """
+    Fetch the actual Stripe processing fee for a charge (via its balance
+    transaction), in dollars. Returns None (never raises) if unavailable.
+    """
+    try:
+        stripe = _require_stripe()
+    except StripeNotConfigured:
+        return None
+    try:
+        charge = stripe.Charge.retrieve(charge_id, expand=["balance_transaction"])
+        bt = charge.get("balance_transaction")
+        fee_cents = bt.get("fee") if bt and hasattr(bt, "get") else None
+    except Exception:
+        logger.warning("stripe.Charge.retrieve failed for %s", charge_id, exc_info=True)
+        return None
+    if fee_cents is None:
+        return None
+    return round(fee_cents / 100, 2)
+
+
 def verify_webhook(
     payload_bytes: bytes, signature_header: str | None
 ) -> dict[str, Any]:

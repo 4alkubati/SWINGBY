@@ -10,9 +10,10 @@ POST /payments/stripe/checkout/{booking_id}
 
 POST /payments/stripe/webhook
     No auth header — Stripe signs the body. We verify with STRIPE_WEBHOOK_SECRET.
-    Handles `checkout.session.completed`: marks the booking's payment row as
-    fully paid (Stripe sandbox simulates the cash side; on-platform escrow
-    accounting already split via /interests accept). Other event types ack.
+    Handles `checkout.session.completed`: the FULL amount is now captured and
+    held on the platform's Stripe balance (CARD-21 Uber model — nothing is
+    released to the business here; that only happens at booking completion).
+    Other event types ack.
 """
 
 from __future__ import annotations
@@ -112,8 +113,13 @@ async def webhook(request: Request):
             session_id = data_object["id"]
         except (KeyError, TypeError):
             session_id = getattr(data_object, "id", None)
+        payment_intent_id = None
+        try:
+            payment_intent_id = data_object["payment_intent"]
+        except (KeyError, TypeError):
+            payment_intent_id = getattr(data_object, "payment_intent", None)
         if booking_id:
-            _mark_payment_paid(booking_id, session_id)
+            _mark_payment_paid(booking_id, session_id, payment_intent_id)
         elif business_id:
             # D2.4 — subscription checkout completed
             try:
@@ -201,18 +207,52 @@ def _mark_past_due(invoice_obj) -> None:
         logger.exception("Could not mark subscription past_due")
 
 
-def _mark_payment_paid(booking_id: str, stripe_session_id: str | None) -> None:
+def _mark_payment_paid(
+    booking_id: str, stripe_session_id: str | None, stripe_payment_intent_id: str | None = None
+) -> None:
     """
     On `checkout.session.completed`, finalize the on-platform accounting.
 
-    The /interests accept flow already inserted a payments row with
-    status='partial' (50% released, 50% escrow). Beta semantics: in sandbox the
-    full charge cleared, so mark the row 'paid_full' and stamp the Stripe
-    session id in `notes` for traceability. The release-on-complete path in
-    /bookings/{id}/complete continues to handle the remaining 50% + platform
-    cut at job-complete time.
+    CARD-21 — Uber model. The /interests accept flow inserted a payments row
+    at $0 held / $0 released (status='pending'). Stripe just captured the
+    FULL amount into the platform's own Stripe balance — nothing is owed to
+    the business yet. So: escrow_held = total_charged, released_to_business
+    stays 0, status -> 'paid_full' (meaning "captured & held", not "paid
+    out"). The release at completion (/bookings/{id}/complete) is what
+    actually pays the business.
     """
-    update: dict = {"status": "paid_full"}
+    try:
+        booking_res = (
+            supabase.table("bookings")
+            .select("id")
+            .eq("id", booking_id)
+            .single()
+            .execute()
+        )
+        if not booking_res.data:
+            logger.warning("checkout.session.completed for unknown booking %s", booking_id)
+            return
+    except Exception:
+        logger.exception("Could not look up booking %s for webhook", booking_id)
+        return
+
+    try:
+        pay_res = (
+            supabase.table("payments")
+            .select("id, total_charged")
+            .eq("booking_id", booking_id)
+            .single()
+            .execute()
+        )
+        total_charged = float((pay_res.data or {}).get("total_charged") or 0)
+    except Exception:
+        total_charged = 0.0
+
+    update: dict = {
+        "status": "paid_full",
+        "escrow_held": total_charged,
+        "released_to_business": 0,
+    }
     if stripe_session_id:
         update["notes"] = f"stripe_session={stripe_session_id}"
     try:
@@ -220,6 +260,28 @@ def _mark_payment_paid(booking_id: str, stripe_session_id: str | None) -> None:
     except Exception:
         logger.exception("Could not mark payment paid for booking %s", booking_id)
         # Don't raise — webhooks must be idempotent + always 200 to Stripe.
+
+    # Booking-level payment_status mirrors the hold — 'held' is already a
+    # valid value in bookings_payment_status_check (unused until now).
+    try:
+        supabase.table("bookings").update({"payment_status": "held"}).eq(
+            "id", booking_id
+        ).execute()
+    except Exception:
+        logger.exception("Could not set booking %s payment_status to held", booking_id)
+
+    # CARD-21 money ledger — best-effort, never breaks the webhook.
+    try:
+        from app.services import money_ledger
+
+        money_ledger.record_capture(
+            booking_id=booking_id,
+            stripe_checkout_session_id=stripe_session_id,
+            stripe_payment_intent_id=stripe_payment_intent_id,
+            actual_captured_amount=total_charged if total_charged else None,
+        )
+    except Exception:
+        logger.warning("Could not record ledger capture for booking %s", booking_id, exc_info=True)
 
     # Email the client a payment receipt — best-effort, never raises
     try:
