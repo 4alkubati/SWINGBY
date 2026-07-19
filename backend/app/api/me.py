@@ -9,6 +9,9 @@ Both endpoints require a valid Bearer token (Depends(get_current_user)).
 Ghost UUID used for message anonymisation: 00000000-0000-0000-0000-000000000000
 """
 
+import secrets
+import string
+
 import structlog
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
@@ -23,6 +26,23 @@ router = APIRouter()
 
 _GHOST_UUID = "00000000-0000-0000-0000-000000000000"
 _DELETE_CONFIRM_PHRASE = "DELETE_MY_ACCOUNT"
+
+# GAP-AUDIT-2026-07-18 #4 — referral code alphabet/length.
+_REFERRAL_CODE_ALPHABET = string.ascii_uppercase + string.digits
+_REFERRAL_CODE_LENGTH = 8
+
+
+def _generate_referral_code() -> str:
+    """
+    8-char uppercase alphanumeric code. No idiom for short codes existed
+    elsewhere in the codebase (checked uploads.py/request_id.py — both use
+    uuid4, too long to show/share). Collision risk at beta scale is
+    negligible; docs/referrals_table.sql's partial unique index on
+    (code) WHERE referee_id IS NULL is the real backstop.
+    """
+    return "".join(
+        secrets.choice(_REFERRAL_CODE_ALPHABET) for _ in range(_REFERRAL_CODE_LENGTH)
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -128,6 +148,79 @@ def export_my_data(
     except Exception:
         logger.exception("me.export failed", user_id=uid)
         raise HTTPException(status_code=400, detail="Could not export data")
+
+
+@router.get("/referrals")
+def get_my_referrals(current_user: dict = Depends(get_current_user)):
+    """
+    GAP-AUDIT-2026-07-18 #4 — real referral code + real counters. Credit
+    APPLICATION is intentionally NOT wired for beta (Kira's call): nothing
+    here ever writes a non-zero credit_cents value.
+
+    Response:
+      code           — caller's own shareable referral code. Generated and
+                       persisted (as a `referrals` row with referee_id=NULL,
+                       the "registry" row) the first time this endpoint is
+                       called for this user; stable after that.
+      invited_count  — number of people who have signed up using this code.
+      joined_count   — same as invited_count today: beta has no separate
+                       "invited but not yet joined" state to distinguish
+                       since claiming the code AT signup IS the join event
+                       (see the referral_code handling in auth.signup).
+                       Kept as its own field so the mobile contract has
+                       somewhere to go once a post-signup completion step
+                       exists, without another API change.
+      credit_cents   — sum of credit_cents across this user's claim rows.
+                       Always 0 today; see docstring above.
+    """
+    uid = current_user["id"]
+    try:
+        res = (
+            supabase.table("referrals")
+            .select("code, referee_id, credit_cents")
+            .eq("referrer_id", uid)
+            .execute()
+        )
+        rows = res.data or []
+        registry_row = next((r for r in rows if r.get("referee_id") is None), None)
+        claim_rows = [r for r in rows if r.get("referee_id") is not None]
+
+        if registry_row:
+            code = registry_row["code"]
+        else:
+            code = _generate_referral_code()
+            try:
+                supabase.table("referrals").insert(
+                    {
+                        "code": code,
+                        "referrer_id": uid,
+                        "referee_id": None,
+                        "status": "active",
+                        "credit_cents": 0,
+                    }
+                ).execute()
+            except Exception:
+                # Best-effort persistence — if this fails (e.g. a race with
+                # another concurrent call already inserting the registry
+                # row) the caller still gets a usable code back this
+                # request; the next call will find the persisted row.
+                logger.warning("me.referrals registry insert failed", user_id=uid)
+
+        invited_count = len(claim_rows)
+        joined_count = invited_count
+        credit_cents = sum(r.get("credit_cents") or 0 for r in claim_rows)
+
+        return {
+            "code": code,
+            "invited_count": invited_count,
+            "joined_count": joined_count,
+            "credit_cents": credit_cents,
+        }
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception("me.referrals failed", user_id=uid)
+        raise HTTPException(status_code=400, detail="Could not load referral data")
 
 
 @router.delete("")

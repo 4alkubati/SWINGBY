@@ -117,6 +117,7 @@ class SignupRequest(BaseModel):
     phone: Optional[str] = Field(None, max_length=20)
     role: str = Field(..., max_length=500)
     hcaptcha_token: Optional[str] = None
+    referral_code: Optional[str] = Field(None, max_length=32)
 
     @field_validator("password")
     @classmethod
@@ -158,6 +159,17 @@ class SignupRequest(BaseModel):
     @classmethod
     def validate_phone(cls, v: Optional[str]) -> Optional[str]:
         return _validate_phone(v)
+
+    @field_validator("referral_code", mode="before")
+    @classmethod
+    def normalize_referral_code(cls, v: Optional[str]) -> Optional[str]:
+        """Blank -> None; otherwise uppercase + strip. Never raises — an
+        unparseable/garbage code degrades to a no-op claim later, it must
+        not block signup."""
+        if v is None:
+            return None
+        v = str(v).strip().upper()
+        return v or None
 
 
 class LoginRequest(BaseModel):
@@ -248,6 +260,34 @@ def signup(request: Request, data: SignupRequest):
         if data.phone:
             row["phone"] = data.phone
         supabase.table("users").upsert(row).execute()
+
+        # Referral code claim — best-effort, never blocks signup.
+        # GAP-AUDIT-2026-07-18 #4: an invalid/unknown code (or a self-refer
+        # edge case) silently degrades to a no-op; nothing sensitive is
+        # logged either way.
+        if data.referral_code:
+            try:
+                ref_res = (
+                    supabase.table("referrals")
+                    .select("referrer_id")
+                    .eq("code", data.referral_code)
+                    .is_("referee_id", "null")
+                    .limit(1)
+                    .execute()
+                )
+                ref_rows = ref_res.data or []
+                if ref_rows and ref_rows[0]["referrer_id"] != user_id:
+                    supabase.table("referrals").insert(
+                        {
+                            "code": data.referral_code,
+                            "referrer_id": ref_rows[0]["referrer_id"],
+                            "referee_id": user_id,
+                            "status": "joined",
+                            "credit_cents": 0,
+                        }
+                    ).execute()
+            except Exception:
+                pass
 
         # Sync to Notion CRM — best-effort, never blocks signup
         try:
