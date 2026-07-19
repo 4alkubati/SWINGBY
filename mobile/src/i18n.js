@@ -160,6 +160,15 @@ const translations = {
     'dispute.photoPermission': 'Allow SwingBy to access your photos to attach evidence.',
     'dispute.addPhoto': 'Add photo',
     'dispute.photosOptional': 'Optional — add up to 3 photos as evidence.',
+
+    // CARD-20 (D2) — booking-entry flow: disappearing chat banner + the
+    // floating booking badge that replaced the old plain "Booking"/"Quote"
+    // label in the Messages list.
+    'chat.disappearingBanner': 'Agree on a time to turn this into your booking chat.',
+    'messages.badgeQuote': 'Quote',
+    'messages.badgeBooking': 'Booking',
+    'messages.badgeBookingPending': 'Pending time',
+    'messages.badgeBookingA11y': 'Open booking details',
   },
 
   'fr-CA': {
@@ -315,6 +324,15 @@ const translations = {
     'dispute.photoPermission': 'Autorisez SwingBy à accéder à vos photos pour joindre des preuves.',
     'dispute.addPhoto': 'Ajouter une photo',
     'dispute.photosOptional': 'Facultatif — ajoutez jusqu\'à 3 photos comme preuve.',
+
+    // CARD-20 (D2) — booking-entry flow: disappearing chat banner + the
+    // floating booking badge that replaced the old plain "Booking"/"Quote"
+    // label in the Messages list.
+    'chat.disappearingBanner': 'Convenez d’un horaire pour transformer ceci en votre clavardage de réservation.',
+    'messages.badgeQuote': 'Devis',
+    'messages.badgeBooking': 'Réservation',
+    'messages.badgeBookingPending': 'Horaire à confirmer',
+    'messages.badgeBookingA11y': 'Voir les détails de la réservation',
   },
 
   // ── Arabic (RTL) — skeleton keys, translator TODO ──────────────────────
@@ -471,6 +489,15 @@ const translations = {
     'dispute.photoPermission': 'اسمح لـ SwingBy بالوصول إلى صورك لإرفاق الأدلة.',
     'dispute.addPhoto': 'إضافة صورة',
     'dispute.photosOptional': 'اختياري — أضف حتى 3 صور كدليل.',
+
+    // CARD-20 (D2) — booking-entry flow: disappearing chat banner + the
+    // floating booking badge that replaced the old plain "Booking"/"Quote"
+    // label in the Messages list.
+    'chat.disappearingBanner': 'اتفقوا على موعد لتحويل هذه المحادثة إلى محادثة الحجز.',
+    'messages.badgeQuote': 'عرض سعر',
+    'messages.badgeBooking': 'حجز',
+    'messages.badgeBookingPending': 'بانتظار الموعد',
+    'messages.badgeBookingA11y': 'فتح تفاصيل الحجز',
   },
 };
 

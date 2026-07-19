@@ -26,6 +26,7 @@ import { useAuth } from '../../context/AuthContext';
 import { api } from '../../services/api';
 import * as toast from '../../services/toast';
 import * as haptics from '../../services/haptics';
+import i18n from '../../i18n';
 import EmptyState from '../../components/EmptyState';
 import ConfirmDateCard from '../../components/ConfirmDateCard';
 import { colors } from '../../theme/tokens';
@@ -266,6 +267,18 @@ export default function MessageThreadScreen({ route, navigation }) {
         <View style={{ width: 36 }} />
       </View>
 
+      {/* CARD-20 — "disappearing chat" banner, same rule as ChatScreen: a
+          booking with no confirmed_date yet means the post was made without
+          a time, so this thread is temporary until one is agreed below. */}
+      {!!bookingId && !!bookingMeta && !bookingMeta.confirmed_date && (
+        <View style={styles.disappearingBanner}>
+          <Feather name="clock" size={13} color={colors.textSecondary} />
+          <Text style={styles.disappearingBannerText}>
+            {i18n.t('chat.disappearingBanner')}
+          </Text>
+        </View>
+      )}
+
       {/* Pinned confirm-date handshake card (UBER-3) — client only, renders
           nothing until the business has proposed dates. Waits for bookingMeta
           (already fetched above) instead of letting the card double-fetch. */}
@@ -384,6 +397,23 @@ const styles = StyleSheet.create({
 
   loadingWrap: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   loadMoreWrap: { alignItems: 'center', paddingVertical: 10 },
+
+  disappearingBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginHorizontal: 16,
+    marginTop: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+    backgroundColor: colors.surfaceAlt,
+  },
+  disappearingBannerText: {
+    flex: 1,
+    fontSize: 12,
+    color: colors.textSecondary,
+  },
 
   listContent: { paddingHorizontal: 14, paddingTop: 12, paddingBottom: 8, gap: 4 },
   emptyFlex: { flex: 1 },

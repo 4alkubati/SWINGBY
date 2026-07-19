@@ -7,9 +7,11 @@ import Animated, {
   withSpring,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Feather } from '@expo/vector-icons';
 
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../services/api';
+import i18n from '../../i18n';
 import { colors, spacing, radius, shadows, motion } from '../../theme/tokens';
 
 import Text from '../../components/Text';
@@ -45,11 +47,89 @@ function timeAgo(dateStr) {
   return `${Math.floor(hrs / 24)}d`;
 }
 
+// ─── Floating side-chat element (CARD-20, D2) ────────────────────────────────
+// Replaces the old plain "Booking"/"Quote" text pill. Booking threads get a
+// small elevated chip that CARRIES the booking — tapping it jumps straight to
+// BookingDetails, independent of tapping the row (which opens the chat).
+// Quote (pre-booking interest) threads have no booking yet to carry, so they
+// keep a flat, non-interactive label.
+function BookingBadge({ thread, onPress }) {
+  const isBooking = thread.thread_type === 'booking';
+
+  if (!isBooking) {
+    return (
+      <View style={badgeStyles.staticPill}>
+        <Text variant="caption" style={badgeStyles.staticPillText}>
+          {i18n.t('messages.badgeQuote')}
+        </Text>
+      </View>
+    );
+  }
+
+  const isPending = !thread.confirmed_date;
+
+  return (
+    <Pressable
+      onPress={onPress}
+      hitSlop={8}
+      accessibilityRole="button"
+      accessibilityLabel={i18n.t('messages.badgeBookingA11y')}
+      style={({ pressed }) => [
+        badgeStyles.floatingChip,
+        pressed && badgeStyles.floatingChipPressed,
+      ]}
+    >
+      <Feather
+        name={isPending ? 'clock' : 'calendar'}
+        size={11}
+        color={colors.accentText}
+      />
+      <Text variant="caption" style={badgeStyles.floatingChipText}>
+        {isPending ? i18n.t('messages.badgeBookingPending') : i18n.t('messages.badgeBooking')}
+      </Text>
+    </Pressable>
+  );
+}
+
+const badgeStyles = {
+  staticPill: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 1,
+    borderRadius: radius.pill,
+    backgroundColor: colors.surfaceAlt,
+  },
+  staticPillText: {
+    color: colors.textSecondary,
+    fontWeight: '600',
+    letterSpacing: 0.4,
+  },
+  floatingChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 3,
+    borderRadius: radius.pill,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.borderAccent,
+    ...shadows.subtle,
+  },
+  floatingChipPressed: {
+    opacity: 0.7,
+  },
+  floatingChipText: {
+    color: colors.accentText,
+    fontWeight: '600',
+    letterSpacing: 0.3,
+  },
+};
+
 // ─── AnimatedPressable row ────────────────────────────────────────────────────
 
 const AnimatedPressableRN = Animated.createAnimatedComponent(Pressable);
 
-function ConversationRow({ thread, onPress }) {
+function ConversationRow({ thread, onPress, onBadgePress }) {
   const scale = useSharedValue(1);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -104,25 +184,7 @@ function ConversationRow({ thread, onPress }) {
           <Text variant="bodyMedium" numberOfLines={1} style={{ flexShrink: 1 }}>
             {otherParty}
           </Text>
-          <View
-            style={{
-              paddingHorizontal: spacing.sm,
-              paddingVertical: 1,
-              borderRadius: radius.pill,
-              backgroundColor: isQuote ? colors.accentMuted : colors.surfaceAlt,
-            }}
-          >
-            <Text
-              variant="caption"
-              style={{
-                color: isQuote ? colors.accentText : colors.textSecondary,
-                fontWeight: '600',
-                letterSpacing: 0.4,
-              }}
-            >
-              {isQuote ? 'Quote' : 'Booking'}
-            </Text>
-          </View>
+          <BookingBadge thread={thread} onPress={onBadgePress} />
         </Inline>
         <Text variant="small" color="secondary" numberOfLines={1}>
           {subtitle}
@@ -345,6 +407,11 @@ export default function MessagesScreen({ navigation }) {
                     : { bookingId: item.id }),
                   otherPartyName: item.counterpart_name,
                 })
+              }
+              onBadgePress={
+                item.thread_type === 'booking'
+                  ? () => navigation.navigate('BookingDetails', { bookingId: item.id })
+                  : undefined
               }
             />
           )}

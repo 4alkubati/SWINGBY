@@ -263,6 +263,14 @@ export default function QuoteComparisonScreen({ navigation, route }) {
   }
 
   // ── Confirm booking (original API logic preserved) ─────────────────────────
+  // CARD-20 (D2, 2026-07-19) — booking-entry flow. Land the client straight
+  // in the chat for this booking instead of the ActiveBooking summary: if the
+  // originating post carried a time, the backend already stamped
+  // booking.confirmed_date at creation and the chat opens as the confirmed
+  // "booking chat" (ConfirmDateCard shows the confirmed banner). If not, the
+  // same chat opens as the "disappearing" pre-confirm chat — a banner asks
+  // for a time and the propose/accept handshake (ConfirmDateCard) runs right
+  // there; once a date is confirmed the banner drops and it's the booking chat.
   async function handleConfirm() {
     if (!selectedQuote) return;
     setConfirming(true);
@@ -272,7 +280,10 @@ export default function QuoteComparisonScreen({ navigation, route }) {
       const bookingId = res?.booking?.id;
       setSheetVisible(false);
       if (bookingId) {
-        navigation.replace('ActiveBooking', { bookingId });
+        navigation.replace('Chat', {
+          bookingId,
+          otherPartyName: selectedQuote.businesses?.business_name || 'Business',
+        });
       } else {
         // Booking was created but id missing — land on My Jobs so it's visible
         navigation.navigate('ClientTabs', { screen: 'My Jobs' });

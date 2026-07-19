@@ -19,6 +19,7 @@ import Animated, {
 import { Feather } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../services/api';
+import i18n from '../../i18n';
 import Text from '../../components/Text';
 import Surface from '../../components/Surface';
 import Inline from '../../components/Inline';
@@ -290,15 +291,20 @@ export default function ChatScreen({ navigation, route }) {
 
   const listRef = useRef(null);
 
-  // Self-heal: the caller didn't pass a name — fetch the booking payload
-  // (already used elsewhere, e.g. MessageThreadScreen) so the header isn't
-  // stuck on the generic fallback. Only fires when the param is missing.
-  useEffect(() => {
-    if (!bookingId || otherPartyName) return;
+  // Booking payload — feeds two things: (1) self-heal the header name when
+  // the caller didn't pass one (already used elsewhere, e.g.
+  // MessageThreadScreen), and (2) CARD-20's "disappearing chat" banner below,
+  // which needs to know whether a date is confirmed yet. Always fetched for
+  // booking threads (not just when the name is missing) so ConfirmDateCard
+  // can reuse this instead of self-fetching a second time.
+  const loadBookingMeta = useCallback(() => {
+    if (!bookingId) return;
     api.get(`/bookings/${bookingId}`)
       .then((data) => setBookingMeta(data))
-      .catch(() => { /* best-effort — header keeps its fallback */ });
-  }, [bookingId, otherPartyName]);
+      .catch(() => { /* best-effort — header/banner keep their fallback */ });
+  }, [bookingId]);
+
+  useEffect(() => { loadBookingMeta(); }, [loadBookingMeta]);
 
   // Resolved header identity: caller-provided name wins; otherwise self-heal
   // from data this screen already fetches (booking payload / interest thread info).
@@ -436,11 +442,32 @@ export default function ChatScreen({ navigation, route }) {
         <View style={{ width: 32 }} />
       </Surface>
 
+      {/* CARD-20 — "disappearing chat" framing. A booking thread with no
+          confirmed_date yet is the pre-confirm state of D2's entry flow: the
+          job was posted without a time, so this chat is temporary until one
+          gets agreed below. It disappears the moment bookingMeta reloads
+          with a confirmed_date (ConfirmDateCard's onConfirmed callback). */}
+      {!!bookingId && !!bookingMeta && !bookingMeta.confirmed_date && (
+        <View style={{ paddingHorizontal: spacing.base, paddingTop: spacing.sm }}>
+          <Surface elevation="none" background="alt" rounded="input" padding="sm">
+            <Inline spacing="xs" align="center">
+              <Feather name="clock" size={13} color={colors.textSecondary} />
+              <Text variant="caption" color="secondary" style={{ flex: 1 }}>
+                {i18n.t('chat.disappearingBanner')}
+              </Text>
+            </Inline>
+          </Surface>
+        </View>
+      )}
+
       {/* Pinned confirm-date handshake card (UBER-3) — booking threads only,
-          two-sided: either party proposes times, the other accepts */}
+          two-sided: either party proposes times, the other accepts. Passing
+          this screen's own bookingMeta down (once loaded) and wiring
+          onConfirmed back to loadBookingMeta keeps the two in sync, so the
+          disappearing-chat banner above drops the moment a date confirms. */}
       {!!bookingId && (
         <View style={{ paddingHorizontal: spacing.base, paddingTop: spacing.sm }}>
-          <ConfirmDateCard bookingId={bookingId} />
+          <ConfirmDateCard bookingId={bookingId} booking={bookingMeta} onConfirmed={loadBookingMeta} />
         </View>
       )}
 

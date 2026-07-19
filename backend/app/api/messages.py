@@ -202,7 +202,7 @@ def _accessible_thread_ids(current_user: dict):
     if role == "client":
         booking_rows = (
             supabase.table("bookings")
-            .select("id, status, business_id, businesses(business_name)")
+            .select("id, status, business_id, confirmed_date, businesses(business_name)")
             .eq("client_id", uid)
             .execute()
         ).data or []
@@ -230,7 +230,10 @@ def _accessible_thread_ids(current_user: dict):
         if biz_id:
             booking_rows = (
                 supabase.table("bookings")
-                .select("id, status, client_id, users!bookings_client_id_fkey(first_name, last_name, avatar_url)")
+                .select(
+                    "id, status, client_id, confirmed_date, "
+                    "users!bookings_client_id_fkey(first_name, last_name, avatar_url)"
+                )
                 .eq("business_id", biz_id)
                 .execute()
             ).data or []
@@ -399,6 +402,10 @@ def list_threads(current_user: dict = Depends(get_current_user)):
                     "counterpart_name": counterpart,
                     "counterpart_avatar": client_user.get("avatar_url"),
                     "status": b.get("status"),
+                    # CARD-20 — lets the Messages list render the floating
+                    # booking badge as "confirmed" vs "pending a time"
+                    # without a second round-trip to /bookings/{id}.
+                    "confirmed_date": b.get("confirmed_date"),
                     "last_message": (agg["last"] or {}).get("content"),
                     "last_at": (agg["last"] or {}).get("sent_at"),
                     "unread_count": agg["unread"],
