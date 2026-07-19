@@ -15,7 +15,7 @@ This Privacy Policy explains how Swingbyy Inc. ("SwingBy", "we", "us", "our") co
 - Name, email address, phone number, role (client / business / employee)
 - Profile photo, business description, service category, service radius
 - Job posts, quote amounts, booking schedules
-- Messages exchanged with other users on confirmed bookings
+- Messages exchanged with other users on job (quote) threads and bookings
 - Reviews and ratings
 - Payment-method metadata (we do not store card numbers — see §3.2)
 
@@ -51,8 +51,8 @@ We do **not** sell or rent your personal information to third parties.
 
 ### 3.1 Between users
 - Clients see business profiles, ratings, and reviews
-- Businesses see clients' first name, job description, and uploaded photos when quoting (full name + address only after booking is confirmed)
-- Messages are visible only to the two parties on a confirmed booking
+- Businesses browsing open jobs see the job description, uploaded photos, the client's name, and the job address — this is how they judge whether the job is in their service area before quoting
+- Messages are visible only to the two parties on the job thread or booking they belong to
 - Reviews are public on the reviewed party's profile (first name only, surname redacted)
 
 ### 3.2 With service providers (processors)

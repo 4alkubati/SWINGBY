@@ -62,7 +62,7 @@ export default function HowItWorksClients() {
           <span className={styles.eyebrow}>For clients</span>
           <h1 className={styles.heroTitle}>Local services, quoted in minutes</h1>
           <p className={styles.heroSub}>
-            Post once. Compare verified Calgary businesses. Pay through escrow so your money is protected until the job is done.
+            Post once. Compare verified Calgary businesses. Pay through SwingBy — half releases at booking, the rest only when the job is done.
           </p>
         </div>
       </section>

@@ -84,9 +84,9 @@
 
 **Duration:** 20s
 
-**Hook (0–3s):** "Your money doesn't move until the job is done."
+**Hook (0–3s):** "Your money moves in two steps — and you control the second one."
 
-**Beat 1 (3–10s):** "When you book on SwingBy, your payment is held in escrow. Not released to the business until you confirm the job is complete."
+**Beat 1 (3–10s):** "When you book on SwingBy, half your payment goes to the business so they can start. The rest is held until you confirm the job is complete."
 
 **Beat 2 (10–17s):** "No awkward cash. No paying upfront and hoping they show up. No chasing invoices."
 
@@ -96,7 +96,7 @@
 
 **On-screen captions:**
 - [0–3s] "Your money = protected 🔒"
-- [3–10s] "Held in escrow until job complete"
+- [3–10s] "Half at booking · half when it's done"
 - [10–17s] "No cash. No stress."
 - [17–20s] "swingbyy.com"
 

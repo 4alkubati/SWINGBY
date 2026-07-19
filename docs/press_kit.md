@@ -16,7 +16,7 @@ SwingBy is a service marketplace for everyday work — cleaning, plumbing, lawn,
 
 SwingBy fixes the awkward dance of hiring local services. Instead of three quotes by text, then a no-show, then an "is e-transfer okay?" conversation, SwingBy lets you post a job in 30 seconds and lock in a vetted pro within the hour. The client sets the date and time when posting — businesses know the schedule before they quote, so no one accepts a job they can't deliver. Photos of the space go to every quoting business, so the worker isn't surprised on the day.
 
-The model is built around three commitments. **Workers earn reputation as individuals**: Khalid earns his own star rating under his company's roof, so good cleaners get paid more even when they work for a 20-person operation. **Money is held in escrow**: half releases when the booking is confirmed, the other half (minus a 10% platform fee) when the job is marked complete and photo-proofed. **The chat opens only after booking**: no shadow contact, no pre-booking pressure, no harassment. The cancellation policy is symmetric — clients pay 25-50% if they bail late, businesses lose the booking if they bail late.
+The model is built around three commitments. **Workers earn reputation as individuals**: Khalid earns his own star rating under his company's roof, so good cleaners get paid more even when they work for a 20-person operation. **Money is released in two stages**: half releases when the booking is confirmed, the other half (minus a 10% platform fee) when the job is marked complete. **The chat opens on the quote, not before it**: a business can only reach a client on a job it has actually quoted on, so there is no cold contact and no off-thread pressure. The cancellation policy is symmetric — clients pay 25-50% if they bail late, businesses lose the booking if they bail late.
 
 Swingbyy Inc. is a Calgary company. The technical stack is Supabase (Postgres + auth in ca-central-1), FastAPI on Render, React Native on Expo, and Cloudflare for waitlist + pre-launch. The team has spent more time on the cancellation flow and dispute mechanism than on the marketplace UI — because in a service marketplace the edges of the experience are where trust either compounds or evaporates. SwingBy launches publicly in Calgary in summer 2026 with expansion to Edmonton + Vancouver tracked for 2027.
 
@@ -57,7 +57,7 @@ SwingBy is the first marketplace built mobile-first for Canadian skilled trades 
 
 - *"We built the cancellation policy first. If you can't get cancellations right, the rest of the marketplace breaks."*
 - *"Khalid the cleaner shouldn't have to start over every time he changes companies. His rating follows him."*
-- *"Chat opens only after booking. If you want to negotiate, send a quote — that's the negotiation."*
+- *"Chat opens on the quote, never before it. If you want to talk to a client, quote their job — that's the door."*
 - *"We charge 10% from the business, not the client. The quoted price is the quoted price."*
 
 ---

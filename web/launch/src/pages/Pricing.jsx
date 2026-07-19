@@ -59,7 +59,7 @@ export default function Pricing() {
               <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '48px', color: 'var(--color-accent-text)', lineHeight: 1 }}>Free</div>
               <p style={{ color: 'var(--color-text-secondary)', marginTop: '4px' }}>Forever. No hidden fees.</p>
             </div>
-            {['Post unlimited jobs', 'Receive competitive quotes', 'Compare businesses and reviews', 'Safe escrow payments', 'In-app messaging on confirmed bookings', 'Dispute protection'].map(f => (
+            {['Post unlimited jobs', 'Receive competitive quotes', 'Compare businesses and reviews', 'Split escrow payments', 'In-app messaging from quote through booking', 'Dispute protection'].map(f => (
               <div key={f} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
                 <Check size={16} weight="bold" color="var(--color-success)" />
                 <span style={{ fontSize: '14px', color: 'var(--color-text-secondary)' }}>{f}</span>
@@ -77,7 +77,7 @@ export default function Pricing() {
               <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '48px', color: 'var(--color-accent-text)', lineHeight: 1 }}>10%</div>
               <p style={{ color: 'var(--color-text-secondary)', marginTop: '4px' }}>Per completed booking — that's it.</p>
             </div>
-            {['Free signup and listing', 'Free geo-browse visibility', 'Unlimited interest expressions', 'Free messaging on confirmed bookings', 'Escrow payouts on completion', '10% platform fee deducted automatically'].map(f => (
+            {['Free signup and listing', 'Free geo-browse visibility', 'Unlimited interest expressions', 'Free messaging on every job you quote on', '50% payout on booking confirmation, balance on completion', '10% platform fee deducted automatically'].map(f => (
               <div key={f} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
                 <Check size={16} weight="bold" color="var(--color-success)" />
                 <span style={{ fontSize: '14px', color: 'var(--color-text-secondary)' }}>{f}</span>

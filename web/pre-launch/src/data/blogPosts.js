@@ -27,7 +27,7 @@ Finding reliable local service providers has always been a frustrating experienc
 
 - **Verified businesses** — every provider goes through our verification process
 - **Transparent pricing** — no hidden fees, no surprises
-- **Secure payments** — funds are held in escrow until the job is done
+- **Secure payments** — funds are released in stages: half at booking, half on completion
 - **Real reviews** — only clients who booked can leave reviews
 
 ### Launch categories
@@ -165,7 +165,7 @@ Your safety is our priority. Here are practical tips to stay safe when using Swi
 - **Check the verified badge** — only book verified businesses
 - **Read reviews** — look for consistent positive feedback
 - **Use in-app messaging** — keep all communication on the platform
-- **Never pay outside the app** — our escrow system protects your payment
+- **Never pay outside the app** — off-platform payments have no held balance and no dispute cover
 
 ### During the service
 
@@ -239,7 +239,7 @@ After every job, ask your client to leave a review. Consistent 5-star reviews pu
   {
     slug: 'introducing-escrow-payments',
     title: 'Introducing escrow payments: How we protect your money',
-    excerpt: 'Payments on SwingBy are held in escrow until the job is complete. Learn how this system works and why it matters.',
+    excerpt: 'Payments on SwingBy are released in two stages — half at booking, half on completion. Learn how this system works and why it matters.',
     category: 'Product Updates',
     author: { name: 'Amr Basem', role: 'Founder & CEO' },
     publishedAt: '2026-01-05',
@@ -252,14 +252,14 @@ One of the most common concerns when hiring someone online is: "What if they tak
 
 ### How it works
 
-1. **You book a service** — the full amount is authorized on your card
-2. **50% is held in escrow** — released to the business when they confirm the booking
-3. **50% on completion** — released when you confirm the job is done
-4. **Dispute protection** — if there is an issue, funds are held while we investigate
+1. **You book a service** — the full job amount is committed to SwingBy
+2. **50% releases on confirmation** — paid to the business when the booking is confirmed, so they can schedule the work
+3. **50% on completion** — the balance, less our 10% platform fee, releases when the job is marked done
+4. **Dispute protection** — if there is an issue, the unreleased balance is held while we investigate
 
 ### Why escrow matters
 
-- **For clients**: Your money is protected until the job is done to your satisfaction
+- **For clients**: Half your money stays held until the job is done to your satisfaction
 - **For businesses**: You are guaranteed payment for completed work
 - **For everyone**: It creates accountability and trust
 

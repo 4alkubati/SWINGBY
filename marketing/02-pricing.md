@@ -22,7 +22,7 @@ Why: marketplace demand-side friction is fatal. Free clients = liquidity.
 | Listing                             | Free             | One business = one listing |
 | Geo-browse visibility               | Free             |                            |
 | Post-and-match interest expressions | Free             | Unlimited                  |
-| Messaging on confirmed bookings     | Free             |                            |
+| Messaging on quoted jobs + bookings | Free             | Opens once you quote a job |
 | **Transaction fee**                 | **10% of total** | Taken on completion        |
 |                                     |                  |                            |
 

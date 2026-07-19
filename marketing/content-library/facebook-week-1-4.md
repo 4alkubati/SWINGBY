@@ -51,7 +51,7 @@ Sign up in 5 minutes at the link below.
 
 The hardest part of hiring local help isn't finding someone — it's trusting them.
 
-SwingBy was built with that problem at the center. Every business goes through our verification process before they can take bookings. Your payment is held in escrow and only released when the job is done. And every completed job adds to the business's verified rating.
+SwingBy was built with that problem at the center. Every business goes through our verification process before they can take bookings. Your payment is split — half releases at booking, the rest only when the job is done. And every completed job adds to the business's verified rating.
 
 You deserve to know who's coming to your home. SwingBy makes that possible.
 

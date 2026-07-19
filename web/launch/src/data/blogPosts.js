@@ -18,7 +18,7 @@ export const BLOG_POSTS = [
     author: { name: 'Amr Basem', role: 'Founder' },
     publishedAt: '2026-05-20',
     readTime: 4,
-    content: `## Why escrow protects everyone\n\nEscrow isn't new — it's used in real estate for the same reason we use it for services: trust through a neutral third party holding funds.\n\nFor clients: your money is protected until the job is done. You never wire money to a stranger and hope they show up.\n\nFor businesses: payment is confirmed when you accept a booking. No more chasing invoices or dealing with "I'll pay you when I have cash."\n\nAt SwingBy, 50% releases on booking confirmation (so businesses know the job is real and worth travelling to) and 50% on completion. Simple, fair, and automatic.`,
+    content: `## Why escrow protects everyone\n\nEscrow isn't new — it's used in real estate for the same reason we use it for services: trust through a neutral third party holding funds.\n\nFor clients: half your money stays held until the job is done. You never wire the full amount to a stranger and hope they show up.\n\nFor businesses: payment is confirmed when you accept a booking. No more chasing invoices or dealing with "I'll pay you when I have cash."\n\nAt SwingBy, 50% releases on booking confirmation (so businesses know the job is real and worth travelling to) and 50% on completion. Simple, fair, and automatic.`,
   },
   {
     slug: 'founder-pricing-explained',

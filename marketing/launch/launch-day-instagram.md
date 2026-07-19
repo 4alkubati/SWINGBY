@@ -52,7 +52,7 @@ A note from me.
 
 I built SwingBy because I got burned. Hired someone off a platform who didn't show up, and the platform couldn't do anything about it. Paid a deposit. Never saw the person again.
 
-I thought: there has to be a better way to do this. One where the money is protected until the job is done. One where the business has to show up, or they don't get paid. One where clients and service pros can actually trust each other.
+I thought: there has to be a better way to do this. One where the money sits with the platform instead of changing hands in cash, and half of it stays held until the job is done. One where clients and service pros can actually trust each other.
 
 That's SwingBy.
 

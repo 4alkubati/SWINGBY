@@ -55,7 +55,7 @@ SwingBy is live in Calgary today.
 [CTA BUTTON: Get started →]
 
 **If you're a client:**  
-Post your first job. Tell us what you need. Local businesses will send you real quotes, and you pick who you work with. Payment is held in escrow until the job's done. No risk, no pressure.
+Post your first job. Tell us what you need. Local businesses will send you real quotes, and you pick who you work with. Payment runs through SwingBy — half releases at booking, the rest when the job's done. No cash handoffs, no pressure.
 
 **If you're a business:**  
 Build your profile. Browse jobs near you. Send quotes. Get paid directly when work is complete — without losing a cut every time someone books through a platform.

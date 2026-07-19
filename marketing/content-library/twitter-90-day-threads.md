@@ -313,7 +313,7 @@ Calgary has thousands of local service businesses. The problem isn't supply. It'
 ---
 
 **Single 2**
-Your money on SwingBy doesn't move until the job is done. That's not a feature. That's the whole point.
+Your money on SwingBy moves in two steps — half at booking, half when the job is done. That's not a feature. That's the whole point.
 
 ---
 

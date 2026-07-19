@@ -24,7 +24,7 @@ const HOW_IT_WORKS = {
       {
         num: '03',
         title: 'Get it done',
-        desc: 'Confirm the booking, chat in-app, and pay securely when the job is complete.',
+        desc: 'Chat in-app from the quote onward, confirm the booking, and pay securely through SwingBy.',
       },
     ],
     browse: [
@@ -87,22 +87,22 @@ const FAQ_ITEMS = [
   {
     question: 'How does SwingBy work?',
     answer:
-      'SwingBy connects you with local service businesses in minutes. Post a job describing what you need — plumbing fix, house cleaning, lawn care, etc. — and set your preferred date. Nearby businesses will send you quotes. You review them side-by-side and accept the best one. Payment is handled securely through the app, and released to the business only after the job is completed.',
+      'SwingBy connects you with local service businesses in minutes. Post a job describing what you need — plumbing fix, house cleaning, lawn care, etc. — and set your preferred date. Nearby businesses will send you quotes. You review them side-by-side and accept the best one. Payment is handled securely through the app: half is released to the business when you accept the quote so they can schedule the work, and the rest when the job is marked complete.',
   },
   {
     question: 'How do quotes get accepted?',
     answer:
-      'After posting a job, you\'ll receive quotes from interested businesses in the Quotes tab. Each quote shows the business name, star rating, jobs completed, and their price. Tap "Select" on the one you want. A booking is created instantly, and both you and the business receive a confirmation. Chat opens only after a booking is confirmed.',
+      'After posting a job, you\'ll receive quotes from interested businesses in the Quotes tab. Each quote shows the business name, star rating, jobs completed, and their price. Tap "Select" on the one you want. A booking is created instantly, and both you and the business receive a confirmation. You can message a business on its quote thread before you accept, and that same conversation carries over into the booking.',
   },
   {
     question: 'When does payment happen?',
     answer:
-      'When you accept a quote, your payment is placed in escrow — it\'s charged to your card but held securely. The business never receives the money until the job is completed and photo proof is submitted. Once you confirm the job is done (or after an automatic 24-hour window), the payment is released to the business. This protects both sides.',
+      'When you accept a quote, SwingBy records the payment for the job and releases 50% to the business so they can schedule and start the work. The remaining 50%, minus our 10% platform fee, is released when the job is marked complete. If something goes wrong, you can report a problem and our team will review the case.',
   },
   {
     question: 'What if a job goes wrong?',
     answer:
-      'If there\'s an issue with a job, tap "Report a problem" on the booking screen. Our support team will review the case, including messages and photos submitted by both parties. Payment can be held in escrow during the investigation. We aim to resolve disputes within 48 hours. You can also reach us directly at 4alkubati@gmail.com.',
+      'If there\'s an issue with a job, tap "Report a problem" on the booking screen. Our support team will review the case, including messages and photos submitted by both parties. Any portion of the payment not yet released can be held during the investigation. We aim to resolve disputes within 48 hours. You can also reach us directly at 4alkubati@gmail.com.',
   },
   {
     question: 'How do I become a business on SwingBy?',
