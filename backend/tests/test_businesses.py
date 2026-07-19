@@ -317,3 +317,72 @@ class TestBusinessPagination:
             data = response.json()
             assert data["items"] == []
             assert data["next_offset"] is None
+
+
+def _multi_table(stubs: dict, default: SupabaseTableStub):
+    def _table(name):
+        return stubs.get(name, default)
+
+    return _table
+
+
+class TestAnalyticsRecentReviewsKey:
+    """
+    GAP-AUDIT-2026-07-18 #62: GET /businesses/me/analytics built recent_reviews
+    with `.eq("reviewee_id", uid)` where uid is the business OWNER's user id.
+    Business reviews are stored `reviewee_id = business_id`,
+    reviewee_type = "business" (reviews.py:58) — the owner's user id never
+    matches, so recent_reviews was always empty. Pin the fixed key: query by
+    business id + reviewee_type="business", not the owner's user id.
+    """
+
+    def test_recent_reviews_query_filters_on_business_id_not_owner_id(
+        self, test_client, as_owner
+    ):
+        businesses_stub = SupabaseTableStub(
+            select_data={"id": "biz-1", "avg_rating": 4.5, "review_count": 1}
+        )
+        bookings_stub = SupabaseTableStub(select_data=[])
+        interests_stub = SupabaseTableStub(select_data=[])
+        reviews_stub = SupabaseTableStub(
+            select_data=[
+                {
+                    "id": "rev-1",
+                    "rating": 5,
+                    "comment": "Great work",
+                    "created_at": "2026-07-01T00:00:00Z",
+                    "reviewer_id": "client-9",
+                }
+            ]
+        )
+        users_stub = SupabaseTableStub(select_data={"first_name": "Jane"})
+
+        with patch("app.api.businesses.supabase") as mock_supabase:
+            mock_supabase.table.side_effect = _multi_table(
+                {
+                    "businesses": businesses_stub,
+                    "bookings": bookings_stub,
+                    "interests": interests_stub,
+                    "reviews": reviews_stub,
+                    "users": users_stub,
+                },
+                reviews_stub,
+            )
+
+            response = test_client.get(
+                "/businesses/me/analytics",
+                headers={"Authorization": "Bearer test-token"},
+            )
+
+        assert response.status_code == 200, response.text
+
+        # Pin the key: reviews queried by business id (not the owner's user
+        # id, which is "user-123" per the as_owner fixture) + reviewee_type.
+        eq_calls = [c for c in reviews_stub.calls if c[0] == "eq"]
+        assert ("reviewee_id", "biz-1") in [c[1] for c in eq_calls]
+        assert ("reviewee_type", "business") in [c[1] for c in eq_calls]
+        assert ("reviewee_id", "user-123") not in [c[1] for c in eq_calls]
+
+        data = response.json()
+        assert len(data["recent_reviews"]) == 1
+        assert data["recent_reviews"][0]["client_first_name"] == "Jane"

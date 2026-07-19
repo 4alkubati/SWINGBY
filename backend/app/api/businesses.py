@@ -338,10 +338,14 @@ def get_my_analytics(
         )
 
         # 7. Recent reviews (last 5, join reviewer first name)
+        # Business reviews are stored with reviewee_id = business id (not the
+        # owner's user id) and reviewee_type = "business" — see reviews.py:58.
+        # Querying reviewee_id = uid (the owner) matched nothing (GAP #62).
         reviews_res = (
             supabase.table("reviews")
             .select("id, rating, comment, created_at, reviewer_id")
-            .eq("reviewee_id", uid)
+            .eq("reviewee_id", biz_id)
+            .eq("reviewee_type", "business")
             .order("created_at", desc=True)
             .limit(5)
             .execute()
