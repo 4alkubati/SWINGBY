@@ -1,6 +1,8 @@
-// T58 — SearchScreen (UX polish pass)
-// Sticky SearchField (design-system), Chip radius pills, AnimatedPressable recent rows.
-// All colors/spacing/radius via tokens. No StyleSheet.create.
+// T58 — SearchScreen (UX polish pass) · DQ-1 — name-based business search
+// Sticky SearchField (design-system), AnimatedPressable recent rows.
+// Name search hits GET /businesses/?q= — works with NO location; distance is
+// attached only when coords are available (degrades gracefully when denied).
+// All colors/spacing via tokens. No StyleSheet.create.
 import { View, FlatList, Pressable, Platform } from 'react-native';
 import Animated, {
   useAnimatedStyle,
@@ -14,21 +16,18 @@ import { Feather } from '@expo/vector-icons';
 
 import { api } from '../../services/api';
 import { getUserLocation } from '../../services/location';
+import i18n from '../../i18n';
 import NearbyCard from '../../components/NearbyCard';
 import CategoryScroll from '../../components/CategoryScroll';
 import EmptyState from '../../components/EmptyState';
 import { SkeletonList } from '../../components/Skeleton';
 import SearchField from '../../components/SearchField';
-import Chip from '../../components/Chip';
 import DSText from '../../components/Text';
 import Stack from '../../components/Stack';
-import Inline from '../../components/Inline';
-import { colors, spacing, radius, motion } from '../../theme/tokens';
+import { colors, spacing, motion } from '../../theme/tokens';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-const CALGARY_FALLBACK = { lat: 51.0447, lng: -114.0719 };
 const RECENT_KEY = 'swingby_recent_searches';
-const RADIUS_OPTIONS = [5, 10, 25, 50];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function toInitials(name) {
@@ -105,7 +104,6 @@ export default function SearchScreen({ navigation }) {
 
   const [query, setQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('all');
-  const [activeRadius, setActiveRadius] = useState(25);
 
   const [results, setResults] = useState([]);
   const [loadState, setLoadState] = useState('idle'); // idle | loading | done | empty | error
@@ -122,9 +120,12 @@ export default function SearchScreen({ navigation }) {
       }
     });
 
+    // Best-effort location — never block name search on it. If permission is
+    // denied or the lookup fails, coords stay null and distance is simply
+    // skipped (DQ-1: browse must work without location).
     getUserLocation()
       .then((c) => { coordsRef.current = c; })
-      .catch(() => { coordsRef.current = CALGARY_FALLBACK; });
+      .catch(() => { coordsRef.current = null; });
   }, []);
 
   // ─── Search trigger — fires after SearchField debounce updates `query` ───
@@ -134,11 +135,14 @@ export default function SearchScreen({ navigation }) {
       setResults([]);
       return;
     }
-    runSearch(query.trim(), activeCategory, activeRadius);
-  }, [query, activeCategory, activeRadius]);
+    runSearch(query.trim(), activeCategory);
+  }, [query, activeCategory]);
 
   // ─── Core search logic ───────────────────────────────────────────────────
-  const runSearch = useCallback(async (q, category, rad) => {
+  // Name-based search hits GET /businesses/?q=… which requires NO location, so
+  // results render even when geolocation is denied. Distance is attached only
+  // when we happen to have the caller's coordinates.
+  const runSearch = useCallback(async (q, category) => {
     if (abortRef.current) abortRef.current.abort();
     const controller = new AbortController();
     abortRef.current = controller;
@@ -146,47 +150,33 @@ export default function SearchScreen({ navigation }) {
     setLoadState('loading');
     setErrorMsg('');
 
-    let coords = coordsRef.current;
-    if (!coords) {
-      try { coords = await getUserLocation(); }
-      catch { coords = CALGARY_FALLBACK; }
-      coordsRef.current = coords;
-    }
+    const coords = coordsRef.current;
 
     try {
-      const params = { lat: coords.lat, lng: coords.lng, radius_km: rad };
-      if (q) params.q = q;
+      const params = { q, limit: 50 };
+      if (category && category !== 'all') params.category = category;
 
-      const data = await api.get('/businesses/nearby', { params, signal: controller.signal });
-      let list = Array.isArray(data) ? data : (data?.businesses ?? []);
+      const data = await api.get('/businesses/', { params, signal: controller.signal });
+      let list = Array.isArray(data) ? data : (data?.items ?? []);
 
-      // Client-side text filter (defensive fallback)
-      if (q) {
-        const lower = q.toLowerCase();
-        list = list.filter(
-          (b) =>
-            (b.business_name ?? '').toLowerCase().includes(lower) ||
-            (b.category ?? '').toLowerCase().includes(lower)
-        );
-      }
-
-      // Client-side category filter
-      if (category && category !== 'all') {
-        list = list.filter((b) => (b.category ?? '').toLowerCase() === category);
-      }
-
-      // Attach computed distance
-      list = list.map((b) => ({
-        ...b,
-        _distance: computeDistance(coords.lat, coords.lng, b.lat, b.lng),
-      }));
+      // Attach computed distance only when we actually know where the user is.
+      list = list.map((b) => {
+        const hasCoords =
+          coords && typeof b.lat === 'number' && typeof b.lng === 'number';
+        return {
+          ...b,
+          _distance: hasCoords
+            ? computeDistance(coords.lat, coords.lng, b.lat, b.lng)
+            : null,
+        };
+      });
 
       setResults(list);
       setLoadState(list.length === 0 ? 'empty' : 'done');
       saveRecent(q);
     } catch (err) {
       if (controller.signal.aborted) return;
-      setErrorMsg(err.message || 'Network error');
+      setErrorMsg(err.message || i18n.t('common.error'));
       setLoadState('error');
     }
   }, []);
@@ -226,7 +216,7 @@ export default function SearchScreen({ navigation }) {
               color="secondary"
               style={{ marginBottom: spacing.sm + 2 }}
             >
-              RECENT
+              {i18n.t('search.recent')}
             </DSText>
             {recentSearches.map((term) => (
               <RecentRow key={term} term={term} onPress={handleRecentTap} />
@@ -237,8 +227,8 @@ export default function SearchScreen({ navigation }) {
       return (
         <EmptyState
           icon="search"
-          title="Search local pros"
-          body="Type a business name or category"
+          title={i18n.t('search.idleTitle')}
+          body={i18n.t('search.idleBody')}
         />
       );
     }
@@ -255,9 +245,9 @@ export default function SearchScreen({ navigation }) {
       return (
         <EmptyState
           icon="slash"
-          title="No matches"
-          body={`No results for "${query}"`}
-          action={{ label: 'Clear search', onPress: handleClear }}
+          title={i18n.t('search.noMatchesTitle')}
+          body={i18n.t('search.noMatchesBody', { query })}
+          action={{ label: i18n.t('search.clear'), onPress: handleClear }}
         />
       );
     }
@@ -266,11 +256,11 @@ export default function SearchScreen({ navigation }) {
       return (
         <EmptyState
           icon="wifi-off"
-          title="Network error"
+          title={i18n.t('search.errorTitle')}
           body={errorMsg}
           action={{
-            label: 'Retry',
-            onPress: () => runSearch(query, activeCategory, activeRadius),
+            label: i18n.t('common.retry'),
+            onPress: () => runSearch(query.trim(), activeCategory),
           }}
         />
       );
@@ -318,7 +308,7 @@ export default function SearchScreen({ navigation }) {
       <SearchField
         value={query}
         onChangeText={setQuery}
-        placeholder="Search businesses, categories…"
+        placeholder={i18n.t('search.placeholder')}
         debounceMs={300}
         autoFocus
         autoCapitalize="none"
@@ -338,25 +328,6 @@ export default function SearchScreen({ navigation }) {
           prependAll
         />
       </View>
-
-      {/* Radius pills — Chip components in an Inline row */}
-      <Inline
-        spacing="sm"
-        style={{
-          paddingHorizontal: spacing.base,
-          marginTop: spacing.sm + 2,
-          marginBottom: spacing.xs,
-        }}
-      >
-        {RADIUS_OPTIONS.map((r) => (
-          <Chip
-            key={r}
-            label={`${r}km`}
-            selected={activeRadius === r}
-            onPress={() => setActiveRadius(r)}
-          />
-        ))}
-      </Inline>
 
       {/* Content area */}
       <View style={{ flex: 1, marginTop: spacing.sm }}>

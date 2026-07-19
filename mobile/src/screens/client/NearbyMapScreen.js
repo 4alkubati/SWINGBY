@@ -396,7 +396,7 @@ export default function NearbyMapScreen({ navigation }) {
           params: { lat: c.lat, lng: c.lng, radius_km: 25 },
         });
         if (!cancelled) {
-          const list = Array.isArray(data) ? data : (data?.businesses ?? []);
+          const list = Array.isArray(data) ? data : (data?.items ?? []);
           setBusinesses(list);
         }
       } catch {

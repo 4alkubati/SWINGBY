@@ -12,7 +12,11 @@ export default function NearbyCard({ name, initials, rating, jobs, distance, onP
       onPress={onPress}
       activeOpacity={onPress ? 0.85 : 1}
       accessibilityRole="button"
-      accessibilityLabel={`${name}, rated ${rating} stars, ${jobs} jobs, ${distance} away`}
+      accessibilityLabel={
+        distance
+          ? `${name}, rated ${rating} stars, ${jobs} jobs, ${distance} away`
+          : `${name}, rated ${rating} stars, ${jobs} jobs`
+      }
       accessibilityHint="Opens business profile"
     >
       <View style={styles.avatar} accessible={false}>
@@ -33,11 +37,13 @@ export default function NearbyCard({ name, initials, rating, jobs, distance, onP
           </Text>
         </View>
       </View>
-      <View style={styles.distPill}>
-        <Text style={styles.distText} maxFontSizeMultiplier={1.2}>
-          {distance}
-        </Text>
-      </View>
+      {distance ? (
+        <View style={styles.distPill}>
+          <Text style={styles.distText} maxFontSizeMultiplier={1.2}>
+            {distance}
+          </Text>
+        </View>
+      ) : null}
     </TouchableOpacity>
   );
 }

@@ -118,7 +118,7 @@ export default function HomeScreen({ navigation }) {
         params: { lat: coords.lat, lng: coords.lng, radius_km: 25 },
       });
 
-      const list = Array.isArray(data) ? data : (data?.businesses ?? []);
+      const list = Array.isArray(data) ? data : (data?.items ?? []);
       setBusinesses(
         list.map((b) => ({
           ...b,
