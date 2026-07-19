@@ -90,6 +90,104 @@ class TestListBusinesses:
             assert data["limit"] == 10
             assert data["offset"] == 0
 
+    def test_lowercase_category_chip_id_matches_capitalized_label(
+        self, test_client, as_owner
+    ):
+        """
+        DQ-1 regression: CategoryScroll sends the lowercase chip `id` (e.g.
+        "cleaning") but businesses.category stores the capitalized canonical
+        `label` (e.g. "Cleaning"). The filter must be case-insensitive (ilike),
+        matching the Phase CAT idiom in service_posts.py::list_open_posts —
+        not an exact .eq() which would return zero results.
+        """
+        stub = SupabaseTableStub(
+            select_data=[
+                {"id": "biz-1", "business_name": "Test Cleaning Co.", "category": "Cleaning"}
+            ]
+        )
+        with patch("app.api.businesses.supabase") as mock_supabase:
+            mock_supabase.table.return_value = stub
+
+            response = test_client.get("/businesses/", params={"category": "cleaning"})
+
+            assert response.status_code == 200
+            data = response.json()
+            assert len(data["items"]) == 1
+
+            ilike_calls = [c for c in stub.calls if c[0] == "ilike"]
+            assert ilike_calls, "expected an ilike() call for ?category= filter"
+            name, args, _kwargs = ilike_calls[0]
+            assert args[0] == "category"
+            assert args[1] == "cleaning"
+            eq_calls = [c for c in stub.calls if c[0] == "eq"]
+            assert not eq_calls, "category filter must not use exact .eq() match"
+
+
+class TestBusinessNameSearch:
+    """Tests for GET /businesses/?q= — DQ-1 name-based search (no location)."""
+
+    def _find_ilike(self, stub):
+        for name, args, _kwargs in stub.calls:
+            if name == "ilike":
+                return args
+        return None
+
+    def test_name_search_calls_ilike_and_requires_no_location(
+        self, test_client, as_owner
+    ):
+        """
+        DQ-1.1: GET /businesses/?q=<name> issues a case-insensitive ilike on
+        business_name and returns 200 without any lat/lng location param.
+        """
+        stub = SupabaseTableStub(
+            select_data=[
+                {"id": "biz-1", "business_name": "Test Cleaning Co.", "avg_rating": 4.5}
+            ]
+        )
+        with patch("app.api.businesses.supabase") as mock_supabase:
+            mock_supabase.table.return_value = stub
+
+            response = test_client.get("/businesses/?q=Cleaning")
+
+            assert response.status_code == 200
+            data = response.json()
+            assert len(data["items"]) == 1
+
+            ilike_args = self._find_ilike(stub)
+            assert ilike_args is not None, "expected an ilike() call for ?q= search"
+            assert ilike_args[0] == "business_name"
+            assert ilike_args[1] == "%Cleaning%"
+
+    def test_name_search_escapes_ilike_special_chars(self, test_client, as_owner):
+        """
+        DQ-1.2: % _ \\ in the user query are backslash-escaped before building
+        the ilike pattern so they can't act as wildcards.
+        """
+        stub = SupabaseTableStub(select_data=[])
+        with patch("app.api.businesses.supabase") as mock_supabase:
+            mock_supabase.table.return_value = stub
+
+            # raw query: a%b_c\d
+            response = test_client.get("/businesses/", params={"q": "a%b_c\\d"})
+
+            assert response.status_code == 200
+            ilike_args = self._find_ilike(stub)
+            assert ilike_args is not None
+            assert ilike_args[1] == "%a\\%b\\_c\\\\d%"
+
+    def test_no_query_does_not_call_ilike(self, test_client, as_owner):
+        """
+        DQ-1.3: existing behavior preserved — omitting ?q= issues no ilike.
+        """
+        stub = SupabaseTableStub(select_data=[])
+        with patch("app.api.businesses.supabase") as mock_supabase:
+            mock_supabase.table.return_value = stub
+
+            response = test_client.get("/businesses/")
+
+            assert response.status_code == 200
+            assert self._find_ilike(stub) is None
+
 
 class TestNearbyBusinesses:
     """Tests for GET /businesses/nearby."""
@@ -120,6 +218,59 @@ class TestNearbyBusinesses:
             data = response.json()
             assert "items" in data
             assert isinstance(data["items"], list)
+
+    def test_lowercase_category_chip_id_matches_capitalized_label(
+        self, test_client, as_owner
+    ):
+        """
+        DQ-BK1 regression: CategoryScroll sends the lowercase chip `id` (e.g.
+        "landscaping") but businesses.category stores the capitalized
+        canonical `label` (e.g. "Landscaping"). The nearby filter must be
+        case-insensitive (ilike), matching the idiom already used by
+        list_businesses (this file, ?category=) and
+        service_posts.py::list_open_posts — not an exact .eq() which
+        silently returns zero results. The geo/Haversine filtering path is
+        untouched: the stubbed business sits exactly at the caller's
+        lat/lng so it always passes the distance check regardless of the
+        category fix.
+        """
+        stub = SupabaseTableStub(
+            select_data=[
+                {
+                    "id": "biz-1",
+                    "business_name": "Test Landscaping Co.",
+                    "category": "Landscaping",
+                    "lat": 51.0447,
+                    "lng": -114.0719,
+                    "service_radius_km": 25,
+                }
+            ]
+        )
+        with patch("app.api.businesses.supabase") as mock_supabase:
+            mock_supabase.table.return_value = stub
+
+            response = test_client.get(
+                "/businesses/nearby",
+                params={
+                    "lat": 51.0447,
+                    "lng": -114.0719,
+                    "radius_km": 10,
+                    "category": "landscaping",
+                },
+            )
+
+            assert response.status_code == 200
+            data = response.json()
+            assert len(data["items"]) == 1
+            assert data["items"][0]["id"] == "biz-1"
+
+            ilike_calls = [c for c in stub.calls if c[0] == "ilike"]
+            assert ilike_calls, "expected an ilike() call for ?category= filter"
+            name, args, _kwargs = ilike_calls[0]
+            assert args[0] == "category"
+            assert args[1] == "landscaping"
+            eq_calls = [c for c in stub.calls if c[0] == "eq"]
+            assert not eq_calls, "category filter must not use exact .eq() match"
 
 
 class TestUpdateBusiness:

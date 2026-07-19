@@ -16,7 +16,12 @@ logger = structlog.get_logger(__name__)
 router = APIRouter()
 
 
-# ── Haversine helper ──────────────────────────────────────────────────────────
+# ── Helpers ─────────────────────────────────────────────────────────────────
+
+
+def _escape_ilike(v: str) -> str:
+    """Backslash-escape ilike wildcard chars so a literal value can't act as one."""
+    return v.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
 
 
 def _haversine_km(lat1: float, lng1: float, lat2: float, lng2: float) -> float:
@@ -128,7 +133,12 @@ def get_nearby_businesses(
             .lte("lng", lng + lng_delta)
         )
         if category:
-            query = query.eq("category", category.strip())
+            # Case-insensitive match: mobile sends the lowercase CategoryScroll
+            # chip id (e.g. "cleaning") but the DB stores the capitalized
+            # canonical label (e.g. "Cleaning") — same idiom as list_businesses
+            # (this file) and service_posts.py::list_open_posts. A raw .eq()
+            # here silently returns zero results (DQ-BK1).
+            query = query.ilike("category", _escape_ilike(category.strip()))
 
         res = query.execute()
         businesses = res.data or []
@@ -382,15 +392,33 @@ def get_my_analytics(
 
 @router.get("/")
 def list_businesses(
+    q: Optional[str] = Query(
+        None,
+        max_length=120,
+        description="Case-insensitive business-name search (no location required)",
+    ),
     category: Optional[str] = Query(None, max_length=120),
     limit: int = Query(20, ge=1, le=100, description="Max results to return"),
     offset: int = Query(0, ge=0, description="Number of results to skip"),
     current_user: dict = Depends(get_current_user),
 ):
+    """
+    List businesses, optionally filtered by a case-insensitive name search (`q`)
+    and/or category. Unlike /nearby this requires NO location — it powers the
+    name-based Search screen so browse works even when geolocation is denied.
+    """
     try:
         query = supabase.table("businesses").select("*")
+        if q and q.strip():
+            # Escape ilike wildcards (% _ \) so user input is matched literally.
+            pattern = f"%{_escape_ilike(q.strip())}%"
+            query = query.ilike("business_name", pattern)
         if category:
-            query = query.eq("category", category.strip())
+            # Case-insensitive match: mobile sends the lowercase CategoryScroll
+            # chip id (e.g. "cleaning") but the DB stores the capitalized
+            # canonical label (e.g. "Cleaning") — same Phase CAT idiom as
+            # service_posts.py::list_open_posts.
+            query = query.ilike("category", _escape_ilike(category.strip()))
         res = query.range(offset, offset + limit - 1).execute()
         items = res.data or []
         next_offset = offset + limit if len(items) == limit else None
