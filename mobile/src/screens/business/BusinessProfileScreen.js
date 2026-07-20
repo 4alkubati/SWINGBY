@@ -149,11 +149,17 @@ function SectionHeader({ title }) {
 }
 
 // ─── Review card ──────────────────────────────────────────────────────────────
+// NOTE (payload-shape fix, MOBILE-PRODUCT Goal 2): GET /reviews/business/{id}
+// (backend/app/api/reviews.py) returns nested reviewer info under `users`
+// (`.select("*, users(first_name, last_name)")`, joined via reviews.reviewer_id
+// -> users.id) — this was reading `review.reviewer`, a key the response never
+// has, so every review card silently fell back to "Client". Same bug class as
+// the CLAUDE.md payload-drift warning.
 function ReviewCard({ review }) {
   return (
     <Surface elevation="subtle" style={styles.reviewCard}>
       <Inline justify="space-between" style={{ marginBottom: spacing.sm }}>
-        <Text variant="smallMedium">{review.reviewer?.first_name || 'Client'}</Text>
+        <Text variant="smallMedium">{review.users?.first_name || 'Client'}</Text>
         <RatingStarsDisplay rating={review.rating || 0} size={12} color={colors.warning} />
       </Inline>
       {review.comment ? (

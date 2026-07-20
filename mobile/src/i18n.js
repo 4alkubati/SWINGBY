@@ -160,6 +160,78 @@ const translations = {
     'dispute.photoPermission': 'Allow SwingBy to access your photos to attach evidence.',
     'dispute.addPhoto': 'Add photo',
     'dispute.photosOptional': 'Optional — add up to 3 photos as evidence.',
+
+    // Business profile — distance + completeness meter (missing-key audit)
+    'businessProfile.distanceAway': '%{km} km away',
+    'businessProfile.completenessLabel': 'Profile completeness',
+    'businessProfile.completenessTipDescription': 'Add a description to help clients find you.',
+    'businessProfile.completenessTipPhotos': 'Add photos of your work to build trust.',
+    'businessProfile.completenessTipServices': 'List the services you offer.',
+    'businessProfile.completenessTipRadius': 'Set your service radius so clients nearby can find you.',
+
+    // Job management — business "Jobs" tab (New/Quoted/Scheduled) (missing-key audit)
+    'jobManagement.title': 'Jobs',
+    'jobManagement.errorTitle': 'Could not load your jobs',
+    'jobManagement.messageAction': 'Message',
+    'jobManagement.interestPending': 'Pending',
+    'jobManagement.interestAccepted': 'Accepted',
+    'jobManagement.interestRejected': 'Declined',
+    'jobManagement.filterNew': 'New',
+    'jobManagement.filterQuoted': 'Quoted',
+    'jobManagement.filterScheduled': 'Scheduled',
+    'jobManagement.emptyNewTitle': 'No new leads',
+    'jobManagement.emptyNewBody': 'New job posts near you will show up here.',
+    'jobManagement.emptyQuotedTitle': 'No quotes sent yet',
+    'jobManagement.emptyQuotedBody': 'Quotes you send on new leads will appear here.',
+    'jobManagement.emptyScheduledTitle': 'No scheduled jobs',
+    'jobManagement.emptyScheduledBody': 'Jobs you have booked will appear here.',
+
+    // Profile — invite friends badge (missing-key audit)
+    'profile.inviteBadge': 'New',
+
+    // Jobs view — operational hub (CARD-24: Today/Upcoming/Needs action/Past)
+    'jobManagement.filterToday': 'Today',
+    'jobManagement.filterUpcoming': 'Upcoming',
+    'jobManagement.filterNeedsAction': 'Needs action',
+    'jobManagement.filterPast': 'Past',
+    'jobManagement.emptyTodayTitle': 'Nothing scheduled today',
+    'jobManagement.emptyTodayBody': 'Jobs confirmed for today will show up here.',
+    'jobManagement.emptyUpcomingTitle': 'No upcoming jobs',
+    'jobManagement.emptyUpcomingBody': 'Jobs confirmed for later will show up here.',
+    'jobManagement.emptyNeedsActionTitle': "You're all caught up",
+    'jobManagement.emptyNeedsActionBody': 'New leads, quotes, and bookings that need you will show up here.',
+    'jobManagement.emptyPastTitle': 'No past jobs yet',
+    'jobManagement.emptyPastBody': 'Completed and cancelled jobs will appear here, each linked to its invoice.',
+    'jobManagement.needsActionNewLeads': 'New requests',
+    'jobManagement.needsActionBookings': 'Bookings needing you',
+    'jobManagement.needsActionQuotesSent': 'Quotes awaiting response',
+    'jobManagement.needsActionUnassigned': 'Needs an employee',
+    'jobManagement.needsActionProposeDate': 'Propose a time',
+    'jobManagement.needsActionAwaitingDate': 'Awaiting date confirmation',
+    'jobManagement.viewInvoice': 'View invoice',
+
+    // Dashboard — next job / money in flight (CARD-24)
+    'dashboard.nextJobTitle': 'Next job',
+    'dashboard.nextJobNone': 'No upcoming jobs scheduled',
+    'dashboard.moneyInFlightTitle': 'Money in flight',
+    'dashboard.moneyHeld': 'Held in escrow',
+    'dashboard.moneyCleared': 'Cleared',
+    'dashboard.moneyUnavailable': 'Could not load payment totals',
+
+    // Biometric app-lock (CARD-24)
+    'biometric.lockedTitle': 'Unlock SwingBy',
+    'biometric.lockedBody': 'Use Face ID, Touch ID, or your fingerprint to continue.',
+    'biometric.unlockCta': 'Unlock',
+    'biometric.declinedHint': "Didn't work? Try again or sign in differently.",
+    'biometric.useDifferentAccount': 'Sign in differently',
+    'biometric.prompt': 'Unlock SwingBy',
+
+    // Settings — biometric toggle (CARD-24)
+    'settings.biometricUnlock': 'Face ID / Fingerprint Unlock',
+    'settings.biometricUnavailableHint': 'Not set up on this device',
+    'settings.biometricUnavailableTitle': 'Not available',
+    'settings.biometricUnavailableBody': "Face ID / fingerprint isn't set up on this device yet. Enable it in your device settings, then try again.",
+    'settings.biometricConfirmPrompt': 'Confirm to enable biometric unlock',
   },
 
   'fr-CA': {
@@ -315,6 +387,78 @@ const translations = {
     'dispute.photoPermission': 'Autorisez SwingBy à accéder à vos photos pour joindre des preuves.',
     'dispute.addPhoto': 'Ajouter une photo',
     'dispute.photosOptional': 'Facultatif — ajoutez jusqu\'à 3 photos comme preuve.',
+
+    // Business profile — distance + completeness meter (missing-key audit)
+    'businessProfile.distanceAway': 'À %{km} km',
+    'businessProfile.completenessLabel': 'Complétude du profil',
+    'businessProfile.completenessTipDescription': 'Ajoutez une description pour aider les clients à vous trouver.',
+    'businessProfile.completenessTipPhotos': 'Ajoutez des photos de vos travaux pour bâtir la confiance.',
+    'businessProfile.completenessTipServices': 'Énumérez les services que vous offrez.',
+    'businessProfile.completenessTipRadius': "Définissez votre rayon de service pour que les clients à proximité puissent vous trouver.",
+
+    // Job management — business "Jobs" tab (New/Quoted/Scheduled) (missing-key audit)
+    'jobManagement.title': 'Travaux',
+    'jobManagement.errorTitle': 'Impossible de charger vos travaux',
+    'jobManagement.messageAction': 'Message',
+    'jobManagement.interestPending': 'En attente',
+    'jobManagement.interestAccepted': 'Accepté',
+    'jobManagement.interestRejected': 'Refusé',
+    'jobManagement.filterNew': 'Nouveaux',
+    'jobManagement.filterQuoted': 'Devis envoyés',
+    'jobManagement.filterScheduled': 'Planifiés',
+    'jobManagement.emptyNewTitle': 'Aucun nouveau prospect',
+    'jobManagement.emptyNewBody': 'Les nouvelles publications près de vous apparaîtront ici.',
+    'jobManagement.emptyQuotedTitle': 'Aucun devis envoyé',
+    'jobManagement.emptyQuotedBody': 'Les devis que vous envoyez sur de nouveaux prospects apparaîtront ici.',
+    'jobManagement.emptyScheduledTitle': 'Aucun travail planifié',
+    'jobManagement.emptyScheduledBody': 'Les travaux que vous avez réservés apparaîtront ici.',
+
+    // Profile — invite friends badge (missing-key audit)
+    'profile.inviteBadge': 'Nouveau',
+
+    // Jobs view — operational hub (CARD-24: Today/Upcoming/Needs action/Past)
+    'jobManagement.filterToday': "Aujourd'hui",
+    'jobManagement.filterUpcoming': 'À venir',
+    'jobManagement.filterNeedsAction': 'Nécessite une action',
+    'jobManagement.filterPast': 'Passés',
+    'jobManagement.emptyTodayTitle': "Rien de prévu aujourd'hui",
+    'jobManagement.emptyTodayBody': "Les travaux confirmés pour aujourd'hui apparaîtront ici.",
+    'jobManagement.emptyUpcomingTitle': 'Aucun travail à venir',
+    'jobManagement.emptyUpcomingBody': 'Les travaux confirmés pour plus tard apparaîtront ici.',
+    'jobManagement.emptyNeedsActionTitle': 'Tout est à jour',
+    'jobManagement.emptyNeedsActionBody': 'Les nouveaux prospects, devis et réservations qui ont besoin de vous apparaîtront ici.',
+    'jobManagement.emptyPastTitle': 'Aucun travail passé',
+    'jobManagement.emptyPastBody': 'Les travaux terminés et annulés apparaîtront ici, chacun lié à sa facture.',
+    'jobManagement.needsActionNewLeads': 'Nouvelles demandes',
+    'jobManagement.needsActionBookings': 'Réservations nécessitant une action',
+    'jobManagement.needsActionQuotesSent': 'Devis en attente de réponse',
+    'jobManagement.needsActionUnassigned': 'Nécessite un employé',
+    'jobManagement.needsActionProposeDate': 'Proposer une heure',
+    'jobManagement.needsActionAwaitingDate': 'En attente de confirmation de date',
+    'jobManagement.viewInvoice': 'Voir la facture',
+
+    // Dashboard — next job / money in flight (CARD-24)
+    'dashboard.nextJobTitle': 'Prochain travail',
+    'dashboard.nextJobNone': 'Aucun travail à venir prévu',
+    'dashboard.moneyInFlightTitle': 'Argent en transit',
+    'dashboard.moneyHeld': 'Retenu en fiducie',
+    'dashboard.moneyCleared': 'Libéré',
+    'dashboard.moneyUnavailable': 'Impossible de charger les totaux de paiement',
+
+    // Biometric app-lock (CARD-24)
+    'biometric.lockedTitle': 'Déverrouiller SwingBy',
+    'biometric.lockedBody': 'Utilisez Face ID, Touch ID ou votre empreinte digitale pour continuer.',
+    'biometric.unlockCta': 'Déverrouiller',
+    'biometric.declinedHint': "Ça n'a pas fonctionné? Réessayez ou connectez-vous autrement.",
+    'biometric.useDifferentAccount': 'Se connecter autrement',
+    'biometric.prompt': 'Déverrouiller SwingBy',
+
+    // Settings — biometric toggle (CARD-24)
+    'settings.biometricUnlock': 'Déverrouillage par Face ID / empreinte',
+    'settings.biometricUnavailableHint': 'Non configuré sur cet appareil',
+    'settings.biometricUnavailableTitle': 'Non disponible',
+    'settings.biometricUnavailableBody': "Face ID ou l'empreinte digitale n'est pas encore configuré sur cet appareil. Activez-le dans les paramètres de votre appareil, puis réessayez.",
+    'settings.biometricConfirmPrompt': 'Confirmez pour activer le déverrouillage biométrique',
   },
 
   // ── Arabic (RTL) — skeleton keys, translator TODO ──────────────────────
@@ -471,6 +615,78 @@ const translations = {
     'dispute.photoPermission': 'اسمح لـ SwingBy بالوصول إلى صورك لإرفاق الأدلة.',
     'dispute.addPhoto': 'إضافة صورة',
     'dispute.photosOptional': 'اختياري — أضف حتى 3 صور كدليل.',
+
+    // Business profile — distance + completeness meter (missing-key audit)
+    'businessProfile.distanceAway': 'على بعد %{km} كم',
+    'businessProfile.completenessLabel': 'اكتمال الملف الشخصي',
+    'businessProfile.completenessTipDescription': 'أضف وصفاً لمساعدة العملاء في العثور عليك.',
+    'businessProfile.completenessTipPhotos': 'أضف صوراً لأعمالك لبناء الثقة.',
+    'businessProfile.completenessTipServices': 'اذكر الخدمات التي تقدمها.',
+    'businessProfile.completenessTipRadius': 'حدد نطاق خدمتك ليتمكن العملاء القريبون من العثور عليك.',
+
+    // Job management — business "Jobs" tab (New/Quoted/Scheduled) (missing-key audit)
+    'jobManagement.title': 'الأعمال',
+    'jobManagement.errorTitle': 'تعذر تحميل أعمالك',
+    'jobManagement.messageAction': 'رسالة',
+    'jobManagement.interestPending': 'قيد الانتظار',
+    'jobManagement.interestAccepted': 'مقبول',
+    'jobManagement.interestRejected': 'مرفوض',
+    'jobManagement.filterNew': 'جديد',
+    'jobManagement.filterQuoted': 'عروض مرسلة',
+    'jobManagement.filterScheduled': 'مجدول',
+    'jobManagement.emptyNewTitle': 'لا توجد فرص جديدة',
+    'jobManagement.emptyNewBody': 'ستظهر هنا المنشورات الجديدة القريبة منك.',
+    'jobManagement.emptyQuotedTitle': 'لم يتم إرسال أي عرض بعد',
+    'jobManagement.emptyQuotedBody': 'ستظهر هنا العروض التي ترسلها على الفرص الجديدة.',
+    'jobManagement.emptyScheduledTitle': 'لا توجد أعمال مجدولة',
+    'jobManagement.emptyScheduledBody': 'ستظهر هنا الأعمال التي حجزتها.',
+
+    // Profile — invite friends badge (missing-key audit)
+    'profile.inviteBadge': 'جديد',
+
+    // Jobs view — operational hub (CARD-24: Today/Upcoming/Needs action/Past)
+    'jobManagement.filterToday': 'اليوم',
+    'jobManagement.filterUpcoming': 'القادمة',
+    'jobManagement.filterNeedsAction': 'يتطلب إجراء',
+    'jobManagement.filterPast': 'السابقة',
+    'jobManagement.emptyTodayTitle': 'لا يوجد شيء مجدول اليوم',
+    'jobManagement.emptyTodayBody': 'ستظهر هنا الأعمال المؤكدة لهذا اليوم.',
+    'jobManagement.emptyUpcomingTitle': 'لا توجد أعمال قادمة',
+    'jobManagement.emptyUpcomingBody': 'ستظهر هنا الأعمال المؤكدة لوقت لاحق.',
+    'jobManagement.emptyNeedsActionTitle': 'كل شيء على ما يرام',
+    'jobManagement.emptyNeedsActionBody': 'ستظهر هنا الفرص الجديدة والعروض والحجوزات التي تحتاج إلى إجرائك.',
+    'jobManagement.emptyPastTitle': 'لا توجد أعمال سابقة',
+    'jobManagement.emptyPastBody': 'ستظهر هنا الأعمال المكتملة والملغاة، كل منها مرتبط بفاتورته.',
+    'jobManagement.needsActionNewLeads': 'طلبات جديدة',
+    'jobManagement.needsActionBookings': 'حجوزات تحتاج إجراء',
+    'jobManagement.needsActionQuotesSent': 'عروض بانتظار الرد',
+    'jobManagement.needsActionUnassigned': 'تحتاج إلى تعيين موظف',
+    'jobManagement.needsActionProposeDate': 'اقترح موعدًا',
+    'jobManagement.needsActionAwaitingDate': 'بانتظار تأكيد الموعد',
+    'jobManagement.viewInvoice': 'عرض الفاتورة',
+
+    // Dashboard — next job / money in flight (CARD-24)
+    'dashboard.nextJobTitle': 'العمل التالي',
+    'dashboard.nextJobNone': 'لا توجد أعمال قادمة مجدولة',
+    'dashboard.moneyInFlightTitle': 'الأموال قيد المعالجة',
+    'dashboard.moneyHeld': 'محتجزة في الضمان',
+    'dashboard.moneyCleared': 'تم تحريرها',
+    'dashboard.moneyUnavailable': 'تعذر تحميل إجماليات الدفع',
+
+    // Biometric app-lock (CARD-24)
+    'biometric.lockedTitle': 'افتح قفل SwingBy',
+    'biometric.lockedBody': 'استخدم بصمة الوجه أو بصمة الإصبع لمتابعة الدخول.',
+    'biometric.unlockCta': 'فتح القفل',
+    'biometric.declinedHint': 'لم ينجح؟ حاول مرة أخرى أو سجّل الدخول بطريقة مختلفة.',
+    'biometric.useDifferentAccount': 'تسجيل الدخول بطريقة مختلفة',
+    'biometric.prompt': 'افتح قفل SwingBy',
+
+    // Settings — biometric toggle (CARD-24)
+    'settings.biometricUnlock': 'فتح القفل ببصمة الوجه / الإصبع',
+    'settings.biometricUnavailableHint': 'غير مُعدّ على هذا الجهاز',
+    'settings.biometricUnavailableTitle': 'غير متاح',
+    'settings.biometricUnavailableBody': 'بصمة الوجه أو الإصبع غير معدة على هذا الجهاز بعد. فعّلها من إعدادات جهازك ثم حاول مرة أخرى.',
+    'settings.biometricConfirmPrompt': 'أكّد لتفعيل فتح القفل البيومتري',
   },
 };
 

@@ -1,12 +1,13 @@
 import {
   View, FlatList, TouchableOpacity, StyleSheet,
-  RefreshControl,
+  RefreshControl, Alert, ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useState, useEffect, useCallback } from 'react';
 import { Feather } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../services/api';
+import * as toast from '../../services/toast';
 import { colors, spacing, radius } from '../../theme/tokens';
 import { SkeletonList } from '../../components/Skeleton';
 import EmptyState from '../../components/EmptyState';
@@ -16,6 +17,7 @@ import Stack from '../../components/Stack';
 import Inline from '../../components/Inline';
 import Avatar from '../../components/Avatar';
 import Tabs from '../../components/Tabs';
+import EditPostSheet from '../../components/EditPostSheet';
 
 const STATUS_CONFIG = {
   confirmed:   { label: 'Confirmed',   color: colors.accentText,    bg: colors.accentMuted },
@@ -119,10 +121,11 @@ function BookingRow({ booking, onPress, onReview, onDetails, userRole }) {
   );
 }
 
-function PostRow({ post, onViewQuotes, onViewBooking }) {
+function PostRow({ post, onViewQuotes, onViewBooking, onEdit, onDelete, deleting }) {
   const status = STATUS_CONFIG[post.status] || STATUS_CONFIG.open;
   const quoteCount = post.interest_count ?? 0;
   const isMatched = post.status === 'matched';
+  const isOpen = post.status === 'open';
   // Matched posts open their booking; open posts open the quote list.
   const rowAction = isMatched ? onViewBooking : (quoteCount > 0 ? onViewQuotes : undefined);
   const date = post.created_at
@@ -165,6 +168,43 @@ function PostRow({ post, onViewQuotes, onViewBooking }) {
             </TouchableOpacity>
           )}
         </Inline>
+
+        {/* Edit/delete — PATCH /service-posts/{id} + DELETE (owner + status
+            'open' only, backend-enforced) — GAP-AUDIT carryover: PATCH
+            shipped in c96f995 with no mobile UI until now. */}
+        {isOpen && (onEdit || onDelete) && (
+          <Inline justify="flex-end" spacing="md" style={styles.editDeleteRow}>
+            {onEdit && (
+              <TouchableOpacity
+                onPress={(e) => { e.stopPropagation?.(); onEdit(post); }}
+                style={styles.iconBtn}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                accessibilityRole="button"
+                accessibilityLabel="Edit post"
+              >
+                <Feather name="edit-2" size={14} color={colors.textSecondary} strokeWidth={1.8} />
+                <Text style={styles.iconBtnText}>Edit</Text>
+              </TouchableOpacity>
+            )}
+            {onDelete && (
+              <TouchableOpacity
+                onPress={(e) => { e.stopPropagation?.(); onDelete(post); }}
+                style={styles.iconBtn}
+                disabled={deleting}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                accessibilityRole="button"
+                accessibilityLabel="Delete post"
+              >
+                {deleting ? (
+                  <ActivityIndicator size="small" color={colors.danger} />
+                ) : (
+                  <Feather name="trash-2" size={14} color={colors.danger} strokeWidth={1.8} />
+                )}
+                <Text style={[styles.iconBtnText, { color: colors.danger }]}>Delete</Text>
+              </TouchableOpacity>
+            )}
+          </Inline>
+        )}
       </Surface>
     </TouchableOpacity>
   );
@@ -180,6 +220,8 @@ export default function MyJobsScreen({ navigation }) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
+  const [editingPost, setEditingPost] = useState(null);
+  const [deletingPostId, setDeletingPostId] = useState(null);
   const isClient = user?.role === 'client';
 
   const load = useCallback(async () => {
@@ -216,6 +258,41 @@ export default function MyJobsScreen({ navigation }) {
     } else {
       navigation.navigate('JobManagement', { bookingId: booking.id });
     }
+  }
+
+  function handleEditPost(post) {
+    setEditingPost(post);
+  }
+
+  function handlePostSaved(updatedPost) {
+    setPosts((prev) => prev.map((p) => (p.id === updatedPost.id ? { ...p, ...updatedPost } : p)));
+    toast.show({ type: 'success', text1: 'Post updated' });
+  }
+
+  function handleDeletePost(post) {
+    Alert.alert(
+      'Delete this post?',
+      'Clients waiting to quote will no longer see it. This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            setDeletingPostId(post.id);
+            try {
+              await api.delete(`/service-posts/${post.id}`);
+              setPosts((prev) => prev.filter((p) => p.id !== post.id));
+              toast.show({ type: 'success', text1: 'Post deleted' });
+            } catch (err) {
+              toast.show({ type: 'error', text1: 'Could not delete post', text2: err.message });
+            } finally {
+              setDeletingPostId(null);
+            }
+          },
+        },
+      ],
+    );
   }
 
   if (loading) {
@@ -276,6 +353,9 @@ export default function MyJobsScreen({ navigation }) {
                     ? () => navigation.navigate('ActiveBooking', { bookingId: matchedBooking.id })
                     : undefined
                 }
+                onEdit={post.status === 'open' ? handleEditPost : undefined}
+                onDelete={post.status === 'open' ? handleDeletePost : undefined}
+                deleting={deletingPostId === post.id}
               />
             );
           })}
@@ -361,6 +441,13 @@ export default function MyJobsScreen({ navigation }) {
         )}
       />
       )}
+
+      <EditPostSheet
+        visible={!!editingPost}
+        post={editingPost}
+        onClose={() => setEditingPost(null)}
+        onSaved={handlePostSaved}
+      />
     </View>
   );
 }
@@ -409,4 +496,18 @@ const styles = StyleSheet.create({
   },
   actionBtnText: { fontSize: 12, fontFamily: 'Inter_600SemiBold', color: colors.textSecondary },
   actionBtnTextHighlight: { color: colors.accentText },
+  editDeleteRow: {
+    marginTop: spacing.sm,
+    paddingTop: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  iconBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 4,
+    paddingHorizontal: 6,
+  },
+  iconBtnText: { fontSize: 12, fontFamily: 'Inter_600SemiBold', color: colors.textSecondary },
 });

@@ -10,7 +10,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { api } from '../../services/api';
 import { show as showToast } from '../../services/toast';
 import { buttonTap } from '../../services/haptics';
 import { colors, spacing, radius, shadows, motion } from '../../theme/tokens';
@@ -19,6 +21,7 @@ import Stack from '../../components/Stack';
 import Inline from '../../components/Inline';
 import Surface from '../../components/Surface';
 import Button from '../../components/Button';
+import { SkeletonBox } from '../../components/Skeleton';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -27,7 +30,33 @@ export default function ReferralScreen() {
   const navigation = useNavigation();
   const { user } = useAuth();
 
-  const referralCode = (user?.id ?? 'SWINGBY1').slice(0, 8).toUpperCase();
+  // GAP-AUDIT M2 P0 #2: this screen used to fabricate a code from user.id
+  // and hardcode "0 friends / $0 earned" regardless of real activity.
+  // GET /me/referrals (backend/app/api/me.py) already returns the real,
+  // persisted code + counters — wire to it instead. Until
+  // docs/referrals_table.sql is applied, this 400s and the screen shows the
+  // real error state below (not a fake number).
+  const [referral, setReferral] = useState(null); // { code, invited_count, joined_count, credit_cents }
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+
+  const load = useCallback(async () => {
+    setError(false);
+    try {
+      const data = await api.get('/me/referrals');
+      setReferral(data || null);
+    } catch {
+      setError(true);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const referralCode = referral?.code || null;
+  const friendsJoined = referral?.joined_count ?? 0;
+  const earnedDollars = Math.floor((referral?.credit_cents ?? 0) / 100);
 
   // Spring scale values for copy button micro-interaction
   const copyScale = useSharedValue(1);
@@ -50,6 +79,7 @@ export default function ReferralScreen() {
   };
 
   async function handleCopy() {
+    if (!referralCode) return;
     buttonTap();
     try {
       await Clipboard.setStringAsync(referralCode);
@@ -60,6 +90,7 @@ export default function ReferralScreen() {
   }
 
   async function handleShare() {
+    if (!referralCode) return;
     try {
       await Share.share({
         message: `Join me on SwingBy! Code: ${referralCode} — https://swingbyy.com`,
@@ -176,6 +207,16 @@ export default function ReferralScreen() {
             Your Referral Code
           </Text>
 
+          {loading ? (
+            <SkeletonBox width={160} height={34} borderRadius={8} />
+          ) : error || !referralCode ? (
+            <Stack spacing="sm" align="center">
+              <Text variant="small" color="secondary" style={{ textAlign: 'center' }}>
+                Could not load your referral code.
+              </Text>
+              <Button variant="ghost" label="Try again" onPress={() => { setLoading(true); load(); }} />
+            </Stack>
+          ) : (
           <AnimatedPressable
             onPressIn={handleCopyPressIn}
             onPressOut={handleCopyPressOut}
@@ -209,6 +250,7 @@ export default function ReferralScreen() {
               </Text>
             </Inline>
           </AnimatedPressable>
+          )}
         </Surface>
 
         {/* How it works */}
@@ -264,7 +306,11 @@ export default function ReferralScreen() {
             align="center"
             style={{ flex: 1, paddingVertical: spacing.base + 2 }}
           >
-            <Text variant="h1">0</Text>
+            {loading ? (
+              <SkeletonBox width={28} height={28} borderRadius={6} />
+            ) : (
+              <Text variant="h1">{error ? '—' : friendsJoined}</Text>
+            )}
             <Text variant="caption" color="secondary">
               Friends joined
             </Text>
@@ -279,7 +325,11 @@ export default function ReferralScreen() {
             align="center"
             style={{ flex: 1, paddingVertical: spacing.base + 2 }}
           >
-            <Text variant="h1">$0</Text>
+            {loading ? (
+              <SkeletonBox width={28} height={28} borderRadius={6} />
+            ) : (
+              <Text variant="h1">{error ? '—' : `$${earnedDollars}`}</Text>
+            )}
             <Text variant="caption" color="secondary">
               Earned
             </Text>
@@ -291,6 +341,7 @@ export default function ReferralScreen() {
           variant="primary"
           label="Share my code"
           onPress={handleShare}
+          disabled={!referralCode}
           icon={<Feather name="share-2" size={18} color={colors.textPrimary} />}
           style={{ marginTop: spacing.xs, minHeight: 54 }}
         />

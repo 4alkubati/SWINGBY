@@ -17,13 +17,16 @@ import SendQuoteSheet from '../../components/SendQuoteSheet';
 import SectionHeader from '../../components/SectionHeader';
 import EarningsHero from '../../components/EarningsHero';
 import HeaderGlow from '../../components/HeaderGlow';
+import { bucketBooking, byJobDateAsc } from '../../utils/bookingBuckets';
 
 import { colors, spacing, motion } from '../../theme/tokens';
 import Text from '../../components/Text';
 import Surface from '../../components/Surface';
 import Stack from '../../components/Stack';
+import Inline from '../../components/Inline';
 import Button from '../../components/Button';
 import { SkeletonBox } from '../../components/Skeleton';
+import i18n from '../../i18n';
 
 function getGreeting() {
   const h = new Date().getHours();
@@ -41,7 +44,7 @@ function toInitials(name) {
     .slice(0, 2);
 }
 
-function KpiCard({ label, value, sub, index = 0 }) {
+function KpiCard({ label, value, sub, index = 0, onPress }) {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.94)).current;
 
@@ -63,10 +66,8 @@ function KpiCard({ label, value, sub, index = 0 }) {
     ]).start();
   }, [fadeAnim, scaleAnim, index]);
 
-  return (
-    <Animated.View
-      style={[styles.kpiCard, { opacity: fadeAnim, transform: [{ scale: scaleAnim }] }]}
-    >
+  const content = (
+    <>
       <Text style={styles.kpiLabel} maxFontSizeMultiplier={1.3}>
         {label}
       </Text>
@@ -77,6 +78,26 @@ function KpiCard({ label, value, sub, index = 0 }) {
         <Text style={styles.kpiSub} maxFontSizeMultiplier={1.3}>
           {sub}
         </Text>
+      )}
+    </>
+  );
+
+  return (
+    <Animated.View
+      style={[styles.kpiCard, { opacity: fadeAnim, transform: [{ scale: scaleAnim }] }]}
+    >
+      {onPress ? (
+        <TouchableOpacity
+          onPress={onPress}
+          activeOpacity={0.75}
+          accessibilityRole="button"
+          accessibilityLabel={`${label} ${value}${sub ? `, ${sub}` : ''}`}
+          style={styles.kpiCardTouch}
+        >
+          {content}
+        </TouchableOpacity>
+      ) : (
+        content
       )}
     </Animated.View>
   );
@@ -94,6 +115,10 @@ export default function DashboardScreen({ navigation }) {
   const [posts, setPosts] = useState(_dashboardCache?.posts || []);
   const [business, setBusiness] = useState(_dashboardCache?.business || null);
   const [unreadTotal, setUnreadTotal] = useState(_dashboardCache?.unreadTotal || 0);
+  // Money in flight — CARD-24. null (not 0) means "not loaded yet / failed to
+  // load" so the card can render a loading/failed state instead of a
+  // fabricated $0 (audit fault M4, referral-fake-zeros).
+  const [payments, setPayments] = useState(_dashboardCache?.payments ?? null);
   const [loading, setLoading] = useState(!_dashboardCache);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(false);
@@ -104,11 +129,12 @@ export default function DashboardScreen({ navigation }) {
   const load = useCallback(async () => {
     setError(false);
     try {
-      const [b, p, biz, threads] = await Promise.all([
+      const [b, p, biz, threads, pay] = await Promise.all([
         api.get('/bookings/'),
         api.get('/service-posts/'),
         api.get('/businesses/me').catch(() => null),
         api.get('/messages/threads', { _silent: true }).catch(() => null),
+        api.get('/payments/mine', { _silent: true }).catch(() => null),
       ]);
       const nextBookings = b?.items || b || [];
       const nextPosts = (p?.items || p || []).filter((post) => post.status === 'open');
@@ -116,15 +142,22 @@ export default function DashboardScreen({ navigation }) {
         (sum, t) => sum + (t.unread_count || 0),
         0
       );
+      // total_pending = escrow still held, total_released = already cleared
+      // to the business — both real fields from GET /payments/mine.
+      const nextPayments = pay
+        ? { held: pay.total_pending ?? 0, cleared: pay.total_released ?? 0 }
+        : null;
       setBookings(nextBookings);
       setPosts(nextPosts);
       setBusiness(biz || null);
       setUnreadTotal(nextUnread);
+      setPayments(nextPayments);
       _dashboardCache = {
         bookings: nextBookings,
         posts: nextPosts,
         business: biz || null,
         unreadTotal: nextUnread,
+        payments: nextPayments,
       };
     } catch {
       // With cached data on screen, a background failure shouldn't nuke the UI
@@ -165,16 +198,15 @@ export default function DashboardScreen({ navigation }) {
 
   const visiblePosts = posts.filter((p) => !dismissedIds.has(p.id));
 
-  // What makes money right now: new leads, unanswered messages, unassigned jobs
-  const awaitingAction = bookings.filter(
-    (b) => b.status === 'confirmed' && !b.employee_id
-  ).length;
+  // Same bucketing utils/bookingBuckets.js gives the Jobs view — so "3
+  // awaiting action" here and the Needs Action tab always agree.
+  const bookingsNeedingAction = bookings.filter((b) => bucketBooking(b) === 'needsAction').length;
   const attentionChips = [
     visiblePosts.length > 0 && {
       key: 'leads',
       icon: 'zap',
       label: `${visiblePosts.length} new ${visiblePosts.length === 1 ? 'lead' : 'leads'}`,
-      onPress: () => navigation.navigate('Jobs'),
+      onPress: () => navigation.navigate('Jobs', { filter: 'needsAction' }),
     },
     unreadTotal > 0 && {
       key: 'unread',
@@ -182,24 +214,19 @@ export default function DashboardScreen({ navigation }) {
       label: `${unreadTotal} unread`,
       onPress: () => navigation.navigate('Messages'),
     },
-    awaitingAction > 0 && {
+    bookingsNeedingAction > 0 && {
       key: 'awaiting',
       icon: 'alert-circle',
-      label: `${awaitingAction} awaiting action`,
-      onPress: () => navigation.navigate('Jobs'),
+      label: `${bookingsNeedingAction} awaiting action`,
+      onPress: () => navigation.navigate('Jobs', { filter: 'needsAction' }),
     },
   ].filter(Boolean);
 
-  const todayBookings = bookings.filter((b) => {
-    if (!b.scheduled_at && !b.created_at) return false;
-    const d = new Date(b.scheduled_at || b.created_at);
-    const today = new Date();
-    return (
-      d.getDate() === today.getDate() &&
-      d.getMonth() === today.getMonth() &&
-      d.getFullYear() === today.getFullYear()
-    );
-  });
+  const todayBookings = bookings.filter((b) => bucketBooking(b) === 'today');
+  const upcomingBookings = bookings.filter((b) => bucketBooking(b) === 'upcoming');
+  // Next job with a locked-in date, soonest first — today's overdue ones
+  // sort first by construction (byJobDateAsc is a plain date comparator).
+  const nextJob = [...todayBookings, ...upcomingBookings].sort(byJobDateAsc)[0] || null;
 
   const earningsIn = (minDaysAgo, maxDaysAgo) =>
     bookings
@@ -347,6 +374,45 @@ export default function DashboardScreen({ navigation }) {
           </View>
         )}
 
+        {/* Next job — CARD-24 dashboard landing. Tap goes straight into its
+            detail/status screen. */}
+        <TouchableOpacity
+          activeOpacity={nextJob ? 0.85 : 1}
+          disabled={!nextJob}
+          onPress={() => nextJob && navigation.navigate('JobManagement', { bookingId: nextJob.id })}
+          accessibilityRole={nextJob ? 'button' : undefined}
+        >
+          <Surface elevation="subtle" rounded="card" padding="base" style={styles.nextJobCard}>
+            <Text variant="label" color="secondary" style={styles.nextJobLabel}>
+              {i18n.t('dashboard.nextJobTitle')}
+            </Text>
+            {nextJob ? (
+              <Inline justify="space-between" style={{ marginTop: spacing.xs }}>
+                <Stack spacing={2} style={{ flex: 1 }}>
+                  <Text variant="bodyMedium" numberOfLines={1}>
+                    {nextJob.users?.first_name
+                      ? [nextJob.users.first_name, nextJob.users.last_name].filter(Boolean).join(' ')
+                      : (nextJob.client_name || 'Client')}
+                  </Text>
+                  <Text variant="small" color="secondary" numberOfLines={1}>
+                    {nextJob.service_posts?.title || nextJob.service_category || 'Service'}
+                  </Text>
+                </Stack>
+                <Text
+                  variant="bodyMedium"
+                  style={{ fontFamily: 'SpaceGrotesk_700Bold', color: colors.accentText }}
+                >
+                  {new Date(nextJob.confirmed_date).toLocaleTimeString('en-CA', { hour: 'numeric', minute: '2-digit' })}
+                </Text>
+              </Inline>
+            ) : (
+              <Text variant="small" color="secondary" style={{ marginTop: spacing.xs }}>
+                {i18n.t('dashboard.nextJobNone')}
+              </Text>
+            )}
+          </Surface>
+        </TouchableOpacity>
+
         {/* Earnings hero */}
         <EarningsHero
           amount={
@@ -365,6 +431,7 @@ export default function DashboardScreen({ navigation }) {
             label="TODAY"
             value={String(todayBookings.length)}
             sub={todayBookings.length === 1 ? 'booking' : 'bookings'}
+            onPress={() => navigation.navigate('Jobs', { filter: 'today' })}
           />
           <KpiCard
             index={1}
@@ -373,6 +440,40 @@ export default function DashboardScreen({ navigation }) {
             sub={reviewCount ? `${reviewCount} reviews` : 'no reviews yet'}
           />
         </View>
+
+        {/* Money in flight — real numbers from GET /payments/mine only.
+            payments === null means "not loaded" and is never shown as $0. */}
+        <TouchableOpacity
+          activeOpacity={0.85}
+          onPress={() => navigation.navigate('Earnings')}
+          accessibilityRole="button"
+        >
+          <Surface elevation="subtle" rounded="card" padding="base" style={styles.moneyCard}>
+            <Text variant="label" color="secondary" style={styles.nextJobLabel}>
+              {i18n.t('dashboard.moneyInFlightTitle')}
+            </Text>
+            {payments ? (
+              <Inline justify="space-between" style={{ marginTop: spacing.xs }}>
+                <Stack spacing={2}>
+                  <Text variant="caption" color="secondary">{i18n.t('dashboard.moneyHeld')}</Text>
+                  <Text variant="bodyMedium" style={{ fontFamily: 'SpaceGrotesk_700Bold' }}>
+                    ${Math.round(payments.held).toLocaleString()}
+                  </Text>
+                </Stack>
+                <Stack spacing={2} style={{ alignItems: 'flex-end' }}>
+                  <Text variant="caption" color="secondary">{i18n.t('dashboard.moneyCleared')}</Text>
+                  <Text variant="bodyMedium" style={{ fontFamily: 'SpaceGrotesk_700Bold', color: colors.success }}>
+                    ${Math.round(payments.cleared).toLocaleString()}
+                  </Text>
+                </Stack>
+              </Inline>
+            ) : (
+              <Text variant="small" color="secondary" style={{ marginTop: spacing.xs }}>
+                {i18n.t('dashboard.moneyUnavailable')}
+              </Text>
+            )}
+          </Surface>
+        </TouchableOpacity>
 
         {/* New opportunities header */}
         <View style={styles.sectionHeader}>
@@ -563,6 +664,21 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     padding: spacing.base,
     gap: 4,
+  },
+  kpiCardTouch: {
+    width: '100%',
+    gap: 4,
+  },
+  nextJobCard: {
+    marginHorizontal: 0,
+  },
+  nextJobLabel: {
+    textTransform: 'uppercase',
+    letterSpacing: 1.2,
+    fontSize: 11,
+  },
+  moneyCard: {
+    marginHorizontal: 0,
   },
   kpiLabel: {
     fontSize: 11,
