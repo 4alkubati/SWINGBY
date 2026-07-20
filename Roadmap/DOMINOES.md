@@ -58,11 +58,18 @@ Meta: [[dominoes/_LEARNING-LOG|_LEARNING-LOG]] — the book that grows across do
 
 > The Jul 19 "attack plan" ran as **cards** (CARD-01…24) in a file outside the repo — a second planning system running beside this one. **Cards are retired. Dominoes are the only system.** Everything they covered is folded in below, with work already done recorded honestly against it.
 
+> ## ⚖️ THE DONE-RULE (added 2026-07-20, learned the hard way)
+> **A domino is done when it is ON `main`. Not committed. Not pushed to a branch. Not reported done. On main.**
+>
+> Only `main` deploys. On 2026-07-19 thirteen branches had accumulated, and D9.1–D9.6 / D10.4–D10.6 were all ticked ✅ on the strength of "committed and pushed" — while none of them were live. Worse, D9.6 (the client-PII P0) had been **silently reverted** by a stale WIP commit landing on top of it, so `privacy.py` and its 515 lines of tests sat in the tree looking finished while real client addresses and last names stayed public in production for a day.
+>
+> Before ticking any box: `git ls-tree origin/main <the-file>`. If it isn't there, it isn't done.
+
 ### [[dominoes/D6-m1-gate|D6 — M1 GATE]] 🔴 **everything waits on this**
 The app survives Kira's own 15-min walkthrough on a fresh pull of `main`. Tester outreach stays shut until it closes.
-- [ ] **D6.1** — apply 4 migrations → merge `card-01-sync` → verify deploy ← **the immediate next action**
-- [ ] **D6.2** — scripted 15-min run, repeated until 3 clean consecutive passes
-- [ ] **D6.3** — Kira's own phone run. *Agent-clean ≠ done.*
+- [x] **D6.1** — ✅ 2026-07-20. All 4 migrations were already applied live (verified against `information_schema` / `pg_constraint`, **not** `list_migrations` — raw-SQL migrations never register there). 13 branches collapsed into `main` via PR #16 (`403a2b4`). Prod `/health` 200.
+- [ ] **D6.2** — scripted 15-min run, repeated until 3 clean consecutive passes. *Prod e2e smoke ALL PASS against `403a2b4` (2026-07-20): post → quote → chat → accept → propose → handshake → en_route → complete → escrow fully_released.*
+- [ ] **D6.3** — Kira's own phone run. *Agent-clean ≠ done.* ← **the immediate next action**
 
 ### [[dominoes/D7-security|D7 — Security + honest instruments]] 🟡
 - [ ] **D7.1** — secret rotation: Telegram token + `.dev` creds (Kira generates, agent verifies old ones dead)
@@ -71,27 +78,27 @@ The app survives Kira's own 15-min walkthrough on a fresh pull of `main`. Tester
 
 ### [[dominoes/D8-money-uber|D8 — Money, the Uber way]] 🔴 **architecture rework**
 **Client pays at confirmation** (Kira 2026-07-19) → ledger accrues → **batched** payout. Replaces the per-booking-transfer model.
-- [ ] **D8.1** — capture timing stays as built; ledger accrues per business instead of per-booking transfer
+- [ ] **D8.1** — capture timing stays as built; ledger accrues per business instead of per-booking transfer. ⛔ **PARKED on branch `card-21-money` — do NOT merge yet.** It writes `payment_status='pending'`, but the live `bookings_payment_status_check` allows only held / partial_released / fully_released / refunded, so merging it 500s **every quote acceptance** in prod. Unblock in this order: apply `docs/bookings_payment_status_add_pending.sql` **and** `docs/payment_ledger_table.sql` (both filed on that branch) → then merge → then verify. This is the one branch deliberately left out of the 2026-07-20 collapse.
 - [ ] **D8.2** — payout rail decision: manual for beta vs Stripe Connect
 - [ ] **D8.3** — execute every refund/penalty path in sandbox, actual vs designed
 
-### D9 — Product P0s 🟢 *code-complete, unverified on device*
-Built 2026-07-19, committed and pushed, **none seen running** (no emulator on the box):
-- [x] **D9.1** reviews wired to real data — `agent-mobile-product` *(migration 4 unapplied)*
-- [x] **D9.2** referrals real backend — `agent-mobile-product` *(migration 2 unapplied)*
-- [x] **D9.3** booking-entry per D2 — `card-20-entry` `b6cbb78` *(⚠️ needs Kira's ruling — see [[dominoes/D6-m1-gate|D6]])*
-- [x] **D9.4** business Jobs view + biometrics — `card-24-jobsview` `e6ad7f1`
-- [x] **D9.5** rebook loop + favorites — `card-12-rebook` `ef5dca0`
-- [x] **D9.6** client-PII leak fixed (P0, found unplanned) — `agent-backend` `b1ec11c`
+### D9 — Product P0s 🟢 *ON MAIN as of 2026-07-20 — still unverified on device*
+Built 2026-07-19 on branches; **none of it was live until the 2026-07-20 collapse** (PR #16). Every box below re-verified present on `main` by file, not by commit message. Still no emulator on the box, so "runs correctly on a phone" remains D6.3's job:
+- [x] **D9.1** reviews wired to real data — on main *(reviewee_type migration still unapplied)*
+- [x] **D9.2** referrals real backend — on main; `referrals` table confirmed live in Supabase
+- [x] **D9.3** booking-entry per D2 — on main; preferred_date → straight-to-booking path smoke-covered
+- [x] **D9.4** business Jobs view + biometrics — on main (`biometrics.js`, `BiometricLockScreen`, Settings toggle, AuthContext)
+- [x] **D9.5** rebook loop + favorites — on main (`useFavorites.js`, `FavoritesScreen`)
+- [x] **D9.6** client-PII leak fixed (P0) — on main and **verified live in prod 2026-07-20**: feed returns `address='Calgary'`, `last_name=None`. ⚠️ Was reverted by stale WIP commit `0e005c6` and re-wired in `c926eec` — see the done-rule above.
 
 ### D10 — Launch surface 🟡
 - [ ] **D10.1** — deploy `web/launch` so swingbyy.com serves privacy/terms/cookies *(legal exposure until done)*
 - [ ] **D10.2** — DMARC → quarantine. *Record drafted and ready; DNS is Kira's step.*
 - [ ] **D10.3** — waitlist count into the morning brief *(blocked: no `NOTION_TOKEN` on the box)*
-- [x] **D10.4** — analytics funnel: signup / booking created / booking completed — verified live
-- [x] **D10.5** — money-path failure tests — 33 added, suite green
-- [x] **D10.6** — app screens on the website — `card-22-website` `ec7e27c`
-- [x] **D10.7** — docs match shipped behaviour — `card-14-docs` `179a2f7` *(4 decisions await Kira)*
+- [x] **D10.4** — analytics funnel — `services/analytics.py` on main as of 2026-07-20 *(was on a branch only; the earlier "verified live" referred to Plausible on the website, not this funnel)*
+- [x] **D10.5** — money-path failure tests — `test_money_paths_failures.py` on main; full suite 156 passed / 3 skipped
+- [x] **D10.6** — app screens on the website — on main *(the CARD-22 copy repeated the old "no contact until they accept" claim; resolved in favour of D10.7's corrected wording — chat opens at the quote)*
+- [x] **D10.7** — docs match shipped behaviour — on main *(2 decisions still await Kira: beta invite card, inbox cleanup)*
 
 ### Card → domino map (so the old reports stay findable)
 
