@@ -444,9 +444,25 @@ def accept_interest(interest_id: str, current_user: dict = Depends(get_current_u
         supabase.table("interests").update({"status": "rejected"}).eq(
             "post_id", post["id"]
         ).neq("id", interest_id).execute()
-        supabase.table("service_posts").update({"status": "matched"}).eq(
-            "id", post["id"]
-        ).execute()
+        # §8 — conditional on status='open' so a losing racer (two accepts
+        # for the same post resolving concurrently) fails to silently
+        # overwrite: the booking itself is already secured by this point
+        # (protected by the UNIQUE(post_id) constraint on bookings, migration
+        # 0002), so 0 rows here just means another request already closed
+        # this post — nothing to roll back, only log for visibility.
+        post_close_res = (
+            supabase.table("service_posts")
+            .update({"status": "matched"})
+            .eq("id", post["id"])
+            .eq("status", "open")
+            .execute()
+        )
+        if not post_close_res.data:
+            logger.warning(
+                "service_posts %s was not 'open' when accept_interest tried "
+                "to close it — likely a concurrent accept already did",
+                post["id"],
+            )
 
         # Notify the business owner and client (push + email) — best-effort
         try:
