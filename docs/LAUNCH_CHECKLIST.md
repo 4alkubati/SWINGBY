@@ -37,6 +37,13 @@
 | 17 | Pro tier upgrade for Supabase (or a confirmed weekly `pg_dump` plan) | ☐ |
 | 18 | Post-expiry cron is alive and pruning stale `service_posts` (check `pg_cron.job_run_details` table) | ☐ |
 
+> **Item 15 status note (CARD-06, 2026-07-19):** as of this date, `get_advisors` returns 1 open security
+> WARN — `auth_leaked_password_protection` (see item 20, Section 4 — same underlying issue, dashboard-only
+> fix). 2 other WARNs (`function_search_path_mutable` on `public.update_disputes_updated_at`,
+> `public_bucket_allows_listing` on the `job-photos` bucket) were fixed via
+> `docs/card06_security_advisors_fix.sql`. Do not tick item 15 until item 20's dashboard toggle is also
+> done and `get_advisors` is re-run clean.
+
 ## Section 4 — Security (5 items)
 
 | # | Item | Status |
