@@ -11,6 +11,12 @@
 --     anon      → zero access to everything
 --     authenticated → read-only access to public data only
 --     service_role  → full access (our backend)
+--
+-- Going forward: new schema/RLS changes should land as a new timestamped
+-- file in supabase/migrations/, not appended here. This file stays the
+-- "run whole script in one shot" reference (kept in sync by hand — see the
+-- S1 column-lockdown blocks in §2 and §4 below, mirrored verbatim in
+-- supabase/migrations/20260720000000_s1_column_lockdown_and_unique_constraints.sql).
 -- =============================================================================
 
 
@@ -66,6 +72,22 @@ create policy "businesses_update_own" on businesses
 create policy "businesses_delete_own" on businesses
     for delete
     using (auth.uid() = owner_id);
+
+-- S1 audit finding: businesses_select_authenticated above is `using (true)`
+-- for `to authenticated` — full-row access, but discovery/browsing only
+-- needs the public fields. stripe_customer_id / subscription_id /
+-- subscription_current_period_end (Stripe identifiers + billing metadata)
+-- and license_number (the business's actual license number, not just
+-- verified/pending status) have no legitimate reason to be readable by a
+-- browsing client or a competing business. All three are written/read only
+-- via the service_role client (subscriptions.py, payments_stripe.py),
+-- unaffected by this. Idempotent — REVOKE on an unheld privilege is a no-op.
+revoke select (
+    license_number,
+    stripe_customer_id,
+    subscription_id,
+    subscription_current_period_end
+) on businesses from authenticated;
 
 
 -- ─────────────────────────────────────────────────────────────────────────────
@@ -134,6 +156,25 @@ create policy "posts_insert" on service_posts
 create policy "posts_update" on service_posts
     for update
     using (auth.uid() = client_id);
+
+-- S1 fix: posts_select above is a ROW filter (any open post, or your own) —
+-- it says nothing about which COLUMNS are visible in those rows. Supabase
+-- grants `authenticated` SELECT on every column by default, so the full row
+-- — street address included — is readable directly via PostgREST by anyone
+-- with the (public, bundled-in-the-website) anon key and their own valid
+-- JWT, bypassing backend/app/privacy.py's masking entirely:
+--   GET /rest/v1/service_posts?status=eq.open&select=*
+-- Column-level REVOKE closes this at the grant layer, independent of which
+-- policy matched the row, and — per Postgres/PostgREST column-privilege
+-- semantics — `select=*` does not error on a column the caller lacks
+-- privilege on, it silently omits it. So this survives any future
+-- `select=*` query, unlike a row-policy-only fix. service_role (used by
+-- every backend read of this table, including bookings.py's post-accept
+-- embed) is untouched by this REVOKE. lat/lng deliberately NOT revoked —
+-- approximate location is intentionally pre-acceptance-visible per
+-- privacy.py / CLAUDE.md (map pins need it); see the migration file for the
+-- full writeup. Idempotent — REVOKE on an unheld privilege is a no-op.
+revoke select (address) on service_posts from authenticated;
 
 
 -- ─────────────────────────────────────────────────────────────────────────────
