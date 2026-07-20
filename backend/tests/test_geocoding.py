@@ -28,7 +28,10 @@ class _FakeResponse:
 
 
 def _ok_payload(lat=51.0447, lng=-114.0719):
-    return {"status": "OK", "results": [{"geometry": {"location": {"lat": lat, "lng": lng}}}]}
+    return {
+        "status": "OK",
+        "results": [{"geometry": {"location": {"lat": lat, "lng": lng}}}],
+    }
 
 
 @pytest.fixture
@@ -38,8 +41,11 @@ def with_key(monkeypatch):
 
 # ── geocode_address ───────────────────────────────────────────────────────────
 
+
 def test_returns_coordinates_on_success(monkeypatch, with_key):
-    monkeypatch.setattr(geocoding.httpx, "get", lambda *a, **k: _FakeResponse(_ok_payload()))
+    monkeypatch.setattr(
+        geocoding.httpx, "get", lambda *a, **k: _FakeResponse(_ok_payload())
+    )
     assert geocode_address("123 Main St, Calgary") == (51.0447, -114.0719)
 
 
@@ -69,50 +75,69 @@ def test_network_failure_is_swallowed(monkeypatch, with_key):
 
 def test_zero_results_returns_none(monkeypatch, with_key):
     monkeypatch.setattr(
-        geocoding.httpx, "get", lambda *a, **k: _FakeResponse({"status": "ZERO_RESULTS", "results": []})
+        geocoding.httpx,
+        "get",
+        lambda *a, **k: _FakeResponse({"status": "ZERO_RESULTS", "results": []}),
     )
     assert geocode_address("nowhere at all") is None
 
 
 def test_request_denied_returns_none(monkeypatch, with_key):
     monkeypatch.setattr(
-        geocoding.httpx, "get", lambda *a, **k: _FakeResponse({"status": "REQUEST_DENIED"})
+        geocoding.httpx,
+        "get",
+        lambda *a, **k: _FakeResponse({"status": "REQUEST_DENIED"}),
     )
     assert geocode_address("123 Main St") is None
 
 
 def test_malformed_payload_returns_none(monkeypatch, with_key):
     monkeypatch.setattr(
-        geocoding.httpx, "get", lambda *a, **k: _FakeResponse({"status": "OK", "results": [{}]})
+        geocoding.httpx,
+        "get",
+        lambda *a, **k: _FakeResponse({"status": "OK", "results": [{}]}),
     )
     assert geocode_address("123 Main St") is None
 
 
 def test_out_of_range_coordinates_rejected(monkeypatch, with_key):
     monkeypatch.setattr(
-        geocoding.httpx, "get", lambda *a, **k: _FakeResponse(_ok_payload(lat=999.0, lng=0.0))
+        geocoding.httpx,
+        "get",
+        lambda *a, **k: _FakeResponse(_ok_payload(lat=999.0, lng=0.0)),
     )
     assert geocode_address("123 Main St") is None
 
 
 # ── resolve_coordinates ───────────────────────────────────────────────────────
 
+
 def test_supplied_coordinates_win_without_an_api_call(monkeypatch, with_key):
     def explode(*a, **k):
         raise AssertionError("must not geocode when coordinates were supplied")
 
     monkeypatch.setattr(geocoding.httpx, "get", explode)
-    assert resolve_coordinates(51.05, -114.07, "123 Main St") == {"lat": 51.05, "lng": -114.07}
+    assert resolve_coordinates(51.05, -114.07, "123 Main St") == {
+        "lat": 51.05,
+        "lng": -114.07,
+    }
 
 
 def test_missing_coordinates_are_resolved_from_address(monkeypatch, with_key):
-    monkeypatch.setattr(geocoding.httpx, "get", lambda *a, **k: _FakeResponse(_ok_payload()))
-    assert resolve_coordinates(None, None, "123 Main St") == {"lat": 51.0447, "lng": -114.0719}
+    monkeypatch.setattr(
+        geocoding.httpx, "get", lambda *a, **k: _FakeResponse(_ok_payload())
+    )
+    assert resolve_coordinates(None, None, "123 Main St") == {
+        "lat": 51.0447,
+        "lng": -114.0719,
+    }
 
 
 def test_unresolvable_address_leaves_coordinates_null(monkeypatch, with_key):
     monkeypatch.setattr(
-        geocoding.httpx, "get", lambda *a, **k: _FakeResponse({"status": "ZERO_RESULTS", "results": []})
+        geocoding.httpx,
+        "get",
+        lambda *a, **k: _FakeResponse({"status": "ZERO_RESULTS", "results": []}),
     )
     assert resolve_coordinates(None, None, "gibberish") == {"lat": None, "lng": None}
 
@@ -127,7 +152,9 @@ def test_never_returns_provenance_columns(monkeypatch, with_key):
     applied, so the request path must never write geocode_source/geocoded_at —
     doing so would fail every insert until the migration lands.
     """
-    monkeypatch.setattr(geocoding.httpx, "get", lambda *a, **k: _FakeResponse(_ok_payload()))
+    monkeypatch.setattr(
+        geocoding.httpx, "get", lambda *a, **k: _FakeResponse(_ok_payload())
+    )
     for result in (
         resolve_coordinates(None, None, "123 Main St"),
         resolve_coordinates(51.05, -114.07, "123 Main St"),

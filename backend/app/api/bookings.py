@@ -386,7 +386,9 @@ def propose_dates(
                     .single()
                     .execute()
                 )
-                other_uid = biz_owner_res.data["owner_id"] if biz_owner_res.data else None
+                other_uid = (
+                    biz_owner_res.data["owner_id"] if biz_owner_res.data else None
+                )
             else:
                 other_uid = booking["client_id"]
             if other_uid:
