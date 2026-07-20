@@ -129,7 +129,7 @@ def list_my_bookings(
                 .select(
                     "*, businesses(business_name, category, avg_rating), "
                     "employees(role_title, avatar_url, users(first_name, last_name)), "
-                    "service_posts(title, address)"
+                    "service_posts(title, address, lat, lng)"
                 )
                 .eq("client_id", uid)
                 .order("created_at", desc=True)
@@ -156,7 +156,7 @@ def list_my_bookings(
                 .select(
                     "*, users!bookings_client_id_fkey(first_name, last_name, avatar_url), "
                     "employees(role_title, users(first_name, last_name)), "
-                    "service_posts(title, address)"
+                    "service_posts(title, address, lat, lng)"
                 )
                 .eq("business_id", biz.data["id"])
                 .order("created_at", desc=True)
@@ -182,7 +182,7 @@ def list_my_bookings(
                 supabase.table("bookings")
                 .select(
                     "*, users!bookings_client_id_fkey(first_name, last_name), businesses(business_name), "
-                    "service_posts(title, address)"
+                    "service_posts(title, address, lat, lng)"
                 )
                 .eq("employee_id", emp.data["id"])
                 .order("created_at", desc=True)
@@ -214,7 +214,7 @@ def get_booking(booking_id: str, current_user: dict = Depends(get_current_user))
                 "*, users!bookings_client_id_fkey(first_name, last_name, avatar_url), "
                 "businesses(business_name, category, avg_rating, review_count), "
                 "employees(role_title, avatar_url, users(first_name, last_name)), "
-                "service_posts(title, address)"
+                "service_posts(title, address, lat, lng)"
             )
             .eq("id", booking_id)
             .single()

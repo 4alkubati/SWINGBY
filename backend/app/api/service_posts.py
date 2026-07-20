@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field, field_validator
 from typing import Optional, Literal, List
 from app.categories import allowed_categories_for, resolve_create_category
 from app.deps import get_current_user
+from app.services.geocoding import resolve_coordinates
 from app.supabase_client import supabase
 
 logger = logging.getLogger(__name__)
@@ -120,8 +121,11 @@ def create_service_post(
                     "description": data.description,
                     "category": resolve_create_category(data.category),
                     "budget": data.budget,
-                    "lat": data.lat,
-                    "lng": data.lng,
+                    # RO-0: server-side geocoding fallback. When the app sends
+                    # coordinates (Places autocomplete) they pass through
+                    # untouched; when it sends only an address, resolve here so
+                    # the post is mappable instead of silently invisible.
+                    **resolve_coordinates(data.lat, data.lng, data.address),
                     "address": data.address,
                     "image_urls": data.image_urls or [],
                     "preferred_date": data.preferred_date,
