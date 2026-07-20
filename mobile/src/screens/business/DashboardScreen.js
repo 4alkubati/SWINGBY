@@ -22,8 +22,12 @@ import { colors, spacing, motion } from '../../theme/tokens';
 import Text from '../../components/Text';
 import Surface from '../../components/Surface';
 import Stack from '../../components/Stack';
+import Inline from '../../components/Inline';
 import Button from '../../components/Button';
+import Avatar from '../../components/Avatar';
 import { SkeletonBox } from '../../components/Skeleton';
+import { groupBusinessJobs, bookingDate } from '../../utils/jobGroups';
+import i18n from '../../i18n';
 
 function getGreeting() {
   const h = new Date().getHours();
@@ -39,6 +43,25 @@ function toInitials(name) {
     .join('')
     .toUpperCase()
     .slice(0, 2);
+}
+
+// CARD-24 — "next job" chip: just the time if it's today, date+time otherwise.
+function nextJobWhenLabel(booking) {
+  const d = bookingDate(booking);
+  if (!d) return '';
+  const today = new Date();
+  const isToday =
+    d.getDate() === today.getDate() &&
+    d.getMonth() === today.getMonth() &&
+    d.getFullYear() === today.getFullYear();
+  const time = d.toLocaleTimeString('en-CA', { hour: 'numeric', minute: '2-digit' });
+  if (isToday) return time;
+  return `${d.toLocaleDateString('en-CA', { month: 'short', day: 'numeric' })} · ${time}`;
+}
+
+function nextJobClientName(booking) {
+  const u = booking?.users || {};
+  return [u.first_name, u.last_name].filter(Boolean).join(' ') || 'Client';
 }
 
 function KpiCard({ label, value, sub, index = 0 }) {
@@ -94,6 +117,12 @@ export default function DashboardScreen({ navigation }) {
   const [posts, setPosts] = useState(_dashboardCache?.posts || []);
   const [business, setBusiness] = useState(_dashboardCache?.business || null);
   const [unreadTotal, setUnreadTotal] = useState(_dashboardCache?.unreadTotal || 0);
+  // CARD-24 — quotes (for needs-action parity with the Jobs tab) + payments
+  // (for the "money in flight" held/cleared split). Real endpoints, not derived
+  // client-side from bookings — GET /payments/mine is the same call EarningsScreen
+  // already uses for its released/pending totals.
+  const [quotes, setQuotes] = useState(_dashboardCache?.quotes || []);
+  const [payments, setPayments] = useState(_dashboardCache?.payments || null);
   const [loading, setLoading] = useState(!_dashboardCache);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(false);
@@ -104,11 +133,13 @@ export default function DashboardScreen({ navigation }) {
   const load = useCallback(async () => {
     setError(false);
     try {
-      const [b, p, biz, threads] = await Promise.all([
+      const [b, p, biz, threads, i, pay] = await Promise.all([
         api.get('/bookings/'),
         api.get('/service-posts/'),
         api.get('/businesses/me').catch(() => null),
         api.get('/messages/threads', { _silent: true }).catch(() => null),
+        api.get('/interests/mine').catch(() => null),
+        api.get('/payments/mine').catch(() => null),
       ]);
       const nextBookings = b?.items || b || [];
       const nextPosts = (p?.items || p || []).filter((post) => post.status === 'open');
@@ -116,15 +147,20 @@ export default function DashboardScreen({ navigation }) {
         (sum, t) => sum + (t.unread_count || 0),
         0
       );
+      const nextQuotes = i?.items || i || [];
       setBookings(nextBookings);
       setPosts(nextPosts);
       setBusiness(biz || null);
       setUnreadTotal(nextUnread);
+      setQuotes(nextQuotes);
+      setPayments(pay || null);
       _dashboardCache = {
         bookings: nextBookings,
         posts: nextPosts,
         business: biz || null,
         unreadTotal: nextUnread,
+        quotes: nextQuotes,
+        payments: pay || null,
       };
     } catch {
       // With cached data on screen, a background failure shouldn't nuke the UI
@@ -165,10 +201,22 @@ export default function DashboardScreen({ navigation }) {
 
   const visiblePosts = posts.filter((p) => !dismissedIds.has(p.id));
 
-  // What makes money right now: new leads, unanswered messages, unassigned jobs
-  const awaitingAction = bookings.filter(
-    (b) => b.status === 'confirmed' && !b.employee_id
-  ).length;
+  // CARD-24 — same grouping logic the Jobs tab uses (src/utils/jobGroups.js),
+  // so "today" here always matches the Jobs tab's Today count, and the
+  // "awaiting action" chip means the same thing in both places.
+  const groups = groupBusinessJobs({ bookings, posts, quotes });
+  const todayBookings = groups.today;
+  const nextJob = groups.nextJob;
+  // Quotes-awaiting-response + jobs-awaiting-date/staff — deliberately excludes
+  // "leads" so this doesn't double-count against the leads chip below.
+  const awaitingAction = groups.needsAction.quotes.length + groups.needsAction.awaitingSchedule.length;
+
+  // Money in flight — GET /payments/mine (same endpoint EarningsScreen uses).
+  // null (not 0) when the call fails or hasn't returned, so the UI can tell
+  // "no money moving" apart from "don't know yet" and never show a fake number.
+  const moneyHeld = payments?.total_pending ?? null;
+  const moneyCleared = payments?.total_released ?? null;
+
   const attentionChips = [
     visiblePosts.length > 0 && {
       key: 'leads',
@@ -189,17 +237,6 @@ export default function DashboardScreen({ navigation }) {
       onPress: () => navigation.navigate('Jobs'),
     },
   ].filter(Boolean);
-
-  const todayBookings = bookings.filter((b) => {
-    if (!b.scheduled_at && !b.created_at) return false;
-    const d = new Date(b.scheduled_at || b.created_at);
-    const today = new Date();
-    return (
-      d.getDate() === today.getDate() &&
-      d.getMonth() === today.getMonth() &&
-      d.getFullYear() === today.getFullYear()
-    );
-  });
 
   const earningsIn = (minDaysAgo, maxDaysAgo) =>
     bookings
@@ -347,6 +384,44 @@ export default function DashboardScreen({ navigation }) {
           </View>
         )}
 
+        {/* Next job — CARD-24. Tap opens the operational job screen. */}
+        <TouchableOpacity
+          activeOpacity={nextJob ? 0.8 : 1}
+          disabled={!nextJob}
+          onPress={() => nextJob && navigation.navigate('JobManagement', { bookingId: nextJob.id })}
+          accessibilityRole={nextJob ? 'button' : undefined}
+        >
+          <Surface elevation="subtle" rounded="card" padding="base" style={styles.nextJobCard}>
+            <Text style={styles.kpiLabel} maxFontSizeMultiplier={1.3}>
+              {i18n.t('dashboard.nextJobTitle')}
+            </Text>
+            {nextJob ? (
+              <Inline justify="space-between" style={{ marginTop: 6 }}>
+                <Inline spacing="sm" style={{ flex: 1 }}>
+                  <Avatar name={nextJobClientName(nextJob)} size="sm" />
+                  <View style={{ flex: 1 }}>
+                    <Text variant="bodyMedium" numberOfLines={1}>{nextJobClientName(nextJob)}</Text>
+                    <Text variant="small" color="secondary" numberOfLines={1}>
+                      {nextJob.service_posts?.title || nextJob.service_category || 'Service'}
+                    </Text>
+                  </View>
+                </Inline>
+                <Text
+                  variant="bodyMedium"
+                  numberOfLines={1}
+                  style={{ color: colors.accentText, fontFamily: 'SpaceGrotesk_700Bold' }}
+                >
+                  {nextJobWhenLabel(nextJob)}
+                </Text>
+              </Inline>
+            ) : (
+              <Text variant="small" color="secondary" style={{ marginTop: 6 }}>
+                {i18n.t('dashboard.nextJobEmpty')}
+              </Text>
+            )}
+          </Surface>
+        </TouchableOpacity>
+
         {/* Earnings hero */}
         <EarningsHero
           amount={
@@ -373,6 +448,30 @@ export default function DashboardScreen({ navigation }) {
             sub={reviewCount ? `${reviewCount} reviews` : 'no reviews yet'}
           />
         </View>
+
+        {/* Money in flight — GET /payments/mine, held vs cleared — CARD-24 */}
+        <View style={styles.sectionHeader}>
+          <SectionHeader title={i18n.t('dashboard.moneyInFlightTitle')} />
+        </View>
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={() => navigation.navigate('Earnings')}
+          accessibilityRole="button"
+          accessibilityLabel={i18n.t('dashboard.moneyInFlightTitle')}
+        >
+          <View style={styles.kpiRow}>
+            <KpiCard
+              index={0}
+              label={i18n.t('dashboard.escrowHeld')}
+              value={moneyHeld != null ? `$${Math.round(moneyHeld).toLocaleString()}` : '—'}
+            />
+            <KpiCard
+              index={1}
+              label={i18n.t('dashboard.cleared')}
+              value={moneyCleared != null ? `$${Math.round(moneyCleared).toLocaleString()}` : '—'}
+            />
+          </View>
+        </TouchableOpacity>
 
         {/* New opportunities header */}
         <View style={styles.sectionHeader}>
@@ -551,6 +650,10 @@ const styles = StyleSheet.create({
     color: colors.accentText,
   },
 
+  nextJobCard: {
+    marginBottom: 0,
+  },
+
   kpiRow: {
     flexDirection: 'row',
     gap: spacing.sm,
@@ -569,6 +672,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     letterSpacing: 1.4,
     color: colors.textSecondary,
+    textTransform: 'uppercase',
   },
   kpiValue: {
     fontFamily: 'SpaceGrotesk_700Bold',

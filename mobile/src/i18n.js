@@ -160,6 +160,52 @@ const translations = {
     'dispute.photoPermission': 'Allow SwingBy to access your photos to attach evidence.',
     'dispute.addPhoto': 'Add photo',
     'dispute.photosOptional': 'Optional — add up to 3 photos as evidence.',
+
+    // Biometric unlock — Settings toggle (CARD-24)
+    'security.title': 'Security',
+    'security.biometricUnlock': 'Biometric unlock',
+    'security.biometricUnlockSub': 'Use Face ID or your fingerprint to open SwingBy faster',
+    'security.biometricUnavailableTitle': 'Not available',
+    'security.biometricUnavailableBody': "Your device doesn't have Face ID, Touch ID, or a fingerprint set up. Add one in your device settings, or keep using your password.",
+    'security.biometricConfirmFailed': "Couldn't verify — try again",
+
+    // Biometric unlock — app-open lock screen (CARD-24)
+    'biometricLock.title': 'Unlock SwingBy',
+    'biometricLock.subtitle': 'Use Face ID or your fingerprint to continue',
+    'biometricLock.promptMessage': 'Unlock SwingBy',
+    'biometricLock.tryAgain': 'Try again',
+    'biometricLock.usePassword': 'Use password instead',
+    'biometricLock.failed': "Couldn't verify — try again or use your password.",
+
+    // Business Jobs view — Today / Upcoming / Needs action / Past (CARD-24)
+    'businessJobs.title': 'Jobs',
+    'businessJobs.tabToday': 'Today',
+    'businessJobs.tabUpcoming': 'Upcoming',
+    'businessJobs.tabNeedsAction': 'Needs action',
+    'businessJobs.tabPast': 'Past',
+    'businessJobs.emptyTodayTitle': 'Nothing scheduled today',
+    'businessJobs.emptyTodayBody': 'Jobs confirmed for today will show up here.',
+    'businessJobs.emptyUpcomingTitle': 'No upcoming jobs',
+    'businessJobs.emptyUpcomingBody': 'Confirmed jobs scheduled for later will show up here.',
+    'businessJobs.emptyNeedsActionTitle': "You're all caught up",
+    'businessJobs.emptyNeedsActionBody': 'New leads, sent quotes, and jobs waiting on a date will show up here.',
+    'businessJobs.emptyPastTitle': 'No past jobs yet',
+    'businessJobs.emptyPastBody': 'Completed and cancelled jobs will show up here, with a link to the invoice.',
+    'businessJobs.errorTitle': 'Could not load your jobs',
+    'businessJobs.needsActionLeadLabel': 'New requests',
+    'businessJobs.needsActionQuoteSectionLabel': 'Quotes awaiting response',
+    'businessJobs.needsActionQuoteBadge': 'Awaiting response',
+    'businessJobs.needsActionScheduleSectionLabel': 'Awaiting confirmation',
+    'businessJobs.needsActionScheduleLabel': 'Awaiting date confirmation',
+    'businessJobs.needsActionAssignLabel': 'Needs a team member assigned',
+    'businessJobs.messageAction': 'Message',
+
+    // Dashboard — next job + money in flight (CARD-24)
+    'dashboard.nextJobTitle': 'Next job',
+    'dashboard.nextJobEmpty': 'No upcoming jobs scheduled',
+    'dashboard.moneyInFlightTitle': 'Money in flight',
+    'dashboard.escrowHeld': 'Held in escrow',
+    'dashboard.cleared': 'Cleared to you',
   },
 
   'fr-CA': {
@@ -315,6 +361,52 @@ const translations = {
     'dispute.photoPermission': 'Autorisez SwingBy à accéder à vos photos pour joindre des preuves.',
     'dispute.addPhoto': 'Ajouter une photo',
     'dispute.photosOptional': 'Facultatif — ajoutez jusqu\'à 3 photos comme preuve.',
+
+    // Biometric unlock — Settings toggle (CARD-24)
+    'security.title': 'Sécurité',
+    'security.biometricUnlock': 'Déverrouillage biométrique',
+    'security.biometricUnlockSub': 'Utilisez Face ID ou votre empreinte digitale pour ouvrir SwingBy plus rapidement',
+    'security.biometricUnavailableTitle': 'Non disponible',
+    'security.biometricUnavailableBody': "Votre appareil n'a pas Face ID, Touch ID ou une empreinte digitale configurée. Ajoutez-en une dans les paramètres de votre appareil, ou continuez d'utiliser votre mot de passe.",
+    'security.biometricConfirmFailed': 'Impossible de vérifier — réessayez',
+
+    // Biometric unlock — app-open lock screen (CARD-24)
+    'biometricLock.title': 'Déverrouiller SwingBy',
+    'biometricLock.subtitle': 'Utilisez Face ID ou votre empreinte digitale pour continuer',
+    'biometricLock.promptMessage': 'Déverrouiller SwingBy',
+    'biometricLock.tryAgain': 'Réessayer',
+    'biometricLock.usePassword': 'Utiliser le mot de passe',
+    'biometricLock.failed': 'Impossible de vérifier — réessayez ou utilisez votre mot de passe.',
+
+    // Business Jobs view — Today / Upcoming / Needs action / Past (CARD-24)
+    'businessJobs.title': 'Travaux',
+    'businessJobs.tabToday': "Aujourd'hui",
+    'businessJobs.tabUpcoming': 'À venir',
+    'businessJobs.tabNeedsAction': 'À traiter',
+    'businessJobs.tabPast': 'Passés',
+    'businessJobs.emptyTodayTitle': "Rien de prévu aujourd'hui",
+    'businessJobs.emptyTodayBody': "Les travaux confirmés pour aujourd'hui apparaîtront ici.",
+    'businessJobs.emptyUpcomingTitle': 'Aucun travail à venir',
+    'businessJobs.emptyUpcomingBody': 'Les travaux confirmés pour plus tard apparaîtront ici.',
+    'businessJobs.emptyNeedsActionTitle': 'Tout est à jour',
+    'businessJobs.emptyNeedsActionBody': 'Les nouvelles demandes, soumissions envoyées et travaux en attente d\'une date apparaîtront ici.',
+    'businessJobs.emptyPastTitle': 'Aucun travail passé',
+    'businessJobs.emptyPastBody': 'Les travaux terminés et annulés apparaîtront ici, avec un lien vers la facture.',
+    'businessJobs.errorTitle': 'Impossible de charger vos travaux',
+    'businessJobs.needsActionLeadLabel': 'Nouvelles demandes',
+    'businessJobs.needsActionQuoteSectionLabel': 'Soumissions en attente de réponse',
+    'businessJobs.needsActionQuoteBadge': 'En attente de réponse',
+    'businessJobs.needsActionScheduleSectionLabel': 'En attente de confirmation',
+    'businessJobs.needsActionScheduleLabel': 'En attente de confirmation de date',
+    'businessJobs.needsActionAssignLabel': "Nécessite l'affectation d'un employé",
+    'businessJobs.messageAction': 'Message',
+
+    // Dashboard — next job + money in flight (CARD-24)
+    'dashboard.nextJobTitle': 'Prochain travail',
+    'dashboard.nextJobEmpty': 'Aucun travail à venir prévu',
+    'dashboard.moneyInFlightTitle': 'Argent en circulation',
+    'dashboard.escrowHeld': 'Détenu en entiercement',
+    'dashboard.cleared': 'Versé à vous',
   },
 
   // ── Arabic (RTL) — skeleton keys, translator TODO ──────────────────────
@@ -471,6 +563,52 @@ const translations = {
     'dispute.photoPermission': 'اسمح لـ SwingBy بالوصول إلى صورك لإرفاق الأدلة.',
     'dispute.addPhoto': 'إضافة صورة',
     'dispute.photosOptional': 'اختياري — أضف حتى 3 صور كدليل.',
+
+    // Biometric unlock — Settings toggle (CARD-24)
+    'security.title': 'الأمان',
+    'security.biometricUnlock': 'فتح القفل البيومتري',
+    'security.biometricUnlockSub': 'استخدم بصمة الوجه أو بصمة الإصبع لفتح SwingBy بشكل أسرع',
+    'security.biometricUnavailableTitle': 'غير متاح',
+    'security.biometricUnavailableBody': 'جهازك لا يحتوي على بصمة وجه أو بصمة إصبع مُعدّة. أضف واحدة من إعدادات جهازك، أو تابع استخدام كلمة المرور.',
+    'security.biometricConfirmFailed': 'تعذر التحقق — حاول مرة أخرى',
+
+    // Biometric unlock — app-open lock screen (CARD-24)
+    'biometricLock.title': 'فتح قفل SwingBy',
+    'biometricLock.subtitle': 'استخدم بصمة الوجه أو بصمة الإصبع للمتابعة',
+    'biometricLock.promptMessage': 'فتح قفل SwingBy',
+    'biometricLock.tryAgain': 'حاول مجدداً',
+    'biometricLock.usePassword': 'استخدم كلمة المرور بدلاً من ذلك',
+    'biometricLock.failed': 'تعذر التحقق — حاول مجدداً أو استخدم كلمة المرور.',
+
+    // Business Jobs view — Today / Upcoming / Needs action / Past (CARD-24)
+    'businessJobs.title': 'الأعمال',
+    'businessJobs.tabToday': 'اليوم',
+    'businessJobs.tabUpcoming': 'القادمة',
+    'businessJobs.tabNeedsAction': 'يتطلب إجراء',
+    'businessJobs.tabPast': 'السابقة',
+    'businessJobs.emptyTodayTitle': 'لا يوجد شيء مجدول اليوم',
+    'businessJobs.emptyTodayBody': 'الأعمال المؤكدة لهذا اليوم ستظهر هنا.',
+    'businessJobs.emptyUpcomingTitle': 'لا توجد أعمال قادمة',
+    'businessJobs.emptyUpcomingBody': 'الأعمال المؤكدة للمستقبل ستظهر هنا.',
+    'businessJobs.emptyNeedsActionTitle': 'كل شيء محدّث',
+    'businessJobs.emptyNeedsActionBody': 'الطلبات الجديدة، والعروض المُرسلة، والأعمال بانتظار تحديد موعد ستظهر هنا.',
+    'businessJobs.emptyPastTitle': 'لا توجد أعمال سابقة بعد',
+    'businessJobs.emptyPastBody': 'الأعمال المكتملة والملغاة ستظهر هنا، مع رابط للفاتورة.',
+    'businessJobs.errorTitle': 'تعذر تحميل أعمالك',
+    'businessJobs.needsActionLeadLabel': 'طلبات جديدة',
+    'businessJobs.needsActionQuoteSectionLabel': 'عروض بانتظار الرد',
+    'businessJobs.needsActionQuoteBadge': 'بانتظار الرد',
+    'businessJobs.needsActionScheduleSectionLabel': 'بانتظار التأكيد',
+    'businessJobs.needsActionScheduleLabel': 'بانتظار تأكيد الموعد',
+    'businessJobs.needsActionAssignLabel': 'يحتاج إلى تعيين موظف',
+    'businessJobs.messageAction': 'رسالة',
+
+    // Dashboard — next job + money in flight (CARD-24)
+    'dashboard.nextJobTitle': 'العمل التالي',
+    'dashboard.nextJobEmpty': 'لا توجد أعمال قادمة مجدولة',
+    'dashboard.moneyInFlightTitle': 'الأموال قيد التحويل',
+    'dashboard.escrowHeld': 'محتجزة كضمان',
+    'dashboard.cleared': 'تم تحويلها إليك',
   },
 };
 

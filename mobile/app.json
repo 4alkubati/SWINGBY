@@ -20,6 +20,7 @@
         "NSLocationAlwaysUsageDescription": "SwingBy uses your location to show nearby service providers.",
         "NSPhotoLibraryUsageDescription": "SwingBy needs access to your photos so you can attach images to a job post.",
         "NSCameraUsageDescription": "SwingBy needs camera access so you can take a photo for your job post.",
+        "NSFaceIDUsageDescription": "SwingBy uses Face ID to unlock the app quickly, if you turn it on in Settings.",
         "ITSAppUsesNonExemptEncryption": false
       }
     },
@@ -54,6 +55,7 @@
       "expo-notifications",
       "@sentry/react-native",
       "expo-localization",
+      "expo-local-authentication",
       "@react-native-community/datetimepicker",
       [
         "expo-image-picker",

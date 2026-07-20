@@ -18,6 +18,12 @@ import { useAuth } from '../../context/AuthContext';
 import { api } from '../../services/api';
 import { show as showToast } from '../../services/toast';
 import LanguageSelector from '../../components/LanguageSelector';
+import {
+  isBiometricEnabled,
+  setBiometricEnabled,
+  isBiometricHardwareReady,
+  authenticateAsync,
+} from '../../services/biometrics';
 import i18n from '../../i18n';
 import { colors, spacing, radius } from '../../theme/tokens';
 import Text from '../../components/Text';
@@ -42,6 +48,12 @@ export default function SettingsScreen() {
   const [currentLocale, setCurrentLocale] = useState(i18n.locale);
   const [exportLoading, setExportLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  // CARD-24 — biometric unlock toggle. Off by default; only flips on after
+  // the device proves it actually has biometrics enrolled AND the user
+  // passes one confirmation prompt (so a stale/mistaken toggle can't lock
+  // anyone out later — see BiometricLockScreen's fallback for the boot side).
+  const [bioEnabled, setBioEnabledState] = useState(false);
+  const [bioBusy, setBioBusy] = useState(false);
 
   useEffect(() => {
     if (isExpoGo) return;
@@ -54,6 +66,40 @@ export default function SettingsScreen() {
       // Native module unavailable — leave switch off.
     }
   }, []);
+
+  useEffect(() => {
+    isBiometricEnabled().then(setBioEnabledState);
+  }, []);
+
+  async function toggleBiometric(val) {
+    if (!val) {
+      // Turning off never needs a check — always safe.
+      setBioEnabledState(false);
+      await setBiometricEnabled(false);
+      return;
+    }
+    setBioBusy(true);
+    try {
+      const ready = await isBiometricHardwareReady();
+      if (!ready) {
+        Alert.alert(
+          i18n.t('security.biometricUnavailableTitle'),
+          i18n.t('security.biometricUnavailableBody')
+        );
+        return; // toggle stays off — graceful degrade, no lockout
+      }
+      // Confirm they can actually unlock before persisting the opt-in.
+      const result = await authenticateAsync(i18n.t('biometricLock.promptMessage'));
+      if (result.success) {
+        setBioEnabledState(true);
+        await setBiometricEnabled(true);
+      } else {
+        showToast({ type: 'error', text1: i18n.t('security.biometricConfirmFailed') });
+      }
+    } finally {
+      setBioBusy(false);
+    }
+  }
 
   async function toggleNotifications(val) {
     if (isExpoGo) {
@@ -145,6 +191,18 @@ export default function SettingsScreen() {
     />
   );
 
+  // Biometric unlock toggle — off by default (CARD-24)
+  const bioSwitch = bioBusy ? (
+    <ActivityIndicator size="small" color={colors.accent} />
+  ) : (
+    <Switch
+      value={bioEnabled}
+      onValueChange={toggleBiometric}
+      trackColor={{ false: colors.border, true: colors.accentMuted }}
+      thumbColor={bioEnabled ? colors.accent : colors.textSecondary}
+    />
+  );
+
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Header */}
@@ -189,6 +247,23 @@ export default function SettingsScreen() {
                 left={<Feather name="bell" size={24} color={colors.textSecondary} />}
                 title="Notifications"
                 right={notifSwitch}
+                showChevron={false}
+                style={styles.listItemFlush}
+              />
+            </Stack>
+          </Surface>
+
+          {/* ── SECURITY (CARD-24) ── */}
+          <Surface elevation="subtle" padding={0} style={styles.section}>
+            <Text variant="label" color="secondary" style={styles.sectionLabel}>
+              {i18n.t('security.title')}
+            </Text>
+            <Stack spacing={0}>
+              <ListItem
+                left={<Feather name="lock" size={24} color={colors.textSecondary} />}
+                title={i18n.t('security.biometricUnlock')}
+                subtitle={i18n.t('security.biometricUnlockSub')}
+                right={bioSwitch}
                 showChevron={false}
                 style={styles.listItemFlush}
               />

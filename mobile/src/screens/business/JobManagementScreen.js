@@ -26,9 +26,11 @@ import EmptyState from '../../components/EmptyState';
 import JobOpportunityCard from '../../components/JobOpportunityCard';
 import SendQuoteSheet from '../../components/SendQuoteSheet';
 import { SkeletonBox, SkeletonList } from '../../components/Skeleton';
+import Avatar from '../../components/Avatar';
 import { Feather } from '@expo/vector-icons';
 import { colors, spacing, radius, shadows, motion } from '../../theme/tokens';
 import i18n from '../../i18n';
+import { groupBusinessJobs, bookingDate } from '../../utils/jobGroups';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -597,90 +599,210 @@ function JobDetailScreen({ navigation, route }) {
   );
 }
 
-// ─── Jobs list / lead-triage screen (no bookingId — Business "Jobs" tab) ──────
-// Handoff-mock content (DQ-6 QA-07, Kira's product call 2026-07-18, exec-spec
-// entry #26): a "Jobs" header with a New/Quoted/Scheduled segmented filter and
-// a scrollable feed. New-lead cards + the send-quote sheet already existed in
-// polished form on DashboardScreen (JobOpportunityCard + SendQuoteSheet) —
-// reused here, not rebuilt. Tapping a Scheduled row opens the existing
-// per-booking JobDetailScreen above via the same route (`JobManagement`,
-// {bookingId}), so nothing about the detail/status flow changes.
+// ─── Jobs list — the operational hub (no bookingId — Business "Jobs" tab) ────
+// CARD-24 (Kira, 2026-07-19): "they go to jobs and every job should be listed
+// over there — like the past would move to invoices — and their jobs view
+// they see like today's jobs or anything related to it." Grouped Today /
+// Upcoming / Needs action / Past, sourced entirely from endpoints already
+// used elsewhere in the app (GET /bookings/, /service-posts/, /interests/mine
+// — see src/utils/jobGroups.js for the shared grouping logic, also consumed
+// by DashboardScreen so the two screens can't disagree on counts).
+//
+// Superseded the earlier New/Quoted/Scheduled taxonomy (DQ-6 QA-07, exec-spec
+// #26) — that version was never wired to the "Jobs" tab (BusinessNavigator
+// pointed it at the client MyJobsScreen instead) so nothing user-facing
+// regresses; this replaces it as the tab's actual destination.
+//
+// Row → screen routing (deliberate, see CARD-24 report for the full reasoning):
+//   Today / Upcoming      → JobManagement {bookingId} (assign employee, advance
+//                            status, live timeline — the operational screen)
+//   Needs action / awaiting date → BookingDetails {bookingId} (has ConfirmDateCard,
+//                            the actual propose/confirm-date UI, works for both roles)
+//   Needs action / awaiting staff → JobManagement {bookingId} (Assign Employee modal)
+//   Past                  → Invoice {bookingId} when completed (the ask: "past
+//                            moves to invoices"); BookingDetails when cancelled
+//                            (no invoice exists for those, but the job shouldn't vanish)
 
-const INTEREST_STATUS_COLOR = {
-  pending: colors.warning,
-  accepted: colors.success,
-  rejected: colors.textSecondary,
-};
-const INTEREST_STATUS_LABEL = {
-  pending: 'jobManagement.interestPending',
-  accepted: 'jobManagement.interestAccepted',
-  rejected: 'jobManagement.interestRejected',
-};
-
-const LIST_FILTERS = ['new', 'quoted', 'scheduled'];
-
-function QuoteListRow({ interest, onMessage }) {
-  const post = interest.service_posts || {};
-  const clientUser = post.users || {};
-  const clientName = [clientUser.first_name, clientUser.last_name].filter(Boolean).join(' ') || 'Client';
-  const color = INTEREST_STATUS_COLOR[interest.status] || colors.textSecondary;
-  const labelKey = INTEREST_STATUS_LABEL[interest.status];
-  const canMessage = post.status === 'open' || post.status === 'matched' || interest.status === 'accepted';
-
-  return (
-    <Surface elevation="subtle" rounded="card" padding="base" style={listStyles.rowCard}>
-      <Inline justify="space-between" style={{ marginBottom: spacing.xs }}>
-        <Text variant="smallMedium" numberOfLines={1} style={{ flex: 1 }}>{post.title || 'Job post'}</Text>
-        <StatusChip label={labelKey ? i18n.t(labelKey) : interest.status} color={color} />
-      </Inline>
-      <Text variant="small" color="secondary">
-        {clientName} · <Text variant="smallMedium" style={{ color: colors.success, fontFamily: 'SpaceGrotesk_700Bold' }}>${interest.quoted_price}</Text>
-      </Text>
-      {canMessage && (
-        <Button
-          variant="ghost"
-          label={i18n.t('jobManagement.messageAction')}
-          onPress={onMessage}
-          style={{ alignSelf: 'flex-start', paddingHorizontal: 0, marginTop: spacing.xs }}
-        />
-      )}
-    </Surface>
-  );
+function amountLabel(n) {
+  if (n === null || n === undefined) return null;
+  return `$${Number(n).toLocaleString()}`;
 }
 
-function ScheduledListRow({ booking, onPress }) {
-  const clientName = booking.users?.first_name
-    ? [booking.users.first_name, booking.users.last_name].filter(Boolean).join(' ')
-    : (booking.client_name || 'Client');
-  const when = booking.confirmed_date || booking.proposed_date_1;
-  const date = when
-    ? new Date(when).toLocaleDateString('en-CA', { month: 'short', day: 'numeric' })
-    : null;
+function formatTime(d) {
+  if (!d) return null;
+  try {
+    return new Date(d).toLocaleTimeString('en-CA', { hour: 'numeric', minute: '2-digit' });
+  } catch { return null; }
+}
 
+function formatDateShort(d) {
+  if (!d) return null;
+  try {
+    return new Date(d).toLocaleDateString('en-CA', { month: 'short', day: 'numeric' });
+  } catch { return null; }
+}
+
+function bookingClientName(b) {
+  const u = b.users || {};
+  return [u.first_name, u.last_name].filter(Boolean).join(' ') || 'Client';
+}
+
+// Today / Upcoming row — client, service, time (+ date for Upcoming),
+// address when known, amount, status. Tap → the operational job screen.
+function ScheduleRow({ booking, showDate, onPress }) {
+  const date = bookingDate(booking);
+  const address = booking.service_posts?.address;
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.8}>
       <Surface elevation="subtle" rounded="card" padding="base" style={listStyles.rowCard}>
-        <Inline justify="space-between" style={{ marginBottom: spacing.xs }}>
-          <Text variant="smallMedium" numberOfLines={1} style={{ flex: 1 }}>{clientName}</Text>
-          <StatusChip status={booking.status} />
+        <Inline spacing="md">
+          <Avatar name={bookingClientName(booking)} size="sm" />
+          <View style={{ flex: 1 }}>
+            <Inline justify="space-between" style={{ marginBottom: 2 }}>
+              <Text variant="smallMedium" numberOfLines={1} style={{ flex: 1 }}>{bookingClientName(booking)}</Text>
+              <StatusChip status={booking.status} />
+            </Inline>
+            <Text variant="small" color="secondary" numberOfLines={1}>
+              {booking.service_posts?.title || booking.service_category || 'Service'}
+            </Text>
+            <Text variant="caption" color="secondary" numberOfLines={1} style={{ marginTop: 2 }}>
+              {[showDate ? formatDateShort(date) : null, formatTime(date), address].filter(Boolean).join(' · ')}
+            </Text>
+          </View>
+          {booking.total_amount != null && (
+            <Text variant="smallMedium" style={{ color: colors.success, fontFamily: 'SpaceGrotesk_700Bold' }}>
+              {amountLabel(booking.total_amount)}
+            </Text>
+          )}
         </Inline>
-        <Text variant="small" color="secondary">
-          {booking.service_posts?.title || booking.service_category || 'Service'}
-          {date ? ` · ${date}` : ''}
-        </Text>
       </Surface>
     </TouchableOpacity>
   );
 }
 
+// Needs-action / awaiting-schedule-or-staff row.
+function AwaitingActionRow({ booking, onPress }) {
+  const needsDate = !bookingDate(booking);
+  return (
+    <TouchableOpacity onPress={onPress} activeOpacity={0.8}>
+      <Surface elevation="subtle" rounded="card" padding="base" style={listStyles.rowCard}>
+        <Inline spacing="md">
+          <Avatar name={bookingClientName(booking)} size="sm" />
+          <View style={{ flex: 1 }}>
+            <Text variant="smallMedium" numberOfLines={1}>{bookingClientName(booking)}</Text>
+            <Text variant="small" color="secondary" numberOfLines={1}>
+              {booking.service_posts?.title || booking.service_category || 'Service'}
+            </Text>
+            <Text variant="caption" style={{ color: colors.warning, marginTop: 2 }}>
+              {i18n.t(needsDate ? 'businessJobs.needsActionScheduleLabel' : 'businessJobs.needsActionAssignLabel')}
+            </Text>
+          </View>
+          {booking.total_amount != null && (
+            <Text variant="smallMedium" style={{ color: colors.success, fontFamily: 'SpaceGrotesk_700Bold' }}>
+              {amountLabel(booking.total_amount)}
+            </Text>
+          )}
+        </Inline>
+      </Surface>
+    </TouchableOpacity>
+  );
+}
+
+// Needs-action / quote-awaiting-response row.
+function QuoteRow({ interest, onMessage }) {
+  const post = interest.service_posts || {};
+  const clientUser = post.users || {};
+  const clientName = [clientUser.first_name, clientUser.last_name].filter(Boolean).join(' ') || 'Client';
+  const canMessage = post.status === 'open' || post.status === 'matched' || interest.status === 'accepted';
+
+  return (
+    <Surface elevation="subtle" rounded="card" padding="base" style={listStyles.rowCard}>
+      <Inline spacing="md">
+        <Avatar name={clientName} size="sm" />
+        <View style={{ flex: 1 }}>
+          <Inline justify="space-between" style={{ marginBottom: 2 }}>
+            <Text variant="smallMedium" numberOfLines={1} style={{ flex: 1 }}>{post.title || 'Job post'}</Text>
+            <StatusChip label={i18n.t('businessJobs.needsActionQuoteBadge')} color={colors.warning} />
+          </Inline>
+          <Text variant="small" color="secondary">
+            {clientName} · <Text variant="smallMedium" style={{ color: colors.success, fontFamily: 'SpaceGrotesk_700Bold' }}>{amountLabel(interest.quoted_price)}</Text>
+          </Text>
+          {!!post.address && (
+            <Text variant="caption" color="secondary" numberOfLines={1}>{post.address}</Text>
+          )}
+          {canMessage && (
+            <Button
+              variant="ghost"
+              label={i18n.t('businessJobs.messageAction')}
+              onPress={onMessage}
+              style={{ alignSelf: 'flex-start', paddingHorizontal: 0, marginTop: spacing.xs }}
+            />
+          )}
+        </View>
+      </Inline>
+    </Surface>
+  );
+}
+
+// Past row — completed jobs open their invoice; cancelled ones open
+// BookingDetails since no invoice was ever generated for them.
+const PAST_PAYMENT_BADGE = {
+  fully_released: { label: 'Paid', color: colors.success },
+  partial_released: { label: 'Partial', color: colors.accentText },
+  refunded: { label: 'Refunded', color: colors.danger },
+  held: { label: 'Held', color: colors.warning },
+};
+
+function PastRow({ booking, onPress }) {
+  const badge = booking.status === 'completed' ? PAST_PAYMENT_BADGE[booking.payment_status] : null;
+  const date = booking.completed_at || booking.confirmed_date || booking.created_at;
+
+  return (
+    <TouchableOpacity onPress={onPress} activeOpacity={0.8}>
+      <Surface elevation="subtle" rounded="card" padding="base" style={listStyles.rowCard}>
+        <Inline spacing="md">
+          <Avatar name={bookingClientName(booking)} size="sm" />
+          <View style={{ flex: 1 }}>
+            <Inline justify="space-between" style={{ marginBottom: 2 }}>
+              <Text variant="smallMedium" numberOfLines={1} style={{ flex: 1 }}>{bookingClientName(booking)}</Text>
+              <StatusChip status={booking.status} />
+            </Inline>
+            <Text variant="small" color="secondary" numberOfLines={1}>
+              {[booking.service_posts?.title || booking.service_category || 'Service', formatDateShort(date)]
+                .filter(Boolean).join(' · ')}
+            </Text>
+          </View>
+          <Stack spacing={2} style={{ alignItems: 'flex-end' }}>
+            {booking.total_amount != null && (
+              <Text variant="smallMedium" style={{ color: colors.success, fontFamily: 'SpaceGrotesk_700Bold' }}>
+                {amountLabel(booking.total_amount)}
+              </Text>
+            )}
+            {!!badge && <Text variant="caption" style={{ color: badge.color }}>{badge.label}</Text>}
+          </Stack>
+          <Feather name="chevron-right" size={16} color={colors.textSecondary} strokeWidth={1.8} />
+        </Inline>
+      </Surface>
+    </TouchableOpacity>
+  );
+}
+
+const BUSINESS_JOB_TABS = ['today', 'upcoming', 'needsAction', 'past'];
+const TAB_LABEL_KEY = {
+  today: 'businessJobs.tabToday',
+  upcoming: 'businessJobs.tabUpcoming',
+  needsAction: 'businessJobs.tabNeedsAction',
+  past: 'businessJobs.tabPast',
+};
+
 function JobsListScreen({ navigation }) {
   const insets = useSafeAreaInsets();
 
+  const [bookings, setBookings] = useState([]);
   const [posts, setPosts] = useState([]);
   const [quotes, setQuotes] = useState([]);
-  const [scheduled, setScheduled] = useState([]);
   const [dismissedIds, setDismissedIds] = useState(new Set());
-  const [filter, setFilter] = useState('new');
+  const [tab, setTab] = useState('today');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -690,16 +812,14 @@ function JobsListScreen({ navigation }) {
   const load = useCallback(async () => {
     setError(null);
     try {
-      const [p, i, b] = await Promise.all([
+      const [b, p, i] = await Promise.all([
+        api.get('/bookings/?limit=100'),
         api.get('/service-posts/').catch(() => ({ items: [] })),
         api.get('/interests/mine').catch(() => ({ items: [] })),
-        api.get('/bookings/').catch(() => ({ items: [] })),
       ]);
-      const openPosts = (p?.items || p || []).filter((post) => post.status === 'open');
-      const allBookings = b?.items || b || [];
-      setPosts(openPosts);
+      setBookings(b?.items || b || []);
+      setPosts((p?.items || p || []).filter((post) => post.status === 'open'));
       setQuotes(i?.items || i || []);
-      setScheduled(allBookings.filter((bk) => bk.status !== 'cancelled'));
     } catch (err) {
       setError(err?.message || 'Could not load jobs.');
     } finally {
@@ -714,8 +834,6 @@ function JobsListScreen({ navigation }) {
     return unsub;
   }, [navigation, load]);
 
-  const visiblePosts = posts.filter((p) => !dismissedIds.has(p.id));
-
   function openQuoteSheet(post) {
     setSelectedPost(post);
     setSheetVisible(true);
@@ -724,18 +842,22 @@ function JobsListScreen({ navigation }) {
     setDismissedIds((prev) => new Set(prev).add(post.id));
   }
 
-  const FILTER_LABEL_KEY = {
-    new: 'jobManagement.filterNew',
-    quoted: 'jobManagement.filterQuoted',
-    scheduled: 'jobManagement.filterScheduled',
+  const groups = groupBusinessJobs({ bookings, posts, quotes });
+  const visibleLeads = groups.needsAction.leads.filter((p) => !dismissedIds.has(p.id));
+  const needsActionCount = visibleLeads.length + groups.needsAction.quotes.length + groups.needsAction.awaitingSchedule.length;
+
+  const TAB_COUNT = {
+    today: groups.today.length,
+    upcoming: groups.upcoming.length,
+    needsAction: needsActionCount,
+    past: groups.past.length,
   };
-  const FILTER_COUNT = { new: visiblePosts.length, quoted: quotes.length, scheduled: scheduled.length };
 
   if (loading) {
     return (
       <View style={[styles.screen, { paddingTop: insets.top }]}>
         <View style={listStyles.header}>
-          <Text variant="display3">{i18n.t('jobManagement.title')}</Text>
+          <Text variant="display3">{i18n.t('businessJobs.title')}</Text>
         </View>
         <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.sm }}>
           <SkeletonList count={4} />
@@ -749,7 +871,7 @@ function JobsListScreen({ navigation }) {
       <View style={[styles.screen, styles.center, { paddingTop: insets.top }]}>
         <Stack spacing="md" align="center">
           <Feather name="alert-triangle" size={32} color={colors.warning} strokeWidth={1.8} />
-          <Text variant="bodyMedium" color="secondary">{i18n.t('jobManagement.errorTitle')}</Text>
+          <Text variant="bodyMedium" color="secondary">{i18n.t('businessJobs.errorTitle')}</Text>
           <Text variant="small" color="secondary" style={{ textAlign: 'center' }}>{error}</Text>
           <Button variant="primary" label={i18n.t('common.retry')} onPress={load} style={{ minWidth: 120 }} />
         </Stack>
@@ -760,17 +882,17 @@ function JobsListScreen({ navigation }) {
   return (
     <View style={[styles.screen, { paddingTop: insets.top }]}>
       <View style={listStyles.header}>
-        <Text variant="display3">{i18n.t('jobManagement.title')}</Text>
+        <Text variant="display3">{i18n.t('businessJobs.title')}</Text>
       </View>
 
       <View style={listStyles.filterRow}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={listStyles.filterScroll}>
-          {LIST_FILTERS.map((f) => (
+          {BUSINESS_JOB_TABS.map((t) => (
             <Chip
-              key={f}
-              label={`${i18n.t(FILTER_LABEL_KEY[f])} (${FILTER_COUNT[f]})`}
-              selected={filter === f}
-              onPress={() => setFilter(f)}
+              key={t}
+              label={`${i18n.t(TAB_LABEL_KEY[t])} (${TAB_COUNT[t]})`}
+              selected={tab === t}
+              onPress={() => setTab(t)}
             />
           ))}
         </ScrollView>
@@ -787,66 +909,124 @@ function JobsListScreen({ navigation }) {
           />
         }
       >
-        {filter === 'new' && (
-          visiblePosts.length === 0 ? (
-            <EmptyState
-              icon="inbox"
-              title={i18n.t('jobManagement.emptyNewTitle')}
-              body={i18n.t('jobManagement.emptyNewBody')}
-            />
-          ) : (
-            <Stack spacing="md">
-              {visiblePosts.map((post) => (
-                <JobOpportunityCard
-                  key={post.id}
-                  post={post}
-                  onSendQuote={() => openQuoteSheet(post)}
-                  onPass={() => passPost(post)}
-                />
-              ))}
-            </Stack>
-          )
-        )}
-
-        {filter === 'quoted' && (
-          quotes.length === 0 ? (
-            <EmptyState
-              icon="send"
-              title={i18n.t('jobManagement.emptyQuotedTitle')}
-              body={i18n.t('jobManagement.emptyQuotedBody')}
-            />
-          ) : (
-            <Stack spacing="md">
-              {quotes.map((q) => (
-                <QuoteListRow
-                  key={q.id}
-                  interest={q}
-                  onMessage={() =>
-                    navigation.navigate('Chat', {
-                      interestId: q.id,
-                      otherPartyName: q.service_posts?.users?.first_name || 'Client',
-                    })
-                  }
-                />
-              ))}
-            </Stack>
-          )
-        )}
-
-        {filter === 'scheduled' && (
-          scheduled.length === 0 ? (
+        {tab === 'today' && (
+          groups.today.length === 0 ? (
             <EmptyState
               icon="calendar"
-              title={i18n.t('jobManagement.emptyScheduledTitle')}
-              body={i18n.t('jobManagement.emptyScheduledBody')}
+              title={i18n.t('businessJobs.emptyTodayTitle')}
+              body={i18n.t('businessJobs.emptyTodayBody')}
             />
           ) : (
             <Stack spacing="md">
-              {scheduled.map((b) => (
-                <ScheduledListRow
+              {groups.today.map((b) => (
+                <ScheduleRow
                   key={b.id}
                   booking={b}
                   onPress={() => navigation.navigate('JobManagement', { bookingId: b.id })}
+                />
+              ))}
+            </Stack>
+          )
+        )}
+
+        {tab === 'upcoming' && (
+          groups.upcoming.length === 0 ? (
+            <EmptyState
+              icon="calendar"
+              title={i18n.t('businessJobs.emptyUpcomingTitle')}
+              body={i18n.t('businessJobs.emptyUpcomingBody')}
+            />
+          ) : (
+            <Stack spacing="md">
+              {groups.upcoming.map((b) => (
+                <ScheduleRow
+                  key={b.id}
+                  booking={b}
+                  showDate
+                  onPress={() => navigation.navigate('JobManagement', { bookingId: b.id })}
+                />
+              ))}
+            </Stack>
+          )
+        )}
+
+        {tab === 'needsAction' && (
+          needsActionCount === 0 ? (
+            <EmptyState
+              icon="check-circle"
+              title={i18n.t('businessJobs.emptyNeedsActionTitle')}
+              body={i18n.t('businessJobs.emptyNeedsActionBody')}
+            />
+          ) : (
+            <Stack spacing="lg">
+              {visibleLeads.length > 0 && (
+                <Stack spacing="md">
+                  <SectionLabel>{i18n.t('businessJobs.needsActionLeadLabel')}</SectionLabel>
+                  {visibleLeads.map((post) => (
+                    <JobOpportunityCard
+                      key={post.id}
+                      post={post}
+                      onSendQuote={() => openQuoteSheet(post)}
+                      onPass={() => passPost(post)}
+                    />
+                  ))}
+                </Stack>
+              )}
+              {groups.needsAction.quotes.length > 0 && (
+                <Stack spacing="md">
+                  <SectionLabel>{i18n.t('businessJobs.needsActionQuoteSectionLabel')}</SectionLabel>
+                  {groups.needsAction.quotes.map((q) => (
+                    <QuoteRow
+                      key={q.id}
+                      interest={q}
+                      onMessage={() =>
+                        navigation.navigate('Chat', {
+                          interestId: q.id,
+                          otherPartyName: q.service_posts?.users?.first_name || 'Client',
+                        })
+                      }
+                    />
+                  ))}
+                </Stack>
+              )}
+              {groups.needsAction.awaitingSchedule.length > 0 && (
+                <Stack spacing="md">
+                  <SectionLabel>{i18n.t('businessJobs.needsActionScheduleSectionLabel')}</SectionLabel>
+                  {groups.needsAction.awaitingSchedule.map((b) => (
+                    <AwaitingActionRow
+                      key={b.id}
+                      booking={b}
+                      onPress={() =>
+                        !bookingDate(b)
+                          ? navigation.navigate('BookingDetails', { bookingId: b.id })
+                          : navigation.navigate('JobManagement', { bookingId: b.id })
+                      }
+                    />
+                  ))}
+                </Stack>
+              )}
+            </Stack>
+          )
+        )}
+
+        {tab === 'past' && (
+          groups.past.length === 0 ? (
+            <EmptyState
+              icon="file-text"
+              title={i18n.t('businessJobs.emptyPastTitle')}
+              body={i18n.t('businessJobs.emptyPastBody')}
+            />
+          ) : (
+            <Stack spacing="md">
+              {groups.past.map((b) => (
+                <PastRow
+                  key={b.id}
+                  booking={b}
+                  onPress={() =>
+                    b.status === 'completed'
+                      ? navigation.navigate('Invoice', { bookingId: b.id })
+                      : navigation.navigate('BookingDetails', { bookingId: b.id })
+                  }
                 />
               ))}
             </Stack>
@@ -895,10 +1075,10 @@ const listStyles = StyleSheet.create({
 });
 
 // ─── Default export — branches on whether a specific booking was opened ──────
-// No bookingId (Business "Jobs" tab root) → the lead-triage feed above.
-// bookingId present (existing navigation.navigate('JobManagement', {bookingId})
-// call from the Scheduled row, formerly from MyJobsScreen) → unchanged
-// per-booking detail/status manager.
+// No bookingId (Business "Jobs" tab root) → the Today/Upcoming/Needs action/
+// Past hub above (CARD-24). bookingId present (navigate('JobManagement',
+// {bookingId}) from a Today/Upcoming/awaiting-staff row) → the per-booking
+// detail/status manager, unchanged by this card.
 export default function JobManagementScreen({ navigation, route }) {
   const { bookingId } = route.params || {};
   if (!bookingId) {

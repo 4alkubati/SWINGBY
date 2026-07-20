@@ -50,6 +50,7 @@ import AuthNavigator from './src/navigation/AuthNavigator';
 import ClientNavigator from './src/navigation/ClientNavigator';
 import BusinessNavigator from './src/navigation/BusinessNavigator';
 import AdminScreen from './src/screens/admin/AdminScreen';
+import BiometricLockScreen from './src/screens/auth/BiometricLockScreen';
 import { configureNotificationHandlers } from './src/services/notifications';
 import OfflineBanner from './src/components/OfflineBanner';
 import Toast from 'react-native-toast-message';
@@ -62,7 +63,7 @@ import { colors } from './src/theme/tokens';
 configureNotificationHandlers();
 
 function RootNavigator() {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, needsBiometric } = useAuth();
 
   if (isLoading) {
     return (
@@ -71,6 +72,11 @@ function RootNavigator() {
       </View>
     );
   }
+
+  // CARD-24 — biometric unlock gate. A stored session exists but the user
+  // opted into biometric unlock, so it's held here until BiometricLockScreen
+  // reports success or the user chooses "Use password instead."
+  if (needsBiometric) return <BiometricLockScreen />;
 
   if (!user) return <AuthNavigator />;
   if (user.role === 'admin') return <AdminScreen />;

@@ -10,7 +10,6 @@ import { colors } from '../theme/tokens';
 import DashboardScreen from '../screens/business/DashboardScreen';
 import MessagesScreen from '../screens/messages/MessagesScreen';
 import BusinessProfileScreen from '../screens/business/BusinessProfileScreen';
-import MyJobsScreen from '../screens/client/MyJobsScreen';
 import BusinessSetupScreen from '../screens/onboarding/BusinessSetupScreen';
 
 import JobManagementScreen from '../screens/business/JobManagementScreen';
@@ -48,7 +47,12 @@ function BusinessTabs() {
       screenOptions={{ headerShown: false }}
     >
       <Tab.Screen name="Dashboard" component={DashboardScreen} />
-      <Tab.Screen name="Jobs" component={MyJobsScreen} />
+      {/* CARD-24 — Jobs tab now opens JobManagementScreen's grouped operational
+          view (Today/Upcoming/Needs action/Past→invoice) directly, replacing
+          the generic client MyJobsScreen that was wired here before. Same
+          component also handles the per-booking detail route below when
+          navigated with {bookingId}. */}
+      <Tab.Screen name="Jobs" component={JobManagementScreen} />
       <Tab.Screen name="Messages" component={MessagesScreen} />
       <Tab.Screen name="My Business" component={BusinessProfileScreen} />
     </Tab.Navigator>
