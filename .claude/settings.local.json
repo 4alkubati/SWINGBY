@@ -44,8 +44,8 @@
       "mcp__57a2c292-e06b-48d6-b671-1313ed55f997__notion-update-page",
       "Read(//home/l3thal/agents/**)",
       "Read(//home/l3thal/brain/**)",
-      "Bash(git -C /home/l3thal/agents/projects/swingby status --porcelain)",
-      "Bash(git -C /home/l3thal/agents/projects/swingby diff --stat)",
+      "Bash(git -C /home/l3thal/brain/10-swingby/swingby status --porcelain)",
+      "Bash(git -C /home/l3thal/brain/10-swingby/swingby diff --stat)",
       "Bash(.venv/bin/python -c \"import psycopg2; print\\('psycopg2', psycopg2.__version__\\)\")",
       "Bash(.venv/bin/python -c \"import psycopg; print\\('psycopg3', psycopg.__version__\\)\")",
       "Bash(git *)"

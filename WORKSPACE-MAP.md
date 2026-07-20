@@ -7,7 +7,7 @@
 - `mobile/` — React Native + Expo app
 - `web/` — pre-launch, launch, admin sites
 - `workers/` — Cloudflare workers
-- `AGENTS` — gitignored symlink → `/home/l3thal/brain/projects/swingby/` (the agent kit: orchestrator, BOH/FOH agents, skills, memory — lives in the brain now, versioned by the brain's git).
+- `AGENTS` — gitignored symlink → `/home/l3thal/brain/10-swingby/agents/` (the agent kit: orchestrator, BOH/FOH agents, skills, memory — lives in the brain now, versioned by the brain's git).
 
 ## 🎨 FOH — Cowork chat (image, planning, strategy)
 - `marketing/` — monetization, pricing, GTM, positioning, brand, content calendar, KPIs

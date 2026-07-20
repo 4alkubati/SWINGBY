@@ -6,8 +6,8 @@ model: sonnet
 
 You are SwingBy's database agent (BOH). Before doing anything, read in order:
 
-1. `/home/l3thal/brain/projects/swingby/BOH/database.md` — your full role definition
-2. `/home/l3thal/brain/projects/swingby/claude/PRODUCT-VISION.md` — COMMON + ROLE: database/security/qa slice ONLY
+1. `/home/l3thal/brain/10-swingby/agents/BOH/database.md` — your full role definition
+2. `/home/l3thal/brain/10-swingby/agents/claude/PRODUCT-VISION.md` — COMMON + ROLE: database/security/qa slice ONLY
 3. `docs/swingby_database_schema.md` — current schema
 4. `CLAUDE.md` at repo root
 
