@@ -91,6 +91,17 @@
       "body": "We're proving the model in Calgary first. Every business is checked by a real human. Every quote is from someone who can actually do the job in your neighbourhood.",
       "nextLabel": "Next on the map"
     },
+    "showcase": {
+      "eyebrow": "Inside the app",
+      "title": "From post to paid — five screens.",
+      "items": {
+        "postJob": { "title": "Post a job",       "desc": "Category, details, budget — two minutes." },
+        "quotes":  { "title": "Compare quotes",   "desc": "Verified businesses quote with a price and a pitch." },
+        "chat":    { "title": "Chat + live ETA",  "desc": "Message the pro and follow the job in real time." },
+        "booking": { "title": "Track the booking","desc": "Confirmed → on the way → in progress → done." },
+        "receipt": { "title": "Escrow receipt",   "desc": "Money releases only when you confirm the work." }
+      }
+    },
     "app": {
       "eyebrow": "The app",
       "title": "Calgary jobs, one tap away.",

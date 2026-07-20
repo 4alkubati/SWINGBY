@@ -21,6 +21,14 @@ const CATEGORIES = [
   { slug: 'moving',      key: 'moving',      Icon: Truck },
 ]
 
+const SHOWCASE_SCREENS = [
+  { key: 'postJob', img: 'post-job' },
+  { key: 'quotes',  img: 'quotes' },
+  { key: 'chat',    img: 'chat' },
+  { key: 'booking', img: 'booking' },
+  { key: 'receipt', img: 'receipt' },
+]
+
 const CLIENT_STEP_KEYS = ['1', '2', '3', '4']
 const BUSINESS_STEP_KEYS = ['1', '2', '3', '4']
 const TRUST_KEYS = ['verified', 'reviews', 'canadian', 'support']
@@ -212,6 +220,36 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ─────────────── App screens showcase ─────────────── */}
+      <section className={styles.section}>
+        <div className={styles.container}>
+          <motion.div className={styles.sectionHeader} {...fadeUp}>
+            <span className={styles.eyebrow}>{t('home.showcase.eyebrow')}</span>
+            <h2 className={styles.sectionTitle}>{t('home.showcase.title')}</h2>
+          </motion.div>
+          <div className={styles.showcaseRow}>
+            {SHOWCASE_SCREENS.map(({ key, img }, i) => (
+              <motion.div
+                key={key}
+                className={styles.showcaseItem}
+                {...fadeUp}
+                transition={{ ...fadeUp.transition, delay: i * 0.05 }}
+              >
+                <AppMockupFrame
+                  src={`/app-screens/${img}.png`}
+                  alt={`SwingBy app — ${t(`home.showcase.items.${key}.title`)}`}
+                  width={210}
+                />
+                <div className={styles.showcaseCaption}>
+                  <p className={styles.showcaseTitle}>{t(`home.showcase.items.${key}.title`)}</p>
+                  <p className={styles.showcaseDesc}>{t(`home.showcase.items.${key}.desc`)}</p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ─────────────── Escrow band ─────────────── */}
       <section className={styles.section}>
         <div className={styles.container}>
@@ -329,7 +367,7 @@ export default function Home() {
               </div>
             </div>
             <div className={styles.appMockup}>
-              <AppMockupFrame label="Nearby jobs feed" alt="SwingBy app — nearby jobs feed mockup" width={260} />
+              <AppMockupFrame src="/app-screens/nearby-map.png" alt="SwingBy app — browse verified pros nearby on the map" width={260} />
             </div>
           </motion.div>
         </div>

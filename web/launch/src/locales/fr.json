@@ -91,6 +91,17 @@
       "body": "Nous prouvons le modèle à Calgary. Chaque entreprise est vérifiée par un vrai humain. Chaque devis vient de quelqu'un qui peut vraiment faire le travail près de chez vous.",
       "nextLabel": "Prochaines villes"
     },
+    "showcase": {
+      "eyebrow": "Dans l'application",
+      "title": "De l'annonce au paiement — cinq écrans.",
+      "items": {
+        "postJob": { "title": "Publiez une tâche",     "desc": "Catégorie, détails, budget — deux minutes." },
+        "quotes":  { "title": "Comparez les devis",    "desc": "Des entreprises vérifiées proposent un prix et un argumentaire." },
+        "chat":    { "title": "Messagerie + suivi",    "desc": "Discutez avec le pro et suivez la tâche en temps réel." },
+        "booking": { "title": "Suivez la réservation", "desc": "Confirmée → en route → en cours → terminée." },
+        "receipt": { "title": "Reçu sous séquestre",   "desc": "L'argent n'est versé qu'après votre confirmation." }
+      }
+    },
     "app": {
       "eyebrow": "L'application",
       "title": "Les contrats de Calgary, à portée de main.",

@@ -18,6 +18,7 @@ const STEPS = [
     title: 'Set your service area + categories',
     desc: 'Pick a radius from your shop or home base — we use it to surface only nearby posts. Add the categories you actually do. No "we do everything" pages — clients trust focus.',
     mockupLabel: 'Service area + radius',
+    mockupSrc: '/app-screens/business-setup.png',
     callout: <><strong>How we match:</strong> Haversine distance from your base to the job address. Increase the radius if you\'re slow; tighten it if you\'re drowning.</>,
   },
   {
@@ -25,12 +26,14 @@ const STEPS = [
     title: 'Browse Calgary jobs nearby',
     desc: 'Open the feed. Real jobs, sorted by distance and how recently they were posted. Filters: category, budget range, timing. No mystery shopper accounts, no fake leads.',
     mockupLabel: 'Nearby jobs feed',
+    mockupSrc: '/app-screens/job-management.png',
   },
   {
     n: 4,
     title: 'Quote + win the job',
     desc: 'Tap a post, add your quote and a short pitch. The client sees who you are, your rating, your sample work. If they accept, the booking is created and the first 50% releases to you immediately.',
     mockupLabel: 'Quote + interest screen',
+    mockupSrc: '/app-screens/chat.png',
     callout: <><strong>Spam shield works both ways:</strong> you can\'t cold-contact a client — a conversation only opens once you\'ve quoted on their job, and it stays on that job thread.</>,
   },
   {
@@ -38,6 +41,7 @@ const STEPS = [
     title: 'Complete + get paid',
     desc: 'Do the work. When the client confirms it\'s done, the remaining 50% releases — minus the 10% SwingBy fee. You keep 90% of the total. No subscription, no per-quote fee, no setup cost.',
     mockupLabel: 'Earnings + payout screen',
+    mockupSrc: '/app-screens/earnings.png',
     callout: <><strong>If a client cancels:</strong> 25% penalty if they cancel more than 48 hours out, 50% within 48 hours. Credited to your account.</>,
   },
 ]
@@ -74,7 +78,7 @@ export default function HowItWorksBusinesses() {
             {STEPS.map((step) => (
               <article className={styles.step} key={step.n}>
                 <div className={styles.stepMockup}>
-                  <AppMockupFrame label={step.mockupLabel} alt={`${step.title} — app screen mockup`} width={300} />
+                  <AppMockupFrame src={step.mockupSrc} label={step.mockupLabel} alt={`${step.title} — app screen mockup`} width={300} />
                 </div>
                 <div className={styles.stepBody}>
                   <span className={styles.stepNumber} aria-hidden="true">{step.n}</span>
