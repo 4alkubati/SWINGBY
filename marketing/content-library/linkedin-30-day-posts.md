@@ -28,7 +28,7 @@ Three years ago, I booked a handyman off an online classifieds site. He didn't s
 
 I spent the next month asking around. Turns out almost everyone in Calgary had a version of this story. The problem isn't a lack of service businesses — Calgary has thousands of them. The problem is trust. There's no reliable way to know who to hire, and no protection if something goes wrong.
 
-SwingBy is my answer to that problem. We vet every business that joins. We hold payment in escrow until the job is done. We give clients real reviews from real booked jobs.
+SwingBy is my answer to that problem. We vet every business that joins. We hold the payment on the platform and release it in two stages — half at booking, half when the job is done. We give clients real reviews from real booked jobs.
 
 We launched this week. 40 businesses already on the platform. Come see what we're building.
 
@@ -399,7 +399,7 @@ We can make this guarantee because we vet businesses before they join and monito
 
 Two months. 1,800+ bookings. Here's what I know now that I didn't know 60 days ago:
 
-The escrow structure is the right call, but explaining it takes longer than I thought. Most clients don't know what escrow means until we explain it simply: "your money is held until the job is done." Once they understand it, it's the main reason they come back.
+The escrow structure is the right call, but explaining it takes longer than I thought. Most clients don't know what escrow means until we explain it simply: "half goes out at booking, the rest is held until the job is done." Once they understand it, it's the main reason they come back.
 
 Review quality is everything. One honest, specific review converts better than ten generic five-stars. We're working on prompting clients to write better reviews — not better ratings, better descriptions.
 

@@ -20,7 +20,7 @@ Here's how it works:
 → Client posts a job with a budget
 → Local businesses send quotes
 → Client picks who they trust
-→ Payment is held in escrow until the job is complete
+→ Payment releases in two stages — half at booking, half on completion
 → No payout until the work is done — for real
 
 I've been building this for [X months]. Full-stack, by myself, in Calgary.

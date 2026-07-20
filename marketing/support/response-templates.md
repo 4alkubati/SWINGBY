@@ -126,7 +126,7 @@ Use these as starting points — always personalize by name and specific context
 
 > Hey [Name],
 >
-> Thank you for letting me know. I've put a hold on the remaining escrow payment while we sort this out — the business will not receive their final payout until this is resolved.
+> Thank you for letting me know. I've put a hold on the unreleased balance while we sort this out — the business will not receive their final payout until this is resolved.
 >
 > To help me investigate, could you share: [1] a description of what was agreed vs. what happened, [2] any photos of the issue, [3] any messages you exchanged with the business.
 >
@@ -157,7 +157,7 @@ Use these as starting points — always personalize by name and specific context
 > I'm really sorry this happened. Not showing up is a serious violation of our terms, and I'm taking it seriously.
 >
 > Here's what I'm doing right now:
-> 1. Processing your full refund from escrow — funds will arrive within 5–10 business days.
+> 1. Processing your refund — funds will arrive within 5–10 business days.
 > 2. Flagging the business account for review.
 >
 > I'll send you a confirmation once the refund is initiated.
@@ -251,9 +251,9 @@ Use these as starting points — always personalize by name and specific context
 
 > Hey [Name],
 >
-> Message delivery requires an active confirmed booking — if the booking is still in a pending state, messaging isn't available yet. Once the booking is confirmed on both sides, messages should work.
+> Messaging runs on two kinds of thread: the quote thread (open from the moment a business quotes your job, and while the post is still open or matched) and the booking thread (open once the booking is confirmed, and it stays open after the job is complete). If a job post has been closed or has expired without a match, that quote thread closes with it.
 >
-> If your booking is confirmed and messages still aren't going through, let me know the booking ID and I'll check the status.
+> Let me know the job post or booking ID and I'll check which state it's in.
 >
 > — [Your name], SwingBy
 

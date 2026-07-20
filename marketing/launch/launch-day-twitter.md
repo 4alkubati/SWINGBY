@@ -98,7 +98,7 @@ What it IS:
 
 ✅ A clean feed of jobs near you (business side)
 ✅ A simple flow: post → quote → accept → pay → done (client side)
-✅ In-app messaging only after booking is confirmed
+✅ In-app messaging from the quote onward — but only with businesses that quoted your job
 ✅ Reviews that actually mean something
 ✅ A human to contact if something goes wrong
 

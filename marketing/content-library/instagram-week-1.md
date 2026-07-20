@@ -22,7 +22,7 @@
 
 **Hook:** Finding a reliable cleaner in Calgary shouldn't take 3 hours on Kijiji.
 
-**Body:** It did for us. So we built something better. Post what you need, get quotes from vetted local businesses, pay safely with escrow. No chasing. No ghosting.
+**Body:** It did for us. So we built something better. Post what you need, get quotes from vetted local businesses, pay in two stages instead of all up front. No chasing. No ghosting.
 
 **CTA:** SwingBy. Local services, trusted and simple. Link in bio.
 
@@ -61,7 +61,7 @@
 
 **Hook:** The worst part of hiring local help: not knowing if they'll show up.
 
-**Body:** Every business on SwingBy is verified before they can take bookings. Your payment is held in escrow until the job is done. If something goes wrong, we're here. That's the SwingBy promise.
+**Body:** Every business on SwingBy is verified before they can take bookings. Half your payment is held until the job is done. If something goes wrong, we're here. That's the SwingBy promise.
 
 **CTA:** Safe, simple local services. Link in bio.
 

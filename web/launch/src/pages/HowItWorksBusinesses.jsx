@@ -31,7 +31,7 @@ const STEPS = [
     title: 'Quote + win the job',
     desc: 'Tap a post, add your quote and a short pitch. The client sees who you are, your rating, your sample work. If they accept, the booking is created and the first 50% releases to you immediately.',
     mockupLabel: 'Quote + interest screen',
-    callout: <><strong>Spam shield works both ways:</strong> you can\'t contact the client directly until they accept your quote. Once they do, full address and chat unlock.</>,
+    callout: <><strong>Spam shield works both ways:</strong> you can\'t cold-contact a client — a conversation only opens once you\'ve quoted on their job, and it stays on that job thread.</>,
   },
   {
     n: 5,

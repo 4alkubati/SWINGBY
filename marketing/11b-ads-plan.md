@@ -68,7 +68,7 @@ Without supply, paid demand just churns. With supply, paid demand compounds.
 | Negative keywords | None — brand campaign is narrow |
 | Bid strategy | Target impression share: top of page |
 | Daily budget | $10/day |
-| Ad copy variant A | Headline 1: "SwingBy Calgary" / Headline 2: "Book Local Services Fast" / Headline 3: "Escrow Protected — Try Free" |
+| Ad copy variant A | Headline 1: "SwingBy Calgary" / Headline 2: "Book Local Services Fast" / Headline 3: "Payment Protected — Try Free" |
 | Ad copy variant B | Headline 1: "SwingBy — Local Services" / Headline 2: "Post a Job, Get Bids Fast" / Headline 3: "No Fees for Clients" |
 | Landing page | swingbyy.com (home) |
 
@@ -87,7 +87,7 @@ Without supply, paid demand just churns. With supply, paid demand compounds.
 | Negative keywords | "jobs", "hiring", "salary", "reddit", "free", "DIY", "course", "youtube" |
 | Bid strategy | Maximize conversions (once you have 30+ conversions; else manual CPC) |
 | Daily budget | $20-40/day |
-| Ad copy variant A | Headline 1: "Find a [Service] in Calgary" / Headline 2: "Post Free, Get Bids Today" / Headline 3: "Escrow Protects Your Payment" |
+| Ad copy variant A | Headline 1: "Find a [Service] in Calgary" / Headline 2: "Post Free, Get Bids Today" / Headline 3: "Half Held Till The Job's Done" |
 | Ad copy variant B | Headline 1: "Calgary [Service] — Book in Minutes" / Headline 2: "Real Reviews. Local Pros." / Headline 3: "Free for Clients" |
 | Landing page | `/calgary/[neighbourhood]/[category]` SEO pages — not the homepage |
 
@@ -108,7 +108,7 @@ Without supply, paid demand just churns. With supply, paid demand compounds.
 | Negative keywords | "login", "reviews" (brand-specific review searches) |
 | Bid strategy | Manual CPC, aggressive — willing to pay up to $5 per click |
 | Daily budget | $10/day |
-| Ad copy variant A | Headline 1: "Better Than Thumbtack?" / Headline 2: "SwingBy: No Lead Fees" / Headline 3: "Escrow + 10% vs $50/lead" |
+| Ad copy variant A | Headline 1: "Better Than Thumbtack?" / Headline 2: "SwingBy: No Lead Fees" / Headline 3: "10% on revenue vs $50/lead" |
 | Ad copy variant B | Headline 1: "Skip the Lead Fees" / Headline 2: "Pay 10% Only When You Win" / Headline 3: "SwingBy — Calgary's Own" |
 | Landing page | A dedicated comparison landing page `/vs/thumbtack` |
 
@@ -139,7 +139,7 @@ Without supply, paid demand just churns. With supply, paid demand compounds.
 > "Post your job. Get bids. Pick the best. SwingBy handles payment — you get your money back if the job isn't done right. Free to use. Calgary only (for now)."
 
 **Copy variant B:**
-> "Finding a cleaner in Calgary shouldn't take 3 hours of Googling. SwingBy connects you with vetted local businesses in minutes. No hidden fees. Escrow protected."
+> "Finding a cleaner in Calgary shouldn't take 3 hours of Googling. SwingBy connects you with vetted local businesses in minutes. No hidden fees. Payment held and released in stages."
 
 **Landing page:** swingbyy.com home with client CTA prominent.
 
@@ -200,7 +200,7 @@ Without supply, paid demand just churns. With supply, paid demand compounds.
 **Format:** Promoted post — looks exactly like a community post.
 
 **Copy (must read like a human wrote it):**
-> "For anyone who's been burned by no-shows or Kijiji people — we built a marketplace for Calgary where payment is held in escrow until the job's done. Still in early days but wanted to share it with r/Calgary first."
+> "For anyone who's been burned by no-shows or Kijiji people — we built a marketplace for Calgary where the payment sits with the platform and only half goes out until the job's done. Still in early days but wanted to share it with r/Calgary first."
 
 **Budget:** $5-10/day. Cap at $300/month for experiment phase.
 

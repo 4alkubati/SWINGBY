@@ -35,7 +35,7 @@
 
 **Hook:** 3 steps. 60 seconds. Done.
 
-**Body:** Step 1: Post your job. Describe what you need, set your budget, choose your date. Takes about a minute. Step 2: Businesses respond. Local, vetted service providers see your post and send you their quote and profile. Step 3: Pick and book. Review them, confirm the booking, pay securely. Done. Your money is held in escrow until the job is complete.
+**Body:** Step 1: Post your job. Describe what you need, set your budget, choose your date. Takes about a minute. Step 2: Businesses respond. Local, vetted service providers see your post and send you their quote and profile. Step 3: Pick and book. Review them, confirm the booking, pay securely. Done. Half your payment releases at booking so the business can schedule the work; the rest releases when the job is complete.
 
 **CTA:** Try it today. Link in bio.
 
@@ -59,9 +59,9 @@
 
 ### Post 5 — Escrow explainer
 
-**Hook:** Your money doesn't move until the job is done.
+**Hook:** Your money moves in two steps — and you control the second one.
 
-**Body:** Here's how SwingBy protects you. When you book, your payment is held in escrow — not released to the business until you confirm the job is complete. If the business no-shows, you get your money back. If you cancel with enough notice, no penalty. Simple. No awkward cash handoffs. No chasing invoices. Just a clean transaction.
+**Body:** Here's how SwingBy protects you. When you book, half the payment releases to the business so they can schedule and start the work — the rest is held until you confirm the job is complete. If something goes wrong, you open a dispute and our team reviews it. If you cancel, a timing-based fee applies: 25% more than 48 hours out, 50% inside 48 hours. No awkward cash handoffs. No chasing invoices.
 
 **CTA:** Book your next job with confidence. Link in bio.
 
@@ -261,7 +261,7 @@
 
 **Hook:** POV: you just had your house cleaned by someone you trust.
 
-**Body:** No strangers from Craigslist. No "I hope they show up." You know their name, their reviews, and that their payment is held until you're satisfied. You come home to a clean house and a completed job. That's what SwingBy is supposed to feel like. Not flashy — just reliable.
+**Body:** No strangers from Craigslist. No "I hope they show up." You know their name, their reviews, and that half their payment is still held until you're satisfied. You come home to a clean house and a completed job. That's what SwingBy is supposed to feel like. Not flashy — just reliable.
 
 **CTA:** Book your next clean. Link in bio.
 
@@ -461,7 +461,7 @@
 
 **Hook:** Escrow is not magic. Here's what it covers — and what it doesn't.
 
-**Body:** Escrow covers: payment disputes if the job wasn't done, no-shows, significant scope differences from what was agreed. Escrow doesn't cover: "I changed my mind," dissatisfaction with quality (handled via reviews + dispute process), or damage claims (handled via insurance, not escrow). For any dispute, contact us within 48 hours of the scheduled service.
+**Body:** Our dispute process covers: the job not being done, no-shows, and significant scope differences from what was agreed. Worth knowing: 50% of the payment is already released to the business at booking, so a refund is a support decision on the held balance, not an automatic full reversal. It doesn't cover: "I changed my mind," quality preferences (handled via reviews), or damage claims (handled via insurance). For any dispute, contact us within 48 hours of the scheduled service.
 
 **CTA:** Questions? DM us.
 

@@ -14,7 +14,7 @@ Use this anywhere you have ~15 words. Headline, app store description first line
 
 ## Three sentence pitch
 
-> SwingBy connects you with vetted, top-rated local service providers — from house cleaners to handymen to dog walkers — in your neighbourhood. Post a job and get bids in minutes, or browse businesses on a map. Payment is held in escrow and only released when the job is done, so you're always protected.
+> SwingBy connects you with vetted, top-rated local service providers — from house cleaners to handymen to dog walkers — in your neighbourhood. Post a job and get bids in minutes, or browse businesses on a map. Payment runs through SwingBy — half releases when you confirm the booking, the rest only when the job is done.
 
 Use this on the homepage hero, app store description, and intro emails.
 
@@ -28,7 +28,7 @@ Use this on the homepage hero, app store description, and intro emails.
 |---|---|
 | "I don't know who to trust" | Every business on SwingBy is reviewed by real customers and verified by us. |
 | "I hate calling around for quotes" | Post once. Get bids from multiple businesses. Pick the one you like. |
-| "What if they no-show?" | Your money is held in escrow until the job is done. If they don't show, you get it back. |
+| "What if they no-show?" | Only half the payment is released at booking, and the rest is held. If they don't show, report it and our team reviews the case and decides the refund. |
 | "I want it now" | Use the map to see who's available near you, today. |
 
 ### To businesses
@@ -36,8 +36,8 @@ Use this on the homepage hero, app store description, and intro emails.
 | Pain | Message |
 |---|---|
 | "I spend more time chasing leads than doing work" | SwingBy clients come to you. You pick the jobs you want. |
-| "I get scammed by no-shows" | Every booking is paid into escrow before the job starts. You always get paid. |
-| "I'm losing repeat clients because they forget my number" | Once a client books you, you're saved in their app. Repeat bookings happen in two taps. |
+| "I get scammed by no-shows" | Half your money is released the moment the booking is confirmed — before you ever show up. |
+| "I'm losing repeat clients because they forget my number" | Clients can favourite your business, and your booking chat thread stays open after the job — so they can reach you again without hunting for your number. |
 | "I can't afford to advertise" | SwingBy is free to join. We only charge 10% when you get paid. |
 
 ---
@@ -107,7 +107,7 @@ Build 50 location-category pages (5 categories × 10 neighbourhoods) before paid
 **Cleaners, handymen, & more**
 
 ### Short description (80 chars)
-**Find trusted local services in Calgary. Post a job, get bids, book with escrow.**
+**Find trusted local services in Calgary. Post a job, get bids, pay in stages.**
 
 ### Long description (full)
 
@@ -119,7 +119,7 @@ SwingBy connects you with vetted house cleaners, handymen, dog walkers, personal
 WHY SWINGBY
 
 ✓ Vetted businesses — every provider is reviewed by real customers
-✓ Escrow protection — your payment is held safely until the job is done
+✓ Staged payment — half releases at booking, the rest when the job is done
 ✓ Local first — see businesses near you, today
 ✓ No phone tag — post once, get bids back, pick the one you like
 ✓ Honest reviews — both sides review each other
@@ -129,7 +129,7 @@ HOW IT WORKS
 1. Post what you need, or browse the map
 2. Local businesses send you quotes
 3. Pick the one you trust
-4. Pay through SwingBy — your money is protected until the job is done
+4. Pay through SwingBy — half releases at booking, the rest when the job is done
 5. Leave a review
 
 FOR BUSINESSES
