@@ -90,7 +90,9 @@ class TestAcceptInterestBookingEntry:
             "status": "open",
             "preferred_date": "2026-08-01T10:00:00Z",
         }
-        stubs = self._base_stubs(post_row, booking_confirmed_date="2026-08-01T10:00:00Z")
+        stubs = self._base_stubs(
+            post_row, booking_confirmed_date="2026-08-01T10:00:00Z"
+        )
         p = self._patch(stubs)
         try:
             with patch("app.api.interests.send_push_to_user"):
@@ -168,14 +170,17 @@ class TestAcceptInterestBookingEntry:
 
             def __getattr__(self, name):
                 if name == "execute":
+
                     def _execute():
                         raise Exception(
                             "column service_posts.preferred_date does not exist"
                         )
+
                     return _execute
 
                 def _call(*_args, **_kwargs):
                     return self
+
                 return _call
 
         real_posts_stub = stubs["service_posts"]

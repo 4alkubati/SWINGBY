@@ -27,9 +27,11 @@ class TestSignup:
         - first_name, last_name: non-empty
         - role: 'client' or 'business_owner'
         """
-        with patch("app.api.auth.supabase") as mock_supabase, \
-             patch("app.api.auth.supabase_auth") as mock_supabase_auth, \
-             patch("app.services.analytics.httpx.post") as mock_analytics_post:
+        with patch("app.api.auth.supabase") as mock_supabase, patch(
+            "app.api.auth.supabase_auth"
+        ) as mock_supabase_auth, patch(
+            "app.services.analytics.httpx.post"
+        ) as mock_analytics_post:
             # Mock successful auth signup (sign_up lives on the auth-only client)
             mock_user = MagicMock()
             mock_user.id = "test-user-id"
@@ -76,12 +78,12 @@ class TestSignup:
         Plausible is unreachable, signup must still return 200 — the
         exception is swallowed inside track_event(), not propagated.
         """
-        with patch("app.api.auth.supabase") as mock_supabase, \
-             patch("app.api.auth.supabase_auth") as mock_supabase_auth, \
-             patch(
-                 "app.services.analytics.httpx.post",
-                 side_effect=RuntimeError("Plausible is down"),
-             ):
+        with patch("app.api.auth.supabase") as mock_supabase, patch(
+            "app.api.auth.supabase_auth"
+        ) as mock_supabase_auth, patch(
+            "app.services.analytics.httpx.post",
+            side_effect=RuntimeError("Plausible is down"),
+        ):
             mock_user = MagicMock()
             mock_user.id = "test-user-id-2"
             mock_session = MagicMock()
@@ -153,8 +155,9 @@ class TestLogin:
         """
         T81.4: Login with correct credentials should return 200 + access_token.
         """
-        with patch("app.api.auth.supabase") as mock_supabase, \
-             patch("app.api.auth.supabase_auth") as mock_supabase_auth:
+        with patch("app.api.auth.supabase") as mock_supabase, patch(
+            "app.api.auth.supabase_auth"
+        ) as mock_supabase_auth:
             # Mock successful login (sign_in lives on the auth-only client)
             mock_user = MagicMock()
             mock_user.id = "test-user-id"

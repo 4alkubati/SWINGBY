@@ -435,7 +435,11 @@ def _interest_messages_stubs(interest_status: str):
             },
         ]
     )
-    return {"interests": interest_stub, "businesses": biz_stub, "messages": messages_stub}
+    return {
+        "interests": interest_stub,
+        "businesses": biz_stub,
+        "messages": messages_stub,
+    }
 
 
 class TestInterestMessagesMasksClientSenderPreAcceptance:
