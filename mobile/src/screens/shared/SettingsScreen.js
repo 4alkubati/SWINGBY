@@ -17,6 +17,12 @@ const isExpoGo =
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../services/api';
 import { show as showToast } from '../../services/toast';
+import {
+  isBiometricAvailable,
+  getBiometricPref,
+  setBiometricPref,
+  authenticateAsync,
+} from '../../services/biometrics';
 import LanguageSelector from '../../components/LanguageSelector';
 import i18n from '../../i18n';
 import { colors, spacing, radius } from '../../theme/tokens';
@@ -43,6 +49,11 @@ export default function SettingsScreen() {
   const [exportLoading, setExportLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
+  // CARD-24 — biometric unlock, opt-in and off by default.
+  const [bioAvailable, setBioAvailable] = useState(false);
+  const [bioEnabled, setBioEnabled] = useState(false);
+  const [bioBusy, setBioBusy] = useState(false);
+
   useEffect(() => {
     if (isExpoGo) return;
     try {
@@ -54,6 +65,42 @@ export default function SettingsScreen() {
       // Native module unavailable — leave switch off.
     }
   }, []);
+
+  useEffect(() => {
+    (async () => {
+      const [available, pref] = await Promise.all([isBiometricAvailable(), getBiometricPref()]);
+      setBioAvailable(available);
+      // A pref saved on a device that later loses its enrollment shouldn't
+      // show as "on" — but we don't erase the stored pref, so it silently
+      // resumes if the user re-enrolls.
+      setBioEnabled(available && pref);
+    })();
+  }, []);
+
+  async function toggleBiometric(nextVal) {
+    if (bioBusy) return;
+    if (!nextVal) {
+      setBioBusy(true);
+      await setBiometricPref(false);
+      setBioEnabled(false);
+      setBioBusy(false);
+      return;
+    }
+    if (!bioAvailable) {
+      Alert.alert(
+        i18n.t('settings.biometricUnavailableTitle'),
+        i18n.t('settings.biometricUnavailableBody')
+      );
+      return;
+    }
+    setBioBusy(true);
+    const result = await authenticateAsync(i18n.t('settings.biometricConfirmPrompt'));
+    if (result.success) {
+      await setBiometricPref(true);
+      setBioEnabled(true);
+    }
+    setBioBusy(false);
+  }
 
   async function toggleNotifications(val) {
     if (isExpoGo) {
@@ -145,6 +192,17 @@ export default function SettingsScreen() {
     />
   );
 
+  const bioSwitch = bioBusy ? (
+    <ActivityIndicator size="small" color={colors.accent} />
+  ) : (
+    <Switch
+      value={bioEnabled}
+      onValueChange={toggleBiometric}
+      trackColor={{ false: colors.border, true: colors.accentMuted }}
+      thumbColor={bioEnabled ? colors.accent : colors.textSecondary}
+    />
+  );
+
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Header */}
@@ -189,6 +247,15 @@ export default function SettingsScreen() {
                 left={<Feather name="bell" size={24} color={colors.textSecondary} />}
                 title="Notifications"
                 right={notifSwitch}
+                showChevron={false}
+                style={styles.listItemFlush}
+              />
+              <View style={styles.divider} />
+              <ListItem
+                left={<Feather name="lock" size={24} color={colors.textSecondary} />}
+                title={i18n.t('settings.biometricUnlock')}
+                subtitle={bioAvailable ? undefined : i18n.t('settings.biometricUnavailableHint')}
+                right={bioSwitch}
                 showChevron={false}
                 style={styles.listItemFlush}
               />

@@ -39,7 +39,8 @@ import { NavigationContainer } from '@react-navigation/native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
-import { View, ActivityIndicator } from 'react-native';
+import { View, ActivityIndicator, AppState } from 'react-native';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useFonts } from 'expo-font';
 import { SpaceGrotesk_700Bold, SpaceGrotesk_400Regular } from '@expo-google-fonts/space-grotesk';
 import { Inter_400Regular, Inter_600SemiBold } from '@expo-google-fonts/inter';
@@ -50,6 +51,8 @@ import AuthNavigator from './src/navigation/AuthNavigator';
 import ClientNavigator from './src/navigation/ClientNavigator';
 import BusinessNavigator from './src/navigation/BusinessNavigator';
 import AdminScreen from './src/screens/admin/AdminScreen';
+import BiometricLockScreen from './src/screens/shared/BiometricLockScreen';
+import { getBiometricPref, isBiometricAvailable } from './src/services/biometrics';
 import { configureNotificationHandlers } from './src/services/notifications';
 import OfflineBanner from './src/components/OfflineBanner';
 import Toast from 'react-native-toast-message';
@@ -62,9 +65,67 @@ import { colors } from './src/theme/tokens';
 configureNotificationHandlers();
 
 function RootNavigator() {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, restoredFromStorage, logout } = useAuth();
 
-  if (isLoading) {
+  // CARD-24 biometric app-lock. Gates only the cold-boot "resumed from a
+  // stored token" path — never an interactive login/signup just now — and
+  // only when the user opted in AND the device actually has biometrics
+  // enrolled. Either condition failing means `locked` never turns true, so
+  // an unopted-in or unenrolled user sails straight through: no lockout.
+  const [locked, setLocked] = useState(false);
+  const [checkingLock, setCheckingLock] = useState(true);
+  const appState = useRef(AppState.currentState);
+  const pendingRelock = useRef(false);
+
+  // useLayoutEffect (not useEffect) so this fires before the frame commits —
+  // without it, the moment AuthContext resolves user+isLoading together, one
+  // frame of the real navigator can flash before the lock re-engages.
+  useLayoutEffect(() => {
+    if (!user || !restoredFromStorage) {
+      setCheckingLock(false);
+      return;
+    }
+    // Hold the loading state for this pass — the async block below resolves
+    // it to true (locked) or false (no lock configured) a moment later.
+    setCheckingLock(true);
+    let cancelled = false;
+    (async () => {
+      const enabled = await getBiometricPref();
+      if (!enabled) {
+        if (!cancelled) setCheckingLock(false);
+        return;
+      }
+      const available = await isBiometricAvailable();
+      if (!cancelled) {
+        if (available) setLocked(true);
+        setCheckingLock(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [user, restoredFromStorage]);
+
+  // Re-lock on foreground resume, same opt-in-and-available gate as above.
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', async (next) => {
+      const prev = appState.current;
+      if (prev.match(/active/) && next === 'background') {
+        pendingRelock.current = true;
+      } else if (prev === 'background' && next === 'active' && pendingRelock.current) {
+        pendingRelock.current = false;
+        if (user) {
+          const enabled = await getBiometricPref();
+          if (enabled) {
+            const available = await isBiometricAvailable();
+            if (available) setLocked(true);
+          }
+        }
+      }
+      appState.current = next;
+    });
+    return () => sub.remove();
+  }, [user]);
+
+  if (isLoading || checkingLock) {
     return (
       <View style={{ flex: 1, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center' }}>
         <ActivityIndicator color={colors.accent} size="large" />
@@ -73,6 +134,16 @@ function RootNavigator() {
   }
 
   if (!user) return <AuthNavigator />;
+
+  if (locked) {
+    return (
+      <BiometricLockScreen
+        onUnlocked={() => setLocked(false)}
+        onUseDifferentAccount={logout}
+      />
+    );
+  }
+
   if (user.role === 'admin') return <AdminScreen />;
   if (user.role === 'business_owner' || user.role === 'employee') return <BusinessNavigator />;
   return <ClientNavigator />;

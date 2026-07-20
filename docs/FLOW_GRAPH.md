@@ -108,15 +108,17 @@ flowchart LR
   Dashboard --> Jobs
   Dashboard --> Messages
   Dashboard --> My_Business
+  Dashboard --> JobManagement
   Dashboard --> Earnings
   Dashboard --> BusinessAnalytics
   Dashboard --> EmployeeManagement
   Dashboard --> Chat
   BusinessInvoices --> Invoice
   EmployeeProfile --> BusinessProfile
-  JobManagement --> Chat
-  JobManagement --> Invoice
-  JobManagement --> DisputeFlow
+  Jobs --> Chat
+  Jobs --> Invoice
+  Jobs --> DisputeFlow
+  Jobs --> JobManagement
   Favorites --> Home
   Favorites --> BusinessProfile
   MyDisputes --> BookingDetails
@@ -131,12 +133,12 @@ flowchart LR
   Home --> Search
   Home --> NearbyMap
   Home --> BusinessProfile
-  Jobs --> ActiveBooking
-  Jobs --> JobManagement
-  Jobs --> QuoteComparison
-  Jobs --> Chat
-  Jobs --> BookingDetails
-  Jobs --> Review
+  My_Jobs --> ActiveBooking
+  My_Jobs --> JobManagement
+  My_Jobs --> QuoteComparison
+  My_Jobs --> Chat
+  My_Jobs --> BookingDetails
+  My_Jobs --> Review
   Search --> BusinessProfile
   QuoteComparison --> ActiveBooking
   QuoteComparison --> ClientTabs
@@ -183,6 +185,6 @@ Mobile calls to endpoints **not exposed by the backend** (path params normalized
 
 - Navigators: **4**  
 - Registered screens: **56**  
-- Navigation edges: **94**  
-- Backend routes: **75**  
-- Mobile API calls: **86**  
+- Navigation edges: **97**  
+- Backend routes: **76**  
+- Mobile API calls: **91**  
