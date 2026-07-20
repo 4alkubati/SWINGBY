@@ -25,7 +25,7 @@ from pydantic import BaseModel
 
 from app.deps import get_current_user
 from app.supabase_client import supabase
-from app.services import stripe_service
+from app.services import stripe_service, payment_status
 
 logger = logging.getLogger(__name__)
 
@@ -205,14 +205,19 @@ def _mark_payment_paid(booking_id: str, stripe_session_id: str | None) -> None:
     """
     On `checkout.session.completed`, finalize the on-platform accounting.
 
-    The /interests accept flow already inserted a payments row with
-    status='partial' (50% released, 50% escrow). Beta semantics: in sandbox the
-    full charge cleared, so mark the row 'paid_full' and stamp the Stripe
-    session id in `notes` for traceability. The release-on-complete path in
-    /bookings/{id}/complete continues to handle the remaining 50% + platform
-    cut at job-complete time.
+    NOTE (PAYMENT-MODEL.md §4/§5): PATCH /interests/{id}/accept now charges
+    the client's card off-session and creates the payments row (status=held)
+    BEFORE the booking exists at all — this Checkout-session flow is a
+    separate, older path that charges an already-created booking. It is left
+    as-is here (out of scope for this change — see PAYMENT-MODEL.md), except
+    for this one vocabulary fix: 'paid_full' is not a value in the single
+    payment_status enum (app/services/payment_status.py) — writing it here
+    after the vocabulary migration ships would violate the payments_status
+    CHECK constraint. 'held' is the correct equivalent: charged, nothing
+    released yet. The release-on-complete path in /bookings/{id}/complete
+    continues to handle the remaining release at job-complete time.
     """
-    update: dict = {"status": "paid_full"}
+    update: dict = {"status": payment_status.HELD}
     if stripe_session_id:
         update["notes"] = f"stripe_session={stripe_session_id}"
     try:

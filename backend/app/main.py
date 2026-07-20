@@ -132,6 +132,14 @@ app.include_router(
     payments_stripe_router, prefix="/payments/stripe", tags=["payments-stripe"]
 )
 
+from app.api.payments_cardonfile import router as payments_cardonfile_router
+
+app.include_router(
+    payments_cardonfile_router,
+    prefix="/payments/card-on-file",
+    tags=["payments-card-on-file"],
+)
+
 from app.api.payments_offplatform import router as payments_offplatform_router
 
 app.include_router(

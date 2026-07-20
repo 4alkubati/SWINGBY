@@ -14,6 +14,7 @@ from pydantic import BaseModel, Field, field_validator
 
 from app.deps import get_current_user
 from app.supabase_client import supabase
+from app.services import payment_status
 
 logger = logging.getLogger(__name__)
 
@@ -64,7 +65,22 @@ def mark_paid_offplatform(
         .execute()
     )
     for row in existing.data or []:
-        if row.get("status") in ("paid_full", "paid_off_platform", "fully_released"):
+        # Vocabulary fix (PAYMENT-MODEL.md §4): 'paid_full' is not a value in
+        # the single payment_status enum (app/services/payment_status.py) —
+        # after the vocabulary migration ships, a card-charged booking's
+        # payment row reads 'held' or 'partial_released', not 'paid_full'.
+        # This preserves the exact same guard intent (block re-marking a
+        # booking that already has money behind it) against the new values;
+        # it is NOT the broader "fee-escape hole" guard from §6 (a booking
+        # that ever had a successful card charge should never become
+        # paid_off_platform even after a refund/dispute) — that is still
+        # open, tracked separately.
+        if row.get("status") in (
+            payment_status.HELD,
+            payment_status.PARTIAL_RELEASED,
+            payment_status.PAID_OFF_PLATFORM,
+            payment_status.FULLY_RELEASED,
+        ):
             raise HTTPException(status_code=400, detail="Booking is already paid")
 
     total = float(booking.get("total_amount") or 0)
