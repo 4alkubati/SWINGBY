@@ -270,6 +270,28 @@ def accept_interest(interest_id: str, current_user: dict = Depends(get_current_u
     if post["status"] != "open":
         raise HTTPException(status_code=400, detail="Post is no longer open")
 
+    # CARD-20 (D2, 2026-07-19) — booking-entry flow. A post carries an
+    # optional client-set `preferred_date` (service_posts.preferred_date).
+    # If it was set, the date is already agreed — the resulting booking
+    # should land the client straight in the confirmed "booking chat"
+    # instead of running the propose/accept handshake. Fetched in its own
+    # isolated call (never the primary post_res above) so a not-yet-migrated
+    # column on live Supabase degrades to None instead of 404ing accept —
+    # the migration (docs/service_posts_preferred_date.sql) may not be
+    # applied yet in every environment.
+    preferred_date = None
+    try:
+        pref_res = (
+            supabase.table("service_posts")
+            .select("preferred_date")
+            .eq("id", post["id"])
+            .single()
+            .execute()
+        )
+        preferred_date = (pref_res.data or {}).get("preferred_date")
+    except Exception:
+        preferred_date = None
+
     # D2.4 — business subscription gate. Beta posture is track-only (default
     # 'trialing'), so this only rejects businesses actively past_due / canceled.
     biz_sub = (
@@ -301,23 +323,23 @@ def accept_interest(interest_id: str, current_user: dict = Depends(get_current_u
         platform_fee = round(total_amount * 0.10, 2)
         half = round(total_amount * 0.50, 2)
 
-        booking_res = (
-            supabase.table("bookings")
-            .insert(
-                {
-                    "client_id": current_user["id"],
-                    "business_id": interest["business_id"],
-                    "post_id": post["id"],
-                    "service_category": post["category"],
-                    "total_amount": total_amount,
-                    "commission_rate": 0.10,
-                    "platform_fee": platform_fee,
-                    "status": "confirmed",
-                    "payment_status": "partial_released",
-                }
-            )
-            .execute()
-        )
+        booking_insert = {
+            "client_id": current_user["id"],
+            "business_id": interest["business_id"],
+            "post_id": post["id"],
+            "service_category": post["category"],
+            "total_amount": total_amount,
+            "commission_rate": 0.10,
+            "platform_fee": platform_fee,
+            "status": "confirmed",
+            "payment_status": "partial_released",
+        }
+        if preferred_date:
+            # Time was already given at posting — skip the propose/accept
+            # handshake entirely, the date is confirmed from booking creation.
+            booking_insert["confirmed_date"] = preferred_date
+
+        booking_res = supabase.table("bookings").insert(booking_insert).execute()
         booking = booking_res.data[0]
 
         # Carry the pre-booking quote conversation into the booking thread —
@@ -328,6 +350,27 @@ def accept_interest(interest_id: str, current_user: dict = Depends(get_current_u
             ).execute()
         except Exception:
             pass  # thread migration is best-effort
+
+        # Timeline entry for the auto-confirmed date — mirrors the
+        # date_confirmed event PATCH /confirm-date records for the manual
+        # handshake path (bookings.py), so the two entry paths leave the
+        # same trail on the booking's Live Job Status timeline.
+        if preferred_date:
+            try:
+                supabase.table("booking_events").insert(
+                    {
+                        "booking_id": booking["id"],
+                        "actor_id": current_user["id"],
+                        "event_type": "date_confirmed",
+                        "note": f"Time set at posting: {preferred_date}",
+                    }
+                ).execute()
+            except Exception:
+                logger.warning(
+                    "Could not record date_confirmed booking_event for %s",
+                    booking["id"],
+                    exc_info=True,
+                )
 
         payment_res = (
             supabase.table("payments")

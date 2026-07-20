@@ -156,7 +156,7 @@
 | `payment_status` | `text` | CHECK `bookings_payment_status_check`, extended by `docs/bookings_payment_status_allow_refunded.sql`: `'held' \| 'partial_released' \| 'fully_released' \| 'refunded'`. |
 | `proposed_date_1` / `_2` / `_3` | `text` (ISO-8601 string, not a `date`/`timestamptz` column) | App explicitly treats these as plain strings ("mirrors bookings.py's date-string idiom"), not parsed dates. |
 | `date_proposed_by` | `uuid` FK → `users.id`, nullable | Tracks which side proposed — enforces "proposer can't accept their own dates" handshake rule. |
-| `confirmed_date` | `text` (ISO-8601 string) | Set by `PATCH /confirm-date`. |
+| `confirmed_date` | `text` (ISO-8601 string) | Set by `PATCH /confirm-date` (propose/accept handshake), OR at booking creation by `PATCH /interests/{id}/accept` when the originating post's `service_posts.preferred_date` was set (CARD-20, D2 — skips the handshake since the time was already given at posting). |
 | `scheduled_date` | *(column referenced in `select()` calls; never written anywhere found)* | Read in `payments.py`, `disputes.py`, `invoices.py` selects but no `.insert()`/`.update()` payload sets it in the reconstructed code. **Could not fully reconstruct — likely legacy/unused or set by a DB default/trigger not in this repo; verify against live DB.** |
 | `completed_at` | `timestamptz`, nullable | Read in `invoices.py`/`payments.py` selects; not explicitly set in any `.update()` found (booking `status` flips to `completed` in `bookings.py::complete_booking` without visibly stamping `completed_at` — possible DB trigger, or a gap). **Partial reconstruction.** |
 | `created_at` | `timestamptz` | |

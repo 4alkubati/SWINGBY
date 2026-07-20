@@ -242,6 +242,14 @@ const translations = {
     'favorites.remove': 'Remove from favorites',
     'favorites.added': 'Saved to favorites',
     'favorites.removed': 'Removed from favorites',
+    // CARD-20 (D2) — booking-entry flow: disappearing chat banner + the
+    // floating booking badge that replaced the old plain "Booking"/"Quote"
+    // label in the Messages list.
+    'chat.disappearingBanner': 'Agree on a time to turn this into your booking chat.',
+    'messages.badgeQuote': 'Quote',
+    'messages.badgeBooking': 'Booking',
+    'messages.badgeBookingPending': 'Pending time',
+    'messages.badgeBookingA11y': 'Open booking details',
   },
 
   'fr-CA': {
@@ -479,6 +487,14 @@ const translations = {
     'favorites.remove': 'Retirer des favoris',
     'favorites.added': 'Ajouté aux favoris',
     'favorites.removed': 'Retiré des favoris',
+    // CARD-20 (D2) — booking-entry flow: disappearing chat banner + the
+    // floating booking badge that replaced the old plain "Booking"/"Quote"
+    // label in the Messages list.
+    'chat.disappearingBanner': 'Convenez d’un horaire pour transformer ceci en votre clavardage de réservation.',
+    'messages.badgeQuote': 'Devis',
+    'messages.badgeBooking': 'Réservation',
+    'messages.badgeBookingPending': 'Horaire à confirmer',
+    'messages.badgeBookingA11y': 'Voir les détails de la réservation',
   },
 
   // ── Arabic (RTL) — skeleton keys, translator TODO ──────────────────────
@@ -717,6 +733,14 @@ const translations = {
     'favorites.remove': 'إزالة من المفضلة',
     'favorites.added': 'تم الحفظ في المفضلة',
     'favorites.removed': 'تمت الإزالة من المفضلة',
+    // CARD-20 (D2) — booking-entry flow: disappearing chat banner + the
+    // floating booking badge that replaced the old plain "Booking"/"Quote"
+    // label in the Messages list.
+    'chat.disappearingBanner': 'اتفقوا على موعد لتحويل هذه المحادثة إلى محادثة الحجز.',
+    'messages.badgeQuote': 'عرض سعر',
+    'messages.badgeBooking': 'حجز',
+    'messages.badgeBookingPending': 'بانتظار الموعد',
+    'messages.badgeBookingA11y': 'فتح تفاصيل الحجز',
   },
 };
 

@@ -929,37 +929,37 @@
     {
       "from_file": "mobile/src/screens/client/QuoteComparisonScreen.js",
       "from_screen": "QuoteComparisonScreen",
-      "to_route": "ActiveBooking",
+      "to_route": "Chat",
       "method": "replace",
-      "line": 275
+      "line": 283
     },
     {
       "from_file": "mobile/src/screens/client/QuoteComparisonScreen.js",
       "from_screen": "QuoteComparisonScreen",
       "to_route": "ClientTabs",
       "method": "navigate",
-      "line": 278
+      "line": 289
     },
     {
       "from_file": "mobile/src/screens/client/QuoteComparisonScreen.js",
       "from_screen": "QuoteComparisonScreen",
       "to_route": "My Jobs",
       "method": "dispatch",
-      "line": 278
+      "line": 289
     },
     {
       "from_file": "mobile/src/screens/client/QuoteComparisonScreen.js",
       "from_screen": "QuoteComparisonScreen",
       "to_route": "BusinessProfile",
       "method": "navigate",
-      "line": 383
+      "line": 394
     },
     {
       "from_file": "mobile/src/screens/client/QuoteComparisonScreen.js",
       "from_screen": "QuoteComparisonScreen",
       "to_route": "Chat",
       "method": "navigate",
-      "line": 386
+      "line": 397
     },
     {
       "from_file": "mobile/src/screens/client/NearbyMapScreen.js",
@@ -1015,7 +1015,14 @@
       "from_screen": "MessagesScreen",
       "to_route": "Chat",
       "method": "navigate",
-      "line": 342
+      "line": 404
+    },
+    {
+      "from_file": "mobile/src/screens/messages/MessagesScreen.js",
+      "from_screen": "MessagesScreen",
+      "to_route": "BookingDetails",
+      "method": "navigate",
+      "line": 413
     },
     {
       "from_file": "mobile/src/components/BottomNav.js",
@@ -1294,7 +1301,7 @@
       "method": "PATCH",
       "path": "/interests/{interest_id}/reject",
       "file": "backend/app/api/interests.py",
-      "line": 418
+      "line": 461
     },
     {
       "method": "GET",
@@ -1330,31 +1337,31 @@
       "method": "POST",
       "path": "/messages/",
       "file": "backend/app/api/messages.py",
-      "line": 254
+      "line": 257
     },
     {
       "method": "GET",
       "path": "/messages/threads",
       "file": "backend/app/api/messages.py",
-      "line": 340
+      "line": 343
     },
     {
       "method": "GET",
       "path": "/messages/unread-count",
       "file": "backend/app/api/messages.py",
-      "line": 443
+      "line": 450
     },
     {
       "method": "GET",
       "path": "/messages/interest/{interest_id}",
       "file": "backend/app/api/messages.py",
-      "line": 478
+      "line": 485
     },
     {
       "method": "GET",
       "path": "/messages/{booking_id}",
       "file": "backend/app/api/messages.py",
-      "line": 525
+      "line": 532
     },
     {
       "method": "GET",
@@ -1824,13 +1831,13 @@
       "from_file": "mobile/src/screens/client/QuoteComparisonScreen.js",
       "method": "PATCH",
       "path": "/interests/${selectedQuote.id}/accept",
-      "line": 271
+      "line": 279
     },
     {
       "from_file": "mobile/src/screens/client/QuoteComparisonScreen.js",
       "method": "PATCH",
       "path": "/interests/${quote.id}/reject",
-      "line": 304
+      "line": 315
     },
     {
       "from_file": "mobile/src/screens/client/NearbyMapScreen.js",
@@ -1872,49 +1879,49 @@
       "from_file": "mobile/src/screens/messages/MessageThreadScreen.js",
       "method": "GET",
       "path": "/bookings/${bookingId}",
-      "line": 126
+      "line": 127
     },
     {
       "from_file": "mobile/src/screens/messages/MessageThreadScreen.js",
       "method": "GET",
       "path": "/messages/${bookingId}",
-      "line": 139
+      "line": 140
     },
     {
       "from_file": "mobile/src/screens/messages/MessageThreadScreen.js",
       "method": "POST",
       "path": "/messages/",
-      "line": 195
+      "line": 196
     },
     {
       "from_file": "mobile/src/screens/messages/ChatScreen.js",
       "method": "GET",
       "path": "/bookings/${bookingId}",
-      "line": 298
+      "line": 302
     },
     {
       "from_file": "mobile/src/screens/messages/ChatScreen.js",
       "method": "GET",
       "path": "/messages/interest/${interestId}",
-      "line": 314
+      "line": 320
     },
     {
       "from_file": "mobile/src/screens/messages/ChatScreen.js",
       "method": "GET",
       "path": "/messages/${bookingId}",
-      "line": 315
+      "line": 321
     },
     {
       "from_file": "mobile/src/screens/messages/ChatScreen.js",
       "method": "POST",
       "path": "/messages/",
-      "line": 344
+      "line": 350
     },
     {
       "from_file": "mobile/src/screens/messages/MessagesScreen.js",
       "method": "GET",
       "path": "/messages/threads",
-      "line": 169
+      "line": 231
     },
     {
       "from_file": "mobile/src/components/LiveStatusTimeline.js",
