@@ -139,14 +139,19 @@ export default function EarningsScreen({ navigation }) {
   const [range, setRange] = useState('month');
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
+    setError(false);
     try {
       const data = await api.get('/payments/mine');
       setPayments(Array.isArray(data) ? data : (data?.items ?? []));
     } catch {
-      setPayments([]);
+      // Don't silently render a confident $0.00 — a failed fetch is an
+      // error state, not "no earnings" (this is what hid the P0 backend
+      // crash: 500s were swallowed into an empty list here).
+      setError(true);
     } finally {
       setLoading(false);
     }
@@ -171,6 +176,40 @@ export default function EarningsScreen({ navigation }) {
     .sort((a, b) => a.x - b.x);
 
   const stats = aggregateStats(inRange);
+
+  if (error) {
+    return (
+      <View style={[styles.container, { paddingTop: insets.top }]}>
+        <View style={styles.header}>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            accessibilityLabel="Back"
+            accessibilityRole="button"
+            style={{ width: 40 }}
+          >
+            <Feather name="arrow-left" size={20} color={colors.textSecondary} strokeWidth={1.8} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Earnings</Text>
+          <View style={{ width: 40 }} />
+        </View>
+        <View style={styles.errorState}>
+          <Feather name="alert-circle" size={28} color={colors.danger} />
+          <Text style={styles.errorTitle}>Failed to load earnings</Text>
+          <Text style={styles.errorBody}>Check your connection and try again.</Text>
+          <TouchableOpacity
+            style={styles.retryBtn}
+            onPress={load}
+            activeOpacity={0.8}
+            accessibilityRole="button"
+            accessibilityLabel="Retry"
+          >
+            <Text style={styles.retryText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -405,5 +444,40 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colors.textPrimary,
     letterSpacing: -0.5,
+  },
+
+  // Error state
+  errorState: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 32,
+    gap: 10,
+  },
+  errorTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.textPrimary,
+    textAlign: 'center',
+  },
+  errorBody: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    textAlign: 'center',
+  },
+  retryBtn: {
+    marginTop: 10,
+    backgroundColor: colors.accent,
+    borderRadius: 20,
+    paddingHorizontal: 24,
+    paddingVertical: 10,
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  retryText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.textPrimary,
   },
 });
