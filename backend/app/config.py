@@ -40,6 +40,7 @@ _OPTIONAL = [
     "RESEND_API_KEY",  # Resend transactional email — set after domain verified
     "RESEND_FROM_EMAIL",  # e.g. "SwingBy <hello@swingbyy.com>"
     "PASSWORD_RESET_REDIRECT_URL",  # override where Supabase reset emails redirect (defaults to web)
+    "GOOGLE_MAPS_API_KEY",  # server-side Geocoding API fallback (RO-0). Absent → geocoding no-ops.
     "STRIPE_SECRET_KEY",  # sk_test_… for beta sandbox, sk_live_… post-beta
     "STRIPE_WEBHOOK_SECRET",  # whsec_… — used to verify Stripe webhook signature
     "STRIPE_SUCCESS_URL",  # browser landing after Checkout success (defaults to web)
@@ -109,6 +110,10 @@ class _Settings:
         return os.getenv(
             "PASSWORD_RESET_REDIRECT_URL", "https://swingbyy.com/reset-password"
         )
+
+    @property
+    def GOOGLE_MAPS_API_KEY(self) -> str:
+        return os.getenv("GOOGLE_MAPS_API_KEY", "")
 
     @property
     def STRIPE_SECRET_KEY(self) -> str:

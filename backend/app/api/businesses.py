@@ -94,6 +94,14 @@ def create_business(
         payload = {"owner_id": current_user["id"], **data.model_dump(exclude_none=True)}
         if payload.get("category"):
             payload["category"] = normalize_category(payload["category"])
+        # RO-0 note: no server-side geocoding fallback here, deliberately.
+        # `businesses` stores no address — only lat/lng (BusinessCreate above),
+        # so there is nothing to geocode from. A business gets coordinates only
+        # from the mobile Places autocomplete in BusinessSetupScreen.js, which
+        # was dead until EXPO_PUBLIC_GOOGLE_PLACES_KEY was set. New businesses
+        # resolve correctly now; pre-existing coordinate-less rows cannot be
+        # backfilled without first adding an address column. Tracked in the
+        # RO-0 PR description as the one gap this card does not close.
         res = supabase.table("businesses").insert(payload).execute()
         return {"message": "Business created", "business": res.data[0]}
     except Exception:
