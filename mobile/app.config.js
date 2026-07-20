@@ -17,11 +17,21 @@ const mapsKey = process.env.GOOGLE_MAPS_API_KEY || '';
 // in 950d4f4 and never executed until 2026-07-20.
 module.exports = ({ config }) => ({
   ...config,
+  // NB: the two platforms take DIFFERENT shapes here, and getting it wrong
+  // fails `expo doctor` in the cloud build (not locally, where doctor isn't
+  // run):  Android = android.config.googleMaps.apiKey  (nested)
+  //        iOS     = ios.config.googleMapsApiKey       (flat)
+  // Using the iOS shape on Android yields:
+  //   "Field: android/config - should NOT have additional property
+  //    'googleMapsApiKey'"
   android: {
     ...config.android,
     config: {
       ...(config.android && config.android.config),
-      googleMapsApiKey: mapsKey,
+      googleMaps: {
+        ...((config.android && config.android.config && config.android.config.googleMaps) || {}),
+        apiKey: mapsKey,
+      },
     },
   },
   ios: {
