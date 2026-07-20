@@ -81,11 +81,18 @@ def pg_conn():
     name = f"swingby-card02-{uuid.uuid4().hex[:8]}"
     run = subprocess.run(
         [
-            "docker", "run", "-d", "--rm",
-            "--name", name,
-            "-e", "POSTGRES_PASSWORD=test",
-            "-e", "POSTGRES_DB=swingby_test",
-            "-p", "127.0.0.1::5432",
+            "docker",
+            "run",
+            "-d",
+            "--rm",
+            "--name",
+            name,
+            "-e",
+            "POSTGRES_PASSWORD=test",
+            "-e",
+            "POSTGRES_DB=swingby_test",
+            "-p",
+            "127.0.0.1::5432",
             "postgres:16-alpine",
         ],
         capture_output=True,
@@ -95,12 +102,16 @@ def pg_conn():
         pytest.skip(f"could not start postgres container: {run.stderr.strip()}")
 
     try:
-        port_out = subprocess.run(
-            ["docker", "port", name, "5432/tcp"],
-            capture_output=True,
-            text=True,
-            check=True,
-        ).stdout.strip().splitlines()[0]
+        port_out = (
+            subprocess.run(
+                ["docker", "port", name, "5432/tcp"],
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+            .stdout.strip()
+            .splitlines()[0]
+        )
         port = int(port_out.rsplit(":", 1)[1])
 
         conn = None
@@ -152,7 +163,13 @@ def _insert_event(db, event_type, created_at=None):
             values (%s, %s, %s, %s, coalesce(%s, now()))
             returning id
             """,
-            (db["booking_id"], db["actor_id"], event_type, f"test {event_type}", created_at),
+            (
+                db["booking_id"],
+                db["actor_id"],
+                event_type,
+                f"test {event_type}",
+                created_at,
+            ),
         )
         return cur.fetchone()[0]
 
@@ -184,12 +201,10 @@ class TestBookingEventsCheckMigration:
     def test_migration_applies_cleanly(self, db):
         with db["conn"].cursor() as cur:
             cur.execute(MIGRATION.read_text())
-            cur.execute(
-                """
+            cur.execute("""
                 select pg_get_constraintdef(oid) from pg_constraint
                 where conname = 'booking_events_event_type_check'
-                """
-            )
+                """)
             constraint_def = cur.fetchone()[0]
         for event_type in NEW_EVENT_TYPES:
             assert event_type in constraint_def

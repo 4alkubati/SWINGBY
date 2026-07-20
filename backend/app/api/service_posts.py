@@ -293,9 +293,7 @@ def update_service_post(
     are rejected.
     """
     if current_user["role"] != "client":
-        raise HTTPException(
-            status_code=403, detail="Only clients can edit their posts"
-        )
+        raise HTTPException(status_code=403, detail="Only clients can edit their posts")
 
     post = (
         supabase.table("service_posts")

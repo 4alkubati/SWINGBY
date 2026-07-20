@@ -203,7 +203,9 @@ def _accessible_thread_ids(current_user: dict):
     if role == "client":
         booking_rows = (
             supabase.table("bookings")
-            .select("id, status, business_id, confirmed_date, businesses(business_name)")
+            .select(
+                "id, status, business_id, confirmed_date, businesses(business_name)"
+            )
             .eq("client_id", uid)
             .execute()
         ).data or []
@@ -291,7 +293,9 @@ def send_message(data: MessageSend, current_user: dict = Depends(get_current_use
                 .single()
                 .execute()
             )
-            recipient_id = biz_owner_res.data["owner_id"] if biz_owner_res.data else None
+            recipient_id = (
+                biz_owner_res.data["owner_id"] if biz_owner_res.data else None
+            )
         else:
             recipient_id = booking["client_id"]
 
@@ -317,11 +321,17 @@ def send_message(data: MessageSend, current_user: dict = Depends(get_current_use
                 .single()
                 .execute()
             )
-            recipient_id = biz_owner_res.data["owner_id"] if biz_owner_res.data else None
+            recipient_id = (
+                biz_owner_res.data["owner_id"] if biz_owner_res.data else None
+            )
         else:
             recipient_id = client_id
 
-        row = {"interest_id": data.interest_id, "sender_id": uid, "content": data.content}
+        row = {
+            "interest_id": data.interest_id,
+            "sender_id": uid,
+            "content": data.content,
+        }
 
     try:
         res = supabase.table("messages").insert(row).execute()
@@ -390,10 +400,14 @@ def list_threads(current_user: dict = Depends(get_current_user)):
             agg = by_booking.get(b["id"], {"last": None, "unread": 0})
             client_user = b.get("users") or {}
             client_name = " ".join(
-                filter(None, [client_user.get("first_name"), client_user.get("last_name")])
+                filter(
+                    None, [client_user.get("first_name"), client_user.get("last_name")]
+                )
             )
             counterpart = (
-                (b.get("businesses") or {}).get("business_name") or client_name or "Chat"
+                (b.get("businesses") or {}).get("business_name")
+                or client_name
+                or "Chat"
             )
             threads.append(
                 {
@@ -428,7 +442,10 @@ def list_threads(current_user: dict = Depends(get_current_user)):
             counterpart = (
                 (i.get("businesses") or {}).get("business_name")
                 or " ".join(
-                    filter(None, [client_user.get("first_name"), client_user.get("last_name")])
+                    filter(
+                        None,
+                        [client_user.get("first_name"), client_user.get("last_name")],
+                    )
                 )
                 or "Chat"
             )
@@ -465,9 +482,12 @@ def unread_count(current_user: dict = Depends(get_current_user)):
         if not booking_ids and not interest_ids:
             return {"total": 0, "by_booking": {}}
 
-        q = supabase.table("messages").select(
-            "id, booking_id, interest_id", count="exact"
-        ).neq("sender_id", uid).is_("read_at", "null")
+        q = (
+            supabase.table("messages")
+            .select("id, booking_id, interest_id", count="exact")
+            .neq("sender_id", uid)
+            .is_("read_at", "null")
+        )
         if booking_ids and interest_ids:
             q = q.or_(
                 f"booking_id.in.({','.join(booking_ids)}),"

@@ -144,7 +144,7 @@ def list_my_disputes(current_user: dict = Depends(get_current_user)):
     filed = (
         supabase.table("disputes")
         .select(
-            "*, bookings(id, client_id, business_id, service_category, scheduled_date)"
+            "*, bookings(id, client_id, business_id, service_category, scheduled_date:confirmed_date)"
         )
         .eq("opened_by", uid)
         .order("created_at", desc=True)
@@ -172,7 +172,7 @@ def list_my_disputes(current_user: dict = Depends(get_current_user)):
                 against = (
                     supabase.table("disputes")
                     .select(
-                        "*, bookings(id, client_id, business_id, service_category, scheduled_date)"
+                        "*, bookings(id, client_id, business_id, service_category, scheduled_date:confirmed_date)"
                     )
                     .in_("booking_id", biz_ids)
                     .neq("opened_by", uid)
