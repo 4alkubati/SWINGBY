@@ -2,8 +2,8 @@ import {
   View, ScrollView, KeyboardAvoidingView, Platform, StyleSheet, Modal,
   TouchableOpacity, ActivityIndicator, Alert, Image,
 } from 'react-native';
-import { useState, useRef } from 'react';
-import { useNavigation } from '@react-navigation/native';
+import { useState, useRef, useEffect } from 'react';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   useSharedValue, useAnimatedStyle, withSpring, withTiming, Easing,
@@ -70,6 +70,28 @@ function derivePreferredDate(dateText, timeText) {
 
 const STEPS = ['Category', 'Details', 'Budget', 'Confirm'];
 const TOTAL_STEPS = STEPS.length;
+
+// CARD-12 — Rebook. There is no backend primitive to target a post at one
+// specific business (service_posts has no business_id column, and bookings
+// are only ever created via interests.accept_interest on an OPEN post — see
+// backend/app/api/service_posts.py + interests.py). So "rebook the same
+// business" honestly means: pre-fill the same open-marketplace wizard with
+// the prior job's category/address/budget and a description that names the
+// business, saving the client the re-typing. It does NOT guarantee only that
+// business sees the post. Flagged plainly in the CARD-12 report.
+function RebookBanner({ businessName }) {
+  if (!businessName) return null;
+  return (
+    <Surface elevation="subtle" background="alt" rounded="card" padding="base" style={styles.rebookBanner}>
+      <Inline spacing="sm" align="center">
+        <Feather name="refresh-cw" size={16} color={colors.accentText} />
+        <Text variant="small" style={{ flex: 1 }}>
+          {i18n.t('rebook.bannerTitle', { business: businessName })}
+        </Text>
+      </Inline>
+    </Surface>
+  );
+}
 
 // ─── Progress bar ─────────────────────────────────────────────────────────────
 function ProgressBar({ step }) {
@@ -583,14 +605,32 @@ function StepConfirm({ category, description, address, budget, date, time, photo
 // ─── Main screen ─────────────────────────────────────────────────────────────
 export default function PostJobScreen() {
   const navigation = useNavigation();
+  const route = useRoute();
   const insets = useSafeAreaInsets();
 
-  const [description, setDescription] = useState('');
-  const [category, setCategory] = useState('');
-  const [address, setAddress] = useState('');
+  // CARD-12 — Rebook prefill. Set by BookingDetailsScreen / MyJobsScreen when
+  // the client taps "Rebook" on a completed booking (route.params only —
+  // this screen is also reached with no params from the normal Post Job flow).
+  const {
+    rebookBusinessId,
+    rebookBusinessName,
+    rebookCategory,
+    rebookAddress,
+    rebookBudget,
+  } = route.params || {};
+
+  const [description, setDescription] = useState(
+    rebookBusinessName
+      ? i18n.t('rebook.descriptionTemplate', { business: rebookBusinessName })
+      : ''
+  );
+  const [category, setCategory] = useState(rebookCategory || '');
+  const [address, setAddress] = useState(rebookAddress || '');
   const [addressLat, setAddressLat] = useState(null);
   const [addressLng, setAddressLng] = useState(null);
-  const [budget, setBudget] = useState('');
+  const [budget, setBudget] = useState(
+    rebookBudget != null && rebookBudget !== '' ? String(rebookBudget) : ''
+  );
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
   const [photos, setPhotos] = useState([]);
@@ -601,6 +641,18 @@ export default function PostJobScreen() {
   const [direction, setDirection] = useState(1);
   const [descError, setDescError] = useState('');
   const placesRef = useRef(null);
+
+  // Push the rebook address into the Places autocomplete field's own
+  // internal state via its imperative ref — its textInput is NOT driven by
+  // an external `value` prop (see the comment in StepDetails below), so
+  // setting `address` state alone would not update the visible text.
+  useEffect(() => {
+    if (rebookAddress) {
+      placesRef.current?.setAddressText?.(rebookAddress);
+    }
+    // Intentionally run once on mount only.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function goForward() {
     if (step === 1) {
@@ -697,6 +749,8 @@ export default function PostJobScreen() {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
+        <RebookBanner businessName={rebookBusinessName} />
+
         <Stack spacing="sm" style={styles.progressSection}>
           <StepLabels step={step} />
           <ProgressBar step={step} />
@@ -794,6 +848,9 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xl,
     gap: spacing.lg,
   },
+
+  // Rebook banner (CARD-12)
+  rebookBanner: { marginBottom: spacing.sm },
 
   // Progress
   progressSection: { marginBottom: spacing.xs },

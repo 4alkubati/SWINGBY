@@ -232,6 +232,16 @@ const translations = {
     'settings.biometricUnavailableTitle': 'Not available',
     'settings.biometricUnavailableBody': "Face ID / fingerprint isn't set up on this device yet. Enable it in your device settings, then try again.",
     'settings.biometricConfirmPrompt': 'Confirm to enable biometric unlock',
+    // Rebook — one-tap repeat booking from a completed job (CARD-12)
+    'rebook.button': 'Rebook',
+    'rebook.bannerTitle': 'Rebooking %{business}',
+    'rebook.descriptionTemplate': 'Rebooking %{business} — same job as last time. Add any new details below.',
+
+    // Favorites — save a business for later (CARD-12)
+    'favorites.add': 'Save to favorites',
+    'favorites.remove': 'Remove from favorites',
+    'favorites.added': 'Saved to favorites',
+    'favorites.removed': 'Removed from favorites',
   },
 
   'fr-CA': {
@@ -459,6 +469,16 @@ const translations = {
     'settings.biometricUnavailableTitle': 'Non disponible',
     'settings.biometricUnavailableBody': "Face ID ou l'empreinte digitale n'est pas encore configuré sur cet appareil. Activez-le dans les paramètres de votre appareil, puis réessayez.",
     'settings.biometricConfirmPrompt': 'Confirmez pour activer le déverrouillage biométrique',
+    // Rebook — one-tap repeat booking from a completed job (CARD-12)
+    'rebook.button': 'Réserver à nouveau',
+    'rebook.bannerTitle': 'Nouvelle réservation avec %{business}',
+    'rebook.descriptionTemplate': 'Nouvelle réservation avec %{business} — même travail que la dernière fois. Ajoutez des détails ci-dessous.',
+
+    // Favorites — save a business for later (CARD-12)
+    'favorites.add': 'Ajouter aux favoris',
+    'favorites.remove': 'Retirer des favoris',
+    'favorites.added': 'Ajouté aux favoris',
+    'favorites.removed': 'Retiré des favoris',
   },
 
   // ── Arabic (RTL) — skeleton keys, translator TODO ──────────────────────
@@ -687,6 +707,16 @@ const translations = {
     'settings.biometricUnavailableTitle': 'غير متاح',
     'settings.biometricUnavailableBody': 'بصمة الوجه أو الإصبع غير معدة على هذا الجهاز بعد. فعّلها من إعدادات جهازك ثم حاول مرة أخرى.',
     'settings.biometricConfirmPrompt': 'أكّد لتفعيل فتح القفل البيومتري',
+    // Rebook — one-tap repeat booking from a completed job (CARD-12)
+    'rebook.button': 'إعادة الحجز',
+    'rebook.bannerTitle': 'إعادة حجز %{business}',
+    'rebook.descriptionTemplate': 'إعادة حجز %{business} — نفس العمل السابق. أضف أي تفاصيل جديدة أدناه.',
+
+    // Favorites — save a business for later (CARD-12)
+    'favorites.add': 'حفظ في المفضلة',
+    'favorites.remove': 'إزالة من المفضلة',
+    'favorites.added': 'تم الحفظ في المفضلة',
+    'favorites.removed': 'تمت الإزالة من المفضلة',
   },
 };
 

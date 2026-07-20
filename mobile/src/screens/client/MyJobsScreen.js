@@ -8,6 +8,7 @@ import { Feather } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../services/api';
 import * as toast from '../../services/toast';
+import i18n from '../../i18n';
 import { colors, spacing, radius } from '../../theme/tokens';
 import { SkeletonList } from '../../components/Skeleton';
 import EmptyState from '../../components/EmptyState';
@@ -66,7 +67,7 @@ function QuoteRow({ interest, onMessage }) {
   );
 }
 
-function BookingRow({ booking, onPress, onReview, onDetails, userRole }) {
+function BookingRow({ booking, onPress, onReview, onDetails, onRebook, userRole }) {
   const status = STATUS_CONFIG[booking.status] || STATUS_CONFIG.confirmed;
   const otherParty = userRole === 'client'
     ? (booking.businesses?.business_name || booking.business_name || 'Business')
@@ -94,6 +95,20 @@ function BookingRow({ booking, onPress, onReview, onDetails, userRole }) {
             {date && <Text style={styles.rowDate}>{date}</Text>}
           </View>
           <View style={styles.rowActions}>
+            {/* CARD-12 — Rebook: cheapest nudge back on-platform for job #2 */}
+            {booking.status === 'completed' && onRebook && (
+              <TouchableOpacity
+                style={[styles.actionBtn, styles.actionBtnHighlight]}
+                onPress={onRebook}
+                activeOpacity={0.8}
+                accessibilityRole="button"
+                accessibilityLabel={i18n.t('rebook.button')}
+              >
+                <Text style={[styles.actionBtnText, styles.actionBtnTextHighlight]}>
+                  {i18n.t('rebook.button')}
+                </Text>
+              </TouchableOpacity>
+            )}
             {booking.status === 'completed' && onReview && (
               <TouchableOpacity style={styles.actionBtn} onPress={onReview} activeOpacity={0.8}>
                 <Text style={styles.actionBtnText}>Review</Text>
@@ -426,6 +441,15 @@ export default function MyJobsScreen({ navigation }) {
             userRole={user?.role}
             onPress={() => handleBookingPress(item)}
             onDetails={isClient ? () => navigation.navigate('BookingDetails', { bookingId: item.id }) : undefined}
+            onRebook={isClient ? () =>
+              navigation.navigate('PostJob', {
+                rebookBusinessId: item.business_id,
+                rebookBusinessName: item.businesses?.business_name,
+                rebookCategory: item.service_category,
+                rebookAddress: item.service_posts?.address,
+                rebookBudget: item.total_amount,
+              }) : undefined
+            }
             onReview={isClient ? () =>
               navigation.navigate('Review', {
                 bookingId: item.id,
