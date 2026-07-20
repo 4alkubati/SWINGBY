@@ -54,7 +54,7 @@ def list_my_payments(current_user: dict = Depends(get_current_user)):
         pay = (
             supabase.table("payments")
             .select(
-                "*, bookings(scheduled_date, completed_at, service_category, client_id)"
+                "*, bookings(confirmed_date, completed_at, service_category, client_id)"
             )
             .in_("booking_id", booking_ids)
             .order("created_at", desc=True)
@@ -70,7 +70,7 @@ def list_my_payments(current_user: dict = Depends(get_current_user)):
             return {"items": [], "total_released": 0, "total_pending": 0}
         pay = (
             supabase.table("payments")
-            .select("*, bookings(scheduled_date, completed_at, service_category)")
+            .select("*, bookings(confirmed_date, completed_at, service_category)")
             .in_("booking_id", booking_ids)
             .order("created_at", desc=True)
             .execute()

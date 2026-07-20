@@ -34,7 +34,7 @@ def _load_invoice_data(booking_id: str, current_user: dict) -> dict:
         .select(
             "id, client_id, business_id, employee_id, service_category, total_amount, "
             "platform_fee, commission_rate, status, payment_status, "
-            "scheduled_date, confirmed_date, completed_at, created_at, "
+            "confirmed_date, completed_at, created_at, "
             "businesses(business_name, category, license_status), "
             "employees(role_title, users(first_name, last_name))"
         )
