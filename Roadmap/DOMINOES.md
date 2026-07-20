@@ -69,7 +69,8 @@ Meta: [[dominoes/_LEARNING-LOG|_LEARNING-LOG]] — the book that grows across do
 The app survives Kira's own 15-min walkthrough on a fresh pull of `main`. Tester outreach stays shut until it closes.
 - [x] **D6.1** — ✅ 2026-07-20. All 4 migrations were already applied live (verified against `information_schema` / `pg_constraint`, **not** `list_migrations` — raw-SQL migrations never register there). 13 branches collapsed into `main` via PR #16 (`403a2b4`). Prod `/health` 200.
 - [ ] **D6.2** — scripted 15-min run, repeated until 3 clean consecutive passes. *Prod e2e smoke ALL PASS against `403a2b4` (2026-07-20): post → quote → chat → accept → propose → handshake → en_route → complete → escrow fully_released.*
-- [ ] **D6.3** — Kira's own phone run. *Agent-clean ≠ done.* ← **the immediate next action**
+- [x] **D6.2b — installable Android APK exists** ✅ 2026-07-20. First successful `eas build` ever. Took clearing 4 stacked defects, all from `950d4f4` (CARD-03) — a commit that was never executed: Sentry source-map upload with no org (killed Gradle), ESM `export default` in a CommonJS `app.config.js` (killed every expo/eas command), uninstalled `expo-local-authentication` after the collapse added it, and the flat iOS `googleMapsApiKey` shape used for Android instead of nested `googleMaps.apiKey` (failed `expo doctor`, which only runs in cloud builds). Full write-up: [[../Roadmap/July/2026-07-20|Jul 20 log]].
+- [ ] **D6.3** — Kira's own phone run on that APK. *Agent-clean ≠ done.* ← **the immediate next action**
 
 ### [[dominoes/D7-security|D7 — Security + honest instruments]] 🟡
 - [ ] **D7.1** — secret rotation: Telegram token + `.dev` creds (Kira generates, agent verifies old ones dead)
