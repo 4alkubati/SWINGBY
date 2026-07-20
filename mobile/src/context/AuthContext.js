@@ -9,6 +9,11 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  // True only when the session on screen came from a stored token on cold
+  // boot (not an interactive login/signup just now). CARD-24's biometric
+  // lock only gates this path — nobody gets re-prompted for FaceID right
+  // after typing their password.
+  const [restoredFromStorage, setRestoredFromStorage] = useState(false);
   // Keep a stable ref so the 401 handler always has the latest logout fn.
   const logoutRef = useRef(null);
 
@@ -21,6 +26,7 @@ export function AuthProvider({ children }) {
           const me = await getMe();
           setToken(stored);
           setUser(me);
+          setRestoredFromStorage(true);
         }
       } catch {
         await clearToken();
@@ -61,6 +67,7 @@ export function AuthProvider({ children }) {
     setAuthToken(null);
     setToken(null);
     setUser(null);
+    setRestoredFromStorage(false);
   }
 
   // Register logout as the 401 handler whenever it changes.
@@ -74,7 +81,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, token, isLoading, login, signup, logout, updateUser }}>
+    <AuthContext.Provider value={{ user, token, isLoading, restoredFromStorage, login, signup, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

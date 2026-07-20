@@ -43,11 +43,12 @@ SwingBy is a **marketplace**. We connect clients with independent businesses. Sw
 
 ### 3.3 Quote and booking flow
 1. Client posts a job with date, description, and (optionally) photos
-2. Businesses send quotes (price only — no message)
-3. Client picks a quote → a Booking is created → chat opens between the two parties
-4. Worker arrives, completes job, uploads proof photos, marks complete
-5. Payment release: 50% on confirmation, 50% (minus 10% platform fee) on completion
-6. Client reviews the worker
+2. Businesses send quotes (price only — no message attached to the quote itself)
+3. A chat thread opens on that quote — the client and the quoting business can message each other while the post is still open
+4. Client picks a quote → a Booking is created → the existing quote conversation carries over onto the booking
+5. Worker arrives, completes the job, may upload proof photos, and marks it complete
+6. Payment release: 50% on confirmation, 50% (minus 10% platform fee) on completion
+7. Client reviews the worker
 
 ---
 
@@ -60,7 +61,7 @@ SwingBy charges the **business** a **10% platform fee** on the gross job amount.
 - **On booking confirmation:** 50% released to business, 50% held in escrow
 - **On job completion:** remaining 50% minus 10% fee released to business
 - **Total to business:** 90% of quoted price
-- Disputed jobs hold the escrow until resolved (§7)
+- Disputed jobs hold the unreleased balance until resolved (§7). Note the 50% released on confirmation has already been paid out; recovering it is a support decision, not an automatic reversal.
 
 ### 4.3 Cancellations (by client)
 | When cancellation occurs | Penalty to client |

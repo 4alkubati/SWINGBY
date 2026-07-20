@@ -19,11 +19,11 @@ SwingBy reserves the right to suspend or terminate accounts that violate these t
   {
     id: 'payments-escrow-refunds',
     title: '2. Payments, Escrow & Refunds',
-    body: `All payments on SwingBy are processed through our payment partner. When a client accepts a quote, payment is held in escrow until the job is marked complete by the service provider and photo proof is submitted.
+    body: `All payments on SwingBy are processed through our payment partner. When a client accepts a quote, the job amount is committed to SwingBy and split in two: 50% is released to the service provider on booking confirmation so they can schedule the work, and the remaining balance — less the SwingBy platform fee — is released when the job is marked complete.
 
-Payment is automatically released to the service provider upon job completion. In cases of dispute, SwingBy may hold payment pending investigation.
+In cases of dispute, SwingBy may hold any portion of the payment not yet released pending investigation. Disputes are reviewed and resolved by the SwingBy team.
 
-Refunds: if a job is cancelled before it begins, a full refund will be issued. If a dispute arises after work has started, SwingBy will review submitted evidence (photos, messages) and make a final determination.
+Refunds: cancellations are subject to a cancellation fee based on timing — 25% of the job amount if cancelled more than 48 hours before the scheduled date, and 50% if cancelled within 48 hours. If a dispute arises after work has started, SwingBy will review submitted evidence (photos, messages) and make a final determination, including any refund amount.
 
 SwingBy charges a platform fee on each completed transaction. This fee is disclosed at the time of booking.`,
   },

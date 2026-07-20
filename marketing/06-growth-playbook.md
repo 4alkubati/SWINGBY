@@ -73,7 +73,7 @@ The most underrated channel for a 0-100 marketplace. It does not scale. That's t
 **Email template:**
 > Hey [name],
 > 
-> I'm Amr — Calgary founder. I'm launching SwingBy in 2 weeks: it's a clean, escrow-protected way for clients to book local services. Think Uber meets Thumbtack, made for Calgary first.
+> I'm Amr — Calgary founder. I'm launching SwingBy in 2 weeks: it's a clean, platform-held-payment way for clients to book local services — half releases to the business at booking, the rest on completion. Think Uber meets Thumbtack, made for Calgary first.
 > 
 > I'm picking the first 100 businesses to launch with. You're on my shortlist for [neighbourhood]. We pay you in escrow, charge 5% (vs Thumbtack's lead fees), and you get featured for free for 6 months.
 > 

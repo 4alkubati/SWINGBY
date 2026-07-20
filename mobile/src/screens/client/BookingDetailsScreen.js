@@ -359,6 +359,24 @@ export default function BookingDetailsScreen({ route, navigation }) {
     });
   };
 
+  // CARD-12 — Rebook. `booking.service_category` is the raw bookings-table
+  // column (set at booking creation from the accepted post's category — see
+  // interests.py accept_interest); `booking.category` above is overwritten
+  // with the job's post title for display, so we read the raw column here
+  // instead so the chip picker on PostJobScreen can actually match a
+  // CATEGORY_LABELS entry. `booking.total_amount` is the real bookings-table
+  // price column (the Price row on this screen reads quoted_price/price,
+  // which aren't columns on this table — pre-existing, not touched here).
+  const handleRebook = () => {
+    navigation.navigate('PostJob', {
+      rebookBusinessId: booking?.business_id,
+      rebookBusinessName: companyName || booking?.business_name,
+      rebookCategory: booking?.service_category,
+      rebookAddress: booking?.address,
+      rebookBudget: booking?.total_amount,
+    });
+  };
+
   const [payInFlight, setPayInFlight] = useState(false);
   const [offPayVisible, setOffPayVisible] = useState(false);
   const [offPayInFlight, setOffPayInFlight] = useState(false);
@@ -663,6 +681,17 @@ export default function BookingDetailsScreen({ route, navigation }) {
           gap: spacing.sm + 2,
         }}
       >
+        {/* CARD-12 — Rebook. First action on a completed job: cheapest nudge
+            back on-platform for job #2 (audit faults I6/I2). */}
+        {user?.role === 'client' && booking?.status === 'completed' && (
+          <Button
+            variant="secondary"
+            label={i18n.t('rebook.button')}
+            onPress={handleRebook}
+            icon={<Feather name="refresh-cw" size={18} color={colors.textSecondary} />}
+          />
+        )}
+
         {user?.role === 'client' && (payment?.status !== 'paid_full' && payment?.status !== 'paid_off_platform' && booking?.status !== 'cancelled') && (
           <Button
             variant="primary"

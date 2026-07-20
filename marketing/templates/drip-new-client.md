@@ -22,7 +22,7 @@ Here's how it works in three steps:
 
 1. **Post a job.** Describe what you need, set a rough budget, and choose your area. Takes two minutes.
 2. **Get quotes.** Vetted local businesses in your area respond with their price and availability.
-3. **Book with confidence.** Your payment is held safely in escrow until the job is done to your satisfaction.
+3. **Book with confidence.** Half your payment releases at booking so the business can schedule; the rest is held until the job is done to your satisfaction.
 
 **Post your first job free:** [swingbyy.com/app/post](https://swingbyy.com/app/post)
 

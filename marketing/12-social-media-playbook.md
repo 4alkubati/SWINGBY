@@ -322,7 +322,7 @@ Copy, adapt, and use these. Replace `[brackets]`.
 > #Calgary #[category] #SwingBy #LocalBusiness
 
 **Template 2 — How it works**
-> You post your job. Businesses bid. You pick the one you trust. SwingBy holds the payment until the job is done.
+> You post your job. Businesses bid. You pick the one you trust. SwingBy splits the payment — half at booking, half when the job is done.
 >
 > No chasing invoices. No fake reviews. No surprises.
 >

@@ -51,12 +51,30 @@ def create_review(data: ReviewCreate, current_user: dict = Depends(get_current_u
     role = current_user["role"]
     reviewee_id = None
     reviewee_type = None
+    # Live Job Status assigns a specific worker to a booking (bookings.employee_id
+    # -> employees.id). When a client reviews that booking, the same rating +
+    # comment also becomes that employee's own trust-card review (reviewee_type
+    # 'employee', reviewee_id = the employee's users.id) — a second polymorphic
+    # row alongside the existing business-targeted one. See
+    # docs/reviews_reviewee_type_extend_employee.sql (CARD MOBILE-PRODUCT Goal 2).
+    employee_user_id = None
 
     if role == "client":
         if booking["client_id"] != current_user["id"]:
             raise HTTPException(status_code=403, detail="This is not your booking")
         reviewee_id = booking["business_id"]
         reviewee_type = "business"
+
+        if booking.get("employee_id"):
+            emp_row = (
+                supabase.table("employees")
+                .select("user_id")
+                .eq("id", booking["employee_id"])
+                .single()
+                .execute()
+            )
+            if emp_row.data:
+                employee_user_id = emp_row.data["user_id"]
     elif role == "business_owner":
         biz = (
             supabase.table("businesses")
@@ -118,6 +136,31 @@ def create_review(data: ReviewCreate, current_user: dict = Depends(get_current_u
                     }
                 ).eq("id", reviewee_id).execute()
 
+        # Secondary employee-targeted row (see note above). Best-effort: the
+        # reviewee_type CHECK extension may not be applied yet on this
+        # environment, in which case this insert raises and is swallowed here
+        # — the primary business review above has already succeeded and must
+        # not be rolled back or surfaced as an error to the caller.
+        if employee_user_id:
+            try:
+                supabase.table("reviews").insert(
+                    {
+                        "booking_id": data.booking_id,
+                        "reviewer_id": current_user["id"],
+                        "reviewee_id": employee_user_id,
+                        "reviewee_type": "employee",
+                        "rating": data.rating,
+                        "comment": data.comment,
+                    }
+                ).execute()
+            except Exception:
+                logger.warning(
+                    "Could not write employee-targeted review row for booking %s "
+                    "— reviewee_type CHECK likely not yet extended, see "
+                    "docs/reviews_reviewee_type_extend_employee.sql",
+                    data.booking_id,
+                )
+
         return {"message": "Review submitted", "review": res.data[0]}
     except HTTPException:
         raise
@@ -159,4 +202,33 @@ def get_client_reviews(client_id: str, current_user: dict = Depends(get_current_
         return res.data
     except Exception:
         logger.exception("Could not retrieve client reviews")
+        raise HTTPException(status_code=400, detail="Could not retrieve reviews")
+
+
+@router.get("/employee/{employee_user_id}")
+def get_employee_reviews(
+    employee_user_id: str, current_user: dict = Depends(get_current_user)
+):
+    """
+    MOBILE-PRODUCT Goal 2 — backs EmployeeProfileScreen's review list.
+
+    `employee_user_id` is the employee's users.id (not the employees.id row
+    id) — same key GET /employees/{id}/profile already aggregates
+    avg_rating/review_count against. Returns [] today until
+    docs/reviews_reviewee_type_extend_employee.sql is applied, since no
+    reviewee_type='employee' rows can exist before that CHECK extension —
+    not a bug, just genuinely empty.
+    """
+    try:
+        res = (
+            supabase.table("reviews")
+            .select("*, users(first_name, last_name)")
+            .eq("reviewee_id", employee_user_id)
+            .eq("reviewee_type", "employee")
+            .order("created_at", desc=True)
+            .execute()
+        )
+        return res.data
+    except Exception:
+        logger.exception("Could not retrieve employee reviews")
         raise HTTPException(status_code=400, detail="Could not retrieve reviews")

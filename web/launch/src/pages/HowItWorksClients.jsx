@@ -11,6 +11,7 @@ const STEPS = [
     title: 'Post a job',
     desc: 'Describe what you need: category, address, budget range, when you want it done, and a couple of photos if it helps. Two minutes, no account required to start.',
     mockupLabel: 'Post-a-job form',
+    mockupSrc: '/app-screens/post-job.png',
     callout: <><strong>What businesses see:</strong> your post, your category, your area — never your phone number or full address until you accept a quote.</>,
   },
   {
@@ -18,6 +19,7 @@ const STEPS = [
     title: 'Get matched quotes',
     desc: 'Verified Calgary businesses tap "Express interest" with a price. You see who they are, what they\'ve done, what other clients said. No pressure, no calls.',
     mockupLabel: 'Quotes feed',
+    mockupSrc: '/app-screens/quotes.png',
     callout: <><strong>Spam shield:</strong> businesses can\'t contact you directly. Every quote comes through SwingBy so you control the conversation.</>,
   },
   {
@@ -25,12 +27,14 @@ const STEPS = [
     title: 'Pick your pro',
     desc: 'Compare the quotes side by side: price, rating, response time, sample work. Read reviews from real bookings only — we don\'t accept anonymous ones.',
     mockupLabel: 'Compare quotes screen',
+    mockupSrc: '/app-screens/nearby-map.png',
   },
   {
     n: 4,
     title: 'Book + pay safely',
     desc: 'Pay through the app. SwingBy holds the full amount in escrow. When the booking is confirmed, the business gets the first 50% — enough to cover materials and commit to the date.',
     mockupLabel: 'Booking + escrow screen',
+    mockupSrc: '/app-screens/booking.png',
     callout: <><strong>Escrow protection:</strong> SwingBy never spends your money. It sits between you and the business until the job is done.</>,
   },
   {
@@ -38,6 +42,7 @@ const STEPS = [
     title: 'Job done → release + review',
     desc: 'When the work is complete, you confirm in the app. The remaining 50% is released to the business minus our 10% fee. You leave a public review that future clients can see.',
     mockupLabel: 'Complete + review screen',
+    mockupSrc: '/app-screens/receipt.png',
     callout: <><strong>If something goes wrong:</strong> open a dispute through the app. SwingBy support reviews within 72 hours and can withhold payment until it\'s resolved.</>,
   },
 ]
@@ -62,7 +67,7 @@ export default function HowItWorksClients() {
           <span className={styles.eyebrow}>For clients</span>
           <h1 className={styles.heroTitle}>Local services, quoted in minutes</h1>
           <p className={styles.heroSub}>
-            Post once. Compare verified Calgary businesses. Pay through escrow so your money is protected until the job is done.
+            Post once. Compare verified Calgary businesses. Pay through SwingBy — half releases at booking, the rest only when the job is done.
           </p>
         </div>
       </section>
@@ -73,7 +78,7 @@ export default function HowItWorksClients() {
             {STEPS.map((step) => (
               <article className={styles.step} key={step.n}>
                 <div className={styles.stepMockup}>
-                  <AppMockupFrame label={step.mockupLabel} alt={`${step.title} — app screen mockup`} width={300} />
+                  <AppMockupFrame src={step.mockupSrc} label={step.mockupLabel} alt={`${step.title} — app screen mockup`} width={300} />
                 </div>
                 <div className={styles.stepBody}>
                   <span className={styles.stepNumber} aria-hidden="true">{step.n}</span>

@@ -11,7 +11,7 @@
       "livePill": "En ligne à Calgary",
       "headlineLead": "Services locaux, devis en",
       "headlineAccent": "quelques minutes.",
-      "sub": "Publiez une tâche. Des entreprises de Calgary vérifiées la chiffrent. Réservez avec un paiement sous séquestre — l'argent circule quand le travail est fait.",
+      "sub": "Publiez une tâche. Des entreprises de Calgary vérifiées la chiffrent. Réservez avec un paiement sous séquestre — versé en deux temps : la moitié à la confirmation, la moitié quand le travail est fait.",
       "ctaPrimary": "Publier une tâche — c'est gratuit",
       "ctaSecondary": "Obtenir plus de contrats",
       "trust": {
@@ -59,14 +59,14 @@
       "business": {
         "1": { "title": "Inscrivez-vous + vérifiez", "desc": "Vérification manuelle en 24 à 48 heures pendant la bêta." },
         "2": { "title": "Parcourez à proximité", "desc": "De vraies tâches triées par distance et récence." },
-        "3": { "title": "Chiffrez + gagnez", "desc": "Ajoutez votre prix et votre argumentaire. La réservation débloque le chat." },
+        "3": { "title": "Chiffrez + gagnez", "desc": "Ajoutez votre prix et votre argumentaire. Le chat s'ouvre dès le devis ; la réservation débloque l'adresse complète." },
         "4": { "title": "Terminé + payé", "desc": "Vous gardez 90 % après la commission de 10 %. Sans abonnement." }
       }
     },
     "escrow": {
       "eyebrow": "Protection séquestre",
-      "title": "Votre argent ne bouge que lorsque le travail est fait.",
-      "body": "SwingBy conserve chaque paiement jusqu'à la confirmation — la moitié à la réservation, la moitié à l'approbation. En cas de problème, nous pouvons retenir le paiement.",
+      "title": "Votre argent se libère en deux temps, pas en un seul.",
+      "body": "SwingBy divise chaque paiement — la moitié est versée à l'entreprise à la confirmation de la réservation, la moitié à l'approbation des travaux. En cas de problème, nous pouvons retenir le solde non versé.",
       "ledgerTitle": "Flux d'une réservation de 180 $",
       "row1Title": "Vous réservez",
       "row1Sub": "Fonds sous séquestre",
@@ -90,6 +90,17 @@
       "title": "Local d'abord, national ensuite.",
       "body": "Nous prouvons le modèle à Calgary. Chaque entreprise est vérifiée par un vrai humain. Chaque devis vient de quelqu'un qui peut vraiment faire le travail près de chez vous.",
       "nextLabel": "Prochaines villes"
+    },
+    "showcase": {
+      "eyebrow": "Dans l'application",
+      "title": "De l'annonce au paiement — cinq écrans.",
+      "items": {
+        "postJob": { "title": "Publiez une tâche",     "desc": "Catégorie, détails, budget — deux minutes." },
+        "quotes":  { "title": "Comparez les devis",    "desc": "Des entreprises vérifiées proposent un prix et un argumentaire." },
+        "chat":    { "title": "Messagerie + suivi",    "desc": "Discutez avec le pro et suivez la tâche en temps réel." },
+        "booking": { "title": "Suivez la réservation", "desc": "Confirmée → en route → en cours → terminée." },
+        "receipt": { "title": "Reçu sous séquestre",   "desc": "L'argent n'est versé qu'après votre confirmation." }
+      }
     },
     "app": {
       "eyebrow": "L'application",

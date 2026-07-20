@@ -55,8 +55,8 @@ Open the app and tap "I have an invite" on the welcome screen, paste the code, a
 What works on day one:
   ✓ Post a job, get quotes within minutes
   ✓ Browse 30+ verified Calgary businesses
-  ✓ In-app messaging once you confirm a quote
-  ✓ Photo proof of work + escrow payment
+  ✓ In-app messaging from the moment a business quotes your job
+  ✓ Photo proof of work + split escrow payment (50% on confirmation, 50% on completion)
   ✓ Reviews on individual workers, not just companies
 
 What's still cooking:

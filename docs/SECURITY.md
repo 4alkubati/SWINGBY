@@ -2,7 +2,8 @@
 
 | Item | Status |
 |---|---|
-| RLS on all 10 tables | ✅ Applied via MCP — 0 advisor warnings |
+| RLS on all 10 tables | ✅ Applied via MCP |
+| Supabase security advisors | ⚠️ 1 open — HIBP leaked-password protection disabled (dashboard-only toggle, Auth → Sign In / Providers → Password → "Leaked password protection" → Enable). 2 others (disputes trigger fn missing pinned `search_path`, `job-photos` bucket publicly listable) fixed 2026-07-19 via `docs/card06_security_advisors_fix.sql` (CARD-06). Verify live with `mcp__claude_ai_Supabase__get_advisors` before checking this row off — don't trust this line without re-running it. |
 | No table open to anon | ✅ Zero anon policies |
 | Service role key backend-only | ✅ Never in mobile/ or web/ |
 | `.env` not in git | ✅ Confirmed via git ls-files |

@@ -28,7 +28,8 @@ class TestSignup:
         - role: 'client' or 'business_owner'
         """
         with patch("app.api.auth.supabase") as mock_supabase, \
-             patch("app.api.auth.supabase_auth") as mock_supabase_auth:
+             patch("app.api.auth.supabase_auth") as mock_supabase_auth, \
+             patch("app.services.analytics.httpx.post") as mock_analytics_post:
             # Mock successful auth signup (sign_up lives on the auth-only client)
             mock_user = MagicMock()
             mock_user.id = "test-user-id"
@@ -43,6 +44,10 @@ class TestSignup:
             mock_supabase.table.return_value.upsert.return_value.execute.return_value = (
                 None
             )
+            # CARD-23 GOAL 4: signup fires a best-effort Plausible event — mock
+            # the network call out so this test stays hermetic (no real POST
+            # to plausible.io during the suite).
+            mock_analytics_post.return_value = MagicMock(status_code=202)
 
             response = test_client.post(
                 "/auth/signup",
@@ -59,6 +64,49 @@ class TestSignup:
             data = response.json()
             assert "access_token" in data
             assert data["user_id"] == "test-user-id"
+            # CARD-23 GOAL 4 (K7 — no-analytics): signup fires a "Signup"
+            # funnel event to Plausible.
+            mock_analytics_post.assert_called_once()
+            sent_json = mock_analytics_post.call_args.kwargs["json"]
+            assert sent_json["name"] == "Signup"
+
+    def test_signup_succeeds_even_if_analytics_call_raises(self, test_client):
+        """
+        K7's hard rule: analytics must never block a request path. If
+        Plausible is unreachable, signup must still return 200 — the
+        exception is swallowed inside track_event(), not propagated.
+        """
+        with patch("app.api.auth.supabase") as mock_supabase, \
+             patch("app.api.auth.supabase_auth") as mock_supabase_auth, \
+             patch(
+                 "app.services.analytics.httpx.post",
+                 side_effect=RuntimeError("Plausible is down"),
+             ):
+            mock_user = MagicMock()
+            mock_user.id = "test-user-id-2"
+            mock_session = MagicMock()
+            mock_session.access_token = "test-access-token-2"
+            mock_res = MagicMock()
+            mock_res.user = mock_user
+            mock_res.session = mock_session
+            mock_supabase_auth.auth.sign_up.return_value = mock_res
+            mock_supabase.table.return_value.upsert.return_value.execute.return_value = (
+                None
+            )
+
+            response = test_client.post(
+                "/auth/signup",
+                json={
+                    "email": "test2@example.com",
+                    "password": "SecurePass123",
+                    "first_name": "Jane",
+                    "last_name": "Doe",
+                    "role": "client",
+                },
+            )
+
+        assert response.status_code == 200
+        assert response.json()["user_id"] == "test-user-id-2"
 
     def test_signup_weak_password_returns_400(self, test_client):
         """

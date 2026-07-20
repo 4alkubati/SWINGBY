@@ -12,6 +12,8 @@ import { Feather } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../services/api';
 import { getUserLocation } from '../../services/location';
+import { useFavorites } from '../../hooks/useFavorites';
+import * as toast from '../../services/toast';
 import { colors, spacing, radius, shadows, motion } from '../../theme/tokens';
 import Text from '../../components/Text';
 import Button from '../../components/Button';
@@ -149,11 +151,17 @@ function SectionHeader({ title }) {
 }
 
 // ─── Review card ──────────────────────────────────────────────────────────────
+// NOTE (payload-shape fix, MOBILE-PRODUCT Goal 2): GET /reviews/business/{id}
+// (backend/app/api/reviews.py) returns nested reviewer info under `users`
+// (`.select("*, users(first_name, last_name)")`, joined via reviews.reviewer_id
+// -> users.id) — this was reading `review.reviewer`, a key the response never
+// has, so every review card silently fell back to "Client". Same bug class as
+// the CLAUDE.md payload-drift warning.
 function ReviewCard({ review }) {
   return (
     <Surface elevation="subtle" style={styles.reviewCard}>
       <Inline justify="space-between" style={{ marginBottom: spacing.sm }}>
-        <Text variant="smallMedium">{review.reviewer?.first_name || 'Client'}</Text>
+        <Text variant="smallMedium">{review.users?.first_name || 'Client'}</Text>
         <RatingStarsDisplay rating={review.rating || 0} size={12} color={colors.warning} />
       </Inline>
       {review.comment ? (
@@ -269,6 +277,26 @@ export default function BusinessProfileScreen({ navigation, route }) {
 
   const isOwnProfile = !businessId || businessId === user?.business_id;
   const isOwner = user?.role === 'business_owner' && isOwnProfile;
+
+  // CARD-12 — Favorites. FavoritesScreen + useFavorites (AsyncStorage,
+  // persists across restarts) already existed, but nothing in the app ever
+  // called add() — there was no way to actually favorite a business, so the
+  // list could only ever be empty. This is that missing entry point: a heart
+  // toggle on the visitor view of a business profile, client role only
+  // (Favorites has no route in BusinessNavigator — see docs/FLOW_GRAPH.md).
+  const { isFavorite, toggle: toggleFavorite } = useFavorites();
+  const canFavorite = user?.role === 'client' && !isOwnProfile;
+  const isFav = canFavorite && bizId ? isFavorite(bizId) : false;
+
+  function handleToggleFavorite() {
+    if (!bizId) return;
+    const wasFav = isFavorite(bizId);
+    toggleFavorite(bizId);
+    toast.show({
+      type: 'success',
+      text1: wasFav ? i18n.t('favorites.removed') : i18n.t('favorites.added'),
+    });
+  }
 
   // Distance-from-viewer (public view only) — best-effort, never blocks the
   // profile from rendering. Same "silent catch, distance simply omitted"
@@ -428,6 +456,22 @@ export default function BusinessProfileScreen({ navigation, route }) {
             onPress={() => setEditMode(false)}
             style={styles.editBtn}
           />
+        )}
+        {/* CARD-12 — Favorites entry point (client visitor view only) */}
+        {!loading && !error && !editMode && canFavorite && (
+          <TouchableOpacity
+            onPress={handleToggleFavorite}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            accessibilityRole="button"
+            accessibilityLabel={isFav ? i18n.t('favorites.remove') : i18n.t('favorites.add')}
+            style={styles.favBtn}
+          >
+            <Feather
+              name="heart"
+              size={20}
+              color={isFav ? colors.danger : colors.textSecondary}
+            />
+          </TouchableOpacity>
         )}
       </Inline>
 
@@ -808,6 +852,7 @@ const styles = StyleSheet.create({
   navBar:       { paddingHorizontal: spacing.lg, paddingVertical: spacing.sm },
   iconBtn:      { paddingVertical: 0, paddingHorizontal: 0, width: 44, justifyContent: 'center' },
   editBtn:      { paddingVertical: spacing.sm, paddingHorizontal: spacing.sm },
+  favBtn:       { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
 
   content:      { paddingTop: spacing.sm, gap: 0 },
   hPad:         { marginHorizontal: spacing.lg },

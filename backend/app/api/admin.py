@@ -8,6 +8,9 @@ T27  Admin user/booking management:
      - POST /admin/unsuspend-user/{user_id}
      - POST /admin/force-complete-booking/{booking_id}
 
+CARD-07 Monitoring verification:
+     - GET  /admin/monitoring-probe
+
 Rate limit: 30/minute per IP for all admin endpoints.
 
 NOTE: `users.is_suspended boolean default false` column must exist in the DB.
@@ -20,6 +23,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from app.deps import get_current_user
 from app.limiter import limiter
 from app.supabase_client import supabase
+from app.api.waitlist import get_notion, WAITLIST_DB_ID
 
 logger = structlog.get_logger(__name__)
 
@@ -140,6 +144,52 @@ def unsuspend_user(
         raise HTTPException(status_code=400, detail="Could not unsuspend user")
 
 
+@router.get("/waitlist-count")
+@limiter.limit("30/minute")
+def waitlist_count(
+    request: Request,
+    current_user: dict = Depends(require_admin),
+):
+    """
+    Live signup count (audit fault K5 — "waitlist-blind": a 200-signup
+    target existed with no tracked actual count driving decisions).
+
+    Source of truth: the SwingBy Waitlist Notion database
+    (WAITLIST_DB_ID, see app/api/waitlist.py). BOTH waitlist entry points —
+    this backend's POST /waitlist/ and the Cloudflare Worker at
+    api.swingbyy.com/waitlist (workers/waitlist/index.js) — write into that
+    same database, so there is no separate KV or Postgres store to
+    reconcile; a Notion page count over that database IS the true count.
+
+    Paginates the Notion API (100 rows/page, capped at 5,000 total as a
+    runaway-loop guard) since `databases.query` doesn't return a total in
+    one call.
+    """
+    try:
+        notion = get_notion()
+    except RuntimeError as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    try:
+        count = 0
+        cursor = None
+        for _ in range(50):  # safety cap: 50 * 100 = 5,000 rows
+            kwargs = {"database_id": WAITLIST_DB_ID, "page_size": 100}
+            if cursor:
+                kwargs["start_cursor"] = cursor
+            page = notion.databases.query(**kwargs)
+            count += len(page.get("results", []))
+            if not page.get("has_more"):
+                break
+            cursor = page.get("next_cursor")
+        return {"count": count, "source": "notion", "database_id": WAITLIST_DB_ID}
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception("admin.waitlist_count failed")
+        raise HTTPException(status_code=400, detail="Could not fetch waitlist count")
+
+
 @router.post("/force-complete-booking/{booking_id}")
 @limiter.limit("30/minute")
 def force_complete_booking(
@@ -168,3 +218,35 @@ def force_complete_booking(
     except Exception:
         logger.exception("admin.force_complete_booking failed", booking_id=booking_id)
         raise HTTPException(status_code=400, detail="Could not complete booking")
+
+
+@router.get("/monitoring-probe")
+@limiter.limit("5/minute")
+def monitoring_probe(
+    request: Request,
+    current_user: dict = Depends(require_admin),
+):
+    """
+    CARD-07 — deliberate, admin-only test error for Sentry verification.
+
+    Intentionally left UNCAUGHT (no try/except): the goal is to reach
+    FastAPI's default 500 path and let Sentry's FastApiIntegration capture
+    a real unhandled exception exactly as it would for a genuine bug, not a
+    manually-called capture_message(). Proves the live prod SENTRY_DSN
+    actually ingests errors end-to-end, on demand.
+
+    Safe: admin-gated (403 for non-admin), rate-limited (5/min), touches no
+    data, no side effects besides one log line + one exception. If
+    SENTRY_DSN is unset in this environment, this just 500s with no capture
+    (unchanged behavior for the caller either way).
+
+    Usage once deployed:
+      curl -H "Authorization: Bearer <admin-jwt>" \
+        https://swingbyy-api.onrender.com/admin/monitoring-probe
+      -> expect HTTP 500, then check the Sentry issues stream for
+         "CARD-07 monitoring probe" within ~1 minute.
+    """
+    logger.info("card07.monitoring_probe.fired", admin_id=current_user["id"])
+    raise RuntimeError(
+        "CARD-07 monitoring probe — deliberate test error, safe to ignore"
+    )

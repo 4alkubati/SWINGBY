@@ -6,9 +6,9 @@
 
 ## Executive Summary
 
-SwingBy is a two-sided service marketplace for Calgary, connecting homeowners and renters with local service businesses — cleaning, handyman, dog walking, moving, and more. Clients post a job for free and receive bids from nearby businesses. SwingBy holds payment in escrow until the job is done. Businesses pay a 10% fee on completion — not on leads, not on bids, only on revenue they actually earn.
+SwingBy is a two-sided service marketplace for Calgary, connecting homeowners and renters with local service businesses — cleaning, handyman, dog walking, moving, and more. Clients post a job for free and receive bids from nearby businesses. SwingBy splits payment — half released on booking confirmation, the balance on completion. Businesses pay a 10% fee on completion — not on leads, not on bids, only on revenue they actually earn.
 
-The product is built. The backend API, database, authentication, booking flow, payment escrow, and messaging are all live. The mobile app is in development. The web presence is launching.
+The backend API, database, authentication, booking flow, staged payment split, and messaging are built and running. Stripe is wired in sandbox only — no live card charges yet. The mobile app is in development. The web presence is launching.
 
 The marketing opportunity is clear: Calgary's $2.8B+ annual home services market has no dominant digital-first marketplace. HomeStars and Thumbtack charge per lead, regardless of outcome. Kijiji is unstructured and unsafe. Word-of-mouth still drives most local service discovery — a behaviour we can replicate in-app with reviews, referrals, and trust signals that don't exist anywhere else locally.
 
@@ -31,7 +31,7 @@ This plan covers the go-to-market approach, customer acquisition on both sides o
 - Digital-native booking is expected: Uber and Airbnb have set the standard.
 
 **The gap:**
-No platform in Calgary offers: escrow-protected payments + verified reviews + instant matching + a local-first focus. SwingBy addresses all four.
+No platform in Calgary offers: staged, platform-held payments + verified reviews + instant matching + a local-first focus. SwingBy addresses all four.
 
 ---
 
@@ -39,13 +39,15 @@ No platform in Calgary offers: escrow-protected payments + verified reviews + in
 
 SwingBy is a two-sided marketplace with two discovery flows:
 
-**Post and match:** A client posts a job with a budget and description. Businesses in the area express interest with a quoted price. The client reviews profiles and accepts the one they want. SwingBy creates the booking and holds payment in escrow.
+**Post and match:** A client posts a job with a budget and description. Businesses in the area express interest with a quoted price. The client reviews profiles and accepts the one they want. SwingBy creates the booking and splits the payment into a 50% release on confirmation and a 50% balance held for completion.
 
 **Geo-browse:** A client browses businesses on a map, filtered by category and distance. They contact a business directly or book through their profile.
 
-The booking flow continues: employee assigned → date confirmed → job done → payment released. Businesses receive 50% on booking confirmation and 50% (minus 10% platform fee) on completion. Messaging is locked to confirmed bookings — no spam, no cold pitching.
+The booking flow continues: employee assigned → date confirmed → job done → payment released. Businesses receive 50% on booking confirmation and 50% (minus 10% platform fee) on completion. Messaging opens on the quote thread once a business has quoted a job, and carries over onto the booking — a business can never cold-contact a client it hasn't quoted, so there's no spam and no cold pitching.
 
-The platform's core trust mechanism is escrow. The client's money is held until the job is complete. If the business no-shows, the client is fully refunded. This is the feature that kills the "Kijiji risk" and makes clients willing to try an unfamiliar business.
+The platform's core trust mechanism is staged payment. Half of the client's money releases to the business on booking confirmation so they can schedule the work, and the balance only on completion. If something goes wrong, the client opens a dispute and the SwingBy team reviews it and decides the refund. This is the feature that kills the "Kijiji risk" and makes clients willing to try an unfamiliar business.
+
+> **Roadmap note:** CARD-21 proposes moving to a full hold-until-completion model (nothing released until the job is done). Copy describing that model is describing the *future* product, not what ships today.
 
 ---
 
@@ -62,7 +64,7 @@ The platform's core trust mechanism is escrow. The client's money is held until 
 | TaskRabbit | Business | 15% of job | No | No | Yes |
 | Word of mouth | Neither | Never | Yes | No | No |
 
-SwingBy's differentiator is the combination of local focus + outcome-based pricing + escrow. No lead fees means businesses have no risk in joining. Escrow means clients have no risk in booking. That's the unlock for both sides.
+SwingBy's differentiator is the combination of local focus + outcome-based pricing + platform-held payment. No lead fees means businesses have no risk in joining. Staged payment plus a dispute process means clients aren't handing a stranger the full amount up front. That's the unlock for both sides.
 
 For full positioning detail: [04-positioning-and-messaging.md](04-positioning-and-messaging.md)
 
@@ -70,7 +72,7 @@ For full positioning detail: [04-positioning-and-messaging.md](04-positioning-an
 
 ## Monetization Model
 
-**Primary: 10% transaction fee on completed bookings.** Charged to the business, taken from escrow on job completion. This is the core revenue stream.
+**Primary: 10% transaction fee on completed bookings.** Charged to the business, deducted from the final release on job completion. This is the core revenue stream.
 
 **Secondary (month 2+):**
 - Featured listing: $29/month or $5 per 24-hour boost

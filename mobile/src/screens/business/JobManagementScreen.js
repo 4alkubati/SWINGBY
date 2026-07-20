@@ -25,10 +25,12 @@ import ListItem from '../../components/ListItem';
 import EmptyState from '../../components/EmptyState';
 import JobOpportunityCard from '../../components/JobOpportunityCard';
 import SendQuoteSheet from '../../components/SendQuoteSheet';
+import ReviewSubmitSheet from '../../components/ReviewSubmitSheet';
 import { SkeletonBox, SkeletonList } from '../../components/Skeleton';
 import { Feather } from '@expo/vector-icons';
 import { colors, spacing, radius, shadows, motion } from '../../theme/tokens';
 import i18n from '../../i18n';
+import { bucketBooking, needsActionReason, byJobDateAsc } from '../../utils/bookingBuckets';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -183,6 +185,11 @@ function JobDetailScreen({ navigation, route }) {
   const [advancing, setAdvancing] = useState(false);
   const [assignPickerVisible, setAssignPickerVisible] = useState(false);
   const [assigning, setAssigning] = useState(false);
+  const [reviewSheetVisible, setReviewSheetVisible] = useState(false);
+  // Local-only: backend still enforces one review per (booking, reviewer) —
+  // this just hides the action immediately after a successful submit so the
+  // owner isn't invited to double-tap it in the same session.
+  const [justReviewed, setJustReviewed] = useState(false);
 
   // View state
   const [activeTab, setActiveTab] = useState(0); // 0 = Details, 1 = Status
@@ -528,6 +535,15 @@ function JobDetailScreen({ navigation, route }) {
                     showChevron
                   />
                 )}
+                {isDone && !justReviewed && (
+                  <ListItem
+                    title="Review client"
+                    subtitle="Rate how this job went"
+                    left={<Feather name="star" size={16} color={colors.textSecondary} strokeWidth={2} />}
+                    onPress={() => setReviewSheetVisible(true)}
+                    showChevron
+                  />
+                )}
                 <ListItem
                   title="Report a problem"
                   subtitle="Open a dispute for this booking"
@@ -593,18 +609,37 @@ function JobDetailScreen({ navigation, route }) {
           )}
         </View>
       </Modal>
+
+      {/* Business → client review — GAP-AUDIT M3: ReviewSubmitSheet existed
+          but was mounted nowhere. This is the business-side counterpart to
+          the client's ReviewScreen (client -> business/employee). */}
+      <ReviewSubmitSheet
+        visible={reviewSheetVisible}
+        onClose={() => setReviewSheetVisible(false)}
+        bookingId={booking.id}
+        revieweeName={booking.client_name || 'Client'}
+        onSubmitted={() => setJustReviewed(true)}
+      />
     </View>
   );
 }
 
-// ─── Jobs list / lead-triage screen (no bookingId — Business "Jobs" tab) ──────
-// Handoff-mock content (DQ-6 QA-07, Kira's product call 2026-07-18, exec-spec
-// entry #26): a "Jobs" header with a New/Quoted/Scheduled segmented filter and
-// a scrollable feed. New-lead cards + the send-quote sheet already existed in
-// polished form on DashboardScreen (JobOpportunityCard + SendQuoteSheet) —
-// reused here, not rebuilt. Tapping a Scheduled row opens the existing
-// per-booking JobDetailScreen above via the same route (`JobManagement`,
-// {bookingId}), so nothing about the detail/status flow changes.
+// ─── Jobs list — the operational hub (no bookingId — Business "Jobs" tab) ─────
+// CARD-24, Kira's product call 2026-07-19: "they go to jobs and every job
+// should be listed over there — like the past would move to invoices — and
+// their jobs view they see like today's jobs or anything related to it."
+// Replaces the earlier New/Quoted/Scheduled lead-triage tabs (DQ-6 QA-07)
+// with four groupings built around what a working owner needs *today*:
+// Today, Upcoming, Needs action, Past. New leads + quotes-awaiting-response
+// + bookings-awaiting-a-date all fold into Needs Action; confirmed jobs with
+// a locked-in date partition into Today/Upcoming by date; completed/cancelled
+// fall into Past, each one linking to its invoice. Bucketing logic lives in
+// utils/bookingBuckets.js so these counts always match the Dashboard's.
+// New-lead cards + the send-quote sheet still come from DashboardScreen
+// (JobOpportunityCard + SendQuoteSheet) — reused, not rebuilt. Tapping any
+// row still opens the existing per-booking JobDetailScreen above via the
+// same route (`JobManagement`, {bookingId}) — nothing about the
+// detail/status/review flow above changes.
 
 const INTEREST_STATUS_COLOR = {
   pending: colors.warning,
@@ -617,7 +652,121 @@ const INTEREST_STATUS_LABEL = {
   rejected: 'jobManagement.interestRejected',
 };
 
-const LIST_FILTERS = ['new', 'quoted', 'scheduled'];
+const NEEDS_ACTION_REASON_KEY = {
+  unassigned: 'jobManagement.needsActionUnassigned',
+  proposeDate: 'jobManagement.needsActionProposeDate',
+  awaitingDate: 'jobManagement.needsActionAwaitingDate',
+};
+
+const LIST_FILTERS = ['today', 'upcoming', 'needsAction', 'past'];
+
+function jobClientName(booking) {
+  return booking.users?.first_name
+    ? [booking.users.first_name, booking.users.last_name].filter(Boolean).join(' ')
+    : (booking.client_name || 'Client');
+}
+
+function formatRowTime(date) {
+  return date.toLocaleTimeString('en-CA', { hour: 'numeric', minute: '2-digit' });
+}
+function formatRowDate(date) {
+  return date.toLocaleDateString('en-CA', { weekday: 'short', month: 'short', day: 'numeric' });
+}
+
+// Today/Upcoming row — what a working owner needs at a glance: client,
+// service, time, address, status, amount.
+function JobRow({ booking, showDate, onPress }) {
+  const service = booking.service_posts?.title || booking.service_category || 'Service';
+  const address = booking.service_posts?.address;
+  const when = booking.confirmed_date ? new Date(booking.confirmed_date) : null;
+
+  return (
+    <TouchableOpacity onPress={onPress} activeOpacity={0.8}>
+      <Surface elevation="subtle" rounded="card" padding="base" style={listStyles.rowCard}>
+        <Inline justify="space-between" style={{ marginBottom: spacing.xs }}>
+          <Text variant="smallMedium" numberOfLines={1} style={{ flex: 1 }}>{jobClientName(booking)}</Text>
+          <StatusChip status={booking.status} />
+        </Inline>
+        <Text variant="small" color="secondary" numberOfLines={1}>{service}</Text>
+        <Inline justify="space-between" style={{ marginTop: spacing.xs }}>
+          <Inline spacing="xs" style={{ flex: 1 }}>
+            <Feather name="clock" size={12} color={colors.textTertiary} strokeWidth={2} />
+            <Text variant="caption" color="secondary">
+              {when ? (showDate ? `${formatRowDate(when)} · ${formatRowTime(when)}` : formatRowTime(when)) : '—'}
+            </Text>
+          </Inline>
+          {booking.total_amount != null && (
+            <Text variant="smallMedium" style={{ color: colors.success, fontFamily: 'SpaceGrotesk_700Bold', fontVariant: ['tabular-nums'] }}>
+              ${booking.total_amount}
+            </Text>
+          )}
+        </Inline>
+        {!!address && (
+          <Inline spacing="xs" style={{ marginTop: spacing.xs }}>
+            <Feather name="map-pin" size={12} color={colors.textTertiary} strokeWidth={2} />
+            <Text variant="caption" color="secondary" numberOfLines={1} style={{ flex: 1 }}>{address}</Text>
+          </Inline>
+        )}
+      </Surface>
+    </TouchableOpacity>
+  );
+}
+
+// Needs Action row — a confirmed booking blocked on the owner (no employee
+// assigned yet, or a date handshake that hasn't closed).
+function ActionBookingRow({ booking, onPress }) {
+  const service = booking.service_posts?.title || booking.service_category || 'Service';
+  const reasonKey = NEEDS_ACTION_REASON_KEY[needsActionReason(booking)];
+
+  return (
+    <TouchableOpacity onPress={onPress} activeOpacity={0.8}>
+      <Surface elevation="subtle" rounded="card" padding="base" style={listStyles.rowCard}>
+        <Inline justify="space-between" style={{ marginBottom: spacing.xs }}>
+          <Text variant="smallMedium" numberOfLines={1} style={{ flex: 1 }}>{jobClientName(booking)}</Text>
+          <StatusChip label={i18n.t(reasonKey)} color={colors.warning} />
+        </Inline>
+        <Text variant="small" color="secondary" numberOfLines={1}>{service}</Text>
+      </Surface>
+    </TouchableOpacity>
+  );
+}
+
+// Past row — completed/cancelled. Completed jobs link straight to their
+// invoice ("the past would move to invoices" — Kira).
+function PastJobRow({ booking, onPress }) {
+  const service = booking.service_posts?.title || booking.service_category || 'Service';
+  const when = booking.confirmed_date ? new Date(booking.confirmed_date) : null;
+  const isCompleted = booking.status === 'completed';
+
+  return (
+    <TouchableOpacity onPress={onPress} activeOpacity={0.8}>
+      <Surface elevation="subtle" rounded="card" padding="base" style={listStyles.rowCard}>
+        <Inline justify="space-between" style={{ marginBottom: spacing.xs }}>
+          <Text variant="smallMedium" numberOfLines={1} style={{ flex: 1 }}>{jobClientName(booking)}</Text>
+          <StatusChip status={booking.status} />
+        </Inline>
+        <Inline justify="space-between">
+          <Text variant="small" color="secondary" numberOfLines={1} style={{ flex: 1 }}>
+            {service}{when ? ` · ${formatRowDate(when)}` : ''}
+          </Text>
+          {booking.total_amount != null && (
+            <Text variant="smallMedium" style={{ color: colors.success, fontFamily: 'SpaceGrotesk_700Bold', fontVariant: ['tabular-nums'] }}>
+              ${booking.total_amount}
+            </Text>
+          )}
+        </Inline>
+        {isCompleted && (
+          <Button
+            variant="ghost"
+            label={i18n.t('jobManagement.viewInvoice')}
+            onPress={onPress}
+            style={{ alignSelf: 'flex-start', paddingHorizontal: 0, marginTop: spacing.xs }}
+          />
+        )}
+      </Surface>
+    </TouchableOpacity>
+  );
+}
 
 function QuoteListRow({ interest, onMessage }) {
   const post = interest.service_posts || {};
@@ -648,39 +797,14 @@ function QuoteListRow({ interest, onMessage }) {
   );
 }
 
-function ScheduledListRow({ booking, onPress }) {
-  const clientName = booking.users?.first_name
-    ? [booking.users.first_name, booking.users.last_name].filter(Boolean).join(' ')
-    : (booking.client_name || 'Client');
-  const when = booking.confirmed_date || booking.proposed_date_1;
-  const date = when
-    ? new Date(when).toLocaleDateString('en-CA', { month: 'short', day: 'numeric' })
-    : null;
-
-  return (
-    <TouchableOpacity onPress={onPress} activeOpacity={0.8}>
-      <Surface elevation="subtle" rounded="card" padding="base" style={listStyles.rowCard}>
-        <Inline justify="space-between" style={{ marginBottom: spacing.xs }}>
-          <Text variant="smallMedium" numberOfLines={1} style={{ flex: 1 }}>{clientName}</Text>
-          <StatusChip status={booking.status} />
-        </Inline>
-        <Text variant="small" color="secondary">
-          {booking.service_posts?.title || booking.service_category || 'Service'}
-          {date ? ` · ${date}` : ''}
-        </Text>
-      </Surface>
-    </TouchableOpacity>
-  );
-}
-
-function JobsListScreen({ navigation }) {
+function JobsListScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
 
+  const [bookings, setBookings] = useState([]);
   const [posts, setPosts] = useState([]);
   const [quotes, setQuotes] = useState([]);
-  const [scheduled, setScheduled] = useState([]);
   const [dismissedIds, setDismissedIds] = useState(new Set());
-  const [filter, setFilter] = useState('new');
+  const [filter, setFilter] = useState(route?.params?.filter || 'today');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -696,10 +820,11 @@ function JobsListScreen({ navigation }) {
         api.get('/bookings/').catch(() => ({ items: [] })),
       ]);
       const openPosts = (p?.items || p || []).filter((post) => post.status === 'open');
-      const allBookings = b?.items || b || [];
       setPosts(openPosts);
-      setQuotes(i?.items || i || []);
-      setScheduled(allBookings.filter((bk) => bk.status !== 'cancelled'));
+      // Only quotes still waiting on the client belong in Needs Action —
+      // accepted ones are already a booking, rejected ones are dead.
+      setQuotes((i?.items || i || []).filter((q) => q.status === 'pending'));
+      setBookings(b?.items || b || []);
     } catch (err) {
       setError(err?.message || 'Could not load jobs.');
     } finally {
@@ -714,7 +839,25 @@ function JobsListScreen({ navigation }) {
     return unsub;
   }, [navigation, load]);
 
+  // Deep-link from the Dashboard's "needs action" / "today" surfaces — jump
+  // straight to the relevant tab, then clear the param so switching tabs
+  // manually afterward doesn't keep getting overridden.
+  useEffect(() => {
+    if (route?.params?.filter) {
+      setFilter(route.params.filter);
+      navigation.setParams({ filter: undefined });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [route?.params?.filter]);
+
   const visiblePosts = posts.filter((p) => !dismissedIds.has(p.id));
+
+  const todayJobs = bookings.filter((b) => bucketBooking(b) === 'today').sort(byJobDateAsc);
+  const upcomingJobs = bookings.filter((b) => bucketBooking(b) === 'upcoming').sort(byJobDateAsc);
+  const needsActionBookings = bookings.filter((b) => bucketBooking(b) === 'needsAction');
+  const pastJobs = bookings
+    .filter((b) => bucketBooking(b) === 'past')
+    .sort((a, b) => new Date(b.confirmed_date || b.created_at || 0) - new Date(a.confirmed_date || a.created_at || 0));
 
   function openQuoteSheet(post) {
     setSelectedPost(post);
@@ -723,13 +866,23 @@ function JobsListScreen({ navigation }) {
   function passPost(post) {
     setDismissedIds((prev) => new Set(prev).add(post.id));
   }
+  function openBooking(bookingId) {
+    navigation.navigate('JobManagement', { bookingId });
+  }
 
   const FILTER_LABEL_KEY = {
-    new: 'jobManagement.filterNew',
-    quoted: 'jobManagement.filterQuoted',
-    scheduled: 'jobManagement.filterScheduled',
+    today: 'jobManagement.filterToday',
+    upcoming: 'jobManagement.filterUpcoming',
+    needsAction: 'jobManagement.filterNeedsAction',
+    past: 'jobManagement.filterPast',
   };
-  const FILTER_COUNT = { new: visiblePosts.length, quoted: quotes.length, scheduled: scheduled.length };
+  const needsActionCount = visiblePosts.length + quotes.length + needsActionBookings.length;
+  const FILTER_COUNT = {
+    today: todayJobs.length,
+    upcoming: upcomingJobs.length,
+    needsAction: needsActionCount,
+    past: pastJobs.length,
+  };
 
   if (loading) {
     return (
@@ -787,66 +940,109 @@ function JobsListScreen({ navigation }) {
           />
         }
       >
-        {filter === 'new' && (
-          visiblePosts.length === 0 ? (
+        {filter === 'today' && (
+          todayJobs.length === 0 ? (
             <EmptyState
-              icon="inbox"
-              title={i18n.t('jobManagement.emptyNewTitle')}
-              body={i18n.t('jobManagement.emptyNewBody')}
+              icon="sun"
+              title={i18n.t('jobManagement.emptyTodayTitle')}
+              body={i18n.t('jobManagement.emptyTodayBody')}
             />
           ) : (
             <Stack spacing="md">
-              {visiblePosts.map((post) => (
-                <JobOpportunityCard
-                  key={post.id}
-                  post={post}
-                  onSendQuote={() => openQuoteSheet(post)}
-                  onPass={() => passPost(post)}
-                />
+              {todayJobs.map((b) => (
+                <JobRow key={b.id} booking={b} onPress={() => openBooking(b.id)} />
               ))}
             </Stack>
           )
         )}
 
-        {filter === 'quoted' && (
-          quotes.length === 0 ? (
-            <EmptyState
-              icon="send"
-              title={i18n.t('jobManagement.emptyQuotedTitle')}
-              body={i18n.t('jobManagement.emptyQuotedBody')}
-            />
-          ) : (
-            <Stack spacing="md">
-              {quotes.map((q) => (
-                <QuoteListRow
-                  key={q.id}
-                  interest={q}
-                  onMessage={() =>
-                    navigation.navigate('Chat', {
-                      interestId: q.id,
-                      otherPartyName: q.service_posts?.users?.first_name || 'Client',
-                    })
-                  }
-                />
-              ))}
-            </Stack>
-          )
-        )}
-
-        {filter === 'scheduled' && (
-          scheduled.length === 0 ? (
+        {filter === 'upcoming' && (
+          upcomingJobs.length === 0 ? (
             <EmptyState
               icon="calendar"
-              title={i18n.t('jobManagement.emptyScheduledTitle')}
-              body={i18n.t('jobManagement.emptyScheduledBody')}
+              title={i18n.t('jobManagement.emptyUpcomingTitle')}
+              body={i18n.t('jobManagement.emptyUpcomingBody')}
             />
           ) : (
             <Stack spacing="md">
-              {scheduled.map((b) => (
-                <ScheduledListRow
+              {upcomingJobs.map((b) => (
+                <JobRow key={b.id} booking={b} showDate onPress={() => openBooking(b.id)} />
+              ))}
+            </Stack>
+          )
+        )}
+
+        {filter === 'needsAction' && (
+          needsActionCount === 0 ? (
+            <EmptyState
+              icon="check-circle"
+              title={i18n.t('jobManagement.emptyNeedsActionTitle')}
+              body={i18n.t('jobManagement.emptyNeedsActionBody')}
+            />
+          ) : (
+            <Stack spacing="lg">
+              {visiblePosts.length > 0 && (
+                <Stack spacing="md">
+                  <SectionLabel>{i18n.t('jobManagement.needsActionNewLeads')}</SectionLabel>
+                  {visiblePosts.map((post) => (
+                    <JobOpportunityCard
+                      key={post.id}
+                      post={post}
+                      onSendQuote={() => openQuoteSheet(post)}
+                      onPass={() => passPost(post)}
+                    />
+                  ))}
+                </Stack>
+              )}
+
+              {needsActionBookings.length > 0 && (
+                <Stack spacing="md">
+                  <SectionLabel>{i18n.t('jobManagement.needsActionBookings')}</SectionLabel>
+                  {needsActionBookings.map((b) => (
+                    <ActionBookingRow key={b.id} booking={b} onPress={() => openBooking(b.id)} />
+                  ))}
+                </Stack>
+              )}
+
+              {quotes.length > 0 && (
+                <Stack spacing="md">
+                  <SectionLabel>{i18n.t('jobManagement.needsActionQuotesSent')}</SectionLabel>
+                  {quotes.map((q) => (
+                    <QuoteListRow
+                      key={q.id}
+                      interest={q}
+                      onMessage={() =>
+                        navigation.navigate('Chat', {
+                          interestId: q.id,
+                          otherPartyName: q.service_posts?.users?.first_name || 'Client',
+                        })
+                      }
+                    />
+                  ))}
+                </Stack>
+              )}
+            </Stack>
+          )
+        )}
+
+        {filter === 'past' && (
+          pastJobs.length === 0 ? (
+            <EmptyState
+              icon="archive"
+              title={i18n.t('jobManagement.emptyPastTitle')}
+              body={i18n.t('jobManagement.emptyPastBody')}
+            />
+          ) : (
+            <Stack spacing="md">
+              {pastJobs.map((b) => (
+                <PastJobRow
                   key={b.id}
                   booking={b}
-                  onPress={() => navigation.navigate('JobManagement', { bookingId: b.id })}
+                  onPress={() =>
+                    b.status === 'completed'
+                      ? navigation.navigate('Invoice', { bookingId: b.id })
+                      : openBooking(b.id)
+                  }
                 />
               ))}
             </Stack>
@@ -895,14 +1091,14 @@ const listStyles = StyleSheet.create({
 });
 
 // ─── Default export — branches on whether a specific booking was opened ──────
-// No bookingId (Business "Jobs" tab root) → the lead-triage feed above.
-// bookingId present (existing navigation.navigate('JobManagement', {bookingId})
-// call from the Scheduled row, formerly from MyJobsScreen) → unchanged
-// per-booking detail/status manager.
+// No bookingId (Business "Jobs" tab root, CARD-24) → the operational-hub
+// feed above (Today/Upcoming/Needs action/Past). bookingId present (from a
+// row's onPress here, or from MyJobsScreen/Dashboard) → unchanged per-booking
+// detail/status manager.
 export default function JobManagementScreen({ navigation, route }) {
   const { bookingId } = route.params || {};
   if (!bookingId) {
-    return <JobsListScreen navigation={navigation} />;
+    return <JobsListScreen navigation={navigation} route={route} />;
   }
   return <JobDetailScreen navigation={navigation} route={route} />;
 }
