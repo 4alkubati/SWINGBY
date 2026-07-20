@@ -138,21 +138,23 @@ flowchart LR
   My_Jobs --> QuoteComparison
   My_Jobs --> Chat
   My_Jobs --> BookingDetails
+  My_Jobs --> PostJob
   My_Jobs --> Review
   Search --> BusinessProfile
-  QuoteComparison --> ActiveBooking
+  QuoteComparison --> Chat
   QuoteComparison --> ClientTabs
   QuoteComparison --> My_Jobs
   QuoteComparison --> BusinessProfile
-  QuoteComparison --> Chat
   NearbyMap --> BusinessProfile
   PostJob --> QuoteComparison
   BookingDetails --> MessageThread
   BookingDetails --> CancellationFlow
+  BookingDetails --> PostJob
   BookingDetails --> BusinessProfile
   BookingDetails --> Invoice
   BookingDetails --> DisputeFlow
   Messages --> Chat
+  Messages --> BookingDetails
   BottomNav --> PostJob
 ```
 
@@ -185,6 +187,6 @@ Mobile calls to endpoints **not exposed by the backend** (path params normalized
 
 - Navigators: **4**  
 - Registered screens: **56**  
-- Navigation edges: **97**  
-- Backend routes: **76**  
+- Navigation edges: **100**  
+- Backend routes: **78**  
 - Mobile API calls: **91**  
