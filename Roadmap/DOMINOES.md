@@ -12,9 +12,9 @@ tags: [roadmap, dominoes, beta, plan]
 > The single ordered list of dominoes between today and a real tester completing a booking. Each domino lives in its own file under `[[dominoes]]`. Each file follows the **book convention**: never edit history, append new entries at the end under `📖 Log` and capture lessons under `🎓 Learning`.
 
 **North star:** [[README|Roadmap/README]] — by Aug 31, SwingBy is live and real people are transacting.
-**Vision slice each agent reads:** [[../AGENTS/claude/PRODUCT-VISION|PRODUCT-VISION.md]].
-**Live state of the build:** [[../AGENTS/claude/memory/STATUS|STATUS.md]].
-**What only a human can do:** [[../AGENTS/claude/memory/HUMAN-TODO|HUMAN-TODO.md]].
+**Vision slice each agent reads:** `~/brain/10-swingby/agents/claude/PRODUCT-VISION.md`.
+**Live state of the build:** `~/brain/10-swingby/agents/claude/memory/STATUS.md`.
+**What only a human can do:** `~/brain/10-swingby/agents/claude/memory/HUMAN-TODO.md`.
 
 ---
 
@@ -51,6 +51,64 @@ Every domino file follows the same shape, top to bottom:
 - [ ] **D5** [[dominoes/D5-paid-testers|— Hire real dev testers (Phase 2 — money cleared)]] — paid path: Apple Dev, Play, EAS.
 
 Meta: [[dominoes/_LEARNING-LOG|_LEARNING-LOG]] — the book that grows across dominoes.
+
+---
+
+## 🁢 D6 → D10 — the chain after the 40-fault audit (added 2026-07-19)
+
+> The Jul 19 "attack plan" ran as **cards** (CARD-01…24) in a file outside the repo — a second planning system running beside this one. **Cards are retired. Dominoes are the only system.** Everything they covered is folded in below, with work already done recorded honestly against it.
+
+### [[dominoes/D6-m1-gate|D6 — M1 GATE]] 🔴 **everything waits on this**
+The app survives Kira's own 15-min walkthrough on a fresh pull of `main`. Tester outreach stays shut until it closes.
+- [ ] **D6.1** — apply 4 migrations → merge `card-01-sync` → verify deploy ← **the immediate next action**
+- [ ] **D6.2** — scripted 15-min run, repeated until 3 clean consecutive passes
+- [ ] **D6.3** — Kira's own phone run. *Agent-clean ≠ done.*
+
+### [[dominoes/D7-security|D7 — Security + honest instruments]] 🟡
+- [ ] **D7.1** — secret rotation: Telegram token + `.dev` creds (Kira generates, agent verifies old ones dead)
+- [ ] **D7.2** — Supabase advisors → zero. *2 of 3 cleared live; HIBP toggle is dashboard-only, outstanding.*
+- [ ] **D7.3** — monitoring proven. *Analytics verified live (Plausible 202). Sentry unprovable — no dashboard creds on this box.*
+
+### [[dominoes/D8-money-uber|D8 — Money, the Uber way]] 🔴 **architecture rework**
+Authorize → capture at completion → ledger → **batched** payout. Replaces the per-booking-transfer model.
+- [ ] **D8.1** — move capture to completion; ledger accrues per business
+- [ ] **D8.2** — payout rail decision: manual for beta vs Stripe Connect
+- [ ] **D8.3** — execute every refund/penalty path in sandbox, actual vs designed
+
+### D9 — Product P0s 🟢 *code-complete, unverified on device*
+Built 2026-07-19, committed and pushed, **none seen running** (no emulator on the box):
+- [x] **D9.1** reviews wired to real data — `agent-mobile-product` *(migration 4 unapplied)*
+- [x] **D9.2** referrals real backend — `agent-mobile-product` *(migration 2 unapplied)*
+- [x] **D9.3** booking-entry per D2 — `card-20-entry` `b6cbb78` *(⚠️ needs Kira's ruling — see [[dominoes/D6-m1-gate|D6]])*
+- [x] **D9.4** business Jobs view + biometrics — `card-24-jobsview` `e6ad7f1`
+- [x] **D9.5** rebook loop + favorites — `card-12-rebook` `ef5dca0`
+- [x] **D9.6** client-PII leak fixed (P0, found unplanned) — `agent-backend` `b1ec11c`
+
+### D10 — Launch surface 🟡
+- [ ] **D10.1** — deploy `web/launch` so swingbyy.com serves privacy/terms/cookies *(legal exposure until done)*
+- [ ] **D10.2** — DMARC → quarantine. *Record drafted and ready; DNS is Kira's step.*
+- [ ] **D10.3** — waitlist count into the morning brief *(blocked: no `NOTION_TOKEN` on the box)*
+- [x] **D10.4** — analytics funnel: signup / booking created / booking completed — verified live
+- [x] **D10.5** — money-path failure tests — 33 added, suite green
+- [x] **D10.6** — app screens on the website — `card-22-website` `ec7e27c`
+- [x] **D10.7** — docs match shipped behaviour — `card-14-docs` `179a2f7` *(4 decisions await Kira)*
+
+### Card → domino map (so the old reports stay findable)
+
+| Card | Domino | Card | Domino |
+|---|---|---|---|
+| 01, 02 | D6.1 | 14 | D10.7 |
+| 03 | D6.2 | 15 | D10.1 |
+| 04, 11 | D6.2 / D6.3 | 16 | D10.2 |
+| 05 | D7.1 | 17 | D10.3 |
+| 06 | D7.2 | 18 | D10.4 |
+| 07 | D7.3 | 19 | D10.5 |
+| 08, 09, 10 | D9.1 / D9.2 | 20 | D9.3 |
+| 12 | D9.5 | 21, 13 | D8 |
+| 22 | D10.6 | 23 | D9.6 |
+| 24 | D9.4 | | |
+
+Agent reports for all of these live in `~/brain/inbox/` — **this box only**, brain has no remote yet.
 
 ---
 
