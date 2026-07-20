@@ -20,6 +20,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from app.deps import get_current_user
 from app.limiter import limiter
 from app.supabase_client import supabase
+from app.api.waitlist import get_notion, WAITLIST_DB_ID
 
 logger = structlog.get_logger(__name__)
 
@@ -138,6 +139,52 @@ def unsuspend_user(
     except Exception:
         logger.exception("admin.unsuspend_user failed", target_user=user_id)
         raise HTTPException(status_code=400, detail="Could not unsuspend user")
+
+
+@router.get("/waitlist-count")
+@limiter.limit("30/minute")
+def waitlist_count(
+    request: Request,
+    current_user: dict = Depends(require_admin),
+):
+    """
+    Live signup count (audit fault K5 — "waitlist-blind": a 200-signup
+    target existed with no tracked actual count driving decisions).
+
+    Source of truth: the SwingBy Waitlist Notion database
+    (WAITLIST_DB_ID, see app/api/waitlist.py). BOTH waitlist entry points —
+    this backend's POST /waitlist/ and the Cloudflare Worker at
+    api.swingbyy.com/waitlist (workers/waitlist/index.js) — write into that
+    same database, so there is no separate KV or Postgres store to
+    reconcile; a Notion page count over that database IS the true count.
+
+    Paginates the Notion API (100 rows/page, capped at 5,000 total as a
+    runaway-loop guard) since `databases.query` doesn't return a total in
+    one call.
+    """
+    try:
+        notion = get_notion()
+    except RuntimeError as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    try:
+        count = 0
+        cursor = None
+        for _ in range(50):  # safety cap: 50 * 100 = 5,000 rows
+            kwargs = {"database_id": WAITLIST_DB_ID, "page_size": 100}
+            if cursor:
+                kwargs["start_cursor"] = cursor
+            page = notion.databases.query(**kwargs)
+            count += len(page.get("results", []))
+            if not page.get("has_more"):
+                break
+            cursor = page.get("next_cursor")
+        return {"count": count, "source": "notion", "database_id": WAITLIST_DB_ID}
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception("admin.waitlist_count failed")
+        raise HTTPException(status_code=400, detail="Could not fetch waitlist count")
 
 
 @router.post("/force-complete-booking/{booking_id}")

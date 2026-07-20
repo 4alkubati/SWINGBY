@@ -6,6 +6,7 @@ from fastapi import APIRouter, HTTPException, Depends, Query
 from pydantic import BaseModel, Field, field_validator, model_validator
 from typing import Optional
 from app.deps import get_current_user
+from app.privacy import mask_service_post_row, mask_user_public
 from app.supabase_client import supabase
 from app.services.push import send_push_to_user
 
@@ -410,6 +411,12 @@ def list_threads(current_user: dict = Depends(get_current_user)):
             if not agg:
                 continue  # no conversation yet
             post = i.get("service_posts") or {}
+            # CARD-23: quote threads are pre-acceptance by default — only an
+            # accepted interest may show the client's last name in the chat
+            # header. Address never appears in this payload, so no address
+            # masking is needed here (only the users(...) join is present).
+            if i.get("status") != "accepted":
+                post = mask_service_post_row(post)
             client_user = post.get("users") or {}
             counterpart = (
                 (i.get("businesses") or {}).get("business_name")
@@ -500,6 +507,15 @@ def get_interest_messages(
         query = query.order("sent_at", desc=True).limit(limit)
         res = query.execute()
         items = res.data or []
+        # CARD-23: a pending quote thread is pre-acceptance — the client's
+        # last name must not ride along on their own chat messages until
+        # the interest is accepted. Only the client's own messages carry
+        # their name via this join, so only those need masking.
+        if interest["status"] != "accepted":
+            client_id = interest["service_posts"]["client_id"]
+            for item in items:
+                if item.get("sender_id") == client_id and item.get("users"):
+                    item["users"] = mask_user_public(item["users"])
         _mark_read("interest_id", interest_id, current_user["id"])
         next_before = items[-1]["sent_at"] if items else None
         return {

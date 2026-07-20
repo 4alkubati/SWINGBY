@@ -309,6 +309,11 @@ def signup(request: Request, data: SignupRequest):
         except Exception:
             pass
 
+        # Funnel event (K7 — no-analytics) — best-effort, never blocks signup
+        from app.services.analytics import track_event
+
+        track_event("Signup", url_path="/signup", props={"role": data.role})
+
         # If email confirmation is OFF, Supabase returns a live session immediately.
         # Return the token so the mobile app can auto-login.
         access_token = res.session.access_token if res.session else None
