@@ -21,6 +21,9 @@
         "NSPhotoLibraryUsageDescription": "SwingBy needs access to your photos so you can attach images to a job post.",
         "NSCameraUsageDescription": "SwingBy needs camera access so you can take a photo for your job post.",
         "ITSAppUsesNonExemptEncryption": false
+      },
+      "config": {
+        "googleMapsApiKey": ""
       }
     },
     "android": {
@@ -35,8 +38,18 @@
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.READ_MEDIA_IMAGES",
-        "android.permission.CAMERA"
-      ]
+        "android.permission.CAMERA",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ],
+      "config": {
+        "googleMapsApiKey": ""
+      }
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -66,6 +79,12 @@
       "eas": {
         "projectId": "ec4c12cf-4859-416c-a375-a22fb676ae53"
       }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/ec4c12cf-4859-416c-a375-a22fb676ae53"
     }
   }
 }
