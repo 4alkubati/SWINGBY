@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 from app.deps import get_current_user
 from app.supabase_client import supabase
 from app.services.push import send_push_to_user
+from app.services import payment_status, payment_ledger
 
 logger = logging.getLogger(__name__)
 
@@ -386,7 +387,9 @@ def propose_dates(
                     .single()
                     .execute()
                 )
-                other_uid = biz_owner_res.data["owner_id"] if biz_owner_res.data else None
+                other_uid = (
+                    biz_owner_res.data["owner_id"] if biz_owner_res.data else None
+                )
             else:
                 other_uid = booking["client_id"]
             if other_uid:
@@ -449,14 +452,51 @@ def confirm_date(
         )
 
     try:
+        # §5 release trigger: "first_release on date confirmed." Release
+        # BEFORE flipping the booking's status, mirroring the ordering used
+        # in complete_booking — if the release fails, the booking stays
+        # 'confirmed' and the call is safely retryable instead of leaving a
+        # confirmed-date booking with escrow stuck at 100%.
+        new_payment_status = None
+        try:
+            payment_res = (
+                supabase.table("payments")
+                .select("*")
+                .eq("booking_id", booking_id)
+                .single()
+                .execute()
+            )
+            payment_row = payment_res.data
+        except Exception:
+            # No payment row (legacy booking predating this system) — degrade
+            # to the pre-existing behavior of only flipping the date/status,
+            # rather than 500ing a date confirmation over a missing ledger row.
+            logger.warning(
+                "No payment row found for booking %s at date-confirm — skipping release",
+                booking_id,
+                exc_info=True,
+            )
+            payment_row = None
+
+        if payment_row and payment_row.get("status") == payment_status.HELD:
+            payment_ledger.release_first_tranche(supabase, payment_row)
+            new_payment_status = payment_status.PARTIAL_RELEASED
+        elif payment_row:
+            # Already released (re-entry guarded by the status check above in
+            # practice) or a cash job — leave the payment row's own status as
+            # the source of truth rather than overwriting it.
+            new_payment_status = payment_row.get("status")
+
+        booking_update = {
+            "confirmed_date": data.confirmed_date,
+            "status": "in_progress",
+        }
+        if new_payment_status:
+            booking_update["payment_status"] = new_payment_status
+
         res = (
             supabase.table("bookings")
-            .update(
-                {
-                    "confirmed_date": data.confirmed_date,
-                    "status": "in_progress",
-                }
-            )
+            .update(booking_update)
             .eq("id", booking_id)
             .execute()
         )
@@ -562,10 +602,19 @@ def complete_booking(booking_id: str, current_user: dict = Depends(get_current_u
     """
     Business owner or assigned employee marks job complete.
 
+    Preconditions (§5 — previously missing entirely: a business could accept
+    a quote and instantly complete it, releasing escrow with no employee, no
+    date, and no work done):
+      - the booking is not already completed
+      - a date was confirmed
+      - payment is held / partial_released / paid_off_platform
+
     Payment logic:
-      - Booking: status → completed, payment_status → fully_released
-      - Payment: release remaining 50 % escrow minus 10 % platform cut.
-        e.g. $100 total: $50 already released, now release $40, SwingBy keeps $10.
+      - Booking: status → completed, payment_status → fully_released,
+        completed_at stamped (previously never written — every invoice was
+        dated the day the booking was created).
+      - Payment: release business_net's exact remainder (second_release),
+        never a second-rounded 50% — see app/services/money.py.
     """
     if current_user["role"] not in ("business_owner", "employee"):
         raise HTTPException(
@@ -609,10 +658,14 @@ def complete_booking(booking_id: str, current_user: dict = Depends(get_current_u
                 status_code=403, detail="You are not assigned to this booking"
             )
 
+    # §5 completion preconditions.
+    if not booking.get("confirmed_date"):
+        raise HTTPException(
+            status_code=400,
+            detail="Cannot complete a booking with no confirmed date",
+        )
+
     try:
-        # Release remaining escrow FIRST (minus platform cut). If this fails the
-        # booking stays in its current status and the call is safely retryable —
-        # flipping the booking first left completed bookings with stuck escrow.
         payment_res = (
             supabase.table("payments")
             .select("*")
@@ -620,30 +673,39 @@ def complete_booking(booking_id: str, current_user: dict = Depends(get_current_u
             .single()
             .execute()
         )
-        if payment_res.data:
-            p = payment_res.data
-            # already_released = 50 %, platform_cut = 10 % → final release = 40 %
-            final_release = round(
-                p["total_charged"] - p["platform_cut"] - p["released_to_business"], 2
-            )
-            supabase.table("payments").update(
-                {
-                    "released_to_business": round(
-                        p["released_to_business"] + final_release, 2
-                    ),
-                    "escrow_held": 0,
-                    # payments_status_check allows: pending | partial | paid_full |
-                    # paid_off_platform | fully_released | refunded | failed
-                    "status": "fully_released",
-                    "released_at": datetime.now(timezone.utc).isoformat(),
-                }
-            ).eq("id", p["id"]).execute()
+        payment_row = payment_res.data
+    except Exception:
+        payment_row = None
 
-        # Update booking
+    if not payment_row or payment_row.get("status") not in (
+        payment_status.HELD,
+        payment_status.PARTIAL_RELEASED,
+        payment_status.PAID_OFF_PLATFORM,
+    ):
+        raise HTTPException(
+            status_code=400,
+            detail="Cannot complete a booking with no confirmed payment",
+        )
+
+    try:
+        # Release the remaining escrow FIRST. If this fails the booking stays
+        # in its current status and the call is safely retryable — flipping
+        # the booking first left completed bookings with stuck escrow.
+        if payment_row["status"] == payment_status.PAID_OFF_PLATFORM:
+            # Cash job — the platform never held the principal (§6);
+            # nothing to release here.
+            final_payment_status = payment_status.PAID_OFF_PLATFORM
+        else:
+            payment_ledger.release_second_tranche(supabase, payment_row)
+            final_payment_status = payment_status.FULLY_RELEASED
+
+        # Update booking — completed_at was never written before; every
+        # invoice was dated the day the booking was created.
         supabase.table("bookings").update(
             {
                 "status": "completed",
-                "payment_status": "fully_released",
+                "payment_status": final_payment_status,
+                "completed_at": datetime.now(timezone.utc).isoformat(),
             }
         ).eq("id", booking_id).execute()
 

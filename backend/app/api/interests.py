@@ -1,12 +1,13 @@
 import logging
 
 from fastapi import APIRouter, HTTPException, Depends
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from typing import Optional
 from app.deps import get_current_user
 from app.privacy import mask_service_post_row
 from app.supabase_client import supabase
 from app.services.push import send_push_to_user
+from app.services import money, payment_status, payment_ledger, stripe_service
 
 logger = logging.getLogger(__name__)
 
@@ -19,6 +20,20 @@ router = APIRouter()
 class InterestCreate(BaseModel):
     post_id: str = Field(..., min_length=1, max_length=64)
     quoted_price: Optional[float] = Field(None, gt=0, le=1_000_000)
+
+    @field_validator("quoted_price")
+    @classmethod
+    def _validate_precision(cls, v: Optional[float]) -> Optional[float]:
+        # PAYMENT-MODEL.md §3: "quoted_price must be validated to 2 decimal
+        # places on input" — reject extra precision rather than silently
+        # rounding a business's quote.
+        if v is None:
+            return v
+        try:
+            money.validate_two_decimal_places(v)
+        except money.MoneyError as exc:
+            raise ValueError(str(exc)) from exc
+        return v
 
 
 # ── Endpoints ─────────────────────────────────────────────────────────────────
@@ -308,20 +323,59 @@ def accept_interest(interest_id: str, current_user: dict = Depends(get_current_u
             detail="This business isn't accepting bookings right now — subscription is not active.",
         )
 
+    # §3 — server-derive the charge amount from the stored quote. The client
+    # never sends a price; whatever the quote/post carries is the only number
+    # that can move money.
     try:
-        supabase.table("interests").update({"status": "accepted"}).eq(
-            "id", interest_id
-        ).execute()
-        supabase.table("interests").update({"status": "rejected"}).eq(
-            "post_id", post["id"]
-        ).neq("id", interest_id).execute()
-        supabase.table("service_posts").update({"status": "matched"}).eq(
-            "id", post["id"]
-        ).execute()
+        ledger = money.derive_ledger(interest["quoted_price"] or post["budget"])
+    except money.MoneyError as exc:
+        raise HTTPException(status_code=400, detail=f"Could not accept interest: {exc}")
 
-        total_amount = float(interest["quoted_price"] or post["budget"])
-        platform_fee = round(total_amount * 0.10, 2)
-        half = round(total_amount * 0.50, 2)
+    # §5 — card on file is required to accept a quote, and the charge happens
+    # BEFORE any booking exists: "money is committed before work happens."
+    client_row = (
+        supabase.table("users")
+        .select("stripe_customer_id, default_payment_method_id")
+        .eq("id", current_user["id"])
+        .single()
+        .execute()
+    )
+    client_data = client_row.data or {}
+    customer_id = client_data.get("stripe_customer_id")
+    payment_method_id = client_data.get("default_payment_method_id")
+    if not customer_id or not payment_method_id:
+        raise HTTPException(
+            status_code=402,
+            detail="Add a card to book this service — no card on file.",
+        )
+
+    # Idempotency key is derived from interest_id (not time/random) so a
+    # retried or double-tapped accept collapses into the SAME PaymentIntent on
+    # Stripe's side instead of charging the client twice.
+    idempotency_key = f"interest-accept-{interest_id}"
+    try:
+        intent = stripe_service.charge_off_session(
+            customer_id=customer_id,
+            payment_method_id=payment_method_id,
+            amount=ledger.total_charged,
+            idempotency_key=idempotency_key,
+            description=f"SwingBy booking — quote {interest_id}",
+        )
+    except stripe_service.CardChargeError as exc:
+        # Charge failed — nothing has been written yet. Interest stays
+        # pending, post stays open, no booking is created (§5).
+        raise HTTPException(status_code=402, detail=str(exc))
+
+    try:
+        # Charge succeeded. Booking + payment are created BEFORE the
+        # interest/post are flipped to their resolved states, so that if
+        # anything below fails, the interest is still 'pending' — a retry
+        # re-uses the same idempotency key (safe, no double charge) instead
+        # of landing in a stuck state with no recovery path (§8).
+        booking_payment_status = (
+            payment_status.PARTIAL_RELEASED if preferred_date else payment_status.HELD
+        )
+        total_amount = float(ledger.total_charged)
 
         booking_insert = {
             "client_id": current_user["id"],
@@ -329,10 +383,10 @@ def accept_interest(interest_id: str, current_user: dict = Depends(get_current_u
             "post_id": post["id"],
             "service_category": post["category"],
             "total_amount": total_amount,
-            "commission_rate": 0.10,
-            "platform_fee": platform_fee,
+            "commission_rate": float(money.PLATFORM_CUT_RATE),
+            "platform_fee": float(ledger.platform_cut),
             "status": "confirmed",
-            "payment_status": "partial_released",
+            "payment_status": booking_payment_status,
         }
         if preferred_date:
             # Time was already given at posting — skip the propose/accept
@@ -342,20 +396,21 @@ def accept_interest(interest_id: str, current_user: dict = Depends(get_current_u
         booking_res = supabase.table("bookings").insert(booking_insert).execute()
         booking = booking_res.data[0]
 
-        # Carry the pre-booking quote conversation into the booking thread —
-        # stamped messages surface under the booking in /messages/threads.
-        try:
-            supabase.table("messages").update({"booking_id": booking["id"]}).eq(
-                "interest_id", interest_id
-            ).execute()
-        except Exception:
-            pass  # thread migration is best-effort
+        payment_row = payment_ledger.capture_payment_row(
+            supabase,
+            booking_id=booking["id"],
+            ledger=ledger,
+            stripe_payment_intent_id=intent["id"],
+        )
 
         # Timeline entry for the auto-confirmed date — mirrors the
         # date_confirmed event PATCH /confirm-date records for the manual
         # handshake path (bookings.py), so the two entry paths leave the
-        # same trail on the booking's Live Job Status timeline.
+        # same trail on the booking's Live Job Status timeline. Since the
+        # date is already confirmed here, the first-release trigger ("date
+        # confirmed", §5) fires immediately too.
         if preferred_date:
+            payment_row = payment_ledger.release_first_tranche(supabase, payment_row)
             try:
                 supabase.table("booking_events").insert(
                     {
@@ -372,20 +427,26 @@ def accept_interest(interest_id: str, current_user: dict = Depends(get_current_u
                     exc_info=True,
                 )
 
-        payment_res = (
-            supabase.table("payments")
-            .insert(
-                {
-                    "booking_id": booking["id"],
-                    "total_charged": total_amount,
-                    "escrow_held": half,
-                    "released_to_business": half,
-                    "platform_cut": platform_fee,
-                    "status": "partial",
-                }
-            )
-            .execute()
-        )
+        # Carry the pre-booking quote conversation into the booking thread —
+        # stamped messages surface under the booking in /messages/threads.
+        try:
+            supabase.table("messages").update({"booking_id": booking["id"]}).eq(
+                "interest_id", interest_id
+            ).execute()
+        except Exception:
+            pass  # thread migration is best-effort
+
+        # Now that the money + booking are secured, resolve the interest and
+        # the post it came from.
+        supabase.table("interests").update({"status": "accepted"}).eq(
+            "id", interest_id
+        ).execute()
+        supabase.table("interests").update({"status": "rejected"}).eq(
+            "post_id", post["id"]
+        ).neq("id", interest_id).execute()
+        supabase.table("service_posts").update({"status": "matched"}).eq(
+            "id", post["id"]
+        ).execute()
 
         # Notify the business owner and client (push + email) — best-effort
         try:
@@ -467,7 +528,7 @@ def accept_interest(interest_id: str, current_user: dict = Depends(get_current_u
         return {
             "message": "Interest accepted — booking and payment created",
             "booking": booking,
-            "payment": payment_res.data[0],
+            "payment": payment_row,
         }
     except HTTPException:
         raise
