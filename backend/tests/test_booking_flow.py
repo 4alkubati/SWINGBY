@@ -205,7 +205,9 @@ class TestDateHandshake:
                 update_data=[{**booking_row, "id": "booking-1"}],
             ),
             "booking_events": SupabaseTableStub(insert_data=[{"id": "evt-1"}]),
-            "businesses": SupabaseTableStub(select_data={"id": "biz-1", "owner_id": "owner-1"}),
+            "businesses": SupabaseTableStub(
+                select_data={"id": "biz-1", "owner_id": "owner-1"}
+            ),
             "users": SupabaseTableStub(select_data=None),
         }
 
@@ -304,9 +306,7 @@ class TestDateHandshake:
 
         assert response.status_code == 403, response.text
 
-    def test_propose_requires_awaiting_confirmation_state(
-        self, test_client, as_client
-    ):
+    def test_propose_requires_awaiting_confirmation_state(self, test_client, as_client):
         stubs = self._stubs(
             {"client_id": "client-1", "business_id": "biz-1", "status": "in_progress"}
         )

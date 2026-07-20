@@ -102,7 +102,11 @@ class TestListBusinesses:
         """
         stub = SupabaseTableStub(
             select_data=[
-                {"id": "biz-1", "business_name": "Test Cleaning Co.", "category": "Cleaning"}
+                {
+                    "id": "biz-1",
+                    "business_name": "Test Cleaning Co.",
+                    "category": "Cleaning",
+                }
             ]
         )
         with patch("app.api.businesses.supabase") as mock_supabase:

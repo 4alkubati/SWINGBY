@@ -34,7 +34,9 @@ jobs:
           cache-dependency-path: backend/requirements.txt
 
       - name: Install linters
-        run: pip install ruff black
+        # Pinned: unpinned linters mean a new Black/Ruff release turns main red
+        # with no code change. Bump deliberately, not by surprise.
+        run: pip install ruff==0.15.22 black==26.5.1
 
       - name: Ruff check
         run: ruff check backend/ --output-format=github

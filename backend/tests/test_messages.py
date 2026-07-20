@@ -114,9 +114,7 @@ class TestBookingThreadCarriesQuoteHistory:
             # booking_id path param must be a UUID (see _require_uuid); the
             # SupabaseTableStub ignores the value passed to .eq(), it just
             # returns whatever select_data was configured with above.
-            response = test_client.get(
-                "/messages/22222222-2222-2222-2222-222222222222"
-            )
+            response = test_client.get("/messages/22222222-2222-2222-2222-222222222222")
 
         assert response.status_code == 200, response.text
         data = response.json()
@@ -171,9 +169,7 @@ class TestQuoteContextOnBookingThread:
                 messages_stub,
             )
 
-            response = test_client.get(
-                "/messages/33333333-3333-3333-3333-333333333333"
-            )
+            response = test_client.get("/messages/33333333-3333-3333-3333-333333333333")
 
         assert response.status_code == 200, response.text
         data = response.json()
@@ -211,9 +207,7 @@ class TestQuoteContextOnBookingThread:
                 messages_stub,
             )
 
-            response = test_client.get(
-                "/messages/44444444-4444-4444-4444-444444444444"
-            )
+            response = test_client.get("/messages/44444444-4444-4444-4444-444444444444")
 
         assert response.status_code == 200, response.text
         assert response.json()["interest"] is None
