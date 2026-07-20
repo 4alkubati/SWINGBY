@@ -27,10 +27,13 @@ The first rework (2026-07-19) fixed the timing but modelled payouts as a **per-b
 
 ## 🚕 The model Kira specified
 
-1. **Authorization** — a hold is placed on the client's card confirming funds exist. No money moves.
-2. **Direct capture** — when the job completes, the full fare is captured into SwingBy's own account.
-3. **Ledger accounting** — an internal database records the transaction and computes the business's cut vs the platform fee. **This is bookkeeping, not money movement.**
-4. **Payouts** — earnings **accumulate per business** and are disbursed on a schedule (regular deposit, or instant cash-out on request). *Not* held in a per-booking escrow tied to one job.
+Uber's reference flow is authorize-then-capture-at-end. **Kira ruled 2026-07-19: SwingBy captures up front — the client pays before the job.** Everything downstream follows Uber.
+
+1. **Capture at confirmation** — the client's card is charged the full amount when the booking is confirmed, into SwingBy's own account. *(Kira's call. Diverges from Uber deliberately — see the log.)*
+2. **Ledger accounting** — an internal database records the transaction and computes the business's cut vs the platform fee. **This is bookkeeping, not money movement.**
+3. **Payouts** — earnings **accumulate per business** and are disbursed on a schedule (regular deposit, or instant cash-out on request). *Not* held in a per-booking escrow tied to one job.
+
+**Non-negotiable regardless of capture timing:** no money reaches a business before the job is complete. Capturing early funds the platform balance; it does not pay the business.
 
 ### The thing this unlocks
 
@@ -51,9 +54,9 @@ A number on the business analytics screen is **step 3, not step 4**. Seeing corr
 
 Branch `card-21-money` (`1632f1c`) already did the hard half: accept no longer releases 50%, completion is the sole release point, refunds come from the platform balance, 17 tests, suite green at 90. **Rework, don't restart.**
 
-### Step 1 — move the capture
-Today it captures the full amount at confirmation. Switch to a Stripe PaymentIntent with `capture_method: 'manual'` — authorize at confirmation, capture at completion.
-> **Verify:** a sandbox booking shows an *uncaptured* PaymentIntent after confirmation, and a captured one only after `complete_booking`.
+### Step 1 — capture timing: ✅ NO CHANGE (Kira, 2026-07-19)
+Keep capture at confirmation. The client pays before the job. `card-21-money` already does exactly this — **do not** switch to `capture_method: 'manual'`.
+> **Verify:** confirming a sandbox booking produces a captured PaymentIntent on the platform balance, and `payments.escrow_held` equals the full amount with `released_to_business` at 0.
 
 ### Step 2 — accrue, don't transfer
 Replace the per-booking transfer with a ledger accrual: on capture, write the business's share to a running balance rather than moving funds.
@@ -64,8 +67,8 @@ Replace the per-booking transfer with a ledger accrual: on capture, write the bu
 > **Verify:** two completed bookings for one business roll into one outstanding balance matching the Stripe dashboard to the cent.
 
 ### Step 4 — refunds
-Refunds before completion cancel the authorization (nothing captured, nothing to claw back). After completion, refund from the platform balance and **debit the accrual** — never claw back from a business already paid.
-> **Verify:** a pre-completion cancel releases the hold with no charge; a post-completion refund reduces the outstanding balance.
+Because money is captured up front, **every** cancellation is a real Stripe refund from the platform balance — there is no authorization to simply release. Post-completion refunds also **debit the accrual**; never claw back from a business already paid out.
+> **Verify:** a pre-completion cancel issues a real refund and returns `escrow_held` to 0; a post-completion refund reduces that business's outstanding balance.
 
 ## 🪜 D8.2 — The payout rail (decision, then build)
 
@@ -93,7 +96,14 @@ A sandbox booking runs authorize → capture-at-completion → ledger accrual �
 - Could not run live sandbox: no `STRIPE_SECRET_KEY` and no real Supabase creds on the box. Declined to run `e2e_smoke.py` against **prod** — that would have validated the old code, not the branch. Correct call.
 - `create_transfer` built but left unwired: no Stripe Connect onboarding exists anywhere in the codebase.
 - **Kira's correction, same day:** Uber does not escrow per trip. It authorizes, captures at completion, accounts internally, and **batches payouts**. This retires the per-booking-transfer design and with it the Connect blocker for beta.
-- Kira asked whether the ledger already works, having seen numbers in business analytics. Answer recorded: analytics proves step 3 (accounting), not step 4 (money leaving the account). Both real, only one built.
+- Kira asked whether the ledger already works, having seen numbers in business analytics. Answer recorded: analytics proves the accounting step, not money leaving the account. Both real, only one built.
+
+### 2026-07-19 — RULING: client pays before the job
+- Kira: **"keep client pays before job."** Capture stays at confirmation; the authorize-then-capture-at-completion step is cancelled. `card-21-money` already has the right capture timing — only the payout half needs rework.
+- **Deliberate divergence from Uber.** Uber authorizes at request and captures at trip end. SwingBy captures up front.
+- **What this buys:** funds are guaranteed before a business spends a day on the job. No mid-job card decline, no chasing payment after work is done — the failure mode that drives tradespeople off-platform.
+- **What it costs:** every cancellation is a real refund rather than a released hold, so refund volume touches real money and shows on statements. Client-side trust bar is higher — they're paying a new platform before receiving anything, which makes the refund path a **product** surface, not just an engineering one. Cancellation UX should say plainly when and how money comes back.
+- **Unchanged and non-negotiable:** nothing reaches the business before completion. Capturing early funds the platform balance only.
 
 ## 🎓 Learning
 

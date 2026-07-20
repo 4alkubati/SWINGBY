@@ -70,8 +70,8 @@ The app survives Kira's own 15-min walkthrough on a fresh pull of `main`. Tester
 - [ ] **D7.3** — monitoring proven. *Analytics verified live (Plausible 202). Sentry unprovable — no dashboard creds on this box.*
 
 ### [[dominoes/D8-money-uber|D8 — Money, the Uber way]] 🔴 **architecture rework**
-Authorize → capture at completion → ledger → **batched** payout. Replaces the per-booking-transfer model.
-- [ ] **D8.1** — move capture to completion; ledger accrues per business
+**Client pays at confirmation** (Kira 2026-07-19) → ledger accrues → **batched** payout. Replaces the per-booking-transfer model.
+- [ ] **D8.1** — capture timing stays as built; ledger accrues per business instead of per-booking transfer
 - [ ] **D8.2** — payout rail decision: manual for beta vs Stripe Connect
 - [ ] **D8.3** — execute every refund/penalty path in sandbox, actual vs designed
 
