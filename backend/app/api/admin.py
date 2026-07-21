@@ -212,11 +212,36 @@ def force_complete_booking(
     booking_id: str,
     current_user: dict = Depends(require_admin),
 ):
-    """Sets bookings.status = 'completed' regardless of current state."""
+    """Sets bookings.status = 'completed' and releases escrow like /complete.
+
+    fix G: previously this only flipped status='completed' and bypassed the
+    escrow release, leaving the on-platform 50% stuck in escrow forever with no
+    route out. Now it runs the SAME release path as PATCH /bookings/{id}/complete
+    so the ledger settles. If the booking has no payments row, the completion
+    still proceeds (admin override) but is logged for follow-up.
+    """
+    from app.services import escrow
+
     try:
+        payment_status = "fully_released"
+        try:
+            escrow.release_escrow_on_complete(booking_id)
+        except escrow.EscrowError:
+            # No payment row to release — don't block the admin override, but
+            # surface it: there's nothing to settle and payment_status is unknown.
+            logger.warning(
+                "admin.force_complete_booking: no payments row for %s — "
+                "completing without escrow release",
+                booking_id,
+            )
+            payment_status = None
+
+        booking_update = {"status": "completed"}
+        if payment_status:
+            booking_update["payment_status"] = payment_status
         res = (
             supabase.table("bookings")
-            .update({"status": "completed"})
+            .update(booking_update)
             .eq("id", booking_id)
             .execute()
         )

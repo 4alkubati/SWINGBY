@@ -259,6 +259,15 @@ def assign_employee(
             status_code=403, detail="This booking doesn't belong to your business"
         )
 
+    # Status guard: an employee can only be (re)assigned while the booking is
+    # live. Reassigning onto a completed/cancelled booking is nonsensical and
+    # would let work be re-attributed after the money has settled.
+    if booking.get("status") not in ("confirmed", "in_progress"):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Cannot assign an employee to a '{booking.get('status')}' booking",
+        )
+
     # Validate employee is active and belongs to this business
     emp = (
         supabase.table("employees")
@@ -615,39 +624,35 @@ def complete_booking(booking_id: str, current_user: dict = Depends(get_current_u
         # Release remaining escrow FIRST (minus platform cut). If this fails the
         # booking stays in its current status and the call is safely retryable —
         # flipping the booking first left completed bookings with stuck escrow.
-        payment_res = (
-            supabase.table("payments")
-            .select("*")
-            .eq("booking_id", booking_id)
-            .single()
-            .execute()
-        )
-        if payment_res.data:
-            p = payment_res.data
-            # already_released = 50 %, platform_cut = 10 % → final release = 40 %
-            final_release = round(
-                p["total_charged"] - p["platform_cut"] - p["released_to_business"], 2
-            )
-            supabase.table("payments").update(
-                {
-                    "released_to_business": round(
-                        p["released_to_business"] + final_release, 2
-                    ),
-                    "escrow_held": 0,
-                    # payments_status_check allows: pending | partial | paid_full |
-                    # paid_off_platform | fully_released | refunded | failed
-                    "status": "fully_released",
-                    "released_at": datetime.now(timezone.utc).isoformat(),
-                }
-            ).eq("id", p["id"]).execute()
+        #
+        # fix F: never mark a non-existent payment released. If the accept-time
+        # payments insert was lost, release_escrow_on_complete raises and we fail
+        # loudly rather than flipping the booking to fully_released with no
+        # payment record behind it.
+        from app.services import escrow
 
-        # Update booking
+        try:
+            outcome = escrow.release_escrow_on_complete(booking_id)
+        except escrow.EscrowError:
+            logger.exception(
+                "complete_booking: no releasable payment for booking %s", booking_id
+            )
+            raise HTTPException(
+                status_code=409,
+                detail="Cannot complete: no payment record to release. "
+                "Contact support — this booking's payment is missing.",
+            )
+
+        # Booking payment_status mirrors the ledger: off-platform bookings are
+        # settled (money changed hands off SwingBy); on-platform releases are
+        # fully_released; there is no in-between now that nothing releases early.
         supabase.table("bookings").update(
             {
                 "status": "completed",
                 "payment_status": "fully_released",
             }
         ).eq("id", booking_id).execute()
+        _ = outcome  # (kept for readability / future event logging)
 
         # Email the client a completion notice + review nudge — best-effort
         try:
@@ -720,7 +725,10 @@ def cancel_booking(
         raise HTTPException(status_code=404, detail="Booking not found")
     booking = booking_res.data
 
-    _assert_booking_access(booking, current_user)
+    # fix G: cancellation carries a financial penalty and moves the ledger —
+    # only the two handshake parties (client, business owner) may cancel. An
+    # assigned employee must not trigger refunds/penalties.
+    _assert_handshake_party(booking, current_user)
 
     if booking["status"] in ("completed", "cancelled"):
         raise HTTPException(
@@ -728,7 +736,12 @@ def cancel_booking(
             detail=f"Cannot cancel a booking with status '{booking['status']}'",
         )
 
-    # Calculate penalty
+    from app.services import escrow
+
+    cancelled_by_business = current_user["role"] == "business_owner"
+
+    # Time-based penalty (only applies to a CLIENT-initiated cancel — a business
+    # that cancels never keeps the client's money; see compute_cancellation_split).
     penalty_amount = 0.0
     confirmed_date = booking.get("confirmed_date")
     total = booking.get("total_amount", 0)
@@ -739,11 +752,17 @@ def cancel_booking(
             job_dt = datetime.fromisoformat(confirmed_date.replace("Z", "+00:00"))
             hours_until = (job_dt - now).total_seconds() / 3600
             if hours_until <= 48:
-                penalty_amount = round(total * 0.50, 2)
+                penalty_amount = escrow.to_dollars(int(escrow.to_cents(total) * 0.50))
             else:
-                penalty_amount = round(total * 0.25, 2)
+                penalty_amount = escrow.to_dollars(int(escrow.to_cents(total) * 0.25))
         except (ValueError, TypeError):
             pass  # malformed date — no penalty
+
+    split = escrow.compute_cancellation_split(
+        total, penalty_amount, cancelled_by_business
+    )
+    # The penalty actually retained by the business (0 for a business-side cancel).
+    penalty_amount = split["business_keeps"]
 
     try:
         # Update booking
@@ -764,18 +783,54 @@ def cancel_booking(
             }
         ).execute()
 
-        # Update payment record
-        payment_res = (
-            supabase.table("payments")
-            .select("id")
-            .eq("booking_id", booking_id)
-            .single()
-            .execute()
-        )
-        if payment_res.data:
-            supabase.table("payments").update({"status": "refunded"}).eq(
-                "id", payment_res.data["id"]
-            ).execute()
+        # Move the payment ledger to match reality: the business keeps
+        # `business_keeps` (the penalty), the client is refunded the rest.
+        # fix D: previously the code only stamped status='refunded' and left
+        # released_to_business/escrow_held untouched — a cancelled booking still
+        # read as 50% released to the business.
+        payment = escrow.load_single_payment(booking_id)
+        if payment:
+            supabase.table("payments").update(
+                {
+                    "status": "refunded",
+                    "released_to_business": split["business_keeps"],
+                    "escrow_held": 0,
+                    # No platform cut is taken on a cancellation — the retained
+                    # penalty goes entirely to the business as compensation.
+                    "platform_cut": 0,
+                    "released_at": datetime.now(timezone.utc).isoformat(),
+                }
+            ).eq("id", payment["id"]).execute()
+
+            # Real money movement: only call Stripe when a real charge was
+            # captured (stripe_payment_intent_id present). In beta almost no
+            # booking has one, so this is ledger-only — we deliberately do NOT
+            # call Stripe for the common case.
+            intent_id = payment.get("stripe_payment_intent_id")
+            refund_amount = split["client_refund"]
+            if intent_id and refund_amount > 0:
+                try:
+                    from app.services import stripe_service
+
+                    stripe_service.refund_payment_intent(
+                        payment_intent_id=intent_id, amount_cad=refund_amount
+                    )
+                except Exception:
+                    # Ledger already reflects the refund; a failed Stripe call
+                    # must be reconciled out-of-band, but must not 500 the cancel.
+                    logger.exception(
+                        "Stripe refund failed for booking %s (intent %s) — "
+                        "LEDGER SAYS REFUNDED, STRIPE DID NOT. Needs reconciliation.",
+                        booking_id,
+                        intent_id,
+                    )
+            elif refund_amount > 0:
+                logger.info(
+                    "cancel booking %s: ledger-only refund of %.2f "
+                    "(no Stripe charge captured)",
+                    booking_id,
+                    refund_amount,
+                )
 
         # Email the OTHER party (whoever didn't cancel) — best-effort
         try:

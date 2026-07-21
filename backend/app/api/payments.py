@@ -78,10 +78,14 @@ def list_my_payments(current_user: dict = Depends(get_current_user)):
 
     items = pay.data or []
     total_released = sum(float(p.get("released_to_business") or 0) for p in items)
+    # fix C: the old filter used bookings.payment_status literals ("held",
+    # "partial_released") which never match payments.status, so total_pending was
+    # always 0. "Pending" here = money held in escrow, not yet released to the
+    # business: payments.status in pending/partial/paid_full.
     total_pending = sum(
         float(p.get("escrow_held") or 0)
         for p in items
-        if p.get("status") in ("held", "partial_released")
+        if p.get("status") in ("pending", "partial", "paid_full")
     )
     return {
         "items": items,

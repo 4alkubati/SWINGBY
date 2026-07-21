@@ -95,9 +95,33 @@ async def webhook(request: Request):
         etype = getattr(event, "type", None)
 
     try:
+        event_id = event["id"]
+    except (KeyError, TypeError):
+        event_id = getattr(event, "id", None)
+
+    try:
         data_object = event["data"]["object"]
     except (KeyError, TypeError):
         data_object = None
+
+    # fix E: idempotency. A replayed event must not re-run side effects (e.g.
+    # regress a fully_released payment back to paid_full). If we've already
+    # recorded this Stripe event id, ack and stop.
+    if event_id:
+        try:
+            seen = (
+                supabase.table("stripe_events")
+                .select("event_id")
+                .eq("event_id", event_id)
+                .execute()
+            )
+            if seen.data:
+                logger.info("Stripe webhook duplicate ignored: %s", event_id)
+                return {"received": True, "duplicate": True, "type": etype}
+        except Exception:
+            # If the dedupe table is unreachable, fall through — _mark_payment_paid
+            # is itself status-guarded so a double-apply is still safe.
+            logger.warning("stripe_events dedupe check failed for %s", event_id)
 
     if etype == "checkout.session.completed" and data_object is not None:
         metadata = {}
@@ -112,8 +136,12 @@ async def webhook(request: Request):
             session_id = data_object["id"]
         except (KeyError, TypeError):
             session_id = getattr(data_object, "id", None)
+        # Amount actually paid (cents) and the PaymentIntent id, for amount
+        # verification and refund traceability.
+        amount_total = _obj_get(data_object, "amount_total")
+        payment_intent = _obj_get(data_object, "payment_intent")
         if booking_id:
-            _mark_payment_paid(booking_id, session_id)
+            _mark_payment_paid(booking_id, session_id, amount_total, payment_intent)
         elif business_id:
             # D2.4 — subscription checkout completed
             try:
@@ -152,7 +180,26 @@ async def webhook(request: Request):
     else:
         logger.info("Stripe webhook event ignored: %s", etype)
 
+    # fix E: record the event id so a Stripe retry/replay is deduped above.
+    if event_id:
+        try:
+            supabase.table("stripe_events").insert(
+                {"event_id": event_id, "event_type": etype}
+            ).execute()
+        except Exception:
+            logger.warning("Could not record processed stripe event %s", event_id)
+
     return {"received": True, "type": etype}
+
+
+def _obj_get(obj, key):
+    """Read a field from a Stripe object (dict-or-StripeObject), else None."""
+    if obj is None:
+        return None
+    try:
+        return obj[key]
+    except (KeyError, TypeError):
+        return getattr(obj, key, None)
 
 
 def _sync_subscription(sub_obj) -> None:
@@ -201,22 +248,88 @@ def _mark_past_due(invoice_obj) -> None:
         logger.exception("Could not mark subscription past_due")
 
 
-def _mark_payment_paid(booking_id: str, stripe_session_id: str | None) -> None:
+def _mark_payment_paid(
+    booking_id: str,
+    stripe_session_id: str | None,
+    amount_total_cents: int | None = None,
+    payment_intent_id: str | None = None,
+) -> None:
     """
-    On `checkout.session.completed`, finalize the on-platform accounting.
+    On `checkout.session.completed`, confirm the on-platform CAPTURE.
 
-    The /interests accept flow already inserted a payments row with
-    status='partial' (50% released, 50% escrow). Beta semantics: in sandbox the
-    full charge cleared, so mark the row 'paid_full' and stamp the Stripe
-    session id in `notes` for traceability. The release-on-complete path in
-    /bookings/{id}/complete continues to handle the remaining 50% + platform
-    cut at job-complete time.
+    The /interests accept flow inserted a payments row with status='pending'
+    (full amount held in escrow, nothing released). Stripe having captured the
+    charge, we transition pending → paid_full: the full amount is now genuinely
+    held in escrow. Release to the business still happens only at
+    /bookings/{id}/complete.
+
+    fix A: the Stripe id goes into `stripe_payment_intent_id` (a real column),
+    never the phantom `notes` column that 400'd this write.
+    fix E: (1) verify the paid amount matches the booking total before marking
+    paid; (2) never regress a fully_released / refunded / off-platform row.
     """
-    update: dict = {"status": "paid_full"}
-    if stripe_session_id:
-        update["notes"] = f"stripe_session={stripe_session_id}"
+    from app.services import escrow
+
+    booking_res = (
+        supabase.table("bookings")
+        .select("total_amount")
+        .eq("id", booking_id)
+        .single()
+        .execute()
+    )
+    expected_cents = (
+        escrow.to_cents(booking_res.data.get("total_amount"))
+        if booking_res.data
+        else None
+    )
+
+    # Amount verification — refuse to mark paid if Stripe charged a different
+    # amount than the booking total. Better to leave it pending for review than
+    # to silently accept an under/over-charge.
+    if (
+        amount_total_cents is not None
+        and expected_cents is not None
+        and int(amount_total_cents) != expected_cents
+    ):
+        logger.error(
+            "Stripe amount mismatch for booking %s: paid=%s expected=%s cents — "
+            "NOT marking paid. Needs manual review.",
+            booking_id,
+            amount_total_cents,
+            expected_cents,
+        )
+        return
+
+    payment = escrow.load_single_payment(booking_id)
+    if not payment:
+        logger.error(
+            "Stripe capture for booking %s but no payments row exists", booking_id
+        )
+        return
+
+    # Regression guard: a replayed event must not knock a released/refunded/
+    # off-platform payment back to paid_full.
+    if payment.get("status") in ("fully_released", "refunded", "paid_off_platform"):
+        logger.info(
+            "Stripe capture for booking %s ignored — payment already %s",
+            booking_id,
+            payment.get("status"),
+        )
+        return
+
+    update: dict = {
+        "status": "paid_full",
+        # Capture confirmed → the full charge is now held in escrow.
+        "escrow_held": float(payment.get("total_charged") or 0),
+    }
+    if payment_intent_id:
+        update["stripe_payment_intent_id"] = payment_intent_id
+    elif stripe_session_id:
+        # No PaymentIntent on the event — fall back to the session id so the
+        # capture is still traceable in a real column (not `notes`).
+        update["stripe_payment_intent_id"] = stripe_session_id
     try:
-        supabase.table("payments").update(update).eq("booking_id", booking_id).execute()
+        supabase.table("payments").update(update).eq("id", payment["id"]).execute()
     except Exception:
         logger.exception("Could not mark payment paid for booking %s", booking_id)
         # Don't raise — webhooks must be idempotent + always 200 to Stripe.
