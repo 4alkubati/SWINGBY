@@ -161,9 +161,20 @@ flowchart LR
 
 ## Broken navigation edges
 
-Screens that call `navigation.navigate('X')` where **X is not registered** in any navigator.
+Checked **per navigator**: a screen that calls `navigation.navigate('X')` must have `X` registered in one of the navigators that screen itself is registered in. A route that only exists in a *different* navigator is a real runtime break — React Navigation resolves route names within the caller's own navigator tree.
 
-*None.* Every navigation target resolves.
+| From file:line | Call | Target | Caller's navigator(s) | Why it breaks |
+|---|---|---|---|---|
+| `mobile/src/screens/shared/SettingsScreen.js:233` | `.navigate` | **`ProfileEdit`** | BusinessNavigator, ClientNavigator | missing from BusinessNavigator (registered only in: ClientNavigator) |
+| `mobile/src/screens/profile/NotificationsCenterScreen.js:59` | `.dispatch` | **`QuoteComparison`** | BusinessNavigator, ClientNavigator | missing from BusinessNavigator (registered only in: ClientNavigator) |
+| `mobile/src/screens/business/BusinessProfileScreen.js:646` | `.navigate` | **`EmployeeManagement`** | BusinessNavigator, ClientNavigator | missing from ClientNavigator (registered only in: BusinessNavigator) |
+| `mobile/src/screens/business/BusinessProfileScreen.js:776` | `.navigate` | **`BusinessInvoices`** | BusinessNavigator, ClientNavigator | missing from ClientNavigator (registered only in: BusinessNavigator) |
+| `mobile/src/screens/business/BusinessProfileScreen.js:827` | `.navigate` | **`PostJob`** | BusinessNavigator, ClientNavigator | missing from BusinessNavigator (registered only in: ClientNavigator) |
+| `mobile/src/screens/business/EmployeeProfileScreen.js:288` | `.navigate` | **`BusinessProfile`** | BusinessNavigator, ClientNavigator | missing from BusinessNavigator (registered only in: ClientNavigator) |
+| `mobile/src/screens/client/MyJobsScreen.js:274` | `.navigate` | **`JobManagement`** | ClientNavigator | missing from ClientNavigator (registered only in: BusinessNavigator) |
+| `mobile/src/screens/client/BookingDetailsScreen.js:356` | `.navigate` | **`CancellationFlow`** | BusinessNavigator, ClientNavigator | missing from BusinessNavigator (registered only in: ClientNavigator) |
+| `mobile/src/screens/client/BookingDetailsScreen.js:371` | `.navigate` | **`PostJob`** | BusinessNavigator, ClientNavigator | missing from BusinessNavigator (registered only in: ClientNavigator) |
+| `mobile/src/screens/client/BookingDetailsScreen.js:566` | `.navigate` | **`BusinessProfile`** | BusinessNavigator, ClientNavigator | missing from BusinessNavigator (registered only in: ClientNavigator) |
 
 ## Orphan screens (global)
 

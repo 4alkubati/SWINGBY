@@ -4,7 +4,9 @@
 -- tracks code ownership + claims, nothing ever automatically debits/credits
 -- a wallet or booking).
 -- Apply via Supabase SQL editor OR the mcp Supabase apply_migration tool.
--- FILE ONLY — do not apply to prod; database-agent reviews and applies.
+-- STATUS: APPLIED to prod (verified by introspection 2026-07-21). The
+-- referrals table, its CHECKs and its RLS policies all exist. Statements are
+-- idempotent; re-running is safe. See docs/MIGRATIONS.md.
 --
 -- Design (see backend/app/api/me.py::get_my_referrals and
 -- backend/app/api/auth.py::signup for the two write paths):

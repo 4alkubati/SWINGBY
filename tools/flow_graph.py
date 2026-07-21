@@ -15,7 +15,9 @@ What it detects
   * Every mobile api.get/post/put/patch/delete/fetch call
 
 What it flags
-  * Broken nav edges  — navigate('X') where X is not a registered screen
+  * Broken nav edges  — navigate('X') where X is not registered in a navigator
+                        the CALLING screen belongs to (cross-navigator targets
+                        count as broken; they 404 at runtime)
   * Orphan screens    — registered but nothing navigates to them
   * Broken API calls  — mobile hits an endpoint the backend doesn't expose
 """
@@ -217,10 +219,65 @@ def diff(navs, edges, routes, api_calls):
             all_routes.add(s["route"])
             route_to_file[s["route"]] = s["file"] or nav_name
 
-    # nav edges: unresolved targets
-    broken_edges = [
-        e for e in edges if e["to_route"] not in all_routes
-    ]
+    # Which navigator(s) does each screen file belong to? Needed both for the
+    # per-navigator broken-edge check and for orphan attribution below.
+    file_to_navs = defaultdict(set)  # file path -> {nav names it appears in}
+    for nav_name, screens in navs.items():
+        for s in screens:
+            if s["file"]:
+                file_to_navs[s["file"]].add(nav_name)
+
+    nav_route_sets = {
+        nav_name: {s["route"] for s in screens}
+        for nav_name, screens in navs.items()
+    }
+
+    # Broken nav edges — checked PER NAVIGATOR, not against the union of all
+    # navigators. An edge fired from a screen registered in BusinessNavigator
+    # to a route that only exists in ClientNavigator is broken at runtime:
+    # React Navigation resolves route names within the caller's own navigator
+    # tree, so the union test silently hides every cross-navigator break.
+    #
+    # Rules:
+    #   * source file registered in >= 1 navigator -> the target must exist in
+    #     EVERY one of those navigators. A screen shared by ClientNavigator and
+    #     BusinessNavigator that navigates to a Client-only route is broken for
+    #     business users, even though the union test would call it fine.
+    #   * source file registered nowhere (shared components, unregistered
+    #     screens) -> fall back to the global union; we can't know the caller's
+    #     navigator, so only a target missing everywhere is provably broken
+    broken_edges = []
+    for e in edges:
+        src_navs = file_to_navs.get(e["from_file"], set())
+        if src_navs:
+            missing_in = sorted(
+                n for n in src_navs
+                if e["to_route"] not in nav_route_sets.get(n, set())
+            )
+            if missing_in:
+                registered_in = sorted(
+                    n for n, rs in nav_route_sets.items() if e["to_route"] in rs
+                )
+                broken_edges.append({
+                    **e,
+                    "from_navigators": sorted(src_navs),
+                    "missing_in": missing_in,
+                    "reason": (
+                        "not registered in any navigator"
+                        if not registered_in
+                        else "missing from "
+                        + ", ".join(missing_in)
+                        + " (registered only in: "
+                        + ", ".join(registered_in)
+                        + ")"
+                    ),
+                })
+        elif e["to_route"] not in all_routes:
+            broken_edges.append({
+                **e,
+                "from_navigators": [],
+                "reason": "not registered in any navigator",
+            })
 
     # Per-navigator orphan detection.
     # A screen X registered in navigator N is orphaned WITHIN N if:
@@ -233,18 +290,13 @@ def diff(navs, edges, routes, api_calls):
     # but still unreachable to a Business user, and vice-versa. The
     # global "any incoming edge" test misses that.
     #
-    # We need each screen's home file to attribute edges to navigators.
-    file_to_navs = defaultdict(set)  # file path -> {nav names it appears in}
-    for nav_name, screens in navs.items():
-        for s in screens:
-            if s["file"]:
-                file_to_navs[s["file"]].add(nav_name)
+    # (file_to_navs is built above — it is shared with the broken-edge check.)
 
     # Build per-navigator reachability sets.
     per_nav_orphans = {}
     global_reachable = {e["to_route"] for e in edges}
     for nav_name, screens in navs.items():
-        nav_route_set = {s["route"] for s in screens}
+        nav_route_set = nav_route_sets[nav_name]
         # Screens whose file is registered in this nav — those are the
         # only screens whose navigation.navigate calls count as "in-nav"
         # edges. A shared screen (e.g. MyJobsScreen used by both) fires
@@ -370,14 +422,26 @@ def build_report(navs, edges, routes, api_calls,
     md.append("\n")
 
     md.append("## Broken navigation edges\n")
-    md.append("Screens that call `navigation.navigate('X')` where **X is not registered** in any navigator.\n")
+    md.append(
+        "Checked **per navigator**: a screen that calls "
+        "`navigation.navigate('X')` must have `X` registered in **every** "
+        "navigator that screen itself is registered in. A route that only "
+        "exists in a *different* navigator is a real runtime break — React "
+        "Navigation resolves route names within the caller's own navigator "
+        "tree, so a screen shared by both roles dead-ends for the role whose "
+        "navigator lacks the target.\n"
+    )
     if not broken_edges:
-        md.append("*None.* Every navigation target resolves.\n")
+        md.append("*None.* Every navigation target resolves within its own navigator.\n")
     else:
-        md.append("| From file:line | Call | Target |")
-        md.append("|---|---|---|")
+        md.append("| From file:line | Call | Target | Caller's navigator(s) | Why it breaks |")
+        md.append("|---|---|---|---|---|")
         for e in broken_edges:
-            md.append(f"| `{e['from_file']}:{e['line']}` | `.{e['method']}` | **`{e['to_route']}`** |")
+            src_navs = ", ".join(e.get("from_navigators") or []) or "_(unregistered)_"
+            md.append(
+                f"| `{e['from_file']}:{e['line']}` | `.{e['method']}` "
+                f"| **`{e['to_route']}`** | {src_navs} | {e.get('reason', '')} |"
+            )
         md.append("")
 
     md.append("## Orphan screens (global)\n")

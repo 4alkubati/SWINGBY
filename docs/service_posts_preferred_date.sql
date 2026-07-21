@@ -4,7 +4,10 @@
 -- The mobile job-post wizard already collects a date/time and
 -- SendQuoteSheet.js already reads `post.preferred_date` defensively — the
 -- column just doesn't exist yet. Additive, nullable — no backfill needed.
--- FILE ONLY — do not apply to prod; database-agent reviews and applies.
+-- STATUS: APPLIED to prod (verified by introspection 2026-07-21).
+-- service_posts.preferred_date exists. Note the pre-existing typo column
+-- `preffered_date` is still present and must never be written. See
+-- docs/MIGRATIONS.md.
 
 ALTER TABLE public.service_posts
     ADD COLUMN IF NOT EXISTS preferred_date TIMESTAMPTZ;
