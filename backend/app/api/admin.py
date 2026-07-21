@@ -24,6 +24,7 @@ from app.deps import get_current_user
 from app.limiter import limiter
 from app.supabase_client import supabase
 from app.api.waitlist import get_notion, WAITLIST_DB_ID
+from app.services.audit import record_audit
 
 logger = structlog.get_logger(__name__)
 
@@ -108,6 +109,13 @@ def suspend_user(
         logger.info(
             "admin.suspend_user", admin_id=current_user["id"], target_user=user_id
         )
+        record_audit(
+            actor_id=current_user["id"],
+            action="admin.suspend_user",
+            resource_type="user",
+            resource_id=user_id,
+            request=request,
+        )
         return {"message": "user_suspended", "user_id": user_id}
     except HTTPException:
         raise
@@ -135,6 +143,13 @@ def unsuspend_user(
             raise HTTPException(status_code=404, detail="User not found")
         logger.info(
             "admin.unsuspend_user", admin_id=current_user["id"], target_user=user_id
+        )
+        record_audit(
+            actor_id=current_user["id"],
+            action="admin.unsuspend_user",
+            resource_type="user",
+            resource_id=user_id,
+            request=request,
         )
         return {"message": "user_unsuspended", "user_id": user_id}
     except HTTPException:
@@ -211,6 +226,13 @@ def force_complete_booking(
             "admin.force_complete_booking",
             admin_id=current_user["id"],
             booking_id=booking_id,
+        )
+        record_audit(
+            actor_id=current_user["id"],
+            action="admin.force_complete_booking",
+            resource_type="booking",
+            resource_id=booking_id,
+            request=request,
         )
         return {"message": "booking_completed", "booking_id": booking_id}
     except HTTPException:

@@ -33,6 +33,13 @@ def express_interest(
             status_code=403, detail="Only business owners can express interest"
         )
 
+    # Ghost mode makes a business unbookable: no new quotes while ghosted.
+    if current_user.get("is_ghosted"):
+        raise HTTPException(
+            status_code=403,
+            detail="Cannot express interest while your account is in ghost mode",
+        )
+
     biz_res = (
         supabase.table("businesses")
         .select("id")
@@ -319,9 +326,12 @@ def accept_interest(interest_id: str, current_user: dict = Depends(get_current_u
             "id", post["id"]
         ).execute()
 
-        total_amount = float(interest["quoted_price"] or post["budget"])
-        platform_fee = round(total_amount * 0.10, 2)
-        half = round(total_amount * 0.50, 2)
+        from app.services import escrow
+
+        total_amount = escrow.to_dollars(
+            escrow.to_cents(interest["quoted_price"] or post["budget"])
+        )
+        platform_fee = escrow.platform_cut(total_amount)
 
         booking_insert = {
             "client_id": current_user["id"],
@@ -331,8 +341,13 @@ def accept_interest(interest_id: str, current_user: dict = Depends(get_current_u
             "total_amount": total_amount,
             "commission_rate": 0.10,
             "platform_fee": platform_fee,
+            # Money model (2026-07-21): NOTHING is released to the business at
+            # accept — the job hasn't happened and, for on-platform pay, Stripe
+            # hasn't captured. The full amount is held in escrow; release happens
+            # only at /complete. Previously this set 'partial_released' + released
+            # half with no charge collected — a real ledger defect.
             "status": "confirmed",
-            "payment_status": "partial_released",
+            "payment_status": "held",
         }
         if preferred_date:
             # Time was already given at posting — skip the propose/accept
@@ -372,16 +387,20 @@ def accept_interest(interest_id: str, current_user: dict = Depends(get_current_u
                     exc_info=True,
                 )
 
+        # One payments row per booking (payments.py / bookings.py both .single()).
+        # At accept the full amount is HELD, zero is released. status='pending'
+        # until either Stripe capture (→ paid_full) or off-platform mark
+        # (→ paid_off_platform); release to the business happens at /complete.
         payment_res = (
             supabase.table("payments")
             .insert(
                 {
                     "booking_id": booking["id"],
                     "total_charged": total_amount,
-                    "escrow_held": half,
-                    "released_to_business": half,
+                    "escrow_held": total_amount,
+                    "released_to_business": 0,
                     "platform_cut": platform_fee,
-                    "status": "partial",
+                    "status": "pending",
                 }
             )
             .execute()

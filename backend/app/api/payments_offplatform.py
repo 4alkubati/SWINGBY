@@ -94,6 +94,7 @@ def mark_paid_offplatform(
             supabase.table("booking_events").insert(
                 {
                     "booking_id": booking_id,
+                    "actor_id": current_user["id"],
                     "event_type": "paid_offplatform",
                     "note": f"{data.method}" + (f" — {data.note}" if data.note else ""),
                 }

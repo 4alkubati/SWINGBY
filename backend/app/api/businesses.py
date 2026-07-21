@@ -10,6 +10,7 @@ from app.categories import normalize_category
 from app.deps import get_current_user
 from app.supabase_client import supabase
 from app.limiter import limiter
+from app.services.visibility import hidden_user_ids
 
 logger = structlog.get_logger(__name__)
 
@@ -151,10 +152,17 @@ def get_nearby_businesses(
         res = query.execute()
         businesses = res.data or []
 
+        # Hide businesses whose owner is ghosted / suspended / soft-deleted.
+        hidden_owners = hidden_user_ids(
+            supabase, [b.get("owner_id") for b in businesses]
+        )
+
         # Exact Haversine filter — only include businesses whose service radius
         # overlaps the caller's location
         nearby = []
         for biz in businesses:
+            if biz.get("owner_id") in hidden_owners:
+                continue
             biz_lat = biz.get("lat")
             biz_lng = biz.get("lng")
             if biz_lat is None or biz_lng is None:
@@ -278,7 +286,7 @@ def get_my_analytics(
         bookings = bookings_res.data or []
         total_bookings = len(bookings)
 
-        # 3. Total earnings (sum of released_to_business from settled payments)
+        # 3. Total earnings (sum of released_to_business from released payments)
         booking_ids = [b["id"] for b in bookings]
         total_earnings = 0.0
         if booking_ids:
@@ -289,7 +297,12 @@ def get_my_analytics(
                 .execute()
             )
             for p in payments_res.data or []:
-                if p.get("status") == "settled" and p.get("released_to_business"):
+                # fix C: "settled" is in no enum, so total_earnings was always
+                # 0.00. Released on-platform earnings live on rows whose
+                # payments.status == 'fully_released'.
+                if p.get("status") == "fully_released" and p.get(
+                    "released_to_business"
+                ):
                     total_earnings += float(p["released_to_business"])
 
         # 4. Bookings by month (last 6 months)
@@ -433,7 +446,13 @@ def list_businesses(
             query = query.ilike("category", _escape_ilike(category.strip()))
         res = query.range(offset, offset + limit - 1).execute()
         items = res.data or []
-        next_offset = offset + limit if len(items) == limit else None
+
+        # Hide businesses whose owner is ghosted / suspended / soft-deleted.
+        hidden_owners = hidden_user_ids(supabase, [b.get("owner_id") for b in items])
+        if hidden_owners:
+            items = [b for b in items if b.get("owner_id") not in hidden_owners]
+
+        next_offset = offset + limit if len(res.data or []) == limit else None
         return {
             "items": items,
             "limit": limit,

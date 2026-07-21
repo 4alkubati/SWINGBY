@@ -361,15 +361,31 @@ def login(request: Request, data: LoginRequest):
 
         user_id = res.user.id
 
-        # Read role + name from our users table (not Supabase metadata)
+        # Read role + name + lifecycle flags from our users table (not Supabase
+        # metadata). A suspended or soft-deleted account must not be able to
+        # obtain a fresh token, so we re-check here as well as in get_current_user.
         db_res = (
             supabase.table("users")
-            .select("role, first_name, last_name")
+            .select("role, first_name, last_name, is_suspended, deleted_at")
             .eq("id", user_id)
             .single()
             .execute()
         )
         user_data = db_res.data or {}
+
+        if user_data.get("deleted_at"):
+            raise HTTPException(status_code=403, detail="account_deactivated")
+        if user_data.get("is_suspended"):
+            raise HTTPException(status_code=403, detail="account_suspended")
+
+        # Ghost mode lifts automatically on next successful login. Best-effort:
+        # a failure here must not block an otherwise-valid login.
+        try:
+            supabase.table("users").update({"is_ghosted": False}).eq(
+                "id", user_id
+            ).execute()
+        except Exception:
+            logger.warning("auth.login ghost-clear failed", user_id=user_id)
 
         return {
             "access_token": res.session.access_token,
@@ -400,6 +416,23 @@ def refresh_token(request: Request, data: RefreshRequest):
         res = supabase_auth.auth.refresh_session(data.refresh_token)
         if not res.session:
             raise HTTPException(status_code=401, detail="Could not refresh session")
+
+        # A suspended or soft-deleted account must not be able to mint a fresh
+        # access token off an old refresh token.
+        if res.user:
+            guard = (
+                supabase.table("users")
+                .select("is_suspended, deleted_at")
+                .eq("id", res.user.id)
+                .single()
+                .execute()
+            )
+            gu = guard.data or {}
+            if gu.get("deleted_at"):
+                raise HTTPException(status_code=403, detail="account_deactivated")
+            if gu.get("is_suspended"):
+                raise HTTPException(status_code=403, detail="account_suspended")
+
         return {
             "access_token": res.session.access_token,
             "refresh_token": res.session.refresh_token,

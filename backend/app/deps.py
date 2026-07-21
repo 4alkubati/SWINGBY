@@ -29,7 +29,18 @@ def get_current_user(authorization: str | None = Header(None)) -> dict:
         if not db_res.data:
             raise HTTPException(status_code=401, detail="User not found in database")
 
-        return db_res.data
+        user = db_res.data
+
+        # Account-lifecycle enforcement. These columns are written by admin
+        # actions / self-service delete but must ALSO be read on every request
+        # or they have zero effect. A soft-deleted or suspended account is
+        # fully locked out (403, not 401 — the token itself is valid).
+        if user.get("deleted_at"):
+            raise HTTPException(status_code=403, detail="account_deactivated")
+        if user.get("is_suspended"):
+            raise HTTPException(status_code=403, detail="account_suspended")
+
+        return user
 
     except HTTPException:
         raise
