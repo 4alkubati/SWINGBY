@@ -435,6 +435,9 @@ def accept_interest(interest_id: str, current_user: dict = Depends(get_current_u
                         biz_name,
                         booking["id"],
                         total_amount,
+                        client_name=current_user.get("first_name", ""),
+                        service_title=post_title,
+                        confirmed_date=booking.get("confirmed_date", ""),
                     )
 
             # Email the client too
@@ -451,6 +454,9 @@ def accept_interest(interest_id: str, current_user: dict = Depends(get_current_u
                     client_user_res.data["first_name"],
                     booking["id"],
                     total_amount,
+                    business_name=biz_name,
+                    service_title=post_title,
+                    confirmed_date=booking.get("confirmed_date", ""),
                 )
         except Exception:
             pass  # notification failure must not break the request

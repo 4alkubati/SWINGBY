@@ -305,7 +305,7 @@ def signup(request: Request, data: SignupRequest):
         try:
             from app.services.email import send_welcome_email
 
-            send_welcome_email(str(data.email), data.first_name)
+            send_welcome_email(str(data.email), data.first_name, data.role)
         except Exception:
             pass
 

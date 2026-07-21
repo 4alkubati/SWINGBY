@@ -487,7 +487,7 @@ def confirm_date(
         try:
             full_booking = (
                 supabase.table("bookings")
-                .select("client_id, business_id")
+                .select("client_id, business_id, service_category")
                 .eq("id", booking_id)
                 .single()
                 .execute()
@@ -542,6 +542,9 @@ def confirm_date(
                                 biz_name,
                                 booking_id,
                                 data.confirmed_date,
+                                service_title=full_booking.data.get(
+                                    "service_category", ""
+                                ),
                             )
                     except Exception:
                         pass
@@ -678,6 +681,8 @@ def complete_booking(booking_id: str, current_user: dict = Depends(get_current_u
                     client_user_res.data["first_name"],
                     booking_id,
                     biz_name,
+                    service_title=booking.get("service_category", ""),
+                    total_amount=booking.get("total_amount"),
                 )
         except Exception:
             pass
@@ -813,11 +818,15 @@ def cancel_booking(
                     .execute()
                 )
                 if other_user_res.data:
+                    # This mail only ever goes to the party who did NOT cancel,
+                    # so cancelled_by_you stays False.
                     send_booking_cancelled(
                         other_user_res.data["email"],
                         other_user_res.data["first_name"],
                         booking_id,
                         penalty_amount,
+                        service_title=booking.get("service_category", ""),
+                        reason=data.reason,
                     )
         except Exception:
             pass

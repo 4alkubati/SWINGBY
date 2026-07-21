@@ -227,7 +227,7 @@ def _mark_payment_paid(booking_id: str, stripe_session_id: str | None) -> None:
 
         booking_res = (
             supabase.table("bookings")
-            .select("client_id, total_amount")
+            .select("client_id, total_amount, service_category")
             .eq("id", booking_id)
             .single()
             .execute()
@@ -248,6 +248,7 @@ def _mark_payment_paid(booking_id: str, stripe_session_id: str | None) -> None:
                     client_user_res.data["first_name"],
                     booking_id,
                     amount,
+                    service_title=booking_res.data.get("service_category", ""),
                 )
     except Exception:
         logger.warning("payment receipt email failed for booking %s", booking_id)
