@@ -7,7 +7,6 @@ import {
   ScrollView,
   TouchableOpacity,
   StyleSheet,
-  Alert,
   Dimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -186,13 +185,17 @@ export default function EarningsScreen({ navigation }) {
           <Feather name="arrow-left" size={20} color={colors.textSecondary} strokeWidth={1.8} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Earnings</Text>
-        <TouchableOpacity
-          style={styles.exportBtn}
-          onPress={() => Alert.alert('Coming soon', 'CSV export will be available soon.')}
-          activeOpacity={0.8}
+        {/* CSV export is not built — the handler only ever raised a "coming
+            soon" alert. Rendered as a disabled, explicitly-labelled affordance
+            so it does not read as a working export button. */}
+        <View
+          style={[styles.exportBtn, styles.exportBtnDisabled]}
+          accessibilityRole="button"
+          accessibilityLabel="Export CSV, coming soon"
+          accessibilityState={{ disabled: true }}
         >
-          <Text style={styles.exportText}>Export CSV</Text>
-        </TouchableOpacity>
+          <Text style={styles.exportText}>Export CSV · Soon</Text>
+        </View>
       </View>
 
       <ScrollView
@@ -298,6 +301,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  exportBtnDisabled: { opacity: 0.45 },
   exportText: { fontSize: 12, fontWeight: '700', color: colors.textSecondary },
 
   // Hero

@@ -767,9 +767,13 @@ export default function BusinessProfileScreen({ navigation, route }) {
                   <Text variant="body" style={styles.acctLabel}>Notifications</Text>
                   <Feather name="chevron-right" size={16} color={colors.textSecondary} />
                 </TouchableOpacity>
+                {/* PaymentMethodScreen is a Stripe placeholder — nothing can
+                    be added yet, so the row is labelled rather than dressed up
+                    as a working setting. */}
                 <TouchableOpacity style={styles.acctRow} activeOpacity={0.7} onPress={() => navigation.navigate('PaymentMethod')}>
                   <Feather name="credit-card" size={18} color={colors.textSecondary} />
                   <Text variant="body" style={styles.acctLabel}>Payment methods</Text>
+                  <Text variant="caption" color="secondary" style={{ marginRight: spacing.xs }}>Soon</Text>
                   <Feather name="chevron-right" size={16} color={colors.textSecondary} />
                 </TouchableOpacity>
                 {user?.role === 'business_owner' && (
@@ -820,7 +824,12 @@ export default function BusinessProfileScreen({ navigation, route }) {
       )}
 
       {/* ── Sticky "Book" button (visitor view) ── */}
-      {!loading && !error && !editMode && businessId && businessId !== user?.business_id && (
+      {/* "Book now" pushes `PostJob`, which is a ClientNavigator-only route.
+          This screen is now also reachable from BusinessNavigator (company
+          link on BookingDetails / EmployeeProfile), so the CTA is gated to
+          clients — otherwise a business user viewing another company would
+          tap a button that resolves to nothing. */}
+      {!loading && !error && !editMode && user?.role === 'client' && businessId && businessId !== user?.business_id && (
         <View style={[styles.bookBar, { paddingBottom: Math.max(insets.bottom, spacing.base) }]}>
           <Button
             label="Book now"

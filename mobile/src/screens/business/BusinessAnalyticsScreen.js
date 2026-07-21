@@ -81,9 +81,12 @@ function ProgressBar({ value }) {
 }
 
 // ─── Metric card ──────────────────────────────────────────────────────────────
-function MetricCard({ label, value, sub, showProgress }) {
+// `muted` = the metric is not tracked by the platform yet; the card is dimmed
+// and shows an explicit "Not tracked yet" caption so it can't be mistaken for
+// a real measurement of zero.
+function MetricCard({ label, value, sub, showProgress, muted }) {
   return (
-    <View style={styles.metricCard}>
+    <View style={[styles.metricCard, muted && { opacity: 0.5 }]}>
       <Text style={styles.metricLabel}>{label}</Text>
       <Text style={styles.metricValue}>{value}</Text>
       {sub && <Text style={styles.metricSub}>{sub}</Text>}
@@ -281,10 +284,16 @@ export default function BusinessAnalyticsScreen({ navigation, route }) {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.metricRow}
         >
+          {/* Profile views are not instrumented anywhere — the analytics
+              endpoint returns a hardcoded 0 (backend/app/api/businesses.py).
+              Presented as explicitly not-yet-tracked instead of as a real
+              measurement of zero. Restore the live value here once the backend
+              actually counts profile views. */}
           <MetricCard
             label="Profile Views"
-            value={loading ? '—' : (metrics?.profile_views ? String(metrics.profile_views) : '—')}
-            sub="This month"
+            value="—"
+            sub="Not tracked yet"
+            muted
           />
           <MetricCard
             label="Quote-to-Booking"
@@ -292,11 +301,12 @@ export default function BusinessAnalyticsScreen({ navigation, route }) {
             sub="Conversion rate"
             showProgress={loading ? false : metrics?.conversion_rate ?? 0}
           />
+          {/* Same as Profile Views — repeat_rate is hardcoded 0 server-side. */}
           <MetricCard
             label="Repeat Customers"
-            value={loading ? '—' : (metrics?.repeat_rate ? `${metrics.repeat_rate}%` : '—')}
-            sub="Come back rate"
-            showProgress={loading ? false : metrics?.repeat_rate ?? 0}
+            value="—"
+            sub="Not tracked yet"
+            muted
           />
         </ScrollView>
 
