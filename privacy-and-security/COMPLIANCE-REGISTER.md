@@ -93,10 +93,24 @@ The Terms of Service publishes a payment/escrow/cancellation contract to users. 
 
 ---
 
-## G. Related work in flight (2026-07-21 review)
+## G. Related work — 2026-07-21 review (all 5 PRs open as drafts)
 
-- **PR #26** — mobile dead-nav + de-faked stub features
-- **PR #27** — technical docs regenerated from live truth (API, schema, flow graph, new `docs/MIGRATIONS.md`)
-- **Security/deletion agent** (dispatched) — suspension/deletion enforcement, ghost mode, audit_log wiring → covers B1–B4, C-partial, E1, E5
-- **Money/ledger agent** (dispatched) — phantom-column writes, status-literal reporting, cancellation ledger, webhook idempotency, charge-before-service structure → covers A1–A4
-- This register tracks the **legal-document** side those code PRs must be reconciled against.
+| PR | Scope | Register items it addresses (code side) |
+|---|---|---|
+| **#26** | mobile dead-nav + de-faked stub features | (mobile only) |
+| **#27** | technical docs regenerated from live DB (API, schema, flow graph, new `docs/MIGRATIONS.md`) | E3 (RLS doc), technical-doc drift |
+| **#28** | this compliance register | — |
+| **#29** | security/account-lifecycle: suspension + soft-delete enforcement in `deps.py`, `DELETE /me` password re-auth + PII-scrub, ghost mode (`users.is_ghosted` applied), audit_log wired | **B1–B4, E1, E5**, C-partial |
+| **#30** | money/escrow: phantom-column writes, status-literal reporting, cancellation ledger + real refund, webhook idempotency (`stripe_events` applied), charge-before-service structure | **A1–A5 (code); D-cancel math still needs the numbers decision (A3)** |
+
+**Stacking:** #30 is stacked on #29 (merge #29 → main first, #30 auto-retargets). Combined backend HEAD verified: 105 tests pass, ruff clean.
+
+### ⚠️ New gate before #30 merges — live-Stripe verification
+The money agent correctly refused to auto-mark any payment captured without a real Stripe event. **Three money paths are built but unverified against live Stripe (test mode) and MUST be exercised before merge:** (1) capture at post/accept, (2) cancellation refund, (3) webhook idempotency replay. This is a release-blocking checklist item, not a code TODO.
+
+### Still needs YOU (owner decisions, unblock the legal rewrites)
+- **A3** — the cancellation penalty numbers (ToS ladder vs code penalty diverge; pick one).
+- **C1** — disclose or drop the Notion CRM PII sync.
+- **C3** — employee-roster public visibility: keep+disclose, or restrict.
+
+> The code PRs fix behaviour; **the legal documents still have to be rewritten to match** (ToS §7–§8 money terms, Privacy §3/§6/§7/§9 for messages/deletion/new-data). That rewrite is the next block of work in this branch, gated on the three decisions above.
