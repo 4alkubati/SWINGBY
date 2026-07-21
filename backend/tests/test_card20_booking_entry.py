@@ -68,16 +68,50 @@ class TestAcceptInterestBookingEntry:
             "businesses": SupabaseTableStub(select_data=None),
             "bookings": SupabaseTableStub(insert_data=[booking_row]),
             "messages": SupabaseTableStub(update_data=[]),
-            "payments": SupabaseTableStub(insert_data=[{"id": "pay-1"}]),
+            "payments": SupabaseTableStub(
+                insert_data=[
+                    {"id": "pay-1", "total_charged": "150.00", "status": "held"}
+                ],
+                update_data=[
+                    {
+                        "id": "pay-1",
+                        "total_charged": "150.00",
+                        "status": "partial_released",
+                    }
+                ],
+            ),
             "booking_events": SupabaseTableStub(insert_data=[{"id": "evt-1"}]),
-            "users": SupabaseTableStub(select_data=None),
+            # §5 — accept now requires a card on file before it will charge.
+            "users": SupabaseTableStub(
+                select_data={
+                    "stripe_customer_id": "cus_test_1",
+                    "default_payment_method_id": "pm_test_1",
+                }
+            ),
         }
 
     def _patch(self, stubs):
         patcher = patch("app.api.interests.supabase")
         mock_supabase = patcher.start()
         mock_supabase.table.side_effect = lambda name: stubs[name]
-        return patcher
+
+        # §5 — accept charges off-session before creating anything; mock the
+        # charge as a successful PaymentIntent so this booking-entry test can
+        # focus on the CARD-20 date-confirmation behavior it's actually
+        # about, not payment capture (covered separately in
+        # tests/test_accept_interest_capture.py).
+        charge_patcher = patch(
+            "app.api.interests.stripe_service.charge_off_session",
+            return_value={"id": "pi_test_1", "status": "succeeded"},
+        )
+        charge_patcher.start()
+
+        class _CombinedPatch:
+            def stop(self):
+                patcher.stop()
+                charge_patcher.stop()
+
+        return _CombinedPatch()
 
     def test_accept_with_preferred_date_confirms_booking_immediately(
         self, test_client, as_client
@@ -200,7 +234,10 @@ class TestAcceptInterestBookingEntry:
         mock_supabase = patcher.start()
         mock_supabase.table.side_effect = _table
         try:
-            with patch("app.api.interests.send_push_to_user"):
+            with patch("app.api.interests.send_push_to_user"), patch(
+                "app.api.interests.stripe_service.charge_off_session",
+                return_value={"id": "pi_test_1", "status": "succeeded"},
+            ):
                 response = test_client.patch(
                     "/interests/interest-1/accept",
                     headers={"Authorization": "Bearer test-token"},

@@ -11,17 +11,30 @@ themselves return 503 if invoked while keys are absent.
 from __future__ import annotations
 
 import logging
+from decimal import Decimal
 from typing import Any
 
 from fastapi import HTTPException
 
 from app.config import settings
+from app.services import money
 
 logger = logging.getLogger(__name__)
 
 
 class StripeNotConfigured(RuntimeError):
     """Raised when an endpoint is hit but STRIPE_SECRET_KEY is unset."""
+
+
+class CardChargeError(Exception):
+    """
+    Raised when an off-session card charge is declined or otherwise fails at
+    quote-acceptance time (PAYMENT-MODEL.md §5).
+
+    Callers must treat this as "no booking, interest stays pending, post
+    stays open" — see backend/app/api/interests.py::accept_interest. The
+    message is written to be shown directly to the client.
+    """
 
 
 def _require_stripe():
@@ -133,5 +146,126 @@ def verify_webhook(
     except Exception:
         logger.warning("stripe webhook signature verification failed", exc_info=True)
         raise HTTPException(status_code=400, detail="Invalid webhook signature")
+
+    return event
+
+
+# ── Card on file (PAYMENT-MODEL.md §5) ──────────────────────────────────────
+
+
+def get_or_create_customer(
+    *, user_id: str, email: str | None, existing_customer_id: str | None
+) -> str:
+    """
+    Returns a Stripe Customer id for this user, creating one if needed.
+
+    Raises HTTPException(503) if Stripe is not configured.
+    """
+    if existing_customer_id:
+        return existing_customer_id
+
+    stripe = _require_stripe()
+    try:
+        customer = stripe.Customer.create(
+            email=email, metadata={"swingby_user_id": user_id}
+        )
+    except Exception:
+        logger.exception("stripe.Customer.create failed for user %s", user_id)
+        raise HTTPException(status_code=502, detail="Could not create Stripe customer")
+    return customer["id"]
+
+
+def create_setup_intent(*, customer_id: str) -> dict[str, Any]:
+    """
+    Creates a SetupIntent for the given customer so the client SDK can
+    collect + confirm a card without charging it. Returns {id, client_secret}.
+    """
+    stripe = _require_stripe()
+    try:
+        intent = stripe.SetupIntent.create(
+            customer=customer_id,
+            payment_method_types=["card"],
+        )
+    except Exception:
+        logger.exception(
+            "stripe.SetupIntent.create failed for customer %s", customer_id
+        )
+        raise HTTPException(status_code=502, detail="Could not create setup intent")
+    return {"id": intent["id"], "client_secret": intent["client_secret"]}
+
+
+def attach_payment_method(*, customer_id: str, payment_method_id: str) -> None:
+    """
+    Attaches a confirmed PaymentMethod to the customer and sets it as the
+    default for future off-session charges (invoice_settings +
+    the explicit payment_method_id we also persist on `users`).
+    """
+    stripe = _require_stripe()
+    try:
+        stripe.PaymentMethod.attach(payment_method_id, customer=customer_id)
+        stripe.Customer.modify(
+            customer_id,
+            invoice_settings={"default_payment_method": payment_method_id},
+        )
+    except Exception:
+        logger.exception(
+            "Could not attach payment method %s to customer %s",
+            payment_method_id,
+            customer_id,
+        )
+        raise HTTPException(
+            status_code=502, detail="Could not save card — please try again"
+        )
+
+
+# ── Off-session capture (PAYMENT-MODEL.md §5) ───────────────────────────────
+
+
+def charge_off_session(
+    *,
+    customer_id: str,
+    payment_method_id: str,
+    amount: Decimal,
+    idempotency_key: str,
+    description: str = "",
+) -> dict[str, Any]:
+    """
+    Charges the customer's saved card off-session for `amount` (a Decimal,
+    CAD). `idempotency_key` MUST be derived from a stable identifier (the
+    interest_id) so a retried or double-tapped acceptance cannot double-charge
+    — Stripe collapses repeated calls with the same key into the original
+    PaymentIntent instead of creating a second charge.
+
+    Raises:
+        HTTPException(503) — Stripe not configured.
+        CardChargeError     — the card was declined or the charge otherwise
+                               failed. Message is safe to show the client.
+    """
+    stripe = _require_stripe()
+    cents = money.to_cents(amount)
+    if cents <= 0:
+        raise CardChargeError("Amount must be greater than zero")
+
+    try:
+        intent = stripe.PaymentIntent.create(
+            amount=cents,
+            currency=money.CURRENCY.lower(),
+            customer=customer_id,
+            payment_method=payment_method_id,
+            off_session=True,
+            confirm=True,
+            description=description or None,
+            idempotency_key=idempotency_key,
+        )
+    except stripe.error.CardError as exc:
+        user_message = getattr(exc, "user_message", None)
+        raise CardChargeError(
+            user_message or "Your card was declined — try another card."
+        ) from exc
+    except Exception as exc:
+        logger.exception("stripe.PaymentIntent.create failed (off-session charge)")
+        raise CardChargeError("Could not process payment — please try again.") from exc
+
+    return {"id": intent["id"], "status": intent["status"]}
 
     return event
