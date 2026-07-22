@@ -304,6 +304,67 @@ class TestUpdateBusiness:
 
             assert response.status_code == 200
 
+    def test_update_business_logo_url_round_trips(self, test_client, as_owner):
+        """
+        LANE D #6b: a logo_url in the PATCH body reaches the update call and is
+        echoed back in the response — the backend half of the logo-upload flow.
+        """
+        stub = SupabaseTableStub(
+            select_data={"owner_id": "user-123"},
+            update_data=[
+                {
+                    "id": "biz-123",
+                    "business_name": "Bow River Cleaning",
+                    "owner_id": "user-123",
+                    "logo_url": "https://cdn/logo.png",
+                }
+            ],
+        )
+        with patch("app.api.businesses.supabase") as mock_supabase:
+            mock_supabase.table.return_value = stub
+
+            response = test_client.patch(
+                "/businesses/biz-123",
+                json={"logo_url": "https://cdn/logo.png"},
+                headers={"Authorization": "Bearer test-token"},
+            )
+
+            assert response.status_code == 200
+            update_call = next(c for c in stub.calls if c[0] == "update")
+            assert update_call[1][0] == {"logo_url": "https://cdn/logo.png"}
+            assert response.json()["business"]["logo_url"] == "https://cdn/logo.png"
+
+    def test_update_business_clears_logo_url_to_null(self, test_client, as_owner):
+        """
+        LANE D #6b: PATCH {"logo_url": null} must persist NULL (owner removes the
+        logo). Same null-clear semantics as the avatar fix on /auth/me — an
+        explicit null on the nullable column reaches the update payload.
+        """
+        stub = SupabaseTableStub(
+            select_data={"owner_id": "user-123"},
+            update_data=[
+                {
+                    "id": "biz-123",
+                    "business_name": "Bow River Cleaning",
+                    "owner_id": "user-123",
+                    "logo_url": None,
+                }
+            ],
+        )
+        with patch("app.api.businesses.supabase") as mock_supabase:
+            mock_supabase.table.return_value = stub
+
+            response = test_client.patch(
+                "/businesses/biz-123",
+                json={"logo_url": None},
+                headers={"Authorization": "Bearer test-token"},
+            )
+
+            assert response.status_code == 200
+            update_call = next(c for c in stub.calls if c[0] == "update")
+            assert update_call[1][0] == {"logo_url": None}
+            assert response.json()["business"]["logo_url"] is None
+
 
 class TestBusinessPagination:
     """Tests for pagination across business endpoints."""

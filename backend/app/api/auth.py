@@ -515,8 +515,24 @@ def get_me(current_user: dict = Depends(get_current_user)):
 
 @router.patch("/me")
 def update_me(data: ProfileUpdate, current_user: dict = Depends(get_current_user)):
-    """Update the current user's own profile."""
-    update_data = {k: v for k, v in data.model_dump().items() if v is not None}
+    """Update the current user's own profile.
+
+    GAP #11 — the old body was ``{k: v for ... if v is not None}`` over a full
+    ``model_dump()``. That conflated "field omitted" with "field explicitly set
+    to null", so ``PATCH /auth/me {"avatar_url": null}`` dropped the only key in
+    the payload and fell through to the 400 below: a user could upload an avatar
+    but never remove one. Same for clearing a phone number.
+
+    ``exclude_unset=True`` now distinguishes the two cases, and the columns that
+    are nullable in ``public.users`` (avatar_url, phone) are allowed through as
+    an explicit NULL. first_name/last_name are NOT NULL in the schema, so a null
+    there is still ignored rather than sent to Postgres.
+    """
+    nullable_fields = {"avatar_url", "phone"}
+    provided = data.model_dump(exclude_unset=True)
+    update_data = {
+        k: v for k, v in provided.items() if v is not None or k in nullable_fields
+    }
     if not update_data:
         raise HTTPException(status_code=400, detail="No fields provided to update")
 

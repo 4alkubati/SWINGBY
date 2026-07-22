@@ -47,6 +47,7 @@ class BusinessCreate(BaseModel):
     custom_category: Optional[str] = Field(None, max_length=120)
     description: Optional[str] = Field(None, max_length=2000)
     license_number: Optional[str] = Field(None, max_length=500)
+    logo_url: Optional[str] = Field(None, max_length=2048)
     lat: Optional[float] = Field(None, ge=-90.0, le=90.0)
     lng: Optional[float] = Field(None, ge=-180.0, le=180.0)
     service_radius_km: Optional[float] = Field(25.0, ge=1.0, le=500.0)
@@ -63,6 +64,10 @@ class BusinessUpdate(BaseModel):
     custom_category: Optional[str] = Field(None, max_length=120)
     description: Optional[str] = Field(None, max_length=2000)
     license_number: Optional[str] = Field(None, max_length=500)
+    # Public-facing business logo (Supabase Storage URL from POST /uploads/image).
+    # Nullable on purpose so an owner can remove a logo again — see the
+    # exclude_unset handling in update_business below.
+    logo_url: Optional[str] = Field(None, max_length=2048)
     lat: Optional[float] = Field(None, ge=-90.0, le=90.0)
     lng: Optional[float] = Field(None, ge=-180.0, le=180.0)
     service_radius_km: Optional[float] = Field(None, ge=1.0, le=500.0)
@@ -502,7 +507,14 @@ def update_business(
     if biz.data["owner_id"] != current_user["id"]:
         raise HTTPException(status_code=403, detail="You don't own this business")
 
-    update_data = {k: v for k, v in data.model_dump().items() if v is not None}
+    # logo_url is nullable in the schema, so distinguish "omitted" from
+    # "explicitly cleared": exclude_unset drops omitted keys, and an explicit
+    # null on logo_url is allowed through so an owner can remove their logo.
+    nullable_fields = {"logo_url"}
+    provided = data.model_dump(exclude_unset=True)
+    update_data = {
+        k: v for k, v in provided.items() if v is not None or k in nullable_fields
+    }
     if not update_data:
         raise HTTPException(status_code=400, detail="No fields provided to update")
     if update_data.get("category"):
