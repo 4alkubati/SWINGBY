@@ -63,6 +63,30 @@ def create_checkout(
     if amount <= 0:
         raise HTTPException(status_code=400, detail="Booking total_amount must be > 0")
 
+    # Customer-credit redemption — reduce what the client pays by any available
+    # credit. GATED: this rides the same not-yet-live-Stripe-verified capture
+    # path as the rest of PR #30, so it only runs when
+    # CREDIT_REDEMPTION_AT_CHECKOUT_ENABLED is flipped on. When on, the net
+    # (reduced) amount is charged AND _mark_payment_paid's amount check subtracts
+    # the recorded redemption so capture verification stays consistent.
+    from app.services import escrow, credits
+
+    if credits.CREDIT_REDEMPTION_AT_CHECKOUT_ENABLED:
+        gross_cents = escrow.to_cents(amount)
+        redemption = credits.redeem_credit_for_booking(
+            user_id=current_user["id"],
+            booking_id=booking_id,
+            gross_amount_cents=gross_cents,
+        )
+        amount = escrow.to_dollars(redemption["net_amount_cents"])
+        if amount <= 0:
+            # Credit fully covers the booking — nothing left to charge via
+            # Stripe. (Not yet reachable while the flag is OFF.)
+            raise HTTPException(
+                status_code=400,
+                detail="Credit covers the full amount; no Stripe charge needed",
+            )
+
     email: Optional[str] = current_user.get("email")
     description = (
         f"SwingBy — {booking.get('service_category') or 'booking'} #{booking_id[:8]}"
@@ -282,6 +306,17 @@ def _mark_payment_paid(
         if booking_res.data
         else None
     )
+
+    # If credit was redeemed at checkout, Stripe captured the REDUCED (net)
+    # amount — subtract the recorded redemption so the mismatch check compares
+    # against what we actually asked Stripe to charge. No-op (subtract 0) for
+    # bookings with no redemption, so this is safe while redemption is gated off.
+    if expected_cents is not None:
+        from app.services import credits
+
+        redeemed = credits._existing_redemption_cents(booking_id)
+        if redeemed:
+            expected_cents = max(expected_cents - redeemed, 0)
 
     # Amount verification — refuse to mark paid if Stripe charged a different
     # amount than the booking total. Better to leave it pending for review than

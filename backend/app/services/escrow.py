@@ -90,29 +90,130 @@ def compute_completion_release(
     }
 
 
-def compute_cancellation_split(
-    total_amount, penalty_amount, cancelled_by_business: bool
-) -> dict:
-    """Cents-based split of a cancelled booking.
+# ── Cancellation penalty ladder (published ToS, product-owner ruling 2026-07-21)
+#
+# 48h is measured against ``bookings.confirmed_date``. "no_show" = a cancel filed
+# after the confirmed date/time has already passed (the party never showed).
+#
+#   CLIENT cancels
+#     early   (>48h)   client refunded 100%, business receives   0%
+#     late    (<=48h)  client refunded  75%, business receives  25%
+#     no_show          client refunded  50%, business receives  50%
+#
+#   BUSINESS cancels
+#     early   (>48h)   client refunded 100%, business penalty  0,   no credit
+#     late    (<=48h)  client refunded 100%, business penalty 25%, + client credit
+#     no_show          client refunded 100%, business penalty 50%, + client credit
+#
+#   no_date (either actor, no confirmed date yet) → 0 penalty, no credit.
+#
+# The business "penalty" is an audit/ledger figure recorded on
+# ``cancellations.penalty_amount``: in the charge-before-service model the
+# business has been paid nothing before completion, so there is no captured
+# payout to claw back — the client is simply made whole and (for late/no-show)
+# handed a goodwill credit. See app.services.credits.GOODWILL_CREDIT_CENTS.
 
-    - Client-initiated cancel: the business keeps the penalty; the client is
-      refunded the remainder.
-    - Business-initiated cancel: the client is made whole (full refund); the
-      business keeps nothing. (A business that cancels does not get to keep a
-      client's money. Any business-side penalty is a future ledger item — see
-      PR notes — and is intentionally NOT charged here.)
+_CANCEL_ACTORS = ("client", "business")
+_CANCEL_TIMINGS = ("no_date", "early", "late", "no_show")
+
+
+def classify_cancellation_timing(confirmed_date, now: Optional[datetime] = None) -> str:
+    """Bucket a cancellation by proximity to ``confirmed_date``.
+
+    Returns one of: ``no_date`` (no/unparseable confirmed date), ``early``
+    (>48h before), ``late`` (0–48h before), ``no_show`` (date already passed).
+    Pure/deterministic given ``now`` so it is unit-testable.
     """
+    if not confirmed_date:
+        return "no_date"
+    now = now or datetime.now(timezone.utc)
+    try:
+        job_dt = datetime.fromisoformat(str(confirmed_date).replace("Z", "+00:00"))
+    except (ValueError, TypeError):
+        return "no_date"
+    hours_until = (job_dt - now).total_seconds() / 3600
+    if hours_until < 0:
+        return "no_show"
+    if hours_until <= 48:
+        return "late"
+    return "early"
+
+
+def _pct_cents(total_c: int, pct: int) -> int:
+    """``pct`` percent of ``total_c`` cents, half-up rounded."""
+    return int(
+        (Decimal(total_c) * Decimal(pct) / Decimal(100)).quantize(
+            Decimal("1"), rounding=ROUND_HALF_UP
+        )
+    )
+
+
+def compute_cancellation_split(total_amount, actor: str, timing: str) -> dict:
+    """Pure cents-based split of a cancelled booking per the ToS ladder.
+
+    ``actor``  — "client" or "business" (who cancelled).
+    ``timing`` — one of classify_cancellation_timing()'s buckets.
+
+    Returns a dict of both cents and dollar figures:
+      client_refund          — dollars refunded to the client
+      business_keeps         — dollars the business retains/receives (ledger
+                               ``released_to_business`` on cancel)
+      business_penalty       — dollars the business is penalised (audit only)
+      credit_amount          — goodwill credit granted to the client (dollars)
+      penalty_amount         — figure to record on cancellations.penalty_amount
+                               (= business_keeps for a client cancel, the
+                               business_penalty for a business cancel)
+      *_cents                — integer-cents counterparts
+    """
+    if actor not in _CANCEL_ACTORS:
+        raise ValueError(f"actor must be one of {_CANCEL_ACTORS}, got {actor!r}")
+    if timing not in _CANCEL_TIMINGS:
+        raise ValueError(f"timing must be one of {_CANCEL_TIMINGS}, got {timing!r}")
+
+    # Local import avoids a module cycle (credits imports nothing from escrow,
+    # but keep the dependency direction explicit and lazy).
+    from app.services.credits import GOODWILL_CREDIT_CENTS
+
     total_c = to_cents(total_amount)
-    if cancelled_by_business:
-        business_keeps_c = 0
-    else:
-        business_keeps_c = min(to_cents(penalty_amount), total_c)
-    client_refund_c = total_c - business_keeps_c
+    client_refund_c = total_c
+    business_keeps_c = 0
+    business_penalty_c = 0
+    credit_c = 0
+
+    if timing == "no_date":
+        # No confirmed date yet → no penalty either way, client fully refunded.
+        client_refund_c = total_c
+    elif actor == "client":
+        if timing == "early":
+            client_refund_c = total_c  # 100%
+        elif timing == "late":
+            business_keeps_c = _pct_cents(total_c, 25)
+            client_refund_c = total_c - business_keeps_c  # 75%
+        elif timing == "no_show":
+            business_keeps_c = _pct_cents(total_c, 50)
+            client_refund_c = total_c - business_keeps_c  # 50%
+    else:  # actor == "business" — client is always made whole
+        client_refund_c = total_c  # 100%
+        if timing == "late":
+            business_penalty_c = _pct_cents(total_c, 25)
+            credit_c = GOODWILL_CREDIT_CENTS
+        elif timing == "no_show":
+            business_penalty_c = _pct_cents(total_c, 50)
+            credit_c = GOODWILL_CREDIT_CENTS
+        # early → no penalty, no credit.
+
+    penalty_c = business_keeps_c if actor == "client" else business_penalty_c
     return {
-        "business_keeps": to_dollars(business_keeps_c),
         "client_refund": to_dollars(client_refund_c),
-        "business_keeps_cents": business_keeps_c,
+        "business_keeps": to_dollars(business_keeps_c),
+        "business_penalty": to_dollars(business_penalty_c),
+        "credit_amount": to_dollars(credit_c),
+        "penalty_amount": to_dollars(penalty_c),
         "client_refund_cents": client_refund_c,
+        "business_keeps_cents": business_keeps_c,
+        "business_penalty_cents": business_penalty_c,
+        "credit_cents": credit_c,
+        "penalty_cents": penalty_c,
     }
 
 

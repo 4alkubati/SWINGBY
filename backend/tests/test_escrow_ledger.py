@@ -14,13 +14,14 @@ test_escrow_ledger.py — Money-path correctness for the escrow ledger fixes
 - Reporting-literal fixes (fix C: total_pending / total_earnings).
 """
 
+from datetime import datetime, timezone
 from unittest.mock import patch
 
 import pytest
 
 from app.deps import get_current_user
 from app.main import app
-from app.services import escrow
+from app.services import credits, escrow
 from tests.conftest import SupabaseTableStub
 
 # ── Pure ledger math ──────────────────────────────────────────────────────────
@@ -50,28 +51,104 @@ class TestEscrowMath:
         assert out["released_to_business"] == 90.00
         assert out["final_release"] == 0.00
 
-    def test_cancellation_split_client_keeps_penalty(self):
-        # Client cancels a $100 booking with a $25 penalty.
-        out = escrow.compute_cancellation_split(
-            100.00, 25.00, cancelled_by_business=False
-        )
-        assert out["business_keeps"] == 25.00
-        assert out["client_refund"] == 75.00
 
-    def test_cancellation_split_business_cancel_full_refund(self):
-        # Business cancels → client made whole regardless of computed penalty.
-        out = escrow.compute_cancellation_split(
-            100.00, 50.00, cancelled_by_business=True
-        )
-        assert out["business_keeps"] == 0.00
+# ── Cancellation penalty ladder (published ToS, 2026-07-21) ───────────────────
+
+
+class TestCancellationLadderMath:
+    """The full 6-case ladder + the no-confirmed-date case, in pure cents math."""
+
+    # --- CLIENT cancels ---
+    def test_client_early_full_refund(self):
+        out = escrow.compute_cancellation_split(100.00, "client", "early")
         assert out["client_refund"] == 100.00
+        assert out["business_keeps"] == 0.00
+        assert out["credit_amount"] == 0.00
+        assert out["penalty_amount"] == 0.00
 
-    def test_cancellation_penalty_never_exceeds_total(self):
-        out = escrow.compute_cancellation_split(
-            100.00, 150.00, cancelled_by_business=False
+    def test_client_late_keeps_25(self):
+        out = escrow.compute_cancellation_split(100.00, "client", "late")
+        assert out["client_refund"] == 75.00
+        assert out["business_keeps"] == 25.00
+        assert out["credit_amount"] == 0.00
+        assert out["penalty_amount"] == 25.00
+
+    def test_client_no_show_keeps_50(self):
+        out = escrow.compute_cancellation_split(100.00, "client", "no_show")
+        assert out["client_refund"] == 50.00
+        assert out["business_keeps"] == 50.00
+        assert out["credit_amount"] == 0.00
+        assert out["penalty_amount"] == 50.00
+
+    # --- BUSINESS cancels ---
+    def test_business_early_full_refund_no_penalty(self):
+        out = escrow.compute_cancellation_split(100.00, "business", "early")
+        assert out["client_refund"] == 100.00
+        assert out["business_keeps"] == 0.00
+        assert out["business_penalty"] == 0.00
+        assert out["credit_amount"] == 0.00
+        assert out["penalty_amount"] == 0.00
+
+    def test_business_late_full_refund_penalty_25_plus_credit(self):
+        out = escrow.compute_cancellation_split(100.00, "business", "late")
+        assert out["client_refund"] == 100.00
+        assert out["business_keeps"] == 0.00
+        assert out["business_penalty"] == 25.00
+        assert out["credit_cents"] == credits.GOODWILL_CREDIT_CENTS
+        assert out["penalty_amount"] == 25.00
+
+    def test_business_no_show_full_refund_penalty_50_plus_credit(self):
+        out = escrow.compute_cancellation_split(100.00, "business", "no_show")
+        assert out["client_refund"] == 100.00
+        assert out["business_keeps"] == 0.00
+        assert out["business_penalty"] == 50.00
+        assert out["credit_cents"] == credits.GOODWILL_CREDIT_CENTS
+        assert out["penalty_amount"] == 50.00
+
+    # --- no confirmed date → zero penalty either way, no credit ---
+    def test_no_date_client_zero_penalty(self):
+        out = escrow.compute_cancellation_split(100.00, "client", "no_date")
+        assert out["client_refund"] == 100.00
+        assert out["business_keeps"] == 0.00
+        assert out["credit_amount"] == 0.00
+
+    def test_no_date_business_zero_penalty_no_credit(self):
+        out = escrow.compute_cancellation_split(100.00, "business", "no_date")
+        assert out["client_refund"] == 100.00
+        assert out["business_penalty"] == 0.00
+        assert out["credit_cents"] == 0
+
+    def test_bad_actor_or_timing_raises(self):
+        with pytest.raises(ValueError):
+            escrow.compute_cancellation_split(100.00, "nobody", "late")
+        with pytest.raises(ValueError):
+            escrow.compute_cancellation_split(100.00, "client", "someday")
+
+
+class TestCancellationTimingClassifier:
+    def test_no_date(self):
+        assert escrow.classify_cancellation_timing(None) == "no_date"
+        assert escrow.classify_cancellation_timing("not-a-date") == "no_date"
+
+    def test_early_late_no_show(self):
+        now = datetime(2026, 1, 10, 12, 0, tzinfo=timezone.utc)
+        # 5 days out → early
+        assert (
+            escrow.classify_cancellation_timing("2026-01-15T12:00:00Z", now) == "early"
         )
-        assert out["business_keeps"] == 100.00
-        assert out["client_refund"] == 0.00
+        # 24h out → late
+        assert (
+            escrow.classify_cancellation_timing("2026-01-11T12:00:00Z", now) == "late"
+        )
+        # exactly 48h out → late (boundary is inclusive)
+        assert (
+            escrow.classify_cancellation_timing("2026-01-12T12:00:00Z", now) == "late"
+        )
+        # date already passed → no_show
+        assert (
+            escrow.classify_cancellation_timing("2026-01-09T12:00:00Z", now)
+            == "no_show"
+        )
 
 
 # ── release_escrow_on_complete state machine ──────────────────────────────────
@@ -203,15 +280,31 @@ class TestAcceptDoesNotPreRelease:
 # ── Endpoint: cancellation moves the ledger ───────────────────────────────────
 
 
+BUSINESS = {
+    "id": "owner-1",
+    "role": "business_owner",
+    "first_name": "Biz",
+    "email": "b@x.co",
+}
+
+
+@pytest.fixture
+def as_business():
+    app.dependency_overrides[get_current_user] = lambda: BUSINESS
+    yield BUSINESS
+    app.dependency_overrides.pop(get_current_user, None)
+
+
 class TestCancellationLedger:
-    def test_client_cancel_far_out_keeps_25_percent(self, test_client, as_client):
+    def test_client_cancel_far_out_full_refund(self, test_client, as_client):
+        # New ladder: client cancels >48h out → 100% refund, business keeps 0%.
         booking_row = {
             "id": "booking-1",
             "client_id": "client-1",
             "business_id": "biz-1",
             "status": "in_progress",
             "total_amount": 100.0,
-            "confirmed_date": "2099-01-01T00:00:00Z",  # far future → 25% penalty
+            "confirmed_date": "2099-01-01T00:00:00Z",  # far future → early
         }
         payments_stub = SupabaseTableStub(
             select_data={"id": "pay-1", "stripe_payment_intent_id": None},
@@ -244,12 +337,81 @@ class TestCancellationLedger:
             p2.stop()
 
         assert resp.status_code == 200, resp.text
+        assert resp.json()["penalty_amount"] == 0.00
+        upd = [c for c in payments_stub.calls if c[0] == "update"][0][1][0]
+        assert upd["status"] == "refunded"
+        assert upd["released_to_business"] == 0.00
+        assert upd["escrow_held"] == 0
+        assert upd["platform_cut"] == 0
+
+    def test_business_cancel_late_grants_credit_and_full_refund(
+        self, test_client, as_business
+    ):
+        # Business cancels <=48h out → client 100% refund + goodwill credit,
+        # business penalty 25%.
+        booking_row = {
+            "id": "booking-1",
+            "client_id": "client-1",
+            "business_id": "biz-1",
+            "status": "in_progress",
+            "total_amount": 100.0,
+            # Slightly in the future but within 48h → "late".
+            "confirmed_date": "2099-01-01T00:00:00Z",
+        }
+        payments_stub = SupabaseTableStub(
+            select_data={"id": "pay-1", "stripe_payment_intent_id": None},
+            update_data=[{"id": "pay-1"}],
+        )
+        credits_stub = SupabaseTableStub(insert_data=[{"id": "uc-1"}])
+        bstubs = {
+            "bookings": SupabaseTableStub(
+                select_data=booking_row, update_data=[booking_row]
+            ),
+            "cancellations": SupabaseTableStub(insert_data=[{"id": "can-1"}]),
+            "payments": payments_stub,
+            # owner lookup (handshake) + email owner lookup share this stub.
+            "businesses": SupabaseTableStub(
+                select_data={"id": "biz-1", "owner_id": "owner-1"}
+            ),
+            "users": SupabaseTableStub(select_data=None),
+        }
+        p1 = patch("app.api.bookings.supabase")
+        m1 = p1.start()
+        m1.table.side_effect = lambda name: bstubs[name]
+        p2 = patch("app.services.escrow.supabase")
+        m2 = p2.start()
+        m2.table.side_effect = lambda name: bstubs[name]
+        p3 = patch("app.services.credits.supabase")
+        m3 = p3.start()
+        m3.table.side_effect = lambda name: credits_stub
+        # Force the "late" bucket regardless of wall-clock.
+        p4 = patch(
+            "app.services.escrow.classify_cancellation_timing", return_value="late"
+        )
+        p4.start()
+        try:
+            with patch("app.api.bookings.send_push_to_user"):
+                resp = test_client.patch(
+                    "/bookings/booking-1/cancel",
+                    json={"reason": "van broke down"},
+                    headers={"Authorization": "Bearer t"},
+                )
+        finally:
+            p1.stop()
+            p2.stop()
+            p3.stop()
+            p4.stop()
+
+        assert resp.status_code == 200, resp.text
         assert resp.json()["penalty_amount"] == 25.00
         upd = [c for c in payments_stub.calls if c[0] == "update"][0][1][0]
         assert upd["status"] == "refunded"
-        assert upd["released_to_business"] == 25.00
-        assert upd["escrow_held"] == 0
-        assert upd["platform_cut"] == 0
+        assert upd["released_to_business"] == 0.00  # client made whole
+        # A goodwill credit was granted to the client.
+        assert credits_stub.inserted is not None
+        assert credits_stub.inserted["user_id"] == "client-1"
+        assert credits_stub.inserted["amount_cents"] == credits.GOODWILL_CREDIT_CENTS
+        assert credits_stub.inserted["booking_id"] == "booking-1"
 
 
 # ── Endpoint: off-platform mark-paid ──────────────────────────────────────────

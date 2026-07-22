@@ -215,14 +215,20 @@ def reactivate_employee(
 def list_employees_for_business(
     business_id: str, current_user: dict = Depends(get_current_user)
 ):
-    """Public trust-card list. Any authenticated user can view a business's team."""
+    """Public trust-card list. Any authenticated user can view a business's team.
+
+    Owner ruling (2026-07-21): stays public, but only ACTIVE employees are
+    shown and the internal ``user_id`` is never exposed in the payload — a trust
+    card needs a name, photo and role, not the account id behind it.
+    """
     try:
         res = (
             supabase.table("employees")
             .select(
-                "id, business_id, user_id, role_title, is_active, avatar_url, created_at, users(first_name, last_name, avatar_url)"
+                "id, business_id, role_title, is_active, avatar_url, created_at, users(first_name, last_name, avatar_url)"
             )
             .eq("business_id", business_id)
+            .eq("is_active", True)
             .order("created_at")
             .execute()
         )

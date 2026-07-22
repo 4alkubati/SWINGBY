@@ -239,6 +239,38 @@ def get_my_referrals(current_user: dict = Depends(get_current_user)):
         raise HTTPException(status_code=400, detail="Could not load referral data")
 
 
+@router.get("/credits")
+def get_my_credits(current_user: dict = Depends(get_current_user)):
+    """
+    The caller's customer-credit balance + full ledger history.
+
+    Credits accrue today only when a business cancels late/no-shows (goodwill —
+    see the cancellation ladder). Each history row is a signed cents delta:
+    positive = a grant, negative = a redemption against a booking charge.
+
+    Response:
+      balance_cents  — current balance in integer cents (SUM of the ledger)
+      balance        — same, in dollars (float)
+      history        — [{id, amount_cents, reason, booking_id, created_at}], newest first
+    """
+    uid = current_user["id"]
+    try:
+        from app.services import credits
+
+        balance_cents = credits.get_balance_cents(uid)
+        history = credits.get_history(uid)
+        return {
+            "balance_cents": balance_cents,
+            "balance": round(balance_cents / 100, 2),
+            "history": history,
+        }
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception("me.credits failed", user_id=uid)
+        raise HTTPException(status_code=400, detail="Could not load credits")
+
+
 @router.delete("")
 @limiter.limit("1/hour")
 def delete_my_account(

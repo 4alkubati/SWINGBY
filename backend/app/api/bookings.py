@@ -713,10 +713,20 @@ def cancel_booking(
     current_user: dict = Depends(get_current_user),
 ):
     """
-    Cancel a booking. Penalty logic (proximity to confirmed_date):
-      - No confirmed date set   → no penalty
-      - > 48 h before date      → 25 % penalty  (business keeps 25 % of total)
-      - ≤ 48 h before date      → 50 % penalty  (business keeps 50 % of total)
+    Cancel a booking. Penalty ladder (published ToS, measured against
+    confirmed_date; see escrow.compute_cancellation_split):
+
+      CLIENT cancels
+        >48h    → client refunded 100%, business 0%
+        <=48h   → client refunded  75%, business 25%
+        no-show → client refunded  50%, business 50%
+
+      BUSINESS cancels
+        >48h    → client refunded 100%, business penalty 0
+        <=48h   → client refunded 100% + goodwill CREDIT, business penalty 25%
+        no-show → client refunded 100% + goodwill CREDIT, business penalty 50%
+
+      No confirmed date yet → 0 penalty either way, no credit.
     """
     booking_res = (
         supabase.table("bookings").select("*").eq("id", booking_id).single().execute()
@@ -738,31 +748,17 @@ def cancel_booking(
 
     from app.services import escrow
 
-    cancelled_by_business = current_user["role"] == "business_owner"
-
-    # Time-based penalty (only applies to a CLIENT-initiated cancel — a business
-    # that cancels never keeps the client's money; see compute_cancellation_split).
-    penalty_amount = 0.0
-    confirmed_date = booking.get("confirmed_date")
+    # Actor is derived from the authenticated user's role (the two handshake
+    # parties only — enforced above). "who cancelled" is also persisted on
+    # cancellations.cancelled_by below.
+    actor = "business" if current_user["role"] == "business_owner" else "client"
     total = booking.get("total_amount", 0)
+    timing = escrow.classify_cancellation_timing(booking.get("confirmed_date"))
 
-    if confirmed_date:
-        now = datetime.now(timezone.utc)
-        try:
-            job_dt = datetime.fromisoformat(confirmed_date.replace("Z", "+00:00"))
-            hours_until = (job_dt - now).total_seconds() / 3600
-            if hours_until <= 48:
-                penalty_amount = escrow.to_dollars(int(escrow.to_cents(total) * 0.50))
-            else:
-                penalty_amount = escrow.to_dollars(int(escrow.to_cents(total) * 0.25))
-        except (ValueError, TypeError):
-            pass  # malformed date — no penalty
-
-    split = escrow.compute_cancellation_split(
-        total, penalty_amount, cancelled_by_business
-    )
-    # The penalty actually retained by the business (0 for a business-side cancel).
-    penalty_amount = split["business_keeps"]
+    split = escrow.compute_cancellation_split(total, actor, timing)
+    # Figure recorded on the cancellations row (business_keeps for a client
+    # cancel, the business penalty for a business cancel).
+    penalty_amount = split["penalty_amount"]
 
     try:
         # Update booking
@@ -831,6 +827,20 @@ def cancel_booking(
                     booking_id,
                     refund_amount,
                 )
+
+        # Goodwill credit accrual: the ladder grants the client a credit when
+        # the BUSINESS cancels late / no-shows. grant_credit is best-effort
+        # (logs loudly on failure) so a goodwill gesture can never 500 the
+        # cancel or roll back the refund already applied above.
+        if split["credit_cents"] > 0:
+            from app.services import credits
+
+            credits.grant_credit(
+                user_id=booking["client_id"],
+                amount_cents=split["credit_cents"],
+                reason=f"business_cancel_{timing}",
+                booking_id=booking_id,
+            )
 
         # Email the OTHER party (whoever didn't cancel) — best-effort
         try:

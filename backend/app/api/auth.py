@@ -33,7 +33,6 @@ from app.supabase_client import supabase, supabase_auth
 from app.deps import get_current_user
 from app.limiter import limiter  # shared limiter — see app/limiter.py
 from app.config import settings
-from app.services.notion_crm import sync_user_to_crm
 
 logger = structlog.get_logger(__name__)
 
@@ -288,18 +287,6 @@ def signup(request: Request, data: SignupRequest):
                     ).execute()
             except Exception:
                 pass
-
-        # Sync to Notion CRM — best-effort, never blocks signup
-        try:
-            sync_user_to_crm(
-                user_id=user_id,
-                email=str(data.email),
-                first_name=data.first_name,
-                last_name=data.last_name,
-                role=data.role,
-            )
-        except Exception:
-            pass
 
         # Welcome email — best-effort, never blocks signup
         try:
