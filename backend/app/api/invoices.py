@@ -19,7 +19,7 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 
-from app.deps import get_current_user
+from app.deps import get_current_user, get_current_user_allow_query_token
 from app.supabase_client import supabase
 
 logger = logging.getLogger(__name__)
@@ -74,7 +74,8 @@ def _load_invoice_data(booking_id: str, current_user: dict) -> dict:
     pay_res = (
         supabase.table("payments")
         .select(
-            "status, method, notes, total_charged, platform_cut, released_to_business"
+            "status, method, stripe_payment_intent_id, "
+            "total_charged, platform_cut, released_to_business"
         )
         .eq("booking_id", booking_id)
         .order("created_at", desc=True)
@@ -145,7 +146,7 @@ def _load_invoice_data(booking_id: str, current_user: dict) -> dict:
             "status": payment.get("status")
             or booking.get("payment_status")
             or "pending",
-            "processor_ref": payment.get("notes"),
+            "processor_ref": payment.get("stripe_payment_intent_id"),
         },
     }
 
@@ -156,7 +157,10 @@ def get_invoice(booking_id: str, current_user: dict = Depends(get_current_user))
 
 
 @router.get("/{booking_id}/invoice.pdf")
-def get_invoice_pdf(booking_id: str, current_user: dict = Depends(get_current_user)):
+def get_invoice_pdf(
+    booking_id: str,
+    current_user: dict = Depends(get_current_user_allow_query_token),
+):
     data = _load_invoice_data(booking_id, current_user)
 
     try:
