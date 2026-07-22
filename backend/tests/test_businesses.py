@@ -127,70 +127,103 @@ class TestListBusinesses:
             assert not eq_calls, "category filter must not use exact .eq() match"
 
 
-class TestBusinessNameSearch:
-    """Tests for GET /businesses/?q= — DQ-1 name-based search (no location)."""
+class TestBusinessWorkSearch:
+    """
+    Tests for GET /businesses/?q= — LANE F work-history search (no location).
 
-    def _find_ilike(self, stub):
+    q no longer matches business NAMES. It ranks businesses by how much the
+    work they have completed resembles the query, via the
+    `search_businesses_by_work` RPC. These tests use a bare MagicMock supabase
+    (so the RPC returns an un-iterable MagicMock → the endpoint's in-process
+    fallback runs), which is enough to assert the routing and the no-name-ilike
+    guarantee. End-to-end ranking is covered in test_search_index.py.
+    """
+
+    def _find_business_name_ilike(self, stub):
         for name, args, _kwargs in stub.calls:
-            if name == "ilike":
+            if name == "ilike" and args and args[0] == "business_name":
                 return args
         return None
 
-    def test_name_search_calls_ilike_and_requires_no_location(
+    def test_query_routes_to_work_history_rpc_not_a_name_ilike(
         self, test_client, as_owner
     ):
         """
-        DQ-1.1: GET /businesses/?q=<name> issues a case-insensitive ilike on
-        business_name and returns 200 without any lat/lng location param.
+        LANE F: GET /businesses/?q=<term> ranks by completed work via the RPC
+        and returns 200 with NO location param — and never issues a
+        business_name ilike (the old name-match behaviour is gone).
         """
         stub = SupabaseTableStub(
             select_data=[
-                {"id": "biz-1", "business_name": "Test Cleaning Co.", "avg_rating": 4.5}
+                {
+                    "id": "biz-1",
+                    "owner_id": "o1",
+                    "business_name": "Test Cleaning Co.",
+                    "category": "Cleaning",
+                    "description": "Deep clean of a big house",
+                    "avg_rating": 4.5,
+                }
             ]
         )
-        with patch("app.api.businesses.supabase") as mock_supabase:
+        with patch("app.api.businesses.supabase") as mock_supabase, patch(
+            "app.api.businesses.hidden_user_ids", return_value=set()
+        ):
             mock_supabase.table.return_value = stub
+            # No work-index RPC in this stub DB → the endpoint's in-process
+            # fallback ranks the fetched rows. Still corpus-aware, still no name
+            # ilike — which is exactly what this test asserts.
+            mock_supabase.rpc.side_effect = RuntimeError("rpc unavailable")
 
-            response = test_client.get("/businesses/?q=Cleaning")
+            response = test_client.get("/businesses/?q=big+house")
 
             assert response.status_code == 200
             data = response.json()
-            assert len(data["items"]) == 1
+            assert data["items"][0]["id"] == "biz-1"
+            assert data["search_mode"] == "name_fallback"
+            # Crucially, no ilike on business_name — search is by work, not name.
+            assert self._find_business_name_ilike(stub) is None
 
-            ilike_args = self._find_ilike(stub)
-            assert ilike_args is not None, "expected an ilike() call for ?q= search"
-            assert ilike_args[0] == "business_name"
-            assert ilike_args[1] == "%Cleaning%"
-
-    def test_name_search_escapes_ilike_special_chars(self, test_client, as_owner):
-        """
-        DQ-1.2: % _ \\ in the user query are backslash-escaped before building
-        the ilike pattern so they can't act as wildcards.
-        """
-        stub = SupabaseTableStub(select_data=[])
-        with patch("app.api.businesses.supabase") as mock_supabase:
+    def test_unrelated_query_returns_no_matches(self, test_client, as_owner):
+        """LANE F: a term unrelated to any completed work returns nothing."""
+        stub = SupabaseTableStub(
+            select_data=[
+                {
+                    "id": "biz-1",
+                    "owner_id": "o1",
+                    "business_name": "Test Cleaning Co.",
+                    "category": "Cleaning",
+                    "description": "Deep clean of a big house",
+                    "avg_rating": 4.5,
+                }
+            ]
+        )
+        with patch("app.api.businesses.supabase") as mock_supabase, patch(
+            "app.api.businesses.hidden_user_ids", return_value=set()
+        ):
             mock_supabase.table.return_value = stub
+            mock_supabase.rpc.side_effect = RuntimeError("rpc unavailable")
 
-            # raw query: a%b_c\d
-            response = test_client.get("/businesses/", params={"q": "a%b_c\\d"})
+            response = test_client.get("/businesses/?q=plumbing+emergency")
 
             assert response.status_code == 200
-            ilike_args = self._find_ilike(stub)
-            assert ilike_args is not None
-            assert ilike_args[1] == "%a\\%b\\_c\\\\d%"
+            assert response.json()["items"] == []
 
-    def test_no_query_does_not_call_ilike(self, test_client, as_owner):
+    def test_no_query_does_not_rank_or_ilike_by_name(self, test_client, as_owner):
         """
-        DQ-1.3: existing behavior preserved — omitting ?q= issues no ilike.
+        LANE F: omitting ?q= is the plain listing — no work-history RPC and no
+        business_name ilike.
         """
         stub = SupabaseTableStub(select_data=[])
-        with patch("app.api.businesses.supabase") as mock_supabase:
+        with patch("app.api.businesses.supabase") as mock_supabase, patch(
+            "app.api.businesses.hidden_user_ids", return_value=set()
+        ):
             mock_supabase.table.return_value = stub
 
             response = test_client.get("/businesses/")
 
             assert response.status_code == 200
-            assert self._find_ilike(stub) is None
+            assert self._find_business_name_ilike(stub) is None
+            mock_supabase.rpc.assert_not_called()
 
 
 class TestNearbyBusinesses:
