@@ -10,11 +10,17 @@ from app.categories import normalize_category
 from app.deps import get_current_user
 from app.supabase_client import supabase
 from app.limiter import limiter
+from app.services import search_index
 from app.services.visibility import hidden_user_ids
 
 logger = structlog.get_logger(__name__)
 
 router = APIRouter()
+
+# Ceiling on rows scanned by the in-process search fallback (tier 3, used only
+# when the work-index RPC is unavailable). Bounded so a missing migration can
+# never turn a search into a full-table scan.
+_FALLBACK_SCAN_LIMIT = 500
 
 
 # ── Helpers ─────────────────────────────────────────────────────────────────
@@ -415,29 +421,160 @@ def get_my_analytics(
         raise HTTPException(status_code=500, detail="Analytics unavailable")
 
 
+def _attach_distance(
+    items: list[dict],
+    lat: Optional[float],
+    lng: Optional[float],
+    radius_km: Optional[float],
+) -> list[dict]:
+    """
+    Annotate each business with `distance_km` when the caller's coords are known,
+    and drop anything outside `radius_km` when one was supplied.
+
+    Businesses with no coordinates survive an unfiltered call (they simply get
+    no distance) but are dropped once a radius is requested — an unlocatable
+    business cannot be shown to satisfy a distance constraint.
+    """
+    if lat is None or lng is None:
+        return items
+
+    out: list[dict] = []
+    for biz in items:
+        biz_lat, biz_lng = biz.get("lat"), biz.get("lng")
+        if biz_lat is None or biz_lng is None:
+            if radius_km is None:
+                out.append(biz)
+            continue
+        try:
+            dist = _haversine_km(lat, lng, float(biz_lat), float(biz_lng))
+        except (TypeError, ValueError):
+            logger.warning("search_bad_coords", biz_id=biz.get("id"))
+            continue
+        if radius_km is not None:
+            biz_radius = float(biz.get("service_radius_km") or 25.0)
+            if dist > min(radius_km, biz_radius):
+                continue
+        out.append({**biz, "distance_km": round(dist, 2)})
+    return out
+
+
+def _search_by_work(
+    q: str,
+    category: Optional[str],
+    lat: Optional[float],
+    lng: Optional[float],
+    radius_km: Optional[float],
+    limit: int,
+    offset: int,
+) -> dict:
+    """
+    Rank businesses by how much their COMPLETED WORK resembles `q`.
+
+    Three tiers, one response shape (LANE F — see app/services/search_index.py
+    and docs/business_work_index.sql):
+      1. semantic  — pgvector cosine over the work corpus (flag-gated, dormant)
+      2. work_lexical — weighted tsvector + pg_trgm over the work corpus (LIVE)
+      3. name_fallback — in-process ranking over name/category/description, used
+         only when the work-index RPC is unavailable (e.g. migration not applied
+         on a dev DB). Still corpus-aware, so it beats the old name-only ilike.
+
+    Ranking happens in the DB but hydration/filtering/pagination happen here, so
+    the ghost-owner filter and the radius filter still apply to the ranked set.
+    """
+    mode = "semantic" if search_index.semantic_search_available() else "work_lexical"
+
+    ranked = search_index.rank_business_ids(supabase, q, category)
+    if ranked is None:
+        # Tier 3: no work index to query. Scan a bounded page of businesses and
+        # rank them in-process rather than 500ing or falling back to name-only.
+        mode = "name_fallback"
+        scan = supabase.table("businesses").select("*")
+        if category and category.strip():
+            scan = scan.ilike("category", _escape_ilike(category.strip()))
+        scan_res = scan.limit(_FALLBACK_SCAN_LIMIT).execute()
+        candidates = scan_res.data or []
+        ranked = search_index.rank_businesses_in_process(q, candidates)
+        by_id = {b.get("id"): b for b in candidates}
+    else:
+        ids = [r["business_id"] for r in ranked]
+        by_id = {}
+        if ids:
+            hydrated = supabase.table("businesses").select("*").in_("id", ids).execute()
+            by_id = {b.get("id"): b for b in (hydrated.data or [])}
+
+    # Rebuild in rank order, carrying the score/reason onto each row.
+    items = []
+    for row in ranked:
+        biz = by_id.get(row["business_id"])
+        if not biz:
+            continue
+        items.append(
+            {
+                **biz,
+                "match_score": round(row["match_score"], 4),
+                "match_reason": row.get("match_reason"),
+            }
+        )
+
+    # Hide businesses whose owner is ghosted / suspended / soft-deleted.
+    hidden_owners = hidden_user_ids(supabase, [b.get("owner_id") for b in items])
+    if hidden_owners:
+        items = [b for b in items if b.get("owner_id") not in hidden_owners]
+
+    items = _attach_distance(items, lat, lng, radius_km)
+
+    # Paginate AFTER filtering so a page is never silently short.
+    page = items[offset : offset + limit]
+    next_offset = offset + limit if len(items) > offset + limit else None
+    return {
+        "items": page,
+        "limit": limit,
+        "offset": offset,
+        "next_offset": next_offset,
+        "query": q,
+        "search_mode": mode,
+    }
+
+
 @router.get("/")
 def list_businesses(
     q: Optional[str] = Query(
         None,
         max_length=120,
-        description="Case-insensitive business-name search (no location required)",
+        description=(
+            "Work-history search: ranks businesses by how much the work they "
+            "have COMPLETED resembles the query (e.g. 'big house'). No location "
+            "required."
+        ),
     ),
     category: Optional[str] = Query(None, max_length=120),
+    lat: Optional[float] = Query(None, ge=-90.0, le=90.0, description="Caller lat"),
+    lng: Optional[float] = Query(None, ge=-180.0, le=180.0, description="Caller lng"),
+    radius_km: Optional[float] = Query(
+        None,
+        ge=1.0,
+        le=200.0,
+        description="Filter to businesses within this radius (needs lat+lng, and q)",
+    ),
     limit: int = Query(20, ge=1, le=100, description="Max results to return"),
     offset: int = Query(0, ge=0, description="Number of results to skip"),
     current_user: dict = Depends(get_current_user),
 ):
     """
-    List businesses, optionally filtered by a case-insensitive name search (`q`)
-    and/or category. Unlike /nearby this requires NO location — it powers the
-    name-based Search screen so browse works even when geolocation is denied.
+    List businesses. With `q`, results are ranked by WORK HISTORY — the titles,
+    descriptions and categories of the jobs each business actually completed —
+    not by name. Without `q`, this is a plain (optionally category-filtered)
+    listing. Neither path requires location, so browse still works when
+    geolocation is denied; `lat`/`lng` only add `distance_km`, and `radius_km`
+    filters alongside `q` (use /nearby for pure geo-browse).
     """
     try:
-        query = supabase.table("businesses").select("*")
         if q and q.strip():
-            # Escape ilike wildcards (% _ \) so user input is matched literally.
-            pattern = f"%{_escape_ilike(q.strip())}%"
-            query = query.ilike("business_name", pattern)
+            return _search_by_work(
+                q.strip(), category, lat, lng, radius_km, limit, offset
+            )
+
+        query = supabase.table("businesses").select("*")
         if category:
             # Case-insensitive match: mobile sends the lowercase CategoryScroll
             # chip id (e.g. "cleaning") but the DB stores the capitalized
@@ -452,6 +589,8 @@ def list_businesses(
         if hidden_owners:
             items = [b for b in items if b.get("owner_id") not in hidden_owners]
 
+        items = _attach_distance(items, lat, lng, None)
+
         next_offset = offset + limit if len(res.data or []) == limit else None
         return {
             "items": items,
@@ -459,6 +598,8 @@ def list_businesses(
             "offset": offset,
             "next_offset": next_offset,
         }
+    except HTTPException:
+        raise
     except Exception:
         logger.exception("list_businesses_error")
         raise HTTPException(status_code=400, detail="Could not list businesses")
