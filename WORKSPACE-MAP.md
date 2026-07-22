@@ -45,5 +45,5 @@ tags: [core]
 ---
 **Up:** [[SWINGBY]] · **Home:** [[SWINGBY]]
 
-**Related:** [[CLAUDE]] · [[PRIVACY_POLICY]] · [[TERMS_OF_SERVICE]]
+**Related:** [[CLAUDE]] · [[PRIVACY_POLICY]] · [[TERMS_OF_SERVICE]] · [[_BOH]]
 <!-- graph-wire:end -->

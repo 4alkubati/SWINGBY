@@ -155,5 +155,5 @@ npx expo start --clear
 ---
 **Up:** [[SWINGBY]] · **Home:** [[SWINGBY]]
 
-**Related:** [[DEPLOY]] · [[ROLLBACK]] · [[RUNNING_LOCALLY]] · [[SESSIONS]]
+**Related:** [[DEPLOY]] · [[DISPATCH_GATE]] · [[ROLLBACK]] · [[RUNNING_LOCALLY]] · [[SESSIONS]]
 <!-- graph-wire:end -->

@@ -103,5 +103,5 @@ If 3+ testers completed the flow + critical bug rate is < 1/tester → ready for
 ---
 **Up:** [[MOC-Plan]] · **Home:** [[SWINGBY]]
 
-**Related:** [[D4-friend-tester]] · [[D4-tester-brief]] · [[_LEARNING-LOG]]
+**Related:** [[D4-friend-tester]] · [[D4-tester-brief]] · [[HUMAN-TODO]] · [[_LEARNING-LOG]]
 <!-- graph-wire:end -->

@@ -31,5 +31,5 @@ Historical record of significant work sessions. Current state lives in `CLAUDE.m
 ---
 **Up:** [[MOC-Build]] · **Home:** [[SWINGBY]]
 
-**Related:** [[CLAUDE]]
+**Related:** [[CLAUDE]] · [[ORCHESTRATOR_ISSUES]]
 <!-- graph-wire:end -->

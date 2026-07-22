@@ -70,5 +70,5 @@ These are the lessons that show up in 3+ dominos' logs. Stop here when scanning.
 ---
 **Up:** [[MOC-Plan]] · **Home:** [[SWINGBY]]
 
-**Related:** [[D2.0-live-walkthrough]] · [[D3-expo-go-walkthrough]] · [[D5-paid-testers]] · [[DOMINOES]]
+**Related:** [[D2.0-live-walkthrough]] · [[D3-expo-go-walkthrough]] · [[D5-paid-testers]] · [[DOMINOES]] · [[STATUS]]
 <!-- graph-wire:end -->

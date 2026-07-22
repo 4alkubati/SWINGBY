@@ -48,5 +48,5 @@ Full stage logs: `docs/diag/logs/20260718-180308/`
 ---
 **Up:** [[MOC-Build]] · **Home:** [[SWINGBY]]
 
-**Related:** [[2026-07-18]] · [[FLOW_GRAPH]]
+**Related:** [[2026-07-18]]
 <!-- graph-wire:end -->

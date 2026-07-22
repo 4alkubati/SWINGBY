@@ -32,12 +32,8 @@ Untitled.base
 Untitled.md
 Untitled*.md
 
-# Obsidian — share the vault/graph config, keep per-machine state out
-.obsidian/*
-!.obsidian/app.json
-!.obsidian/graph.json
-!.obsidian/appearance.json
-!.obsidian/core-plugins.json
+# Obsidian — vault root is the parent 10-swingby folder, not this repo
+.obsidian/
 
 # Local-only credentials vault (test accounts + API keys + service notes).
 # Only the README is committed so the folder structure is discoverable.
