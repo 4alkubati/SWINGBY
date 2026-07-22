@@ -269,6 +269,16 @@ export default function ActiveBookingScreen({ navigation, route }) {
 
   const load = useCallback(async () => {
     setError(false);
+    // This screen cannot self-discover a booking — every caller (Home's pinned
+    // card, My Jobs, a matched post) must pass bookingId. Without one, show the
+    // empty state instead of firing GET /bookings/undefined and reporting the
+    // resulting 4xx as "something went wrong".
+    if (!bookingId) {
+      setBooking(null);
+      setLoading(false);
+      setRefreshing(false);
+      return;
+    }
     try {
       const data = await api.get(`/bookings/${bookingId}`);
       setBooking(data);
