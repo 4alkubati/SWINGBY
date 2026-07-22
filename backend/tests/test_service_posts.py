@@ -313,6 +313,355 @@ class TestCreateServicePostNormalizesCategory:
             assert response.json()["post"]["preferred_date"] == "2026-08-01T10:00:00Z"
 
 
+class TestTargetedBookNow:
+    """
+    LANE C — direct "Book now". A targeted post (target_business_id set):
+      * derives its category from the target business, ignoring any client
+        category, and
+      * on the feed, reaches ONLY that business, regardless of category, and
+        never leaks into another business's feed or a broad category browse.
+    """
+
+    def test_create_targeted_post_derives_category_and_sets_target(
+        self, test_client, as_client
+    ):
+        """A targeted post stores the BUSINESS's category and the target id —
+        the client is never asked for a category on this flow."""
+        businesses_stub = SupabaseTableStub(
+            select_data={"id": "biz-9", "category": "Cleaning"}
+        )
+        posts_stub = SupabaseTableStub(
+            insert_data=[
+                {
+                    "id": "post-t1",
+                    "client_id": "client-1",
+                    "title": "Deep clean please",
+                    "category": "Cleaning",
+                    "target_business_id": "biz-9",
+                    "budget": 120,
+                    "status": "open",
+                }
+            ]
+        )
+
+        with patch("app.api.service_posts.supabase") as mock_supabase:
+            # order: business lookup (derive category) then service_posts insert
+            mock_supabase.table.side_effect = [businesses_stub, posts_stub]
+
+            response = test_client.post(
+                "/service-posts/",
+                json={
+                    "title": "Deep clean please",
+                    "budget": 120,
+                    "target_business_id": "biz-9",
+                },
+                headers={"Authorization": "Bearer test-token"},
+            )
+
+        assert response.status_code in [200, 201], response.text
+        assert posts_stub.inserted["target_business_id"] == "biz-9"
+        assert posts_stub.inserted["category"] == "Cleaning"
+
+    def test_create_targeted_post_ignores_client_category_on_mismatch(
+        self, test_client, as_client
+    ):
+        """Even if the client's payload carries a mismatched category, a
+        targeted post stores the business's category so it can never be hidden
+        from its target by a category mismatch."""
+        businesses_stub = SupabaseTableStub(
+            select_data={"id": "biz-9", "category": "Cleaning"}
+        )
+        posts_stub = SupabaseTableStub(
+            insert_data=[{"id": "post-t2", "category": "Cleaning"}]
+        )
+
+        with patch("app.api.service_posts.supabase") as mock_supabase:
+            mock_supabase.table.side_effect = [businesses_stub, posts_stub]
+
+            response = test_client.post(
+                "/service-posts/",
+                json={
+                    "title": "Deep clean please",
+                    "budget": 120,
+                    "category": "Plumbing",  # deliberately wrong
+                    "target_business_id": "biz-9",
+                },
+                headers={"Authorization": "Bearer test-token"},
+            )
+
+        assert response.status_code in [200, 201], response.text
+        assert posts_stub.inserted["category"] == "Cleaning"
+
+    def test_create_targeted_post_unknown_business_404s(self, test_client, as_client):
+        businesses_stub = SupabaseTableStub(select_data=None)
+
+        with patch("app.api.service_posts.supabase") as mock_supabase:
+            mock_supabase.table.return_value = businesses_stub
+
+            response = test_client.post(
+                "/service-posts/",
+                json={
+                    "title": "Deep clean please",
+                    "budget": 120,
+                    "target_business_id": "does-not-exist",
+                },
+                headers={"Authorization": "Bearer test-token"},
+            )
+
+        assert response.status_code == 404
+
+    def test_create_open_post_without_category_or_target_rejected(
+        self, test_client, as_client
+    ):
+        """An open post (no target) must still carry a category — the
+        model validator rejects a payload with neither."""
+        response = test_client.post(
+            "/service-posts/",
+            json={"title": "Something vague", "budget": 100},
+            headers={"Authorization": "Bearer test-token"},
+        )
+        assert response.status_code == 422
+
+    def test_feed_target_business_sees_targeted_post_regardless_of_category(
+        self, test_client, as_owner
+    ):
+        """The business the post targets gets an or_ filter that includes a
+        `target_business_id.eq.<my-id>` branch — so a post targeted at it
+        surfaces even when the post's category doesn't match its trade."""
+        businesses_stub = SupabaseTableStub(
+            select_data=[{"id": "biz-7", "category": "Handyman"}]
+        )
+        posts_stub = SupabaseTableStub(select_data=[])
+
+        with patch("app.api.service_posts.supabase") as mock_supabase:
+            mock_supabase.table.side_effect = [posts_stub, businesses_stub]
+
+            response = test_client.get(
+                "/service-posts/", headers={"Authorization": "Bearer test-token"}
+            )
+
+        assert response.status_code == 200
+        or_call = _get_or_call(posts_stub)
+        assert or_call is not None
+        filter_str = or_call[1][0]
+        # Reaches me even off-category:
+        assert "target_business_id.eq.biz-7" in filter_str
+
+    def test_feed_targeted_post_does_not_leak_to_other_businesses(
+        self, test_client, as_owner
+    ):
+        """The category branch of the feed filter is scoped to untargeted posts
+        (`and(target_business_id.is.null,...)`), so a post targeted at some
+        OTHER business can never appear via category matching."""
+        businesses_stub = SupabaseTableStub(
+            select_data=[{"id": "biz-7", "category": "Handyman"}]
+        )
+        posts_stub = SupabaseTableStub(select_data=[])
+
+        with patch("app.api.service_posts.supabase") as mock_supabase:
+            mock_supabase.table.side_effect = [posts_stub, businesses_stub]
+
+            response = test_client.get(
+                "/service-posts/", headers={"Authorization": "Bearer test-token"}
+            )
+
+        assert response.status_code == 200
+        or_call = _get_or_call(posts_stub)
+        assert or_call is not None
+        filter_str = or_call[1][0]
+        # Category matches only ever apply to untargeted posts:
+        assert "and(target_business_id.is.null,or(" in filter_str
+
+    def test_feed_explicit_category_browse_excludes_targeted_posts(
+        self, test_client, as_owner
+    ):
+        """A broad ?category= browse must never surface a post targeted at a
+        specific business — the query is scoped with is_ null."""
+        posts_stub = SupabaseTableStub(select_data=[])
+
+        with patch("app.api.service_posts.supabase") as mock_supabase:
+            mock_supabase.table.return_value = posts_stub
+
+            response = test_client.get(
+                "/service-posts/?category=cleaning",
+                headers={"Authorization": "Bearer test-token"},
+            )
+
+        assert response.status_code == 200
+        is_calls = [c for c in posts_stub.calls if c[0] == "is_"]
+        assert ("target_business_id", "null") in [c[1] for c in is_calls]
+
+    def test_feed_client_role_excludes_targeted_posts(self, test_client, as_client):
+        """A client hitting the open feed sees only open marketplace posts,
+        never someone else's direct booking."""
+        posts_stub = SupabaseTableStub(select_data=[])
+
+        with patch("app.api.service_posts.supabase") as mock_supabase:
+            mock_supabase.table.return_value = posts_stub
+
+            response = test_client.get(
+                "/service-posts/", headers={"Authorization": "Bearer test-token"}
+            )
+
+        assert response.status_code == 200
+        is_calls = [c for c in posts_stub.calls if c[0] == "is_"]
+        assert ("target_business_id", "null") in [c[1] for c in is_calls]
+
+
+class TestTargetedPostAccessControl:
+    """
+    LANE C — feed filtering HIDES a targeted post from everyone but its target;
+    these are the checks that ENFORCE it. Without them a business that learned a
+    post id another way could read the job or quote on it anyway.
+    """
+
+    def test_non_target_business_cannot_read_targeted_post(self, test_client, as_owner):
+        """GET /service-posts/{id} 404s for a business that isn't the target."""
+        posts_stub = SupabaseTableStub(
+            select_data={
+                "id": "post-t1",
+                "client_id": "client-1",
+                "title": "Deep clean",
+                "target_business_id": "biz-9",
+            }
+        )
+        businesses_stub = SupabaseTableStub(select_data=[{"id": "biz-OTHER"}])
+
+        with patch("app.api.service_posts.supabase") as mock_supabase:
+            mock_supabase.table.side_effect = [posts_stub, businesses_stub]
+
+            response = test_client.get(
+                "/service-posts/post-t1",
+                headers={"Authorization": "Bearer test-token"},
+            )
+
+        assert response.status_code == 404
+
+    def test_target_business_can_read_targeted_post(self, test_client, as_owner):
+        posts_stub = SupabaseTableStub(
+            select_data={
+                "id": "post-t1",
+                "client_id": "client-1",
+                "title": "Deep clean",
+                "target_business_id": "biz-9",
+            }
+        )
+        businesses_stub = SupabaseTableStub(select_data=[{"id": "biz-9"}])
+
+        with patch("app.api.service_posts.supabase") as mock_supabase:
+            mock_supabase.table.side_effect = [posts_stub, businesses_stub]
+
+            response = test_client.get(
+                "/service-posts/post-t1",
+                headers={"Authorization": "Bearer test-token"},
+            )
+
+        assert response.status_code == 200
+        assert response.json()["id"] == "post-t1"
+
+    def test_non_target_business_cannot_express_interest(self, test_client, as_owner):
+        """POST /interests/ 404s when the post is targeted at someone else —
+        the leak that feed filtering alone would not close."""
+        businesses_stub = SupabaseTableStub(select_data={"id": "biz-OTHER"})
+        posts_stub = SupabaseTableStub(
+            select_data={
+                "id": "post-t1",
+                "status": "open",
+                "target_business_id": "biz-9",
+            }
+        )
+
+        with patch("app.api.interests.supabase") as mock_supabase:
+            mock_supabase.table.side_effect = [businesses_stub, posts_stub]
+
+            response = test_client.post(
+                "/interests/",
+                json={"post_id": "post-t1", "quoted_price": 100},
+                headers={"Authorization": "Bearer test-token"},
+            )
+
+        assert response.status_code == 404
+
+    def test_target_business_can_express_interest(self, test_client, as_owner):
+        """The business the client picked quotes normally, even though the post
+        is targeted."""
+        businesses_stub = SupabaseTableStub(select_data={"id": "biz-9"})
+        posts_stub = SupabaseTableStub(
+            select_data={
+                "id": "post-t1",
+                "status": "open",
+                "target_business_id": "biz-9",
+            }
+        )
+        dup_stub = SupabaseTableStub(select_data=[])
+        interests_stub = SupabaseTableStub(
+            insert_data=[
+                {
+                    "id": "int-1",
+                    "post_id": "post-t1",
+                    "business_id": "biz-9",
+                    "status": "pending",
+                }
+            ]
+        )
+        # Post-insert notification lookups are best-effort and wrapped in
+        # try/except in the route; a stub that returns nothing is enough.
+        noop_stub = SupabaseTableStub(select_data=None)
+
+        with patch("app.api.interests.supabase") as mock_supabase:
+            mock_supabase.table.side_effect = [
+                businesses_stub,
+                posts_stub,
+                dup_stub,
+                interests_stub,
+                noop_stub,
+                noop_stub,
+                noop_stub,
+            ]
+
+            response = test_client.post(
+                "/interests/",
+                json={"post_id": "post-t1", "quoted_price": 100},
+                headers={"Authorization": "Bearer test-token"},
+            )
+
+        assert response.status_code in [200, 201], response.text
+        assert interests_stub.inserted["business_id"] == "biz-9"
+
+    def test_untargeted_post_still_open_to_any_business(self, test_client, as_owner):
+        """Regression guard: the new check must not touch ordinary open posts."""
+        businesses_stub = SupabaseTableStub(select_data={"id": "biz-OTHER"})
+        posts_stub = SupabaseTableStub(
+            select_data={
+                "id": "post-open",
+                "status": "open",
+                "target_business_id": None,
+            }
+        )
+        dup_stub = SupabaseTableStub(select_data=[])
+        interests_stub = SupabaseTableStub(insert_data=[{"id": "int-2"}])
+        noop_stub = SupabaseTableStub(select_data=None)
+
+        with patch("app.api.interests.supabase") as mock_supabase:
+            mock_supabase.table.side_effect = [
+                businesses_stub,
+                posts_stub,
+                dup_stub,
+                interests_stub,
+                noop_stub,
+                noop_stub,
+                noop_stub,
+            ]
+
+            response = test_client.post(
+                "/interests/",
+                json={"post_id": "post-open", "quoted_price": 100},
+                headers={"Authorization": "Bearer test-token"},
+            )
+
+        assert response.status_code in [200, 201], response.text
+
+
 class TestUpdateServicePost:
     """
     PATCH /service-posts/{post_id} — GAP-AUDIT-2026-07-18 #3. Owner-only,

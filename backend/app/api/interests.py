@@ -55,12 +55,20 @@ def express_interest(
 
     post_res = (
         supabase.table("service_posts")
-        .select("id, status")
+        .select("id, status, target_business_id")
         .eq("id", data.post_id)
         .single()
         .execute()
     )
     if not post_res.data:
+        raise HTTPException(status_code=404, detail="Post not found")
+    # LANE C — direct "Book now". Feed filtering hides a targeted post from
+    # everyone but its target, but hiding is not enforcement: a business that
+    # learned the post id another way could still quote on it. This is the
+    # real gate. 404 (not 403) so we don't confirm the post exists to a
+    # business that was never meant to see it.
+    target_business_id = post_res.data.get("target_business_id")
+    if target_business_id and target_business_id != business_id:
         raise HTTPException(status_code=404, detail="Post not found")
     if post_res.data["status"] != "open":
         raise HTTPException(
