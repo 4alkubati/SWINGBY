@@ -58,6 +58,8 @@ The Terms of Service publishes a payment/escrow/cancellation contract to users. 
 | D3 | US-subprocessor transfer adequacy (SCCs post-Privacy-Shield) unconfirmed | Privacy §12 |
 | D4 | Whole set needs a lawyer's pass before public reliance | all 12 docs |
 | D5 | Effective/Last-updated dates will need bumping on republish | Privacy, ToS headers |
+| D6 | **Retention period inconsistency: 6 vs 7 years.** CRA statute is 6 years from end of tax year (~7 years from transaction in practice). `privacy-policy.md` + register now say 6; `data-handling.md`, `pipeda-compliance.md`, `dpa-template.md`, `docs/legal/PRIVACY_POLICY.md` say 7. Counsel must set ONE number, then align all docs. | multiple |
+| D7 | **Two privacy policies exist** — `privacy-and-security/privacy-policy.md` (updated 2026-07-21) and `docs/legal/PRIVACY_POLICY.md` (stale). Duplicate canonical docs will drift. Pick one home, redirect/delete the other. | privacy docs |
 
 ---
 
@@ -108,9 +110,15 @@ The Terms of Service publishes a payment/escrow/cancellation contract to users. 
 ### ⚠️ New gate before #30 merges — live-Stripe verification
 The money agent correctly refused to auto-mark any payment captured without a real Stripe event. **Three money paths are built but unverified against live Stripe (test mode) and MUST be exercised before merge:** (1) capture at post/accept, (2) cancellation refund, (3) webhook idempotency replay. This is a release-blocking checklist item, not a code TODO.
 
-### Still needs YOU (owner decisions, unblock the legal rewrites)
-- **A3** — the cancellation penalty numbers (ToS ladder vs code penalty diverge; pick one).
-- **C1** — disclose or drop the Notion CRM PII sync.
-- **C3** — employee-roster public visibility: keep+disclose, or restrict.
+### Owner decisions — RESOLVED 2026-07-21
+- **A3 cancellation** → adopt the published ToS ladder (code changes to match). Requires a credit system for the business-cancel "+ credit" cases. → code in `fix/cancellation-ladder-and-credits` (dispatched, stacks on #30); ToS §8 already matched and is unchanged.
+- **C1 Notion sync** → DROP it (delete `notion_crm.py`, no disclosure). → in the same dispatched branch. Register item C1 closed; no privacy disclosure added (correct).
+- **C3 employee roster** → keep public, disclose. → Privacy §6 disclosure added (this branch); code hardening (drop `user_id`, hide deactivated staff) in the dispatched branch.
 
-> The code PRs fix behaviour; **the legal documents still have to be rewritten to match** (ToS §7–§8 money terms, Privacy §3/§6/§7/§9 for messages/deletion/new-data). That rewrite is the next block of work in this branch, gated on the three decisions above.
+### Legal-document rewrites — DONE this branch (2026-07-21)
+- ToS §7.1/§7.3 rewritten to the charge-upfront model; new §7.5 account-credits clause. §8 ladder verified already-correct, unchanged.
+- Privacy §3 data inventory: messages corrected to pre-booking threads; added disputes, referrals, account credits, push tokens.
+- Privacy §6: employee-roster public-visibility disclosure added.
+- Privacy §7 retention + §9.3 deletion + §9.4 export rewritten to the soft-delete / website-hard-delete-with-password / in-app ghost-mode model + CRA carve-out. Header "Last updated" → 2026-07-21.
+
+> Still open on the legal side: D1–D7 (entity name, address, SCCs, lawyer pass, dates, the 6-vs-7-year number, the duplicate privacy policy) and the E-series security posture items. The legal text now MATCHES the intended code behaviour, but must not be published until the code PRs merge and the live-Stripe verification gate passes — otherwise the docs describe behaviour not yet live.
