@@ -1,3 +1,9 @@
+---
+group: market
+project: swingby
+hub: "[[MOC-Market]]"
+tags: [market]
+---
 # 07 — 90-Day Content Calendar
 
 > Week-by-week content plan across blog, social, and email.
@@ -151,3 +157,10 @@ These should live as drafts in Notion / Obsidian, ready to post anytime:
 - [11-n8n-social-workflow.md](11-n8n-social-workflow.md) — the automation pipeline
 - [09-brand-guidelines.md](09-brand-guidelines.md) — voice, tone, visuals
 - [06-growth-playbook.md](06-growth-playbook.md) — channel strategy
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Market]] · **Home:** [[SWINGBY]]
+
+**Related:** [[06-growth-playbook]] · [[09-brand-guidelines]] · [[11-n8n-social-workflow]]
+<!-- graph-wire:end -->

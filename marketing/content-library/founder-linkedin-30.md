@@ -1,3 +1,9 @@
+---
+group: market
+project: swingby
+hub: "[[MOC-Market]]"
+tags: [market]
+---
 # LinkedIn — Founder Posts (30 posts, build-in-public voice)
 
 > Voice: personal, honest, direct. No "thrilled to announce." No buzzwords.
@@ -395,3 +401,8 @@ These people don't have marketing budgets. They don't have SEO agencies. They ha
 SwingBy exists to be their digital word of mouth. To be the trust layer that helps good people get found.
 
 That's worth building. Calgary is where we start.
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Market]] · **Home:** [[SWINGBY]]
+<!-- graph-wire:end -->

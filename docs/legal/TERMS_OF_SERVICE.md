@@ -1,3 +1,9 @@
+---
+group: trust
+project: swingby
+hub: "[[MOC-Trust]]"
+tags: [trust]
+---
 # SwingBy — Terms of Service
 
 **Effective Date:** May 28, 2026
@@ -171,3 +177,8 @@ We may update these Terms. Material changes are announced in-app and by email at
 4alkubati@gmail.com
 
 For legal notices, include "Legal" in your subject line.
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Trust]] · **Home:** [[SWINGBY]]
+<!-- graph-wire:end -->

@@ -1,3 +1,9 @@
+---
+group: plan
+project: swingby
+hub: "[[MOC-Plan]]"
+tags: [plan]
+---
 # AUGUST — Phase 3: Public Launch
 
 > The finish line. SwingBy goes public and real users transact. Deadline: **Aug 31.**
@@ -27,3 +33,8 @@ By Aug 31: **SwingBy is live to the public** (web first, stores as they clear re
 
 ## The bar
 Aug 31, you can say: *"SwingBy is live, people use it for their business, and I proved I could ship it."* That's the win you named on day one.
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Plan]] · **Home:** [[SWINGBY]]
+<!-- graph-wire:end -->

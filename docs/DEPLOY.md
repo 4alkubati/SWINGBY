@@ -1,3 +1,9 @@
+---
+group: build
+project: swingby
+hub: "[[MOC-Build]]"
+tags: [build]
+---
 # SwingBy — Backend Deploy Guide (Render)
 
 Single source of truth for deploying `backend/` to Render. ~10 minutes start to finish.
@@ -152,3 +158,8 @@ See `docs/ROLLBACK.md`.
 - [ ] Plausible domain configured
 - [ ] Custom domain DNS pointing to Cloudflare Pages
 - [ ] SSL is active on Cloudflare (Full strict mode)
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Build]] · **Home:** [[SWINGBY]]
+<!-- graph-wire:end -->

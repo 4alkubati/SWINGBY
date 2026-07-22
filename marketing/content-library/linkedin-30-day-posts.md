@@ -1,3 +1,9 @@
+---
+group: market
+project: swingby
+hub: "[[MOC-Market]]"
+tags: [market]
+---
 # LinkedIn — 30-Day Post Calendar
 
 > Mix of founder personal + company page posts. Voice: professional but personal, honest, no jargon.
@@ -418,3 +424,8 @@ What we're not doing yet: expanding to other cities. We'll go deep in Calgary fi
 We're not there yet. And that's exactly where we want to be.
 
 🔗 swingbyy.com
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Market]] · **Home:** [[SWINGBY]]
+<!-- graph-wire:end -->

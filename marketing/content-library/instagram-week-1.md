@@ -1,3 +1,9 @@
+---
+group: market
+project: swingby
+hub: "[[MOC-Market]]"
+tags: [market]
+---
 # Instagram — Week 1 (7 posts, ready to queue)
 
 > Voice: direct, warm, no hype. One idea per caption. Calgary-specific.
@@ -91,3 +97,8 @@
 **CTA:** Post a job today. Link in bio.
 
 **Hashtags:** #SwingBy #Calgary #YYC #HomeServices #DogWalking #LawnCare #Cleaning #Handyman #LocalServices
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Market]] · **Home:** [[SWINGBY]]
+<!-- graph-wire:end -->

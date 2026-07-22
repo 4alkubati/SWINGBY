@@ -1,3 +1,9 @@
+---
+group: market
+project: swingby
+hub: "[[MOC-Market]]"
+tags: [market]
+---
 # Instagram — Week 4 (7 posts, ready to queue)
 
 > Voice: direct, warm, no hype. One idea per caption. Calgary-specific.
@@ -87,3 +93,8 @@
 **CTA:** Stay in the loop. Follow us. Link in bio.
 
 **Hashtags:** #SwingBy #Calgary #WhatsComing #Startup #LocalServices #YYC #BuildInPublic #CalgaryApp
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Market]] · **Home:** [[SWINGBY]]
+<!-- graph-wire:end -->

@@ -1,4 +1,8 @@
 ---
+group: plan
+project: swingby
+hub: "[[MOC-Plan]]"
+tags: [plan, domino, backend, payments, stripe, money, schema]
 type: domino
 id: D8
 status: pending
@@ -8,7 +12,6 @@ done:
 links: [[../DOMINOES]]
 prev: [[D7-security]]
 next:
-tags: [domino, backend, payments, stripe, money, schema]
 ---
 
 # 🁢 D8 — Money, the Uber way
@@ -110,3 +113,10 @@ A sandbox booking runs authorize → capture-at-completion → ledger accrual �
 - **Copy the mechanism, not the vibe.** "Uber-style escrow" and Uber's actual flow are different systems. The real one is *simpler* — batching removes the hardest dependency.
 - **A screen showing money is not money.** Ledger correctness and fund movement are separate systems; conflating them is how a platform discovers at payout time that it has no rail.
 - **An agent refusing to produce a green check is doing its job.** Running the smoke test against prod would have "passed" and meant nothing.
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Plan]] · **Home:** [[SWINGBY]]
+
+**Related:** [[2026-07-19]] · [[D6-m1-gate]] · [[D7-security]] · [[_LEARNING-LOG]]
+<!-- graph-wire:end -->

@@ -1,3 +1,9 @@
+---
+group: build
+project: swingby
+hub: "[[MOC-Build]]"
+tags: [build]
+---
 # SwingBy Motion Grammar
 
 > All animations must use these exact curves and durations.
@@ -151,3 +157,8 @@ const onPressOut = () => { scale.value = withSpring(1, { stiffness: 220, damping
 ```jsx
 <motion.button whileTap={{ scale: 0.97 }} transition={{ type: 'spring', stiffness: 220, damping: 22 }} />
 ```
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Build]] · **Home:** [[SWINGBY]]
+<!-- graph-wire:end -->

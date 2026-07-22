@@ -1,3 +1,9 @@
+---
+group: market
+project: swingby
+hub: "[[MOC-Market]]"
+tags: [market]
+---
 # 02 — Pricing
 
 > Exact dollar amounts, tiers, and rationale.
@@ -113,3 +119,8 @@ Dispute flow code: `mobile/src/screens/DisputeFlowScreen.js` + backend dispute t
 | Date | Change | Reason |
 |---|---|---|
 | 2026-06-05 | Initial pricing set | Document baseline |
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Market]] · **Home:** [[SWINGBY]]
+<!-- graph-wire:end -->

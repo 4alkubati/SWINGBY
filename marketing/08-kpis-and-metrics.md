@@ -1,3 +1,9 @@
+---
+group: market
+project: swingby
+hub: "[[MOC-Market]]"
+tags: [market]
+---
 # 08 — KPIs & Metrics
 
 > What to track, when, and what counts as "good."
@@ -165,3 +171,10 @@ A marketplace dies fast when quality slips. Track these even when growth looks g
 
 - [01-monetization-strategy.md](01-monetization-strategy.md) — revenue model
 - [11-n8n-social-workflow.md](11-n8n-social-workflow.md) — auto-logs social metrics into dashboard
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Market]] · **Home:** [[SWINGBY]]
+
+**Related:** [[01-monetization-strategy]] · [[11-n8n-social-workflow]]
+<!-- graph-wire:end -->

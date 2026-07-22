@@ -1,3 +1,9 @@
+---
+group: build
+project: swingby
+hub: "[[MOC-Build]]"
+tags: [build]
+---
 # SwingBy — Rollback Runbook
 
 Step-by-step recovery procedures by failure mode. Keep this in `docs/` so it's versioned with the code.
@@ -126,3 +132,8 @@ Free tier: use your latest weekly `pg_dump` (see `docs/SUPABASE_BACKUP.md` §wee
 - **Customer data writes after the bad deploy** — those are real records. If they need cleanup, do it forward (data migration), not by erasing.
 - **Audit log entries** — append-only by design.
 - **Successful payments** — never roll back a payment record. Refund forward.
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Build]] · **Home:** [[SWINGBY]]
+<!-- graph-wire:end -->

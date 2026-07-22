@@ -1,3 +1,9 @@
+---
+group: market
+project: swingby
+hub: "[[MOC-Market]]"
+tags: [market]
+---
 # Founder Friends Asks — 50 Specific Asks
 
 Send these on launch day or within the first week. Personalize every single one — these are your people.
@@ -130,3 +136,8 @@ Fill this in before launch day so you're not scrambling:
 - Track who responds — follow up with a personal thank-you
 - Never send the same template to two people in the same friend group
 - If someone says "congrats!" without actually trying it — a week later, gently follow up with "hey btw, have you had a chance to try it yet?"
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Market]] · **Home:** [[SWINGBY]]
+<!-- graph-wire:end -->

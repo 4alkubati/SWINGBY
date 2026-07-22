@@ -1,3 +1,9 @@
+---
+group: market
+project: swingby
+hub: "[[MOC-Market]]"
+tags: [market]
+---
 # 11c — Customer Acquisition Deep Dive
 
 > Both sides of the marketplace. Cold start to scale.
@@ -305,3 +311,10 @@ A signup is not activation. Activation is the first completed booking.
 - [08-kpis-and-metrics.md](08-kpis-and-metrics.md) — CAC and LTV targets
 - [10-partnerships.md](10-partnerships.md) — partnership strategy for supply acquisition
 - [03-go-to-market.md](03-go-to-market.md) — launch sequencing
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Market]] · **Home:** [[SWINGBY]]
+
+**Related:** [[03-go-to-market]] · [[06-growth-playbook]] · [[08-kpis-and-metrics]] · [[10-partnerships]] · [[11b-ads-plan]]
+<!-- graph-wire:end -->

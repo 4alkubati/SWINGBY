@@ -1,3 +1,9 @@
+---
+group: market
+project: swingby
+hub: "[[MOC-Market]]"
+tags: [market]
+---
 # 09 — Brand Guidelines
 
 > Visual + verbal identity. Anything we publish should pass these rules.
@@ -187,3 +193,8 @@ Contents:
 - "Disruptive," "revolutionary," "game-changing"
 - Walls of text without H2/H3 breaks
 - All-caps in body copy
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Market]] · **Home:** [[SWINGBY]]
+<!-- graph-wire:end -->

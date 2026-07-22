@@ -1,3 +1,9 @@
+---
+group: market
+project: swingby
+hub: "[[MOC-Market]]"
+tags: [market]
+---
 # Support Response Templates — 20 Canned Responses
 
 Use these as starting points — always personalize by name and specific context before sending.
@@ -308,3 +314,8 @@ Use these as starting points — always personalize by name and specific context
 - Never copy-paste without reading first — something may be factually off for the specific case
 - Never use corporate filler: "I apologize for any inconvenience," "Please be advised," "Per my last email"
 - If you don't know the answer, say so and give a specific time by which you will follow up
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Market]] · **Home:** [[SWINGBY]]
+<!-- graph-wire:end -->

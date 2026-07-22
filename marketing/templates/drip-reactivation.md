@@ -1,3 +1,9 @@
+---
+group: market
+project: swingby
+hub: "[[MOC-Market]]"
+tags: [market]
+---
 # Drip: Reactivation Sequence (3 emails for users inactive 60+ days)
 
 > Goal: Re-engage users who haven't posted a job or accepted a booking in 60+ days.
@@ -89,3 +95,8 @@ If you'd like to stop hearing from us entirely, that's completely fine:
 Thanks for trying SwingBy. We hope we get the chance to be useful to you again.
 
 — Amr and the SwingBy team
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Market]] · **Home:** [[SWINGBY]]
+<!-- graph-wire:end -->

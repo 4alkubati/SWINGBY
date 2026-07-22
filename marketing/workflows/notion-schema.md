@@ -1,3 +1,9 @@
+---
+group: market
+project: swingby
+hub: "[[MOC-Market]]"
+tags: [market]
+---
 # Notion Database Schemas — SwingBy Social Automation
 
 Two Notion databases power the n8n workflows. Create them manually before running the Phase 2 setup checklist in `marketing/11-n8n-social-workflow.md`.
@@ -164,3 +170,8 @@ Once credentials are in place:
 7. The workflow should attempt to post to each platform and update the Notion row to Status=`posted`.
 
 If any platform post fails (expected before credentials are wired), the error shows in n8n's execution log. The workflow continues to the next platform regardless — one failure doesn't block the others.
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Market]] · **Home:** [[SWINGBY]]
+<!-- graph-wire:end -->

@@ -1,3 +1,9 @@
+---
+group: build
+project: swingby
+hub: "[[MOC-Build]]"
+tags: [build]
+---
 # SwingBy — Database Schema
 
 > **Reconstructed from repo migrations + backend code, NOT from live DB introspection.**
@@ -381,3 +387,10 @@ Unique indexes: `referrals_one_registry_per_referrer_uidx` (one registry row per
 3. `booking_events.event_type` CHECK vs. actual inserted values mismatch — see the callout under §7. Worth a live-DB check before the next migration touches that table.
 4. `push_tokens` has no RLS policy documented anywhere in this repo's `.sql` files — confirm it actually has RLS enabled (the database-agent rule "RLS on every table" implies it should, but this doc can't confirm it was ever applied).
 5. `bookings.scheduled_date` and `bookings.completed_at` are read in several `.select()` calls but no `.insert()/.update()` payload in the reconstructed code visibly sets them — either a DB trigger/default exists that isn't in this repo, or those columns are currently always NULL in practice. Flag for live-DB check.
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Build]] · **Home:** [[SWINGBY]]
+
+**Related:** [[2026-07-01]] · [[2026-07-18]] · [[2026-07-19]] · [[GAP-AUDIT-2026-07-18]]
+<!-- graph-wire:end -->

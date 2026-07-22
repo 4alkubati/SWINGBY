@@ -1,3 +1,9 @@
+---
+group: trust
+project: swingby
+hub: "[[MOC-Trust]]"
+tags: [trust]
+---
 # Terms of Service
 
 **Effective date:** June 6, 2026  
@@ -280,3 +286,8 @@ For legal questions or notices:
 ---
 
 *SwingBy Technologies Inc. — Calgary, Alberta, Canada*
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Trust]] · **Home:** [[SWINGBY]]
+<!-- graph-wire:end -->

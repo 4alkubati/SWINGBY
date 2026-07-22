@@ -1,3 +1,9 @@
+---
+group: market
+project: swingby
+hub: "[[MOC-Market]]"
+tags: [market]
+---
 # Launch Day Twitter/X — Thread + Standalones
 
 ---
@@ -196,3 +202,8 @@ This is how it starts. One job. One match. One completed booking.
 Then another.
 
 → swingbyapp.com
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Market]] · **Home:** [[SWINGBY]]
+<!-- graph-wire:end -->

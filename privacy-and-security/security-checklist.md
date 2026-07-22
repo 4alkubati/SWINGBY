@@ -1,3 +1,9 @@
+---
+group: trust
+project: swingby
+hub: "[[MOC-Trust]]"
+tags: [trust]
+---
 # Security Checklist — Internal Quarterly Audit
 
 > Run this every 90 days. Check each item. Fix gaps before the next quarter.
@@ -145,3 +151,10 @@ Complete this section after working through all items above.
 **Date completed:** _______________  
 **Completed by:** _______________  
 **Next audit due:** _______________
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Trust]] · **Home:** [[SWINGBY]]
+
+**Related:** [[data-handling]] · [[incident-response]] · [[pipeda-compliance]] · [[privacy-policy]] · [[subprocessors]] · [[vulnerability-disclosure]]
+<!-- graph-wire:end -->

@@ -1,3 +1,9 @@
+---
+group: market
+project: swingby
+hub: "[[MOC-Market]]"
+tags: [market]
+---
 # Waitlist Launch Email — 3 Variants
 
 Send to the full waitlist on launch day. Pick one variant or A/B test variants A and B.
@@ -102,3 +108,8 @@ Post a job. Browse local pros. Get things done.
 - Monitor open rate and click rate in the first 2 hours
 - Variant A tends to work better for male-skewing early adopters; Variant B for trust-sensitive audiences
 - Variant C is best if you're uncertain — lowest risk of missing the mark
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Market]] · **Home:** [[SWINGBY]]
+<!-- graph-wire:end -->

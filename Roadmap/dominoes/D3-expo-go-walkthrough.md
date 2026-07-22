@@ -1,4 +1,8 @@
 ---
+group: plan
+project: swingby
+hub: "[[MOC-Plan]]"
+tags: [plan, domino, qa, walkthrough, expo-go]
 type: domino
 id: D3
 status: pending
@@ -8,7 +12,6 @@ done:
 links: [[../DOMINOES]]
 prev: [[D2.5-status-cleanup]]
 next: [[D4-friend-tester]]
-tags: [domino, qa, walkthrough, expo-go]
 ---
 
 # 🁢 D3 — Personal Expo Go iOS full walk-through
@@ -84,3 +87,10 @@ Repeat steps 1–4 until your full Run A + Run B pass back-to-back with zero blo
 ## 🎓 Learning
 
 - _to fill as you go_
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Plan]] · **Home:** [[SWINGBY]]
+
+**Related:** [[D2.0-live-walkthrough]] · [[D2.1-employee-trust-card]] · [[D2.2-invoices]] · [[D2.3-offplatform-pay]] · [[D2.4-business-subscription]] · [[D2.5-status-cleanup]] · [[D4-friend-tester]] · [[D4-tester-brief]] · [[D5-paid-testers]] · [[_LEARNING-LOG]]
+<!-- graph-wire:end -->

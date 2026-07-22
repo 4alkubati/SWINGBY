@@ -1,3 +1,9 @@
+---
+group: plan
+project: swingby
+hub: "[[MOC-Plan]]"
+tags: [plan]
+---
 # D4 Bug Capture Sheet — Kira fills while observing
 
 > Supports [[D4-friend-tester]]. Watch, don't drive their phone. Fill this live or right after — don't rely on memory.
@@ -52,3 +58,10 @@
 - 🟢 Minors (parked): ___________________________________________________________
 
 **Read on this tester — "is this real for them?"** ☐ Yes-leaning ☐ No-leaning ☐ Mixed
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Plan]] · **Home:** [[SWINGBY]]
+
+**Related:** [[D4-friend-tester]] · [[D4-tester-brief]] · [[D5-paid-testers]]
+<!-- graph-wire:end -->

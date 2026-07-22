@@ -1,3 +1,9 @@
+---
+group: core
+project: swingby
+hub: "[[SWINGBY]]"
+tags: [core]
+---
 # SwingBy — Workspace Map (which chat works where)
 
 > Two chats, one project. This map keeps them in their lanes. Folders are NOT moved — `backend/`, `mobile/`, `web/`, `workers/` MUST stay at the repo root (builds + deploys depend on it). This is a convention, not a restructure.
@@ -34,3 +40,10 @@
 - `CNAME` at root is a vestige of an earlier GitHub Pages deploy
   (commit 58460b1). Current deploys are Cloudflare Pages + Render. Verify it's
   not load-bearing before deleting.
+
+<!-- graph-wire:start -->
+---
+**Up:** [[SWINGBY]] · **Home:** [[SWINGBY]]
+
+**Related:** [[CLAUDE]] · [[PRIVACY_POLICY]] · [[TERMS_OF_SERVICE]]
+<!-- graph-wire:end -->

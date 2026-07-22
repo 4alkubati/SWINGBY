@@ -1,3 +1,9 @@
+---
+group: trust
+project: swingby
+hub: "[[MOC-Trust]]"
+tags: [trust]
+---
 # Security Overview
 
 > How SwingBy protects your data. Written for users and partners — not for security engineers.
@@ -155,3 +161,10 @@ We take all good-faith security reports seriously. We will acknowledge receipt w
 
 If you have questions about SwingBy's security practices, contact us at:  
 **Email:** security@swingbyy.com
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Trust]] · **Home:** [[SWINGBY]]
+
+**Related:** [[pipeda-compliance]] · [[vulnerability-disclosure]]
+<!-- graph-wire:end -->

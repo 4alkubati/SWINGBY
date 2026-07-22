@@ -1,3 +1,9 @@
+---
+group: market
+project: swingby
+hub: "[[MOC-Market]]"
+tags: [market]
+---
 # Why I Built SwingBy — Founder Blog Post
 
 **Target:** SwingBy blog, published Day 1  
@@ -111,3 +117,8 @@ Calgary, AB
 ---
 
 *SwingBy is live at swingbyapp.com. No signup required to browse. Jobs post in 60 seconds.*
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Market]] · **Home:** [[SWINGBY]]
+<!-- graph-wire:end -->

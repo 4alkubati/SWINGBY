@@ -1,3 +1,9 @@
+---
+group: trust
+project: swingby
+hub: "[[MOC-Trust]]"
+tags: [trust]
+---
 # PIPEDA Compliance Checklist
 
 > Canada's Personal Information Protection and Electronic Documents Act (PIPEDA) — 10 fair information principles.
@@ -210,3 +216,10 @@ An individual shall be able to address a challenge concerning compliance with th
 - [data-handling.md](data-handling.md) — internal SOP
 - [security-overview.md](security-overview.md) — security posture (Principle 7)
 - [incident-response.md](incident-response.md) — breach response (Principle 7)
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Trust]] · **Home:** [[SWINGBY]]
+
+**Related:** [[data-handling]] · [[incident-response]] · [[privacy-policy]] · [[security-checklist]] · [[security-overview]] · [[subprocessors]]
+<!-- graph-wire:end -->

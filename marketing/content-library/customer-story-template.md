@@ -1,3 +1,9 @@
+---
+group: market
+project: swingby
+hub: "[[MOC-Market]]"
+tags: [market]
+---
 # Customer Story Template
 
 Use this fill-in-the-blank format to turn real client/business experiences into shareable content. Edit freely — the goal is an authentic voice, not marketing speak.
@@ -86,3 +92,8 @@ By month three, she'd hired a fourth cleaner. By month six, a fifth.
 - **Specifics win.** "Booked in 4 hours" beats "booked quickly."
 - **Keep the voice theirs.** Light editing for clarity is fine. Don't polish out the personality.
 - **Match the platform:** IG = cut to 3 sentences + CTA. LinkedIn = the full story. Email = use in testimonial section.
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Market]] · **Home:** [[SWINGBY]]
+<!-- graph-wire:end -->

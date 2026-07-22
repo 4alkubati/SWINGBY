@@ -1,3 +1,9 @@
+---
+group: trust
+project: swingby
+hub: "[[MOC-Trust]]"
+tags: [trust]
+---
 # Data Handling — Internal SOP
 
 > For the SwingBy team. Not public. Governs how we handle personal data internally.
@@ -227,3 +233,10 @@ The primary concern is the database staying in Canada for PIPEDA compliance. ✅
 - [pipeda-compliance.md](pipeda-compliance.md) — compliance checklist
 - [incident-response.md](incident-response.md) — what to do in a breach
 - [security-checklist.md](security-checklist.md) — quarterly audit
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Trust]] · **Home:** [[SWINGBY]]
+
+**Related:** [[incident-response]] · [[pipeda-compliance]] · [[privacy-policy]] · [[security-checklist]]
+<!-- graph-wire:end -->

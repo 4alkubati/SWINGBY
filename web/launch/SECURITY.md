@@ -1,3 +1,9 @@
+---
+group: build
+project: swingby
+hub: "[[MOC-Build]]"
+tags: [build]
+---
 # Security Policy
 
 ## Supported Versions
@@ -43,3 +49,8 @@ Out of scope:
 - Physical security
 
 Thank you for helping keep SwingBy safe.
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Build]] · **Home:** [[SWINGBY]]
+<!-- graph-wire:end -->

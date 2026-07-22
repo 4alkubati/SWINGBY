@@ -1,3 +1,9 @@
+---
+group: build
+project: swingby
+hub: "[[MOC-Build]]"
+tags: [build]
+---
 # SwingBy — Deep Diagnostic
 
 Generated: 2026-07-18 18:06 MDT · run `bash tools/deep_diag.sh`
@@ -37,3 +43,10 @@ Full stage logs: `docs/diag/logs/20260718-180308/`
 - FLOW_GRAPH: see /home/l3thal/agents/projects/swingby/docs/diag/logs/20260718-180308
 - LOCAL_BOOT: see /home/l3thal/agents/projects/swingby/docs/diag/logs/20260718-180308
 - E2E_SMOKE_LOCAL: see /home/l3thal/agents/projects/swingby/docs/diag/logs/20260718-180308
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Build]] · **Home:** [[SWINGBY]]
+
+**Related:** [[2026-07-18]] · [[FLOW_GRAPH]]
+<!-- graph-wire:end -->

@@ -1,3 +1,9 @@
+---
+group: build
+project: swingby
+hub: "[[MOC-Build]]"
+tags: [build]
+---
 # SwingBy Backend API
 
 Base URL: `http://127.0.0.1:8000` | Swagger: `/docs` | All routes require `Authorization: Bearer <token>` except signup/login/health/waitlist/contact.
@@ -104,3 +110,8 @@ POST   /waitlist/
 POST   /contact/
 GET    /health
 ```
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Build]] · **Home:** [[SWINGBY]]
+<!-- graph-wire:end -->

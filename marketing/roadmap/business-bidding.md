@@ -1,3 +1,9 @@
+---
+group: market
+project: swingby
+hub: "[[MOC-Market]]"
+tags: [market]
+---
 # Roadmap: Business Bidding Marketplace (eBay-Style)
 
 > Status: Planned — post-MVP  
@@ -99,3 +105,8 @@ ALTER TABLE interests
 - Should businesses see each other's prices in real time (live auction) or only on close (sealed bid)?
 - Do we charge a listing fee for auction posts to reduce spam?
 - How does bidding interact with the current "express interest" flow for small jobs?
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Market]] · **Home:** [[SWINGBY]]
+<!-- graph-wire:end -->

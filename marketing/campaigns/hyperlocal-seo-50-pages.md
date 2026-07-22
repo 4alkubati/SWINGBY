@@ -1,3 +1,9 @@
+---
+group: market
+project: swingby
+hub: "[[MOC-Market]]"
+tags: [market]
+---
 # Hyperlocal SEO — 50-Page Calgary Build Plan
 
 ## Overview
@@ -112,3 +118,8 @@ Content lives in `web/launch/src/data/seo-content.js`.
 
 > TODO (HUMAN): Update `CalgaryPage.jsx` to render a grid of neighbourhood × category links once 20+ pages are live.
 > TODO (HUMAN): Submit sitemap to Google Search Console after each batch of new pages.
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Market]] · **Home:** [[SWINGBY]]
+<!-- graph-wire:end -->

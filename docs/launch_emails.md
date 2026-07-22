@@ -1,3 +1,9 @@
+---
+group: build
+project: swingby
+hub: "[[MOC-Build]]"
+tags: [build]
+---
 # SwingBy — Launch Email Sequence (3 emails)
 
 Subjects + bodies for the launch sequence. Send via your transactional provider (Resend, SendGrid, etc.) or as a Notion-triggered mailer.
@@ -121,3 +127,8 @@ P.S. We're hiring. If you know a Calgary engineer or designer who'd love to work
 - A/B test subject lines on the public launch email — the first 200 recipients get variant A, next 200 get variant B, then winner sends to the rest
 - Suppress unsubscribed addresses — never email after a one-click unsubscribe per CASL
 - Footer on every email: physical mailing address + unsubscribe link (CASL requirement in Canada)
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Build]] · **Home:** [[SWINGBY]]
+<!-- graph-wire:end -->

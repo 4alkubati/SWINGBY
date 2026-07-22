@@ -1,4 +1,8 @@
 ---
+group: plan
+project: swingby
+hub: "[[MOC-Plan]]"
+tags: [plan, domino, gate, mobile, backend, schema, release]
 type: domino
 id: D6
 status: active
@@ -8,7 +12,6 @@ done:
 links: [[../DOMINOES]]
 prev: [[D5-paid-testers]]
 next: [[D7-security]]
-tags: [domino, gate, mobile, backend, schema, release]
 ---
 
 # 🁢 D6 — M1 GATE: the app survives your own 15-minute run
@@ -101,3 +104,10 @@ Fresh pull of `main`, your Android, 15 minutes, the full journey.
 
 - **A done-condition that needs a tool the machine lacks is not a done-condition.** Check what a card *physically requires* before dispatching it, or it lands 90% finished by construction.
 - **The merge gate is load-bearing.** One unmerged branch held four dominoes' worth of verified work. Migrations-with-code is the rule that keeps it honest, but it means the human step is the bottleneck — schedule it first, not last.
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Plan]] · **Home:** [[SWINGBY]]
+
+**Related:** [[2026-07-19]] · [[D7-security]] · [[D8-money-uber]] · [[_LEARNING-LOG]]
+<!-- graph-wire:end -->

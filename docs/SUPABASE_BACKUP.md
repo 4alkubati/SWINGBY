@@ -1,3 +1,9 @@
+---
+group: build
+project: swingby
+hub: "[[MOC-Build]]"
+tags: [build]
+---
 # SwingBy — Supabase Backup & Recovery Policy
 
 What Supabase backs up automatically, what you must back up yourself, and how to restore.
@@ -81,3 +87,8 @@ A backup you've never restored from is a backup that doesn't exist.
 
 ## RLS in backups
 Backups preserve all RLS policies. After restore, run `mcp__claude_ai_Supabase__get_advisors` to confirm no policies regressed.
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Build]] · **Home:** [[SWINGBY]]
+<!-- graph-wire:end -->

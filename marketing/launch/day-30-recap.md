@@ -1,3 +1,9 @@
+---
+group: market
+project: swingby
+hub: "[[MOC-Market]]"
+tags: [market]
+---
 # Day 30 Transparent Recap — Template
 
 **Post on:** Day 30 after launch  
@@ -152,3 +158,8 @@ Founder, SwingBy
 ---
 
 *SwingBy is live at swingbyapp.com*
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Market]] · **Home:** [[SWINGBY]]
+<!-- graph-wire:end -->

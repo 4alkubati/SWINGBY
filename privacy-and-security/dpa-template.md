@@ -1,3 +1,9 @@
+---
+group: trust
+project: swingby
+hub: "[[MOC-Trust]]"
+tags: [trust]
+---
 # Data Processing Agreement — Template
 
 > This is a template. Review with legal counsel before signing with any subprocessor or enterprise client.
@@ -194,3 +200,10 @@ Date: ________________________________
 ---
 
 *TEMPLATE — Review with counsel before signing. SwingBy Technologies Inc. — Calgary, Alberta, Canada.*
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Trust]] · **Home:** [[SWINGBY]]
+
+**Related:** [[security-overview]] · [[subprocessors]]
+<!-- graph-wire:end -->

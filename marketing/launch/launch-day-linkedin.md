@@ -1,3 +1,9 @@
+---
+group: market
+project: swingby
+hub: "[[MOC-Market]]"
+tags: [market]
+---
 # Launch Day LinkedIn — 3 Posts
 
 ---
@@ -88,3 +94,8 @@ Thank you. 🙏
 - Suggested hashtags: `#SwingBy #Calgary #MarketplaceStartup #BuildingInPublic`
 - Respond to every comment on launch day — LinkedIn rewards this with more reach
 - Post 3 should feel like a personal note, not a marketing message — rewrite in your voice if needed
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Market]] · **Home:** [[SWINGBY]]
+<!-- graph-wire:end -->

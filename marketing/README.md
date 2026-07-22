@@ -1,3 +1,9 @@
+---
+group: market
+project: swingby
+hub: "[[MOC-Market]]"
+tags: [market]
+---
 # SwingBy Marketing & Monetization
 
 This folder is the **single source of truth** for everything SwingBy needs to go from "the product is built" to "people are paying us."
@@ -42,3 +48,10 @@ It is owned by the founder (Amr) and is updated at the end of every marketing/bu
 - Money in the door: ❌ Not yet
 
 **Next 14 days:** finish testing → soft-launch waitlist in Calgary → start the playbook in [03-go-to-market.md](03-go-to-market.md).
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Market]] · **Home:** [[SWINGBY]]
+
+**Related:** [[01-monetization-strategy]] · [[02-pricing]] · [[03-go-to-market]] · [[04-positioning-and-messaging]] · [[05-launch-checklist]] · [[06-growth-playbook]] · [[07-content-calendar]] · [[08-kpis-and-metrics]] · [[09-brand-guidelines]] · [[10-partnerships]]
+<!-- graph-wire:end -->

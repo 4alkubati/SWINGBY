@@ -1,3 +1,9 @@
+---
+group: market
+project: swingby
+hub: "[[MOC-Market]]"
+tags: [market]
+---
 # Support Escalation Matrix
 
 ---
@@ -95,3 +101,8 @@ Involve legal counsel when:
 | Close a dispute in favor of business | Founder review recommended |
 | Respond to media | Founder only |
 | Accept legal service of process | Founder only |
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Market]] · **Home:** [[SWINGBY]]
+<!-- graph-wire:end -->

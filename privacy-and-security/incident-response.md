@@ -1,3 +1,9 @@
+---
+group: trust
+project: swingby
+hub: "[[MOC-Trust]]"
+tags: [trust]
+---
 # Incident Response Runbook
 
 > For the SwingBy team. This is the playbook for security incidents, data breaches, and major outages.
@@ -237,3 +243,10 @@ Under PIPEDA (and Alberta PIPA), if a breach creates a **real risk of significan
 - [ ] Post-incident review scheduled within 7 days
 - [ ] Action items assigned with due dates
 - [ ] Breach record filed (24-month retention)
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Trust]] · **Home:** [[SWINGBY]]
+
+**Related:** [[vulnerability-disclosure]]
+<!-- graph-wire:end -->

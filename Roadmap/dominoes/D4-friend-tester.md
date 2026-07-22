@@ -1,4 +1,8 @@
 ---
+group: plan
+project: swingby
+hub: "[[MOC-Plan]]"
+tags: [plan, domino, qa, beta, testers]
 type: domino
 id: D4
 status: pending
@@ -8,7 +12,6 @@ done:
 links: [[../DOMINOES]]
 prev: [[D3-expo-go-walkthrough]]
 next: [[D5-paid-testers]]
-tags: [domino, qa, beta, testers]
 ---
 
 # 🁢 D4 — Friend / known-trade end-to-end run
@@ -100,3 +103,10 @@ If not → fix, find another friend, repeat.
 ## 🎓 Learning
 
 - _to fill as you go_
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Plan]] · **Home:** [[SWINGBY]]
+
+**Related:** [[D2.4-business-subscription]] · [[D3-expo-go-walkthrough]] · [[D4-tester-brief]] · [[D5-paid-testers]] · [[_LEARNING-LOG]]
+<!-- graph-wire:end -->

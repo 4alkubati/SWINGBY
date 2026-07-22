@@ -1,3 +1,9 @@
+---
+group: market
+project: swingby
+hub: "[[MOC-Market]]"
+tags: [market]
+---
 # Roadmap: Multi-Stop Routing for Business Bookings
 
 > Status: Planned — post-MVP  
@@ -83,3 +89,8 @@ https://www.google.com/maps/dir/?api=1
 - Do clients get a real-time "on the way" notification? (Scope for post-MVP.)
 - Should stop order be editable by the worker (drag handles)?
 - What happens when a new same-day booking is added after routing starts?
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Market]] · **Home:** [[SWINGBY]]
+<!-- graph-wire:end -->

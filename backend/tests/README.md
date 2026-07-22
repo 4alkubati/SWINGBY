@@ -1,3 +1,9 @@
+---
+group: build
+project: swingby
+hub: "[[MOC-Build]]"
+tags: [build]
+---
 # SwingBy Backend Tests
 
 ## Overview
@@ -145,3 +151,8 @@ These can be enabled once dependencies are available.
 - Async tests use `pytest-asyncio` marker
 - Load tests use **k6** (separate binary install)
 - Mobile tests use **Detox** (requires device simulator setup)
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Build]] · **Home:** [[SWINGBY]]
+<!-- graph-wire:end -->

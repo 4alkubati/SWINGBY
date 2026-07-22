@@ -1,3 +1,9 @@
+---
+group: trust
+project: swingby
+hub: "[[MOC-Trust]]"
+tags: [trust]
+---
 # Privacy Policy
 
 **Effective date:** June 6, 2026  
@@ -265,3 +271,10 @@ If you are not satisfied with our response, you may file a complaint with the Of
 ---
 
 *SwingBy Technologies Inc. — Calgary, Alberta, Canada*
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Trust]] · **Home:** [[SWINGBY]]
+
+**Related:** [[cookie-policy]] · [[security-overview]] · [[subprocessors]]
+<!-- graph-wire:end -->

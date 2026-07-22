@@ -1,3 +1,9 @@
+---
+group: build
+project: swingby
+hub: "[[MOC-Build]]"
+tags: [build]
+---
 # QA Audit — Full "Uber-flow" walk-through (2026-07-16)
 
 Backend verified live against prod (`https://swingbyy-api.onrender.com`), DB inspected via Supabase,
@@ -95,3 +101,10 @@ box tests against prod.
 - Stripe checkout session creation (real `cs_test_...` URL returned).
 - Review submission post-completion.
 - Business-feed category filtering (Phase CAT) on prod.
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Build]] · **Home:** [[SWINGBY]]
+
+**Related:** [[2026-07-16]] · [[CLAUDE]] · [[RUNNING_LOCALLY]]
+<!-- graph-wire:end -->

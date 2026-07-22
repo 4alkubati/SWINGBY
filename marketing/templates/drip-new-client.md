@@ -1,3 +1,9 @@
+---
+group: market
+project: swingby
+hub: "[[MOC-Market]]"
+tags: [market]
+---
 # Drip: New Client Onboarding (5 emails over 30 days)
 
 > Goal: Get the new client to post their first job and complete their first booking.
@@ -131,3 +137,8 @@ If you had a great experience with a business from your last booking, you can fa
 — The SwingBy team
 
 *You're receiving this because you signed up at swingbyy.com. [Unsubscribe]({{unsubscribe_url}})*
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Market]] · **Home:** [[SWINGBY]]
+<!-- graph-wire:end -->

@@ -1,3 +1,9 @@
+---
+group: market
+project: swingby
+hub: "[[MOC-Market]]"
+tags: [market]
+---
 # Day 7 Transparent Recap — Template
 
 **Post on:** Day 7 after launch  
@@ -107,3 +113,8 @@ Founder, SwingBy
 - The "what didn't work" section will be the most-read section. Be specific.
 - Post the blog version, then post a condensed Twitter thread (8–10 tweets) on the same day
 - Screenshot the blog post and share to Instagram Stories
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Market]] · **Home:** [[SWINGBY]]
+<!-- graph-wire:end -->

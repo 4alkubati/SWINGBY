@@ -1,3 +1,9 @@
+---
+group: plan
+project: swingby
+hub: "[[MOC-Plan]]"
+tags: [plan]
+---
 # Costs, Credentials & APIs — everything SwingBy needs
 
 > What it costs, what to sign up for, what data/keys each piece needs. Keep all keys in a password manager — never in chat or a committed file.
@@ -59,3 +65,8 @@ This is the rabbit hole — only do it once the beta is moving.
 - First end-to-end bookings completed.
 - Bugs found per tester session.
 - (Later) site visitors → signup conversion %.
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Plan]] · **Home:** [[SWINGBY]]
+<!-- graph-wire:end -->

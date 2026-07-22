@@ -1,3 +1,9 @@
+---
+group: build
+project: swingby
+hub: "[[MOC-Build]]"
+tags: [build]
+---
 # SwingBy — Session Log
 
 Historical record of significant work sessions. Current state lives in `CLAUDE.md`.
@@ -20,3 +26,10 @@ Historical record of significant work sessions. Current state lives in `CLAUDE.m
 | 2026-06-23 | Mobile screens reorg: bucketed all 41 screens into mobile/src/screens/{auth,onboarding,admin,business,client,flows,messages,profile,shared}. 40 git mv ops, regex-patched `../` → `../../` in every moved file, updated 53 import refs in App.js + 3 navigators. Web/launch unaffected. |
 | 2026-06-23 | Backend: live job status (booking_events + booking_photos tables) + Stripe sandbox + e2e smoke. Mobile: live status UI + pay-with-card + screens bucket reorg. |
 | 2026-06-24 | AGENTS+docs: orchestrator kit, memory checkpoints, gitignore tightening. |
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Build]] · **Home:** [[SWINGBY]]
+
+**Related:** [[CLAUDE]]
+<!-- graph-wire:end -->

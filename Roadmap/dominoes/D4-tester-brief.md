@@ -1,3 +1,9 @@
+---
+group: plan
+project: swingby
+hub: "[[MOC-Plan]]"
+tags: [plan]
+---
 # D4 Tester Brief — hand this to your tester
 
 > Supports [[D4-friend-tester]]. DRAFT — Kira fills `{{EXPO_LINK}}` and sends himself. ~10 min of their time.
@@ -52,3 +58,10 @@ No real money moves. This is safe to use exactly like a real card in the flow.
 ## Time expectation
 
 About **10 minutes** end to end. If they get stuck or bored before that — that's exactly the kind of signal worth capturing. Don't rush them past confusion.
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Plan]] · **Home:** [[SWINGBY]]
+
+**Related:** [[D4-friend-tester]]
+<!-- graph-wire:end -->

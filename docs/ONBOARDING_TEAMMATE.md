@@ -1,3 +1,9 @@
+---
+group: build
+project: swingby
+hub: "[[MOC-Build]]"
+tags: [build]
+---
 # Onboarding a New Teammate
 
 Checklist for granting a new person access to SwingBy infrastructure, with minimum-privilege approach.
@@ -82,3 +88,8 @@ Before granting access, confirm:
 - [ ] Have I avoided sharing the `SUPABASE_SERVICE_KEY` unless it's strictly necessary?
 - [ ] Is this person expected to access production data? If not, point them to staging.
 - [ ] Has the teammate signed an NDA or employment agreement covering data handling?
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Build]] · **Home:** [[SWINGBY]]
+<!-- graph-wire:end -->

@@ -1,3 +1,9 @@
+---
+group: market
+project: swingby
+hub: "[[MOC-Market]]"
+tags: [market]
+---
 # Drip: New Business Onboarding (5 emails over 14 days)
 
 > Goal: Get the new business to complete their profile and accept their first job.
@@ -143,3 +149,8 @@ Any questions? Reply to this email. We read every one.
 — The SwingBy team
 
 *You're receiving this because you registered as a business at swingbyy.com. [Unsubscribe]({{unsubscribe_url}})*
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Market]] · **Home:** [[SWINGBY]]
+<!-- graph-wire:end -->

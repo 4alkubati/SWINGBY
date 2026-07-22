@@ -1,3 +1,9 @@
+---
+group: build
+project: swingby
+hub: "[[MOC-Build]]"
+tags: [build]
+---
 # Security Deployment Playbook
 
 ## Cloudflare Setup
@@ -117,3 +123,8 @@ Verify DSN is set only via `VITE_SENTRY_DSN` (never hardcoded).
 - In-memory lockout (5 attempts/min) already active in `backend/app/api/auth.py`.
 - Cloudflare WAF rule for `/auth/login` provides IP-level blocking.
 - Consider hCaptcha integration (`VITE_HCAPTCHA_SITEKEY` env var already plumbed in).
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Build]] · **Home:** [[SWINGBY]]
+<!-- graph-wire:end -->

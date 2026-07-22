@@ -1,3 +1,9 @@
+---
+group: build
+project: swingby
+hub: "[[MOC-Build]]"
+tags: [build]
+---
 # SwingBy Mobile
 
 React Native + Expo SDK 54 mobile app for the SwingBy service marketplace. Dual-sided: clients book local services, businesses manage jobs and employees.
@@ -87,3 +93,8 @@ Modules that probe native APIs at import time are lazy-loaded via `require()` in
 - `expo-device` (in services/notifications.js)
 
 `expo-secure-store` is never imported directly. Use `src/services/storage.js` which routes to SecureStore on native and localStorage on web.
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Build]] · **Home:** [[SWINGBY]]
+<!-- graph-wire:end -->

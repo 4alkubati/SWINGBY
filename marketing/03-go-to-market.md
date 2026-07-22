@@ -1,3 +1,9 @@
+---
+group: market
+project: swingby
+hub: "[[MOC-Market]]"
+tags: [market]
+---
 # 03 — Go-to-Market: Calgary Launch Playbook
 
 > How we get from zero to 100 active businesses and 500 active clients in Calgary.
@@ -134,3 +140,10 @@ Recommended launch categories:
 - [05-launch-checklist.md](05-launch-checklist.md) — exact tasks for launch day
 - [06-growth-playbook.md](06-growth-playbook.md) — channel-by-channel breakdown post-launch
 - [08-kpis-and-metrics.md](08-kpis-and-metrics.md) — what to measure each week
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Market]] · **Home:** [[SWINGBY]]
+
+**Related:** [[01-monetization-strategy]] · [[05-launch-checklist]] · [[06-growth-playbook]] · [[08-kpis-and-metrics]]
+<!-- graph-wire:end -->

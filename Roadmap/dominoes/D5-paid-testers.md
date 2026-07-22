@@ -1,4 +1,8 @@
 ---
+group: plan
+project: swingby
+hub: "[[MOC-Plan]]"
+tags: [plan, domino, distribution, eas, app-store, money]
 type: domino
 id: D5
 status: deferred
@@ -8,7 +12,6 @@ done:
 links: [[../DOMINOES]]
 prev: [[D4-friend-tester]]
 next:
-tags: [domino, distribution, eas, app-store, money]
 ---
 
 # 🁢 D5 — Hire real dev testers (paid distribution)
@@ -95,3 +98,10 @@ If 3+ testers completed the flow + critical bug rate is < 1/tester → ready for
 ## 🎓 Learning
 
 - _to fill as you go_
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Plan]] · **Home:** [[SWINGBY]]
+
+**Related:** [[D4-friend-tester]] · [[D4-tester-brief]] · [[_LEARNING-LOG]]
+<!-- graph-wire:end -->

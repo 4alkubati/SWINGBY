@@ -1,3 +1,9 @@
+---
+group: build
+project: swingby
+hub: "[[MOC-Build]]"
+tags: [build]
+---
 # SwingBy Admin Console
 
 Dark-themed admin dashboard for the SwingBy platform. Built with React 18 + Vite 5.
@@ -57,3 +63,8 @@ npm run build
 - Vite 5 (port 5174)
 - react-router-dom v6
 - axios (all API calls via src/services/api.js)
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Build]] · **Home:** [[SWINGBY]]
+<!-- graph-wire:end -->

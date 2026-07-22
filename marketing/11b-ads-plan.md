@@ -1,3 +1,9 @@
+---
+group: market
+project: swingby
+hub: "[[MOC-Market]]"
+tags: [market]
+---
 # 11b — Paid Ads Playbook
 
 > Deeper than the growth playbook. Channel-by-channel structure, budgets, kill switches, and a week-by-week ramp from $0 to $3k/month.
@@ -280,3 +286,10 @@ Weekly ads review (15 minutes every Monday):
 - [06-growth-playbook.md](06-growth-playbook.md) — channel strategy and organic channels
 - [08-kpis-and-metrics.md](08-kpis-and-metrics.md) — CAC and LTV targets
 - [11c-customer-acquisition.md](11c-customer-acquisition.md) — how ads fit into the full acquisition strategy
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Market]] · **Home:** [[SWINGBY]]
+
+**Related:** [[06-growth-playbook]] · [[08-kpis-and-metrics]] · [[11c-customer-acquisition]]
+<!-- graph-wire:end -->

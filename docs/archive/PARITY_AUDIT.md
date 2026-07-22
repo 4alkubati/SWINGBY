@@ -1,3 +1,9 @@
+---
+group: build
+project: swingby
+hub: "[[MOC-Build]]"
+tags: [build]
+---
 # Swingby Cross-Platform Parity Audit
 
 **Date:** 2026-06-01
@@ -71,3 +77,8 @@
 - Bookings (different scopes: user-facing vs. admin)
 - User profile data (self-manage vs. admin-manage)
 - Business profile (owner-facing vs. admin-facing)
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Build]] · **Home:** [[SWINGBY]]
+<!-- graph-wire:end -->

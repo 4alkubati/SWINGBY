@@ -1,3 +1,9 @@
+---
+group: market
+project: swingby
+hub: "[[MOC-Market]]"
+tags: [market]
+---
 # Roadmap: Internationalization (i18n) Rollout
 
 > Status: Scaffold complete (EN/FR/AR keys exist)  
@@ -98,3 +104,8 @@ Based on 2021 Calgary Census data (City of Calgary Community Profiles) and Alber
 - Do we offer Arabic-language customer support? (Phone/chat vs. app-only.)
 - Should the app auto-detect locale or require explicit selection on signup?
 - Does the business-facing dashboard need Arabic? (Most Calgary business owners are English-primary even if clients are Arabic-speaking.)
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Market]] · **Home:** [[SWINGBY]]
+<!-- graph-wire:end -->

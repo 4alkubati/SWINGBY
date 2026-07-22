@@ -1,3 +1,9 @@
+---
+group: trust
+project: swingby
+hub: "[[MOC-Trust]]"
+tags: [trust]
+---
 # docs/legal/
 
 Dev-facing copies of the production legal docs. Grouped here so anyone
@@ -17,3 +23,10 @@ The same material — in different formats — also lives at:
 | App Store + Play Store privacy disclosures | Auto-imported by reviewers |
 
 When updating, change all three. Whichever you edit, search-and-replace the others.
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Trust]] · **Home:** [[SWINGBY]]
+
+**Related:** [[PRIVACY_POLICY]] · [[TERMS_OF_SERVICE]] · [[terms-of-service]]
+<!-- graph-wire:end -->

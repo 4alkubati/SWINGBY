@@ -1,3 +1,9 @@
+---
+group: build
+project: swingby
+hub: "[[MOC-Build]]"
+tags: [build]
+---
 # SwingBy — Launch Checklist
 
 30 items. Every one must be ✅ before public launch. If you can't tick a box, the public launch is not ready.
@@ -91,3 +97,10 @@
 | 48-72 | Day-2 retention; mobile crash-free rate (Sentry); average API latency p95 |
 
 If any of these graphs hockey-stick the wrong way, page yourself.
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Build]] · **Home:** [[SWINGBY]]
+
+**Related:** [[2026-07-19]]
+<!-- graph-wire:end -->

@@ -1,3 +1,9 @@
+---
+group: trust
+project: swingby
+hub: "[[MOC-Trust]]"
+tags: [trust]
+---
 # Cookie Policy
 
 **Effective date:** June 6, 2026  
@@ -124,3 +130,8 @@ We may update this policy when we add or remove analytics tools or change how we
 
 For questions about our cookie practices:  
 **Email:** privacy@swingbyy.com
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Trust]] · **Home:** [[SWINGBY]]
+<!-- graph-wire:end -->

@@ -1,3 +1,9 @@
+---
+group: plan
+project: swingby
+hub: "[[MOC-Plan]]"
+tags: [plan]
+---
 # SwingBy Roadmap — now → Aug 31, 2026
 
 > The single plan to ship SwingBy. Three phases. One output: real people using it.
@@ -47,3 +53,10 @@ Goal: you run ONE thing in the morning and the system does the rest. We add one 
 - **Evening lock-in (7:15–9:45):** the real build — run the day's domino, supervised then autonomous.
 - **Night:** launch overnight agent run; PC awake, Docker up.
 - **Weekends:** big deep-work blocks for the heavy dominoes.
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Plan]] · **Home:** [[SWINGBY]]
+
+**Related:** [[COSTS-CREDENTIALS-APIS]] · [[D4-tester-brief]] · [[DOMINOES]]
+<!-- graph-wire:end -->

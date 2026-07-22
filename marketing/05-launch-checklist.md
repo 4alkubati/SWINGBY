@@ -1,3 +1,9 @@
+---
+group: market
+project: swingby
+hub: "[[MOC-Market]]"
+tags: [market]
+---
 # 05 — Launch Checklist
 
 > Day-by-day checklist from T-14 (two weeks before launch) through T+30. Check each box before moving on.
@@ -134,3 +140,10 @@
 - ❌ Don't expand to another city before 250+ active businesses in Calgary
 - ❌ Don't hire before MRR $5k
 - ❌ Don't raise money before MRR $5k (you'd be raising on hope, not data)
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Market]] · **Home:** [[SWINGBY]]
+
+**Related:** [[2026-07-19]]
+<!-- graph-wire:end -->

@@ -1,3 +1,9 @@
+---
+group: build
+project: swingby
+hub: "[[MOC-Build]]"
+tags: [build]
+---
 # SwingBy — Security Checklist
 
 | Item | Status |
@@ -21,3 +27,10 @@
 | CI secret scan + npm audit | ✅ .github/workflows/web-launch-ci.yml |
 | react-router-dom XSS (GHSA-2w69) | ✅ Upgraded to 6.30.4 |
 | xlsx prototype pollution (no npm fix) | ✅ Replaced with ExcelJS |
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Build]] · **Home:** [[SWINGBY]]
+
+**Related:** [[2026-07-19]]
+<!-- graph-wire:end -->

@@ -1,3 +1,9 @@
+---
+group: market
+project: swingby
+hub: "[[MOC-Market]]"
+tags: [market]
+---
 # 12 — Social Media Playbook
 
 > Day-to-day operating manual for SwingBy's social presence.
@@ -437,3 +443,10 @@ Copy, adapt, and use these. Replace `[brackets]`.
 - [11-n8n-social-workflow.md](11-n8n-social-workflow.md) — automation setup
 - [09-brand-guidelines.md](09-brand-guidelines.md) — voice, tone, visual standards
 - [11c-customer-acquisition.md](11c-customer-acquisition.md) — how social fits the acquisition funnel
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Market]] · **Home:** [[SWINGBY]]
+
+**Related:** [[07-content-calendar]] · [[09-brand-guidelines]] · [[11-n8n-social-workflow]] · [[11c-customer-acquisition]]
+<!-- graph-wire:end -->

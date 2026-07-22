@@ -1,3 +1,9 @@
+---
+group: plan
+project: swingby
+hub: "[[MOC-Plan]]"
+tags: [plan]
+---
 # JULY — Phase 2: Polish + Launch Prep
 
 > First week (Jul 1–7) **finishes Phase-1 beta** (D2.4 → D3 → D4 friend tester). Once a real tester completes a booking, July becomes: fix what they break, then get launch-ready (payments live, stores, legal). Daily files use `../_TEMPLATE-daily.md`. Master timeline (both lanes): [[../DOMINOES]].
@@ -35,3 +41,10 @@ Morning: brief + outreach (grow waitlist/testers). Evening: one polish/prep task
 ## Carry-in from June
 - Any unfinished domino → top of Jul W1.
 - Self-host Umami (parked) → only if driving real traffic.
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Plan]] · **Home:** [[SWINGBY]]
+
+**Related:** [[2026-07-01]] · [[2026-07-02]] · [[2026-07-03]] · [[2026-07-04]] · [[2026-07-06]] · [[2026-07-07]] · [[D2.0-live-walkthrough]] · [[D2.4-business-subscription]] · [[D3-expo-go-walkthrough]] · [[D4-tester-brief]]
+<!-- graph-wire:end -->

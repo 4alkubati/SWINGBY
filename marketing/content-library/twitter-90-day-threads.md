@@ -1,3 +1,9 @@
+---
+group: market
+project: swingby
+hub: "[[MOC-Market]]"
+tags: [market]
+---
 # Twitter/X — 90-Day Content Plan
 
 > 30 threads + 60 single tweets
@@ -518,3 +524,8 @@ Why Calgary first? Homeownership rate, strong trades culture, city that values l
 **Single 59** — A platform is not just technology. It's a set of rules. Build the rules right and the technology almost doesn't matter.
 
 **Single 60** — Two months in. One city. One model. One team. Still building. See you at the next milestone. 🏗️
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Market]] · **Home:** [[SWINGBY]]
+<!-- graph-wire:end -->

@@ -1,3 +1,9 @@
+---
+group: market
+project: swingby
+hub: "[[MOC-Market]]"
+tags: [market]
+---
 # SwingBy Knowledge Base — 30 FAQs
 
 ---
@@ -124,3 +130,8 @@ Contact support immediately. Our team reviews the case and decides the refund �
 
 **Q30: How do I close my account?**  
 Email support@swingbyapp.com with subject line "Account closure request." We'll confirm any pending bookings and process the closure within 5 business days.
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Market]] · **Home:** [[SWINGBY]]
+<!-- graph-wire:end -->

@@ -1,3 +1,9 @@
+---
+group: market
+project: swingby
+hub: "[[MOC-Market]]"
+tags: [market]
+---
 # TikTok — 30-Day Video Scripts
 
 > Format: Hook (0–3s) | Body (3-beat narrative) | CTA | On-screen caption cues | Suggested hashtags
@@ -697,3 +703,8 @@
 **On-screen captions:** "Google vs SwingBy" | "60 seconds to vetted quotes" | "First job on us"
 
 **Hashtags:** #SwingBy #Calgary #YYC #HomeServices #TryIt #LocalHire #BookLocal #CalgaryServices
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Market]] · **Home:** [[SWINGBY]]
+<!-- graph-wire:end -->

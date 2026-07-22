@@ -1,3 +1,9 @@
+---
+group: trust
+project: swingby
+hub: "[[MOC-Trust]]"
+tags: [trust]
+---
 # Subprocessors
 
 > Third-party services that process personal data on SwingBy's behalf.
@@ -133,3 +139,10 @@ We will update this page when we add, change, or remove a subprocessor. Enterpri
 
 If you have questions about our subprocessors or data processing practices, contact:  
 **Email:** privacy@swingbyy.com
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Trust]] · **Home:** [[SWINGBY]]
+
+**Related:** [[dpa-template]]
+<!-- graph-wire:end -->

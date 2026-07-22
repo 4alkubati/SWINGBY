@@ -1,3 +1,9 @@
+---
+group: core
+project: swingby
+hub: "[[SWINGBY]]"
+tags: [core]
+---
 # SwingBy — Master Context for Claude Code
 
 > Source of truth for every session. Keep tight — long-form context lives in `docs/`.
@@ -144,3 +150,10 @@ npx expo start --clear
 **The brain:** the agent kit lives at `~/brain/10-swingby/agents/` (its own git repo); this repo keeps a gitignored `AGENTS` symlink pointing there, so `AGENTS/...` paths still resolve on this box.
 
 **Sync rule:** agent-behavior changes (gates, routing, loop, skills) are edited in `~/brain/10-swingby/agents/` and committed to the brain's git BEFORE being applied in a live session.
+
+<!-- graph-wire:start -->
+---
+**Up:** [[SWINGBY]] · **Home:** [[SWINGBY]]
+
+**Related:** [[DEPLOY]] · [[ROLLBACK]] · [[RUNNING_LOCALLY]] · [[SESSIONS]]
+<!-- graph-wire:end -->

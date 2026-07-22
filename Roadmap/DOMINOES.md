@@ -1,10 +1,13 @@
 ---
+group: plan
+project: swingby
+hub: "[[MOC-Plan]]"
+tags: [plan, roadmap, dominoes, beta]
 type: index
 status: active
 phase: 1 — BETA
 started: 2026-06-26
 owner: Kira
-tags: [roadmap, dominoes, beta, plan]
 ---
 
 # 🁢 DOMINOES — the path to BETA
@@ -184,3 +187,10 @@ Revenue model: customer-side 10% platform cut on in-app card + business-side fla
 - **Don't trust STATUS.md without `git log` + `git status`.** The orchestrator LOOP can be a step behind reality; the working tree is the truth.
 - **Interview before plan, plan before code.** Saved a half-day this round — discovered employee trust card was a real gap and off-platform pay was unbuilt only by asking.
 - **The "book" rule prevents amnesia.** Every domino keeps its own append-only log so future-you knows *why* a choice was made, not just *what* exists.
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Plan]] · **Home:** [[SWINGBY]]
+
+**Related:** [[2026-07-19]] · [[2026-07-20]] · [[D2.0-live-walkthrough]] · [[D2.1-employee-trust-card]] · [[D2.2-invoices]] · [[D2.3-offplatform-pay]] · [[D2.4-business-subscription]] · [[D2.5-status-cleanup]] · [[D3-expo-go-walkthrough]] · [[D4-tester-brief]] · [[D5-paid-testers]] · [[D6-m1-gate]]
+<!-- graph-wire:end -->

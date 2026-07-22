@@ -1,3 +1,9 @@
+---
+group: plan
+project: swingby
+hub: "[[MOC-Plan]]"
+tags: [plan]
+---
 # [DATE] — [Weekday] · [theme]
 
 > Steps stay clean — just actions, no inline explanations. Any term you don't know lives in the **📖 Glossary** at the bottom. Don't break flow to look things up mid-step.
@@ -28,3 +34,8 @@
 > Define every term/tool used in today's steps, one line each, plain English. Steps point here instead of explaining inline.
 
 **[term]** — [one-line plain-English definition]
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Plan]] · **Home:** [[SWINGBY]]
+<!-- graph-wire:end -->

@@ -1,3 +1,9 @@
+---
+group: build
+project: swingby
+hub: "[[MOC-Build]]"
+tags: [build]
+---
 # SwingBy — Design Memo
 > Single source of truth for the app's visual direction, UX decisions, and screen-by-screen specifications.
 > Every agent building this app must read this file before writing a single line of UI code.
@@ -563,3 +569,8 @@ mobile/
 └── design/
     └── home-screen-ali.html  ← visual reference wireframe
 ```
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Build]] · **Home:** [[SWINGBY]]
+<!-- graph-wire:end -->

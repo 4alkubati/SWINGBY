@@ -1,3 +1,9 @@
+---
+group: build
+project: swingby
+hub: "[[MOC-Build]]"
+tags: [build]
+---
 # SwingBy — Press Kit
 
 For journalists, podcasters, and creators. Updated 2026-05-28.
@@ -80,3 +86,8 @@ SwingBy is the first marketplace built mobile-first for Canadian skilled trades 
 **General:** 4alkubati@gmail.com
 
 We respond within one business day. We don't do paid placement.
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Build]] · **Home:** [[SWINGBY]]
+<!-- graph-wire:end -->

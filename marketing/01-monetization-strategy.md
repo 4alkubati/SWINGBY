@@ -1,3 +1,9 @@
+---
+group: market
+project: swingby
+hub: "[[MOC-Market]]"
+tags: [market]
+---
 # 01 — Monetization Strategy
 
 > How SwingBy makes money.
@@ -151,3 +157,10 @@ This is the floor. The ceiling is several multiples higher if Verified + boosted
 - [02-pricing.md](02-pricing.md) — exact dollar amounts and tiers
 - [08-kpis-and-metrics.md](08-kpis-and-metrics.md) — how we track this
 - Backend implementation: `backend/app/api/interests.py` (booking creation), `backend/app/api/bookings.py` (escrow release)
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Market]] · **Home:** [[SWINGBY]]
+
+**Related:** [[02-pricing]] · [[08-kpis-and-metrics]]
+<!-- graph-wire:end -->

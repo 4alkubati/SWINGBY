@@ -1,3 +1,9 @@
+---
+group: build
+project: swingby
+hub: "[[MOC-Build]]"
+tags: [build]
+---
 # SwingBy Launch Website — Release Notes
 
 **Build date:** 2026-06-03  
@@ -158,3 +164,8 @@ Button, Card, Input, Select, Checkbox/Radio, Textarea, Badge, Avatar, Modal, Tab
 3. **Set environment variables** in Cloudflare: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_SENTRY_DSN`, `VITE_API_URL`
 4. **Add OG image** at `public/og-image.png` (1200x630)
 5. **Verify Plausible** domain is configured for swingbyy.com
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Build]] · **Home:** [[SWINGBY]]
+<!-- graph-wire:end -->

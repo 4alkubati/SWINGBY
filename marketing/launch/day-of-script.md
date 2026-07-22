@@ -1,3 +1,9 @@
+---
+group: market
+project: swingby
+hub: "[[MOC-Market]]"
+tags: [market]
+---
 # SwingBy Launch Day Script — Hour-by-Hour
 
 **Date:** TBD (fill in before launch)  
@@ -199,3 +205,10 @@ The work continues tomorrow. Sleep.
 - Your server/hosting status page: TBD
 - Sentry: your Sentry dashboard URL
 - Your most trusted technical contact: [name + number]
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Market]] · **Home:** [[SWINGBY]]
+
+**Related:** [[founder-friends-asks]] · [[launch-day-instagram]] · [[launch-day-linkedin]] · [[launch-day-twitter]] · [[waitlist-launch-email]]
+<!-- graph-wire:end -->

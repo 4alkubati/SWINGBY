@@ -1,3 +1,9 @@
+---
+group: build
+project: swingby
+hub: "[[MOC-Build]]"
+tags: [build]
+---
 # Handoff — SwingBy mock atlas (2026-07-17)
 
 Source: Claude-design polish handoff (`swingby-mocks-standalone.html`), delivered by Kira via inbox.
@@ -7,3 +13,10 @@ Source: Claude-design polish handoff (`swingby-mocks-standalone.html`), delivere
 - Data the app can't provide yet (online presence, read receipts) gets mocked behind a clearly-marked mock service so screens match the design now.
 
 Implementation is dispatched via the execution spec (see AGENTS session notes, 2026-07-17).
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Build]] · **Home:** [[SWINGBY]]
+
+**Related:** [[2026-07-17]]
+<!-- graph-wire:end -->

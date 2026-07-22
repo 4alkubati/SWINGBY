@@ -1,3 +1,9 @@
+---
+group: market
+project: swingby
+hub: "[[MOC-Market]]"
+tags: [market]
+---
 # Launch Day Anti-Checklist — Things NOT To Do
 
 Read this the night before launch. Read it again at 7 AM.
@@ -84,3 +90,8 @@ Then close the laptop. You launched.
 ---
 
 *Print this. Tape it next to your monitor. Cross things off as you successfully avoid them.*
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Market]] · **Home:** [[SWINGBY]]
+<!-- graph-wire:end -->

@@ -1,3 +1,9 @@
+---
+group: market
+project: swingby
+hub: "[[MOC-Market]]"
+tags: [market]
+---
 # 11 — n8n Social Media Workflow
 
 > Automated social posting, DM routing, and engagement analytics — built on n8n.
@@ -294,3 +300,10 @@ For comparison: a social media manager posting manually costs $500–$2,000/mont
 - [`workflows/n8n-social-media-workflow.json`](workflows/n8n-social-media-workflow.json) — importable JSON (workflow 1)
 - [`workflows/n8n-engagement-collector.json`](workflows/n8n-engagement-collector.json) — importable JSON (workflow 2)
 - [`workflows/n8n-dm-auto-reply.json`](workflows/n8n-dm-auto-reply.json) — importable JSON (workflow 3)
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Market]] · **Home:** [[SWINGBY]]
+
+**Related:** [[07-content-calendar]] · [[09-brand-guidelines]] · [[12-social-media-playbook]]
+<!-- graph-wire:end -->

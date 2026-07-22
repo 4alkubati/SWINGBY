@@ -1,3 +1,9 @@
+---
+group: market
+project: swingby
+hub: "[[MOC-Market]]"
+tags: [market]
+---
 # 06 — Growth Playbook
 
 > Channel-by-channel acquisition playbook with budgets, timelines, and expected CAC.
@@ -268,3 +274,10 @@ LTV:CAC target ratio = 3:1 minimum. We can pay up to $400 to acquire an activate
 - [07-content-calendar.md](07-content-calendar.md) — 90-day content plan
 - [11-n8n-social-workflow.md](11-n8n-social-workflow.md) — automated social media pipeline
 - [08-kpis-and-metrics.md](08-kpis-and-metrics.md) — what to track
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Market]] · **Home:** [[SWINGBY]]
+
+**Related:** [[03-go-to-market]] · [[07-content-calendar]] · [[08-kpis-and-metrics]] · [[11-n8n-social-workflow]]
+<!-- graph-wire:end -->

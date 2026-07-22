@@ -1,3 +1,9 @@
+---
+group: market
+project: swingby
+hub: "[[MOC-Market]]"
+tags: [market]
+---
 # SwingBy Marketing Plan
 
 > Version 1.0 — June 2026. For sharing with investors, partners, and advisors.
@@ -298,3 +304,10 @@ SwingBy is not currently raising external capital. The product is self-funded th
 | [11b-ads-plan.md](11b-ads-plan.md) | Paid advertising playbook |
 | [11c-customer-acquisition.md](11c-customer-acquisition.md) | Full acquisition strategy |
 | [12-social-media-playbook.md](12-social-media-playbook.md) | Social media operating manual |
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Market]] · **Home:** [[SWINGBY]]
+
+**Related:** [[01-monetization-strategy]] · [[02-pricing]] · [[03-go-to-market]] · [[04-positioning-and-messaging]] · [[05-launch-checklist]] · [[06-growth-playbook]] · [[07-content-calendar]] · [[08-kpis-and-metrics]] · [[09-brand-guidelines]] · [[10-partnerships]] · [[11-n8n-social-workflow]] · [[11b-ads-plan]]
+<!-- graph-wire:end -->

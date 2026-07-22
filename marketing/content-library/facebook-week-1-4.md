@@ -1,3 +1,9 @@
+---
+group: market
+project: swingby
+hub: "[[MOC-Market]]"
+tags: [market]
+---
 # Facebook Page — Weeks 1–4 (28 posts, ready to queue)
 
 > Facebook voice: more conversational and explanatory than Instagram. Longer is OK.
@@ -339,3 +345,8 @@ We're grateful for everyone who tried the product, gave us feedback, and spread 
 Month two starts Monday. More businesses. More categories. Better experience.
 
 Thanks, Calgary.
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Market]] · **Home:** [[SWINGBY]]
+<!-- graph-wire:end -->

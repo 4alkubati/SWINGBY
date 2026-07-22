@@ -1,3 +1,9 @@
+---
+group: build
+project: swingby
+hub: "[[MOC-Build]]"
+tags: [build]
+---
 # SwingBy — Sleek UX Pass Release Notes
 
 **Campaign:** Sleek UX Pass
@@ -102,3 +108,8 @@ Audit and hardening pass before campaign sign-off.
 ## Summary
 
 The Sleek UX Pass campaign systematically elevated every SwingBy surface — mobile app, public pre-launch site, and internal admin panel — from ad-hoc styling to a coherent, token-driven design system. The eight phases delivered a complete design token foundation, a cross-platform component library, polished screen implementations, consistent motion, accessibility compliance, and a verified parity audit across all 57 screens.
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Build]] · **Home:** [[SWINGBY]]
+<!-- graph-wire:end -->

@@ -1,3 +1,9 @@
+---
+group: trust
+project: swingby
+hub: "[[MOC-Trust]]"
+tags: [trust]
+---
 # SwingBy — Privacy Policy
 
 **Effective Date:** May 28, 2026
@@ -134,3 +140,8 @@ Swingbyy Inc.
 4alkubati@gmail.com
 
 For data-access requests under PIPEDA / PIPA, include "Data Request" in your subject line. We respond within 30 days.
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Trust]] · **Home:** [[SWINGBY]]
+<!-- graph-wire:end -->

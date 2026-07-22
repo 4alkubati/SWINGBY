@@ -1,3 +1,9 @@
+---
+group: plan
+project: swingby
+hub: "[[MOC-Plan]]"
+tags: [plan]
+---
 # Mobile app — finish-line plan
 
 Written 2026-07-01 after the flow-graph clean pass. Goal: get the mobile app to "everything runs, everything reachable, nothing 404s" for beta.
@@ -94,3 +100,10 @@ Ship in this order:
 - License auto-verification (currently manual per CLAUDE.md)
 - Google Maps real API key (using placeholder for now)
 - Admin analytics dashboard (`web/admin/` — separate surface)
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Plan]] · **Home:** [[SWINGBY]]
+
+**Related:** [[2026-07-01]] · [[CLAUDE]]
+<!-- graph-wire:end -->

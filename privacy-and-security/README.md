@@ -1,3 +1,9 @@
+---
+group: trust
+project: swingby
+hub: "[[MOC-Trust]]"
+tags: [trust]
+---
 # Privacy and Security — SwingBy
 
 > This folder contains SwingBy's public-facing legal documents and internal compliance operations.
@@ -101,3 +107,10 @@ Relevant if California users use the platform.
 - Privacy requests: privacy@swingbyy.com
 - Security issues: security@swingbyy.com
 - Legal: legal@swingbyy.com
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Trust]] · **Home:** [[SWINGBY]]
+
+**Related:** [[cookie-policy]] · [[data-handling]] · [[dpa-template]] · [[incident-response]] · [[pipeda-compliance]] · [[privacy-policy]] · [[security-checklist]] · [[security-overview]] · [[subprocessors]] · [[terms-of-service]] · [[vulnerability-disclosure]]
+<!-- graph-wire:end -->

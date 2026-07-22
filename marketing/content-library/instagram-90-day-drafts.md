@@ -1,3 +1,9 @@
+---
+group: market
+project: swingby
+hub: "[[MOC-Market]]"
+tags: [market]
+---
 # Instagram — 90-Day Caption Drafts
 
 > Voice: direct, warm, confident. Short sentences. Calgary-specific. No "unlock", "leverage", "ecosystem".
@@ -649,3 +655,8 @@
 > - Post 59: Education — how to handle a bad service experience
 > - Post 60: Calgary spotlight — Downtown/East Village
 > - Posts 61–90: Continue rotation. Summer content: lawn care, deck cleaning, moving season. Fall content: winterization, eavestrough cleaning, furnace filter. Add Calgary-specific events: Stampede week, long weekend moving season.
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Market]] · **Home:** [[SWINGBY]]
+<!-- graph-wire:end -->

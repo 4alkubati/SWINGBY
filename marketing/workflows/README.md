@@ -1,3 +1,9 @@
+---
+group: market
+project: swingby
+hub: "[[MOC-Market]]"
+tags: [market]
+---
 # SwingBy n8n Workflows
 
 This folder contains importable n8n workflow files for SwingBy's social media automation.
@@ -99,3 +105,8 @@ Once testing passes:
 | Review OpenAI costs | Monthly (check platform.openai.com) |
 | Check n8n execution log for errors | Weekly |
 | Update Notion DB ID if DB changes | As needed |
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Market]] · **Home:** [[SWINGBY]]
+<!-- graph-wire:end -->

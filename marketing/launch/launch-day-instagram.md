@@ -1,3 +1,9 @@
+---
+group: market
+project: swingby
+hub: "[[MOC-Market]]"
+tags: [market]
+---
 # Launch Day Instagram — 5 Posts
 
 Post these across launch day. Times are suggestions — adjust to your audience's peak hours.
@@ -118,3 +124,8 @@ Link in bio. See you there.
 Use 5–10 per post. Mix brand + Calgary + category:
 
 `#SwingBy #YYC #Calgary #CalgaryBusiness #LocalServices #CalgaryLife #TrustTheProcess #MarketplaceApp #GetThingsDone #CalgaryTech #ServicePros #HomeServices #CalgaryStartup`
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Market]] · **Home:** [[SWINGBY]]
+<!-- graph-wire:end -->

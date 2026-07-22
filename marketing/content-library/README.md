@@ -1,3 +1,9 @@
+---
+group: market
+project: swingby
+hub: "[[MOC-Market]]"
+tags: [market]
+---
 # SwingBy Content Library
 
 Ready-to-use social and email content. Paste into your Notion content queue, scheduler (Buffer, Later, Hootsuite), or use directly.
@@ -62,3 +68,10 @@ Full guidelines: [../09-brand-guidelines.md](../09-brand-guidelines.md)
 Add new seasonal content in a new file (e.g., `instagram-stampede-2026.md`).  
 Update evergreen posts once per quarter — check that stats, offers, and CTAs are current.  
 Archive posts you've already published into a `published/` subfolder (create when needed).
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Market]] · **Home:** [[SWINGBY]]
+
+**Related:** [[customer-story-template]] · [[facebook-week-1-4]] · [[founder-linkedin-30]] · [[instagram-90-day-drafts]] · [[instagram-week-1]] · [[instagram-week-2]] · [[instagram-week-3]] · [[instagram-week-4]] · [[linkedin-30-day-posts]] · [[tiktok-30-day-scripts]] · [[twitter-90-day-threads]]
+<!-- graph-wire:end -->

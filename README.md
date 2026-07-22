@@ -1,3 +1,9 @@
+---
+group: core
+project: swingby
+hub: "[[SWINGBY]]"
+tags: [core]
+---
 # SwingBy
 
 [![Backend CI](https://github.com/4alkubati/SWINGBY/actions/workflows/backend.yml/badge.svg)](https://github.com/4alkubati/SWINGBY/actions/workflows/backend.yml)
@@ -59,3 +65,8 @@ ruff check backend/ && black --check backend/ && pytest backend/tests -q
 ## Status
 
 In private beta (Calgary). Backend live on Render, database on Supabase (ca-central-1), sites on Cloudflare Pages.
+
+<!-- graph-wire:start -->
+---
+**Up:** [[SWINGBY]] · **Home:** [[SWINGBY]]
+<!-- graph-wire:end -->

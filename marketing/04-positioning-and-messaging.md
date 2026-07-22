@@ -1,3 +1,9 @@
+---
+group: market
+project: swingby
+hub: "[[MOC-Market]]"
+tags: [market]
+---
 # 04 — Positioning & Messaging
 
 > What we say, how we say it, and how we beat the noise.
@@ -155,3 +161,10 @@ NOW LIVE IN CALGARY
 
 - [09-brand-guidelines.md](09-brand-guidelines.md) — visual identity
 - [07-content-calendar.md](07-content-calendar.md) — where to use this messaging
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Market]] · **Home:** [[SWINGBY]]
+
+**Related:** [[07-content-calendar]] · [[09-brand-guidelines]]
+<!-- graph-wire:end -->

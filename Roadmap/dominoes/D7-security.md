@@ -1,4 +1,8 @@
 ---
+group: plan
+project: swingby
+hub: "[[MOC-Plan]]"
+tags: [plan, domino, security, secrets, monitoring]
 type: domino
 id: D7
 status: active
@@ -8,7 +12,6 @@ done:
 links: [[../DOMINOES]]
 prev: [[D6-m1-gate]]
 next: [[D8-money-uber]]
-tags: [domino, security, secrets, monitoring]
 ---
 
 # 🁢 D7 — Security + honest instruments
@@ -83,3 +86,10 @@ Old secrets are dead, advisors read zero, and both a test error and a test analy
 
 - **"Rotated" and "deleted" are not the same word.** A secret removed from HEAD but present in history is still live until revoked at the source.
 - **Instrument claims need an observed event.** The gap between "the SDK is initialised" and "an error arrived in the dashboard" is where false confidence lives.
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Plan]] · **Home:** [[SWINGBY]]
+
+**Related:** [[2026-07-19]] · [[CLAUDE]] · [[D6-m1-gate]] · [[D8-money-uber]] · [[_LEARNING-LOG]]
+<!-- graph-wire:end -->

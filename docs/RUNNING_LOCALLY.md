@@ -1,3 +1,9 @@
+---
+group: build
+project: swingby
+hub: "[[MOC-Build]]"
+tags: [build]
+---
 # Running SwingBy Locally
 
 Step-by-step for anyone cloning the repo to get all surfaces running.
@@ -128,3 +134,10 @@ Scan the QR code with Expo Go (iOS/Android), or press `w` for web preview.
 | Vite port conflict | Vite auto-increments; check the terminal for the actual URL |
 | Backend CORS error | Add your local origin to `SWINGBY_ALLOWED_ORIGINS` in `.env` |
 | 401 on all API calls | Check that `VITE_API_BASE_URL` in `.env.local` matches the backend port |
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Build]] · **Home:** [[SWINGBY]]
+
+**Related:** [[CLAUDE]]
+<!-- graph-wire:end -->

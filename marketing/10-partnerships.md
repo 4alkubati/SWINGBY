@@ -1,3 +1,9 @@
+---
+group: market
+project: swingby
+hub: "[[MOC-Market]]"
+tags: [market]
+---
 # 10 — Partnerships
 
 > Who we want as allies, what we offer, what we ask for.
@@ -144,3 +150,10 @@ Bundle SwingBy with business internet/phone packages.
 
 - [03-go-to-market.md](03-go-to-market.md) — overall acquisition strategy
 - [04-positioning-and-messaging.md](04-positioning-and-messaging.md) — what to say to partners
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Market]] · **Home:** [[SWINGBY]]
+
+**Related:** [[03-go-to-market]] · [[04-positioning-and-messaging]]
+<!-- graph-wire:end -->

@@ -1,9 +1,12 @@
 ---
+group: plan
+project: swingby
+hub: "[[MOC-Plan]]"
+tags: [plan, learning, principles, append-only, book]
 type: meta-log
 status: ever-growing
 started: 2026-06-26
 links: [[../DOMINOES]]
-tags: [learning, principles, append-only, book]
 ---
 
 # 📚 _LEARNING-LOG — the book that grows across all dominoes
@@ -62,3 +65,10 @@ These are the lessons that show up in 3+ dominos' logs. Stop here when scanning.
 ---
 
 <!-- Future entries go below this line. Add a new dated heading; do not edit anything above. -->
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Plan]] · **Home:** [[SWINGBY]]
+
+**Related:** [[D2.0-live-walkthrough]] · [[D3-expo-go-walkthrough]] · [[D5-paid-testers]] · [[DOMINOES]]
+<!-- graph-wire:end -->

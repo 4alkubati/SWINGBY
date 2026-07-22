@@ -1,3 +1,9 @@
+---
+group: build
+project: swingby
+hub: "[[MOC-Build]]"
+tags: [build]
+---
 # SwingBy Design Tokens — UX Pass
 
 > Single source of truth for all visual constants.
@@ -118,3 +124,10 @@ Full screen specs: `handoff-jet-pulse/README.md` + `SwingBy Polish.dc.html` (sec
 | Robinhood | Card layouts, financial data presentation |
 | Vercel | Whitespace, dark theme execution |
 | Apple HIG | Motion grammar, spring physics |
+
+<!-- graph-wire:start -->
+---
+**Up:** [[MOC-Build]] · **Home:** [[SWINGBY]]
+
+**Related:** [[MOTION]]
+<!-- graph-wire:end -->
