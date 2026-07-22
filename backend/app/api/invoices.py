@@ -74,7 +74,8 @@ def _load_invoice_data(booking_id: str, current_user: dict) -> dict:
     pay_res = (
         supabase.table("payments")
         .select(
-            "status, method, notes, total_charged, platform_cut, released_to_business"
+            "status, method, stripe_payment_intent_id, "
+            "total_charged, platform_cut, released_to_business"
         )
         .eq("booking_id", booking_id)
         .order("created_at", desc=True)
@@ -145,7 +146,7 @@ def _load_invoice_data(booking_id: str, current_user: dict) -> dict:
             "status": payment.get("status")
             or booking.get("payment_status")
             or "pending",
-            "processor_ref": payment.get("notes"),
+            "processor_ref": payment.get("stripe_payment_intent_id"),
         },
     }
 
