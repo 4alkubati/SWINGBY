@@ -1,16 +1,17 @@
 import {
   View, ScrollView, StyleSheet, RefreshControl, Alert, Platform,
-  TextInput, Switch, FlatList, Linking, TouchableOpacity, Animated as RNAnimated,
+  Switch, Linking, TouchableOpacity, ActivityIndicator, Pressable,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Animated, {
   useSharedValue, useAnimatedStyle, withSpring, interpolate,
   useAnimatedScrollHandler, Extrapolation,
 } from 'react-native-reanimated';
 import { Feather } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '../../context/AuthContext';
-import { api } from '../../services/api';
+import { api, uploadFile } from '../../services/api';
 import { getUserLocation } from '../../services/location';
 import { useFavorites } from '../../hooks/useFavorites';
 import * as toast from '../../services/toast';
@@ -23,7 +24,7 @@ import Chip from '../../components/Chip';
 import Surface from '../../components/Surface';
 import Stack from '../../components/Stack';
 import Inline from '../../components/Inline';
-import Card from '../../components/Card';
+import TextField from '../../components/TextField';
 import ProgressBar from '../../components/ProgressBar';
 import { SkeletonBox, SkeletonCard } from '../../components/Skeleton';
 import { RatingStarsDisplay } from '../../components/RatingStars';
@@ -45,36 +46,33 @@ function computeDistanceKm(lat1, lng1, lat2, lng2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-// Owner-view profile-completeness meter. Every check reads a field already
-// fetched on `business` — zero backend dependency. "jobs done" stat is
-// deliberately NOT computed here (see BusinessProfileScreen gap notes) since
-// the spec flagged its exact meaning (reviews vs. total bookings) as
-// ambiguous and unconfirmed by product/backend.
+// Owner-view profile-completeness meter. Every check reads a REAL column on the
+// live `businesses` table (see LANE D notes) — zero backend dependency and
+// nothing phantom. The old version scored `business.photos` and
+// `business.services`, columns that do not exist, so those two points could
+// never be earned; they are dropped here alongside the dead sections they fed.
+// `logo_url` is the new, now-satisfiable check added with the logo-upload path.
+// "jobs done" is still deliberately NOT computed (ambiguous vs. review_count,
+// unconfirmed by product).
 function computeProfileCompleteness(business) {
   const checks = [
     !!business?.business_name,
     !!business?.category,
     !!business?.description,
     !!business?.service_radius_km,
-    Array.isArray(business?.photos) && business.photos.length > 0,
-    Array.isArray(business?.services) && business.services.length > 0,
+    !!business?.logo_url,
+    typeof business?.lat === 'number' && typeof business?.lng === 'number',
   ];
   const done = checks.filter(Boolean).length;
   const pct = Math.round((done / checks.length) * 100);
   let tip = null;
   if (!business?.description) tip = i18n.t('businessProfile.completenessTipDescription');
-  else if (!(Array.isArray(business?.photos) && business.photos.length > 0)) tip = i18n.t('businessProfile.completenessTipPhotos');
-  else if (!(Array.isArray(business?.services) && business.services.length > 0)) tip = i18n.t('businessProfile.completenessTipServices');
+  else if (!business?.logo_url) tip = i18n.t('businessProfile.completenessTipLogo');
   else if (!business?.service_radius_km) tip = i18n.t('businessProfile.completenessTipRadius');
   return { pct, tip };
 }
 
 const AnimatedScrollView = Animated.createAnimatedComponent(ScrollView);
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-function initials(name = '') {
-  return name.split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2);
-}
 
 // ─── Loading skeleton ─────────────────────────────────────────────────────────
 function BusinessProfileSkeleton() {
@@ -219,31 +217,6 @@ function EmployeeCard({ emp, editMode, onToggle, onPress }) {
   );
 }
 
-// ─── Photo item (horizontal carousel) ────────────────────────────────────────
-function PhotoItem({ uri }) {
-  return (
-    <View style={styles.photoItem}>
-      <Surface
-        elevation="subtle"
-        padding={0}
-        style={[styles.photoSurface, { backgroundColor: colors.surfaceAlt }]}
-      >
-        {uri ? (
-          <Animated.Image
-            source={{ uri }}
-            style={styles.photoImage}
-            resizeMode="cover"
-          />
-        ) : (
-          <View style={styles.photoPlaceholder}>
-            <Feather name="image" size={24} color={colors.textSecondary} />
-          </View>
-        )}
-      </Surface>
-    </View>
-  );
-}
-
 // ─── Main screen ──────────────────────────────────────────────────────────────
 export default function BusinessProfileScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
@@ -263,9 +236,11 @@ export default function BusinessProfileScreen({ navigation, route }) {
   // Edit fields
   const [editName, setEditName] = useState('');
   const [editCategory, setEditCategory] = useState('');
+  const [editDescription, setEditDescription] = useState('');
   const [editRadius, setEditRadius] = useState('');
   const [saving, setSaving] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
 
   // Scroll-based header animation
   const scrollY = useSharedValue(0);
@@ -333,6 +308,7 @@ export default function BusinessProfileScreen({ navigation, route }) {
       setSubscription(sub);
       setEditName(biz.business_name || '');
       setEditCategory(biz.category || '');
+      setEditDescription(biz.description || '');
       setEditRadius(String(biz.service_radius_km || 25));
     } catch {
       setError(true);
@@ -344,12 +320,55 @@ export default function BusinessProfileScreen({ navigation, route }) {
 
   useEffect(() => { load(); }, [load]);
 
+  // LANE D (#6b) — business logo upload, mirroring the user-avatar flow in
+  // ProfileEditScreen: ImagePicker → POST /uploads/image → PATCH the business
+  // with the returned URL. Owner-only; needs the businesses.logo_url column.
+  async function handleLogoPress() {
+    if (uploadingLogo || !bizId) return;
+
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (perm.status !== 'granted') {
+      Alert.alert(i18n.t('common.error'), i18n.t('profile.photoPermission'));
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      quality: 0.85,
+      exif: false,
+      allowsEditing: true,
+      aspect: [1, 1],
+    });
+    if (result.canceled || !result.assets?.length) return;
+
+    const asset = result.assets[0];
+    const ext = (asset.uri.split('.').pop() || 'jpg').toLowerCase();
+    const mimeType = asset.mimeType || `image/${ext === 'jpg' ? 'jpeg' : ext}`;
+
+    setUploadingLogo(true);
+    try {
+      const up = await uploadFile('/uploads/image', {
+        uri: asset.uri,
+        type: mimeType,
+        name: asset.fileName || `logo_${Date.now()}.${ext}`,
+      });
+      await api.patch(`/businesses/${bizId}`, { logo_url: up.url });
+      setBusiness((prev) => (prev ? { ...prev, logo_url: up.url } : prev));
+      toast.show({ type: 'success', text1: i18n.t('profile.photoUpdated') });
+    } catch (err) {
+      toast.show({ type: 'error', text1: i18n.t('profile.photoUploadError'), text2: err?.message || '' });
+    } finally {
+      setUploadingLogo(false);
+    }
+  }
+
   async function handleSave() {
     setSaving(true);
     try {
       await api.patch(`/businesses/${bizId}`, {
         business_name: editName,
         category: editCategory,
+        description: editDescription.trim() || null,
         service_radius_km: parseInt(editRadius, 10),
       });
       await load();
@@ -504,38 +523,67 @@ export default function BusinessProfileScreen({ navigation, route }) {
           {/* ── Hero section ── */}
           <Animated.View style={[styles.heroSection, heroScale]}>
             <Stack spacing="md" align="center">
-              <Avatar
-                name={business?.business_name || ''}
-                size="xl"
-              />
+              {/* Logo — owner can tap to upload/replace (LANE D #6b). */}
+              {isOwner ? (
+                <Pressable
+                  onPress={handleLogoPress}
+                  disabled={uploadingLogo}
+                  accessibilityRole="button"
+                  accessibilityLabel="Change business logo"
+                  style={styles.logoWrap}
+                >
+                  <Avatar
+                    name={business?.business_name || ''}
+                    source={business?.logo_url}
+                    size="xl"
+                  />
+                  {uploadingLogo && (
+                    <View style={styles.logoOverlay}>
+                      <ActivityIndicator color={colors.textPrimary} size="small" />
+                    </View>
+                  )}
+                  <View style={styles.logoBadge}>
+                    <Feather name="camera" size={13} color={colors.textPrimary} />
+                  </View>
+                </Pressable>
+              ) : (
+                <Avatar
+                  name={business?.business_name || ''}
+                  source={business?.logo_url}
+                  size="xl"
+                />
+              )}
 
               {editMode ? (
                 /* ── Edit fields ── */
-                <Stack spacing="sm" style={styles.editBlock}>
-                  <Text variant="label" color="secondary">Business name</Text>
-                  <TextInput
-                    style={styles.editInput}
+                <Stack spacing="base" style={styles.editBlock}>
+                  <TextField
+                    label="Business name"
                     value={editName}
                     onChangeText={setEditName}
-                    placeholder="Business name"
-                    placeholderTextColor={colors.textSecondary}
+                    autoCapitalize="words"
+                    maxLength={120}
                   />
-                  <Text variant="label" color="secondary">Category</Text>
-                  <TextInput
-                    style={styles.editInput}
+                  <TextField
+                    label="Category"
                     value={editCategory}
                     onChangeText={setEditCategory}
-                    placeholder="e.g. Cleaning"
-                    placeholderTextColor={colors.textSecondary}
+                    autoCapitalize="words"
+                    maxLength={120}
                   />
-                  <Text variant="label" color="secondary">Service radius (km)</Text>
-                  <TextInput
-                    style={styles.editInput}
+                  <TextField
+                    label="Description"
+                    value={editDescription}
+                    onChangeText={setEditDescription}
+                    multiline
+                    maxLength={2000}
+                  />
+                  <TextField
+                    label="Service radius (km)"
                     value={editRadius}
                     onChangeText={setEditRadius}
-                    placeholder="25"
-                    placeholderTextColor={colors.textSecondary}
                     keyboardType="numeric"
+                    maxLength={4}
                   />
                 </Stack>
               ) : (
@@ -595,6 +643,13 @@ export default function BusinessProfileScreen({ navigation, route }) {
                       </Text>
                     </Inline>
                   )}
+
+                  {/* Description — real column, shown when present */}
+                  {business?.description ? (
+                    <Text variant="small" color="secondary" style={styles.bioText}>
+                      {business.description}
+                    </Text>
+                  ) : null}
                 </Stack>
               )}
             </Stack>
@@ -620,22 +675,6 @@ export default function BusinessProfileScreen({ navigation, route }) {
               </View>
             );
           })()}
-
-          {/* ── Services / Tags chips row ── */}
-          {!editMode && business?.services && business.services.length > 0 && (
-            <>
-              <SectionHeader title="Services" />
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.chipsRow}
-              >
-                {business.services.map((svc, i) => (
-                  <Chip key={i} label={svc} />
-                ))}
-              </ScrollView>
-            </>
-          )}
 
           {/* ── Team section ── */}
           <View style={styles.sectionHeaderRow}>
@@ -667,21 +706,6 @@ export default function BusinessProfileScreen({ navigation, route }) {
                 />
               ))}
             </View>
-          )}
-
-          {/* ── Photos carousel ── */}
-          {business?.photos && business.photos.length > 0 && (
-            <>
-              <SectionHeader title="Photos" />
-              <FlatList
-                horizontal
-                data={business.photos}
-                keyExtractor={(item, i) => String(i)}
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.photosRow}
-                renderItem={({ item }) => <PhotoItem uri={item} />}
-              />
-            </>
           )}
 
           {/* ── Reviews section ── */}
@@ -867,17 +891,26 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.lg,
   },
   editBlock:    { width: '100%' },
-  editInput:    {
-    backgroundColor: colors.surfaceAlt,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.input,
-    paddingHorizontal: spacing.base,
-    paddingVertical: spacing.md,
-    fontSize: 15,
-    color: colors.textPrimary,
-    fontFamily: 'Inter_400Regular',
+
+  // Logo (owner-editable)
+  logoWrap:     { position: 'relative' },
+  logoOverlay:  {
+    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+    borderRadius: radius.avatar,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    alignItems: 'center', justifyContent: 'center',
   },
+  logoBadge:    {
+    position: 'absolute', bottom: 2, right: 2,
+    width: 28, height: 28, borderRadius: radius.pill,
+    backgroundColor: colors.surfaceAlt,
+    borderWidth: 2, borderColor: colors.bg,
+    alignItems: 'center', justifyContent: 'center',
+    ...shadows.subtle,
+  },
+
+  // Description
+  bioText:      { textAlign: 'center', lineHeight: 20, marginTop: spacing.xs },
 
   // Section header
   sectionHeader: {
@@ -913,9 +946,6 @@ const styles = StyleSheet.create({
   acctRowLast: { borderBottomWidth: 0 },
   acctLabel: { flex: 1 },
 
-  // Chips
-  chipsRow:     { paddingHorizontal: spacing.lg, gap: spacing.sm, paddingBottom: spacing.sm },
-
   // Team grid
   teamGrid:     {
     flexDirection: 'row', flexWrap: 'wrap',
@@ -928,17 +958,6 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     paddingHorizontal: spacing.sm,
     paddingVertical: 2,
-  },
-
-  // Photos
-  photosRow:    { paddingHorizontal: spacing.lg, gap: spacing.md, paddingBottom: spacing.sm },
-  photoItem:    { width: 160 },
-  photoSurface: { borderRadius: radius.card, overflow: 'hidden' },
-  photoImage:   { width: 160, height: 120 },
-  photoPlaceholder: {
-    width: 160, height: 120,
-    alignItems: 'center', justifyContent: 'center',
-    backgroundColor: colors.surfaceAlt,
   },
 
   // Reviews

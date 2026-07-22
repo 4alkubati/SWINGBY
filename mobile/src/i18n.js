@@ -167,6 +167,7 @@ const translations = {
     'businessProfile.completenessTipDescription': 'Add a description to help clients find you.',
     'businessProfile.completenessTipPhotos': 'Add photos of your work to build trust.',
     'businessProfile.completenessTipServices': 'List the services you offer.',
+    'businessProfile.completenessTipLogo': 'Add a logo so clients recognize your business.',
     'businessProfile.completenessTipRadius': 'Set your service radius so clients nearby can find you.',
 
     // Job management — business "Jobs" tab (New/Quoted/Scheduled) (missing-key audit)
@@ -412,6 +413,7 @@ const translations = {
     'businessProfile.completenessTipDescription': 'Ajoutez une description pour aider les clients à vous trouver.',
     'businessProfile.completenessTipPhotos': 'Ajoutez des photos de vos travaux pour bâtir la confiance.',
     'businessProfile.completenessTipServices': 'Énumérez les services que vous offrez.',
+    'businessProfile.completenessTipLogo': 'Ajoutez un logo pour que les clients reconnaissent votre entreprise.',
     'businessProfile.completenessTipRadius': "Définissez votre rayon de service pour que les clients à proximité puissent vous trouver.",
 
     // Job management — business "Jobs" tab (New/Quoted/Scheduled) (missing-key audit)
@@ -658,6 +660,7 @@ const translations = {
     'businessProfile.completenessTipDescription': 'أضف وصفاً لمساعدة العملاء في العثور عليك.',
     'businessProfile.completenessTipPhotos': 'أضف صوراً لأعمالك لبناء الثقة.',
     'businessProfile.completenessTipServices': 'اذكر الخدمات التي تقدمها.',
+    'businessProfile.completenessTipLogo': 'أضف شعاراً ليتعرف العملاء على نشاطك التجاري.',
     'businessProfile.completenessTipRadius': 'حدد نطاق خدمتك ليتمكن العملاء القريبون من العثور عليك.',
 
     // Job management — business "Jobs" tab (New/Quoted/Scheduled) (missing-key audit)

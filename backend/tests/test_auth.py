@@ -11,7 +11,11 @@ Coverage:
 
 from unittest.mock import patch, MagicMock
 
+import pytest
+
+from app.deps import get_current_user
 from app.main import app
+from tests.conftest import SupabaseTableStub
 
 
 class TestSignup:
@@ -298,3 +302,100 @@ class TestGetMe:
             assert data["email"] == "test@example.com"
             assert data["first_name"] == "John"
             assert data["role"] == "client"
+
+
+CLIENT_USER = {
+    "id": "user-abc",
+    "role": "client",
+    "first_name": "Ali",
+    "last_name": "Kubati",
+    "email": "ali@example.com",
+}
+
+
+@pytest.fixture
+def as_client():
+    # get_current_user is a Depends captured at import; override, not patch.
+    app.dependency_overrides[get_current_user] = lambda: CLIENT_USER
+    yield CLIENT_USER
+    app.dependency_overrides.pop(get_current_user, None)
+
+
+class TestUpdateMe:
+    """Tests for PATCH /auth/me — including the LANE D avatar null-clear fix."""
+
+    def test_update_me_sets_avatar_url(self, test_client, as_client):
+        """PATCH /auth/me with an avatar_url writes it and echoes it back."""
+        stub = SupabaseTableStub(
+            update_data=[{**CLIENT_USER, "avatar_url": "https://cdn/x.jpg"}]
+        )
+        with patch("app.api.auth.supabase") as mock_supabase:
+            mock_supabase.table.return_value = stub
+
+            response = test_client.patch(
+                "/auth/me",
+                json={"avatar_url": "https://cdn/x.jpg"},
+                headers={"Authorization": "Bearer test-token"},
+            )
+
+            assert response.status_code == 200
+            # The update payload actually sent to Postgres carries the URL.
+            update_call = next(c for c in stub.calls if c[0] == "update")
+            assert update_call[1][0] == {"avatar_url": "https://cdn/x.jpg"}
+            assert response.json()["user"]["avatar_url"] == "https://cdn/x.jpg"
+
+    def test_update_me_clears_avatar_url_to_null(self, test_client, as_client):
+        """
+        GAP #11: PATCH /auth/me {"avatar_url": null} must persist NULL, not 400.
+
+        The old handler stripped every None-valued field, so this body reduced
+        to {} and hit "No fields provided to update". A user could set an avatar
+        but never remove it. The explicit null must now reach the update call.
+        """
+        stub = SupabaseTableStub(update_data=[{**CLIENT_USER, "avatar_url": None}])
+        with patch("app.api.auth.supabase") as mock_supabase:
+            mock_supabase.table.return_value = stub
+
+            response = test_client.patch(
+                "/auth/me",
+                json={"avatar_url": None},
+                headers={"Authorization": "Bearer test-token"},
+            )
+
+            assert response.status_code == 200
+            update_call = next(c for c in stub.calls if c[0] == "update")
+            assert update_call[1][0] == {"avatar_url": None}
+            assert response.json()["user"]["avatar_url"] is None
+
+    def test_update_me_empty_body_still_400(self, test_client, as_client):
+        """An entirely empty PATCH body is still a 400 — nothing to update."""
+        with patch("app.api.auth.supabase") as mock_supabase:
+            mock_supabase.table.return_value = SupabaseTableStub(update_data=[])
+
+            response = test_client.patch(
+                "/auth/me",
+                json={},
+                headers={"Authorization": "Bearer test-token"},
+            )
+
+            assert response.status_code == 400
+
+    def test_update_me_omitted_avatar_not_sent(self, test_client, as_client):
+        """
+        Updating only the name must NOT clear the avatar: an omitted avatar_url
+        (exclude_unset) is absent from the update payload entirely.
+        """
+        stub = SupabaseTableStub(update_data=[{**CLIENT_USER, "first_name": "Alison"}])
+        with patch("app.api.auth.supabase") as mock_supabase:
+            mock_supabase.table.return_value = stub
+
+            response = test_client.patch(
+                "/auth/me",
+                json={"first_name": "Alison"},
+                headers={"Authorization": "Bearer test-token"},
+            )
+
+            assert response.status_code == 200
+            update_call = next(c for c in stub.calls if c[0] == "update")
+            assert "avatar_url" not in update_call[1][0]
+            assert update_call[1][0] == {"first_name": "Alison"}

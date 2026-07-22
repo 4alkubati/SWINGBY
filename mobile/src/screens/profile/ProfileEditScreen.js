@@ -107,6 +107,25 @@ export default function ProfileEditScreen() {
     }
   };
 
+  // LANE D (#11) — the avatar-clear path. The backend PATCH /auth/me now
+  // accepts {"avatar_url": null} (it previously 400'd because null fields were
+  // stripped), so this is the one place a user can actually remove their photo.
+  const handleRemoveAvatar = async () => {
+    if (uploadingPhoto || !avatarUrl) return;
+    await buttonTap();
+    setUploadingPhoto(true);
+    try {
+      const updated = await api.patch('/auth/me', { avatar_url: null });
+      updateUser(updated.user);
+      setAvatarUrl(null);
+      showToast({ type: 'success', text1: i18n.t('profile.photoUpdated') });
+    } catch (err) {
+      showToast({ type: 'error', text1: i18n.t('profile.photoUploadError'), text2: err?.message || '' });
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
+
   async function handleSave() {
     const trimFirst = firstName.trim();
     const trimLast = lastName.trim();
@@ -251,6 +270,18 @@ export default function ProfileEditScreen() {
             <Text variant="caption" color="secondary">
               {uploadingPhoto ? i18n.t('profile.photoUploading') : 'Tap to change photo'}
             </Text>
+
+            {/* Remove photo — only when one exists. Surfaces the avatar-clear path. */}
+            {avatarUrl && !uploadingPhoto && (
+              <Pressable
+                onPress={handleRemoveAvatar}
+                hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                accessibilityRole="button"
+                accessibilityLabel="Remove photo"
+              >
+                <Text variant="caption" color="danger">Remove photo</Text>
+              </Pressable>
+            )}
 
             {/* Rating row (if available) */}
             {user?.avg_rating != null && (
