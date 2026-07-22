@@ -1,8 +1,8 @@
 import logging
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, Depends, Query
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Depends, Query, Request
 from pydantic import BaseModel, Field, field_validator, model_validator
 from typing import Optional
 from app.deps import get_current_user
@@ -13,6 +13,14 @@ from app.services.push import send_push_to_user
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+# A network retry of a POST /messages/ that actually committed (server wrote
+# the row, then the response was lost — classic on a Render cold start) would
+# otherwise double-post. The mobile retry interceptor stamps X-Send-Retry on
+# retried writes; send_message() then treats an identical just-stored message
+# in the same thread as this same send re-arriving. Window covers the client's
+# retry backoff (0.3s + 0.8s + 2s) plus request time, with margin.
+RESEND_DEDUPE_SECONDS = 15
 
 
 def _require_uuid(value: str, label: str) -> None:
@@ -179,6 +187,17 @@ def _quote_context_for_booking(booking: dict) -> Optional[dict]:
         return None
 
 
+def _has_unread(items: list, uid: str) -> bool:
+    """True if any already-fetched message is unread and not sent by the reader.
+
+    Lets callers skip the _mark_read DB WRITE entirely on the common polling
+    case (nothing new since last read) — the message list is polled every 5s,
+    so an unconditional write per poll was pure write amplification against
+    Postgres for no state change.
+    """
+    return any(m.get("read_at") is None and m.get("sender_id") != uid for m in items)
+
+
 def _mark_read(thread_field: str, thread_id: str, uid: str):
     """Mark everything in the thread not sent by the reader as read."""
     try:
@@ -258,7 +277,12 @@ def _accessible_thread_ids(current_user: dict):
 
 
 @router.post("/")
-def send_message(data: MessageSend, current_user: dict = Depends(get_current_user)):
+def send_message(
+    data: MessageSend,
+    background_tasks: BackgroundTasks,
+    request: Request,
+    current_user: dict = Depends(get_current_user),
+):
     uid = current_user["id"]
     recipient_id = None
 
@@ -333,15 +357,44 @@ def send_message(data: MessageSend, current_user: dict = Depends(get_current_use
             "content": data.content,
         }
 
+    # Retry-safe insert: only retried requests carry X-Send-Retry, so the happy
+    # path pays nothing. A retry first looks for an identical message it may
+    # have already stored and returns that instead of posting a duplicate.
+    if request.headers.get("x-send-retry"):
+        thread_field = "booking_id" if data.booking_id else "interest_id"
+        thread_id = data.booking_id or data.interest_id
+        cutoff = (
+            datetime.now(timezone.utc) - timedelta(seconds=RESEND_DEDUPE_SECONDS)
+        ).isoformat()
+        try:
+            existing = (
+                supabase.table("messages")
+                .select("*")
+                .eq(thread_field, thread_id)
+                .eq("sender_id", uid)
+                .eq("content", data.content)
+                .gte("sent_at", cutoff)
+                .order("sent_at", desc=True)
+                .limit(1)
+                .execute()
+            )
+            if existing.data:
+                return {"message": "Sent", "data": existing.data[0]}
+        except Exception:
+            pass  # dedupe is best-effort — fall through to a normal insert
+
     try:
         res = supabase.table("messages").insert(row).execute()
 
-        # Notify the other participant — best-effort
-        try:
-            if recipient_id and recipient_id != uid:
-                send_push_to_user(recipient_id, "New message", data.content[:100])
-        except Exception:
-            pass  # push failure must not break the request
+        # Notify the other participant — best-effort, and OFF the request path.
+        # send_push_to_user() POSTs to Expo serially per token with a 5s timeout,
+        # which used to add up to ~10s to every send when run inline. Handing it
+        # to BackgroundTasks lets the response return the instant the row is
+        # written; the push fans out after. send_push_to_user never raises.
+        if recipient_id and recipient_id != uid:
+            background_tasks.add_task(
+                send_push_to_user, recipient_id, "New message", data.content[:100]
+            )
 
         return {"message": "Sent", "data": res.data[0]}
     except HTTPException:
@@ -458,6 +511,9 @@ def list_threads(current_user: dict = Depends(get_current_user)):
                     "counterpart_avatar": client_user.get("avatar_url"),
                     "status": i.get("status"),
                     "quoted_price": i.get("quoted_price"),
+                    # Lets a client tap through from the inbox / chat header to
+                    # the quoting business's profile without a second fetch.
+                    "business_id": i.get("business_id"),
                     "last_message": (agg["last"] or {}).get("content"),
                     "last_at": (agg["last"] or {}).get("sent_at"),
                     "unread_count": agg["unread"],
@@ -543,7 +599,8 @@ def get_interest_messages(
             for item in items:
                 if item.get("sender_id") == client_id and item.get("users"):
                     item["users"] = mask_user_public(item["users"])
-        _mark_read("interest_id", interest_id, current_user["id"])
+        if _has_unread(items, current_user["id"]):
+            _mark_read("interest_id", interest_id, current_user["id"])
         next_before = items[-1]["sent_at"] if items else None
         return {
             "items": items,
@@ -554,6 +611,9 @@ def get_interest_messages(
                 "id": interest["id"],
                 "status": interest["status"],
                 "quoted_price": interest.get("quoted_price"),
+                # Header tap-through to the business profile (client side) —
+                # the interest thread has no bookingMeta to read business_id off.
+                "business_id": interest.get("business_id"),
                 "post_title": interest["service_posts"].get("title"),
                 "post_status": interest["service_posts"].get("status"),
             },
@@ -595,7 +655,8 @@ def get_messages(
         query = query.order("sent_at", desc=True).limit(limit)
         res = query.execute()
         items = res.data or []
-        _mark_read("booking_id", booking_id, current_user["id"])
+        if _has_unread(items, current_user["id"]):
+            _mark_read("booking_id", booking_id, current_user["id"])
         next_before = items[-1]["sent_at"] if items else None
         return {
             "items": items,

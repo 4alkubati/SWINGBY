@@ -52,6 +52,15 @@ api.interceptors.request.use((config) => {
 // Does not retry on 4xx except 408 (Request Timeout).
 const RETRY_DELAYS = [300, 800, 2000];
 
+// A retry re-enters the WHOLE interceptor chain (`api(config)` below), so the
+// unwrap interceptor registered after this one has already turned the retried
+// response into its body by the time control comes back here. Re-wrapping it as
+// { data } lets the outer unwrap run a second time harmlessly and hand callers
+// the same shape a first-try request returns — without this, every retried
+// request resolved to `body.data` (usually undefined). Errors get flagged the
+// same way so the outer handler doesn't toast the same failure twice.
+const ALREADY_UNWRAPPED = '__swingbyRetryUnwrapped';
+
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -74,8 +83,22 @@ api.interceptors.response.use(
       const delay = RETRY_DELAYS[config._retryCount];
       config._retryCount += 1;
 
+      // Mark retried writes so idempotent endpoints (e.g. POST /messages/) can
+      // dedupe a request that may have already committed before the network
+      // dropped its response. Harmless on GETs, which never dedupe server-side.
+      if (!isGet) {
+        config.headers = config.headers || {};
+        config.headers['X-Send-Retry'] = String(config._retryCount);
+      }
+
       await new Promise((resolve) => setTimeout(resolve, delay));
-      return api(config);
+      try {
+        const body = await api(config);
+        return { data: body, [ALREADY_UNWRAPPED]: true };
+      } catch (retryError) {
+        retryError[ALREADY_UNWRAPPED] = true;
+        return Promise.reject(retryError);
+      }
     }
 
     return Promise.reject(error);
@@ -116,6 +139,9 @@ export function extractMessage(error) {
 api.interceptors.response.use(
   (response) => response.data,
   (error) => {
+    // A retried request already ran this handler once inside its own chain —
+    // it was toasted and its message extracted there. Pass it straight through.
+    if (error?.[ALREADY_UNWRAPPED]) return Promise.reject(error);
     if (error.response?.status === 401 && _onUnauthorized) {
       _onUnauthorized();
     }
