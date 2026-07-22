@@ -193,8 +193,12 @@ def list_open_posts(
     current_user: dict = Depends(get_current_user),
 ):
     try:
+        # Pull the poster's lifecycle flags alongside the public profile so we
+        # can drop posts from ghosted / suspended / soft-deleted clients from
+        # the business-facing feed. The flags are stripped before returning.
         query = supabase.table("service_posts").select(
-            "*, users(first_name, last_name, avatar_url)"
+            "*, users(first_name, last_name, avatar_url, "
+            "is_ghosted, is_suspended, deleted_at)"
         )
         # When no status filter given, default to showing only open posts
         # (preserves existing behaviour); with an explicit status, filter by it
@@ -234,18 +238,37 @@ def list_open_posts(
             .range(offset, offset + limit - 1)
             .execute()
         )
-        items = res.data or []
-        # CARD-23: mask full address + client last name for everyone except
-        # the post's own owner. Feed posts are pre-acceptance by construction
-        # (a matched/accepted post leaves 'open'), so there is no "winning
-        # business" exception to make here — that unmasked view lives on the
-        # booking (bookings.py), which already works and is untouched.
+        raw_items = res.data or []
         uid = current_user["id"]
-        items = [
-            item if item.get("client_id") == uid else mask_service_post_row(item)
-            for item in items
-        ]
-        next_offset = offset + limit if len(items) == limit else None
+
+        # Two independent protections on the feed, BOTH required:
+        #  1) Account lifecycle (PR #29): drop posts whose poster is hidden from
+        #     discovery (ghosted / suspended / soft-deleted), then strip those
+        #     lifecycle flags off the embedded users object so they never leak.
+        #  2) CARD-23 PII masking (main): mask full address + client last name
+        #     for everyone except the post's own owner. Feed posts are
+        #     pre-acceptance by construction, so there is no "winning business"
+        #     exception here — the unmasked view lives on the booking.
+        items = []
+        for post in raw_items:
+            poster = post.get("users") or {}
+            hidden = (
+                poster.get("is_ghosted")
+                or poster.get("is_suspended")
+                or poster.get("deleted_at")
+            )
+            if hidden:
+                continue
+            if isinstance(poster, dict):
+                for flag in ("is_ghosted", "is_suspended", "deleted_at"):
+                    poster.pop(flag, None)
+            items.append(
+                post if post.get("client_id") == uid else mask_service_post_row(post)
+            )
+
+        # Paginate on the pre-filter page size so dropping a hidden poster's
+        # post never prematurely ends the feed.
+        next_offset = offset + limit if len(raw_items) == limit else None
         return {
             "items": items,
             "limit": limit,

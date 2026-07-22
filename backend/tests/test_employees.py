@@ -109,3 +109,46 @@ class TestCreateEmployeeTriggerRow:
 
         body = response.json()
         assert body["employee"]["user_id"] == "emp-user-1"
+
+
+class TestPublicRosterHardening:
+    """GET /employees/business/{id} — public trust card, hardened 2026-07-21:
+    only active employees, and user_id never in the select/payload."""
+
+    def test_filters_inactive_and_omits_user_id(self, test_client, as_owner):
+        roster_stub = SupabaseTableStub(
+            select_data=[
+                {
+                    "id": "emp-1",
+                    "business_id": "biz-1",
+                    "role_title": "Cleaner",
+                    "is_active": True,
+                    "avatar_url": None,
+                    "created_at": "2026-01-01T00:00:00Z",
+                    "users": {
+                        "first_name": "Jane",
+                        "last_name": "Doe",
+                        "avatar_url": None,
+                    },
+                }
+            ]
+        )
+        with patch("app.api.employees.supabase") as mock_supabase:
+            mock_supabase.table.side_effect = lambda name: roster_stub
+            resp = test_client.get(
+                "/employees/business/biz-1",
+                headers={"Authorization": "Bearer test-token"},
+            )
+        assert resp.status_code == 200, resp.text
+
+        # (i) an is_active=True equality filter was applied.
+        eq_calls = [c for c in roster_stub.calls if c[0] == "eq"]
+        assert ("eq", ("is_active", True), {}) in eq_calls
+
+        # (ii) user_id is neither selected nor returned to the caller.
+        select_calls = [c for c in roster_stub.calls if c[0] == "select"]
+        assert select_calls, "expected a select() call"
+        select_arg = select_calls[0][1][0]
+        assert "user_id" not in select_arg
+        body = resp.json()
+        assert body and "user_id" not in body[0]

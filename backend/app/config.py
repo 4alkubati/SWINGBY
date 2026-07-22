@@ -32,8 +32,7 @@ if _missing:
 _OPTIONAL = [
     "SUPABASE_KEY",
     "SWINGBY_ALLOWED_ORIGINS",
-    "NOTION_TOKEN",
-    "NOTION_CRM_DB_ID",
+    "NOTION_TOKEN",  # consumed by the waitlist path (app/api/waitlist.py); NOT CRM
     "SENTRY_DSN",
     "HCAPTCHA_SECRET",
     "HCAPTCHA_SITEKEY",
@@ -80,10 +79,6 @@ class _Settings:
     @property
     def NOTION_TOKEN(self) -> str:
         return os.getenv("NOTION_TOKEN", "")
-
-    @property
-    def NOTION_CRM_DB_ID(self) -> str:
-        return os.getenv("NOTION_CRM_DB_ID", "a0fceda5610e474fac5949ec6ab8d012")
 
     @property
     def SENTRY_DSN(self) -> str:
