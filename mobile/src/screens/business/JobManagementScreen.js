@@ -5,8 +5,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useState, useEffect, useCallback } from 'react';
 import Animated, {
-  useSharedValue, useAnimatedStyle, withSpring, withTiming,
-  FadeIn, FadeOut, Layout,
+  useSharedValue, useAnimatedStyle, withTiming,
 } from 'react-native-reanimated';
 import { api } from '../../services/api';
 import StatusTracker from '../../components/StatusTracker';
@@ -15,7 +14,6 @@ import LiveStatusTimeline from '../../components/LiveStatusTimeline';
 import BookingPhotos from '../../components/BookingPhotos';
 import Text from '../../components/Text';
 import Tabs from '../../components/Tabs';
-import Chip from '../../components/Chip';
 import Surface from '../../components/Surface';
 import Stack from '../../components/Stack';
 import Inline from '../../components/Inline';
@@ -23,6 +21,7 @@ import Badge from '../../components/Badge';
 import Button from '../../components/Button';
 import ListItem from '../../components/ListItem';
 import EmptyState from '../../components/EmptyState';
+import SectionHeader from '../../components/SectionHeader';
 import JobOpportunityCard from '../../components/JobOpportunityCard';
 import SendQuoteSheet from '../../components/SendQuoteSheet';
 import ReviewSubmitSheet from '../../components/ReviewSubmitSheet';
@@ -65,7 +64,7 @@ function JobSkeleton() {
       <SkeletonBox height={90} borderRadius={radius.card} style={{ width: '100%' }} />
       {/* Cards */}
       {[1, 2].map((k) => (
-        <View key={k} style={skeletonStyles.card}>
+        <View key={k} style={styles.skeletonCard}>
           <SkeletonBox height={11} width={80} borderRadius={6} />
           <SkeletonBox height={16} width={160} borderRadius={6} style={{ marginTop: spacing.sm }} />
           <SkeletonBox height={13} width={120} borderRadius={6} style={{ marginTop: spacing.xs }} />
@@ -77,45 +76,18 @@ function JobSkeleton() {
   );
 }
 
-const skeletonStyles = StyleSheet.create({
-  card: {
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.card,
-    padding: spacing.base,
-  },
-});
-
 // ─── Avatar circle ────────────────────────────────────────────────────────────
 
 function AvatarCircle({ name, isActive }) {
   return (
     <View style={[
-      avatarStyles.circle,
-      isActive && avatarStyles.circleActive,
+      styles.avatarCircle,
+      isActive && styles.avatarCircleActive,
     ]}>
       <Text variant="smallMedium" color="accent">{initials(name)}</Text>
     </View>
   );
 }
-
-const avatarStyles = StyleSheet.create({
-  circle: {
-    width: 42,
-    height: 42,
-    borderRadius: radius.avatar,
-    backgroundColor: colors.accentMuted,
-    borderWidth: 1,
-    borderColor: colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  circleActive: {
-    borderColor: colors.accent,
-    borderWidth: 1.5,
-  },
-});
 
 // ─── Job detail sections ───────────────────────────────────────────────────────
 
@@ -140,32 +112,15 @@ function StatusChip({ status, label, color: colorOverride }) {
   const color = colorOverride || STATUS_COLORS[status] || colors.textSecondary;
   const text = label || STATUS_LABELS[status] || status;
   return (
-    <View style={[chipStyles.wrap, {
+    <View style={[styles.statusChip, {
       borderColor: withAlpha(color, '55'),
       backgroundColor: withAlpha(color, '18'),
     }]}>
-      <View style={[chipStyles.dot, { backgroundColor: color }]} />
+      <View style={[styles.statusChipDot, { backgroundColor: color }]} />
       <Text variant="caption" style={{ color }}>{text}</Text>
     </View>
   );
 }
-
-const chipStyles = StyleSheet.create({
-  wrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: radius.pill,
-    borderWidth: 1,
-  },
-  dot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
-});
 
 // ─── Per-booking detail/status screen (bookingId present) ─────────────────────
 // Unchanged from the original single-purpose JobManagementScreen — Live Job
@@ -193,11 +148,9 @@ function JobDetailScreen({ navigation, route }) {
 
   // View state
   const [activeTab, setActiveTab] = useState(0); // 0 = Details, 1 = Status
-  const [activeFilter, setActiveFilter] = useState('all');
 
-  // Spring animation for tab content
+  // Cross-fade for the tab content
   const contentOpacity = useSharedValue(1);
-  const contentTranslate = useSharedValue(0);
 
   const load = useCallback(async () => {
     setError(null);
@@ -233,10 +186,6 @@ function JobDetailScreen({ navigation, route }) {
   function handleTabChange(index) {
     contentOpacity.value = withTiming(0, { duration: 80 }, () => {
       contentOpacity.value = withTiming(1, { duration: motion.entryDuration });
-    });
-    contentTranslate.value = withSpring(0, {
-      stiffness: motion.spring.stiffness,
-      damping: motion.spring.damping,
     });
     setActiveTab(index);
   }
@@ -336,9 +285,6 @@ function JobDetailScreen({ navigation, route }) {
 
   const isDone = booking.status === 'completed';
 
-  const FILTERS = ['all', 'pending', 'in_progress', 'completed'];
-  const filterLabel = { all: 'All', pending: 'Pending', in_progress: 'In Progress', completed: 'Done' };
-
   return (
     <View style={[styles.screen, { paddingTop: insets.top }]}>
       {/* ── Header ─────────────────────────────────────────────────────────── */}
@@ -362,21 +308,9 @@ function JobDetailScreen({ navigation, route }) {
         />
       </View>
 
-      {/* ── Status filters (shown on Details tab) ──────────────────────────── */}
-      {activeTab === 0 && (
-        <Animated.View entering={FadeIn.duration(200)} style={styles.filtersRow}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filtersScroll}>
-            {FILTERS.map((f) => (
-              <Chip
-                key={f}
-                label={filterLabel[f]}
-                selected={activeFilter === f}
-                onPress={() => setActiveFilter(f)}
-              />
-            ))}
-          </ScrollView>
-        </Animated.View>
-      )}
+      {/* A second, hand-rolled Chip filter row used to sit here. It filtered
+          nothing — this screen shows ONE booking — and it was the file's second
+          tab idiom. Removed: `Tabs` above is now the only one. */}
 
       {/* ── Main content ───────────────────────────────────────────────────── */}
       <Animated.View style={[{ flex: 1 }, contentStyle]}>
@@ -682,7 +616,7 @@ function JobRow({ booking, showDate, onPress }) {
 
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.8}>
-      <Surface elevation="subtle" rounded="card" padding="base" style={listStyles.rowCard}>
+      <Surface elevation="subtle" rounded="card" padding="base">
         <Inline justify="space-between" style={{ marginBottom: spacing.xs }}>
           <Text variant="smallMedium" numberOfLines={1} style={{ flex: 1 }}>{jobClientName(booking)}</Text>
           <StatusChip status={booking.status} />
@@ -720,7 +654,7 @@ function ActionBookingRow({ booking, onPress }) {
 
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.8}>
-      <Surface elevation="subtle" rounded="card" padding="base" style={listStyles.rowCard}>
+      <Surface elevation="subtle" rounded="card" padding="base">
         <Inline justify="space-between" style={{ marginBottom: spacing.xs }}>
           <Text variant="smallMedium" numberOfLines={1} style={{ flex: 1 }}>{jobClientName(booking)}</Text>
           <StatusChip label={i18n.t(reasonKey)} color={colors.warning} />
@@ -740,7 +674,7 @@ function PastJobRow({ booking, onPress }) {
 
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.8}>
-      <Surface elevation="subtle" rounded="card" padding="base" style={listStyles.rowCard}>
+      <Surface elevation="subtle" rounded="card" padding="base">
         <Inline justify="space-between" style={{ marginBottom: spacing.xs }}>
           <Text variant="smallMedium" numberOfLines={1} style={{ flex: 1 }}>{jobClientName(booking)}</Text>
           <StatusChip status={booking.status} />
@@ -777,7 +711,7 @@ function QuoteListRow({ interest, onMessage }) {
   const canMessage = post.status === 'open' || post.status === 'matched' || interest.status === 'accepted';
 
   return (
-    <Surface elevation="subtle" rounded="card" padding="base" style={listStyles.rowCard}>
+    <Surface elevation="subtle" rounded="card" padding="base">
       <Inline justify="space-between" style={{ marginBottom: spacing.xs }}>
         <Text variant="smallMedium" numberOfLines={1} style={{ flex: 1 }}>{post.title || 'Job post'}</Text>
         <StatusChip label={labelKey ? i18n.t(labelKey) : interest.status} color={color} />
@@ -794,6 +728,20 @@ function QuoteListRow({ interest, onMessage }) {
         />
       )}
     </Surface>
+  );
+}
+
+// "Needs action" stacks up to three unrelated queues — new leads, bookings
+// blocked on the owner, quotes awaiting a client reply. They used to run
+// together as one undifferentiated column of cards under three bare labels.
+// Each queue now gets its own titled band with a count and a hairline rule
+// above it, so the boundaries are visible at a glance.
+function ActionGroup({ label, count, first, children }) {
+  return (
+    <View style={!first && styles.actionGroupDivided}>
+      <SectionHeader title={label} count={count} style={{ marginBottom: spacing.md }} />
+      <Stack spacing="md">{children}</Stack>
+    </View>
   );
 }
 
@@ -887,7 +835,7 @@ function JobsListScreen({ navigation, route }) {
   if (loading) {
     return (
       <View style={[styles.screen, { paddingTop: insets.top }]}>
-        <View style={listStyles.header}>
+        <View style={styles.listHeader}>
           <Text variant="display3">{i18n.t('jobManagement.title')}</Text>
         </View>
         <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.sm }}>
@@ -910,28 +858,72 @@ function JobsListScreen({ navigation, route }) {
     );
   }
 
+  const needsActionGroups = [];
+  if (visiblePosts.length > 0) {
+    needsActionGroups.push({
+      key: 'leads',
+      label: i18n.t('jobManagement.needsActionNewLeads'),
+      count: visiblePosts.length,
+      items: visiblePosts.map((post) => (
+        <JobOpportunityCard
+          key={post.id}
+          post={post}
+          onSendQuote={() => openQuoteSheet(post)}
+          onPass={() => passPost(post)}
+        />
+      )),
+    });
+  }
+  if (needsActionBookings.length > 0) {
+    needsActionGroups.push({
+      key: 'bookings',
+      label: i18n.t('jobManagement.needsActionBookings'),
+      count: needsActionBookings.length,
+      items: needsActionBookings.map((b) => (
+        <ActionBookingRow key={b.id} booking={b} onPress={() => openBooking(b.id)} />
+      )),
+    });
+  }
+  if (quotes.length > 0) {
+    needsActionGroups.push({
+      key: 'quotes',
+      label: i18n.t('jobManagement.needsActionQuotesSent'),
+      count: quotes.length,
+      items: quotes.map((q) => (
+        <QuoteListRow
+          key={q.id}
+          interest={q}
+          onMessage={() =>
+            navigation.navigate('Chat', {
+              interestId: q.id,
+              otherPartyName: q.service_posts?.users?.first_name || 'Client',
+            })
+          }
+        />
+      )),
+    });
+  }
+
   return (
     <View style={[styles.screen, { paddingTop: insets.top }]}>
-      <View style={listStyles.header}>
+      <View style={styles.listHeader}>
         <Text variant="display3">{i18n.t('jobManagement.title')}</Text>
       </View>
 
-      <View style={listStyles.filterRow}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={listStyles.filterScroll}>
-          {LIST_FILTERS.map((f) => (
-            <Chip
-              key={f}
-              label={`${i18n.t(FILTER_LABEL_KEY[f])} (${FILTER_COUNT[f]})`}
-              selected={filter === f}
-              onPress={() => setFilter(f)}
-            />
-          ))}
-        </ScrollView>
+      {/* Segmented control per the JobManagementScreen mock — same `Tabs`
+          component the client's My Jobs uses, so "switch the list" looks
+          identical on both sides of the marketplace. */}
+      <View style={styles.listTabsRow}>
+        <Tabs
+          tabs={LIST_FILTERS.map((f) => `${i18n.t(FILTER_LABEL_KEY[f])} (${FILTER_COUNT[f]})`)}
+          activeIndex={LIST_FILTERS.indexOf(filter)}
+          onChange={(idx) => setFilter(LIST_FILTERS[idx])}
+        />
       </View>
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={listStyles.content}
+        contentContainerStyle={styles.listContent}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -981,46 +973,11 @@ function JobsListScreen({ navigation, route }) {
             />
           ) : (
             <Stack spacing="lg">
-              {visiblePosts.length > 0 && (
-                <Stack spacing="md">
-                  <SectionLabel>{i18n.t('jobManagement.needsActionNewLeads')}</SectionLabel>
-                  {visiblePosts.map((post) => (
-                    <JobOpportunityCard
-                      key={post.id}
-                      post={post}
-                      onSendQuote={() => openQuoteSheet(post)}
-                      onPass={() => passPost(post)}
-                    />
-                  ))}
-                </Stack>
-              )}
-
-              {needsActionBookings.length > 0 && (
-                <Stack spacing="md">
-                  <SectionLabel>{i18n.t('jobManagement.needsActionBookings')}</SectionLabel>
-                  {needsActionBookings.map((b) => (
-                    <ActionBookingRow key={b.id} booking={b} onPress={() => openBooking(b.id)} />
-                  ))}
-                </Stack>
-              )}
-
-              {quotes.length > 0 && (
-                <Stack spacing="md">
-                  <SectionLabel>{i18n.t('jobManagement.needsActionQuotesSent')}</SectionLabel>
-                  {quotes.map((q) => (
-                    <QuoteListRow
-                      key={q.id}
-                      interest={q}
-                      onMessage={() =>
-                        navigation.navigate('Chat', {
-                          interestId: q.id,
-                          otherPartyName: q.service_posts?.users?.first_name || 'Client',
-                        })
-                      }
-                    />
-                  ))}
-                </Stack>
-              )}
+              {needsActionGroups.map((g, i) => (
+                <ActionGroup key={g.key} label={g.label} count={g.count} first={i === 0}>
+                  {g.items}
+                </ActionGroup>
+              ))}
             </Stack>
           )
         )}
@@ -1068,28 +1025,6 @@ function JobsListScreen({ navigation, route }) {
   );
 }
 
-const listStyles = StyleSheet.create({
-  header: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.sm,
-  },
-  filterRow: {
-    paddingBottom: spacing.sm,
-  },
-  filterScroll: {
-    paddingHorizontal: spacing.lg,
-    gap: spacing.sm,
-  },
-  content: {
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.xl * 2,
-  },
-  rowCard: {
-    marginBottom: 0,
-  },
-});
-
 // ─── Default export — branches on whether a specific booking was opened ──────
 // No bookingId (Business "Jobs" tab root, CARD-24) → the operational-hub
 // feed above (Today/Upcoming/Needs action/Past). bookingId present (from a
@@ -1104,6 +1039,9 @@ export default function JobManagementScreen({ navigation, route }) {
 }
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
+// One StyleSheet for the whole file. This used to be five separate blocks
+// (skeleton / avatar / chip / list / screen) scattered between the components
+// they styled, which made it impossible to see what the file actually defines.
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
@@ -1125,14 +1063,6 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.sm,
   },
 
-  filtersRow: {
-    paddingBottom: spacing.sm,
-  },
-  filtersScroll: {
-    paddingHorizontal: spacing.lg,
-    gap: spacing.sm,
-  },
-
   content: {
     paddingTop: spacing.sm,
     paddingBottom: spacing.xl * 2,
@@ -1149,7 +1079,66 @@ const styles = StyleSheet.create({
     minHeight: 0,
   },
 
-  errorIcon: { fontSize: 36 },
+  // Loading skeleton
+  skeletonCard: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.card,
+    padding: spacing.base,
+  },
+
+  // Avatar circle
+  avatarCircle: {
+    width: 42,
+    height: 42,
+    borderRadius: radius.avatar,
+    backgroundColor: colors.accentMuted,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarCircleActive: {
+    borderColor: colors.accent,
+    borderWidth: 1.5,
+  },
+
+  // Status chip
+  statusChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+  },
+  statusChipDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+
+  // Jobs list (no bookingId)
+  listHeader: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
+  },
+  listTabsRow: {
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.sm,
+  },
+  listContent: {
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.xl * 2,
+  },
+  actionGroupDivided: {
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    paddingTop: spacing.lg,
+  },
 
   // Modal
   modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)' },
@@ -1186,5 +1175,4 @@ const styles = StyleSheet.create({
     borderRadius: radius.input,
     paddingHorizontal: spacing.sm,
   },
-  empCheck: { fontSize: 18 },
 });
