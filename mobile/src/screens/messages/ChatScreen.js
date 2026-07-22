@@ -1,5 +1,5 @@
 import {
-  View, FlatList, TextInput, StyleSheet,
+  View, FlatList, TextInput, StyleSheet, ActivityIndicator,
   KeyboardAvoidingView, Platform, TouchableOpacity,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -14,19 +14,57 @@ import Animated, {
   withDelay,
   FadeIn,
   FadeOut,
-  interpolate,
 } from 'react-native-reanimated';
 import { Feather } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../services/api';
+import * as haptics from '../../services/haptics';
 import i18n from '../../i18n';
 import Text from '../../components/Text';
 import Surface from '../../components/Surface';
 import Inline from '../../components/Inline';
 import Button from '../../components/Button';
 import ConfirmDateCard from '../../components/ConfirmDateCard';
+import ChatBookingSummary from '../../components/ChatBookingSummary';
+import QuoteBubble from '../../components/QuoteBubble';
 import { SkeletonBox } from '../../components/Skeleton';
 import { colors, spacing, radius, shadows, motion } from '../../theme/tokens';
+
+// Newest-first server rows and locally-appended optimistic rows are merged by
+// id (see load()); this keeps the whole thread in send order regardless of
+// source. Optimistic rows stamp sent_at = now, so they trail the last server
+// row until their real timestamp arrives.
+function msgSortKey(m) {
+  return m?.sent_at || m?.created_at || '';
+}
+
+function mergeMessagesById(prev, serverItems) {
+  const byId = new Map();
+  // Local rows first (preserves optimistic sends + just-confirmed rows the
+  // server poll may not have echoed yet), then overlay server truth.
+  for (const m of prev) byId.set(m.id, m);
+  for (const m of serverItems) byId.set(m.id, m);
+  return Array.from(byId.values()).sort((a, b) => {
+    const ka = msgSortKey(a);
+    const kb = msgSortKey(b);
+    return ka < kb ? -1 : ka > kb ? 1 : 0;
+  });
+}
+
+// Swap an optimistic row for the server row it turned into. A poll landing
+// between the POST leaving and its response arriving can have merged that same
+// server row in already, so this drops the temp row and re-merges rather than
+// mapping in place — mapping in place would leave the same id twice and trip
+// FlatList's duplicate-key warning.
+function reconcileSent(prev, tempId, serverMsg) {
+  const withoutTemp = prev.filter((m) => m.id !== tempId);
+  if (!serverMsg?.id) return withoutTemp;
+  return mergeMessagesById(withoutTemp, [{ ...serverMsg, _optimistic: false }]);
+}
+
+// Messages per fetch — both the newest-page poll and each older page pulled in
+// when the user scrolls back. Matches the API's default `limit`.
+const PAGE_SIZE = 50;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -136,7 +174,7 @@ function MessageBubble({ item, isMine }) {
             { color: isMine ? colors.textSecondary : colors.textSecondary, opacity: isMine ? 0.65 : 1 },
           ]}
         >
-          {timeStr(item.sent_at)}
+          {item._optimistic ? 'sending…' : timeStr(item.sent_at)}
         </Text>
       </View>
     </Animated.View>
@@ -288,8 +326,23 @@ export default function ChatScreen({ navigation, route }) {
   const [error, setError] = useState(null);
   const [sending, setSending] = useState(false);
   const [isTyping, setIsTyping] = useState(false); // simulated typing indicator state
+  // Older-history paging (ported from MessageThreadScreen when the two screens
+  // were consolidated): the API returns the newest `limit` messages plus a
+  // `next_before` cursor for the page behind them.
+  const [cursor, setCursor] = useState(null);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   const listRef = useRef(null);
+  // load() runs on a 5s interval, so it must not close over `messages` — the
+  // ref gives the poll's error branch a current view without re-creating the
+  // callback (and restarting the interval) on every new message.
+  const messagesRef = useRef([]);
+  useEffect(() => { messagesRef.current = messages; }, [messages]);
+  // Only auto-scroll to the newest message when the user is already parked at
+  // the bottom; otherwise a poll (or a page of older history) would yank them
+  // away from what they were reading.
+  const atBottomRef = useRef(true);
 
   // Booking payload — feeds two things: (1) self-heal the header name when
   // the caller didn't pass one (already used elsewhere, e.g.
@@ -313,49 +366,125 @@ export default function ChatScreen({ navigation, route }) {
     || threadInfo?.post_title
     || null;
 
-  const load = useCallback(async () => {
-    setError(null);
+  // #9 — tap the header through to the counterpart business's profile. Only a
+  // client has a business to open (the provider's counterpart is the client,
+  // who has no public profile), and BusinessProfile is a client-stack route.
+  // Booking threads read business_id straight off bookingMeta (already
+  // fetched); interest threads get it from threadInfo (backend now includes
+  // business_id in the interest payload).
+  const counterpartBusinessId = bookingMeta?.business_id || threadInfo?.business_id || null;
+  const canOpenBusiness = user?.role === 'client' && !!counterpartBusinessId;
+  const openBusinessProfile = useCallback(() => {
+    if (!canOpenBusiness) return;
+    navigation.navigate('BusinessProfile', { businessId: counterpartBusinessId });
+  }, [canOpenBusiness, counterpartBusinessId, navigation]);
+
+  const load = useCallback(async (before = null) => {
+    if (!before) setError(null);
+    const path = interestId ? `/messages/interest/${interestId}` : `/messages/${bookingId}`;
     try {
-      const data = interestId
-        ? await api.get(`/messages/interest/${interestId}`)
-        : await api.get(`/messages/${bookingId}`);
-      // API returns { items: [...] } newest-first; the list renders oldest-first
+      // _silent: this screen renders its own inline error + Retry, so the
+      // global failure toast would just spam once every poll.
+      const data = await api.get(path, {
+        params: { limit: PAGE_SIZE, ...(before ? { before } : {}) },
+        _silent: true,
+      });
+      // API returns { items: [...] } newest-first; the list renders oldest-first.
+      // Merge by id instead of replacing wholesale — a full replace mid-send
+      // WIPED the just-sent (optimistic) message whenever a 5s poll landed
+      // before the POST resolved (#7b). mergeMessagesById keeps local rows the
+      // server hasn't echoed yet and overlays server truth on the rest, and it
+      // is also what makes paging older history safe alongside the poll.
       const items = Array.isArray(data) ? data : (data?.items || []);
-      setMessages([...items].reverse());
+      const serverItems = [...items].reverse();
+      setMessages((prev) => mergeMessagesById(prev, serverItems));
       if (data?.interest) setThreadInfo(data.interest);
+      // Only the first page (and each older page) moves the cursor; a poll
+      // re-reads the newest page and must not clobber it.
+      if (before || cursor === null) {
+        setCursor(data?.next_before ?? null);
+        setHasMore(items.length === PAGE_SIZE);
+      }
     } catch (err) {
-      if (!messages.length) {
+      if (!messagesRef.current.length) {
         setError(err?.message || 'Could not load messages.');
       }
       // keep stale on background poll failure
     } finally {
       setLoading(false);
     }
+    // `cursor` is deliberately excluded: it changes as the user pages back and
+    // would otherwise restart the 5s poll interval below on every page.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bookingId, interestId]);
 
   useEffect(() => { load(); }, [load]);
 
   // Poll for new messages every 5 seconds
   useEffect(() => {
-    const timer = setInterval(load, 5000);
+    const timer = setInterval(() => load(), 5000);
     return () => clearInterval(timer);
   }, [load]);
+
+  const loadOlder = useCallback(async () => {
+    if (!hasMore || loadingMore || !cursor) return;
+    setLoadingMore(true);
+    await load(cursor);
+    setLoadingMore(false);
+  }, [cursor, hasMore, load, loadingMore]);
+
+  const handleScroll = useCallback((e) => {
+    const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent;
+    atBottomRef.current =
+      contentOffset.y + layoutMeasurement.height >= contentSize.height - 80;
+    if (contentOffset.y <= 24) loadOlder();
+  }, [loadOlder]);
 
   async function handleSend() {
     const trimmed = text.trim();
     if (!trimmed || sending) return;
-    setSending(true);
+
+    // Optimistic send (#7a) — append the bubble immediately, then reconcile
+    // with the server row on success. Ported from MessageThreadScreen, which
+    // already did this; ChatScreen previously awaited the POST before showing
+    // anything, so the message sat invisible for the whole round-trip.
+    const tempId = `_opt_${Date.now()}`;
+    const now = new Date().toISOString();
+    const optimistic = {
+      id: tempId,
+      content: trimmed,
+      sender_id: user?.id,
+      sent_at: now,
+      created_at: now,
+      _optimistic: true,
+    };
+
     setText('');
+    setMessages((prev) => [...prev, optimistic]);
+    setSending(true);
+    atBottomRef.current = true;
+    setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 60);
+
     try {
-      const res = await api.post('/messages/', {
-        ...(interestId ? { interest_id: interestId } : { booking_id: bookingId }),
-        content: trimmed,
-      });
+      haptics.buttonTap();
+      // _retryNonGet lets the retry interceptor re-issue this POST after a
+      // network error / cold start (#7d); the server dedupes a retried write
+      // via the X-Send-Retry header so a committed-but-lost send won't double.
+      const res = await api.post(
+        '/messages/',
+        {
+          ...(interestId ? { interest_id: interestId } : { booking_id: bookingId }),
+          content: trimmed,
+        },
+        { _retryNonGet: true },
+      );
       const msg = res?.data || res;
-      setMessages((prev) => [...prev, msg]);
-      setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 100);
+      setMessages((prev) => reconcileSent(prev, tempId, msg));
+      setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 60);
     } catch {
-      setText(trimmed); // restore on failure
+      // Drop the optimistic bubble and restore the draft so the user can retry.
+      setMessages((prev) => prev.filter((m) => m.id !== tempId));
+      setText(trimmed);
     } finally {
       setSending(false);
     }
@@ -394,7 +523,9 @@ export default function ChatScreen({ navigation, route }) {
           <View style={[styles.center, { gap: spacing.md }]}>
             <Feather name="alert-triangle" size={32} color={colors.warning} strokeWidth={1.8} />
             <Text variant="small" color="secondary">{error}</Text>
-            <Button variant="primary" label="Retry" onPress={load} style={{ minWidth: 120 }} />
+            {/* Arrow-wrapped: onPress hands the press event through, and load()
+                would read it as the `before` cursor. */}
+            <Button variant="primary" label="Retry" onPress={() => load()} style={{ minWidth: 120 }} />
           </View>
         </View>
       </View>
@@ -418,7 +549,15 @@ export default function ChatScreen({ navigation, route }) {
         <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={8}>
           <Feather name="arrow-left" size={20} color={colors.textPrimary} strokeWidth={2} />
         </TouchableOpacity>
-        <View style={styles.headerCenter}>
+        <TouchableOpacity
+          style={styles.headerCenter}
+          onPress={openBusinessProfile}
+          disabled={!canOpenBusiness}
+          activeOpacity={canOpenBusiness ? 0.6 : 1}
+          accessibilityRole={canOpenBusiness ? 'button' : undefined}
+          accessibilityLabel={canOpenBusiness ? `View ${headerName || 'business'} profile` : undefined}
+          hitSlop={6}
+        >
           <View style={styles.avatarSmall}>
             <Text
               variant="caption"
@@ -428,8 +567,15 @@ export default function ChatScreen({ navigation, route }) {
             </Text>
           </View>
           <View>
-            <Text variant="bodyMedium">{headerName || 'Chat'}</Text>
-            {threadInfo ? (
+            <Inline spacing="xs" align="center">
+              <Text variant="bodyMedium">{headerName || 'Chat'}</Text>
+              {canOpenBusiness ? (
+                <Feather name="chevron-right" size={14} color={colors.textSecondary} />
+              ) : null}
+            </Inline>
+            {/* Interest threads only: booking threads surface their quote in the
+                floating QuoteBubble, not the header subtitle. */}
+            {threadInfo && !bookingId ? (
               <Text variant="caption" color="secondary" numberOfLines={1}>
                 {[
                   threadInfo.post_title,
@@ -438,36 +584,56 @@ export default function ChatScreen({ navigation, route }) {
               </Text>
             ) : null}
           </View>
-        </View>
+        </TouchableOpacity>
         <View style={{ width: 32 }} />
       </Surface>
 
-      {/* CARD-20 — "disappearing chat" framing. A booking thread with no
-          confirmed_date yet is the pre-confirm state of D2's entry flow: the
-          job was posted without a time, so this chat is temporary until one
-          gets agreed below. It disappears the moment bookingMeta reloads
-          with a confirmed_date (ConfirmDateCard's onConfirmed callback). */}
-      {!!bookingId && !!bookingMeta && !bookingMeta.confirmed_date && (
-        <View style={{ paddingHorizontal: spacing.base, paddingTop: spacing.sm }}>
-          <Surface elevation="none" background="alt" rounded="input" padding="sm">
-            <Inline spacing="xs" align="center">
-              <Feather name="clock" size={13} color={colors.textSecondary} />
-              <Text variant="caption" color="secondary" style={{ flex: 1 }}>
-                {i18n.t('chat.disappearingBanner')}
-              </Text>
-            </Inline>
-          </Surface>
-        </View>
-      )}
-
-      {/* Pinned confirm-date handshake card (UBER-3) — booking threads only,
-          two-sided: either party proposes times, the other accepts. Passing
-          this screen's own bookingMeta down (once loaded) and wiring
-          onConfirmed back to loadBookingMeta keeps the two in sync, so the
-          disappearing-chat banner above drops the moment a date confirms. */}
+      {/* ── Pinned booking context ─────────────────────────────────────────
+          Owner direction (2026-07-21): once a quote is accepted the thread's
+          identity IS the booking, so the booking is the primary content —
+          summary card first, and the quote that started it demoted to the
+          collapsed bubble underneath. Interest (pre-booking) threads have no
+          booking yet: their quote stays in the header subtitle instead. */}
       {!!bookingId && (
-        <View style={{ paddingHorizontal: spacing.base, paddingTop: spacing.sm }}>
-          <ConfirmDateCard bookingId={bookingId} booking={bookingMeta} onConfirmed={loadBookingMeta} />
+        <View style={styles.contextBlock}>
+          <ChatBookingSummary
+            booking={bookingMeta}
+            onPress={() => navigation.navigate('BookingDetails', { bookingId })}
+          />
+
+          {/* #13 — the demoted quote. Backend already hands booking threads
+              their quote context under `interest` (_quote_context_for_booking),
+              so this is presentation only. */}
+          <QuoteBubble quote={threadInfo} />
+
+          {/* CARD-20 — "disappearing chat" framing. A booking thread with no
+              confirmed_date yet is the pre-confirm state of D2's entry flow:
+              the job was posted without a time, so this chat is temporary
+              until one gets agreed below. It disappears the moment bookingMeta
+              reloads with a confirmed_date (ConfirmDateCard's onConfirmed). */}
+          {!!bookingMeta && !bookingMeta.confirmed_date && (
+            <Surface elevation="none" background="alt" rounded="input" padding="sm">
+              <Inline spacing="xs" align="center">
+                <Feather name="clock" size={13} color={colors.textSecondary} />
+                <Text variant="caption" color="secondary" style={{ flex: 1 }}>
+                  {i18n.t('chat.disappearingBanner')}
+                </Text>
+              </Inline>
+            </Surface>
+          )}
+
+          {/* Pinned confirm-date handshake card (UBER-3) — two-sided: either
+              party proposes times, the other accepts. Suppressed once a date
+              is confirmed: its confirmed banner would just repeat the date the
+              summary card above already shows, and chat needs the room. */}
+          {!bookingMeta?.confirmed_date && (
+            <ConfirmDateCard
+              bookingId={bookingId}
+              booking={bookingMeta}
+              onConfirmed={loadBookingMeta}
+              style={{ marginBottom: 0 }}
+            />
+          )}
         </View>
       )}
 
@@ -475,10 +641,23 @@ export default function ChatScreen({ navigation, route }) {
       <FlatList
         ref={listRef}
         data={messages}
-        keyExtractor={(m) => m.id}
+        keyExtractor={(m) => String(m.id)}
         contentContainerStyle={styles.messagesList}
         showsVerticalScrollIndicator={false}
-        onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: false })}
+        onScroll={handleScroll}
+        scrollEventThrottle={64}
+        onContentSizeChange={() => {
+          // Stay put when the user has scrolled up to read (or just pulled in a
+          // page of older history) — only follow the tail when they're at it.
+          if (atBottomRef.current) listRef.current?.scrollToEnd({ animated: false });
+        }}
+        ListHeaderComponent={
+          loadingMore ? (
+            <View style={styles.loadMore}>
+              <ActivityIndicator size="small" color={colors.accent} />
+            </View>
+          ) : null
+        }
         ListEmptyComponent={
           <View style={styles.emptyChat}>
             <View style={styles.emptyIcon}>
@@ -560,10 +739,23 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 
+  // Pinned booking context above the thread: summary card → quote bubble →
+  // schedule state. One owner of the vertical rhythm so the blocks never
+  // double up their own margins.
+  contextBlock: {
+    paddingHorizontal: spacing.base,
+    paddingTop: spacing.sm,
+    gap: spacing.sm,
+  },
+
   messagesList: {
     paddingHorizontal: spacing.base,
     paddingTop: spacing.base,
     paddingBottom: spacing.sm,
+  },
+  loadMore: {
+    alignItems: 'center',
+    paddingVertical: spacing.sm,
   },
 
   emptyChat: {
