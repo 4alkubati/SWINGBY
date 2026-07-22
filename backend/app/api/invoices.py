@@ -19,7 +19,7 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 
-from app.deps import get_current_user
+from app.deps import get_current_user, get_current_user_allow_query_token
 from app.supabase_client import supabase
 
 logger = logging.getLogger(__name__)
@@ -157,7 +157,10 @@ def get_invoice(booking_id: str, current_user: dict = Depends(get_current_user))
 
 
 @router.get("/{booking_id}/invoice.pdf")
-def get_invoice_pdf(booking_id: str, current_user: dict = Depends(get_current_user)):
+def get_invoice_pdf(
+    booking_id: str,
+    current_user: dict = Depends(get_current_user_allow_query_token),
+):
     data = _load_invoice_data(booking_id, current_user)
 
     try:

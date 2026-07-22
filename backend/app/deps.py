@@ -1,22 +1,13 @@
-from fastapi import Header, HTTPException
+from fastapi import Header, HTTPException, Query
 from app.supabase_client import supabase
 
 
-def get_current_user(authorization: str | None = Header(None)) -> dict:
+def _user_from_token(token: str) -> dict:
+    """Validate a Supabase JWT and return the matching `users` row.
+
+    Shared core for every auth entry point. Raises 401 for a bad/expired token
+    and 403 for a valid token on a suspended / soft-deleted account.
     """
-    Validates the Bearer JWT from Supabase Auth and returns the matching
-    row from our `users` table (includes id, role, first_name, etc.).
-
-    The header is Optional so a missing token yields 401, not a 422
-    validation error.
-    """
-    if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(
-            status_code=401, detail="Missing or invalid Authorization header"
-        )
-
-    token = authorization[7:]  # strip "Bearer "
-
     try:
         auth_res = supabase.auth.get_user(token)
         if not auth_res.user:
@@ -46,3 +37,45 @@ def get_current_user(authorization: str | None = Header(None)) -> dict:
         raise
     except Exception:
         raise HTTPException(status_code=401, detail="Invalid or expired token")
+
+
+def get_current_user(authorization: str | None = Header(None)) -> dict:
+    """
+    Validates the Bearer JWT from Supabase Auth and returns the matching
+    row from our `users` table (includes id, role, first_name, etc.).
+
+    The header is Optional so a missing token yields 401, not a 422
+    validation error.
+    """
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(
+            status_code=401, detail="Missing or invalid Authorization header"
+        )
+
+    return _user_from_token(authorization[7:])  # strip "Bearer "
+
+
+def get_current_user_allow_query_token(
+    authorization: str | None = Header(None),
+    token: str | None = Query(None),
+) -> dict:
+    """Auth dependency that accepts the JWT via the Authorization header OR a
+    ``?token=`` query param.
+
+    NARROW USE ONLY — this exists for the invoice-PDF route, which the mobile
+    client opens with ``Linking.openURL`` (the system browser, which cannot
+    attach an Authorization header). The header is preferred when present.
+
+    SECURITY NOTE: a token in the query string can leak into server/access
+    logs and browser history. It is a short-lived Supabase JWT over HTTPS, and
+    this is scoped to a single read-only PDF endpoint. Post-beta this should
+    move to an in-app authenticated download (expo-file-system ``downloadAsync``
+    with the header + ``expo-sharing``) so no token ever rides in a URL.
+    """
+    if authorization and authorization.startswith("Bearer "):
+        return _user_from_token(authorization[7:])
+    if token:
+        return _user_from_token(token)
+    raise HTTPException(
+        status_code=401, detail="Missing or invalid Authorization header"
+    )
