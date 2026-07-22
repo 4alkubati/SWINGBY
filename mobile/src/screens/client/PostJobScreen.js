@@ -77,14 +77,16 @@ function derivePreferredDate(dateText, timeText) {
 const STEPS_OPEN = ['Category', 'Details', 'Budget', 'Confirm'];
 const STEPS_TARGETED = ['Details', 'Budget', 'Confirm'];
 
-// CARD-12 — Rebook. There is no backend primitive to target a post at one
-// specific business (service_posts has no business_id column, and bookings
-// are only ever created via interests.accept_interest on an OPEN post — see
-// backend/app/api/service_posts.py + interests.py). So "rebook the same
-// business" honestly means: pre-fill the same open-marketplace wizard with
-// the prior job's category/address/budget and a description that names the
-// business, saving the client the re-typing. It does NOT guarantee only that
-// business sees the post. Flagged plainly in the CARD-12 report.
+// CARD-12 — Rebook. Pre-fills the open-marketplace wizard with the prior job's
+// category/address/budget and a description naming the business, saving the
+// client the re-typing. It still posts OPENLY — it does not guarantee only that
+// business sees the post.
+//
+// LANE C note: the primitive that was missing when this was written now exists
+// (service_posts.target_business_id + the `targeted` path below), so rebook
+// COULD be switched to a targeted post. Deliberately left alone here to keep
+// this change scoped to "Book now"; switching it is a CARD-12 follow-up and a
+// real behaviour change (the client would stop receiving competing quotes).
 function RebookBanner({ businessName }) {
   if (!businessName) return null;
   return (
@@ -782,6 +784,13 @@ export default function PostJobScreen() {
       setPhotos([]);
       setStep(0);
 
+      // Both flows land on the post's quote inbox. On the targeted flow this is
+      // the closest thing to "land in the quote chat with that business" that
+      // is actually reachable: a message thread hangs off an INTEREST (see
+      // backend/app/api/messages.py `_get_interest_thread`), and the target
+      // business hasn't quoted yet, so no thread exists to open. QuoteComparison
+      // is the waiting room — the moment the business replies, its quote appears
+      // here and taps straight through to the chat.
       navigation.navigate('QuoteComparison', {
         postId: post.id,
         postTitle: post.title,
