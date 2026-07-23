@@ -30,7 +30,7 @@ const FAQS = [
     id: '2',
     question: 'How do quotes get accepted?',
     answer:
-      'After posting a job, you\'ll receive quotes from interested businesses in the Quotes tab. Each quote shows the business name, star rating, jobs completed, and their price. Tap "Select" on the one you want. A booking is created instantly, and both you and the business receive a confirmation. Chat opens only after a booking is confirmed.',
+      'After posting a job, you\'ll receive quotes from interested businesses in the Quotes tab. Each quote shows the business name, star rating, jobs completed, and their price. You can message a business directly from its quote to ask questions before you decide. Tap "Select" on the one you want. A booking is created instantly, both you and the business receive a confirmation, and the conversation carries over to the booking.',
   },
   {
     id: '3',

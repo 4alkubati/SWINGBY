@@ -21,6 +21,17 @@ const api = {
 
 export default api;
 
+// The real module exports the axios instance as a NAMED export too, plus a set
+// of helpers that AuthContext and the upload paths call at mount time. Missing
+// any of these makes every screen look like it crashes on render.
+export { api };
+export const BASE_URL = 'http://test.local';
+export const setAuthToken = jest.fn();
+export const getAuthToken = jest.fn(() => null);
+export const getBaseUrl = jest.fn(() => 'http://test.local');
+export const setUnauthorizedHandler = jest.fn();
+export const uploadFile = jest.fn(() => Promise.resolve({ url: 'http://test.local/f.jpg' }));
+
 // Mirror the real module's named export so `import { extractMessage }` works.
 export function extractMessage(error) {
   const detail = error?.response?.data?.detail;

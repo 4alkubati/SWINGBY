@@ -28,11 +28,35 @@ const REASONS = [
 ];
 
 // ─── penalty calculation ──────────────────────────────────────────────────────
-function computePenalty(scheduledDateISO, quotedPrice) {
-  if (!scheduledDateISO || !quotedPrice) return { pct: 0.25, amount: 0 };
-  const hoursUntil = (new Date(scheduledDateISO).getTime() - Date.now()) / 3600000;
-  const pct = hoursUntil > 48 ? 0.25 : 0.50;
-  return { pct, amount: parseFloat((quotedPrice * pct).toFixed(2)) };
+// MIRRORS backend app/services/escrow.py -> classify_cancellation_timing() +
+// compute_cancellation_split() for a CLIENT cancel (product ruling 2026-07-21).
+// These two MUST stay in lockstep: the figure a client reads here before
+// confirming is what the server actually charges.
+//
+//   no_date  (no confirmed date)  ->  0%   full refund
+//   early    (>48h away)          ->  0%   full refund
+//   late     (0–48h away)         -> 25%
+//   no_show  (date already past)  -> 50%
+//
+// The previous version charged 25%/50% split at 48h, which overstated the fee
+// at EVERY tier — it showed a 25% fee to clients who were owed a full refund.
+export const CLIENT_CANCEL_PCT = { no_date: 0, early: 0, late: 0.25, no_show: 0.5 };
+
+export function classifyTiming(scheduledDateISO, now = Date.now()) {
+  if (!scheduledDateISO) return 'no_date';
+  const t = new Date(scheduledDateISO).getTime();
+  if (Number.isNaN(t)) return 'no_date';
+  const hoursUntil = (t - now) / 3600000;
+  if (hoursUntil < 0) return 'no_show';
+  if (hoursUntil <= 48) return 'late';
+  return 'early';
+}
+
+export function computePenalty(scheduledDateISO, quotedPrice, now = Date.now()) {
+  const price = parseFloat(quotedPrice) || 0;
+  const timing = classifyTiming(scheduledDateISO, now);
+  const pct = CLIENT_CANCEL_PCT[timing];
+  return { timing, pct, amount: parseFloat((price * pct).toFixed(2)) };
 }
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
@@ -40,7 +64,7 @@ export default function CancellationFlowScreen({ route, navigation }) {
   const insets = useSafeAreaInsets();
   const { bookingId, scheduledDate, quotedPrice = 0 } = route.params ?? {};
 
-  const { pct, amount } = useMemo(
+  const { pct, amount, timing } = useMemo(
     () => computePenalty(scheduledDate, quotedPrice),
     [scheduledDate, quotedPrice]
   );
@@ -65,7 +89,13 @@ export default function CancellationFlowScreen({ route, navigation }) {
         reason: finalReason,
       });
       const finalAmount = typeof res?.penalty_amount === 'number' ? res.penalty_amount : amount;
-      toast.show({ type: 'info', text1: 'Booking cancelled', text2: `A $${finalAmount.toFixed(2)} fee applies.` });
+      toast.show({
+        type: 'info',
+        text1: 'Booking cancelled',
+        text2: finalAmount > 0
+          ? `A $${finalAmount.toFixed(2)} fee applies.`
+          : 'You will be refunded in full.',
+      });
       navigation.popToTop();
     } catch (err) {
       toast.show({ type: 'error', text1: 'Could not cancel', text2: err.message });
@@ -110,16 +140,20 @@ export default function CancellationFlowScreen({ route, navigation }) {
             <Text style={styles.penaltyLabel}>Cancellation Fee</Text>
             <Text style={styles.penaltyAmount}>${amount.toFixed(2)}</Text>
             <Text style={styles.penaltyDesc}>
-              {(pct * 100).toFixed(0)}% of your ${parseFloat(quotedPrice).toFixed(2)} booking will be
-              charged as a cancellation fee
-              {pct >= 0.5 ? ' (within 48h of scheduled date)' : ''}.
+              {pct === 0
+                ? `You'll be refunded the full $${parseFloat(quotedPrice || 0).toFixed(2)}. No cancellation fee applies.`
+                : `${(pct * 100).toFixed(0)}% of your $${parseFloat(quotedPrice || 0).toFixed(2)} booking will be charged as a cancellation fee.`}
             </Text>
             <View style={styles.penaltyTip}>
               <Feather name="info" size={13} color={colors.accentText} strokeWidth={1.8} />
               <Text style={styles.penaltyTipText}>
-                {pct >= 0.5
-                  ? 'Within 48h of your booking — 50% fee applies.'
-                  : 'More than 48h away — 25% fee applies.'}
+                {timing === 'no_show'
+                  ? 'The scheduled time has already passed — 50% fee applies.'
+                  : timing === 'late'
+                    ? 'Within 48h of your booking — 25% fee applies.'
+                    : timing === 'early'
+                      ? 'More than 48h away — free cancellation, full refund.'
+                      : 'No date confirmed yet — free cancellation, full refund.'}
               </Text>
             </View>
           </View>
@@ -171,7 +205,9 @@ export default function CancellationFlowScreen({ route, navigation }) {
               ? <ActivityIndicator color={colors.textPrimary} />
               : (
                 <Text style={styles.confirmBtnText}>
-                  Cancel booking and pay ${amount.toFixed(2)} fee
+                  {amount > 0
+                    ? `Cancel booking and pay $${amount.toFixed(2)} fee`
+                    : 'Cancel booking — full refund'}
                 </Text>
               )
             }

@@ -16,7 +16,13 @@ import Button from '../../components/Button';
 import Stack from '../../components/Stack';
 import i18n from '../../i18n';
 
-export default function BiometricLockScreen({ onUnlocked, onUseDifferentAccount }) {
+// `onUnlocked` is supplied by App.js in the real app, but this screen auto-runs
+// biometrics on mount — so if it is ever rendered without the prop (a nav-level
+// mistake, or a future reuse of the screen) a SUCCESSFUL unlock throws and locks
+// the user out of their own app. Default both callbacks to no-ops.
+const NOOP = () => {};
+
+export default function BiometricLockScreen({ onUnlocked = NOOP, onUseDifferentAccount = NOOP }) {
   const insets = useSafeAreaInsets();
   const [authenticating, setAuthenticating] = useState(false);
   const [declined, setDeclined] = useState(false);
