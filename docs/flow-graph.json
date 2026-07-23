@@ -1006,42 +1006,42 @@
       "from_screen": "BookingDetailsScreen",
       "to_route": "MessageThread",
       "method": "navigate",
-      "line": 352
+      "line": 407
     },
     {
       "from_file": "mobile/src/screens/client/BookingDetailsScreen.js",
       "from_screen": "BookingDetailsScreen",
       "to_route": "CancellationFlow",
       "method": "navigate",
-      "line": 356
+      "line": 411
     },
     {
       "from_file": "mobile/src/screens/client/BookingDetailsScreen.js",
       "from_screen": "BookingDetailsScreen",
       "to_route": "PostJob",
       "method": "navigate",
-      "line": 371
+      "line": 426
     },
     {
       "from_file": "mobile/src/screens/client/BookingDetailsScreen.js",
       "from_screen": "BookingDetailsScreen",
       "to_route": "BusinessProfile",
       "method": "navigate",
-      "line": 566
+      "line": 632
     },
     {
       "from_file": "mobile/src/screens/client/BookingDetailsScreen.js",
       "from_screen": "BookingDetailsScreen",
       "to_route": "Invoice",
       "method": "navigate",
-      "line": 722
+      "line": 793
     },
     {
       "from_file": "mobile/src/screens/client/BookingDetailsScreen.js",
       "from_screen": "BookingDetailsScreen",
       "to_route": "DisputeFlow",
       "method": "navigate",
-      "line": 747
+      "line": 820
     },
     {
       "from_file": "mobile/src/screens/messages/ChatScreen.js",
@@ -1132,37 +1132,37 @@
       "method": "POST",
       "path": "/auth/login",
       "file": "backend/app/api/auth.py",
-      "line": 324
+      "line": 340
     },
     {
       "method": "POST",
       "path": "/auth/refresh",
       "file": "backend/app/api/auth.py",
-      "line": 394
+      "line": 425
     },
     {
       "method": "POST",
       "path": "/auth/logout",
       "file": "backend/app/api/auth.py",
-      "line": 435
+      "line": 466
     },
     {
       "method": "POST",
       "path": "/auth/forgot-password",
       "file": "backend/app/api/auth.py",
-      "line": 455
+      "line": 486
     },
     {
       "method": "GET",
       "path": "/auth/me",
       "file": "backend/app/api/auth.py",
-      "line": 481
+      "line": 512
     },
     {
       "method": "PATCH",
       "path": "/auth/me",
       "file": "backend/app/api/auth.py",
-      "line": 516
+      "line": 547
     },
     {
       "method": "POST",
@@ -1944,25 +1944,25 @@
       "from_file": "mobile/src/screens/client/BookingDetailsScreen.js",
       "method": "GET",
       "path": "/bookings/${bookingId}",
-      "line": 294
+      "line": 349
     },
     {
       "from_file": "mobile/src/screens/client/BookingDetailsScreen.js",
       "method": "GET",
       "path": "/payments/${bookingId}",
-      "line": 295
+      "line": 350
     },
     {
       "from_file": "mobile/src/screens/client/BookingDetailsScreen.js",
       "method": "POST",
       "path": "/bookings/${bookingId}/mark-paid-offplatform",
-      "line": 388
+      "line": 443
     },
     {
       "from_file": "mobile/src/screens/client/BookingDetailsScreen.js",
       "method": "POST",
       "path": "/payments/stripe/checkout/${bookingId}",
-      "line": 403
+      "line": 458
     },
     {
       "from_file": "mobile/src/screens/messages/ChatScreen.js",

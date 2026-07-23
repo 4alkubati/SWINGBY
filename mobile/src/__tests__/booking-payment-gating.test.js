@@ -1,16 +1,20 @@
 // Double-charge regression suite.
 //
 // The bug: BookingDetailsScreen decided "already paid?" by testing
-// `payment.status !== 'paid_full'`. Migration 0001 (applied 2026-07-22) renamed
-// the payments vocabulary — a successful Stripe capture now writes
-// status = 'held', and 'paid_full' is rejected by the CHECK constraint outright.
-// So after a client paid successfully the booking still looked unpaid, the
+// `payment.status !== 'paid_full'`. A successful Stripe capture writes
+// status = 'held' (the capture webhook in backend/app/api/payments_stripe.py),
+// and nothing anywhere writes 'paid_full' — so the test could never be false.
+// After a client paid successfully the booking still looked unpaid, the
 // "Pay with card" button stayed on screen, and a second tap opened a SECOND
-// Stripe checkout. Confirmed live: the one production row with a real
-// PaymentIntent behind it sits at status='held'.
+// Stripe checkout. Confirmed against the live database: the one production row
+// with a real PaymentIntent behind it sits at status='held'.
 //
 // The same stale test also kept "Mark as paid (cash / e-transfer)" on screen
 // after a card payment, offering to record the job as paid twice over.
+//
+// Also covers the other action-bar bug on this screen: "Cancel booking" was
+// shown to business users, whose navigator has no CancellationFlow route, so
+// the button silently did nothing.
 
 import React from 'react';
 import { render } from '@testing-library/react-native';
@@ -51,20 +55,32 @@ jest.mock('@react-navigation/native', () => {
 // The gate under test is `user?.role === 'client' && isAwaitingPayment(...)`.
 // A real AuthProvider in a test has no session, so user would be null and the
 // button would be absent for the WRONG reason — every assertion below would
-// pass vacuously. Pin a signed-in client so the role half is always satisfied
-// and only the payment half is actually being measured.
+// pass vacuously. Pin a signed-in user so the role half is controlled and only
+// the half under test is actually being measured. Mutable so the cancel-button
+// tests can switch to a business owner.
+const CLIENT_USER = { id: 'u1', role: 'client', first_name: 'Test', last_name: 'Client' };
+const OWNER_USER = {
+  id: 'u2', role: 'business_owner', first_name: 'Biz', last_name: 'Owner',
+  business_id: 'biz1',
+};
+let mockUser = CLIENT_USER;
+
 jest.mock('../context/AuthContext', () => {
   const actual = jest.requireActual('../context/AuthContext');
   return {
     ...actual,
     useAuth: () => ({
-      user: { id: 'u1', role: 'client', first_name: 'Test', last_name: 'Client' },
+      user: mockUser,
       token: 'test-token',
       isLoading: false,
       logout: jest.fn(),
       updateUser: jest.fn(),
     }),
   };
+});
+
+beforeEach(() => {
+  mockUser = CLIENT_USER;
 });
 
 // ─── The predicates ──────────────────────────────────────────────────────────
@@ -83,7 +99,7 @@ describe('isAwaitingPayment — the gate on "Pay with card"', () => {
   it('is FALSE for every other state where money has moved', () => {
     for (const status of [
       'partial_released', 'fully_released', 'paid_off_platform', 'refunded',
-      'paid_full', 'partial', // legacy names, in case an env lags the migration
+      'paid_full', 'partial', // older rows / older backends
     ]) {
       expect(isAwaitingPayment({ status })).toBe(false);
     }
@@ -117,7 +133,7 @@ describe('hasBeenCharged — money has actually moved', () => {
     }
   });
 
-  it('still recognises the pre-migration names', () => {
+  it('still recognises the older names an earlier backend wrote', () => {
     expect(hasBeenCharged({ status: 'paid_full' })).toBe(true);
     expect(hasBeenCharged({ status: 'partial' })).toBe(true);
   });
@@ -235,5 +251,52 @@ describe('BookingDetailsScreen does not invite a second charge', () => {
     });
     const { queryByText } = await renderScreen();
     expect(queryByText('Mark as paid (cash / e-transfer)')).not.toBeNull();
+  });
+});
+
+describe('BookingDetailsScreen does not show a cancel button that goes nowhere', () => {
+  // CancellationFlow is registered in ClientNavigator only, and its copy is
+  // written from the client's side. `canCancel` had no role gate, so a business
+  // user on a confirmed booking saw "Cancel booking" and tapping it did nothing.
+  it('shows "Cancel booking" to the client on a confirmed booking', async () => {
+    mockUser = CLIENT_USER;
+    const { queryByText } = await renderWithPayment({
+      status: 'pending_payment',
+      total_charged: 200,
+    });
+    expect(queryByText('Cancel booking')).not.toBeNull();
+  });
+
+  it('hides "Cancel booking" from a business user on the same booking', async () => {
+    mockUser = OWNER_USER;
+    const { queryByText } = await renderWithPayment({
+      status: 'pending_payment',
+      total_charged: 200,
+    });
+    expect(queryByText('Cancel booking')).toBeNull();
+  });
+
+  it('hides "Cancel booking" from an employee too', async () => {
+    mockUser = { id: 'u3', role: 'employee', first_name: 'Emp', last_name: 'Loyee' };
+    const { queryByText } = await renderWithPayment({
+      status: 'pending_payment',
+      total_charged: 200,
+    });
+    expect(queryByText('Cancel booking')).toBeNull();
+  });
+
+  it('still hides it from the client once the job is no longer cancellable', async () => {
+    mockUser = CLIENT_USER;
+    api.get.mockImplementation((path) => {
+      if (path.startsWith('/bookings/')) {
+        return Promise.resolve({ ...BOOKING, status: 'completed' });
+      }
+      if (path.startsWith('/payments/')) {
+        return Promise.resolve({ status: 'fully_released', total_charged: 200 });
+      }
+      return Promise.resolve({});
+    });
+    const { queryByText } = await renderScreen();
+    expect(queryByText('Cancel booking')).toBeNull();
   });
 });

@@ -120,16 +120,20 @@ function paymentPillLabel(status) {
 
 // ── Has money actually been taken for this booking? ──────────────────────────
 //
-// Migration 0001 (applied 2026-07-22) renamed the payments vocabulary:
-//   pending -> pending_payment,  partial -> partial_released,  paid_full -> held
-// A successful Stripe capture now writes status='held' (payments_stripe.py),
-// and the old value is rejected by the CHECK constraint outright.
+// A successful Stripe capture writes payments.status = 'held' — see the capture
+// webhook in backend/app/api/payments_stripe.py, and verified against the live
+// database: the one production payments row with a real PaymentIntent behind it
+// sits at 'held'. Nothing anywhere writes 'paid_full'.
 //
-// This screen still tested `status !== 'paid_full'` to decide whether to offer
-// "Pay with card". Nothing writes 'paid_full' any more, so the button survived
-// a successful payment and a second tap opened a SECOND Stripe checkout — a
-// real double charge. The one production row with a live PaymentIntent behind
-// it sits at 'held'.
+// This screen tested `status !== 'paid_full'` to decide whether to offer "Pay
+// with card". Since nothing ever writes that value, the test could never be
+// false: the button survived a successful payment and a second tap opened a
+// SECOND Stripe checkout — a real double charge.
+//
+// (Several comments in this repo attribute the rename to a "migration 0001".
+// No such migration exists in supabase_migrations.schema_migrations and no such
+// file is in the tree. The behaviour below is keyed to what the backend
+// observably writes, not to that story.)
 //
 // Deliberately an ALLOWLIST of "still owes money", not a blocklist of paid
 // states. Polarity matters: with a blocklist, any status nobody thought of
@@ -138,8 +142,8 @@ function paymentPillLabel(status) {
 // same unknown falls through to "don't offer to pay", which at worst sends the
 // client to cash / e-transfer. Never charge twice to save a tap.
 const AWAITING_PAYMENT = new Set([
-  'pending_payment', // current
-  'pending',         // legacy (pre-0001)
+  'pending_payment', // what the backend writes today
+  'pending',         // older rows / older backends
   'failed',          // capture failed — paying again is the correct action
 ]);
 
@@ -151,11 +155,12 @@ export function isAwaitingPayment(payment) {
 }
 
 // Money has been captured — held in escrow, partly released, fully released, or
-// settled off-platform. Covers both vocabularies so a half-migrated environment
-// still reads correctly.
+// settled off-platform. The older names are kept because rows written by an
+// earlier backend may still carry them; backend/app/services/escrow.py accepts
+// both sets for exactly the same reason.
 const CAPTURED = new Set([
   'held', 'partial_released', 'fully_released', 'paid_off_platform',
-  'paid_full', 'partial', // legacy (pre-0001)
+  'paid_full', 'partial', // older rows / older backends
 ]);
 
 export function hasBeenCharged(payment) {
@@ -522,7 +527,18 @@ export default function BookingDetailsScreen({ route, navigation }) {
   const workerJobs = worker.job_count ?? worker.review_count ?? 0;
 
   const payPill = paymentPillStyle(booking?.payment_status);
-  const canCancel = ['confirmed', 'on_the_way'].includes(booking?.status);
+  // Clients only. CancellationFlow is registered in ClientNavigator alone, and
+  // its copy is written from the client's side ("you may be charged a
+  // cancellation fee"), so a business user tapping this hit a route their
+  // navigator has never heard of — the button simply did nothing.
+  //
+  // Registering the route for businesses would be the wrong fix: the screen
+  // would quote the client penalty ladder to the wrong party. The backend does
+  // allow either side to cancel, so a business-side cancel path is a real gap —
+  // but it needs its own flow and its own copy, which is a product decision.
+  // Until that exists, don't show a button that goes nowhere.
+  const canCancel =
+    user?.role === 'client' && ['confirmed', 'on_the_way'].includes(booking?.status);
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg, paddingTop: insets.top }}>
