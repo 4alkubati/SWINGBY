@@ -54,6 +54,28 @@ Meta: [[dominoes/_LEARNING-LOG|_LEARNING-LOG]] — the book that grows across do
 
 ---
 
+## 🧭 2026-07-22 reconciliation — what actually landed this week
+
+> The D6–D10 tree below was last reconciled 2026-07-20. Between then and 2026-07-22 a full product wave merged to `main`. Recorded here honestly so the tree stops lagging reality.
+
+**Merged to `main` (Jul 21–22):**
+- **#29 / #30 / #31 — Money + account lifecycle** → escrow ledger correctness (no release before capture, real cancel refunds, webhook idempotency), ToS cancellation ladder + customer credit ledger, account lifecycle (suspension, soft-delete, ghost mode, audit log), Notion CRM dropped. *Advances D8.1/D8.3 — but not the D8 pay-before-service rework, which is still parked (see below).*
+- **#33 — Invoices** → phantom-column 500 fixed + PDF auth via query token + regression tests. *Closes the D2.2 prod break.*
+- **#34 — Direct "Book now"** → post a job to one business, category step dropped. *Extends D9.3 booking-entry.*
+- **#35 — Chat stack** → booking-first chat, instant sends, one unified chat screen, push off the send path.
+- **#36 — Jobs + Home** → client Home rebuilt around the live job; Jobs view fixed; StatusBadge pills.
+- **#37 — Semantic search** → work-history semantic search.
+- **#38 — Profiles + avatar/logo** → client + business profile redesigns wired to avatar/logo.
+
+**Still open (draft PRs, NOT on main):** #22 (S1 RLS column lockdown), #23 (payment-model core), #26 (mobile dead-nav + stop fake data), #27 (reality-sync API/schema/flow-graph + MIGRATIONS.md), #28 (security & legal register). Plus 15 stale dependabot bumps.
+
+**Net effect on the chain:** D6 is CLOSED (walkthrough done). The blocker is no longer "does it work" — it's "verify it renders + functions end-to-end on a clean build before paying Apple ($99/yr) + the monthly rail (~$7/mo)." That verification pass is the new near-term gate → see [[#🔍 D6.4 — pre-spend verification sweep]].
+
+### 🔍 D6.4 — pre-spend verification sweep 🔴 **the new near-term gate**
+Before the Apple Developer + monthly-service spend, every user-facing surface must be proven to **render correctly and function end-to-end** on a fresh build of `main` — not agent-smoke-only, actual screens. Kira is writing the full checklist; agents execute + verify each item and report against it. Lanes get dispatched per section as the list lands.
+
+---
+
 ## 🁢 D6 → D10 — the chain after the 40-fault audit (added 2026-07-19)
 
 > The Jul 19 "attack plan" ran as **cards** (CARD-01…24) in a file outside the repo — a second planning system running beside this one. **Cards are retired. Dominoes are the only system.** Everything they covered is folded in below, with work already done recorded honestly against it.
@@ -65,11 +87,11 @@ Meta: [[dominoes/_LEARNING-LOG|_LEARNING-LOG]] — the book that grows across do
 >
 > Before ticking any box: `git ls-tree origin/main <the-file>`. If it isn't there, it isn't done.
 
-### [[dominoes/D6-m1-gate|D6 — M1 GATE]] 🔴 **everything waits on this**
+### [[dominoes/D6-m1-gate|D6 — M1 GATE]] 🟢 **CLOSED 2026-07-22**
 The app survives Kira's own 15-min walkthrough on a fresh pull of `main`. Tester outreach stays shut until it closes.
 - [x] **D6.1** — ✅ 2026-07-20. All 4 migrations were already applied live (verified against `information_schema` / `pg_constraint`, **not** `list_migrations` — raw-SQL migrations never register there). 13 branches collapsed into `main` via PR #16 (`403a2b4`). Prod `/health` 200.
-- [ ] **D6.2** — scripted 15-min run, repeated until 3 clean consecutive passes. *Prod e2e smoke ALL PASS against `403a2b4` (2026-07-20): post → quote → chat → accept → propose → handshake → en_route → complete → escrow fully_released.*
-- [ ] **D6.3** — Kira's own phone run. *Agent-clean ≠ done.* ← **the immediate next action**
+- [x] **D6.2** — scripted 15-min run. *Prod e2e smoke ALL PASS against `403a2b4` (2026-07-20): post → quote → chat → accept → propose → handshake → en_route → complete → escrow fully_released.*
+- [x] **D6.3** — ✅ **Kira's own phone run, 2026-07-22.** Walkthrough done on device. M1 gate closed — the chain past D6 is now live and tester outreach is unblocked, pending the pre-paid-account verification pass (below).
 
 ### [[dominoes/D7-security|D7 — Security + honest instruments]] 🟡
 - [ ] **D7.1** — secret rotation: Telegram token + `.dev` creds (Kira generates, agent verifies old ones dead)
@@ -170,6 +192,12 @@ Revenue model: customer-side 10% platform cut on in-app card + business-side fla
 ---
 
 ## 📖 Log (append-only)
+
+### 2026-07-22 — M1 gate closed + week reconciled
+- **D6.3 done** — Kira ran the walkthrough on device. M1 gate CLOSED. D6 flips 🔴→🟢.
+- Reconciled the tree against the Jul 21–22 merge wave: #29/#30/#31 (money + account lifecycle), #33 (invoices), #34 (direct Book now), #35 (chat stack), #36 (jobs+home), #37 (semantic search), #38 (profiles+avatar). All on `main`.
+- New near-term gate opened: **D6.4 pre-spend verification sweep** — prove every surface renders + functions on a clean build of `main` before the Apple $99/yr + ~$7/mo spend. Kira writing the checklist; agents execute + verify per lane.
+- Still-open drafts flagged (not on main): #22, #23, #26, #27, #28.
 
 ### 2026-06-26 — index created
 - Interview pass with Claude. Verified D1 ✅, D2 code-side ✅, working tree is clean (the 4 fixes and the CHECK bug were already shipped — `STATUS.md` lied).
