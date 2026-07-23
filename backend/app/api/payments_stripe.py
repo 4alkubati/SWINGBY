@@ -353,7 +353,10 @@ def _mark_payment_paid(
         return
 
     update: dict = {
-        "status": "paid_full",
+        # Vocabulary per migration 0001 (applied 2026-07-22): 'paid_full' was
+        # renamed to 'held' and is no longer accepted by payments_status_check.
+        # Writing the old value 500s the capture webhook with a 23514.
+        "status": "held",
         # Capture confirmed → the full charge is now held in escrow.
         "escrow_held": float(payment.get("total_charged") or 0),
     }
