@@ -26,9 +26,10 @@ try {
     Easing: { linear: () => {}, inOut: () => () => {} },
   }));
 }
-try {
-  jest.mock('react-native-worklets', () => ({ __esModule: true }));
-} catch (_) { /* not installed independently */ }
+// NOTE: do NOT stub `react-native-worklets`. Reanimated's runtime calls
+// `createSerializable` from it during import; an empty stub makes 35 screens
+// fail to import with "createSerializable is not a function". The real package
+// is transformed fine by the preset — leave it alone.
 
 // --- Gesture handler ---------------------------------------------------------
 try {

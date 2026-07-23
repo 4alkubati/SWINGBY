@@ -129,6 +129,8 @@ flowchart LR
   ActiveBooking --> MyDisputes
   ActiveBooking --> CancellationFlow
   Home --> PostJob
+  Home --> ActiveBooking
+  Home --> My_Jobs
   Home --> Notifications
   Home --> Search
   Home --> NearbyMap
@@ -153,6 +155,8 @@ flowchart LR
   BookingDetails --> BusinessProfile
   BookingDetails --> Invoice
   BookingDetails --> DisputeFlow
+  Chat --> BusinessProfile
+  Chat --> BookingDetails
   Messages --> Chat
   Messages --> BookingDetails
   BottomNav --> PostJob
@@ -187,6 +191,6 @@ Mobile calls to endpoints **not exposed by the backend** (path params normalized
 
 - Navigators: **4**  
 - Registered screens: **56**  
-- Navigation edges: **100**  
-- Backend routes: **78**  
-- Mobile API calls: **91**  
+- Navigation edges: **104**  
+- Backend routes: **81**  
+- Mobile API calls: **87**  
