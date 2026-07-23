@@ -216,7 +216,15 @@ export default function ProfileScreen({ navigation }) {
                 <MenuRow icon="heart" label="Favorites" onPress={() => navigation.navigate('Favorites')} />
               )}
               <MenuRow icon="bell" label="Notifications" onPress={() => navigation.navigate('NotificationsCenter')} />
-              <MenuRow icon="credit-card" label="Payment methods" onPress={() => navigation.navigate('PaymentMethod')} />
+              {/* PaymentMethodScreen is a Stripe placeholder — nothing can be
+                  added yet. Badged so the row does not promise a working
+                  feature; the screen itself explains cash / e-transfer. */}
+              <MenuRow
+                icon="credit-card"
+                label="Payment methods"
+                badge="Soon"
+                onPress={() => navigation.navigate('PaymentMethod')}
+              />
               {user?.role === 'client' && (
                 <MenuRow
                   icon="gift"

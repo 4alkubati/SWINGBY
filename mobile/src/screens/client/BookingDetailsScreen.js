@@ -472,7 +472,16 @@ export default function BookingDetailsScreen({ route, navigation }) {
   const workerJobs = worker.job_count ?? worker.review_count ?? 0;
 
   const payPill = paymentPillStyle(booking?.payment_status);
-  const canCancel = ['confirmed', 'on_the_way'].includes(booking?.status);
+  // Client-only. `CancellationFlow` is a ClientNavigator-only route AND the
+  // screen itself is written entirely from the client's point of view (reasons
+  // like "Found another provider", "Cancel booking and pay $X fee", the penalty
+  // framed as money the CLIENT is charged). The backend PATCH
+  // /bookings/{id}/cancel does accept either party, so business-side
+  // cancellation is a real gap — it needs its own flow with business-side copy
+  // and penalty semantics, not this screen. Until then the button is hidden for
+  // business users instead of navigating to a route that does not exist.
+  const canCancel =
+    user?.role === 'client' && ['confirmed', 'on_the_way'].includes(booking?.status);
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg, paddingTop: insets.top }}>
