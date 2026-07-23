@@ -42,23 +42,28 @@ sudo chown -R "$USER":"$USER" mobile/node_modules
 cd mobile && npm install
 ```
 
-**Every time:**
+**Every time — on the server:**
 
 ```bash
-# 1. build the app pointed at the harness proxy
-tools/walkthrough/build-app.sh
+tools/walkthrough/serve.sh          # builds on first run, then serves on :8080
+```
 
-# 2. serve it
-node tools/walkthrough/server.js --app tools/walkthrough/appbuild
+**Then, on your laptop** (see "Reaching it" — the camera needs a secure context):
 
-# 3. open http://localhost:8080, calibrate, walk, talk
+```bash
+ssh -L 8080:localhost:8080 l3thal@kiraserver.tail67bdd7.ts.net
+# then open http://localhost:8080, calibrate, walk, talk
+```
 
-# 4. read the verdict
+**Back on the server, read the verdict:**
+
+```bash
 python3 tools/walkthrough/diagnose.py tools/walkthrough/sessions/<stamp>
 ```
 
-Server options: `--api <url>` (default is the Render backend), `--port`,
-`--out`.
+`serve.sh` honours `PORT` and `API` env vars. The underlying
+`server.js` takes `--app`, `--api`, `--port`, `--out` if you want to run it
+directly.
 
 ### Point it at a local backend instead
 
@@ -73,28 +78,63 @@ node tools/walkthrough/server.js --app tools/walkthrough/appbuild --api http://1
 
 ---
 
-## The camera will not work over the LAN
+## Reaching it
 
-Browsers only hand over a camera or microphone in a **secure context**:
-`localhost`, or real HTTPS. `http://10.0.0.168:8080` gives you neither — the
-page loads, and gaze and voice silently refuse to start. The harness detects
-this and says so rather than looking broken.
+This server is **headless** — no screen, no browser. That is fine: the recorder
+runs in *your laptop's* browser (it needs your laptop's webcam anyway). The
+server only serves the page. So the question is how your laptop reaches it.
 
-Pick one:
+Two things are true here and they pull in different directions:
 
-**Run the browser on the same machine as the server** — simplest, nothing to
-configure, `http://localhost:8080` is a secure context by definition.
+- The camera and microphone only start in a **secure context** — `localhost`,
+  or real HTTPS. Plain `http://<some-ip>:8080` gives neither, and gaze/voice
+  silently refuse to start. The harness detects this and says so.
+- Your laptop reaches this box over **Tailscale** (`kiraserver.tail67bdd7.ts.net`
+  / `100.101.241.0`), not the home-LAN IP `10.0.0.168` — that only works when
+  the laptop is physically on the home network.
 
-**Tailscale HTTPS** — for driving it from the Windows laptop against the Linux
-box. Gives a real certificate, no warnings:
+### SSH tunnel — recommended, works today
+
+`localhost` is a secure context by definition, so tunnel the port to your
+laptop's localhost. Nothing to install on the server, no admin console, no
+browser flags:
 
 ```bash
-tailscale serve --bg 8080
-tailscale serve status     # prints the https://kiraserver.<tailnet>.ts.net URL
+# on the laptop (Windows has ssh built in — use PowerShell or Terminal)
+ssh -L 8080:localhost:8080 l3thal@kiraserver.tail67bdd7.ts.net
 ```
 
-**Chrome flag** — last resort. Open `chrome://flags/#unsafely-treat-insecure-origin-as-secure`,
-add `http://10.0.0.168:8080`, enable, restart.
+Leave that open and browse to **http://localhost:8080**. Camera and mic work.
+
+### Tailscale HTTPS — nicer, but a one-time setup
+
+If you'd rather open a real URL with no tunnel, enable HTTPS certs for the
+tailnet **once** in the admin console (https://login.tailscale.com/admin/dns →
+"HTTPS Certificates" → Enable), then on the server:
+
+```bash
+sudo tailscale set --operator=$USER   # once, so serve doesn't need root
+tailscale serve --bg 8080
+```
+
+Then **https://kiraserver.tail67bdd7.ts.net** works from any device on the
+tailnet, camera included. (Right now certs are **not** enabled, so this path
+does nothing until that toggle is flipped.)
+
+### Just to look, no eye tracking
+
+If you only want to see the app and don't need the camera, skip all of the
+above and open **http://100.101.241.0:8080/app/** directly over Tailscale.
+
+---
+
+### While we're here: CasaOS
+
+Same lesson. CasaOS listens on port 80 of this box. From the laptop it is
+**http://100.101.241.0/** (the Tailscale IP) or
+**http://kiraserver.tail67bdd7.ts.net/** — not `http://10.0.0.168`, which is
+why it looked unreachable. It serves plain HTTP and needs no camera, so no
+tunnel or cert is required for it.
 
 ---
 
