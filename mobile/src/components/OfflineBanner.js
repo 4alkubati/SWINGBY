@@ -6,7 +6,7 @@
 //     ...rest of tree
 //   </SafeAreaProvider>
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, Animated, StyleSheet } from 'react-native';
+import { View, Text, Animated, StyleSheet, Platform } from 'react-native';
 import NetInfo from '@react-native-community/netinfo';
 import { colors } from '../theme/tokens';
 
@@ -17,6 +17,11 @@ export default function OfflineBanner() {
   const translateY = useRef(new Animated.Value(-BANNER_HEIGHT)).current;
 
   useEffect(() => {
+    // On web, NetInfo's reachability probe fails inside sandboxed/proxied
+    // contexts (e.g. the walkthrough harness) and reports "offline" while the
+    // network is fine — a false positive. The mobile app doesn't ship to web,
+    // so skip the banner there rather than trust an unreliable signal.
+    if (Platform.OS === 'web') return undefined;
     const unsubscribe = NetInfo.addEventListener((state) => {
       const isOffline =
         state.isConnected === false && state.isInternetReachable === false;

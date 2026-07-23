@@ -56,6 +56,17 @@ export async function refreshSession() {
   }
 }
 
+// Revoke the session server-side (invalidates the refresh token in Supabase),
+// then the caller clears local storage. Best-effort and _silent: a network
+// failure here must not block the user from logging out locally.
+export async function logout() {
+  try {
+    await api.post('/auth/logout', {}, { _silent: true });
+  } catch {
+    // ignore — local clear still happens in AuthContext.logout
+  }
+}
+
 export async function getStoredToken() {
   return SecureStore.getItemAsync(TOKEN_KEY);
 }

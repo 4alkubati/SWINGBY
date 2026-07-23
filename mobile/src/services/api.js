@@ -148,14 +148,16 @@ export function extractMessage(error) {
   return 'Something went wrong';
 }
 
-// Requests that must NOT trigger a token refresh on 401. A 401 from these is a
-// real credential/refresh failure, not an expired access token — refreshing (or
-// retrying) would loop or mislead.
+// Requests whose own 401 is part of the auth flow, not a "your session expired
+// mid-use" signal. These must NOT trigger a token refresh OR the global logout
+// handler — otherwise logging out with an already-expired token (logout itself
+// 401s → refresh fails → logout → …) loops forever.
 function isAuthEndpoint(url) {
   return (
     url?.startsWith('/auth/login') ||
     url?.startsWith('/auth/refresh') ||
-    url?.startsWith('/auth/signup')
+    url?.startsWith('/auth/signup') ||
+    url?.startsWith('/auth/logout')
   );
 }
 
@@ -204,7 +206,10 @@ api.interceptors.response.use(
       }
     }
 
-    if (status === 401 && _onUnauthorized) {
+    // Auth endpoints manage their own 401s (bad creds, expired refresh, logging
+    // out with a dead token) — never bounce the user via the global handler for
+    // those, or logout re-enters itself.
+    if (status === 401 && _onUnauthorized && !isAuthEndpoint(config?.url)) {
       _onUnauthorized();
     }
     const msg = extractMessage(error);

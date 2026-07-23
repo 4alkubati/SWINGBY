@@ -431,14 +431,11 @@ export default function ActiveBookingScreen({ navigation, route }) {
                         )}
                       </View>
                     </TouchableOpacity>
-                    <TouchableOpacity
-                      style={styles.callBtn}
-                      accessibilityRole="button"
-                      accessibilityLabel="Call"
-                      onPress={() => {}}
-                    >
-                      <Feather name="phone" size={18} color={colors.textPrimary} />
-                    </TouchableOpacity>
+                    {/* No Call button: bookings carry no phone number (the model
+                        is chat-first — see the spam-shield note in CLAUDE.md), so
+                        a phone icon here was a dead control. Contact goes through
+                        Message. Adding real calling is a deliberate feature:
+                        phone in the booking payload + a tel: link + masking. */}
                     <TouchableOpacity
                       style={styles.messageBtn}
                       accessibilityRole="button"
@@ -716,16 +713,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
     marginTop: 2,
-  },
-  callBtn: {
-    width: 42,
-    height: 42,
-    borderRadius: 12,
-    backgroundColor: colors.surfaceAlt,
-    borderWidth: 1,
-    borderColor: colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   messageBtn: {
     width: 42,

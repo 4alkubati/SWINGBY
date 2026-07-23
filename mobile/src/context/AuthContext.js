@@ -3,6 +3,7 @@ import { setAuthToken, setUnauthorizedHandler, setRefreshHandler, getAuthToken }
 import {
   login as svcLogin,
   signup as svcSignup,
+  logout as svcLogout,
   getStoredToken,
   clearToken,
   getMe,
@@ -98,6 +99,9 @@ export function AuthProvider({ children }) {
   }
 
   async function logout() {
+    // Revoke server-side first (best-effort) so the stored refresh token can't
+    // outlive the logout, then clear everything locally.
+    await svcLogout();
     await clearToken();
     setAuthToken(null);
     setToken(null);
