@@ -303,7 +303,21 @@ def signup(request: Request, data: SignupRequest):
 
         # If email confirmation is OFF, Supabase returns a live session immediately.
         # Return the token so the mobile app can auto-login.
-        access_token = res.session.access_token if res.session else None
+        #
+        # Unlike login, `res.session` is legitimately None here when email
+        # confirmation is ON — the account exists but no session is issued until
+        # the user confirms. So every field is read behind that check and all
+        # three stay None on the confirmation path; the mobile client already
+        # branches on a missing access_token (services/auth.js signup).
+        #
+        # refresh_token rides along for the same reason as login: without it the
+        # ~1h access token expiry logs an auto-logged-in signup straight back out.
+        session = res.session
+        access_token = session.access_token if session else None
+        refresh_token_value = (
+            getattr(session, "refresh_token", None) if session else None
+        )
+        expires_in = getattr(session, "expires_in", None) if session else None
         return {
             "message": (
                 "Account created"
@@ -312,6 +326,8 @@ def signup(request: Request, data: SignupRequest):
             ),
             "user_id": user_id,
             "access_token": access_token,
+            "refresh_token": refresh_token_value,
+            "expires_in": expires_in,
         }
 
     except HTTPException:
@@ -374,8 +390,23 @@ def login(request: Request, data: LoginRequest):
         except Exception:
             logger.warning("auth.login ghost-clear failed", user_id=user_id)
 
+        # A Supabase access token expires after ~1h. Hand back the refresh token
+        # too so the mobile client can mint a new one instead of dumping the
+        # user at the login screen mid-session (the 401 interceptor in
+        # mobile/src/services/api.js consumes these). /auth/refresh already
+        # returns the same pair; login never did, so there was nothing to
+        # refresh WITH and the refresh path could never fire.
+        #
+        # getattr rather than attribute access: `res.session` is a Supabase
+        # object whose shape we don't control, and a missing refresh_token must
+        # degrade to None (client stores nothing, behaves as before) rather than
+        # 500 an otherwise-valid login. The session itself is already known
+        # non-None — the `if not res.session` guard above returns 401.
+        session = res.session
         return {
-            "access_token": res.session.access_token,
+            "access_token": session.access_token,
+            "refresh_token": getattr(session, "refresh_token", None),
+            "expires_in": getattr(session, "expires_in", None),
             "user_id": user_id,
             "role": user_data.get("role"),
             "first_name": user_data.get("first_name"),

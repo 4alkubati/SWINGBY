@@ -110,8 +110,61 @@ function paymentPillLabel(status) {
     case 'held':               return 'HELD';
     case 'refunded':           return 'REFUNDED';
     case 'paid_off_platform':  return 'PAID (OFF-PLATFORM)';
-    default:                   return (status || 'pending').toUpperCase();
+    case 'pending_payment':    return 'PENDING';
+    case 'pending':            return 'PENDING';
+    case 'failed':             return 'PAYMENT FAILED';
+    // Never shout a raw column value with underscores at the user.
+    default:                   return (status || 'pending').replace(/_/g, ' ').toUpperCase();
   }
+}
+
+// ── Has money actually been taken for this booking? ──────────────────────────
+//
+// A successful Stripe capture writes payments.status = 'held' — see the capture
+// webhook in backend/app/api/payments_stripe.py, and verified against the live
+// database: the one production payments row with a real PaymentIntent behind it
+// sits at 'held'. Nothing anywhere writes 'paid_full'.
+//
+// This screen tested `status !== 'paid_full'` to decide whether to offer "Pay
+// with card". Since nothing ever writes that value, the test could never be
+// false: the button survived a successful payment and a second tap opened a
+// SECOND Stripe checkout — a real double charge.
+//
+// (Several comments in this repo attribute the rename to a "migration 0001".
+// No such migration exists in supabase_migrations.schema_migrations and no such
+// file is in the tree. The behaviour below is keyed to what the backend
+// observably writes, not to that story.)
+//
+// Deliberately an ALLOWLIST of "still owes money", not a blocklist of paid
+// states. Polarity matters: with a blocklist, any status nobody thought of
+// (a future rename, a state this build predates, a failed fetch) falls through
+// to "show the pay button" and risks charging twice. With an allowlist the
+// same unknown falls through to "don't offer to pay", which at worst sends the
+// client to cash / e-transfer. Never charge twice to save a tap.
+const AWAITING_PAYMENT = new Set([
+  'pending_payment', // what the backend writes today
+  'pending',         // older rows / older backends
+  'failed',          // capture failed — paying again is the correct action
+]);
+
+export function isAwaitingPayment(payment) {
+  // No payments row in hand (404, or the parallel fetch failed) means we do not
+  // KNOW whether money was taken. Stay silent rather than risk a double charge.
+  if (!payment) return false;
+  return AWAITING_PAYMENT.has((payment.status || '').toLowerCase());
+}
+
+// Money has been captured — held in escrow, partly released, fully released, or
+// settled off-platform. The older names are kept because rows written by an
+// earlier backend may still carry them; backend/app/services/escrow.py accepts
+// both sets for exactly the same reason.
+const CAPTURED = new Set([
+  'held', 'partial_released', 'fully_released', 'paid_off_platform',
+  'paid_full', 'partial', // older rows / older backends
+]);
+
+export function hasBeenCharged(payment) {
+  return CAPTURED.has((payment?.status || '').toLowerCase());
 }
 
 // ─── Escrow milestones (read-only) ─────────────────────────────────────────────
@@ -288,8 +341,10 @@ export default function BookingDetailsScreen({ route, navigation }) {
     setStatus('loading');
     try {
       // bookings.payment_status only tracks escrow release (held|partial_released|fully_released).
-      // The client-paid-Stripe-in-full signal lives on payments.status = 'paid_full', so we
-      // fetch the payments row in parallel and use it to gate the "Pay with card" button.
+      // Whether the client has actually been charged lives on the payments row —
+      // a successful Stripe capture writes payments.status = 'held' (NOT the
+      // retired 'paid_full'; see isAwaitingPayment above). Fetch it in parallel
+      // and use it to gate the "Pay with card" button.
       const [bookingData, paymentData] = await Promise.all([
         api.get(`/bookings/${bookingId}`),
         api.get(`/payments/${bookingId}`).catch(() => null),
@@ -472,7 +527,18 @@ export default function BookingDetailsScreen({ route, navigation }) {
   const workerJobs = worker.job_count ?? worker.review_count ?? 0;
 
   const payPill = paymentPillStyle(booking?.payment_status);
-  const canCancel = ['confirmed', 'on_the_way'].includes(booking?.status);
+  // Clients only. CancellationFlow is registered in ClientNavigator alone, and
+  // its copy is written from the client's side ("you may be charged a
+  // cancellation fee"), so a business user tapping this hit a route their
+  // navigator has never heard of — the button simply did nothing.
+  //
+  // Registering the route for businesses would be the wrong fix: the screen
+  // would quote the client penalty ladder to the wrong party. The backend does
+  // allow either side to cancel, so a business-side cancel path is a real gap —
+  // but it needs its own flow and its own copy, which is a product decision.
+  // Until that exists, don't show a button that goes nowhere.
+  const canCancel =
+    user?.role === 'client' && ['confirmed', 'on_the_way'].includes(booking?.status);
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg, paddingTop: insets.top }}>
@@ -692,7 +758,12 @@ export default function BookingDetailsScreen({ route, navigation }) {
           />
         )}
 
-        {user?.role === 'client' && (payment?.status !== 'paid_full' && payment?.status !== 'paid_off_platform' && booking?.status !== 'cancelled') && (
+        {/* Offer to pay ONLY while the booking genuinely still owes money.
+            See isAwaitingPayment — a captured payment now reads 'held', and
+            testing for the retired 'paid_full' left this button on screen
+            after a successful charge, so a second tap opened a second Stripe
+            checkout. */}
+        {user?.role === 'client' && isAwaitingPayment(payment) && booking?.status !== 'cancelled' && (
           <Button
             variant="primary"
             label={payInFlight ? 'Opening checkout…' : 'Pay with card'}
@@ -702,10 +773,10 @@ export default function BookingDetailsScreen({ route, navigation }) {
           />
         )}
 
-        {/* D2.3 — off-platform mark-as-paid (only after completion, only if unpaid) */}
-        {booking?.status === 'completed'
-          && payment?.status !== 'paid_full'
-          && payment?.status !== 'paid_off_platform' && (
+        {/* D2.3 — off-platform mark-as-paid (only after completion, only if
+            unpaid). Same stale-vocabulary bug: after a card capture the status
+            is 'held', so this offered to ALSO record the job as paid in cash. */}
+        {booking?.status === 'completed' && isAwaitingPayment(payment) && (
           <Button
             variant="secondary"
             label="Mark as paid (cash / e-transfer)"
@@ -724,8 +795,10 @@ export default function BookingDetailsScreen({ route, navigation }) {
           />
         )}
 
+        {/* Once the money is in, Message becomes the primary action. Was keyed
+            to the retired 'paid_full', so it never promoted itself again. */}
         <Button
-          variant={payment?.status === 'paid_full' ? 'primary' : 'ghost'}
+          variant={hasBeenCharged(payment) ? 'primary' : 'ghost'}
           label="Message"
           onPress={handleMessage}
           icon={<Feather name="message-circle" size={18} color={colors.textPrimary} />}

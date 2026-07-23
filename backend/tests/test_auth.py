@@ -298,3 +298,187 @@ class TestGetMe:
             assert data["email"] == "test@example.com"
             assert data["first_name"] == "John"
             assert data["role"] == "client"
+
+
+class TestSessionRefreshTokenIssued:
+    """
+    The mobile client refreshes an expired access token instead of logging the
+    user out (see the 401 interceptor in mobile/src/services/api.js). That path
+    needs a refresh_token to refresh WITH. /auth/refresh always returned one,
+    but /auth/login and /auth/signup did not — so the app had nothing stored,
+    the refresh could never fire, and every session died at the ~1h access-token
+    expiry and dumped the user back at the login screen.
+
+    These tests pin the contract the mobile client depends on. No real token
+    value is ever logged or echoed — the mocks use obvious fixtures.
+    """
+
+    def test_login_returns_a_non_empty_refresh_token(self, test_client):
+        # The limiter is keyed by client IP ("testclient" for every test), so
+        # earlier login tests consume the 5/minute budget. Reset for determinism
+        # — same reason as test_login_5_failures_then_lockout_on_6th above.
+        app.state.limiter.reset()
+
+        with patch("app.api.auth.supabase") as mock_supabase, patch(
+            "app.api.auth.supabase_auth"
+        ) as mock_supabase_auth:
+            mock_user = MagicMock()
+            mock_user.id = "test-user-id"
+            mock_session = MagicMock()
+            mock_session.access_token = "fixture-access"
+            mock_session.refresh_token = "fixture-refresh"
+            mock_session.expires_in = 3600
+            mock_res = MagicMock()
+            mock_res.user = mock_user
+            mock_res.session = mock_session
+            mock_supabase_auth.auth.sign_in_with_password.return_value = mock_res
+
+            mock_supabase.table.return_value.select.return_value.eq.return_value.single.return_value.execute.return_value.data = {
+                "id": "test-user-id",
+                "role": "client",
+                "first_name": "John",
+                "last_name": "Doe",
+            }
+
+            response = test_client.post(
+                "/auth/login",
+                json={
+                    "email": "refresh-login@example.com",
+                    "password": "SecurePass123",
+                },
+            )
+
+            assert response.status_code == 200
+            data = response.json()
+            assert data.get("refresh_token"), "login must issue a refresh_token"
+            assert isinstance(data["refresh_token"], str)
+            assert data["refresh_token"] == "fixture-refresh"
+            assert data["expires_in"] == 3600
+            # The pre-existing contract must not regress.
+            assert data["access_token"] == "fixture-access"
+            assert data["user_id"] == "test-user-id"
+
+    def test_signup_returns_a_non_empty_refresh_token(self, test_client):
+        with patch("app.api.auth.supabase") as mock_supabase, patch(
+            "app.api.auth.supabase_auth"
+        ) as mock_supabase_auth, patch(
+            "app.services.analytics.httpx.post"
+        ) as mock_analytics_post:
+            mock_user = MagicMock()
+            mock_user.id = "test-user-id"
+            mock_session = MagicMock()
+            mock_session.access_token = "fixture-access"
+            mock_session.refresh_token = "fixture-refresh"
+            mock_session.expires_in = 3600
+            mock_res = MagicMock()
+            mock_res.user = mock_user
+            mock_res.session = mock_session
+            mock_supabase_auth.auth.sign_up.return_value = mock_res
+
+            mock_supabase.table.return_value.upsert.return_value.execute.return_value = (
+                None
+            )
+            mock_analytics_post.return_value = MagicMock(status_code=202)
+
+            response = test_client.post(
+                "/auth/signup",
+                json={
+                    "email": "refresh-signup@example.com",
+                    "password": "SecurePass123",
+                    "first_name": "John",
+                    "last_name": "Doe",
+                    "role": "client",
+                },
+            )
+
+            assert response.status_code == 200
+            data = response.json()
+            assert data.get("refresh_token"), "signup must issue a refresh_token"
+            assert data["refresh_token"] == "fixture-refresh"
+            assert data["expires_in"] == 3600
+            assert data["access_token"] == "fixture-access"
+
+    def test_signup_awaiting_email_confirmation_returns_no_tokens(self, test_client):
+        """
+        Email confirmation ON — Supabase issues no session. All three token
+        fields must come back None rather than raising: the account exists, the
+        user just has to confirm. The mobile client branches on a missing
+        access_token (services/auth.js) and must not blow up on the others.
+        """
+        with patch("app.api.auth.supabase") as mock_supabase, patch(
+            "app.api.auth.supabase_auth"
+        ) as mock_supabase_auth, patch(
+            "app.services.analytics.httpx.post"
+        ) as mock_analytics_post:
+            mock_user = MagicMock()
+            mock_user.id = "test-user-id"
+            mock_res = MagicMock()
+            mock_res.user = mock_user
+            mock_res.session = None  # no session until the email is confirmed
+            mock_supabase_auth.auth.sign_up.return_value = mock_res
+
+            mock_supabase.table.return_value.upsert.return_value.execute.return_value = (
+                None
+            )
+            mock_analytics_post.return_value = MagicMock(status_code=202)
+
+            response = test_client.post(
+                "/auth/signup",
+                json={
+                    "email": "confirm-me@example.com",
+                    "password": "SecurePass123",
+                    "first_name": "John",
+                    "last_name": "Doe",
+                    "role": "client",
+                },
+            )
+
+            assert response.status_code == 200
+            data = response.json()
+            assert data["access_token"] is None
+            assert data["refresh_token"] is None
+            assert data["expires_in"] is None
+            assert "confirm" in data["message"].lower()
+
+    def test_login_survives_a_session_object_with_no_refresh_token(self, test_client):
+        """
+        Defensive: `res.session` is a Supabase object whose shape we don't
+        control. A session without a refresh_token must degrade to None — the
+        client then stores nothing and behaves exactly as it did before — rather
+        than 500 an otherwise-valid login.
+        """
+        app.state.limiter.reset()
+
+        with patch("app.api.auth.supabase") as mock_supabase, patch(
+            "app.api.auth.supabase_auth"
+        ) as mock_supabase_auth:
+            mock_user = MagicMock()
+            mock_user.id = "test-user-id"
+
+            # spec= makes getattr raise AttributeError for anything not listed,
+            # which is what a real object missing the field would do.
+            mock_session = MagicMock(spec=["access_token"])
+            mock_session.access_token = "fixture-access"
+
+            mock_res = MagicMock()
+            mock_res.user = mock_user
+            mock_res.session = mock_session
+            mock_supabase_auth.auth.sign_in_with_password.return_value = mock_res
+
+            mock_supabase.table.return_value.select.return_value.eq.return_value.single.return_value.execute.return_value.data = {
+                "id": "test-user-id",
+                "role": "client",
+                "first_name": "John",
+                "last_name": "Doe",
+            }
+
+            response = test_client.post(
+                "/auth/login",
+                json={"email": "no-refresh@example.com", "password": "SecurePass123"},
+            )
+
+            assert response.status_code == 200
+            data = response.json()
+            assert data["access_token"] == "fixture-access"
+            assert data["refresh_token"] is None
+            assert data["expires_in"] is None

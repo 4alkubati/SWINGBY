@@ -202,9 +202,17 @@ export default function NotificationsCenterScreen({ navigation }) {
     setNotifications(updated);
 
     const dest = screenForType(item.type, item.meta);
-    if (dest) {
-      navigation.navigate(dest.screen, dest.params);
-    }
+    if (!dest) return;
+
+    // NotificationsCenter is registered in BOTH navigators, but some
+    // destinations are client-only (QuoteComparison lives in ClientNavigator
+    // alone). navigate() on a route the current navigator never registered
+    // throws in dev and silently dead-ends in production, so check the live
+    // route list first and just leave the row marked read.
+    const routeNames = navigation.getState?.()?.routeNames;
+    if (Array.isArray(routeNames) && !routeNames.includes(dest.screen)) return;
+
+    navigation.navigate(dest.screen, dest.params);
   };
 
   const unreadCount = notifications.filter((n) => !n.read).length;

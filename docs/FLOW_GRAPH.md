@@ -38,6 +38,8 @@ flowchart LR
     DisputeFlow["DisputeFlow"]
     Invoice["Invoice"]
     BusinessInvoices["BusinessInvoices"]
+    ProfileEdit["ProfileEdit"]
+    BusinessProfile["BusinessProfile"]
   end
   subgraph ClientNavigator
     Home["Home"]
@@ -83,7 +85,6 @@ flowchart LR
   Settings --> HelpFAQ
   Profile --> Favorites
   Profile --> NotificationsCenter
-  Profile --> PaymentMethod
   Profile --> ReferralScreen
   Profile --> Settings
   Profile --> HelpFAQ
@@ -190,7 +191,7 @@ Mobile calls to endpoints **not exposed by the backend** (path params normalized
 ## Inventory
 
 - Navigators: **4**  
-- Registered screens: **56**  
-- Navigation edges: **104**  
+- Registered screens: **58**  
+- Navigation edges: **103**  
 - Backend routes: **81**  
 - Mobile API calls: **87**  

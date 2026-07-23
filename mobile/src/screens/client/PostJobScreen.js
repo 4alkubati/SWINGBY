@@ -46,6 +46,14 @@ function formatTime(date) {
   return `${hour12}:${String(m).padStart(2, '0')} ${ampm}`;
 }
 
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+function formatDate(date) {
+  return `${DAYS[date.getDay()]}, ${MONTHS[date.getMonth()]} ${date.getDate()}`;
+}
+
 // GAP-AUDIT-2026-07-18 #64 — the wizard has no title field, so the create
 // payload used to send the full description as the title verbatim. Derive a
 // short one instead: first 60 chars of the (whitespace-collapsed) description,
@@ -56,16 +64,32 @@ function deriveTitle(text) {
   return `${collapsed.slice(0, 60).trimEnd()}…`;
 }
 
-// GAP-AUDIT-2026-07-18 #63 — the "Preferred date" field is free text (no
-// structured date picker), so best-effort parse date+time into an ISO-8601
-// string for the backend's plain-string preferred_date column. If it can't
-// be parsed, omit the field rather than send garbage.
-function derivePreferredDate(dateText, timeText) {
-  const raw = [dateText, timeText].filter((s) => s && s.trim()).join(' ').trim();
-  if (!raw) return undefined;
-  const parsed = new Date(raw);
-  if (Number.isNaN(parsed.getTime())) return undefined;
-  return parsed.toISOString();
+// Combine the picked day and the picked time into one ISO-8601 instant for the
+// backend's plain-string preferred_date column.
+//
+// Both arguments are Date objects straight from the platform picker, so there
+// is no parsing here and nothing to get wrong. That is the point. This used to
+// take two free-text strings and run `new Date("Jul 5 2:30 PM")`, which V8
+// resolves to the year *2001* because the string carries no year — so a client
+// who typed the field's own placeholder booked a job 25 years in the past, and
+// anything a person would actually type ("Saturday", "tomorrow", "July 5th")
+// failed to parse and was dropped without a word. Across 35 production posts
+// the column was never once populated.
+//
+// When no time was chosen we anchor to local noon rather than midnight: noon
+// survives conversion to UTC in every timezone without the calendar date
+// rolling to the day before or after, which midnight does not.
+// Exported for src/__tests__/post-job-date.test.js — the noon anchoring is the
+// whole reason the picked day survives the UTC conversion, so it gets asserted.
+export function derivePreferredDate(dateObj, timeObj) {
+  if (!dateObj) return undefined;
+  const combined = new Date(dateObj);
+  if (timeObj) {
+    combined.setHours(timeObj.getHours(), timeObj.getMinutes(), 0, 0);
+  } else {
+    combined.setHours(12, 0, 0, 0);
+  }
+  return combined.toISOString();
 }
 
 // Two wizards share this screen:
@@ -441,7 +465,9 @@ function StepDetails({
 // ─── Step 2: Budget ──────────────────────────────────────────────────────────
 function StepBudget({ budget, setBudget, date, setDate, time, setTime }) {
   const [showTimePicker, setShowTimePicker] = useState(false);
-  const [pickerTime, setPickerTime] = useState(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [pickerTime, setPickerTime] = useState(() => time || new Date());
+  const [pickerDate, setPickerDate] = useState(() => date || new Date());
 
   function onTimeChange(event, selected) {
     if (Platform.OS === 'android') {
@@ -451,7 +477,7 @@ function StepBudget({ budget, setBudget, date, setDate, time, setTime }) {
       setShowTimePicker(false);
       if (event?.type === 'set' && selected) {
         setPickerTime(selected);
-        setTime(formatTime(selected));
+        setTime(selected);
       }
       return;
     }
@@ -460,8 +486,26 @@ function StepBudget({ budget, setBudget, date, setDate, time, setTime }) {
   }
 
   function confirmTime() {
-    setTime(formatTime(pickerTime));
+    setTime(pickerTime);
     setShowTimePicker(false);
+  }
+
+  // Same two-platform dance as the time picker above.
+  function onDateChange(event, selected) {
+    if (Platform.OS === 'android') {
+      setShowDatePicker(false);
+      if (event?.type === 'set' && selected) {
+        setPickerDate(selected);
+        setDate(selected);
+      }
+      return;
+    }
+    if (selected) setPickerDate(selected);
+  }
+
+  function confirmDate() {
+    setDate(pickerDate);
+    setShowDatePicker(false);
   }
 
   return (
@@ -482,13 +526,19 @@ function StepBudget({ budget, setBudget, date, setDate, time, setTime }) {
             placeholder="e.g. 150"
           />
           <Inline spacing="sm" align="flex-start">
-            <TextField
-              label="Preferred date"
-              value={date}
-              onChangeText={setDate}
-              placeholder="Jul 5"
-              style={{ flex: 1 }}
-            />
+            <TouchableOpacity
+              onPress={() => setShowDatePicker(true)}
+              style={[styles.timeTrigger, { flex: 1 }]}
+              accessibilityLabel="Select preferred date"
+              accessibilityRole="button"
+            >
+              <Text variant="caption" color="secondary" style={styles.timeLabel}>
+                Preferred date
+              </Text>
+              <Text variant="body" color={date ? 'primary' : 'secondary'}>
+                {date ? formatDate(date) : 'Any day'}
+              </Text>
+            </TouchableOpacity>
             <TouchableOpacity
               onPress={() => setShowTimePicker(true)}
               style={[styles.timeTrigger, { flex: 1 }]}
@@ -499,7 +549,7 @@ function StepBudget({ budget, setBudget, date, setDate, time, setTime }) {
                 Preferred time
               </Text>
               <Text variant="body" color={time ? 'primary' : 'secondary'}>
-                {time || '10:00 AM'}
+                {time ? formatTime(time) : 'Any time'}
               </Text>
             </TouchableOpacity>
           </Inline>
@@ -544,6 +594,49 @@ function StepBudget({ budget, setBudget, date, setDate, time, setTime }) {
           />
         )
       )}
+
+      {/* minimumDate stops a client requesting a day that has already been —
+          the old free-text field happily accepted anything at all. */}
+      {Platform.OS === 'ios' ? (
+        <Modal
+          transparent
+          animationType="slide"
+          visible={showDatePicker}
+          onRequestClose={() => setShowDatePicker(false)}
+        >
+          <View style={styles.pickerOverlay}>
+            <View style={styles.pickerSheet}>
+              <View style={styles.pickerToolbar}>
+                <TouchableOpacity onPress={() => setShowDatePicker(false)}>
+                  <Text variant="body" color="secondary">Cancel</Text>
+                </TouchableOpacity>
+                <Text variant="label">Preferred date</Text>
+                <TouchableOpacity onPress={confirmDate}>
+                  <Text variant="body" color="accent" style={{ fontWeight: '600' }}>Done</Text>
+                </TouchableOpacity>
+              </View>
+              <DateTimePicker
+                value={pickerDate}
+                mode="date"
+                display="spinner"
+                minimumDate={new Date()}
+                onChange={onDateChange}
+                style={{ height: 200 }}
+              />
+            </View>
+          </View>
+        </Modal>
+      ) : (
+        showDatePicker && (
+          <DateTimePicker
+            value={pickerDate}
+            mode="date"
+            display="default"
+            minimumDate={new Date()}
+            onChange={onDateChange}
+          />
+        )
+      )}
     </StepPanel>
   );
 }
@@ -559,8 +652,8 @@ function StepConfirm({ category, description, address, budget, date, time, photo
     { label: 'Description', value: description || '—' },
     { label: 'Address', value: address || '—' },
     { label: 'Budget', value: budget ? `$${budget}` : '—' },
-    { label: 'Date', value: date || '—' },
-    { label: 'Time', value: time || '—' },
+    { label: 'Date', value: date ? formatDate(date) : 'Any day' },
+    { label: 'Time', value: time ? formatTime(time) : 'Any time' },
   ];
 
   return (
@@ -677,8 +770,9 @@ export default function PostJobScreen() {
   const [budget, setBudget] = useState(
     rebookBudget != null && rebookBudget !== '' ? String(rebookBudget) : ''
   );
-  const [date, setDate] = useState('');
-  const [time, setTime] = useState('');
+  // Date objects (or null), never strings — see derivePreferredDate.
+  const [date, setDate] = useState(null);
+  const [time, setTime] = useState(null);
   const [photos, setPhotos] = useState([]);
   const [photoUploading, setPhotoUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -779,8 +873,8 @@ export default function PostJobScreen() {
       setAddressLat(null);
       setAddressLng(null);
       setBudget('');
-      setDate('');
-      setTime('');
+      setDate(null);
+      setTime(null);
       setPhotos([]);
       setStep(0);
 

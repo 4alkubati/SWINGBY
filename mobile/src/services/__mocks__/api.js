@@ -30,6 +30,10 @@ export const setAuthToken = jest.fn();
 export const getAuthToken = jest.fn(() => null);
 export const getBaseUrl = jest.fn(() => 'http://test.local');
 export const setUnauthorizedHandler = jest.fn();
+// AuthContext registers this in a mount effect. Leaving it off the mock made
+// EVERY screen in the render sweep fail with "setRefreshHandler is not a
+// function" — the whole app tree mounts inside AuthProvider.
+export const setRefreshHandler = jest.fn();
 export const uploadFile = jest.fn(() => Promise.resolve({ url: 'http://test.local/f.jpg' }));
 
 // Mirror the real module's named export so `import { extractMessage }` works.

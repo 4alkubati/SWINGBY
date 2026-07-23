@@ -29,6 +29,7 @@ import PaymentMethodScreen from '../screens/profile/PaymentMethodScreen';
 import DisputeFlowScreen from '../screens/flows/DisputeFlowScreen';
 import InvoiceScreen from '../screens/shared/InvoiceScreen';
 import BusinessInvoicesScreen from '../screens/business/BusinessInvoicesScreen';
+import ProfileEditScreen from '../screens/profile/ProfileEditScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -115,6 +116,23 @@ export default function BusinessNavigator() {
       <Stack.Screen name="DisputeFlow" component={DisputeFlowScreen} />
       <Stack.Screen name="Invoice" component={InvoiceScreen} options={{ headerShown: false }} />
       <Stack.Screen name="BusinessInvoices" component={BusinessInvoicesScreen} />
+      {/* SettingsScreen ("Edit profile") is registered in BOTH navigators and
+          navigates to `ProfileEdit` with no role guard — business owners and
+          employees previously hit a dead route and had no way to edit their
+          own name / phone / avatar at all. ProfileEditScreen is role-neutral
+          (it only touches PATCH /auth/me + POST /uploads/image), so registering
+          it here is the fix rather than hiding the row. */}
+      <Stack.Screen name="ProfileEdit" component={ProfileEditScreen} />
+      {/* BookingDetailsScreen, EmployeeProfileScreen and ChatScreen all
+          navigate to a route literally named `BusinessProfile`. In this
+          navigator the same component was only mounted as the "My Business"
+          TAB, so the route name did not resolve and the company link was dead
+          for every business user. Register it as a stack route (same
+          component, driven by the businessId param) — one route instead of
+          per-call-site conditionals. The screen's "Book now" bar stays hidden
+          because it renders only when businessId !== user.business_id, and
+          every business-side path here passes the user's own business. */}
+      <Stack.Screen name="BusinessProfile" component={BusinessProfileScreen} />
     </Stack.Navigator>
     </ErrorBoundary>
   );

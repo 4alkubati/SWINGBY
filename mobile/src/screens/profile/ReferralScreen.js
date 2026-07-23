@@ -262,7 +262,11 @@ export default function ReferralScreen() {
           {[
             'Share your code with a friend',
             'They sign up and complete a booking',
-            'You both get $10 credit automatically',
+            // Credit APPLICATION is deliberately not wired for beta (Kira's
+            // call) — GET /me/referrals always returns credit_cents: 0, see
+            // backend/app/api/me.py. Don't claim it happens "automatically"
+            // while nothing applies it.
+            'During beta we apply the $10 credit by hand — codes and signups are tracked',
           ].map((text, i) => (
             <Inline key={i} spacing="md">
               <View
