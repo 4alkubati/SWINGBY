@@ -13,6 +13,8 @@ export const api = axios.create({
 
 let _token = null;
 let _onUnauthorized = null;
+let _refreshHandler = null;
+let _refreshInFlight = null; // single-flight lock — see the 401 handler
 
 export function setAuthToken(token) {
   _token = token;
@@ -29,6 +31,16 @@ export function getBaseUrl() {
 /** Register a callback that fires when the API returns 401 (expired/invalid token). */
 export function setUnauthorizedHandler(fn) {
   _onUnauthorized = fn;
+}
+
+/**
+ * Register the function that exchanges the stored refresh token for a fresh
+ * access token. Must resolve to the new access token, or null if the session
+ * can't be refreshed (in which case the 401 handler logs the user out).
+ * Wired up by AuthContext.
+ */
+export function setRefreshHandler(fn) {
+  _refreshHandler = fn;
 }
 
 let _reqCounter = 0;
@@ -136,19 +148,74 @@ export function extractMessage(error) {
   return 'Something went wrong';
 }
 
+// Requests whose own 401 is part of the auth flow, not a "your session expired
+// mid-use" signal. These must NOT trigger a token refresh OR the global logout
+// handler — otherwise logging out with an already-expired token (logout itself
+// 401s → refresh fails → logout → …) loops forever.
+function isAuthEndpoint(url) {
+  return (
+    url?.startsWith('/auth/login') ||
+    url?.startsWith('/auth/refresh') ||
+    url?.startsWith('/auth/signup') ||
+    url?.startsWith('/auth/logout')
+  );
+}
+
 api.interceptors.response.use(
   (response) => response.data,
-  (error) => {
+  async (error) => {
     // A retried request already ran this handler once inside its own chain —
     // it was toasted and its message extracted there. Pass it straight through.
     if (error?.[ALREADY_UNWRAPPED]) return Promise.reject(error);
-    if (error.response?.status === 401 && _onUnauthorized) {
+
+    const config = error.config;
+    const status = error.response?.status;
+
+    // ── 401: try to refresh the session before giving up ─────────────────────
+    // A Supabase access token expires after ~1h. Rather than dumping the user
+    // at the login screen, exchange the refresh token for a new access token
+    // once, replay the original request, and only log out if the refresh itself
+    // fails. Guards: never on the auth endpoints above, and never twice for the
+    // same request (config._didRefresh) so a still-401 reply can't loop.
+    if (
+      status === 401 &&
+      config &&
+      _refreshHandler &&
+      !config._didRefresh &&
+      !isAuthEndpoint(config.url)
+    ) {
+      try {
+        // Single-flight: a burst of parallel requests that all 401 share ONE
+        // refresh. Critical because Supabase rotates the refresh token on use —
+        // two concurrent refreshes with the same token would leave one caller
+        // holding a token the server just invalidated.
+        _refreshInFlight = _refreshInFlight || _refreshHandler();
+        const newToken = await _refreshInFlight;
+        _refreshInFlight = null;
+
+        if (newToken) {
+          config._didRefresh = true;
+          config.headers = config.headers || {};
+          config.headers.Authorization = `Bearer ${newToken}`;
+          const body = await api(config);
+          return { data: body, [ALREADY_UNWRAPPED]: true };
+        }
+      } catch (refreshErr) {
+        _refreshInFlight = null;
+        // fall through to the logout path below
+      }
+    }
+
+    // Auth endpoints manage their own 401s (bad creds, expired refresh, logging
+    // out with a dead token) — never bounce the user via the global handler for
+    // those, or logout re-enters itself.
+    if (status === 401 && _onUnauthorized && !isAuthEndpoint(config?.url)) {
       _onUnauthorized();
     }
     const msg = extractMessage(error);
     // Callers can opt out of the global toast by passing `_silent: true` in the
     // request config (e.g. background polls like UnreadContext).
-    if (error.response?.status !== 401 && !error.config?._silent) {
+    if (status !== 401 && !error.config?._silent) {
       showToast({ type: 'error', text1: 'Request failed', text2: msg });
     }
     return Promise.reject(new Error(msg));

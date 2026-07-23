@@ -1,6 +1,14 @@
 import { createContext, useContext, useState, useEffect, useRef } from 'react';
-import { setAuthToken, setUnauthorizedHandler } from '../services/api';
-import { login as svcLogin, signup as svcSignup, getStoredToken, clearToken, getMe } from '../services/auth';
+import { setAuthToken, setUnauthorizedHandler, setRefreshHandler, getAuthToken } from '../services/api';
+import {
+  login as svcLogin,
+  signup as svcSignup,
+  logout as svcLogout,
+  getStoredToken,
+  clearToken,
+  getMe,
+  refreshSession,
+} from '../services/auth';
 import { registerForPushAsync } from '../services/notifications';
 
 const AuthContext = createContext(null);
@@ -17,14 +25,42 @@ export function AuthProvider({ children }) {
   // Keep a stable ref so the 401 handler always has the latest logout fn.
   const logoutRef = useRef(null);
 
+  // Exchange the refresh token for a new access token and sync it into both the
+  // axios client and React state. The api.js 401 interceptor calls this (via
+  // the registered handler) and single-flights concurrent calls, so this stays
+  // simple. Returns the new token, or null when the session is truly gone.
+  async function refresh() {
+    const newToken = await refreshSession();
+    if (newToken) {
+      setAuthToken(newToken);
+      setToken(newToken);
+    }
+    return newToken;
+  }
+
+  // Register the 401 → refresh and 401 → logout handlers BEFORE the bootstrap
+  // effect below can fire a request. On cold boot the stored access token may
+  // already be expired, so getMe() 401s; with the refresh handler in place the
+  // interceptor transparently refreshes and the session survives. Effects run
+  // top-to-bottom on mount, and setRefreshHandler is synchronous, so it is set
+  // before bootstrap's first await resolves.
+  useEffect(() => {
+    setRefreshHandler(() => refresh());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   useEffect(() => {
     (async () => {
       try {
         const stored = await getStoredToken();
         if (stored) {
           setAuthToken(stored);
+          // If the stored access token is expired, this 401s and the interceptor
+          // refreshes it under the hood, returning a valid /auth/me response.
           const me = await getMe();
-          setToken(stored);
+          // Use the live token, not `stored` — an interceptor refresh during
+          // getMe may have already replaced it.
+          setToken(getAuthToken() || stored);
           setUser(me);
           setRestoredFromStorage(true);
         }
@@ -63,6 +99,9 @@ export function AuthProvider({ children }) {
   }
 
   async function logout() {
+    // Revoke server-side first (best-effort) so the stored refresh token can't
+    // outlive the logout, then clear everything locally.
+    await svcLogout();
     await clearToken();
     setAuthToken(null);
     setToken(null);

@@ -55,24 +55,31 @@ SwingBy/
 
 ---
 
-## Database — 10 Tables + booking_events + booking_photos
+## Database — 19 tables (live schema)
 
-All RLS enabled. Schema details in `docs/swingby_database_schema.md`.
+All RLS enabled. **Query live Supabase before trusting this table — docs drift.**
+Verified against the live schema 2026-07-22.
 
-| Table | Purpose |
+Core:
+
+| Table | Key columns |
 |---|---|
-| `users` | id, name, email, phone, role (client/business_owner/employee/admin), avatar_url |
-| `businesses` | owner_id, business_name, category, lat/lng, service_radius_km, avg_rating, license_status |
-| `employees` | business_id, user_id, role_title, is_active |
-| `service_posts` | client_id, title, category, budget, address, image_urls, status, expires_at (+7d) |
+| `users` | id, **first_name, last_name**, email, phone, role (client/business_owner/employee/admin), avatar_url, deleted_at, is_suspended, is_ghosted, stripe_customer_id, default_payment_method_id |
+| `businesses` | owner_id, business_name, category, custom_category, lat/lng, service_radius_km, avg_rating, review_count, license_status, subscription_tier/status/id, stripe_customer_id |
+| `employees` | business_id, user_id, role_title, avatar_url, is_active |
+| `service_posts` | client_id, title, category, budget, address, image_urls, status, expires_at (+7d), lat/lng, preferred_date, target_business_id |
 | `interests` | post_id, business_id, quoted_price, status (pending/accepted/rejected) |
-| `bookings` | client_id, business_id, employee_id, post_id (nullable), total_amount, status, payment_status |
-| `payments` | booking_id, total_charged, escrow_held, released_to_business, platform_cut (10%), status |
-| `messages` | booking_id, sender_id, content, sent_at |
+| `bookings` | client_id, business_id, employee_id, post_id (nullable), service_category, total_amount, commission_rate, platform_fee, status, payment_status, proposed_date_1/2/3, confirmed_date, date_proposed_by |
+| `payments` | booking_id, total_charged, escrow_held, released_to_business, platform_cut (10%), stripe_payment_intent_id, status, method, currency |
+| `messages` | booking_id, sender_id, content, sent_at, interest_id, read_at |
 | `reviews` | booking_id, reviewer_id, reviewee_id, reviewee_type, rating (1-5), comment |
 | `cancellations` | booking_id, cancelled_by, reason, penalty_amount |
-| `booking_events` | booking_id, event_type, note, created_at — live status timeline |
-| `booking_photos` | booking_id, url, caption — proof of work |
+| `booking_events` | booking_id, actor_id, event_type, note, lat, lng — live status timeline |
+| `booking_photos` | booking_id, uploaded_by, phase, url, path, caption — proof of work |
+
+Also live (not in the original 12): `disputes`, `referrals`, `user_credits`,
+`audit_log`, `push_tokens`, `stripe_events`, `business_work_index` (semantic
+search corpus + embedding).
 
 **Payment escrow:** 50% released on confirmation, 50% on completion (minus 10% platform cut → business gets 90% total). Cancel penalty: 25% if >48h before date, 50% if ≤48h.
 
