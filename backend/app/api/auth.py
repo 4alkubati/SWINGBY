@@ -302,8 +302,11 @@ def signup(request: Request, data: SignupRequest):
         track_event("Signup", url_path="/signup", props={"role": data.role})
 
         # If email confirmation is OFF, Supabase returns a live session immediately.
-        # Return the token so the mobile app can auto-login.
+        # Return the tokens so the mobile app can auto-login AND keep the session
+        # alive past the access token's ~1h expiry via /auth/refresh.
         access_token = res.session.access_token if res.session else None
+        refresh_token = res.session.refresh_token if res.session else None
+        expires_in = res.session.expires_in if res.session else None
         return {
             "message": (
                 "Account created"
@@ -312,6 +315,8 @@ def signup(request: Request, data: SignupRequest):
             ),
             "user_id": user_id,
             "access_token": access_token,
+            "refresh_token": refresh_token,
+            "expires_in": expires_in,
         }
 
     except HTTPException:
@@ -374,8 +379,14 @@ def login(request: Request, data: LoginRequest):
         except Exception:
             logger.warning("auth.login ghost-clear failed", user_id=user_id)
 
+        # Return the refresh_token too, so the app can exchange it via
+        # /auth/refresh instead of dumping the user at the login screen the
+        # moment the (short-lived) access token expires. Supabase access tokens
+        # last ~1h; without this the session silently died every hour.
         return {
             "access_token": res.session.access_token,
+            "refresh_token": res.session.refresh_token,
+            "expires_in": res.session.expires_in,
             "user_id": user_id,
             "role": user_data.get("role"),
             "first_name": user_data.get("first_name"),
