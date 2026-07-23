@@ -44,6 +44,13 @@ export default function BusinessSetupScreen({ onComplete }) {
         business_name: businessName.trim(),
         category,
         description: description.trim() || undefined,
+        // Always send the address. When the Places autocomplete is active it
+        // also sends lat/lng and those win server-side. When the key is absent
+        // this screen falls back to a plain text field that never sets
+        // coordinates — before, the address was dropped here and the business
+        // was created with no pin, invisible on the map forever. The backend
+        // geocodes this string as a fallback (app/api/businesses.py).
+        address: address.trim() || undefined,
         lat: lat ?? undefined,
         lng: lng ?? undefined,
         service_radius_km: radiusKm,

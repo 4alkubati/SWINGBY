@@ -11,6 +11,7 @@ from app.deps import get_current_user
 from app.supabase_client import supabase
 from app.limiter import limiter
 from app.services import search_index
+from app.services.geocoding import resolve_coordinates
 from app.services.visibility import hidden_user_ids
 
 logger = structlog.get_logger(__name__)
@@ -53,6 +54,7 @@ class BusinessCreate(BaseModel):
     custom_category: Optional[str] = Field(None, max_length=120)
     description: Optional[str] = Field(None, max_length=2000)
     license_number: Optional[str] = Field(None, max_length=500)
+    address: Optional[str] = Field(None, max_length=500)
     lat: Optional[float] = Field(None, ge=-90.0, le=90.0)
     lng: Optional[float] = Field(None, ge=-180.0, le=180.0)
     service_radius_km: Optional[float] = Field(25.0, ge=1.0, le=500.0)
@@ -69,6 +71,7 @@ class BusinessUpdate(BaseModel):
     custom_category: Optional[str] = Field(None, max_length=120)
     description: Optional[str] = Field(None, max_length=2000)
     license_number: Optional[str] = Field(None, max_length=500)
+    address: Optional[str] = Field(None, max_length=500)
     lat: Optional[float] = Field(None, ge=-90.0, le=90.0)
     lng: Optional[float] = Field(None, ge=-180.0, le=180.0)
     service_radius_km: Optional[float] = Field(None, ge=1.0, le=500.0)
@@ -101,14 +104,19 @@ def create_business(
         payload = {"owner_id": current_user["id"], **data.model_dump(exclude_none=True)}
         if payload.get("category"):
             payload["category"] = normalize_category(payload["category"])
-        # RO-0 note: no server-side geocoding fallback here, deliberately.
-        # `businesses` stores no address — only lat/lng (BusinessCreate above),
-        # so there is nothing to geocode from. A business gets coordinates only
-        # from the mobile Places autocomplete in BusinessSetupScreen.js, which
-        # was dead until EXPO_PUBLIC_GOOGLE_PLACES_KEY was set. New businesses
-        # resolve correctly now; pre-existing coordinate-less rows cannot be
-        # backfilled without first adding an address column. Tracked in the
-        # RO-0 PR description as the one gap this card does not close.
+        # Server-side geocoding fallback. `businesses` now stores an address
+        # (docs/businesses_address_and_geocode.sql), so a signup that arrives
+        # with an address but no coordinates — the mobile fallback path when
+        # EXPO_PUBLIC_GOOGLE_PLACES_KEY is unset — still lands on the map.
+        # Client-supplied coordinates (Places autocomplete) pass through
+        # untouched; they are more precise than re-geocoding a formatted
+        # string. Without this, the row is created with NULL lat/lng and
+        # GET /businesses/nearby skips it forever: signup appears to succeed
+        # while the pin silently never exists.
+        coords = resolve_coordinates(
+            data.lat, data.lng, data.address, with_provenance=True
+        )
+        payload.update({k: v for k, v in coords.items() if v is not None})
         res = supabase.table("businesses").insert(payload).execute()
         return {"message": "Business created", "business": res.data[0]}
     except Exception:
@@ -648,6 +656,18 @@ def update_business(
         raise HTTPException(status_code=400, detail="No fields provided to update")
     if update_data.get("category"):
         update_data["category"] = normalize_category(update_data["category"])
+
+    # Same fallback as create, but only when this request actually touches
+    # location. An owner editing just their description must not trigger a
+    # geocode or overwrite coordinates the app already resolved precisely.
+    touches_location = (
+        data.address is not None or data.lat is not None or data.lng is not None
+    )
+    if touches_location:
+        coords = resolve_coordinates(
+            data.lat, data.lng, data.address, with_provenance=True
+        )
+        update_data.update({k: v for k, v in coords.items() if v is not None})
 
     try:
         res = (
