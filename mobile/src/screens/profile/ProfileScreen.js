@@ -216,7 +216,11 @@ export default function ProfileScreen({ navigation }) {
                 <MenuRow icon="heart" label="Favorites" onPress={() => navigation.navigate('Favorites')} />
               )}
               <MenuRow icon="bell" label="Notifications" onPress={() => navigation.navigate('NotificationsCenter')} />
-              <MenuRow icon="credit-card" label="Payment methods" onPress={() => navigation.navigate('PaymentMethod')} />
+              {/* "Payment methods" row removed. There is no payment-method
+                  endpoint on the backend (no saved cards, no SetupIntent), so
+                  the row could only ever open a placeholder screen. Per the
+                  no-fake-surfaces rule: wire it to real data or drop the entry.
+                  Re-add this row in the same commit that ships card storage. */}
               {user?.role === 'client' && (
                 <MenuRow
                   icon="gift"

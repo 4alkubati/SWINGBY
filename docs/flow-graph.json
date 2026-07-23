@@ -158,6 +158,18 @@
         "component": "BusinessInvoicesScreen",
         "kind": "Stack",
         "file": "mobile/src/screens/business/BusinessInvoicesScreen.js"
+      },
+      {
+        "route": "ProfileEdit",
+        "component": "ProfileEditScreen",
+        "kind": "Stack",
+        "file": "mobile/src/screens/profile/ProfileEditScreen.js"
+      },
+      {
+        "route": "BusinessProfile",
+        "component": "BusinessProfileScreen",
+        "kind": "Stack",
+        "file": "mobile/src/screens/business/BusinessProfileScreen.js"
       }
     ],
     "ClientNavigator": [
@@ -425,44 +437,37 @@
     {
       "from_file": "mobile/src/screens/profile/ProfileScreen.js",
       "from_screen": "ProfileScreen",
-      "to_route": "PaymentMethod",
-      "method": "navigate",
-      "line": 219
-    },
-    {
-      "from_file": "mobile/src/screens/profile/ProfileScreen.js",
-      "from_screen": "ProfileScreen",
       "to_route": "ReferralScreen",
-      "method": "navigate",
-      "line": 225
-    },
-    {
-      "from_file": "mobile/src/screens/profile/ProfileScreen.js",
-      "from_screen": "ProfileScreen",
-      "to_route": "Settings",
-      "method": "navigate",
-      "line": 228
-    },
-    {
-      "from_file": "mobile/src/screens/profile/ProfileScreen.js",
-      "from_screen": "ProfileScreen",
-      "to_route": "HelpFAQ",
       "method": "navigate",
       "line": 229
     },
     {
       "from_file": "mobile/src/screens/profile/ProfileScreen.js",
       "from_screen": "ProfileScreen",
+      "to_route": "Settings",
+      "method": "navigate",
+      "line": 232
+    },
+    {
+      "from_file": "mobile/src/screens/profile/ProfileScreen.js",
+      "from_screen": "ProfileScreen",
+      "to_route": "HelpFAQ",
+      "method": "navigate",
+      "line": 233
+    },
+    {
+      "from_file": "mobile/src/screens/profile/ProfileScreen.js",
+      "from_screen": "ProfileScreen",
       "to_route": "PrivacyPolicy",
       "method": "navigate",
-      "line": 230
+      "line": 234
     },
     {
       "from_file": "mobile/src/screens/profile/ProfileScreen.js",
       "from_screen": "ProfileScreen",
       "to_route": "TermsOfService",
       "method": "navigate",
-      "line": 231
+      "line": 235
     },
     {
       "from_file": "mobile/src/screens/profile/NotificationsScreen.js",
@@ -994,7 +999,7 @@
       "from_screen": "PostJobScreen",
       "to_route": "QuoteComparison",
       "method": "navigate",
-      "line": 794
+      "line": 888
     },
     {
       "from_file": "mobile/src/screens/client/BookingDetailsScreen.js",
@@ -1355,7 +1360,7 @@
       "method": "PATCH",
       "path": "/interests/{interest_id}/reject",
       "file": "backend/app/api/interests.py",
-      "line": 506
+      "line": 510
     },
     {
       "method": "GET",
@@ -1439,13 +1444,13 @@
       "method": "GET",
       "path": "/payments/mine",
       "file": "backend/app/api/payments.py",
-      "line": 25
+      "line": 26
     },
     {
       "method": "GET",
       "path": "/payments/{booking_id}",
       "file": "backend/app/api/payments.py",
-      "line": 97
+      "line": 99
     },
     {
       "method": "POST",
@@ -1627,7 +1632,7 @@
       "from_file": "mobile/src/screens/flows/CancellationFlowScreen.js",
       "method": "PATCH",
       "path": "/bookings/${bookingId}/cancel",
-      "line": 64
+      "line": 88
     },
     {
       "from_file": "mobile/src/screens/flows/DisputeFlowScreen.js",
@@ -1933,7 +1938,7 @@
       "from_file": "mobile/src/screens/client/PostJobScreen.js",
       "method": "POST",
       "path": "/service-posts/",
-      "line": 768
+      "line": 862
     },
     {
       "from_file": "mobile/src/screens/client/BookingDetailsScreen.js",
@@ -2053,25 +2058,25 @@
       "from_file": "mobile/src/services/auth.js",
       "method": "POST",
       "path": "/auth/login",
-      "line": 9
+      "line": 20
     },
     {
       "from_file": "mobile/src/services/auth.js",
       "method": "POST",
       "path": "/auth/signup",
-      "line": 15
+      "line": 26
     },
     {
       "from_file": "mobile/src/services/auth.js",
       "method": "GET",
       "path": "/auth/me",
-      "line": 34
+      "line": 73
     },
     {
       "from_file": "mobile/src/services/auth.js",
       "method": "PATCH",
       "path": "/auth/me",
-      "line": 38
+      "line": 77
     },
     {
       "from_file": "mobile/src/context/BookingContext.js",
