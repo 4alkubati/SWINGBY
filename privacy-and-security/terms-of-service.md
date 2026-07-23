@@ -111,13 +111,16 @@ Violations may result in immediate account suspension or termination.
 
 ### 7.1 How payments work
 
-When a client accepts a business's interest expression, a booking is created and the client's payment is held in escrow by SwingBy via our payment processor, Stripe.
+SwingBy operates on a **pay-upfront** model: the client's payment is collected **before** the service is performed and held in escrow by SwingBy via our payment processor, Stripe. When the payment is collected depends on how the booking is created:
 
-**Escrow release schedule:**
-- 50% of the total booking amount is released to the business when the booking is confirmed.
-- The remaining 50%, less SwingBy's 10% platform fee, is released to the business when the job is marked complete.
+- **Posted jobs (post-and-match):** when a client posts a job at a set price, payment is collected at the time of posting.
+- **Direct bookings (browse / quote):** when a client accepts a business's proposed price and time (from a listing or in chat), payment is collected at the moment of acceptance.
 
-Example: On a $200 booking, the business receives $100 on confirmation, then $80 on completion (50% × $200 = $100, minus 10% fee = $80), for a total of $180.
+In both cases the funds are held in escrow and are **not** released to the business until the job is marked complete.
+
+**Escrow release:** the full booking amount, less SwingBy's 10% platform fee, is released to the business when the job is marked complete. If the booking is cancelled before completion, refunds and penalties are governed by Section 8.
+
+Example: On a $200 booking, SwingBy collects $200 up front and holds it in escrow. On completion, the business receives $180 ($200 less the 10% platform fee) and SwingBy retains $20.
 
 ### 7.2 Platform fee
 
@@ -127,7 +130,11 @@ The fee may vary for businesses on launch pricing (5% for the first 6 months for
 
 ### 7.3 Payment obligations
 
-By creating a booking, the client authorizes SwingBy to charge the full booking amount to the payment method on file. The amount is held in escrow and not charged to the client's card until the booking is confirmed by both parties.
+By creating a booking — either by posting a priced job or by accepting a business's proposal — the client authorizes and is charged the full booking amount to the payment method on file at that time. SwingBy holds these funds in escrow and releases them to the business only after the job is marked complete, subject to the cancellation and refund terms in Section 8.
+
+### 7.5 Account credits
+
+SwingBy may issue account credits to clients in certain circumstances, including where a business cancels a confirmed booking late or fails to appear (see Section 8.2). Credits are applied automatically against the amount charged for a future booking, have no cash value, and are non-transferable and non-refundable.
 
 ### 7.4 Stripe
 
