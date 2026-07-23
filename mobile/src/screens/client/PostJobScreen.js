@@ -68,17 +68,25 @@ function derivePreferredDate(dateText, timeText) {
   return parsed.toISOString();
 }
 
-const STEPS = ['Category', 'Details', 'Budget', 'Confirm'];
-const TOTAL_STEPS = STEPS.length;
+// Two wizards share this screen:
+//  * open marketplace post — client picks a category (step 0), job goes to
+//    every matching business.
+//  * targeted "Book now" — reached from a business profile with a businessId
+//    param. NO category step (category is derived server-side from the target
+//    business), the job goes to THAT business only.
+const STEPS_OPEN = ['Category', 'Details', 'Budget', 'Confirm'];
+const STEPS_TARGETED = ['Details', 'Budget', 'Confirm'];
 
-// CARD-12 — Rebook. There is no backend primitive to target a post at one
-// specific business (service_posts has no business_id column, and bookings
-// are only ever created via interests.accept_interest on an OPEN post — see
-// backend/app/api/service_posts.py + interests.py). So "rebook the same
-// business" honestly means: pre-fill the same open-marketplace wizard with
-// the prior job's category/address/budget and a description that names the
-// business, saving the client the re-typing. It does NOT guarantee only that
-// business sees the post. Flagged plainly in the CARD-12 report.
+// CARD-12 — Rebook. Pre-fills the open-marketplace wizard with the prior job's
+// category/address/budget and a description naming the business, saving the
+// client the re-typing. It still posts OPENLY — it does not guarantee only that
+// business sees the post.
+//
+// LANE C note: the primitive that was missing when this was written now exists
+// (service_posts.target_business_id + the `targeted` path below), so rebook
+// COULD be switched to a targeted post. Deliberately left alone here to keep
+// this change scoped to "Book now"; switching it is a CARD-12 follow-up and a
+// real behaviour change (the client would stop receiving competing quotes).
 function RebookBanner({ businessName }) {
   if (!businessName) return null;
   return (
@@ -93,9 +101,26 @@ function RebookBanner({ businessName }) {
   );
 }
 
+// ─── Targeted "Book now" banner ───────────────────────────────────────────────
+// Shown on the direct-to-business flow (reached from a business profile). Makes
+// it unmistakable the quote request goes to ONE business, not the marketplace.
+function TargetBanner({ businessName }) {
+  if (!businessName) return null;
+  return (
+    <Surface elevation="subtle" background="alt" rounded="card" padding="base" style={styles.rebookBanner}>
+      <Inline spacing="sm" align="center">
+        <Feather name="send" size={16} color={colors.accentText} />
+        <Text variant="small" style={{ flex: 1 }}>
+          Requesting a quote from <Text variant="smallMedium">{businessName}</Text>. They'll reply with a price and time.
+        </Text>
+      </Inline>
+    </Surface>
+  );
+}
+
 // ─── Progress bar ─────────────────────────────────────────────────────────────
-function ProgressBar({ step }) {
-  const pct = ((step + 1) / TOTAL_STEPS) * 100;
+function ProgressBar({ step, total }) {
+  const pct = ((step + 1) / total) * 100;
   return (
     <View style={styles.progressTrack}>
       <View style={[styles.progressFill, { width: `${pct}%` }]} />
@@ -103,10 +128,10 @@ function ProgressBar({ step }) {
   );
 }
 
-function StepLabels({ step }) {
+function StepLabels({ step, steps }) {
   return (
     <Inline justify="space-between" style={styles.stepLabels}>
-      {STEPS.map((label, i) => (
+      {steps.map((label, i) => (
         <Text
           key={label}
           variant="label"
@@ -524,9 +549,13 @@ function StepBudget({ budget, setBudget, date, setDate, time, setTime }) {
 }
 
 // ─── Step 3: Confirm ─────────────────────────────────────────────────────────
-function StepConfirm({ category, description, address, budget, date, time, photos, onSubmit, submitting }) {
+function StepConfirm({ category, description, address, budget, date, time, photos, onSubmit, submitting, targetBusinessName }) {
   const rows = [
-    { label: 'Category', value: category || 'General' },
+    // On the targeted "Book now" flow the client never picked a category (it's
+    // derived from the business server-side), so show the business instead.
+    targetBusinessName
+      ? { label: 'Business', value: targetBusinessName }
+      : { label: 'Category', value: category || 'General' },
     { label: 'Description', value: description || '—' },
     { label: 'Address', value: address || '—' },
     { label: 'Budget', value: budget ? `$${budget}` : '—' },
@@ -538,9 +567,13 @@ function StepConfirm({ category, description, address, budget, date, time, photo
     <StepPanel direction={1}>
       <Stack spacing="lg">
         <Stack spacing="sm">
-          <Text variant="display3">Ready to post?</Text>
+          <Text variant="display3">
+            {targetBusinessName ? 'Ready to send?' : 'Ready to post?'}
+          </Text>
           <Text variant="body" color="secondary">
-            Review your details below — local businesses will see this and send quotes.
+            {targetBusinessName
+              ? `Review your details below — ${targetBusinessName} will see this and reply with a quote.`
+              : 'Review your details below — local businesses will see this and send quotes.'}
           </Text>
         </Stack>
 
@@ -587,7 +620,7 @@ function StepConfirm({ category, description, address, budget, date, time, photo
         )}
 
         <Button
-          label="Post job → get quotes"
+          label={targetBusinessName ? 'Send request → get a quote' : 'Post job → get quotes'}
           loading={submitting}
           disabled={submitting}
           onPress={onSubmit}
@@ -595,7 +628,9 @@ function StepConfirm({ category, description, address, budget, date, time, photo
         />
 
         <Text variant="caption" color="secondary" style={styles.hint}>
-          Local businesses will respond with quotes. You pick the best one.
+          {targetBusinessName
+            ? `${targetBusinessName} will reply with a price and time. You confirm before anything is charged.`
+            : 'Local businesses will respond with quotes. You pick the best one.'}
         </Text>
       </Stack>
     </StepPanel>
@@ -611,13 +646,24 @@ export default function PostJobScreen() {
   // CARD-12 — Rebook prefill. Set by BookingDetailsScreen / MyJobsScreen when
   // the client taps "Rebook" on a completed booking (route.params only —
   // this screen is also reached with no params from the normal Post Job flow).
+  //
+  // LANE C — targeted "Book now". Set by BusinessProfileScreen's sticky "Book
+  // now" bar. When `businessId` is present, this is a direct quote request to
+  // ONE business: the category step is dropped (category is derived server-side
+  // from the business) and the post targets only that business.
   const {
     rebookBusinessId,
     rebookBusinessName,
     rebookCategory,
     rebookAddress,
     rebookBudget,
+    businessId: targetBusinessId,
+    businessName: targetBusinessName,
   } = route.params || {};
+
+  const targeted = !!targetBusinessId;
+  const STEPS = targeted ? STEPS_TARGETED : STEPS_OPEN;
+  const TOTAL_STEPS = STEPS.length;
 
   const [description, setDescription] = useState(
     rebookBusinessName
@@ -642,6 +688,11 @@ export default function PostJobScreen() {
   const [descError, setDescError] = useState('');
   const placesRef = useRef(null);
 
+  // Map the current numeric step to a stable key so validation / rendering
+  // never depend on which wizard (open vs targeted) is active — the targeted
+  // wizard has no 'category' step, so a bare index would mean different things.
+  const stepKey = STEPS[step] ? STEPS[step].toLowerCase() : 'confirm';
+
   // Push the rebook address into the Places autocomplete field's own
   // internal state via its imperative ref — its textInput is NOT driven by
   // an external `value` prop (see the comment in StepDetails below), so
@@ -655,7 +706,7 @@ export default function PostJobScreen() {
   }, []);
 
   function goForward() {
-    if (step === 1) {
+    if (stepKey === 'details') {
       if (!description.trim() || description.trim().length < 10) {
         setDescError('Describe your job in at least 10 characters.');
         return;
@@ -679,15 +730,17 @@ export default function PostJobScreen() {
   }
 
   async function handleSubmit() {
+    const detailsStep = STEPS.indexOf('Details');
+    const budgetStep = STEPS.indexOf('Budget');
     if (!description.trim() || description.trim().length < 10) {
       setDescError('Describe your job in at least 10 characters.');
-      setStep(1);
+      setStep(detailsStep);
       return;
     }
     const parsedBudget = parseFloat(budget);
     if (!parsedBudget || parsedBudget <= 0) {
       setDescError('Enter a budget amount greater than $0.');
-      setStep(2);
+      setStep(budgetStep);
       return;
     }
 
@@ -696,7 +749,6 @@ export default function PostJobScreen() {
       const payload = {
         title: deriveTitle(description),
         description: description.trim(),
-        category: category || 'General',
         budget: parsedBudget,
         address: address.trim() || undefined,
         lat: addressLat ?? undefined,
@@ -704,6 +756,14 @@ export default function PostJobScreen() {
         image_urls: photos.map((p) => p.url),
         preferred_date: derivePreferredDate(date, time),
       };
+      // Targeted "Book now": the backend derives category from the target
+      // business, so we send only target_business_id — no category step ran.
+      // Open post: category is client-picked (default General escape hatch).
+      if (targeted) {
+        payload.target_business_id = targetBusinessId;
+      } else {
+        payload.category = category || 'General';
+      }
 
       const data = await api.post('/service-posts/', payload);
       const post = data?.post || data;
@@ -724,6 +784,13 @@ export default function PostJobScreen() {
       setPhotos([]);
       setStep(0);
 
+      // Both flows land on the post's quote inbox. On the targeted flow this is
+      // the closest thing to "land in the quote chat with that business" that
+      // is actually reachable: a message thread hangs off an INTEREST (see
+      // backend/app/api/messages.py `_get_interest_thread`), and the target
+      // business hasn't quoted yet, so no thread exists to open. QuoteComparison
+      // is the waiting room — the moment the business replies, its quote appears
+      // here and taps straight through to the chat.
       navigation.navigate('QuoteComparison', {
         postId: post.id,
         postTitle: post.title,
@@ -750,17 +817,18 @@ export default function PostJobScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <RebookBanner businessName={rebookBusinessName} />
+        <TargetBanner businessName={targetBusinessName} />
 
         <Stack spacing="sm" style={styles.progressSection}>
-          <StepLabels step={step} />
-          <ProgressBar step={step} />
+          <StepLabels step={step} steps={STEPS} />
+          <ProgressBar step={step} total={TOTAL_STEPS} />
         </Stack>
 
         <View style={styles.stepContent}>
-          {step === 0 && (
+          {stepKey === 'category' && (
             <StepCategory key="cat" category={category} setCategory={setCategory} />
           )}
-          {step === 1 && (
+          {stepKey === 'details' && (
             <StepDetails
               key="det"
               description={description}
@@ -777,7 +845,7 @@ export default function PostJobScreen() {
               setPhotoUploading={setPhotoUploading}
             />
           )}
-          {step === 2 && (
+          {stepKey === 'budget' && (
             <StepBudget
               key="bud"
               budget={budget}
@@ -788,7 +856,7 @@ export default function PostJobScreen() {
               setTime={setTime}
             />
           )}
-          {step === 3 && (
+          {stepKey === 'confirm' && (
             <StepConfirm
               key="con"
               category={category}
@@ -800,6 +868,7 @@ export default function PostJobScreen() {
               photos={photos}
               onSubmit={handleSubmit}
               submitting={submitting}
+              targetBusinessName={targetBusinessName}
             />
           )}
         </View>

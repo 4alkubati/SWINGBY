@@ -51,6 +51,12 @@ export default function InvoiceScreen({ navigation, route }) {
   async function handleDownload() {
     const base = getBaseUrl();
     const token = getAuthToken();
+    // The PDF opens in the system browser, which cannot attach an Authorization
+    // header, so the token rides in the query string — the backend accepts it
+    // ONLY on this route (deps.get_current_user_allow_query_token). It is a
+    // short-lived Supabase JWT over HTTPS. POST-BETA: switch to an in-app
+    // authenticated download (expo-file-system downloadAsync with the header +
+    // expo-sharing) so no token is ever placed in a URL.
     const url = `${base}/bookings/${bookingId}/invoice.pdf?token=${encodeURIComponent(token || '')}`;
     try {
       await Linking.openURL(url);

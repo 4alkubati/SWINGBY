@@ -101,6 +101,49 @@ def create_checkout_session(
     return {"id": session["id"], "url": session["url"]}
 
 
+def refund_payment_intent(
+    *, payment_intent_id: str, amount_cad: float | None = None
+) -> dict[str, Any]:
+    """
+    Refund a captured PaymentIntent (full or partial).
+
+    ``amount_cad`` None → full refund; otherwise refund that many dollars.
+    Returns the Stripe Refund object as a dict.
+
+    Raises HTTPException(503) if Stripe is not configured, (400) on a zero/negative
+    partial amount, (502) if the Stripe API call fails. Callers MUST only invoke
+    this when a real captured charge exists (a populated
+    ``payments.stripe_payment_intent_id``) — never for cash/off-platform bookings.
+    """
+    try:
+        stripe = _require_stripe()
+    except StripeNotConfigured as exc:
+        raise HTTPException(status_code=503, detail=str(exc))
+
+    kwargs: dict[str, Any] = {"payment_intent": payment_intent_id}
+    if amount_cad is not None:
+        amount_cents = int(round(amount_cad * 100))
+        if amount_cents <= 0:
+            raise HTTPException(
+                status_code=400, detail="refund amount must be greater than zero"
+            )
+        kwargs["amount"] = amount_cents
+
+    try:
+        refund = stripe.Refund.create(**kwargs)
+    except Exception:
+        logger.exception(
+            "stripe.Refund.create failed for payment_intent %s", payment_intent_id
+        )
+        raise HTTPException(status_code=502, detail="Could not issue Stripe refund")
+
+    return {
+        "id": refund["id"],
+        "status": refund["status"],
+        "amount": refund.get("amount"),
+    }
+
+
 def verify_webhook(
     payload_bytes: bytes, signature_header: str | None
 ) -> dict[str, Any]:

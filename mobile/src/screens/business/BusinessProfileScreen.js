@@ -824,7 +824,10 @@ export default function BusinessProfileScreen({ navigation, route }) {
         <View style={[styles.bookBar, { paddingBottom: Math.max(insets.bottom, spacing.base) }]}>
           <Button
             label="Book now"
-            onPress={() => navigation.navigate('PostJob', { businessId: bizId })}
+            onPress={() => navigation.navigate('PostJob', {
+              businessId: bizId,
+              businessName: business?.business_name,
+            })}
             style={styles.bookBtn}
           />
         </View>

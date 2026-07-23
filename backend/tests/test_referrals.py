@@ -55,8 +55,7 @@ class TestSignupReferralCodeClaim:
             )
             # referrals lookup -> a live registry row owned by "referrer-id"
             (
-                mock_supabase.table.return_value.select.return_value.eq.return_value
-                .is_.return_value.limit.return_value.execute.return_value.data
+                mock_supabase.table.return_value.select.return_value.eq.return_value.is_.return_value.limit.return_value.execute.return_value.data
             ) = [{"referrer_id": "referrer-id"}]
 
             response = test_client.post(
@@ -94,8 +93,7 @@ class TestSignupReferralCodeClaim:
                 None
             )
             (
-                mock_supabase.table.return_value.select.return_value.eq.return_value
-                .is_.return_value.limit.return_value.execute.return_value.data
+                mock_supabase.table.return_value.select.return_value.eq.return_value.is_.return_value.limit.return_value.execute.return_value.data
             ) = []
 
             response = test_client.post(

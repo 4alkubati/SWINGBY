@@ -33,6 +33,7 @@ backend/app/api/interests.py::accept_interest):
 from unittest.mock import patch
 
 import pytest
+from fastapi import BackgroundTasks
 
 from app.deps import get_current_user
 from app.main import app
@@ -114,9 +115,7 @@ class TestBookingThreadCarriesQuoteHistory:
             # booking_id path param must be a UUID (see _require_uuid); the
             # SupabaseTableStub ignores the value passed to .eq(), it just
             # returns whatever select_data was configured with above.
-            response = test_client.get(
-                "/messages/22222222-2222-2222-2222-222222222222"
-            )
+            response = test_client.get("/messages/22222222-2222-2222-2222-222222222222")
 
         assert response.status_code == 200, response.text
         data = response.json()
@@ -171,9 +170,7 @@ class TestQuoteContextOnBookingThread:
                 messages_stub,
             )
 
-            response = test_client.get(
-                "/messages/33333333-3333-3333-3333-333333333333"
-            )
+            response = test_client.get("/messages/33333333-3333-3333-3333-333333333333")
 
         assert response.status_code == 200, response.text
         data = response.json()
@@ -211,9 +208,7 @@ class TestQuoteContextOnBookingThread:
                 messages_stub,
             )
 
-            response = test_client.get(
-                "/messages/44444444-4444-4444-4444-444444444444"
-            )
+            response = test_client.get("/messages/44444444-4444-4444-4444-444444444444")
 
         assert response.status_code == 200, response.text
         assert response.json()["interest"] is None
@@ -268,3 +263,353 @@ class TestSendMessageCompletedBooking:
 
         assert response.status_code == 200, response.text
         assert response.json()["data"]["content"] == "Thanks!"
+
+
+def _booking_send_stubs(**message_kwargs):
+    """bookings/businesses/messages stubs for a plain client → business send."""
+    booking_stub = SupabaseTableStub(
+        select_data={
+            "id": "booking-1",
+            "client_id": "client-1",
+            "business_id": "biz-1",
+            "status": "confirmed",
+        }
+    )
+    businesses_stub = SupabaseTableStub(select_data={"owner_id": "owner-1"})
+    messages_stub = SupabaseTableStub(**message_kwargs)
+    return booking_stub, businesses_stub, messages_stub
+
+
+class TestSendMessagePushIsBackgrounded:
+    """
+    #7c — send latency. send_push_to_user() POSTs to Expo serially per token
+    with a 5s timeout (services/push.py), so calling it inline added up to
+    ~10s to every POST /messages/. It must be handed to BackgroundTasks and
+    never awaited on the request path.
+    """
+
+    def test_push_is_scheduled_not_called_inline(self, test_client, as_client):
+        booking_stub, businesses_stub, messages_stub = _booking_send_stubs(
+            insert_data=[
+                {
+                    "id": "msg-1",
+                    "booking_id": "booking-1",
+                    "sender_id": "client-1",
+                    "content": "On my way",
+                }
+            ]
+        )
+
+        with patch("app.api.messages.supabase") as mock_supabase:
+            mock_supabase.table.side_effect = _multi_table(
+                {
+                    "bookings": booking_stub,
+                    "businesses": businesses_stub,
+                    "messages": messages_stub,
+                },
+                messages_stub,
+            )
+            with patch("app.api.messages.send_push_to_user") as mock_push:
+                with patch.object(BackgroundTasks, "add_task") as mock_add_task:
+                    response = test_client.post(
+                        "/messages/",
+                        json={"booking_id": "booking-1", "content": "On my way"},
+                    )
+
+        assert response.status_code == 200, response.text
+        # Scheduled once, with the push helper itself as the task callable.
+        assert mock_add_task.call_count == 1
+        task_args = mock_add_task.call_args[0]
+        assert task_args[0] is mock_push
+        assert task_args[1] == "owner-1"
+        assert task_args[2] == "New message"
+        # ...and never invoked on the request path (add_task is mocked out, so
+        # any call here would have to be an inline one).
+        mock_push.assert_not_called()
+
+    def test_no_push_scheduled_when_sender_is_the_recipient(
+        self, test_client, as_client
+    ):
+        """Self-send (client is also the business owner) schedules nothing."""
+        booking_stub = SupabaseTableStub(
+            select_data={
+                "id": "booking-1",
+                "client_id": "client-1",
+                "business_id": "biz-1",
+                "status": "confirmed",
+            }
+        )
+        businesses_stub = SupabaseTableStub(select_data={"owner_id": "client-1"})
+        messages_stub = SupabaseTableStub(insert_data=[{"id": "msg-1"}])
+
+        with patch("app.api.messages.supabase") as mock_supabase:
+            mock_supabase.table.side_effect = _multi_table(
+                {
+                    "bookings": booking_stub,
+                    "businesses": businesses_stub,
+                    "messages": messages_stub,
+                },
+                messages_stub,
+            )
+            with patch("app.api.messages.send_push_to_user"):
+                with patch.object(BackgroundTasks, "add_task") as mock_add_task:
+                    response = test_client.post(
+                        "/messages/",
+                        json={"booking_id": "booking-1", "content": "note to self"},
+                    )
+
+        assert response.status_code == 200, response.text
+        mock_add_task.assert_not_called()
+
+
+class TestSendMessageRetryDedupe:
+    """
+    #7d — the mobile retry interceptor may re-issue POST /messages/ after a
+    network error (Render cold start), including one where the row was already
+    committed and only the response was lost. Retried requests carry
+    X-Send-Retry; the server must return the already-stored message instead of
+    posting a duplicate. A first-try send must not pay for that lookup.
+    """
+
+    def test_retry_returns_existing_message_without_reinserting(
+        self, test_client, as_client
+    ):
+        existing = {
+            "id": "msg-already-there",
+            "booking_id": "booking-1",
+            "sender_id": "client-1",
+            "content": "On my way",
+            "sent_at": "2026-07-22T10:00:00Z",
+        }
+        booking_stub, businesses_stub, messages_stub = _booking_send_stubs(
+            select_data=[existing],
+            insert_data=[{"id": "msg-duplicate", "content": "On my way"}],
+        )
+
+        with patch("app.api.messages.supabase") as mock_supabase:
+            mock_supabase.table.side_effect = _multi_table(
+                {
+                    "bookings": booking_stub,
+                    "businesses": businesses_stub,
+                    "messages": messages_stub,
+                },
+                messages_stub,
+            )
+            with patch("app.api.messages.send_push_to_user"):
+                response = test_client.post(
+                    "/messages/",
+                    json={"booking_id": "booking-1", "content": "On my way"},
+                    headers={"X-Send-Retry": "1"},
+                )
+
+        assert response.status_code == 200, response.text
+        assert response.json()["data"]["id"] == "msg-already-there"
+        assert messages_stub.inserted is None, "retry must not write a second row"
+
+    def test_retry_with_no_prior_row_still_inserts(self, test_client, as_client):
+        booking_stub, businesses_stub, messages_stub = _booking_send_stubs(
+            select_data=[],
+            insert_data=[{"id": "msg-1", "content": "On my way"}],
+        )
+
+        with patch("app.api.messages.supabase") as mock_supabase:
+            mock_supabase.table.side_effect = _multi_table(
+                {
+                    "bookings": booking_stub,
+                    "businesses": businesses_stub,
+                    "messages": messages_stub,
+                },
+                messages_stub,
+            )
+            with patch("app.api.messages.send_push_to_user"):
+                response = test_client.post(
+                    "/messages/",
+                    json={"booking_id": "booking-1", "content": "On my way"},
+                    headers={"X-Send-Retry": "2"},
+                )
+
+        assert response.status_code == 200, response.text
+        assert response.json()["data"]["id"] == "msg-1"
+        assert messages_stub.inserted is not None
+
+    def test_first_try_send_skips_the_dedupe_lookup(self, test_client, as_client):
+        booking_stub, businesses_stub, messages_stub = _booking_send_stubs(
+            insert_data=[{"id": "msg-1", "content": "On my way"}],
+        )
+
+        with patch("app.api.messages.supabase") as mock_supabase:
+            mock_supabase.table.side_effect = _multi_table(
+                {
+                    "bookings": booking_stub,
+                    "businesses": businesses_stub,
+                    "messages": messages_stub,
+                },
+                messages_stub,
+            )
+            with patch("app.api.messages.send_push_to_user"):
+                response = test_client.post(
+                    "/messages/",
+                    json={"booking_id": "booking-1", "content": "On my way"},
+                )
+
+        assert response.status_code == 200, response.text
+        # The dedupe query is the only thing on this path that windows on
+        # sent_at — no .gte() means it never ran.
+        assert not any(c[0] == "gte" for c in messages_stub.calls)
+
+
+class TestMarkReadIsConditional:
+    """
+    #7 — the mobile chat polls the message list every 5s and _mark_read fired a
+    DB WRITE on every one of those polls, even with nothing new to mark. The
+    write must only happen when the fetched page actually contains an unread
+    message from the other party.
+    """
+
+    BOOKING = {
+        "id": "booking-1",
+        "client_id": "client-1",
+        "business_id": "biz-1",
+        "post_id": None,
+        "status": "confirmed",
+    }
+
+    def _get(self, test_client, items):
+        booking_stub = SupabaseTableStub(select_data=dict(self.BOOKING))
+        messages_stub = SupabaseTableStub(select_data=items)
+        with patch("app.api.messages.supabase") as mock_supabase:
+            mock_supabase.table.side_effect = _multi_table(
+                {"bookings": booking_stub, "messages": messages_stub}, messages_stub
+            )
+            response = test_client.get("/messages/55555555-5555-5555-5555-555555555555")
+        return response, messages_stub
+
+    def test_no_write_when_nothing_is_unread(self, test_client, as_client):
+        response, messages_stub = self._get(
+            test_client,
+            [
+                # already read
+                {
+                    "id": "m1",
+                    "sender_id": "owner-1",
+                    "content": "hi",
+                    "sent_at": "2026-07-22T10:00:00Z",
+                    "read_at": "2026-07-22T10:00:05Z",
+                },
+                # unread, but it's my own — reading my own message is a no-op
+                {
+                    "id": "m2",
+                    "sender_id": "client-1",
+                    "content": "hey",
+                    "sent_at": "2026-07-22T10:01:00Z",
+                    "read_at": None,
+                },
+            ],
+        )
+        assert response.status_code == 200, response.text
+        assert not any(c[0] == "update" for c in messages_stub.calls)
+
+    def test_write_happens_when_a_message_is_unread(self, test_client, as_client):
+        response, messages_stub = self._get(
+            test_client,
+            [
+                {
+                    "id": "m1",
+                    "sender_id": "owner-1",
+                    "content": "hi",
+                    "sent_at": "2026-07-22T10:00:00Z",
+                    "read_at": None,
+                }
+            ],
+        )
+        assert response.status_code == 200, response.text
+        assert any(c[0] == "update" for c in messages_stub.calls)
+
+
+class TestBusinessIdOnQuoteThreads:
+    """
+    #9 — tap the chat header through to the business profile. Booking threads
+    read business_id off the booking payload the screen already fetches; quote
+    (interest) threads have no such payload, so the interest thread endpoint
+    and the inbox row must carry business_id themselves.
+    """
+
+    def test_interest_thread_payload_includes_business_id(self, test_client, as_client):
+        interests_stub = SupabaseTableStub(
+            select_data={
+                "id": "interest-1",
+                "status": "accepted",
+                "quoted_price": 120,
+                "business_id": "biz-9",
+                "service_posts": {
+                    "id": "post-1",
+                    "title": "Deep clean condo",
+                    "status": "open",
+                    "client_id": "client-1",
+                },
+            }
+        )
+        messages_stub = SupabaseTableStub(select_data=[])
+
+        with patch("app.api.messages.supabase") as mock_supabase:
+            mock_supabase.table.side_effect = _multi_table(
+                {"interests": interests_stub, "messages": messages_stub}, messages_stub
+            )
+            response = test_client.get(
+                "/messages/interest/66666666-6666-6666-6666-666666666666"
+            )
+
+        assert response.status_code == 200, response.text
+        assert response.json()["interest"]["business_id"] == "biz-9"
+
+    def test_thread_list_interest_row_includes_business_id(
+        self, test_client, as_client
+    ):
+        bookings_stub = SupabaseTableStub(select_data=[])
+        interests_stub = SupabaseTableStub(
+            select_data=[
+                {
+                    "id": "interest-1",
+                    "status": "pending",
+                    "quoted_price": 120,
+                    "business_id": "biz-9",
+                    "service_posts": {
+                        "id": "post-1",
+                        "title": "Deep clean condo",
+                        "status": "open",
+                        "client_id": "client-1",
+                    },
+                    "businesses": {"business_name": "Test Cleaning Co."},
+                }
+            ]
+        )
+        messages_stub = SupabaseTableStub(
+            select_data=[
+                {
+                    "id": "m1",
+                    "booking_id": None,
+                    "interest_id": "interest-1",
+                    "sender_id": "owner-1",
+                    "content": "Happy to help",
+                    "sent_at": "2026-07-22T10:00:00Z",
+                    "read_at": None,
+                }
+            ]
+        )
+
+        with patch("app.api.messages.supabase") as mock_supabase:
+            mock_supabase.table.side_effect = _multi_table(
+                {
+                    "bookings": bookings_stub,
+                    "interests": interests_stub,
+                    "messages": messages_stub,
+                },
+                messages_stub,
+            )
+            response = test_client.get("/messages/threads")
+
+        assert response.status_code == 200, response.text
+        rows = response.json()["items"]
+        assert len(rows) == 1
+        assert rows[0]["thread_type"] == "interest"
+        assert rows[0]["business_id"] == "biz-9"

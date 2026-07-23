@@ -49,42 +49,74 @@ def mark_paid_offplatform(
         raise HTTPException(status_code=404, detail="Booking not found")
     booking = booking_res.data
 
-    if booking["client_id"] != current_user["id"]:
+    # Access: the booking's client OR the business owner may record an
+    # off-platform payment. The product owner wants the BUSINESS side working for
+    # beta (they collect the cash / e-transfer and mark it paid).
+    allowed = booking["client_id"] == current_user["id"]
+    if not allowed and current_user.get("role") == "business_owner":
+        biz = (
+            supabase.table("businesses")
+            .select("id")
+            .eq("owner_id", current_user["id"])
+            .single()
+            .execute()
+        )
+        allowed = bool(biz.data) and biz.data["id"] == booking["business_id"]
+    if not allowed:
         raise HTTPException(
-            status_code=403, detail="Only the booking's client can mark it paid"
+            status_code=403,
+            detail="Only the booking's client or business can mark it paid",
         )
 
-    if booking["status"] != "completed":
-        raise HTTPException(status_code=400, detail="Booking must be completed first")
+    # Lifecycle: off-platform payment is recorded on a LIVE booking (before or at
+    # completion). A cancelled booking can't be paid. (The old guard required
+    # status=='completed', but /complete already releases the payment row, so the
+    # 'already paid' check below made this endpoint unsatisfiable — fix B.)
+    if booking["status"] == "cancelled":
+        raise HTTPException(
+            status_code=400, detail="Cannot mark a cancelled booking as paid"
+        )
 
+    # Exactly one payments row per booking (accept inserts it; the rest of the
+    # codebase reads it with .single()). UPDATE it in place — inserting a second
+    # row here was fix B's duplicate-row bug that broke every .single() reader.
     existing = (
         supabase.table("payments")
         .select("id, status")
         .eq("booking_id", booking_id)
         .execute()
     )
-    for row in existing.data or []:
-        if row.get("status") in ("paid_full", "paid_off_platform", "fully_released"):
-            raise HTTPException(status_code=400, detail="Booking is already paid")
+    rows = existing.data or []
+    for row in rows:
+        if row.get("status") in ("paid_off_platform", "fully_released", "refunded"):
+            raise HTTPException(status_code=400, detail="Booking is already settled")
 
     total = float(booking.get("total_amount") or 0)
+    # Off-platform: money never touches the platform → no escrow, no platform cut.
+    offplatform_fields = {
+        "total_charged": total,
+        "escrow_held": 0,
+        "released_to_business": 0,
+        "platform_cut": 0,
+        "status": "paid_off_platform",
+        "method": data.method,
+    }
     try:
-        pay_res = (
-            supabase.table("payments")
-            .insert(
-                {
-                    "booking_id": booking_id,
-                    "total_charged": total,
-                    "escrow_held": 0,
-                    "released_to_business": 0,
-                    "platform_cut": 0,
-                    "status": "paid_off_platform",
-                    "method": data.method,
-                    "notes": (data.note or None),
-                }
+        if rows:
+            pay_res = (
+                supabase.table("payments")
+                .update(offplatform_fields)
+                .eq("id", rows[0]["id"])
+                .execute()
             )
-            .execute()
-        )
+        else:
+            # Fallback: booking has no payment row (e.g. a direct geo-browse
+            # booking created outside the accept flow). Create the single row.
+            pay_res = (
+                supabase.table("payments")
+                .insert({"booking_id": booking_id, **offplatform_fields})
+                .execute()
+            )
 
         supabase.table("bookings").update({"payment_status": "fully_released"}).eq(
             "id", booking_id
@@ -94,6 +126,7 @@ def mark_paid_offplatform(
             supabase.table("booking_events").insert(
                 {
                     "booking_id": booking_id,
+                    "actor_id": current_user["id"],
                     "event_type": "paid_offplatform",
                     "note": f"{data.method}" + (f" — {data.note}" if data.note else ""),
                 }

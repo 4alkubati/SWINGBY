@@ -1,7 +1,10 @@
-// T58 — SearchScreen (UX polish pass) · DQ-1 — name-based business search
+// T58 — SearchScreen (UX polish pass) · LANE F — work-history search
 // Sticky SearchField (design-system), AnimatedPressable recent rows.
-// Name search hits GET /businesses/?q= — works with NO location; distance is
-// attached only when coords are available (degrades gracefully when denied).
+// GET /businesses/?q= no longer matches business NAMES — it ranks businesses by
+// how much the work they have COMPLETED resembles the query ("big house" finds
+// whoever did a big-house job). Works with NO location; distance is attached
+// only when coords are available (degrades gracefully when denied).
+// `route.params.q` seeds the box so arriving from Home lands on results.
 // All colors/spacing via tokens. No StyleSheet.create.
 import { View, FlatList, Pressable, Platform } from 'react-native';
 import Animated, {
@@ -98,11 +101,14 @@ function RecentRow({ term, onPress }) {
 }
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
-export default function SearchScreen({ navigation }) {
+export default function SearchScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
   const coordsRef = useRef(null);
 
-  const [query, setQuery] = useState('');
+  // Seed from route.params.q so arriving with a term lands on RESULTS, not an
+  // empty box. HomeScreen already navigates `Search` with { q } — without this
+  // the term was dropped on the floor and the screen opened blank (LANE F).
+  const [query, setQuery] = useState(route?.params?.q ?? '');
   const [activeCategory, setActiveCategory] = useState('all');
 
   const [results, setResults] = useState([]);
@@ -127,6 +133,17 @@ export default function SearchScreen({ navigation }) {
       .then((c) => { coordsRef.current = c; })
       .catch(() => { coordsRef.current = null; });
   }, []);
+
+  // ─── Re-seed when navigated to again with a different term ───────────────
+  // useState above only covers the first mount. Navigating to Search a second
+  // time with a new { q } reuses the mounted screen, so mirror the param into
+  // state here; the search-trigger effect below then runs it.
+  const seededQuery = route?.params?.q;
+  useEffect(() => {
+    if (typeof seededQuery === 'string' && seededQuery.trim()) {
+      setQuery(seededQuery);
+    }
+  }, [seededQuery]);
 
   // ─── Search trigger — fires after SearchField debounce updates `query` ───
   useEffect(() => {
@@ -155,19 +172,30 @@ export default function SearchScreen({ navigation }) {
     try {
       const params = { q, limit: 50 };
       if (category && category !== 'all') params.category = category;
+      // Send coords when we have them so the backend can return an authoritative
+      // distance_km. Never required — omitting them just means no distance.
+      if (coords) {
+        params.lat = coords.lat;
+        params.lng = coords.lng;
+      }
 
       const data = await api.get('/businesses/', { params, signal: controller.signal });
       let list = Array.isArray(data) ? data : (data?.items ?? []);
 
-      // Attach computed distance only when we actually know where the user is.
+      // Prefer the server's distance_km; fall back to computing it locally when
+      // the backend didn't supply one (older build, or coords sent but the row
+      // has no lat/lng).
       list = list.map((b) => {
         const hasCoords =
           coords && typeof b.lat === 'number' && typeof b.lng === 'number';
         return {
           ...b,
-          _distance: hasCoords
-            ? computeDistance(coords.lat, coords.lng, b.lat, b.lng)
-            : null,
+          _distance:
+            typeof b.distance_km === 'number'
+              ? `${b.distance_km.toFixed(1)} km`
+              : hasCoords
+                ? computeDistance(coords.lat, coords.lng, b.lat, b.lng)
+                : null,
         };
       });
 
@@ -266,7 +294,9 @@ export default function SearchScreen({ navigation }) {
       );
     }
 
-    // done — F-pattern full-width result cards
+    // done — F-pattern full-width result cards under a result-count eyebrow
+    // (mock: "8 RESULTS NEAR YOU"). Falls back to an English default so this
+    // screen doesn't have to reach into the shared i18n catalogue.
     return (
       <FlatList
         data={results}
@@ -275,6 +305,20 @@ export default function SearchScreen({ navigation }) {
           paddingHorizontal: spacing.base,
           paddingBottom: spacing.xl,
         }}
+        ListHeaderComponent={
+          <DSText
+            variant="label"
+            color="secondary"
+            style={{ marginBottom: spacing.sm, letterSpacing: 1.4 }}
+          >
+            {i18n
+              .t('search.resultsCount', {
+                count: results.length,
+                defaultValue: '%{count} RESULTS',
+              })
+              .toUpperCase()}
+          </DSText>
+        }
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         renderItem={({ item, index }) => (
@@ -310,7 +354,10 @@ export default function SearchScreen({ navigation }) {
         onChangeText={setQuery}
         placeholder={i18n.t('search.placeholder')}
         debounceMs={300}
-        autoFocus
+        // Only grab focus on a cold open. Arriving with a seeded term means the
+        // user already typed it elsewhere — popping the keyboard would just
+        // cover the results they came here to see.
+        autoFocus={!route?.params?.q}
         autoCapitalize="none"
         autoCorrect={false}
         style={{

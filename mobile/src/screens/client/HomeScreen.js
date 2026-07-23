@@ -23,11 +23,15 @@ import SectionHeader from '../../components/SectionHeader';
 
 import { api } from '../../services/api';
 import { getUserLocation } from '../../services/location';
-import { colors, spacing } from '../../theme/tokens';
+import { colors, spacing, radius } from '../../theme/tokens';
 import Text from '../../components/Text';
 import SearchField from '../../components/SearchField';
 import Stack from '../../components/Stack';
 import Surface from '../../components/Surface';
+import Inline from '../../components/Inline';
+import Avatar from '../../components/Avatar';
+import ListItem from '../../components/ListItem';
+import StatusBadge from '../../components/StatusBadge';
 import { SkeletonBox, SkeletonList } from '../../components/Skeleton';
 import EmptyState from '../../components/EmptyState';
 
@@ -71,6 +75,97 @@ async function resolveCity(lat, lng) {
   return CALGARY_FALLBACK.city;
 }
 
+const BOOKING_STATUS_LABEL = {
+  confirmed: 'Confirmed',
+  in_progress: 'In progress',
+};
+
+function bookingService(b) {
+  return b.service_posts?.title || b.service_category || 'Your booking';
+}
+function bookingWhen(b) {
+  const raw = b.confirmed_date || b.proposed_date_1;
+  if (!raw) return null;
+  return new Date(raw).toLocaleDateString('en-CA', {
+    weekday: 'short', month: 'short', day: 'numeric',
+  });
+}
+// Undated bookings sort last rather than to the top of the list.
+function bookingTime(b) {
+  const raw = b.confirmed_date || b.proposed_date_1;
+  const t = raw ? new Date(raw).getTime() : NaN;
+  return Number.isNaN(t) ? Infinity : t;
+}
+
+// The live job, pinned to the top of Home (item #14). Taps through to
+// ActiveBookingScreen, which needs the bookingId param — it can't self-discover
+// which booking to show.
+function PinnedBookingCard({ booking, onPress }) {
+  const isLive = booking.status === 'in_progress';
+  const provider = booking.businesses?.business_name || booking.business_name || 'Your provider';
+  const when = bookingWhen(booking);
+
+  return (
+    <TouchableOpacity onPress={onPress} activeOpacity={0.85} accessibilityRole="button">
+      <Surface elevation="subtle" style={styles.pinnedCard}>
+        <Inline justify="space-between" align="flex-start" style={{ marginBottom: spacing.xs }}>
+          <Text variant="label" style={styles.pinnedEyebrow} maxFontSizeMultiplier={1.2}>
+            {isLive ? 'HAPPENING NOW' : 'YOUR NEXT JOB'}
+          </Text>
+          <StatusBadge
+            label={BOOKING_STATUS_LABEL[booking.status] || 'Active'}
+            tone="accent"
+          />
+        </Inline>
+        <Text variant="h1" numberOfLines={1} style={{ marginBottom: 2 }}>
+          {bookingService(booking)}
+        </Text>
+        <Inline spacing="xs">
+          <Feather name="briefcase" size={13} color={colors.textSecondary} />
+          <Text variant="small" color="secondary" numberOfLines={1} style={{ flex: 1 }}>
+            {provider}{when ? ` · ${when}` : ''}
+          </Text>
+          <Feather name="chevron-right" size={18} color={colors.textSecondary} />
+        </Inline>
+      </Surface>
+    </TouchableOpacity>
+  );
+}
+
+function UpcomingBookingRow({ booking, onPress }) {
+  const provider = booking.businesses?.business_name || booking.business_name || 'Provider';
+  const when = bookingWhen(booking);
+  return (
+    <ListItem
+      left={<Avatar name={provider} size="sm" />}
+      title={bookingService(booking)}
+      subtitle={when ? `${provider} · ${when}` : provider}
+      right={<StatusBadge label={BOOKING_STATUS_LABEL[booking.status] || 'Active'} tone="accent" />}
+      onPress={onPress}
+    />
+  );
+}
+
+// Open posts get ONE compact line on Home, never a stack of cards — Home is
+// browse-first, and My Jobs is where posts are actually managed.
+function OpenPostsStrip({ count, onPress }) {
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      activeOpacity={0.8}
+      accessibilityRole="button"
+      accessibilityLabel={`${count} open job ${count === 1 ? 'post' : 'posts'}, awaiting quotes`}
+      style={styles.postsStrip}
+    >
+      <Feather name="file-text" size={14} color={colors.textSecondary} />
+      <Text variant="small" color="secondary" numberOfLines={1} style={{ flex: 1 }}>
+        {count} open {count === 1 ? 'post' : 'posts'} · awaiting quotes
+      </Text>
+      <Feather name="chevron-right" size={16} color={colors.textSecondary} />
+    </TouchableOpacity>
+  );
+}
+
 function SkeletonFeaturedCard() {
   return (
     <Surface elevation="subtle" style={styles.featuredCardSkeleton}>
@@ -99,6 +194,32 @@ export default function HomeScreen({ navigation }) {
 
   const [cityLabel, setCityLabel] = useState(CALGARY_FALLBACK.city);
   const coordsRef = useRef(null);
+
+  // Item #14 — Home surfaces the live job. One `GET /bookings/` already returns
+  // status, confirmed_date and the embedded businesses/service_posts rows, so
+  // the pinned card needs no extra round-trip. Both calls are `_silent` because
+  // this is secondary content: if it fails the block simply doesn't render
+  // rather than throwing a toast over a browse screen that still works.
+  const [bookings, setBookings] = useState([]);
+  const [openPosts, setOpenPosts] = useState([]);
+
+  const fetchJobs = useCallback(async () => {
+    try {
+      const [bookingRes, postRes] = await Promise.all([
+        api.get('/bookings/', { _silent: true }).catch(() => []),
+        api.get('/service-posts/my', { _silent: true }).catch(() => []),
+      ]);
+      const bookingList = bookingRes?.items || bookingRes || [];
+      const postList = postRes?.items || postRes || [];
+      setBookings(Array.isArray(bookingList) ? bookingList : []);
+      setOpenPosts(
+        (Array.isArray(postList) ? postList : []).filter((p) => p.status === 'open')
+      );
+    } catch {
+      setBookings([]);
+      setOpenPosts([]);
+    }
+  }, []);
 
   const fetchNearby = useCallback(async () => {
     setBusinessError(null);
@@ -137,10 +258,19 @@ export default function HomeScreen({ navigation }) {
     fetchNearby();
   }, [fetchNearby]);
 
+  useEffect(() => {
+    fetchJobs();
+  }, [fetchJobs]);
+
+  // A booking can be confirmed / started / finished while the client is on
+  // another tab — re-pull on focus so the pinned card is never stale.
+  useEffect(() => navigation.addListener('focus', fetchJobs), [navigation, fetchJobs]);
+
   const handleRefresh = useCallback(() => {
     setRefreshing(true);
+    fetchJobs();
     fetchNearby();
-  }, [fetchNearby]);
+  }, [fetchNearby, fetchJobs]);
 
   const categoryFiltered =
     activeCategory === 'all'
@@ -160,6 +290,26 @@ export default function HomeScreen({ navigation }) {
     : null;
 
   const firstName = user?.first_name || 'there';
+
+  // A job in progress always outranks one that is merely confirmed; after that,
+  // soonest first. The head of the list is pinned, the next few list under it.
+  const liveBookings = bookings
+    .filter((b) => b.status === 'in_progress' || b.status === 'confirmed')
+    .sort((a, b) => {
+      const aLive = a.status === 'in_progress';
+      const bLive = b.status === 'in_progress';
+      if (aLive !== bLive) return aLive ? -1 : 1;
+      const ta = bookingTime(a);
+      const tb = bookingTime(b);
+      // Two undated bookings would subtract to NaN — keep their relative order.
+      if (ta === tb) return 0;
+      return ta - tb;
+    });
+  const pinnedBooking = liveBookings[0] || null;
+  const upcomingBookings = liveBookings.slice(1, 4);
+
+  const openBooking = (id) => navigation.navigate('ActiveBooking', { bookingId: id });
+  const openMyJobs = () => navigation.navigate('My Jobs');
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -217,6 +367,42 @@ export default function HomeScreen({ navigation }) {
               </Text>
             </View>
           </View>
+
+          {/* Live job — pinned above everything browsable. Renders only when
+              the client actually has one, so the browse-first Home is
+              unchanged for everyone else. */}
+          {(pinnedBooking || openPosts.length > 0) && (
+            <Stack spacing="sm" style={styles.jobsBlock}>
+              {pinnedBooking && (
+                <PinnedBookingCard
+                  booking={pinnedBooking}
+                  onPress={() => openBooking(pinnedBooking.id)}
+                />
+              )}
+
+              {upcomingBookings.length > 0 && (
+                <>
+                  <SectionHeader
+                    title="UPCOMING"
+                    actionLabel="All jobs"
+                    onAction={openMyJobs}
+                    style={styles.upcomingHeader}
+                  />
+                  {upcomingBookings.map((b) => (
+                    <UpcomingBookingRow
+                      key={b.id}
+                      booking={b}
+                      onPress={() => openBooking(b.id)}
+                    />
+                  ))}
+                </>
+              )}
+
+              {openPosts.length > 0 && (
+                <OpenPostsStrip count={openPosts.length} onPress={openMyJobs} />
+              )}
+            </Stack>
+          )}
 
           {/* Search */}
           <View style={styles.searchWrap}>
@@ -415,6 +601,35 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
+  },
+
+  jobsBlock: {
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.base,
+  },
+  // Accent-tinted so the live job reads as the one card on Home that is about
+  // *you*, not about browsing.
+  pinnedCard: {
+    backgroundColor: colors.surfaceAlt,
+    borderColor: colors.borderAccent,
+  },
+  pinnedEyebrow: {
+    color: colors.accentSoft,
+    letterSpacing: 1.4,
+  },
+  upcomingHeader: {
+    paddingTop: spacing.xs,
+  },
+  postsStrip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.input,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
   },
 
   searchWrap: {

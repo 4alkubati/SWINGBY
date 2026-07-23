@@ -24,6 +24,7 @@ from app.deps import get_current_user
 from app.limiter import limiter
 from app.supabase_client import supabase
 from app.api.waitlist import get_notion, WAITLIST_DB_ID
+from app.services.audit import record_audit
 
 logger = structlog.get_logger(__name__)
 
@@ -108,6 +109,13 @@ def suspend_user(
         logger.info(
             "admin.suspend_user", admin_id=current_user["id"], target_user=user_id
         )
+        record_audit(
+            actor_id=current_user["id"],
+            action="admin.suspend_user",
+            resource_type="user",
+            resource_id=user_id,
+            request=request,
+        )
         return {"message": "user_suspended", "user_id": user_id}
     except HTTPException:
         raise
@@ -135,6 +143,13 @@ def unsuspend_user(
             raise HTTPException(status_code=404, detail="User not found")
         logger.info(
             "admin.unsuspend_user", admin_id=current_user["id"], target_user=user_id
+        )
+        record_audit(
+            actor_id=current_user["id"],
+            action="admin.unsuspend_user",
+            resource_type="user",
+            resource_id=user_id,
+            request=request,
         )
         return {"message": "user_unsuspended", "user_id": user_id}
     except HTTPException:
@@ -197,11 +212,36 @@ def force_complete_booking(
     booking_id: str,
     current_user: dict = Depends(require_admin),
 ):
-    """Sets bookings.status = 'completed' regardless of current state."""
+    """Sets bookings.status = 'completed' and releases escrow like /complete.
+
+    fix G: previously this only flipped status='completed' and bypassed the
+    escrow release, leaving the on-platform 50% stuck in escrow forever with no
+    route out. Now it runs the SAME release path as PATCH /bookings/{id}/complete
+    so the ledger settles. If the booking has no payments row, the completion
+    still proceeds (admin override) but is logged for follow-up.
+    """
+    from app.services import escrow
+
     try:
+        payment_status = "fully_released"
+        try:
+            escrow.release_escrow_on_complete(booking_id)
+        except escrow.EscrowError:
+            # No payment row to release — don't block the admin override, but
+            # surface it: there's nothing to settle and payment_status is unknown.
+            logger.warning(
+                "admin.force_complete_booking: no payments row for %s — "
+                "completing without escrow release",
+                booking_id,
+            )
+            payment_status = None
+
+        booking_update = {"status": "completed"}
+        if payment_status:
+            booking_update["payment_status"] = payment_status
         res = (
             supabase.table("bookings")
-            .update({"status": "completed"})
+            .update(booking_update)
             .eq("id", booking_id)
             .execute()
         )
@@ -211,6 +251,13 @@ def force_complete_booking(
             "admin.force_complete_booking",
             admin_id=current_user["id"],
             booking_id=booking_id,
+        )
+        record_audit(
+            actor_id=current_user["id"],
+            action="admin.force_complete_booking",
+            resource_type="booking",
+            resource_id=booking_id,
+            request=request,
         )
         return {"message": "booking_completed", "booking_id": booking_id}
     except HTTPException:

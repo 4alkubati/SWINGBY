@@ -22,11 +22,12 @@ from __future__ import annotations
 import logging
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
 
 from app.deps import get_current_user
 from app.supabase_client import supabase
+from app.services.audit import record_audit
 
 logger = logging.getLogger(__name__)
 
@@ -125,6 +126,7 @@ def create_dispute(body: DisputeCreate, current_user: dict = Depends(get_current
         supabase.table("booking_events").insert(
             {
                 "booking_id": body.booking_id,
+                "actor_id": current_user["id"],
                 "event_type": "dispute_opened",
                 "note": f"[{body.issue_type}] {body.description[:200]}",
             }
@@ -144,7 +146,7 @@ def list_my_disputes(current_user: dict = Depends(get_current_user)):
     filed = (
         supabase.table("disputes")
         .select(
-            "*, bookings(id, client_id, business_id, service_category, scheduled_date)"
+            "*, bookings(id, client_id, business_id, service_category, scheduled_date:confirmed_date)"
         )
         .eq("opened_by", uid)
         .order("created_at", desc=True)
@@ -172,7 +174,7 @@ def list_my_disputes(current_user: dict = Depends(get_current_user)):
                 against = (
                     supabase.table("disputes")
                     .select(
-                        "*, bookings(id, client_id, business_id, service_category, scheduled_date)"
+                        "*, bookings(id, client_id, business_id, service_category, scheduled_date:confirmed_date)"
                     )
                     .in_("booking_id", biz_ids)
                     .neq("opened_by", uid)
@@ -188,6 +190,7 @@ def list_my_disputes(current_user: dict = Depends(get_current_user)):
 def resolve_dispute(
     dispute_id: str,
     body: DisputeResolve,
+    request: Request,
     current_user: dict = Depends(get_current_user),
 ):
     if current_user.get("role") != "admin":
@@ -216,6 +219,7 @@ def resolve_dispute(
         supabase.table("booking_events").insert(
             {
                 "booking_id": row["booking_id"],
+                "actor_id": current_user["id"],
                 "event_type": "dispute_resolved",
                 "note": body.resolution[:200],
             }
@@ -224,5 +228,14 @@ def resolve_dispute(
         logger.warning(
             "booking_event write failed for dispute resolve %s: %s", dispute_id, e
         )
+
+    record_audit(
+        actor_id=current_user["id"],
+        action="dispute.resolve",
+        resource_type="dispute",
+        resource_id=dispute_id,
+        metadata={"refund_amount": body.refund_amount},
+        request=request,
+    )
 
     return row

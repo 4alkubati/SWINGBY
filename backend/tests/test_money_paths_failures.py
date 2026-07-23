@@ -285,7 +285,9 @@ class TestAssignEmployeeFailures:
 
     def test_foreign_booking_blocked(self, test_client, as_owner):
         """Booking belongs to a different business — must not be assignable."""
-        booking_stub = SupabaseTableStub(select_data=_booking_row(business_id="biz-999"))
+        booking_stub = SupabaseTableStub(
+            select_data=_booking_row(business_id="biz-999")
+        )
         biz_stub = SupabaseTableStub(select_data={"id": "biz-1"})
         with patch("app.api.bookings.supabase") as mock_supabase:
             mock_supabase.table.side_effect = _multi_table(
@@ -304,7 +306,11 @@ class TestAssignEmployeeFailures:
         emp_stub = SupabaseTableStub(select_data={"id": "emp-1", "is_active": False})
         with patch("app.api.bookings.supabase") as mock_supabase:
             mock_supabase.table.side_effect = _multi_table(
-                {"bookings": booking_stub, "businesses": biz_stub, "employees": emp_stub}
+                {
+                    "bookings": booking_stub,
+                    "businesses": biz_stub,
+                    "employees": emp_stub,
+                }
             )
             response = test_client.patch(
                 f"/bookings/{BOOKING_UUID}/assign-employee",
@@ -319,7 +325,11 @@ class TestAssignEmployeeFailures:
         emp_stub = SupabaseTableStub(select_data=None)
         with patch("app.api.bookings.supabase") as mock_supabase:
             mock_supabase.table.side_effect = _multi_table(
-                {"bookings": booking_stub, "businesses": biz_stub, "employees": emp_stub}
+                {
+                    "bookings": booking_stub,
+                    "businesses": biz_stub,
+                    "employees": emp_stub,
+                }
             )
             response = test_client.patch(
                 f"/bookings/{BOOKING_UUID}/assign-employee",
@@ -458,13 +468,16 @@ class TestMarkPaidOffplatformFailures:
             )
         assert response.status_code == 403
 
-    def test_not_completed_booking_blocked(self, test_client, as_client):
+    def test_cancelled_booking_blocked(self, test_client, as_client):
+        # fix B (PR #30): off-platform payment is recorded on a LIVE booking
+        # (before or at completion), so a merely-not-completed booking is NOT
+        # blocked anymore. The only lifecycle block is 'cancelled'.
         booking_stub = SupabaseTableStub(
             select_data={
                 "id": BOOKING_UUID,
                 "client_id": "client-1",
                 "business_id": "biz-1",
-                "status": "confirmed",
+                "status": "cancelled",
                 "total_amount": 200.0,
             }
         )
