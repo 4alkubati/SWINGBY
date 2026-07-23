@@ -23,8 +23,13 @@
 --   'pending_payment' | 'failed' | 'held' | 'partial_released' |
 --   'fully_released' | 'refunded' | 'paid_off_platform'
 --
--- Backfill mapping (old -> new), applied BEFORE the new CHECK is added so no
--- existing row is caught by the tighter constraint:
+-- Ordering that actually works: DROP the old CHECK -> backfill -> ADD the new
+-- CHECK. Both constraints have to be out of the way during the backfill: the
+-- old one rejects the new values being written, and the new one would reject
+-- any not-yet-migrated row. Doing only the latter (the original ordering here)
+-- fails with 23514 on the very first UPDATE.
+--
+-- Backfill mapping (old -> new):
 --   payments.status:  'partial'   -> 'partial_released'
 --                      'paid_full'-> 'held'
 --                      'pending'  -> 'pending_payment'
@@ -37,13 +42,24 @@ BEGIN;
 --    hardcode it in three places") ──────────────────────────────────────────
 ALTER TABLE payments ADD COLUMN IF NOT EXISTS currency text NOT NULL DEFAULT 'CAD';
 
+-- ── payments.status CHECK — DROP FIRST ──────────────────────────────────────
+-- The OLD constraint must come off BEFORE the backfill below. The backfill
+-- writes NEW-vocabulary values ('partial_released', 'held', 'pending_payment')
+-- which the OLD CHECK (pending|partial|paid_full|paid_off_platform|
+-- fully_released|refunded|failed) does not allow — so running the UPDATEs
+-- first fails with:
+--   23514 new row for relation "payments" violates check constraint
+--         "payments_status_check"
+-- Confirmed against prod 2026-07-22. The original ordering here only
+-- considered the *new* constraint catching old rows, and missed that the
+-- *old* constraint is still enforcing during the backfill.
+ALTER TABLE payments DROP CONSTRAINT IF EXISTS payments_status_check;
+
 -- ── payments.status backfill (old -> new vocabulary) ────────────────────────
 UPDATE payments SET status = 'partial_released' WHERE status = 'partial';
 UPDATE payments SET status = 'held' WHERE status = 'paid_full';
 UPDATE payments SET status = 'pending_payment' WHERE status = 'pending';
 
--- ── payments.status CHECK ───────────────────────────────────────────────────
-ALTER TABLE payments DROP CONSTRAINT IF EXISTS payments_status_check;
 ALTER TABLE payments ADD CONSTRAINT payments_status_check
   CHECK (status = ANY (ARRAY[
     'pending_payment'::text,
