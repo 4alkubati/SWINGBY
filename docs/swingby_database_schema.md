@@ -74,7 +74,7 @@
 | `subscription_cancel_at` | `timestamptz`, nullable | |
 | `subscription_started_at` | `timestamptz`, nullable | |
 
-**RLS:** any `authenticated` user may SELECT (public discovery); only the owner may INSERT/UPDATE/DELETE their own row (`auth.uid() = owner_id`). RLS enabled (`docs/rls_policies.sql` §2).
+**RLS:** any `authenticated` user may SELECT (public discovery); only the owner may INSERT/UPDATE/DELETE their own row (`auth.uid() = owner_id`). RLS enabled (`docs/rls_policies.sql` §2). **S1 audit (2026-07-20), FILED pending apply:** `stripe_customer_id`, `subscription_id`, `subscription_current_period_end`, and `license_number` are column-level `REVOKE`d from `authenticated` — public discovery never needed those, and full-row `using (true)` was exposing them to any authenticated caller via direct PostgREST. See `supabase/migrations/20260720000000_s1_column_lockdown_and_unique_constraints.sql`. `owner_id` also gets a `UNIQUE` constraint in that same file, guarded against pre-existing duplicates (not verified live — no DB access when filed).
 
 ---
 
@@ -116,7 +116,7 @@
 | `expires_at` | `timestamptz` | Referenced only by the expiry cron function — not written anywhere in `backend/app/api/*.py` that was found; likely has a DB default (e.g. `created_at + interval`) not visible from this repo. **Could not fully reconstruct — flag for live-DB check.** |
 | `created_at` | `timestamptz` | |
 
-**RLS:** `authenticated` SELECT when `status = 'open'` OR `client_id = auth.uid()`; INSERT/UPDATE restricted to the owning client. RLS enabled (`docs/rls_policies.sql` §4).
+**RLS:** `authenticated` SELECT when `status = 'open'` OR `client_id = auth.uid()`; INSERT/UPDATE restricted to the owning client. RLS enabled (`docs/rls_policies.sql` §4). **S1 fix (2026-07-20), FILED pending apply:** that row-level policy was granting full-row access (address included) to any authenticated caller for every open post — `address` is now column-level `REVOKE`d from `authenticated` so a direct PostgREST `select=*` can no longer read it; masking in `backend/app/privacy.py` is unchanged and still the path the API itself uses. `lat`/`lng` intentionally left readable (approximate location is meant to be visible pre-acceptance). See `supabase/migrations/20260720000000_s1_column_lockdown_and_unique_constraints.sql`.
 
 ---
 
@@ -133,7 +133,7 @@
 | `status` | `text` | `'pending' \| 'accepted' \| 'rejected'`. |
 | `created_at` | `timestamptz` | |
 
-**RLS:** SELECT for the quoting business owner or the post's client; INSERT restricted to business owners; UPDATE (accept/reject) restricted to the post's client. RLS enabled (`docs/rls_policies.sql` §5).
+**RLS:** SELECT for the quoting business owner or the post's client; INSERT restricted to business owners; UPDATE (accept/reject) restricted to the post's client. RLS enabled (`docs/rls_policies.sql` §5). **FILED pending apply:** `UNIQUE (post_id, business_id)` added in `supabase/migrations/20260720000000_s1_column_lockdown_and_unique_constraints.sql`, guarded to skip (with a `NOTICE`) if duplicates already exist — not verified live.
 
 ---
 
@@ -161,7 +161,7 @@
 | `completed_at` | `timestamptz`, nullable | Read in `invoices.py`/`payments.py` selects; not explicitly set in any `.update()` found (booking `status` flips to `completed` in `bookings.py::complete_booking` without visibly stamping `completed_at` — possible DB trigger, or a gap). **Partial reconstruction.** |
 | `created_at` | `timestamptz` | |
 
-**RLS:** SELECT only for the client, the business owner, or the assigned employee. No direct INSERT/UPDATE policies — all writes via `service_role`. RLS enabled (`docs/rls_policies.sql` §6).
+**RLS:** SELECT only for the client, the business owner, or the assigned employee. No direct INSERT/UPDATE policies — all writes via `service_role`. RLS enabled (`docs/rls_policies.sql` §6). **FILED pending apply:** `UNIQUE (post_id)` added in `supabase/migrations/20260720000000_s1_column_lockdown_and_unique_constraints.sql` (NULLs — direct/geo-browse bookings with no post — are unaffected, Postgres treats them as distinct), guarded to skip if non-null duplicates already exist — not verified live. Coordinate with any payment-spec §8 migration adding the same constraint (see file header).
 
 ---
 
