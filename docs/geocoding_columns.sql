@@ -16,7 +16,9 @@
 -- Additive, all nullable, no backfill required by the migration itself.
 -- Nothing in the request path writes these columns — see the docstring on
 -- app/services/geocoding.py::resolve_coordinates for why that is deliberate.
--- FILE ONLY -- do not apply to prod; database-agent reviews and applies.
+-- STATUS: APPLIED to prod (verified by introspection 2026-07-21).
+-- service_posts.geocoded_at and .geocode_source both exist, with the
+-- geocode_source CHECK constraint. See docs/MIGRATIONS.md.
 --
 -- NOTE: `businesses` deliberately gets no equivalent columns. That table
 -- stores no address (BusinessCreate has lat/lng only), so there is nothing to

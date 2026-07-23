@@ -103,13 +103,14 @@ def resolve_coordinates(
     """
     Build the coordinate fields for an insert/update payload.
 
-    Returns ONLY `lat`/`lng` — both columns that already exist in production.
-    Deliberately no `geocode_source`/`geocoded_at` here: those ship in
-    docs/geocoding_columns.sql, and writing them from the request path would
-    make every service-post create fail until that migration is applied. That
-    is the Jul 17 outage shape (code deployed ahead of schema), and it is not
-    worth re-creating for a provenance column. The backfill tool owns
-    provenance; it runs after the migration and can safely assume the columns.
+    Returns ONLY `lat`/`lng`.
+
+    `geocode_source`/`geocoded_at` DO exist in prod as of the
+    docs/geocoding_columns.sql apply (verified 2026-07-21), but this function
+    still does not write them: provenance is owned by tools/backfill_geocode.py,
+    which is the single writer. If the request path should start stamping
+    provenance, that is a deliberate change — add both columns to the payload
+    here and to the backfill's conflict handling together.
 
     If the caller already supplied both coordinates (the mobile Places
     autocomplete path), they win untouched — the app's own resolution is more

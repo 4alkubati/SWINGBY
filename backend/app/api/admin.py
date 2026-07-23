@@ -7,14 +7,15 @@ T27  Admin user/booking management:
      - POST /admin/suspend-user/{user_id}
      - POST /admin/unsuspend-user/{user_id}
      - POST /admin/force-complete-booking/{booking_id}
+     - GET  /admin/waitlist-count
 
 CARD-07 Monitoring verification:
      - GET  /admin/monitoring-probe
 
 Rate limit: 30/minute per IP for all admin endpoints.
 
-NOTE: `users.is_suspended boolean default false` column must exist in the DB.
-      Wave 6 migration should add it if not already present.
+NOTE: suspension relies on `users.is_suspended boolean not null default false`,
+      which is live in prod (verified 2026-07-21, docs/APPLY-2026-07-20.sql).
 """
 
 import structlog

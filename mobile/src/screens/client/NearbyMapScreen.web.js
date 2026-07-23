@@ -1,4 +1,6 @@
-// Web-only stub. See MapScreen.web.js for explanation.
+// Web-only stub for NearbyMapScreen. react-native-maps has no web build, so
+// Metro picks this .web.js file instead and renders a "not available on web"
+// placeholder. The native implementation is NearbyMapScreen.js.
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';

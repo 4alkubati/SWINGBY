@@ -55,24 +55,30 @@ SwingBy/
 
 ---
 
-## Database — 10 Tables + booking_events + booking_photos
+## Database — 16 Tables
 
-All RLS enabled. Schema details in `docs/swingby_database_schema.md`.
+RLS enabled on all 16, every table has policies. Columns/constraints verified against prod
+2026-07-21 → `docs/swingby_database_schema.md`. **Never trust a `.sql` file in `docs/` as
+proof a change is applied — query prod.** See `docs/MIGRATIONS.md`.
 
 | Table | Purpose |
 |---|---|
-| `users` | id, name, email, phone, role (client/business_owner/employee/admin), avatar_url |
+| `users` | id, **first_name + last_name** (there is no `name`), email, phone, role (client/business_owner/employee/admin), avatar_url, deleted_at (soft delete), is_suspended |
 | `businesses` | owner_id, business_name, category, lat/lng, service_radius_km, avg_rating, license_status |
 | `employees` | business_id, user_id, role_title, is_active |
-| `service_posts` | client_id, title, category, budget, address, image_urls, status, expires_at (+7d) |
+| `service_posts` | client_id, title, category, budget, address, image_urls, status, expires_at (+7d), `preferred_date`, geocoded_at/geocode_source — a dead typo column `preffered_date` also exists, never write it |
 | `interests` | post_id, business_id, quoted_price, status (pending/accepted/rejected) |
-| `bookings` | client_id, business_id, employee_id, post_id (nullable), total_amount, status, payment_status |
-| `payments` | booking_id, total_charged, escrow_held, released_to_business, platform_cut (10%), status |
-| `messages` | booking_id, sender_id, content, sent_at |
-| `reviews` | booking_id, reviewer_id, reviewee_id, reviewee_type, rating (1-5), comment |
+| `bookings` | client_id, business_id, employee_id, post_id (nullable), total_amount, status, payment_status, proposed_date_1/2/3, confirmed_date (**no** `completed_at`, **no** `scheduled_date`) |
+| `payments` | booking_id, total_charged, escrow_held, released_to_business, platform_cut (10%), status, method (**no** `notes`) |
+| `messages` | booking_id **or** interest_id, sender_id, content, sent_at, read_at |
+| `reviews` | booking_id, reviewer_id, reviewee_id, reviewee_type (business/client/employee), rating (1-5), comment |
 | `cancellations` | booking_id, cancelled_by, reason, penalty_amount |
-| `booking_events` | booking_id, event_type, note, created_at — live status timeline |
-| `booking_photos` | booking_id, url, caption — proof of work |
+| `booking_events` | booking_id, actor_id (**ON DELETE RESTRICT**), event_type, note, lat/lng — live status timeline |
+| `booking_photos` | booking_id, uploaded_by (**ON DELETE RESTRICT**), phase (before/after), url, path, caption — proof of work |
+| `disputes` | booking_id, opened_by, against_party, issue_type, status, refund_amount — admin-resolved |
+| `referrals` | code, referrer_id, referee_id (nullable), status, credit_cents |
+| `push_tokens` | user_id, token, platform — unique on (user_id, token) |
+| `audit_log` | actor_id, action, resource_type/id, metadata jsonb, ip |
 
 **Payment escrow:** 50% released on confirmation, 50% on completion (minus 10% platform cut → business gets 90% total). Cancel penalty: 25% if >48h before date, 50% if ≤48h.
 
@@ -134,6 +140,7 @@ npx expo start --clear
 - Running locally → `docs/RUNNING_LOCALLY.md`
 - Deploy / Rollback → `docs/DEPLOY.md`, `docs/ROLLBACK.md`
 - DB schema → `docs/swingby_database_schema.md`
+- **Migrations → `docs/MIGRATIONS.md`** — how to apply, how to verify applied state, and the same-PR rule. Read before touching any `.sql` file or any insert/update payload.
 - **Code-flow graph → `docs/FLOW_GRAPH.md` + `docs/flow-graph.json`** — every screen ↔ screen edge, backend routes vs mobile calls, orphans in red. **Read this FIRST for any nav / 404 / dead-end question** — cheaper than scanning screen files. Regenerate: `python3 tools/flow_graph.py`. How-to: `~/brain/10-swingby/agents/claude/automation/FLOW_GRAPH.md`.
 - **Booking-loop smoke test → `tools/e2e_smoke.py`** — full post→quote→accept→booking→complete journey with response-SHAPE checks against a local backend (`python tools/e2e_smoke.py [base_url]`). **Mandatory before accepting any change to the booking loop** (DISPATCH_GATE Layer 6). Uses the test accounts above.
 - Notion nudge layer → `~/brain/10-swingby/agents/claude/config/NOTION_SYNC.md` — database ID, schema, query pattern, drift-check rule

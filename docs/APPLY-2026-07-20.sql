@@ -1,6 +1,14 @@
 -- =====================================================================
--- APPLY-2026-07-20.sql — the filed-but-unapplied migrations, consolidated
+-- APPLY-2026-07-20.sql — consolidated migrations
 -- =====================================================================
+--
+-- STATUS: **APPLIED.** Verified against prod by introspection on 2026-07-21.
+-- All six sections are live: service_posts.preferred_date, users.is_suspended,
+-- the widened booking_events_event_type_check, reviews_reviewee_type_check
+-- (now allows 'employee'), service_posts.geocoded_at + geocode_source, and the
+-- referrals table with its RLS policies. Every statement is idempotent, so
+-- re-running it is a no-op — keep the file as the audit trail, and re-run
+-- STEP 0 any time you want to re-confirm. See docs/MIGRATIONS.md.
 --
 -- WHY THIS FILE EXISTS
 -- Several migrations in docs/ are marked "FILE ONLY -- do not apply to prod"

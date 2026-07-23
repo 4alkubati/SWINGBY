@@ -1183,19 +1183,19 @@
       "method": "PATCH",
       "path": "/bookings/{booking_id}/confirm-date",
       "file": "backend/app/api/bookings.py",
-      "line": 412
+      "line": 414
     },
     {
       "method": "PATCH",
       "path": "/bookings/{booking_id}/complete",
       "file": "backend/app/api/bookings.py",
-      "line": 560
+      "line": 562
     },
     {
       "method": "PATCH",
       "path": "/bookings/{booking_id}/cancel",
       "file": "backend/app/api/bookings.py",
-      "line": 702
+      "line": 704
     },
     {
       "method": "POST",
@@ -1363,31 +1363,31 @@
       "method": "POST",
       "path": "/messages/",
       "file": "backend/app/api/messages.py",
-      "line": 258
+      "line": 260
     },
     {
       "method": "GET",
       "path": "/messages/threads",
       "file": "backend/app/api/messages.py",
-      "line": 344
+      "line": 354
     },
     {
       "method": "GET",
       "path": "/messages/unread-count",
       "file": "backend/app/api/messages.py",
-      "line": 457
+      "line": 474
     },
     {
       "method": "GET",
       "path": "/messages/interest/{interest_id}",
       "file": "backend/app/api/messages.py",
-      "line": 492
+      "line": 512
     },
     {
       "method": "GET",
       "path": "/messages/{booking_id}",
       "file": "backend/app/api/messages.py",
-      "line": 548
+      "line": 568
     },
     {
       "method": "GET",
@@ -1483,7 +1483,7 @@
       "method": "DELETE",
       "path": "/service-posts/{post_id}",
       "file": "backend/app/api/service_posts.py",
-      "line": 334
+      "line": 332
     },
     {
       "method": "POST",
@@ -2064,7 +2064,157 @@
       "line": 16
     }
   ],
-  "broken_edges": [],
+  "broken_edges": [
+    {
+      "from_file": "mobile/src/screens/shared/SettingsScreen.js",
+      "from_screen": "SettingsScreen",
+      "to_route": "ProfileEdit",
+      "method": "navigate",
+      "line": 233,
+      "from_navigators": [
+        "BusinessNavigator",
+        "ClientNavigator"
+      ],
+      "missing_in": [
+        "BusinessNavigator"
+      ],
+      "reason": "missing from BusinessNavigator (registered only in: ClientNavigator)"
+    },
+    {
+      "from_file": "mobile/src/screens/profile/NotificationsCenterScreen.js",
+      "from_screen": "NotificationsCenterScreen",
+      "to_route": "QuoteComparison",
+      "method": "dispatch",
+      "line": 59,
+      "from_navigators": [
+        "BusinessNavigator",
+        "ClientNavigator"
+      ],
+      "missing_in": [
+        "BusinessNavigator"
+      ],
+      "reason": "missing from BusinessNavigator (registered only in: ClientNavigator)"
+    },
+    {
+      "from_file": "mobile/src/screens/business/BusinessProfileScreen.js",
+      "from_screen": "BusinessProfileScreen",
+      "to_route": "EmployeeManagement",
+      "method": "navigate",
+      "line": 646,
+      "from_navigators": [
+        "BusinessNavigator",
+        "ClientNavigator"
+      ],
+      "missing_in": [
+        "ClientNavigator"
+      ],
+      "reason": "missing from ClientNavigator (registered only in: BusinessNavigator)"
+    },
+    {
+      "from_file": "mobile/src/screens/business/BusinessProfileScreen.js",
+      "from_screen": "BusinessProfileScreen",
+      "to_route": "BusinessInvoices",
+      "method": "navigate",
+      "line": 776,
+      "from_navigators": [
+        "BusinessNavigator",
+        "ClientNavigator"
+      ],
+      "missing_in": [
+        "ClientNavigator"
+      ],
+      "reason": "missing from ClientNavigator (registered only in: BusinessNavigator)"
+    },
+    {
+      "from_file": "mobile/src/screens/business/BusinessProfileScreen.js",
+      "from_screen": "BusinessProfileScreen",
+      "to_route": "PostJob",
+      "method": "navigate",
+      "line": 827,
+      "from_navigators": [
+        "BusinessNavigator",
+        "ClientNavigator"
+      ],
+      "missing_in": [
+        "BusinessNavigator"
+      ],
+      "reason": "missing from BusinessNavigator (registered only in: ClientNavigator)"
+    },
+    {
+      "from_file": "mobile/src/screens/business/EmployeeProfileScreen.js",
+      "from_screen": "EmployeeProfileScreen",
+      "to_route": "BusinessProfile",
+      "method": "navigate",
+      "line": 288,
+      "from_navigators": [
+        "BusinessNavigator",
+        "ClientNavigator"
+      ],
+      "missing_in": [
+        "BusinessNavigator"
+      ],
+      "reason": "missing from BusinessNavigator (registered only in: ClientNavigator)"
+    },
+    {
+      "from_file": "mobile/src/screens/client/MyJobsScreen.js",
+      "from_screen": "MyJobsScreen",
+      "to_route": "JobManagement",
+      "method": "navigate",
+      "line": 274,
+      "from_navigators": [
+        "ClientNavigator"
+      ],
+      "missing_in": [
+        "ClientNavigator"
+      ],
+      "reason": "missing from ClientNavigator (registered only in: BusinessNavigator)"
+    },
+    {
+      "from_file": "mobile/src/screens/client/BookingDetailsScreen.js",
+      "from_screen": "BookingDetailsScreen",
+      "to_route": "CancellationFlow",
+      "method": "navigate",
+      "line": 356,
+      "from_navigators": [
+        "BusinessNavigator",
+        "ClientNavigator"
+      ],
+      "missing_in": [
+        "BusinessNavigator"
+      ],
+      "reason": "missing from BusinessNavigator (registered only in: ClientNavigator)"
+    },
+    {
+      "from_file": "mobile/src/screens/client/BookingDetailsScreen.js",
+      "from_screen": "BookingDetailsScreen",
+      "to_route": "PostJob",
+      "method": "navigate",
+      "line": 371,
+      "from_navigators": [
+        "BusinessNavigator",
+        "ClientNavigator"
+      ],
+      "missing_in": [
+        "BusinessNavigator"
+      ],
+      "reason": "missing from BusinessNavigator (registered only in: ClientNavigator)"
+    },
+    {
+      "from_file": "mobile/src/screens/client/BookingDetailsScreen.js",
+      "from_screen": "BookingDetailsScreen",
+      "to_route": "BusinessProfile",
+      "method": "navigate",
+      "line": 566,
+      "from_navigators": [
+        "BusinessNavigator",
+        "ClientNavigator"
+      ],
+      "missing_in": [
+        "BusinessNavigator"
+      ],
+      "reason": "missing from BusinessNavigator (registered only in: ClientNavigator)"
+    }
+  ],
   "orphans": [],
   "per_nav_orphans": {
     "AuthNavigator": [],
