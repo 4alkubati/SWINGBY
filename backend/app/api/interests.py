@@ -408,7 +408,11 @@ def accept_interest(interest_id: str, current_user: dict = Depends(get_current_u
                     "escrow_held": total_amount,
                     "released_to_business": 0,
                     "platform_cut": platform_fee,
-                    "status": "pending",
+                    # Vocabulary per migration 0001 (applied 2026-07-22): the
+                    # payments_status_check CHECK no longer accepts the legacy
+                    # 'pending' — it is 'pending_payment' now. Writing the old
+                    # value 500s every quote acceptance with a 23514.
+                    "status": "pending_payment",
                 }
             )
             .execute()

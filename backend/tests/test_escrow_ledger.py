@@ -270,7 +270,9 @@ class TestAcceptDoesNotPreRelease:
 
         assert resp.status_code == 200, resp.text
         pay = stubs["payments"].inserted
-        assert pay["status"] == "pending"
+        # 'pending_payment' since migration 0001 renamed the legacy 'pending'.
+        # The live payments_status_check rejects the old value outright.
+        assert pay["status"] == "pending_payment"
         assert pay["released_to_business"] == 0
         assert pay["escrow_held"] == 100.0
         booking = stubs["bookings"].inserted

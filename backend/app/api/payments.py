@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 from app.deps import get_current_user
 from app.supabase_client import supabase
+from app.services import escrow
 
 router = APIRouter()
 
@@ -78,14 +79,15 @@ def list_my_payments(current_user: dict = Depends(get_current_user)):
 
     items = pay.data or []
     total_released = sum(float(p.get("released_to_business") or 0) for p in items)
-    # fix C: the old filter used bookings.payment_status literals ("held",
-    # "partial_released") which never match payments.status, so total_pending was
-    # always 0. "Pending" here = money held in escrow, not yet released to the
-    # business: payments.status in pending/partial/paid_full.
+    # fix C: the old filter used bookings.payment_status literals which never
+    # matched payments.status, so total_pending was always 0. "Pending" here =
+    # money held in escrow, not yet released to the business. Sourced from
+    # escrow.HELD_NOT_RELEASED so the two vocabularies (pre/post migration
+    # 0001) stay defined in exactly one place.
     total_pending = sum(
         float(p.get("escrow_held") or 0)
         for p in items
-        if p.get("status") in ("pending", "partial", "paid_full")
+        if p.get("status") in escrow.HELD_NOT_RELEASED
     )
     return {
         "items": items,

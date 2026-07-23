@@ -36,7 +36,22 @@ logger = logging.getLogger(__name__)
 # and off-platform marking must treat these as terminal.
 RELEASED_OR_SETTLED = ("fully_released", "paid_off_platform", "refunded")
 # Statuses that mean money is still held awaiting release to the business.
-HELD_NOT_RELEASED = ("pending", "partial", "paid_full")
+# Spans BOTH vocabularies on purpose. Migration 0001 (applied 2026-07-22)
+# renamed pending->pending_payment, partial->partial_released, paid_full->held,
+# but a read filter that only knows one side silently under-counts: before the
+# migration it would miss the new names, after it, the old ones. Environments
+# migrate at different times, so accept both and let the write paths emit only
+# the new vocabulary.
+HELD_NOT_RELEASED = (
+    # legacy (pre-0001)
+    "pending",
+    "partial",
+    "paid_full",
+    # current
+    "pending_payment",
+    "partial_released",
+    "held",
+)
 
 
 class EscrowError(RuntimeError):
