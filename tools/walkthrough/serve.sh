@@ -18,8 +18,12 @@ if [ ! -f "$APP/index.html" ]; then
 fi
 
 TSIP="$(tailscale ip -4 2>/dev/null | head -1 || true)"
-TSNAME="$(tailscale status --json 2>/dev/null \
-  | sed -n 's/.*"DNSName":"\([^"]*\)\.".*/\1/p' | head -1 || true)"
+# Self.DNSName specifically — a bare grep grabs the first peer instead. python3
+# is already a hard dep of this tool (diagnose.py), so lean on it for a correct
+# parse rather than fighting JSON in sed.
+TSNAME="$(tailscale status --json 2>/dev/null | python3 -c \
+  "import json,sys; print((json.load(sys.stdin).get('Self') or {}).get('DNSName','').rstrip('.'))" \
+  2>/dev/null || true)"
 
 cat <<EOF
 
