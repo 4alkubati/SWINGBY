@@ -300,24 +300,41 @@ def get_my_analytics(
         bookings = bookings_res.data or []
         total_bookings = len(bookings)
 
-        # 3. Total earnings (sum of released_to_business from released payments)
+        # 3. Total earnings — sum of released_to_business, in INTEGER CENTS
+        #    (migration 20260723120000), across VERIFIED released payments only.
         booking_ids = [b["id"] for b in bookings]
-        total_earnings = 0.0
+        total_earnings_c = 0
+        unverified_earnings_c = 0
         if booking_ids:
+            from app.services import escrow
+
             payments_res = (
                 supabase.table("payments")
-                .select("released_to_business, status")
+                .select(
+                    "released_to_business, released_to_business_cents, status, "
+                    "method, stripe_payment_intent_id"
+                )
                 .in_("booking_id", booking_ids)
                 .execute()
             )
             for p in payments_res.data or []:
                 # fix C: "settled" is in no enum, so total_earnings was always
-                # 0.00. Released on-platform earnings live on rows whose
-                # payments.status == 'fully_released'.
-                if p.get("status") == "fully_released" and p.get(
-                    "released_to_business"
-                ):
-                    total_earnings += float(p["released_to_business"])
+                # 0.00. Released earnings live on rows whose status ==
+                # 'fully_released'.
+                if p.get("status") != "fully_released":
+                    continue
+                cents = escrow.money_cents(p, "released_to_business")
+                # FINDING C (money audit, 2026-07-23): 24 of 29 production rows
+                # read 'fully_released' with no Stripe charge behind them —
+                # $4,675.50 nobody paid. Those legacy rows are NOT counted as
+                # real earnings; they are surfaced separately so the headline
+                # figure is honest instead of inflated by phantom payouts.
+                if escrow.is_capture_backed(p):
+                    total_earnings_c += cents
+                else:
+                    unverified_earnings_c += cents
+        total_earnings = round(total_earnings_c / 100, 2)
+        unverified_earnings = round(unverified_earnings_c / 100, 2)
 
         # 4. Bookings by month (last 6 months)
         six_months_ago = datetime.now(timezone.utc) - timedelta(days=182)
@@ -414,6 +431,10 @@ def get_my_analytics(
             "review_count": int(biz.get("review_count") or 0),
             "total_bookings": total_bookings,
             "total_earnings": round(total_earnings, 2),
+            # FINDING C: earnings on 'fully_released' rows with no captured
+            # payment behind them. Non-zero here = phantom payouts in legacy
+            # data; the headline total_earnings deliberately excludes them.
+            "unverified_earnings": unverified_earnings,
             "profile_views": 0,
             "conversion_rate": conversion_rate,
             "repeat_rate": 0,

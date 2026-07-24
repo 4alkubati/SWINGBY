@@ -167,11 +167,22 @@ function AppRoutes() {
 
 export default function App() {
   if (MAINTENANCE) {
+    // Even when the marketing/app site is gated behind maintenance mode, the
+    // legal pages must stay publicly reachable at stable URLs — a privacy
+    // policy and terms of service that 503 behind a coming-soon gate are live
+    // legal exposure (PIPEDA openness principle). Keep them wrapped in Layout
+    // so they render as normal pages.
     return (
       <BrowserRouter>
         <Suspense fallback={<Spinner />}>
           <Routes>
             <Route path="/status" element={<StatusPage />} />
+            <Route element={<Layout />}>
+              <Route path="/privacy" element={<PrivacyPage />} />
+              <Route path="/terms" element={<TermsPage />} />
+              <Route path="/cookies" element={<CookiesPage />} />
+              <Route path="/accessibility" element={<AccessibilityPage />} />
+            </Route>
             <Route path="*" element={<Maintenance />} />
           </Routes>
         </Suspense>

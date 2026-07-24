@@ -43,6 +43,11 @@ if settings.SENTRY_DSN:
         environment=os.getenv("ENV", "development"),
         integrations=[FastApiIntegration()],
         before_send=_sentry_before_send,
+        # Privacy: docs/legal/PRIVACY_POLICY.md promises we strip stack-trace
+        # local-variable values and do not attach request PII. Enforce both here
+        # so the deployed behavior matches the policy rather than contradicting it.
+        include_local_variables=False,
+        send_default_pii=False,
     )
 
 from fastapi import FastAPI

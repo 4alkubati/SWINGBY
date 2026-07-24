@@ -336,26 +336,35 @@ def accept_interest(interest_id: str, current_user: dict = Depends(get_current_u
 
         from app.services import escrow
 
-        total_amount = escrow.to_dollars(
-            escrow.to_cents(interest["quoted_price"] or post["budget"])
-        )
-        platform_fee = escrow.platform_cut(total_amount)
+        # Integer cents authoritative (migration 20260723120000).
+        total_c = escrow.to_cents(interest["quoted_price"] or post["budget"])
+        platform_fee_c = escrow.platform_cut_cents(total_c)
+        total_amount = escrow.to_dollars(total_c)
+        platform_fee = escrow.to_dollars(platform_fee_c)
 
         booking_insert = {
             "client_id": current_user["id"],
             "business_id": interest["business_id"],
             "post_id": post["id"],
             "service_category": post["category"],
+            # Supply BOTH representations so the insert works whether or not the
+            # cents-sync trigger is present (it is in prod; a fresh local DB that
+            # hasn't run migration 20260723120000 would otherwise NULL the
+            # NOT NULL total_amount). Cents are authoritative; the trigger keeps
+            # them in lockstep from here on.
             "total_amount": total_amount,
+            "total_amount_cents": total_c,
             "commission_rate": 0.10,
             "platform_fee": platform_fee,
-            # Money model (2026-07-21): NOTHING is released to the business at
-            # accept — the job hasn't happened and, for on-platform pay, Stripe
-            # hasn't captured. The full amount is held in escrow; release happens
-            # only at /complete. Previously this set 'partial_released' + released
-            # half with no charge collected — a real ledger defect.
+            "platform_fee_cents": platform_fee_c,
+            # Charge-before-service (2026-07-21). At accept NOTHING has been
+            # captured — the job hasn't happened and Stripe hasn't charged — so
+            # the payment state is 'pending_payment' (owed), NOT 'held'. It flips
+            # to 'held' only when the capture webhook confirms real money, and to
+            # 'fully_released' at /complete. The old code wrote 'held' + a full
+            # escrow figure here, so every unpaid booking read as fully funded.
             "status": "confirmed",
-            "payment_status": "held",
+            "payment_status": "pending_payment",
         }
         if preferred_date:
             # Time was already given at posting — skip the propose/accept
@@ -399,23 +408,49 @@ def accept_interest(interest_id: str, current_user: dict = Depends(get_current_u
         # At accept the full amount is HELD, zero is released. status='pending'
         # until either Stripe capture (→ paid_full) or off-platform mark
         # (→ paid_off_platform); release to the business happens at /complete.
+        # Integer cents are authoritative (migration 20260723120000).
+        #
+        # escrow_held is 0 here, not the full amount. Charge-before-service:
+        # nothing is captured at accept, so nothing is "held in escrow" yet —
+        # escrow_held becomes non-zero only when the Stripe capture webhook
+        # confirms the money actually arrived. status='pending_payment' means
+        # "owed, not captured". Setting escrow_held=total here (the old code)
+        # made every unpaid booking read as fully funded.
+        #
+        # ('pending_payment' is the current vocabulary; the live
+        # payments_status_check still accepts the legacy 'pending' too. Earlier
+        # comments blamed a "migration 0001 applied 2026-07-22" — no such
+        # migration exists in the repo or the live list; the value is right, the
+        # cited reason was not.)
         payment_res = (
             supabase.table("payments")
             .insert(
                 {
                     "booking_id": booking["id"],
-                    "total_charged": total_amount,
-                    "escrow_held": total_amount,
-                    "released_to_business": 0,
-                    "platform_cut": platform_fee,
-                    # Vocabulary per migration 0001 (applied 2026-07-22): the
-                    # payments_status_check CHECK no longer accepts the legacy
-                    # 'pending' — it is 'pending_payment' now. Writing the old
-                    # value 500s every quote acceptance with a 23514.
+                    **escrow.ledger_write(
+                        total_charged=total_c,
+                        escrow_held=0,
+                        released_to_business=0,
+                        platform_cut=platform_fee_c,
+                    ),
                     "status": "pending_payment",
                 }
             )
             .execute()
+        )
+
+        # TRIGGER 2 (charge-before-service, ruling 2026-07-21): the moment the
+        # client accepts, start the charge automatically instead of relying on
+        # an optional "Pay with card" button they can skip. Never raises — a
+        # Stripe hiccup must not undo an accepted booking; the escrow guard at
+        # /complete still refuses to pay the business until a capture exists.
+        # Returns a checkout_url the client is sent straight to.
+        from app.services import payment_triggers
+
+        charge = payment_triggers.trigger_on_accept(
+            booking=booking,
+            client=current_user,
+            post=post,
         )
 
         # Notify the business owner and client (push + email) — best-effort
@@ -499,6 +534,12 @@ def accept_interest(interest_id: str, current_user: dict = Depends(get_current_u
             "message": "Interest accepted — booking and payment created",
             "booking": booking,
             "payment": payment_res.data[0],
+            # Present when charge-at-accept started a Stripe checkout. The client
+            # app should open checkout_url immediately. When None (Stripe not
+            # configured, e.g. the demo box), the booking still exists and can be
+            # paid later or recorded as off-platform.
+            "checkout_url": charge.get("checkout_url"),
+            "payment_started": bool(charge.get("triggered")),
         }
     except HTTPException:
         raise

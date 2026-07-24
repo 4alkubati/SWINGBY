@@ -148,7 +148,7 @@ Query the following to gather all data associated with the user's account:
 
 **For deletion requests:**
 - Soft-delete the user record (set a `deleted_at` timestamp, anonymize PII fields)
-- Retain booking and payment records for 7 years (legal requirement)
+- Retain booking and payment records for 6 years from the end of the tax year they relate to (CRA financial-record requirement — see note in `privacy-policy.md` §7)
 - Remove from all marketing lists immediately
 - Confirm deletion in writing to the requestor
 
@@ -209,8 +209,8 @@ The primary concern is the database staying in Canada for PIPEDA compliance. ✅
 
 | Data category | Retention | Basis |
 |---|---|---|
-| User account data | Until deletion + 30-day purge window | User request / PIPEDA |
-| Booking and payment records | 7 years from transaction | CRA / financial law |
+| User account data | On deletion, identifiers scrubbed/anonymized promptly (soft delete); financial rows retained per the row below | User request / PIPEDA |
+| Booking and payment records | 6 years from the end of the tax year they relate to | CRA / financial law (Income Tax Act s.230(4)) |
 | Messages | 2 years from booking end | Business need |
 | Reviews | Until account deletion | Business need |
 | Application logs | 90 days rolling | Operational need |

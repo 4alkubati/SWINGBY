@@ -19,7 +19,7 @@ This Data Processing Agreement ("DPA") is entered into between:
 
 and
 
-**SwingBy Technologies Inc.**, [address, Calgary, Alberta, Canada] ("SwingBy" / "Processor")
+**`[[LEGAL_ENTITY_NAME — Kira to supply]]`**, `[[REGISTERED_ADDRESS — Kira to supply]]`, Calgary, Alberta, Canada ("SwingBy" / "Processor")
 
 as of the date last signed below.
 
@@ -135,7 +135,7 @@ Upon termination of the Agreement, SwingBy shall, at Controller's election:
 
 Within 30 days of termination, SwingBy shall confirm in writing that deletion or return is complete.
 
-SwingBy may retain Personal Data for longer periods where required by applicable law (e.g., financial records for 7 years under Canadian tax law). Such retained data will be clearly isolated and not used for any other purpose.
+SwingBy may retain Personal Data for longer periods where required by applicable law (e.g., financial records for 6 years from the end of the tax year they relate to, under the Canadian Income Tax Act s.230(4)). Such retained data will be clearly isolated and not used for any other purpose.
 
 ---
 
@@ -184,7 +184,7 @@ Title: ________________________________
 Date: ________________________________  
 Company: _____________________________
 
-**SwingBy Technologies Inc.:**
+**`[[LEGAL_ENTITY_NAME — Kira to supply]]`:**
 
 Signed by: ___________________________  
 Name: ________________________________  
@@ -193,4 +193,4 @@ Date: ________________________________
 
 ---
 
-*TEMPLATE — Review with counsel before signing. SwingBy Technologies Inc. — Calgary, Alberta, Canada.*
+*TEMPLATE — Review with counsel before signing. `[[LEGAL_ENTITY_NAME — Kira to supply]]` — Calgary, Alberta, Canada.*

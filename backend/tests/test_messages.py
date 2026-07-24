@@ -613,3 +613,69 @@ class TestBusinessIdOnQuoteThreads:
         assert len(rows) == 1
         assert rows[0]["thread_type"] == "interest"
         assert rows[0]["business_id"] == "biz-9"
+
+
+class TestContactMaskingOnSend:
+    """
+    Item 31 — off-platform-leakage guard. A phone number or email in an
+    outgoing message must be masked BEFORE the row is written, so the raw
+    contact string never persists and can't be pulled back out via any read
+    path. Prices/addresses must pass through untouched (false-positive safety
+    is exhaustively covered in tests/test_contact_masking.py; this asserts the
+    wiring in send_message actually stores the masked string).
+    """
+
+    def test_phone_is_masked_in_stored_row(self, test_client, as_client):
+        booking_stub, businesses_stub, messages_stub = _booking_send_stubs(
+            insert_data=[{"id": "msg-1", "content": "x"}]
+        )
+        with patch("app.api.messages.supabase") as mock_supabase:
+            mock_supabase.table.side_effect = _multi_table(
+                {
+                    "bookings": booking_stub,
+                    "businesses": businesses_stub,
+                    "messages": messages_stub,
+                },
+                messages_stub,
+            )
+            with patch("app.api.messages.send_push_to_user"):
+                with patch.object(BackgroundTasks, "add_task"):
+                    response = test_client.post(
+                        "/messages/",
+                        json={
+                            "booking_id": "booking-1",
+                            "content": "call me at 403-555-1234",
+                        },
+                    )
+        assert response.status_code == 200, response.text
+        assert response.json()["masked"] is True
+        # The payload actually handed to .insert() must not contain the number.
+        stored = messages_stub.inserted["content"]
+        assert "403" not in stored
+        assert "555" not in stored
+
+    def test_price_is_not_masked(self, test_client, as_client):
+        booking_stub, businesses_stub, messages_stub = _booking_send_stubs(
+            insert_data=[{"id": "msg-1", "content": "x"}]
+        )
+        with patch("app.api.messages.supabase") as mock_supabase:
+            mock_supabase.table.side_effect = _multi_table(
+                {
+                    "bookings": booking_stub,
+                    "businesses": businesses_stub,
+                    "messages": messages_stub,
+                },
+                messages_stub,
+            )
+            with patch("app.api.messages.send_push_to_user"):
+                with patch.object(BackgroundTasks, "add_task"):
+                    response = test_client.post(
+                        "/messages/",
+                        json={
+                            "booking_id": "booking-1",
+                            "content": "The job is $250.00 total",
+                        },
+                    )
+        assert response.status_code == 200, response.text
+        assert response.json()["masked"] is False
+        assert messages_stub.inserted["content"] == "The job is $250.00 total"

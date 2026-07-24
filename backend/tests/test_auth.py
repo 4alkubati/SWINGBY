@@ -482,3 +482,649 @@ class TestSessionRefreshTokenIssued:
             assert data["access_token"] == "fixture-access"
             assert data["refresh_token"] is None
             assert data["expires_in"] is None
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# Social sign-in — /auth/social/*
+# ═════════════════════════════════════════════════════════════════════════════
+#
+# SCOPE OF THESE TESTS: everything on OUR side of the Supabase call. The
+# Supabase client is stubbed, so a real Google or Apple round trip is NOT
+# exercised here and cannot be — see the NOT VERIFIED section of the AUTH
+# report. What IS proven: the PKCE challenge is a correct S256 of the verifier,
+# the redirect allowlist closes the open-redirect hole, and — the part that
+# actually matters for this codebase — a brand-new social user always ends up
+# with a role AND a populated profile row, never a nameless shell.
+
+import base64 as _b64
+import hashlib as _hashlib
+from types import SimpleNamespace
+from datetime import datetime, timedelta, timezone
+
+
+class _FakeTable:
+    """Records writes; replays a fixed row set for reads.
+
+    Deliberately not the shared SupabaseTableStub: these tests need to assert
+    on the exact update payloads in order, and to serve different rows for
+    `users` vs `businesses` within one request.
+    """
+
+    def __init__(self, select_rows=None):
+        self.select_rows = select_rows if select_rows is not None else []
+        self.upserted = None
+        self.updates = []
+        self._mode = "select"
+        self._pending_update = None
+
+    def select(self, *a, **k):
+        self._mode = "select"
+        return self
+
+    def eq(self, *a, **k):
+        return self
+
+    def limit(self, *a, **k):
+        return self
+
+    def single(self, *a, **k):
+        return self
+
+    def upsert(self, payload, *a, **k):
+        self._mode = "upsert"
+        self.upserted = payload
+        return self
+
+    def update(self, payload, *a, **k):
+        self._mode = "update"
+        self._pending_update = payload
+        return self
+
+    def execute(self):
+        if self._mode == "update":
+            self.updates.append(self._pending_update)
+            self._pending_update = None
+            return SimpleNamespace(data=[])
+        if self._mode == "upsert":
+            return SimpleNamespace(data=[])
+        return SimpleNamespace(data=list(self.select_rows))
+
+    # Merged view of everything this table was asked to write.
+    @property
+    def written(self):
+        merged = dict(self.upserted or {})
+        for u in self.updates:
+            merged.update(u)
+        return merged
+
+
+def _social_session(access="social-access", refresh="social-refresh", expires=3600):
+    session = MagicMock()
+    session.access_token = access
+    session.refresh_token = refresh
+    session.expires_in = expires
+    return session
+
+
+def _social_auth_res(user_id="social-user-id", email="new.user@gmail.com",
+                     metadata=None, session=None):
+    user = MagicMock()
+    user.id = user_id
+    user.email = email
+    user.user_metadata = metadata if metadata is not None else {}
+    res = MagicMock()
+    res.user = user
+    res.session = session if session is not None else _social_session()
+    return res
+
+
+class TestSocialAuthorize:
+    """POST /auth/social/authorize — step 1 of the Google PKCE flow."""
+
+    def test_returns_supabase_authorize_url_with_valid_s256_challenge(self, test_client):
+        app.state.limiter.reset()
+        response = test_client.post(
+            "/auth/social/authorize",
+            json={"provider": "google", "redirect_to": "swingby://auth-callback"},
+        )
+        assert response.status_code == 200
+        data = response.json()
+
+        assert "/auth/v1/authorize?" in data["url"]
+        assert "provider=google" in data["url"]
+        assert "code_challenge_method=s256" in data["url"]
+        assert data["provider"] == "google"
+
+        # The whole point of PKCE: challenge must be BASE64URL(SHA256(verifier)),
+        # unpadded. A mismatch here means Supabase would reject the exchange.
+        verifier = data["code_verifier"]
+        expected = (
+            _b64.urlsafe_b64encode(_hashlib.sha256(verifier.encode()).digest())
+            .decode()
+            .rstrip("=")
+        )
+        assert f"code_challenge={expected}" in data["url"]
+
+    def test_each_call_mints_a_fresh_verifier(self, test_client):
+        app.state.limiter.reset()
+        body = {"provider": "google", "redirect_to": "swingby://auth-callback"}
+        first = test_client.post("/auth/social/authorize", json=body).json()
+        second = test_client.post("/auth/social/authorize", json=body).json()
+        assert first["code_verifier"] != second["code_verifier"]
+
+    def test_rejects_redirect_outside_the_allowlist(self, test_client):
+        """Open-redirect guard: an attacker-controlled redirect_to would send
+        the Supabase auth code to a host we don't own."""
+        app.state.limiter.reset()
+        response = test_client.post(
+            "/auth/social/authorize",
+            json={"provider": "google", "redirect_to": "https://evil.example.com/steal"},
+        )
+        assert response.status_code == 400
+
+    def test_rejects_unknown_provider(self, test_client):
+        app.state.limiter.reset()
+        response = test_client.post(
+            "/auth/social/authorize",
+            json={"provider": "facebook", "redirect_to": "swingby://auth-callback"},
+        )
+        assert response.status_code == 422
+
+
+class TestSocialExchange:
+    """POST /auth/social/exchange — Google code+verifier -> session."""
+
+    def test_new_google_user_gets_role_and_a_populated_profile(self, test_client):
+        """THE bug this whole lane exists to prevent.
+
+        handle_new_user() (live trigger on auth.users, verified 2026-07-23)
+        inserts a row with role='client' and EMPTY names. Left alone, a Google
+        signup produces a nameless profile. The exchange must backfill the
+        name from the Google identity and pin the requested role.
+        """
+        app.state.limiter.reset()
+        users = _FakeTable([
+            {
+                "id": "social-user-id",
+                "first_name": "",
+                "last_name": "",
+                "email": "new.user@gmail.com",
+                "role": "client",
+                "avatar_url": None,
+                "is_suspended": False,
+                "deleted_at": None,
+            }
+        ])
+        with patch("app.api.auth.supabase") as mock_supabase, patch(
+            "app.api.auth.supabase_auth"
+        ) as mock_auth:
+            mock_supabase.table.return_value = users
+            mock_auth.auth.exchange_code_for_session.return_value = _social_auth_res(
+                metadata={
+                    "given_name": "Ada",
+                    "family_name": "Lovelace",
+                    "picture": "https://lh3.googleusercontent.com/ada",
+                }
+            )
+
+            response = test_client.post(
+                "/auth/social/exchange",
+                json={
+                    "code": "auth-code",
+                    "code_verifier": "verifier",
+                    "provider": "google",
+                    "role": "business_owner",
+                },
+            )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["access_token"] == "social-access"
+        assert data["refresh_token"] == "social-refresh"
+        assert data["expires_in"] == 3600
+        assert data["is_new_user"] is True
+        assert data["provider"] == "google"
+
+        written = users.written
+        assert written["first_name"] == "Ada"
+        assert written["last_name"] == "Lovelace"
+        assert written["role"] == "business_owner"
+        assert written["avatar_url"] == "https://lh3.googleusercontent.com/ada"
+        assert data["role"] == "business_owner"
+
+    def test_writes_the_whole_row_when_the_trigger_left_nothing(self, test_client):
+        """Belt-and-braces: if handle_new_user() never ran (dropped trigger, a
+        race), we still must not leave a session pointing at no profile."""
+        app.state.limiter.reset()
+        users = _FakeTable([])  # no row at all
+        with patch("app.api.auth.supabase") as mock_supabase, patch(
+            "app.api.auth.supabase_auth"
+        ) as mock_auth:
+            mock_supabase.table.return_value = users
+            mock_auth.auth.exchange_code_for_session.return_value = _social_auth_res(
+                metadata={"full_name": "Grace Hopper"}
+            )
+            response = test_client.post(
+                "/auth/social/exchange",
+                json={"code": "c", "code_verifier": "v", "provider": "google"},
+            )
+
+        assert response.status_code == 200
+        assert users.upserted is not None
+        assert users.upserted["id"] == "social-user-id"
+        assert users.upserted["first_name"] == "Grace"
+        assert users.upserted["last_name"] == "Hopper"
+        # role is NOT NULL with no DB default — omitting it would 500 the insert.
+        assert users.upserted["role"] == "client"
+        assert users.upserted["email"] == "new.user@gmail.com"
+
+    def test_returning_user_keeps_their_existing_role(self, test_client):
+        """A social re-login must never demote an established business_owner,
+        even if the client cheekily passes role='client'."""
+        app.state.limiter.reset()
+        users = _FakeTable([
+            {
+                "id": "social-user-id",
+                "first_name": "Ada",
+                "last_name": "Lovelace",
+                "email": "new.user@gmail.com",
+                "role": "business_owner",
+                "avatar_url": "https://x/y",
+                "is_suspended": False,
+                "deleted_at": None,
+            }
+        ])
+        with patch("app.api.auth.supabase") as mock_supabase, patch(
+            "app.api.auth.supabase_auth"
+        ) as mock_auth:
+            mock_supabase.table.return_value = users
+            mock_auth.auth.exchange_code_for_session.return_value = _social_auth_res(
+                metadata={"given_name": "Ada", "family_name": "Lovelace"}
+            )
+            response = test_client.post(
+                "/auth/social/exchange",
+                json={
+                    "code": "c",
+                    "code_verifier": "v",
+                    "provider": "google",
+                    "role": "client",
+                },
+            )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["is_new_user"] is False
+        assert data["role"] == "business_owner"
+        assert "role" not in users.written
+
+    def test_suspended_account_cannot_sign_in_socially(self, test_client):
+        app.state.limiter.reset()
+        users = _FakeTable([
+            {
+                "id": "social-user-id",
+                "first_name": "Ada",
+                "last_name": "L",
+                "email": "a@b.c",
+                "role": "client",
+                "is_suspended": True,
+                "deleted_at": None,
+            }
+        ])
+        with patch("app.api.auth.supabase") as mock_supabase, patch(
+            "app.api.auth.supabase_auth"
+        ) as mock_auth:
+            mock_supabase.table.return_value = users
+            mock_auth.auth.exchange_code_for_session.return_value = _social_auth_res()
+            response = test_client.post(
+                "/auth/social/exchange",
+                json={"code": "c", "code_verifier": "v", "provider": "google"},
+            )
+
+        assert response.status_code == 403
+        assert response.json()["detail"] == "account_suspended"
+        # Nothing was written for a banned account.
+        assert users.written == {}
+
+    def test_soft_deleted_account_cannot_sign_in_socially(self, test_client):
+        app.state.limiter.reset()
+        users = _FakeTable([
+            {
+                "id": "social-user-id",
+                "first_name": "Ada",
+                "last_name": "L",
+                "email": "a@b.c",
+                "role": "client",
+                "is_suspended": False,
+                "deleted_at": "2026-07-01T00:00:00+00:00",
+            }
+        ])
+        with patch("app.api.auth.supabase") as mock_supabase, patch(
+            "app.api.auth.supabase_auth"
+        ) as mock_auth:
+            mock_supabase.table.return_value = users
+            mock_auth.auth.exchange_code_for_session.return_value = _social_auth_res()
+            response = test_client.post(
+                "/auth/social/exchange",
+                json={"code": "c", "code_verifier": "v", "provider": "google"},
+            )
+
+        assert response.status_code == 403
+        assert response.json()["detail"] == "account_deactivated"
+
+    def test_bad_code_returns_401_not_500(self, test_client):
+        app.state.limiter.reset()
+        with patch("app.api.auth.supabase"), patch(
+            "app.api.auth.supabase_auth"
+        ) as mock_auth:
+            mock_auth.auth.exchange_code_for_session.side_effect = Exception("bad code")
+            response = test_client.post(
+                "/auth/social/exchange",
+                json={"code": "nope", "code_verifier": "v", "provider": "google"},
+            )
+        assert response.status_code == 401
+
+    def test_no_session_returned_is_401(self, test_client):
+        app.state.limiter.reset()
+        res = _social_auth_res()
+        res.session = None
+        with patch("app.api.auth.supabase"), patch(
+            "app.api.auth.supabase_auth"
+        ) as mock_auth:
+            mock_auth.auth.exchange_code_for_session.return_value = res
+            response = test_client.post(
+                "/auth/social/exchange",
+                json={"code": "c", "code_verifier": "v", "provider": "google"},
+            )
+        assert response.status_code == 401
+
+
+class TestSocialIdToken:
+    """POST /auth/social/id-token — the Apple-on-iOS door (and native Google).
+
+    NOTE: no real Apple identityToken has ever been through this path. There is
+    no Apple Developer account and no iOS build. These tests prove the shape of
+    what we send Supabase and what we do with what comes back — not that Apple
+    accepts it.
+    """
+
+    def test_apple_first_authorization_uses_the_client_supplied_name(self, test_client):
+        """Apple sends the user's name ONLY on the very first authorization,
+        and only to the native SDK — never in the identity token itself. So the
+        client passes it and we use it to fill the NOT NULL name columns."""
+        app.state.limiter.reset()
+        users = _FakeTable([
+            {
+                "id": "social-user-id",
+                "first_name": "",
+                "last_name": "",
+                "email": "relay@privaterelay.appleid.com",
+                "role": "client",
+                "is_suspended": False,
+                "deleted_at": None,
+            }
+        ])
+        with patch("app.api.auth.supabase") as mock_supabase, patch(
+            "app.api.auth.supabase_auth"
+        ) as mock_auth:
+            mock_supabase.table.return_value = users
+            mock_auth.auth.sign_in_with_id_token.return_value = _social_auth_res(
+                email="relay@privaterelay.appleid.com", metadata={}
+            )
+            response = test_client.post(
+                "/auth/social/id-token",
+                json={
+                    "provider": "apple",
+                    "id_token": "apple.jwt.here",
+                    "nonce": "raw-nonce",
+                    "first_name": "Tim",
+                    "last_name": "Apple",
+                    "role": "client",
+                },
+            )
+
+        assert response.status_code == 200
+        assert response.json()["provider"] == "apple"
+        assert users.written["first_name"] == "Tim"
+        assert users.written["last_name"] == "Apple"
+
+        sent = mock_auth.auth.sign_in_with_id_token.call_args.args[0]
+        assert sent["provider"] == "apple"
+        assert sent["token"] == "apple.jwt.here"
+        # The nonce must be forwarded or Supabase rejects Apple tokens that
+        # were minted with one.
+        assert sent["nonce"] == "raw-nonce"
+
+    def test_nonce_is_omitted_when_absent_rather_than_sent_as_null(self, test_client):
+        app.state.limiter.reset()
+        users = _FakeTable([])
+        with patch("app.api.auth.supabase") as mock_supabase, patch(
+            "app.api.auth.supabase_auth"
+        ) as mock_auth:
+            mock_supabase.table.return_value = users
+            mock_auth.auth.sign_in_with_id_token.return_value = _social_auth_res()
+            test_client.post(
+                "/auth/social/id-token",
+                json={"provider": "google", "id_token": "g.jwt"},
+            )
+        sent = mock_auth.auth.sign_in_with_id_token.call_args.args[0]
+        assert "nonce" not in sent
+
+    def test_client_supplied_name_never_overrides_the_provider(self, test_client):
+        """A client could lie about its name. Where the provider asserted one,
+        the provider wins."""
+        app.state.limiter.reset()
+        users = _FakeTable([])
+        with patch("app.api.auth.supabase") as mock_supabase, patch(
+            "app.api.auth.supabase_auth"
+        ) as mock_auth:
+            mock_supabase.table.return_value = users
+            mock_auth.auth.sign_in_with_id_token.return_value = _social_auth_res(
+                metadata={"given_name": "Real", "family_name": "Name"}
+            )
+            test_client.post(
+                "/auth/social/id-token",
+                json={
+                    "provider": "google",
+                    "id_token": "g.jwt",
+                    "first_name": "Spoofed",
+                    "last_name": "Identity",
+                },
+            )
+        assert users.upserted["first_name"] == "Real"
+        assert users.upserted["last_name"] == "Name"
+
+    def test_rejects_provider_outside_the_allowlist(self, test_client):
+        app.state.limiter.reset()
+        response = test_client.post(
+            "/auth/social/id-token",
+            json={"provider": "azure", "id_token": "x"},
+        )
+        assert response.status_code == 422
+
+    def test_rejects_a_role_of_admin(self, test_client):
+        """No social door may mint an admin or an employee."""
+        app.state.limiter.reset()
+        response = test_client.post(
+            "/auth/social/id-token",
+            json={"provider": "google", "id_token": "x", "role": "admin"},
+        )
+        assert response.status_code == 422
+
+
+class TestSocialNameDerivation:
+    """users.first_name / last_name are NOT NULL. A provider that tells us
+    nothing must still produce a legal row."""
+
+    def test_falls_back_to_the_email_local_part(self, test_client):
+        app.state.limiter.reset()
+        users = _FakeTable([])
+        with patch("app.api.auth.supabase") as mock_supabase, patch(
+            "app.api.auth.supabase_auth"
+        ) as mock_auth:
+            mock_supabase.table.return_value = users
+            mock_auth.auth.sign_in_with_id_token.return_value = _social_auth_res(
+                email="anonymous.person@icloud.com", metadata={}
+            )
+            response = test_client.post(
+                "/auth/social/id-token",
+                json={"provider": "apple", "id_token": "x"},
+            )
+        assert response.status_code == 200
+        assert users.upserted["first_name"] == "anonymous.person"
+        assert users.upserted["last_name"] == ""  # legal: NOT NULL, not non-empty
+
+    def test_single_word_full_name_still_yields_a_first_name(self, test_client):
+        app.state.limiter.reset()
+        users = _FakeTable([])
+        with patch("app.api.auth.supabase") as mock_supabase, patch(
+            "app.api.auth.supabase_auth"
+        ) as mock_auth:
+            mock_supabase.table.return_value = users
+            mock_auth.auth.sign_in_with_id_token.return_value = _social_auth_res(
+                metadata={"name": "Prince"}
+            )
+            test_client.post(
+                "/auth/social/id-token", json={"provider": "google", "id_token": "x"}
+            )
+        assert users.upserted["first_name"] == "Prince"
+        assert users.upserted["last_name"] == ""
+
+
+class TestSocialRolePick:
+    """POST /auth/social/role — one-shot role pick for an account created via
+    the LOGIN screen's social button (which carries no role)."""
+
+    @staticmethod
+    def _auth_headers():
+        return {"Authorization": "Bearer social-jwt"}
+
+    def _run(self, test_client, current_user, businesses_rows=None, body=None):
+        from app.deps import get_current_user as real_dep
+
+        app.dependency_overrides[real_dep] = lambda: current_user
+        businesses = _FakeTable(businesses_rows or [])
+        users = _FakeTable([])
+
+        def _table(name):
+            return businesses if name == "businesses" else users
+
+        try:
+            with patch("app.api.auth.supabase") as mock_supabase:
+                mock_supabase.table.side_effect = _table
+                response = test_client.post(
+                    "/auth/social/role",
+                    json=body or {"role": "business_owner"},
+                    headers=self._auth_headers(),
+                )
+        finally:
+            app.dependency_overrides.pop(real_dep, None)
+        return response, users
+
+    def test_fresh_client_can_become_a_business_owner(self, test_client):
+        app.state.limiter.reset()
+        response, users = self._run(
+            test_client,
+            {
+                "id": "social-user-id",
+                "role": "client",
+                "created_at": datetime.now(timezone.utc).isoformat(),
+            },
+        )
+        assert response.status_code == 200
+        assert response.json()["role"] == "business_owner"
+        assert users.updates == [{"role": "business_owner"}]
+
+    def test_established_business_owner_is_refused(self, test_client):
+        app.state.limiter.reset()
+        response, users = self._run(
+            test_client,
+            {
+                "id": "social-user-id",
+                "role": "business_owner",
+                "created_at": datetime.now(timezone.utc).isoformat(),
+            },
+        )
+        assert response.status_code == 403
+        assert users.updates == []
+
+    def test_admin_cannot_be_rerolled(self, test_client):
+        """The escalation case that actually matters."""
+        app.state.limiter.reset()
+        response, users = self._run(
+            test_client,
+            {
+                "id": "admin-id",
+                "role": "admin",
+                "created_at": datetime.now(timezone.utc).isoformat(),
+            },
+        )
+        assert response.status_code == 403
+        assert users.updates == []
+
+    def test_account_older_than_24h_is_refused(self, test_client):
+        app.state.limiter.reset()
+        old = (datetime.now(timezone.utc) - timedelta(days=3)).isoformat()
+        response, users = self._run(
+            test_client,
+            {"id": "social-user-id", "role": "client", "created_at": old},
+        )
+        assert response.status_code == 403
+        assert users.updates == []
+
+    def test_client_who_already_owns_a_business_is_refused(self, test_client):
+        app.state.limiter.reset()
+        response, users = self._run(
+            test_client,
+            {
+                "id": "social-user-id",
+                "role": "client",
+                "created_at": datetime.now(timezone.utc).isoformat(),
+            },
+            businesses_rows=[{"id": "biz-1"}],
+        )
+        assert response.status_code == 403
+        assert users.updates == []
+
+    def test_rejects_employee_and_admin_as_a_target_role(self, test_client):
+        app.state.limiter.reset()
+        response, _ = self._run(
+            test_client,
+            {
+                "id": "social-user-id",
+                "role": "client",
+                "created_at": datetime.now(timezone.utc).isoformat(),
+            },
+            body={"role": "admin"},
+        )
+        assert response.status_code == 422
+
+
+class TestEmailPasswordFlowNotRegressed:
+    """The access_token + refresh_token pair landed on 2026-07-23. Social
+    sign-in must not have disturbed it."""
+
+    def test_login_still_returns_both_tokens(self, test_client):
+        app.state.limiter.reset()
+        with patch("app.api.auth.supabase") as mock_supabase, patch(
+            "app.api.auth.supabase_auth"
+        ) as mock_auth:
+            mock_user = MagicMock()
+            mock_user.id = "test-user-id"
+            mock_res = MagicMock()
+            mock_res.user = mock_user
+            mock_res.session = _social_session("acc", "ref", 3600)
+            mock_auth.auth.sign_in_with_password.return_value = mock_res
+            mock_supabase.table.return_value.select.return_value.eq.return_value.single.return_value.execute.return_value.data = {
+                "role": "client",
+                "first_name": "John",
+                "last_name": "Doe",
+            }
+            response = test_client.post(
+                "/auth/login",
+                json={"email": "still@works.com", "password": "SecurePass123"},
+            )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["access_token"] == "acc"
+        assert data["refresh_token"] == "ref"
+        assert data["expires_in"] == 3600

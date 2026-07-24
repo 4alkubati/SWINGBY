@@ -18,10 +18,16 @@ T18  Brute-force lockout on /login:
        custom middleware).
 """
 
+import base64
+import hashlib
+import os
 import re
+import secrets
 import time
 from collections import defaultdict
+from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Tuple
+from urllib.parse import urlencode
 
 import httpx
 import structlog
@@ -562,3 +568,497 @@ def update_me(data: ProfileUpdate, current_user: dict = Depends(get_current_user
     except Exception:
         logger.exception("Profile update failed")
         raise HTTPException(status_code=400, detail="Could not update profile")
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# Social sign-in — Google (all platforms) + Apple (iOS only)
+# ═════════════════════════════════════════════════════════════════════════════
+#
+# WHY THE BACKEND MEDIATES THIS
+# -----------------------------
+# The mobile app never talks to Supabase directly (see CLAUDE.md: "service_role
+# key backend-only"). More importantly, a social sign-in is the ONE path where
+# a Supabase Auth user can come into existence without ever passing through
+# POST /auth/signup — so nothing would set `users.role`, `first_name` or
+# `last_name`. The `handle_new_user()` trigger on auth.users does insert a bare
+# row (role defaults to 'client', names default to ''), which satisfies the
+# NOT NULL constraints but leaves a nameless profile behind. Verified against
+# the live database on 2026-07-23:
+#
+#   users: id, first_name NOT NULL, last_name NOT NULL, email NOT NULL UNIQUE,
+#          phone, role NOT NULL (CHECK client|business_owner|employee|admin,
+#          no default), avatar_url, created_at, deleted_at, is_suspended NOT
+#          NULL, is_ghosted NOT NULL, stripe_customer_id,
+#          default_payment_method_id
+#   trigger: auth.users AFTER INSERT -> public.handle_new_user()
+#
+# So every social entry point below funnels through _provision_social_user(),
+# which backfills names/avatar from the provider identity and pins the role.
+# That is what makes a social user indistinguishable from an email signup.
+#
+# TWO FLOWS
+# ---------
+# 1. PKCE redirect  (Google, every platform)
+#      POST /auth/social/authorize -> {url, code_verifier}
+#      app opens `url` in a browser tab, Supabase runs the Google dance,
+#      redirects back to the app scheme with ?code=...
+#      POST /auth/social/exchange  -> session + provisioned profile
+#
+# 2. Native ID token  (Apple on iOS; also works for Google native SDKs)
+#      POST /auth/social/id-token  -> session + provisioned profile
+#
+# Flow 2 is what expo-apple-authentication feeds. It is INERT until an Apple
+# Developer account exists and the Apple provider is enabled in Supabase —
+# see docs/SOCIAL_SIGNIN_SETUP.md. Nothing in flow 2 is reachable from the
+# Android build.
+
+_SOCIAL_PROVIDERS = ("google", "apple")
+
+# Redirect targets we are willing to hand a Supabase auth code to. An open
+# redirect here would let an attacker harvest auth codes, so this is an
+# allowlist of URL *prefixes*, not a free-text field.
+#   - `swingby://`         the app's own scheme (app.json -> expo.scheme)
+#   - `https://swingbyy.com/` the web property
+# Extra prefixes (e.g. `exp://10.0.0.168:8081/--/` for Expo Go, or a tunnel
+# URL) come from SOCIAL_AUTH_REDIRECT_PREFIXES as a comma-separated list.
+# Read via os.getenv rather than app.config.settings because config.py is not
+# owned by this module; adding it to _OPTIONAL there is a follow-up nicety.
+_DEFAULT_REDIRECT_PREFIXES = ("swingby://", "https://swingbyy.com/")
+
+
+def _allowed_redirect_prefixes() -> Tuple[str, ...]:
+    extra = os.getenv("SOCIAL_AUTH_REDIRECT_PREFIXES", "")
+    parsed = tuple(p.strip() for p in extra.split(",") if p.strip())
+    return _DEFAULT_REDIRECT_PREFIXES + parsed
+
+
+def _validate_redirect(redirect_to: str) -> str:
+    redirect_to = (redirect_to or "").strip()
+    if not redirect_to or not any(
+        redirect_to.startswith(p) for p in _allowed_redirect_prefixes()
+    ):
+        raise HTTPException(status_code=400, detail="redirect_to is not allowed")
+    return redirect_to
+
+
+def _pkce_pair() -> Tuple[str, str]:
+    """Returns (code_verifier, code_challenge) for RFC 7636 S256.
+
+    The verifier is handed back to the app, which holds it for the round trip
+    and returns it on /exchange. That is the standard public-client shape:
+    the code alone is useless to anyone who intercepts the redirect.
+    """
+    verifier = base64.urlsafe_b64encode(secrets.token_bytes(64)).decode().rstrip("=")
+    digest = hashlib.sha256(verifier.encode("ascii")).digest()
+    challenge = base64.urlsafe_b64encode(digest).decode().rstrip("=")
+    return verifier, challenge
+
+
+def _split_provider_name(meta: dict, email: str) -> Tuple[str, str]:
+    """Best-effort first/last name out of an OIDC identity.
+
+    Google sends given_name/family_name (and name/full_name). Apple sends a
+    name ONLY on the very first authorization and only via the native SDK, so
+    the client passes it explicitly. Falls back to the email local-part —
+    users.first_name is NOT NULL, so this must never return an empty first
+    name. last_name is NOT NULL too but '' is a legal value.
+    """
+    meta = meta or {}
+    first = (meta.get("given_name") or meta.get("first_name") or "").strip()
+    last = (meta.get("family_name") or meta.get("last_name") or "").strip()
+
+    if not first:
+        full = (meta.get("full_name") or meta.get("name") or "").strip()
+        if full:
+            parts = full.split()
+            first = parts[0]
+            if not last and len(parts) > 1:
+                last = " ".join(parts[1:])
+
+    if not first:
+        local_part = (email or "").split("@")[0].strip()
+        first = local_part or "SwingBy"
+
+    return first[:80], last[:80]
+
+
+def _provision_social_user(
+    auth_user,
+    provider: str,
+    requested_role: Optional[str],
+    name_hint: Optional[Dict[str, str]] = None,
+):
+    """Guarantee a complete `users` row for a social identity.
+
+    Returns (user_row, is_new_user).
+
+    The handle_new_user() trigger has almost certainly already inserted a bare
+    row by the time we get here (role='client', first_name='', last_name='').
+    "New" is therefore detected as *no row* or *a row with a blank first
+    name* — not as "row missing", which would never be true.
+
+    Lifecycle guards mirror /auth/login exactly: a soft-deleted or suspended
+    account cannot obtain a session through the social door either.
+    """
+    user_id = auth_user.id
+    email = (getattr(auth_user, "email", None) or "").strip().lower()
+    meta = dict(getattr(auth_user, "user_metadata", None) or {})
+    if name_hint:
+        # Client-supplied names (Apple's first-authorization payload) only
+        # fill gaps; they never override what the provider itself asserted.
+        for k, v in name_hint.items():
+            if v and not meta.get(k):
+                meta[k] = v
+
+    existing = (
+        supabase.table("users")
+        .select(
+            "id, first_name, last_name, email, role, avatar_url, "
+            "is_suspended, deleted_at, created_at"
+        )
+        .eq("id", user_id)
+        .limit(1)
+        .execute()
+    )
+    rows = existing.data or []
+    row = rows[0] if rows else None
+
+    is_new = row is None or not (row.get("first_name") or "").strip()
+
+    if row is not None:
+        # Guard BEFORE writing anything — a banned account gets no side effects.
+        if row.get("deleted_at"):
+            raise HTTPException(status_code=403, detail="account_deactivated")
+        if row.get("is_suspended"):
+            raise HTTPException(status_code=403, detail="account_suspended")
+
+    first_name, last_name = _split_provider_name(meta, email)
+    avatar = (meta.get("avatar_url") or meta.get("picture") or "").strip() or None
+
+    if row is None:
+        # Trigger did not fire (or a race lost it) — write the whole row.
+        payload = {
+            "id": user_id,
+            "email": email,
+            "first_name": first_name,
+            "last_name": last_name,
+            "role": requested_role or "client",
+        }
+        if avatar:
+            payload["avatar_url"] = avatar[:2048]
+        supabase.table("users").upsert(payload).execute()
+        row = payload
+    else:
+        patch: Dict[str, object] = {}
+        if not (row.get("first_name") or "").strip():
+            patch["first_name"] = first_name
+            patch["last_name"] = last_name
+        if not (row.get("email") or "").strip() and email:
+            patch["email"] = email
+        if avatar and not (row.get("avatar_url") or "").strip():
+            patch["avatar_url"] = avatar[:2048]
+        # Role is only ever set on the way IN. An established account keeps
+        # the role it has — a social re-login must not silently demote a
+        # business_owner (or, worse, be usable to change an admin's role).
+        if is_new and requested_role and row.get("role") != requested_role:
+            patch["role"] = requested_role
+        if patch:
+            supabase.table("users").update(patch).eq("id", user_id).execute()
+            row = {**row, **patch}
+
+    # Ghost mode lifts on a successful sign-in, same as /auth/login.
+    try:
+        supabase.table("users").update({"is_ghosted": False}).eq(
+            "id", user_id
+        ).execute()
+    except Exception:
+        logger.warning("auth.social ghost-clear failed", user_id=user_id)
+
+    if is_new:
+        # Best-effort side effects — identical to /auth/signup, and identical
+        # in that neither may block the request.
+        try:
+            from app.services.email import send_welcome_email
+
+            send_welcome_email(email, row.get("first_name") or first_name)
+        except Exception:
+            pass
+        try:
+            from app.services.analytics import track_event
+
+            track_event(
+                "Signup",
+                url_path="/auth/social",
+                props={"role": row.get("role"), "method": provider},
+            )
+        except Exception:
+            pass
+
+    return row, is_new
+
+
+def _social_session_response(
+    res,
+    provider: str,
+    requested_role: Optional[str],
+    name_hint: Optional[Dict[str, str]] = None,
+) -> dict:
+    """Shared tail for both social flows: provision, then return the SAME
+    token envelope /auth/login returns so the mobile client has one code path.
+    """
+    session = getattr(res, "session", None)
+    user = getattr(res, "user", None)
+    if not session or not user:
+        raise HTTPException(status_code=401, detail="Social sign-in failed")
+
+    row, is_new = _provision_social_user(user, provider, requested_role, name_hint)
+
+    return {
+        "access_token": session.access_token,
+        "refresh_token": getattr(session, "refresh_token", None),
+        "expires_in": getattr(session, "expires_in", None),
+        "user_id": user.id,
+        "role": row.get("role"),
+        "first_name": row.get("first_name"),
+        "last_name": row.get("last_name"),
+        "provider": provider,
+        "is_new_user": is_new,
+    }
+
+
+def _validate_social_role(v: Optional[str]) -> Optional[str]:
+    if v is None or v == "":
+        return None
+    if v not in ("client", "business_owner"):
+        raise ValueError("role must be 'client' or 'business_owner'")
+    return v
+
+
+class SocialAuthorizeRequest(BaseModel):
+    provider: str = Field(..., max_length=16)
+    redirect_to: str = Field(..., max_length=512)
+    role: Optional[str] = Field(None, max_length=32)
+
+    @field_validator("provider")
+    @classmethod
+    def validate_provider(cls, v: str) -> str:
+        v = v.strip().lower()
+        if v not in _SOCIAL_PROVIDERS:
+            raise ValueError(f"provider must be one of {', '.join(_SOCIAL_PROVIDERS)}")
+        return v
+
+    @field_validator("role", mode="before")
+    @classmethod
+    def validate_role(cls, v):
+        return _validate_social_role(v)
+
+
+class SocialExchangeRequest(BaseModel):
+    code: str = Field(..., min_length=1, max_length=2048)
+    code_verifier: str = Field(..., min_length=1, max_length=256)
+    provider: str = Field("google", max_length=16)
+    role: Optional[str] = Field(None, max_length=32)
+
+    @field_validator("provider")
+    @classmethod
+    def validate_provider(cls, v: str) -> str:
+        v = (v or "google").strip().lower()
+        if v not in _SOCIAL_PROVIDERS:
+            raise ValueError(f"provider must be one of {', '.join(_SOCIAL_PROVIDERS)}")
+        return v
+
+    @field_validator("role", mode="before")
+    @classmethod
+    def validate_role(cls, v):
+        return _validate_social_role(v)
+
+
+class SocialIdTokenRequest(BaseModel):
+    provider: str = Field(..., max_length=16)
+    id_token: str = Field(..., min_length=1, max_length=8192)
+    nonce: Optional[str] = Field(None, max_length=256)
+    first_name: Optional[str] = Field(None, max_length=80)
+    last_name: Optional[str] = Field(None, max_length=80)
+    role: Optional[str] = Field(None, max_length=32)
+
+    @field_validator("provider")
+    @classmethod
+    def validate_provider(cls, v: str) -> str:
+        v = v.strip().lower()
+        if v not in _SOCIAL_PROVIDERS:
+            raise ValueError(f"provider must be one of {', '.join(_SOCIAL_PROVIDERS)}")
+        return v
+
+    @field_validator("role", mode="before")
+    @classmethod
+    def validate_role(cls, v):
+        return _validate_social_role(v)
+
+
+class SocialRoleRequest(BaseModel):
+    role: str = Field(..., max_length=32)
+
+    @field_validator("role")
+    @classmethod
+    def validate_role(cls, v: str) -> str:
+        if v not in ("client", "business_owner"):
+            raise ValueError("role must be 'client' or 'business_owner'")
+        return v
+
+
+@router.post("/social/authorize")
+@limiter.limit("10/minute")
+def social_authorize(request: Request, data: SocialAuthorizeRequest):
+    """Step 1 of the PKCE redirect flow.
+
+    Returns the Supabase `/auth/v1/authorize` URL to open in a browser tab plus
+    the code_verifier the caller must hold and send back to /social/exchange.
+    No secret leaves the server: the verifier is a per-attempt random value,
+    and the Supabase URL is public information anyway.
+    """
+    redirect_to = _validate_redirect(data.redirect_to)
+    verifier, challenge = _pkce_pair()
+
+    base = settings.SUPABASE_URL.rstrip("/")
+    query = urlencode(
+        {
+            "provider": data.provider,
+            "redirect_to": redirect_to,
+            "code_challenge": challenge,
+            "code_challenge_method": "s256",
+        }
+    )
+    return {
+        "url": f"{base}/auth/v1/authorize?{query}",
+        "code_verifier": verifier,
+        "redirect_to": redirect_to,
+        "provider": data.provider,
+    }
+
+
+@router.post("/social/exchange")
+@limiter.limit("10/minute")
+def social_exchange(request: Request, data: SocialExchangeRequest):
+    """Step 2 of the PKCE redirect flow — code + verifier -> session.
+
+    Runs on supabase_auth (NOT supabase) for the reason spelled out in
+    supabase_client.py: a session on the service-role client silently
+    downgrades every subsequent .table() call to that user's RLS context.
+    """
+    try:
+        res = supabase_auth.auth.exchange_code_for_session(
+            {"auth_code": data.code, "code_verifier": data.code_verifier}
+        )
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception("auth.social exchange failed", provider=data.provider)
+        raise HTTPException(status_code=401, detail="Social sign-in failed")
+
+    return _social_session_response(res, data.provider, data.role)
+
+
+@router.post("/social/id-token")
+@limiter.limit("10/minute")
+def social_id_token(request: Request, data: SocialIdTokenRequest):
+    """Native ID-token sign-in — this is the Apple-on-iOS door.
+
+    expo-apple-authentication returns an identityToken (a signed OIDC JWT) and
+    the nonce it was minted with; Supabase verifies the signature against
+    Apple's JWKS. We never trust the client's claim about who they are — the
+    only thing the client can influence is the display name, and only when the
+    provider did not supply one (Apple only sends the name on first auth).
+
+    UNTESTED END-TO-END: no Apple Developer account exists (see the report),
+    so no real identityToken has ever been through this. The Supabase call and
+    the profile provisioning are covered by unit tests with a stubbed client.
+    """
+    name_hint = {}
+    if data.first_name:
+        name_hint["first_name"] = data.first_name.strip()
+    if data.last_name:
+        name_hint["last_name"] = data.last_name.strip()
+
+    credentials = {"provider": data.provider, "token": data.id_token}
+    if data.nonce:
+        credentials["nonce"] = data.nonce
+
+    try:
+        res = supabase_auth.auth.sign_in_with_id_token(credentials)
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception("auth.social id_token failed", provider=data.provider)
+        raise HTTPException(status_code=401, detail="Social sign-in failed")
+
+    return _social_session_response(res, data.provider, data.role, name_hint or None)
+
+
+@router.post("/social/role")
+@limiter.limit("5/minute")
+def social_set_role(
+    request: Request,
+    data: SocialRoleRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    """One-shot role pick for a freshly-created social account.
+
+    A social sign-in started from the LOGIN screen carries no role, so the new
+    account lands as 'client' (the trigger's default). This lets the app ask
+    "actually, are you offering services?" straight afterwards.
+
+    Deliberately narrow so it can never be used for privilege escalation:
+      - only 'client' -> 'business_owner' | 'client' (never employee/admin,
+        and never FROM employee/admin/business_owner)
+      - only within 24h of account creation
+      - only while the user owns no businesses
+    Anything else is a 403. Note that picking business_owner at signup is
+    already unrestricted (see SignupRequest.validate_role), so this grants
+    nothing a normal signup would not.
+    """
+    if current_user.get("role") != "client":
+        raise HTTPException(status_code=403, detail="role is already set")
+
+    created_at = current_user.get("created_at")
+    if created_at:
+        try:
+            parsed = datetime.fromisoformat(str(created_at).replace("Z", "+00:00"))
+            if parsed.tzinfo is None:
+                parsed = parsed.replace(tzinfo=timezone.utc)
+            if datetime.now(timezone.utc) - parsed > timedelta(hours=24):
+                raise HTTPException(status_code=403, detail="role is already set")
+        except HTTPException:
+            raise
+        except Exception:
+            # Unparseable created_at — fail closed rather than open.
+            raise HTTPException(status_code=403, detail="role is already set")
+
+    try:
+        owned = (
+            supabase.table("businesses")
+            .select("id")
+            .eq("owner_id", current_user["id"])
+            .limit(1)
+            .execute()
+        )
+        if owned.data:
+            raise HTTPException(status_code=403, detail="role is already set")
+    except HTTPException:
+        raise
+    except Exception:
+        logger.warning(
+            "auth.social role business lookup failed", user_id=current_user["id"]
+        )
+
+    if data.role == "client":
+        return {"role": "client"}
+
+    try:
+        supabase.table("users").update({"role": data.role}).eq(
+            "id", current_user["id"]
+        ).execute()
+    except Exception:
+        logger.exception("auth.social role update failed")
+        raise HTTPException(status_code=400, detail="Could not set role")
+
+    return {"role": data.role}

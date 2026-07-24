@@ -167,13 +167,17 @@ class TestReleaseOnComplete:
         m.table.side_effect = lambda name: stub
         return patcher, stub
 
-    def test_pending_payment_releases_full_net(self):
+    def test_captured_payment_releases_full_net(self):
+        # FINDING C: release requires a captured payment. A 'held' row with a
+        # real PaymentIntent is capture-backed, so completion releases the net.
         payment = {
             "id": "pay-1",
+            "booking_id": "booking-1",
             "total_charged": 100.00,
             "platform_cut": 10.00,
             "released_to_business": 0,
-            "status": "pending",
+            "status": "held",
+            "stripe_payment_intent_id": "pi_test_123",
         }
         p, stub = self._patch_payments(payment)
         try:
@@ -183,8 +187,48 @@ class TestReleaseOnComplete:
         assert out["outcome"] == "released"
         upd = [c for c in stub.calls if c[0] == "update"][0][1][0]
         assert upd["released_to_business"] == 90.00
+        assert upd["released_to_business_cents"] == 9000
         assert upd["escrow_held"] == 0
         assert upd["status"] == "fully_released"
+
+    def test_uncaptured_pending_payment_cannot_be_released(self):
+        # FINDING C, the core guard: a 'pending_payment' row with no Stripe
+        # charge behind it must NOT release money to the business.
+        payment = {
+            "id": "pay-1",
+            "booking_id": "booking-1",
+            "total_charged": 100.00,
+            "platform_cut": 10.00,
+            "released_to_business": 0,
+            "status": "pending_payment",
+            "stripe_payment_intent_id": None,
+        }
+        p, stub = self._patch_payments(payment)
+        try:
+            with pytest.raises(escrow.CaptureRequiredError):
+                escrow.release_escrow_on_complete("booking-1")
+        finally:
+            p.stop()
+        # And nothing was written to the ledger.
+        assert not [c for c in stub.calls if c[0] == "update"]
+
+    def test_offplatform_method_is_capture_backed_and_releases(self):
+        # A cash/e-transfer booking has no PaymentIntent but IS paid — the
+        # off-platform status short-circuits to a no-op release (money never
+        # touched the platform), not a CaptureRequiredError.
+        payment = {
+            "id": "pay-1",
+            "booking_id": "booking-1",
+            "total_charged": 100.00,
+            "status": "paid_off_platform",
+            "method": "cash",
+        }
+        p, stub = self._patch_payments(payment)
+        try:
+            out = escrow.release_escrow_on_complete("booking-1")
+        finally:
+            p.stop()
+        assert out["outcome"] == "offplatform"
 
     def test_offplatform_payment_is_not_released(self):
         payment = {"id": "pay-1", "status": "paid_off_platform", "total_charged": 100.0}
@@ -270,13 +314,20 @@ class TestAcceptDoesNotPreRelease:
 
         assert resp.status_code == 200, resp.text
         pay = stubs["payments"].inserted
-        # 'pending_payment' since migration 0001 renamed the legacy 'pending'.
-        # The live payments_status_check rejects the old value outright.
+        # Charge-before-service: at accept nothing is captured, so the payment is
+        # 'pending_payment' (owed) with escrow_held=0 — NOT the full amount. The
+        # old code wrote escrow_held=total, making every unpaid booking read as
+        # funded (FINDING C's upstream cause).
         assert pay["status"] == "pending_payment"
         assert pay["released_to_business"] == 0
-        assert pay["escrow_held"] == 100.0
+        assert pay["released_to_business_cents"] == 0
+        assert pay["escrow_held"] == 0
+        assert pay["escrow_held_cents"] == 0
+        assert pay["total_charged_cents"] == 10000
         booking = stubs["bookings"].inserted
-        assert booking["payment_status"] == "held"
+        # Booking payment mirror is 'pending_payment' too, not 'held'.
+        assert booking["payment_status"] == "pending_payment"
+        assert booking["total_amount_cents"] == 10000
 
 
 # ── Endpoint: cancellation moves the ledger ───────────────────────────────────

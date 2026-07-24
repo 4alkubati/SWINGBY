@@ -1,136 +1,58 @@
-# SwingBy — Privacy Policy
+# SwingBy — Privacy Policy (POINTER, NOT THE POLICY)
 
-**Effective Date:** May 28, 2026
-**Last Updated:** May 28, 2026
-**Entity:** Swingbyy Inc.
-**Contact:** 4alkubati@gmail.com
+> **This file is not the privacy policy.** It used to hold a second, separately
+> maintained copy dated 28 May 2026. That copy has been retired because two
+> canonical policies cannot both be true, and they had already diverged on
+> retention (7 years vs 6), on subprocessors, on the deletion model, and on the
+> minimum age.
 
-This Privacy Policy explains how Swingbyy Inc. ("SwingBy", "we", "us", "our") collects, uses, and protects personal information when you use the SwingBy mobile app or website (the "Service"). This Policy complies with Canada's *Personal Information Protection and Electronic Documents Act* (PIPEDA) and Alberta's *Personal Information Protection Act* (PIPA).
+## The canonical privacy policy lives at
 
----
+**[`privacy-and-security/privacy-policy.md`](../../privacy-and-security/privacy-policy.md)**
 
-## 1. Information We Collect
+Edit that file. Do not re-add policy text here.
 
-### 1.1 Information you provide directly
-- Name, email address, phone number, role (client / business / employee)
-- Profile photo, business description, service category, service radius
-- Job posts, quote amounts, booking schedules
-- Messages exchanged with other users on job (quote) threads and bookings
-- Reviews and ratings
-- Payment-method metadata (we do not store card numbers — see §3.2)
+## Why `privacy-and-security/` won
 
-### 1.2 Information collected automatically
-- Approximate device location (when you grant permission) — used for nearby business discovery
-- Device type, OS version, app version (for crash debugging via Sentry)
-- IP address, request timestamps (for audit logging and rate-limiting)
-- Expo push token (for sending booking notifications)
+- It is the fuller legal programme: the policy sits next to the PIPEDA
+  compliance checklist, the subprocessor register, the DPA template, the data
+  handling SOP, the incident-response runbook, and the cookie policy. Those
+  documents cross-link into the policy and would break if the policy lived
+  elsewhere.
+- Its terms-of-service sibling was the only document whose cancellation ladder
+  already matched the shipped `backend/app/services/escrow.py`.
+- The open compliance register (`privacy-and-security/COMPLIANCE-REGISTER.md`)
+  already tracks it as the document of record.
 
-### 1.3 Information from third parties
-- Authentication providers (when you sign in via OAuth — future feature)
-- Aggregated analytics from Plausible (no personally identifying cookies)
+## What was carried over from the retired copy
 
----
+Nothing was silently dropped. The following material only existed in this file
+and has been merged into the canonical policy:
 
-## 2. How We Use Your Information
-
-We use your information only for these purposes (PIPEDA §5: limited collection / limited use):
-
-| Purpose | Examples |
+| Content in the retired copy | Where it went |
 |---|---|
-| Provide the Service | Match clients with businesses; deliver messages; process bookings |
-| Verify identity | Confirm signup email; phone for booking coordination |
-| Improve the Service | Aggregate analytics (never tied to your identity); bug reports via Sentry |
-| Communicate with you | Booking confirmations; receipts; security notifications |
-| Comply with law | Tax remittance; subpoenas; PIPEDA breach reporting |
+| Render as an API-hosting subprocessor (US) | canonical §6 and §12.2 |
+| Expo push-token delivery as a subprocessor | canonical §6 |
+| Cloudflare as a subprocessor | canonical §6 |
+| Notion (waitlist) as a subprocessor | canonical §6 |
+| Audit-log retention (24 months) | canonical §7 retention table |
+| What a business can see on an open job post | canonical §6, corrected — the address is now masked to locality and the client's last name is withheld until acceptance |
+| Explicit PIPEDA / Alberta PIPA framing | canonical §12.1 |
 
-We do **not** sell or rent your personal information to third parties.
+Claims in the retired copy that were **false against the code on `main`** were
+not carried over: hard deletion within 30 days (the product does a soft delete
+with PII scrub), a 7-year payment retention period (the CRA rule is 6 years from
+the end of the tax year), and businesses seeing the client's full name and
+street address before acceptance (masked since CARD-23).
 
----
+## Other surfaces that render this policy
 
-## 3. How We Share Your Information
+These are *derived* — they must be regenerated from the canonical text, never
+edited independently:
 
-### 3.1 Between users
-- Clients see business profiles, ratings, and reviews
-- Businesses browsing open jobs see the job description, uploaded photos, the client's name, and the job address — this is how they judge whether the job is in their service area before quoting
-- Messages are visible only to the two parties on the job thread or booking they belong to
-- Reviews are public on the reviewed party's profile (first name only, surname redacted)
-
-### 3.2 With service providers (processors)
-| Processor | Purpose | Location | Safeguards |
-|---|---|---|---|
-| Supabase Inc. | Database, authentication, file storage | Canada (ca-central-1) | SOC 2 Type II, GDPR-aligned DPA |
-| Render Services Inc. | API hosting | United States | SOC 2 Type II, encryption at rest |
-| Cloudflare Inc. | DNS, CDN, edge worker | Global | SOC 2, ISO 27001 |
-| Sentry / Functional Software Inc. | Error monitoring | United States | SOC 2, DPA with EU SCCs |
-| Expo / 650 Industries Inc. | Push notification delivery | United States | TLS in transit; tokens scoped to app |
-| Notion Labs Inc. | Waitlist + early CRM | United States | SOC 2 Type II |
-
-We share only the minimum data needed. Where transfers cross borders, we rely on contractual safeguards.
-
-### 3.3 With law enforcement
-We may disclose information when legally required (PIPEDA §7(3)). We will challenge over-broad requests and notify affected users where law permits.
-
----
-
-## 4. Your Rights
-
-Under PIPEDA and PIPA you may, at any time:
-
-| Right | How to exercise |
+| Surface | Status |
 |---|---|
-| Access your data | In-app: Settings → Privacy → Export my data — produces a JSON file of everything we have about you |
-| Correct your data | In-app: Settings → Edit profile |
-| Withdraw consent / delete | In-app: Settings → Delete my account — irreversibly removes your profile within 30 days |
-| Challenge our compliance | Email 4alkubati@gmail.com — we respond within 30 days per PIPEDA §29 |
-| Complaint to regulator | Office of the Privacy Commissioner of Canada — priv.gc.ca |
-
----
-
-## 5. Data Retention
-
-| Category | Retention period |
-|---|---|
-| Active account data | While the account is active |
-| Deleted account data | Anonymized within 30 days; messages and reviews retained as anonymous to preserve thread integrity |
-| Audit logs | 24 months (security and dispute resolution) |
-| Payment records | 7 years (Canada Revenue Agency tax requirement) |
-| Sentry crash logs | 90 days |
-| Push tokens | Until revoked or replaced |
-
----
-
-## 6. Security
-
-We protect your information with:
-
-- TLS 1.2+ on every network request
-- Tokens stored in iOS Keychain / Android Keystore (never plain disk)
-- Database access scoped by row-level security (RLS) — users can only see their own rows
-- Service role keys held only on our server, never embedded in the mobile app
-- Rate-limiting and brute-force lockout on authentication endpoints
-- Sentry error logs strip stack-trace local-variable values
-- Annual third-party security review (planned post-launch)
-
-No system is impenetrable. In the event of a breach affecting your information, we will notify you and the Office of the Privacy Commissioner per PIPEDA §10.1 within 72 hours of confirmation.
-
----
-
-## 7. Children
-
-SwingBy is not intended for users under 16. We do not knowingly collect information from children. If you believe we have collected information from a minor, email 4alkubati@gmail.com and we will delete it promptly.
-
----
-
-## 8. Changes to this Policy
-
-We may update this Policy. Material changes will be announced in-app and via email at least 30 days before they take effect. Continued use after the effective date is acceptance.
-
----
-
-## 9. Contact
-
-**Privacy Officer**
-Swingbyy Inc.
-4alkubati@gmail.com
-
-For data-access requests under PIPEDA / PIPA, include "Data Request" in your subject line. We respond within 30 days.
+| `mobile/src/screens/profile/PrivacyPolicyScreen.js` | short in-app summary that links out to the canonical policy |
+| `web/launch/src/pages/PrivacyPage.jsx` | web summary + link; **not currently deployed** |
+| `web/pre-launch/src/pages/PrivacyPage.jsx` | **this is what swingbyy.com/privacy actually serves, and it is dated "May 2025"** — see `COMPLIANCE-REGISTER.md` section H |
+| App Store / Play Store privacy disclosures | must match the canonical policy |

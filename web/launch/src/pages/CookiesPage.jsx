@@ -4,7 +4,7 @@ import styles from './page.module.css'
 export default function CookiesPage() {
   return (
     <>
-      <SEO title="Cookie policy" noindex />
+      <SEO title="Cookie policy" />
       <div className={styles.container}>
         <div className={styles.pageHero}>
           <h1 className={styles.pageTitle}>Cookie policy</h1>

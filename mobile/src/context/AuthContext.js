@@ -8,7 +8,7 @@ import {
   getMe,
   refreshSession,
 } from '../services/auth';
-import { registerForPushAsync } from '../services/notifications';
+import { registerForPushAsync, unregisterPushAsync } from '../services/notifications';
 
 const AuthContext = createContext(null);
 
@@ -98,6 +98,10 @@ export function AuthProvider({ children }) {
   }
 
   async function logout() {
+    // Drop this device's push token FIRST — while the request is still
+    // authenticated — so the next user on this device doesn't inherit the
+    // previous user's notifications. Non-fatal; never blocks sign-out.
+    try { await unregisterPushAsync(); } catch { /* non-fatal */ }
     await clearToken();
     setAuthToken(null);
     setToken(null);
