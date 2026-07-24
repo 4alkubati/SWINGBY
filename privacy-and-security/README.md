@@ -26,10 +26,16 @@
 
 ### Public-facing
 
+> **Canonical.** `privacy-policy.md` and `terms-of-service.md` in this folder are
+> the single source of truth. `docs/legal/PRIVACY_POLICY.md` and
+> `TERMS_OF_SERVICE.md` are pointers to them. Reconciled against the code on
+> `main` on 2026-07-23 — see [COMPLIANCE-REGISTER.md](COMPLIANCE-REGISTER.md).
+
 | File | Purpose | Status |
 |---|---|---|
-| [privacy-policy.md](privacy-policy.md) | What data we collect, why, and user rights | Draft — needs lawyer review |
-| [terms-of-service.md](terms-of-service.md) | Rules of the platform, liability framing | Draft — needs lawyer review |
+| [privacy-policy.md](privacy-policy.md) | What data we collect, why, and user rights | Reconciled 2026-07-23 — needs lawyer review + entity name/address before publishing |
+| [terms-of-service.md](terms-of-service.md) | Rules of the platform, liability framing | Reconciled 2026-07-23 — needs lawyer review + entity name/address before publishing |
+| [COMPLIANCE-REGISTER.md](COMPLIANCE-REGISTER.md) | Maps every legal/security claim to code reality; tracks open items | Living document |
 | [cookie-policy.md](cookie-policy.md) | What cookies and tracking we use | Draft |
 | [security-overview.md](security-overview.md) | High-level security posture for users | Draft |
 | [vulnerability-disclosure.md](vulnerability-disclosure.md) | How security researchers should report issues | Ready |

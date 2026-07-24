@@ -10,7 +10,7 @@ import Stack from '../../components/Stack';
 import Inline from '../../components/Inline';
 import Surface from '../../components/Surface';
 
-const LAST_UPDATED = 'June 2026';
+const LAST_UPDATED = 'July 2026';
 
 const SECTIONS = [
   {
@@ -32,10 +32,10 @@ const SECTIONS = [
   },
   {
     title: '3. Your Rights & Data Retention',
-    body: `You have the right to access, correct, or delete your personal data at any time. You can export your data directly from Settings → Export my data. To delete your account and all associated data, go to Settings → Delete my account.\n\n` +
-      `We retain your data for as long as your account is active, or as required by applicable law. Upon account deletion, we purge personally identifiable information within 30 days, except where retention is legally required.\n\n` +
+    body: `You have the right to access, correct, export, or delete your personal data. You can export your data directly from Settings → Export my data.\n\n` +
+      `Deleting your account scrubs your personal identifiers (name, email, phone, photo). Because SwingBy handles payments, financial records (bookings, payments, invoices) are kept in de-identified form for 6 years from the end of the tax year they relate to, as Canadian tax law requires — so deletion means we anonymize your account, not that we erase records we are legally required to keep. The app also offers a reversible "ghost mode" that hides your profile without deleting your account.\n\n` +
       `For privacy questions or requests, contact us at: privacy@swingbyy.com\n\n` +
-      `This policy may be updated periodically. We will notify you of material changes through the app.`,
+      `This policy may be updated periodically. We will notify you of material changes through the app. Our full privacy policy is governed by Canada's PIPEDA and Alberta's PIPA.`,
   },
 ];
 

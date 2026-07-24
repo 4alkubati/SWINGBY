@@ -83,7 +83,10 @@ export default function Footer() {
         </div>
       </div>
       <div className={styles.bottom}>
-        <p className={styles.copy}>&copy; {new Date().getFullYear()} SwingBy Technologies Inc. · Built in Calgary, Canada</p>
+        {/* Legal entity name unconfirmed — the repo disagrees ("Swingbyy Inc."
+            vs "SwingBy Technologies Inc."). Show the brand only until Kira
+            confirms the registered name; see privacy-and-security/COMPLIANCE-REGISTER.md §D. */}
+        <p className={styles.copy}>&copy; {new Date().getFullYear()} SwingBy · Built in Calgary, Canada</p>
         <p className={styles.casl}>Respecting Canada's Anti-Spam Legislation (CASL).</p>
       </div>
     </footer>

@@ -4,13 +4,14 @@ import styles from './page.module.css'
 export default function TermsPage() {
   return (
     <>
-      <SEO title="Terms of service" noindex />
+      <SEO title="Terms of service" />
       <div className={styles.container}>
         <div className={styles.pageHero}>
           <h1 className={styles.pageTitle}>Terms of service</h1>
-          <p style={{ color: 'var(--color-text-secondary)', fontSize: '13px', marginTop: '8px' }}>Last updated: June 2026</p>
+          <p style={{ color: 'var(--color-text-secondary)', fontSize: '13px', marginTop: '8px' }}>Last updated: July 2026</p>
         </div>
         <div style={{ maxWidth: '720px', margin: '0 auto' }} className={styles.prose}>
+          <p>This is a plain-language summary. The full Terms of Service govern your use of SwingBy.</p>
           <h2>Acceptance</h2>
           <p>By using SwingBy, you agree to these terms. If you don't agree, don't use the platform.</p>
           <h2>The platform</h2>
@@ -18,11 +19,11 @@ export default function TermsPage() {
           <h2>User obligations</h2>
           <p>You must provide accurate information, be 18 or older, and use the platform for legitimate service bookings only. Businesses must comply with all applicable laws and maintain valid licenses.</p>
           <h2>Payments and fees</h2>
-          <p>Clients pay the quoted price at booking. Funds are held in escrow and released per the payment schedule. Businesses pay a 10% platform fee (or 5% founder rate) on completed bookings. Cancellation fees apply per the cancellation policy.</p>
+          <p>SwingBy is pay-upfront: the client is charged the full booking amount when the booking is created (at posting for a priced job, or at acceptance for a direct booking) and the funds are held in escrow. On completion, the business receives the booking amount less SwingBy's 10% platform fee. Nothing is released to the business before completion. Cancellation refunds and penalties follow the cancellation ladder in the full terms.</p>
           <h2>Disputes</h2>
-          <p>SwingBy may adjudicate disputes between clients and businesses. Our decision is final for amounts held in escrow. We are not liable for losses exceeding the amount held.</p>
+          <p>Either party can open a dispute in the app. SwingBy reviews the evidence and its determination is final for the funds SwingBy holds. This is not arbitration and does not remove your other legal remedies.</p>
           <h2>Limitation of liability</h2>
-          <p>SwingBy's liability is limited to the transaction amount in dispute. We are not responsible for the quality of services provided by businesses on the platform.</p>
+          <p>To the maximum extent permitted by law, SwingBy's total liability is capped at the greater of CAD $100 or the fees you paid SwingBy in the 6 months before the claim. We are not responsible for the quality of services provided by businesses on the platform. Nothing here waives rights you have under Alberta's Consumer Protection Act.</p>
           <h2>Governing law</h2>
           <p>These terms are governed by the laws of Alberta, Canada.</p>
           <h2>Contact</h2>

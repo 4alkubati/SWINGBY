@@ -1,7 +1,12 @@
 # Terms of Service
 
+> **CANONICAL.** This file is the single source of truth for SwingBy's terms of
+> service. `docs/legal/TERMS_OF_SERVICE.md` is a pointer to this file and holds
+> no content of its own. Any published surface (website, mobile app, store
+> listing) must be derived from this text.
+
 **Effective date:** June 6, 2026  
-**Last updated:** June 6, 2026
+**Last updated:** July 23, 2026
 
 ---
 
@@ -9,9 +14,12 @@
 
 By creating an account, accessing, or using the SwingBy platform (including the mobile application and website), you agree to be bound by these Terms of Service ("Terms"). If you do not agree, do not use the platform.
 
-These Terms form a legally binding agreement between you and SwingBy Technologies Inc. ("SwingBy," "we," "us," or "our"), incorporated in Alberta, Canada.
+These Terms form a legally binding agreement between you and `[[LEGAL_ENTITY_NAME — Kira to supply]]` ("SwingBy," "we," "us," or "our"), a company `[[INCORPORATION_STATUS — Kira to supply: incorporated in Alberta / sole proprietorship / not yet incorporated]]` with its registered address at `[[REGISTERED_ADDRESS — Kira to supply]]`.
 
-> LEGAL REVIEW NEEDED: Confirm legal entity name and confirm Alberta incorporation is complete before publishing.
+> **BLOCKING — DO NOT PUBLISH WITH PLACEHOLDERS.** A contract cannot bind a
+> counterparty that is not named. The legal entity name, incorporation status,
+> and registered address are unknown to the drafters and must be supplied by the
+> owner. Every occurrence is listed in `COMPLIANCE-REGISTER.md` section D.
 
 ---
 
@@ -111,25 +119,36 @@ Violations may result in immediate account suspension or termination.
 
 ### 7.1 How payments work
 
-When a client accepts a business's interest expression, a booking is created and the client's payment is held in escrow by SwingBy via our payment processor, Stripe.
+SwingBy operates on a **pay-upfront** model: the client's payment is collected **before** the service is performed and held in escrow by SwingBy via our payment processor, Stripe. When the payment is collected depends on how the booking is created:
 
-**Escrow release schedule:**
-- 50% of the total booking amount is released to the business when the booking is confirmed.
-- The remaining 50%, less SwingBy's 10% platform fee, is released to the business when the job is marked complete.
+- **Posted jobs (post-and-match):** when a client posts a job at a set price, payment is collected at the time of posting.
+- **Direct bookings (browse / quote):** when a client accepts a business's proposed price and time (from a listing or in chat), payment is collected at the moment of acceptance.
 
-Example: On a $200 booking, the business receives $100 on confirmation, then $80 on completion (50% × $200 = $100, minus 10% fee = $80), for a total of $180.
+In both cases the funds are held in escrow and are **not** released to the business until the job is marked complete. No part of the booking amount is paid out to the business before completion.
+
+**Escrow release:** the full booking amount, less SwingBy's 10% platform fee, is released to the business when the job is marked complete. If the booking is cancelled before completion, refunds and penalties are governed by Section 8.
+
+Example: On a $200 booking, SwingBy collects $200 up front and holds it in escrow. On completion, the business receives $180 ($200 less the 10% platform fee) and SwingBy retains $20.
 
 ### 7.2 Platform fee
 
-SwingBy charges a 10% platform fee on the total booking value, taken from the business's second escrow release. This fee funds the platform, payment protection, and SwingBy's operations.
+SwingBy charges a flat 10% platform fee on the total booking value, deducted when escrow is released to the business on completion. This fee funds the platform, payment protection, and SwingBy's operations.
 
-The fee may vary for businesses on launch pricing (5% for the first 6 months for Founder-tier businesses). See [Pricing](../marketing/02-pricing.md) for current rates.
+If SwingBy offers promotional or launch pricing, the applicable rate will be shown to the business at the time of booking and recorded on the invoice for that booking. Where no promotional rate has been applied, the rate is 10%.
 
 ### 7.3 Payment obligations
 
-By creating a booking, the client authorizes SwingBy to charge the full booking amount to the payment method on file. The amount is held in escrow and not charged to the client's card until the booking is confirmed by both parties.
+By creating a booking — either by posting a priced job or by accepting a business's proposal — the client authorizes and is charged the full booking amount to the payment method on file at that time. SwingBy holds these funds in escrow and releases them to the business only after the job is marked complete, subject to the cancellation and refund terms in Section 8.
 
-### 7.4 Stripe
+### 7.4 Off-platform payments
+
+Some bookings are settled directly between the client and the business (for example, in cash or by e-transfer) and recorded on SwingBy as paid off-platform. In that case no money passes through SwingBy, no escrow is held, and **no platform fee is charged**. SwingBy provides no payment protection, dispute-held funds, or refund mechanism for off-platform payments, because there are no funds for SwingBy to hold or return. Section 5 still prohibits going off-platform specifically to avoid fees on a match SwingBy made.
+
+### 7.5 Account credits
+
+SwingBy may issue account credits to clients in certain circumstances, including where a business cancels a confirmed booking late or fails to appear (see Section 8.2). Credits are applied automatically against the amount charged for a future booking, have no cash value, and are non-transferable and non-refundable.
+
+### 7.6 Stripe
 
 All payment processing is handled by Stripe. By using SwingBy's payment features, you agree to Stripe's Terms of Service (stripe.com/legal) and acknowledge that Stripe may independently verify your identity and payment information.
 
@@ -137,25 +156,39 @@ All payment processing is handled by Stripe. By using SwingBy's payment features
 
 ## 8. Cancellation and refund policy
 
+All timings below are measured against the **confirmed date and time of the booking**. If no date has been confirmed yet, a cancellation by either party is free: the client is refunded in full, no penalty applies, and no credit is issued.
+
 ### 8.1 Client cancellations
 
 | Timing | Client refund | Business receives |
 |---|---|---|
-| More than 48 hours before scheduled date | 100% refund | 0% (first escrow release reversed) |
-| 48 hours or less before scheduled date | 75% refund | 25% penalty |
-| Client no-show | 50% refund | 50% penalty |
+| No date confirmed yet | 100% refund | 0% |
+| More than 48 hours before the confirmed date | 100% refund | 0% |
+| 48 hours or less before the confirmed date | 75% refund | 25% of the booking total |
+| Cancelled after the confirmed time has passed (no-show) | 50% refund | 50% of the booking total |
+
+Amounts the business receives on a client cancellation are paid to the business in full — SwingBy does not take a platform fee on a cancelled booking.
 
 ### 8.2 Business cancellations
 
-| Timing | Client receives | Business penalty |
+The client is always made whole when the business cancels.
+
+| Timing | Client receives | Business consequence |
 |---|---|---|
-| More than 48 hours before scheduled date | 100% refund | None |
-| 48 hours or less before scheduled date | 100% refund + credit | 25% penalty deducted |
-| Business no-show | 100% refund + credit | 50% penalty + warning |
+| No date confirmed yet | 100% refund | None |
+| More than 48 hours before the confirmed date | 100% refund | None |
+| 48 hours or less before the confirmed date | 100% refund + goodwill account credit | 25% of the booking total recorded against the business |
+| Cancelled after the confirmed time has passed (no-show) | 100% refund + goodwill account credit | 50% of the booking total recorded against the business |
 
-### 8.3 Disputes
+Because SwingBy holds the client's payment in escrow and pays the business nothing before completion (Section 7.1), a business cancellation does not require SwingBy to recover money already paid out. The percentage figures above are recorded against the business's account as a reliability record and may be used in decisions about suspension or removal from the platform; they are not currently deducted from other payouts.
 
-If a dispute arises about whether a service was completed, either party may open a dispute through the app. SwingBy will review the booking details, messages, and any evidence provided, and issue a determination within 72 hours. SwingBy's determination is final.
+### 8.3 How refunds are issued
+
+Refunds are returned to the original payment method through Stripe. Where a booking was recorded as paid off-platform (Section 7.4), SwingBy holds no funds and cannot issue a refund — settlement is between the client and the business.
+
+### 8.4 Disputes
+
+If a dispute arises about whether a service was completed, either party may open a dispute through the app. SwingBy will review the booking details, messages, and any evidence provided, and issue a determination. SwingBy aims to respond within 5 business days. SwingBy's determination is final for the purposes of releasing or refunding funds SwingBy holds; it is not arbitration and does not extinguish either party's other legal remedies.
 
 Repeated fraudulent disputes will result in account suspension.
 
@@ -182,7 +215,7 @@ You represent that you have the right to post the content and that it does not v
 
 ## 10. Intellectual property
 
-SwingBy, its logo, product names, features, and software are owned by SwingBy Technologies Inc. and are protected by copyright, trademark, and other intellectual property laws. You may not use SwingBy's intellectual property without our prior written consent.
+SwingBy, its logo, product names, features, and software are owned by `[[LEGAL_ENTITY_NAME — Kira to supply]]` and are protected by copyright, trademark, and other intellectual property laws. You may not use SwingBy's intellectual property without our prior written consent.
 
 You may not copy, modify, distribute, sell, or lease any part of the platform's code or technology.
 
@@ -247,7 +280,7 @@ Any dispute arising from these Terms or your use of the platform shall first be 
 
 ### 15.1 By you
 
-You may deactivate your account at any time through Settings → Account → Delete Account. Deactivation does not affect completed transactions or obligations that arose before deactivation.
+You may delete your account at any time. Deletion requires you to re-enter your current password to confirm; once confirmed your account is deactivated, you are blocked from signing in, and your personal identifiers are scrubbed. The mobile app also offers a reversible "ghost mode" that hides your profile from discovery without deleting the account. Neither deletion nor ghost mode affects completed transactions or obligations that arose beforehand, and neither is available while you have an active booking, funds still held in escrow, or an open dispute. Financial records are retained as described in Section 7 of the [Privacy Policy](privacy-policy.md).
 
 ### 15.2 By SwingBy
 
@@ -275,8 +308,8 @@ Your continued use of the platform after changes take effect constitutes accepta
 
 For legal questions or notices:  
 **Email:** legal@swingbyy.com  
-**Mailing address:** [SwingBy Technologies Inc., Calgary, Alberta, Canada — TODO: add full address]
+**Mailing address:** `[[REGISTERED_ADDRESS — Kira to supply]]`, Calgary, Alberta, Canada
 
 ---
 
-*SwingBy Technologies Inc. — Calgary, Alberta, Canada*
+*`[[LEGAL_ENTITY_NAME — Kira to supply]]` — Calgary, Alberta, Canada*
