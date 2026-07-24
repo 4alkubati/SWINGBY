@@ -34,7 +34,10 @@ jobs:
           cache-dependency-path: backend/requirements.txt
 
       - name: Install linters
-        run: pip install ruff black
+        # Pinned: unpinned linters float to the newest release, so a brand-new
+        # ruff/black version can turn CI red with zero code changes (new rules /
+        # reformatting). Bump these deliberately, not by surprise.
+        run: pip install ruff==0.15.22 black==26.1.0
 
       - name: Ruff check
         run: ruff check backend/ --output-format=github
