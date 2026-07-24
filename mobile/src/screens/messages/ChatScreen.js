@@ -18,6 +18,7 @@ import Animated, {
 import { Feather } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../services/api';
+import { show as showToast } from '../../services/toast';
 import * as haptics from '../../services/haptics';
 import i18n from '../../i18n';
 import Text from '../../components/Text';
@@ -481,6 +482,17 @@ export default function ChatScreen({ navigation, route }) {
       const msg = res?.data || res;
       setMessages((prev) => reconcileSent(prev, tempId, msg));
       setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 60);
+      // Off-platform-leakage guard (item 31): the backend strips phone numbers
+      // and emails from message content and flags it. Tell the user why their
+      // number/email vanished so it doesn't read as a bug.
+      if (res?.masked) {
+        haptics.warningTap();
+        showToast({
+          type: 'info',
+          text1: 'Contact info hidden',
+          text2: 'Keep phone numbers and emails in SwingBy — payments and support are only covered here.',
+        });
+      }
     } catch {
       // Drop the optimistic bubble and restore the draft so the user can retry.
       setMessages((prev) => prev.filter((m) => m.id !== tempId));
@@ -678,6 +690,12 @@ export default function ChatScreen({ navigation, route }) {
         ListFooterComponent={isTyping ? <TypingIndicator /> : null}
       />
 
+      {/* Off-platform-leakage notice (item 31) — always visible above the
+          composer so hidden phone/email content never reads as a bug. */}
+      <Text variant="caption" color="secondary" style={styles.leakageNote}>
+        Keep it on SwingBy — shared phone numbers and emails are hidden.
+      </Text>
+
       {/* ── Input bar ──────────────────────────────────────────────────────── */}
       <Surface
         elevation="subtle"
@@ -789,6 +807,12 @@ const styles = StyleSheet.create({
     paddingTop: spacing.md,
     borderTopWidth: 1,
     borderTopColor: colors.border,
+    backgroundColor: colors.bg,
+  },
+  leakageNote: {
+    textAlign: 'center',
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.xs,
     backgroundColor: colors.bg,
   },
   input: {

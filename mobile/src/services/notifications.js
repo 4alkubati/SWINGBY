@@ -76,3 +76,34 @@ export async function registerForPushAsync() {
     // none should block normal app usage.
   }
 }
+
+/**
+ * Remove this device's Expo push token for the current user. Call from logout
+ * BEFORE the auth token is cleared, otherwise the request is unauthenticated
+ * and the row survives — the next user on this device would then receive the
+ * previous user's notifications. Non-fatal: never blocks sign-out.
+ */
+export async function unregisterPushAsync() {
+  if (isExpoGo) return;
+  if (Platform.OS === 'web') return;
+
+  try {
+    const Notifications = require('expo-notifications');
+    const Device = require('expo-device');
+
+    if (!Device.isDevice) return;
+
+    const projectId =
+      Constants.expoConfig?.extra?.eas?.projectId ??
+      Constants.easConfig?.projectId;
+
+    const tokenData = await Notifications.getExpoPushTokenAsync(
+      projectId ? { projectId } : undefined
+    );
+
+    await api.post('/push-tokens/unregister', { token: tokenData.data });
+  } catch {
+    // Missing native module, network failure, or permission revoked — the
+    // stale token will simply expire on Expo's side. Never block logout.
+  }
+}
