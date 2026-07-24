@@ -23,7 +23,6 @@ import pytest
 
 from app.services import escrow
 
-
 # Vocabulary accepted by payments_status_check, read from the LIVE database
 # (project ulnxapnsenzyddddldjt) on 2026-07-23 via information_schema /
 # pg_constraint. Note that BOTH the legacy and the current vocabulary are
@@ -42,14 +41,21 @@ LIVE_PAYMENTS_STATUS_VALUES = {
     "paid_off_platform",
 }
 
-# Columns that actually exist on public.payments, same live read.
+# Columns that actually exist on public.payments, same live read. The *_cents
+# columns were added and backfilled by migration
+# 20260723120000_money_integer_cents_and_ledger_integrity.sql (applied
+# 2026-07-23) and are the authoritative money representation.
 LIVE_PAYMENTS_COLUMNS = {
     "id",
     "booking_id",
     "total_charged",
+    "total_charged_cents",
     "escrow_held",
+    "escrow_held_cents",
     "released_to_business",
+    "released_to_business_cents",
     "platform_cut",
+    "platform_cut_cents",
     "stripe_payment_intent_id",
     "status",
     "released_at",
@@ -108,10 +114,9 @@ class TestCancellationLadderMatchesTheRuling:
     def test_no_cent_is_created_or_destroyed(self, total, timing):
         """Refund + what the business keeps must always equal the job total."""
         split = escrow.compute_cancellation_split(total, "client", timing)
-        assert (
-            split["client_refund_cents"] + split["business_keeps_cents"]
-            == escrow.to_cents(total)
-        )
+        assert split["client_refund_cents"] + split[
+            "business_keeps_cents"
+        ] == escrow.to_cents(total)
 
     def test_bad_actor_or_timing_is_rejected(self):
         with pytest.raises(ValueError):
@@ -138,9 +143,17 @@ class TestWriteVocabularyIsAcceptedByTheLiveDatabase:
 
     def test_completion_release_writes_only_real_columns(self):
         release = escrow.compute_completion_release(200, 20, 0)
-        written = {"released_to_business", "escrow_held", "status", "released_at"}
+        written = {
+            "released_to_business",
+            "released_to_business_cents",
+            "escrow_held",
+            "escrow_held_cents",
+            "status",
+            "released_at",
+        }
         assert written <= LIVE_PAYMENTS_COLUMNS
         assert release["released_to_business"] == 180.0
+        assert release["released_to_business_cents"] == 18000
 
 
 def _fake_payments_table(captured):
@@ -176,26 +189,52 @@ class TestChargeBeforeServiceIsNotActuallyEnforced:
         "stripe_payment_intent_id": None,
     }
 
-    def test_TODAY_completion_releases_money_that_was_never_captured(self):
+    def test_completion_refuses_to_release_money_never_captured(self):
         """
-        SHOULD: refuse to release when stripe_payment_intent_id is NULL and the
-        payment was never marked paid off-platform.
-        ACTUALLY: releases the full net to the business anyway. This is the exact
-        mechanism behind the 18 live rows sitting at 'fully_released' with no
-        Stripe charge behind any of them.
+        FIXED (money lane, 2026-07-23). FINDING C.
+
+        Was: releasing the full net to the business anyway — the mechanism behind
+        the 24 live rows at 'fully_released' with no Stripe charge behind them.
+        Now: escrow.assert_capture_backed() refuses. A 'pending_payment' row with
+        a NULL PaymentIntent and no off-platform method is not capture-backed, so
+        completion raises CaptureRequiredError and writes nothing.
         """
         captured = {"row": self.NEVER_PAID}
         with patch.object(
             escrow, "load_single_payment", return_value=self.NEVER_PAID
         ), patch.object(
-            escrow, "supabase", MagicMock(table=lambda _: _fake_payments_table(captured))
+            escrow,
+            "supabase",
+            MagicMock(table=lambda _: _fake_payments_table(captured)),
+        ):
+            with pytest.raises(escrow.CaptureRequiredError):
+                escrow.release_escrow_on_complete("bk-1")
+
+        # Nothing was released.
+        assert "update" not in captured
+        assert self.NEVER_PAID["stripe_payment_intent_id"] is None
+
+    def test_completion_releases_when_capture_is_backed(self):
+        """The same booking, once Stripe has actually captured, DOES release."""
+        paid = dict(
+            self.NEVER_PAID,
+            status="held",
+            stripe_payment_intent_id="pi_real_abc",
+        )
+        captured = {"row": paid}
+        with patch.object(
+            escrow, "load_single_payment", return_value=paid
+        ), patch.object(
+            escrow,
+            "supabase",
+            MagicMock(table=lambda _: _fake_payments_table(captured)),
         ):
             result = escrow.release_escrow_on_complete("bk-1")
 
         assert result["outcome"] == "released"
         assert captured["update"]["status"] == "fully_released"
         assert captured["update"]["released_to_business"] == 180.0
-        assert self.NEVER_PAID["stripe_payment_intent_id"] is None
+        assert captured["update"]["released_to_business_cents"] == 18000
 
     def test_refunded_payment_cannot_be_released(self):
         """This guard does exist and does work."""
@@ -210,30 +249,33 @@ class TestChargeBeforeServiceIsNotActuallyEnforced:
                 escrow.release_escrow_on_complete("bk-1")
 
 
-class TestCaptureWebhookOverstatesEscrow:
+class TestCaptureHoldDoesNotDoubleCount:
     """
-    _mark_payment_paid sets escrow_held = total_charged unconditionally. If any
-    money was already released on that booking, the ledger then claims to hold
-    the whole charge AND to have paid part of it out.
+    FIXED (money lane, 2026-07-23). FINDING D.
+
+    _mark_payment_paid used to set escrow_held = total_charged unconditionally,
+    so a booking with money already released read as holding the whole charge
+    AND having paid part out. escrow.compute_capture_hold now holds only the
+    REMAINDER: max(total - already_released, 0). Live example that produced the
+    bug: booking 82b69fc2, $150 charged, $75 already released, which used to read
+    escrow_held=$150 — $225 of ledger against a $150 charge.
     """
 
-    def test_TODAY_escrow_held_ignores_money_already_released(self):
-        """
-        SHOULD: escrow_held = total_charged - released_to_business.
-        ACTUALLY: escrow_held = total_charged.
+    def test_capture_hold_is_the_remainder_after_prior_release(self):
+        hold = escrow.compute_capture_hold(15000, 7500)
+        assert hold["escrow_held_cents"] == 7500
+        assert hold["escrow_held"] == 75.0
+        # The invariant that is now also a DB CHECK.
+        assert hold["escrow_held_cents"] + 7500 <= 15000
 
-        Live example (booking 82b69fc2, the only row with a real Stripe
-        PaymentIntent): $150 charged, $75 already released, and the row now
-        reads escrow_held=$150 — $225 of ledger against a $150 charge.
-        """
-        total_charged, already_released = 150.0, 75.0
+    def test_capture_hold_holds_full_charge_when_nothing_released(self):
+        hold = escrow.compute_capture_hold(15000, 0)
+        assert hold["escrow_held_cents"] == 15000
 
-        buggy_escrow_held = total_charged
-        correct_escrow_held = total_charged - already_released
-
-        assert buggy_escrow_held == 150.0
-        assert correct_escrow_held == 75.0
-        assert buggy_escrow_held + already_released > total_charged
+    def test_capture_hold_never_goes_negative(self):
+        # Defensive: if more was somehow released than charged, hold floors at 0.
+        hold = escrow.compute_capture_hold(15000, 20000)
+        assert hold["escrow_held_cents"] == 0
 
 
 class TestMobileAndBackendDisagreeOnThePaidStatus:

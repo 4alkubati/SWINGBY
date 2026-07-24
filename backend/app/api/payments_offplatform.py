@@ -40,7 +40,7 @@ def mark_paid_offplatform(
 ):
     booking_res = (
         supabase.table("bookings")
-        .select("id, client_id, business_id, status, total_amount")
+        .select("id, client_id, business_id, status, total_amount, total_amount_cents")
         .eq("id", booking_id)
         .single()
         .execute()
@@ -91,13 +91,24 @@ def mark_paid_offplatform(
         if row.get("status") in ("paid_off_platform", "fully_released", "refunded"):
             raise HTTPException(status_code=400, detail="Booking is already settled")
 
-    total = float(booking.get("total_amount") or 0)
+    from app.services import escrow
+
+    # Integer cents are authoritative (migration 20260723120000).
+    total_c = (
+        int(booking["total_amount_cents"])
+        if booking.get("total_amount_cents") is not None
+        else escrow.to_cents(booking.get("total_amount"))
+    )
     # Off-platform: money never touches the platform → no escrow, no platform cut.
+    # `method` is what tells escrow.is_capture_backed() this booking was really
+    # paid (just not through Stripe), so completion is allowed to settle it.
     offplatform_fields = {
-        "total_charged": total,
-        "escrow_held": 0,
-        "released_to_business": 0,
-        "platform_cut": 0,
+        **escrow.ledger_write(
+            total_charged=total_c,
+            escrow_held=0,
+            released_to_business=0,
+            platform_cut=0,
+        ),
         "status": "paid_off_platform",
         "method": data.method,
     }

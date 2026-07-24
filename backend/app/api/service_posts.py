@@ -201,7 +201,30 @@ def create_service_post(
             )
             .execute()
         )
-        return {"message": "Service post created", "post": res.data[0]}
+        post = res.data[0]
+
+        # TRIGGER 1 (charge-before-service, ruling 2026-07-21): the intent is to
+        # collect money at post time. This CANNOT capture in the current schema
+        # — at post there is no matched business, no agreed price, and no
+        # bookings row for payments.booking_id (NOT NULL) to point at, and the
+        # client has no saved card. trigger_on_post is gated OFF and reports
+        # honestly rather than pretending to charge. Turning it on requires
+        # card-on-file (Stripe SetupIntent), which does not exist in this repo.
+        # Wired here so the trigger point is real; capture lands when
+        # card-on-file does. Never raises.
+        try:
+            from app.services import payment_triggers
+
+            charge = payment_triggers.trigger_on_post(post=post, client=current_user)
+        except Exception:
+            logger.exception("trigger_on_post failed for post %s", post.get("id"))
+            charge = {"triggered": False, "reason": "trigger_error"}
+
+        return {
+            "message": "Service post created",
+            "post": post,
+            "payment_started": bool(charge.get("triggered")),
+        }
     except HTTPException:
         raise
     except Exception:

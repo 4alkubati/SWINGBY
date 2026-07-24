@@ -281,31 +281,36 @@ def _mark_payment_paid(
     """
     On `checkout.session.completed`, confirm the on-platform CAPTURE.
 
-    The /interests accept flow inserted a payments row with status='pending'
-    (full amount held in escrow, nothing released). Stripe having captured the
-    charge, we transition pending → paid_full: the full amount is now genuinely
-    held in escrow. Release to the business still happens only at
-    /bookings/{id}/complete.
+    The /interests accept flow inserted a payments row with
+    status='pending_payment' (amount owed, nothing captured, nothing released).
+    Stripe having captured the charge, we transition it to 'held': the money is
+    now genuinely in escrow, and `stripe_payment_intent_id` records WHICH Stripe
+    charge is behind it — that field is what escrow.assert_capture_backed()
+    later checks before any money is released to the business (FINDING C).
 
     fix A: the Stripe id goes into `stripe_payment_intent_id` (a real column),
     never the phantom `notes` column that 400'd this write.
     fix E: (1) verify the paid amount matches the booking total before marking
     paid; (2) never regress a fully_released / refunded / off-platform row.
+    FINDING D: escrow_held is the remainder of the charge, not a flat overwrite.
     """
     from app.services import escrow
 
     booking_res = (
         supabase.table("bookings")
-        .select("total_amount")
+        .select("total_amount, total_amount_cents")
         .eq("id", booking_id)
         .single()
         .execute()
     )
-    expected_cents = (
-        escrow.to_cents(booking_res.data.get("total_amount"))
-        if booking_res.data
-        else None
-    )
+    # Integer cents are authoritative (migration 20260723120000); total_amount is
+    # the legacy double precision mirror and is only a fallback.
+    expected_cents = None
+    if booking_res.data:
+        if booking_res.data.get("total_amount_cents") is not None:
+            expected_cents = int(booking_res.data["total_amount_cents"])
+        else:
+            expected_cents = escrow.to_cents(booking_res.data.get("total_amount"))
 
     # If credit was redeemed at checkout, Stripe captured the REDUCED (net)
     # amount — subtract the recorded redemption so the mismatch check compares
@@ -352,20 +357,39 @@ def _mark_payment_paid(
         )
         return
 
-    update: dict = {
-        # Vocabulary per migration 0001 (applied 2026-07-22): 'paid_full' was
-        # renamed to 'held' and is no longer accepted by payments_status_check.
-        # Writing the old value 500s the capture webhook with a 23514.
-        "status": "held",
-        # Capture confirmed → the full charge is now held in escrow.
-        "escrow_held": float(payment.get("total_charged") or 0),
-    }
+    # FINDING D (money audit, 2026-07-23) — DOUBLE COUNTING.
+    # This used to be a flat `escrow_held = total_charged`, which OVERWRITES the
+    # held figure instead of accounting for anything already released. Booking
+    # 82b69fc2 took one real $150 charge and the ledger ended up claiming $150
+    # held AND $75 released — $225 of accounting against $150 of money, which the
+    # business Earnings screen then added together.
+    #
+    # Escrow now holds the REMAINDER of the charge: max(total - already_released, 0).
+    # The invariant escrow_held + released_to_business <= total_charged is also a
+    # DB CHECK (payments_ledger_not_over_charged) so it cannot regress silently.
+    total_c = escrow.money_cents(payment, "total_charged")
+    already_released_c = escrow.money_cents(payment, "released_to_business")
+    hold = escrow.compute_capture_hold(total_c, already_released_c)
+
+    update: dict = escrow.ledger_write(escrow_held=hold["escrow_held_cents"])
+    # 'held' is the current vocabulary for "capture confirmed, money in escrow".
+    # (The live payments_status_check accepts the legacy 'paid_full' too; we
+    # write only the current name. NOTE: earlier comments here cited a
+    # "migration 0001 applied 2026-07-22" as the reason — that migration does
+    # not exist in the repo or in the live migration list. The value is correct;
+    # the justification was invented.)
+    update["status"] = "held"
     if payment_intent_id:
         update["stripe_payment_intent_id"] = payment_intent_id
     elif stripe_session_id:
         # No PaymentIntent on the event — fall back to the session id so the
         # capture is still traceable in a real column (not `notes`).
         update["stripe_payment_intent_id"] = stripe_session_id
+    # Record HOW the money arrived. Without this the ledger cannot tell an
+    # on-platform card capture from a row that was never paid, which is half of
+    # what FINDING C's guard has to reason about.
+    if not payment.get("method"):
+        update["method"] = "stripe_card"
     try:
         supabase.table("payments").update(update).eq("id", payment["id"]).execute()
     except Exception:

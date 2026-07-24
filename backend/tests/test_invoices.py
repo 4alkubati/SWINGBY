@@ -23,18 +23,27 @@ BOOKING_UUID = "33333333-3333-3333-3333-333333333333"
 
 # The real `payments` columns, read off GET /payments/mine (select("*")) in prod.
 # A SELECT that names anything outside this set is a phantom column.
+# The *_cents columns were added by migration
+# 20260723120000_money_integer_cents_and_ledger_integrity.sql and are the
+# authoritative money representation; the dollar columns are trigger-maintained
+# mirrors. Both are real. `currency` is also a real column.
 REAL_PAYMENT_COLUMNS = {
     "booking_id",
     "created_at",
+    "currency",
     "escrow_held",
+    "escrow_held_cents",
     "id",
     "method",
     "platform_cut",
+    "platform_cut_cents",
     "released_at",
     "released_to_business",
+    "released_to_business_cents",
     "status",
     "stripe_payment_intent_id",
     "total_charged",
+    "total_charged_cents",
 }
 
 
