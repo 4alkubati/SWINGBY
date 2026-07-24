@@ -17,6 +17,18 @@ const mapsKey = process.env.GOOGLE_MAPS_API_KEY || '';
 // in 950d4f4 and never executed until 2026-07-20.
 module.exports = ({ config }) => ({
   ...config,
+  // AUTH lane: register the Apple Sign In config plugin. Its mods are iOS-ONLY
+  // (it adds the `com.apple.developer.applesignin` entitlement + sets
+  // ios.usesAppleSignIn). It contributes NOTHING to an Android prebuild —
+  // expo-apple-authentication has no Android native code and autolinking skips
+  // it — so it cannot affect the Android demo build. It stays inert until an
+  // iOS build exists AND an Apple Developer account backs the entitlement
+  // (see docs/SOCIAL_SIGNIN_SETUP.md). expo-web-browser and expo-crypto need
+  // no plugin entry — they are plain autolinked modules.
+  plugins: [
+    ...(config.plugins || []),
+    'expo-apple-authentication',
+  ],
   // NB: the two platforms take DIFFERENT shapes here, and getting it wrong
   // fails `expo doctor` in the cloud build (not locally, where doctor isn't
   // run):  Android = android.config.googleMaps.apiKey  (nested)

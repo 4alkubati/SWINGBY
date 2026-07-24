@@ -1,6 +1,6 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
-  KeyboardAvoidingView, ScrollView,
+  ActivityIndicator, KeyboardAvoidingView, ScrollView,
   Platform, Pressable, TouchableOpacity, View, StyleSheet,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -17,6 +17,9 @@ import Button from '../../components/Button';
 import Tabs from '../../components/Tabs';
 import HeaderGlow from '../../components/HeaderGlow';
 import { useAuth } from '../../context/AuthContext';
+import { signInWithGoogle } from '../../services/socialAuth';
+import { isAppleAuthAvailable, signInWithApple } from '../../services/appleAuth';
+import { registerForPushAsync } from '../../services/notifications';
 
 function isValidEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
@@ -66,9 +69,26 @@ function StepDots({ step }) {
 }
 
 export default function SignupScreen({ navigation }) {
-  const { signup } = useAuth();
+  // updateUser flips app state into the logged-in stack after a social
+  // sign-in (see the matching note in LoginScreen). signup() stays the
+  // email/password path.
+  const { signup, updateUser } = useAuth();
 
   const [step, setStep] = useState(0);
+
+  // Social sign-in state, mirrors LoginScreen.
+  const [socialBusy, setSocialBusy] = useState(null); // 'google' | 'apple' | null
+  const [socialError, setSocialError] = useState('');
+  const [appleReady, setAppleReady] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      const ok = await isAppleAuthAvailable();
+      if (alive) setAppleReady(ok);
+    })();
+    return () => { alive = false; };
+  }, []);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -112,6 +132,28 @@ export default function SignupScreen({ navigation }) {
 
     setStep(2);
     setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 120);
+  }
+
+  async function handleSocial(provider) {
+    if (socialBusy) return;
+    setSocialBusy(provider);
+    setSocialError('');
+    try {
+      const fn = provider === 'apple' ? signInWithApple : signInWithGoogle;
+      // The role picker is the last step of the email flow; a social signup
+      // takes the currently-selected role (defaults to 'client' on step 0),
+      // and the backend still lets a fresh account switch to business later.
+      const role = roleIndex === 0 ? 'client' : 'business_owner';
+      const { profile } = await fn({ role });
+      updateUser(profile);
+      try { await registerForPushAsync(); } catch { /* non-fatal */ }
+    } catch (err) {
+      if (err?.code !== 'cancelled') {
+        setSocialError(err?.message || 'Sign-up failed. Please try again.');
+      }
+    } finally {
+      setSocialBusy(null);
+    }
   }
 
   async function handleSignup() {
@@ -217,6 +259,50 @@ export default function SignupScreen({ navigation }) {
             {step === 0 && (
               <View style={styles.stepAction}>
                 <Button label="Continue" onPress={handleContinue} />
+
+                <View style={styles.dividerRow}>
+                  <View style={styles.dividerLine} />
+                  <Text style={styles.dividerText}>or</Text>
+                  <View style={styles.dividerLine} />
+                </View>
+
+                {socialError ? (
+                  <Text style={styles.errorText}>{socialError}</Text>
+                ) : null}
+
+                {/* Apple — iOS only; appleReady is always false off iOS. */}
+                {appleReady && (
+                  <>
+                    <Pressable
+                      style={styles.socialBtn}
+                      onPress={() => handleSocial('apple')}
+                      disabled={!!socialBusy}
+                      accessibilityRole="button"
+                      accessibilityLabel="Sign up with Apple"
+                    >
+                      {socialBusy === 'apple' ? (
+                        <ActivityIndicator color={colors.textPrimary} />
+                      ) : (
+                        <Text style={styles.socialBtnText}>Sign up with Apple</Text>
+                      )}
+                    </Pressable>
+                    <View style={{ height: spacing.sm }} />
+                  </>
+                )}
+
+                <Pressable
+                  style={styles.socialBtn}
+                  onPress={() => handleSocial('google')}
+                  disabled={!!socialBusy}
+                  accessibilityRole="button"
+                  accessibilityLabel="Sign up with Google"
+                >
+                  {socialBusy === 'google' ? (
+                    <ActivityIndicator color={colors.textPrimary} />
+                  ) : (
+                    <Text style={styles.socialBtnText}>Sign up with Google</Text>
+                  )}
+                </Pressable>
               </View>
             )}
           </Animated.View>
@@ -359,6 +445,34 @@ const styles = StyleSheet.create({
 
   stepAction: { marginTop: spacing.lg },
   stepGroup: { marginTop: spacing.lg },
+
+  dividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: spacing.base,
+  },
+  dividerLine: { flex: 1, height: 1, backgroundColor: colors.border },
+  dividerText: {
+    fontSize: 12,
+    fontFamily: 'Inter_400Regular',
+    color: colors.textSecondary,
+    marginHorizontal: spacing.md,
+  },
+  socialBtn: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.button,
+    paddingVertical: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 50,
+    backgroundColor: colors.surface,
+  },
+  socialBtnText: {
+    fontSize: 14,
+    fontFamily: 'Inter_600SemiBold',
+    color: colors.textPrimary,
+  },
 
   passwordHint: {
     fontSize: 12,

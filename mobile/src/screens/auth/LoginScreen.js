@@ -1,9 +1,9 @@
 import {
-  KeyboardAvoidingView, Platform, ScrollView, View, Pressable,
-  StyleSheet,
+  ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, View,
+  Pressable, StyleSheet,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useAuth } from '../../context/AuthContext';
 import { colors, spacing, radius } from '../../theme/tokens';
@@ -11,14 +11,41 @@ import Text from '../../components/Text';
 import TextField from '../../components/TextField';
 import Button from '../../components/Button';
 import HeaderGlow from '../../components/HeaderGlow';
+import { signInWithGoogle } from '../../services/socialAuth';
+import { isAppleAuthAvailable, signInWithApple } from '../../services/appleAuth';
+import { registerForPushAsync } from '../../services/notifications';
 
 export default function LoginScreen({ navigation }) {
-  const { login } = useAuth();
+  // updateUser establishes the session in app state after a social sign-in:
+  // updateUser(profile) with a null user resolves to the profile, which flips
+  // RootNavigator into the logged-in stack — the same effect login() has,
+  // without needing email/password. The access token is already live in the
+  // axios client (set inside the social service), so /me and every subsequent
+  // request are authenticated.
+  const { login, updateUser } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
+
+  // Social sign-in state. `socialBusy` names which provider is mid-flight so
+  // both buttons disable together and only the active one shows a spinner.
+  const [socialBusy, setSocialBusy] = useState(null); // 'google' | 'apple' | null
+  const [socialError, setSocialError] = useState('');
+  const [appleReady, setAppleReady] = useState(false);
+
+  // Apple button only appears on an iOS device that can actually do it. Off
+  // iOS the stub module resolves isAppleAuthAvailable() to false, so this is a
+  // no-op and the button never renders on Android.
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      const ok = await isAppleAuthAvailable();
+      if (alive) setAppleReady(ok);
+    })();
+    return () => { alive = false; };
+  }, []);
 
   async function handleLogin() {
     if (!email.trim() || !password) return;
@@ -32,6 +59,26 @@ export default function LoginScreen({ navigation }) {
       setPasswordError(message);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleSocial(provider) {
+    if (socialBusy) return;
+    setSocialBusy(provider);
+    setSocialError('');
+    try {
+      const fn = provider === 'apple' ? signInWithApple : signInWithGoogle;
+      // No role passed from Login: a genuinely new account defaults to
+      // 'client'; the app can offer the "become a business" pick afterwards.
+      const { profile } = await fn({});
+      updateUser(profile);
+      try { await registerForPushAsync(); } catch { /* non-fatal */ }
+    } catch (err) {
+      if (err?.code !== 'cancelled') {
+        setSocialError(err?.message || 'Sign-in failed. Please try again.');
+      }
+    } finally {
+      setSocialBusy(null);
     }
   }
 
@@ -119,14 +166,43 @@ export default function LoginScreen({ navigation }) {
               <View style={styles.dividerLine} />
             </View>
 
-            <Pressable style={styles.ghostBtn} disabled>
-              <Text style={styles.ghostBtnText}>Continue with Apple</Text>
-            </Pressable>
+            {socialError ? (
+              <Text style={styles.socialError}>{socialError}</Text>
+            ) : null}
 
-            <View style={{ height: spacing.sm }} />
+            {/* Apple — iOS only. On Android appleReady is always false, so this
+                branch never renders and no Apple code is reachable. */}
+            {appleReady && (
+              <>
+                <Pressable
+                  style={styles.socialBtn}
+                  onPress={() => handleSocial('apple')}
+                  disabled={!!socialBusy}
+                  accessibilityRole="button"
+                  accessibilityLabel="Continue with Apple"
+                >
+                  {socialBusy === 'apple' ? (
+                    <ActivityIndicator color={colors.textPrimary} />
+                  ) : (
+                    <Text style={styles.socialBtnText}>Continue with Apple</Text>
+                  )}
+                </Pressable>
+                <View style={{ height: spacing.sm }} />
+              </>
+            )}
 
-            <Pressable style={styles.ghostBtn} disabled>
-              <Text style={styles.ghostBtnText}>Continue with Google</Text>
+            <Pressable
+              style={styles.socialBtn}
+              onPress={() => handleSocial('google')}
+              disabled={!!socialBusy}
+              accessibilityRole="button"
+              accessibilityLabel="Continue with Google"
+            >
+              {socialBusy === 'google' ? (
+                <ActivityIndicator color={colors.textPrimary} />
+              ) : (
+                <Text style={styles.socialBtnText}>Continue with Google</Text>
+              )}
             </Pressable>
           </Animated.View>
 
@@ -201,19 +277,27 @@ const styles = StyleSheet.create({
     marginHorizontal: spacing.md,
   },
 
-  ghostBtn: {
+  socialBtn: {
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: radius.button,
     paddingVertical: 14,
     alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 50,
     backgroundColor: colors.surface,
-    opacity: 0.5,
   },
-  ghostBtnText: {
+  socialBtnText: {
     fontSize: 14,
     fontFamily: 'Inter_600SemiBold',
-    color: colors.textSecondary,
+    color: colors.textPrimary,
+  },
+  socialError: {
+    fontSize: 13,
+    fontFamily: 'Inter_400Regular',
+    color: colors.danger,
+    textAlign: 'center',
+    marginBottom: spacing.sm,
   },
 
   footer: { marginTop: spacing.xl, alignItems: 'center' },
