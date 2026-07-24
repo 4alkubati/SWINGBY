@@ -59,7 +59,7 @@ jobs:
           cache-dependency-path: backend/requirements.txt
 
       - name: Install dependencies
-        run: pip install -r backend/requirements.txt pytest pytest-asyncio httpx
+        run: pip install -r backend/requirements.txt pytest pytest-asyncio httpx sqlparse
 
       - name: Run tests
         run: pytest backend/tests -q
