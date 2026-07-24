@@ -93,7 +93,7 @@ Personal information shall not be used or disclosed for purposes other than thos
 - Subprocessors are prohibited from using SwingBy user data for their own purposes
 
 ### Gap / TODO
-- [ ] Implement automated data deletion for expired retention periods (booking data after 7 years, etc.) — currently manual
+- [ ] Implement automated data deletion for expired retention periods (booking/payment data 6 years after the end of the tax year, etc.) — currently manual
 - [ ] Add formal subprocessor data processing agreements (DPAs) before going live
 
 ---

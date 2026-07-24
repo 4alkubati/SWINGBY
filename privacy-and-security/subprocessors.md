@@ -2,7 +2,7 @@
 
 > Third-party services that process personal data on SwingBy's behalf.
 
-**Last updated:** June 6, 2026
+**Last updated:** July 23, 2026
 
 SwingBy uses the following subprocessors to provide its platform. Each has been selected for reliability, security posture, and data protection standards. This list is updated when we add, change, or remove a vendor.
 
@@ -24,13 +24,27 @@ SwingBy uses the following subprocessors to provide its platform. Each has been 
 
 ---
 
-### Stripe (planned — not yet integrated)
+### Render (API hosting)
+
+| Field | Detail |
+|---|---|
+| **Purpose** | Hosting for the SwingBy backend API (FastAPI). Every API request — and the personal data it carries — is processed on Render infrastructure before data is written to Supabase in Canada. |
+| **Data processed** | In transit / in memory: all data submitted through the app (account, booking, message, payment metadata) while a request is served. Not a data store of record. |
+| **Hosting location** | **United States** |
+| **Privacy policy** | render.com/privacy |
+| **DPA** | render.com/legal/dpa |
+| **Security certifications** | SOC 2 Type II |
+| **Notes** | This is a **cross-border transfer**: although data is stored at rest in Canada (Supabase), it is processed in the US in transit. Disclosed in Privacy Policy §12.2. |
+
+---
+
+### Stripe (integrated — sandbox/live)
 
 | Field | Detail |
 |---|---|
 | **Purpose** | Payment processing and escrow |
-| **Status** | **Not yet integrated.** SwingBy is currently in pre-launch testing. Stripe will be enabled before public launch, after the business email is provisioned and Stripe Connect onboarding is complete. |
-| **Data processed (once live)** | Payment amounts, transaction IDs, payout records. Stripe directly processes card data — SwingBy does not. |
+| **Status** | Integrated (Stripe Checkout; sandbox wired, live capture gated on pre-launch verification). SwingBy is on Stripe Checkout → PCI **SAQ-A** scope. |
+| **Data processed** | Payment amounts, transaction IDs, payout records. Stripe directly processes card data — SwingBy does not. |
 | **Hosting location** | United States (with EU infrastructure available) |
 | **Privacy policy** | stripe.com/privacy |
 | **DPA** | stripe.com/legal/dpa |
@@ -44,12 +58,12 @@ SwingBy uses the following subprocessors to provide its platform. Each has been 
 | Field | Detail |
 |---|---|
 | **Purpose** | Map display, geocoding (converting addresses to lat/lng coordinates), location-based search |
-| **Data processed** | Location coordinates submitted during geo-browse or business profile creation |
+| **Data processed** | Street addresses entered for a business or a job post are sent to Google's Geocoding API (server-side, `backend/app/services/geocoding.py`) to resolve coordinates; lat/lng is sent on map load and search. |
 | **Hosting location** | United States (Google global infrastructure) |
 | **Privacy policy** | policies.google.com/privacy |
 | **DPA** | cloud.google.com/terms/data-processing-addendum |
 | **Security certifications** | ISO 27001, SOC 2, SOC 3 |
-| **Notes** | Lat/lng data is sent to Google Maps API on map load and search. No PII (names, emails) is sent. |
+| **Notes** | An address can itself be personal information. Names and emails are not sent to Google; addresses and coordinates are. |
 
 ---
 
@@ -120,6 +134,42 @@ SwingBy uses the following subprocessors to provide its platform. Each has been 
 | **DPA** | cloudflare.com/gdpr/introduction |
 | **Security certifications** | ISO 27001, SOC 2, PCI DSS |
 | **Notes** | Cloudflare does not have access to database contents. IP logs are transient. Used as our primary edge layer — the entire `swingbyy.com` zone is proxied through Cloudflare. |
+
+---
+
+### Plausible Analytics
+
+| Field | Detail |
+|---|---|
+| **Purpose** | Cookie-free site and product funnel analytics. Wired on the web launch site (client-side) and called server-side from the backend for mobile-app funnel events (signup / booking / completion), since the mobile app has no DOM for the JS snippet. |
+| **Data processed** | Aggregate event counts, referrer, page/screen, coarse location. No cookies, no persistent per-user identifier. |
+| **Hosting location** | EU (Plausible is EU-hosted) |
+| **Privacy policy** | plausible.io/data-policy |
+| **Notes** | Chosen specifically because it is cookie-free — no consent banner required under PIPEDA/PIPA. |
+
+---
+
+### hCaptcha
+
+| Field | Detail |
+|---|---|
+| **Purpose** | Bot/abuse protection on signup |
+| **Data processed** | IP address, browser signals, challenge interaction data (processed by hCaptcha) |
+| **Hosting location** | United States |
+| **Privacy policy** | hcaptcha.com/privacy |
+| **Notes** | Invoked at signup; token verified server-side. |
+
+---
+
+### Notion (pre-launch waitlist)
+
+| Field | Detail |
+|---|---|
+| **Purpose** | Storage of pre-launch waitlist sign-ups collected via the Cloudflare waitlist Worker / `api.swingbyy.com/waitlist`. |
+| **Data processed** | Name and email address of waitlist sign-ups only. **Not** used for in-product user data — the previous Notion *CRM* sync of new-signup PII was removed from the codebase (`notion_crm.py` deleted). |
+| **Hosting location** | United States |
+| **Privacy policy** | notion.so/privacy |
+| **Notes** | Confirm the pre-launch site's own privacy notice discloses waitlist collection — see COMPLIANCE-REGISTER §C2. |
 
 ---
 
