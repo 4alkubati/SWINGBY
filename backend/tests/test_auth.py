@@ -9,6 +9,10 @@ Coverage:
 - Response structure validation
 """
 
+import base64 as _b64
+import hashlib as _hashlib
+from datetime import datetime, timedelta, timezone
+from types import SimpleNamespace
 from unittest.mock import patch, MagicMock
 
 from app.main import app
@@ -496,11 +500,6 @@ class TestSessionRefreshTokenIssued:
 # actually matters for this codebase — a brand-new social user always ends up
 # with a role AND a populated profile row, never a nameless shell.
 
-import base64 as _b64
-import hashlib as _hashlib
-from types import SimpleNamespace
-from datetime import datetime, timedelta, timezone
-
 
 class _FakeTable:
     """Records writes; replays a fixed row set for reads.
@@ -566,8 +565,9 @@ def _social_session(access="social-access", refresh="social-refresh", expires=36
     return session
 
 
-def _social_auth_res(user_id="social-user-id", email="new.user@gmail.com",
-                     metadata=None, session=None):
+def _social_auth_res(
+    user_id="social-user-id", email="new.user@gmail.com", metadata=None, session=None
+):
     user = MagicMock()
     user.id = user_id
     user.email = email
@@ -581,7 +581,9 @@ def _social_auth_res(user_id="social-user-id", email="new.user@gmail.com",
 class TestSocialAuthorize:
     """POST /auth/social/authorize — step 1 of the Google PKCE flow."""
 
-    def test_returns_supabase_authorize_url_with_valid_s256_challenge(self, test_client):
+    def test_returns_supabase_authorize_url_with_valid_s256_challenge(
+        self, test_client
+    ):
         app.state.limiter.reset()
         response = test_client.post(
             "/auth/social/authorize",
@@ -618,7 +620,10 @@ class TestSocialAuthorize:
         app.state.limiter.reset()
         response = test_client.post(
             "/auth/social/authorize",
-            json={"provider": "google", "redirect_to": "https://evil.example.com/steal"},
+            json={
+                "provider": "google",
+                "redirect_to": "https://evil.example.com/steal",
+            },
         )
         assert response.status_code == 400
 
@@ -643,18 +648,20 @@ class TestSocialExchange:
         name from the Google identity and pin the requested role.
         """
         app.state.limiter.reset()
-        users = _FakeTable([
-            {
-                "id": "social-user-id",
-                "first_name": "",
-                "last_name": "",
-                "email": "new.user@gmail.com",
-                "role": "client",
-                "avatar_url": None,
-                "is_suspended": False,
-                "deleted_at": None,
-            }
-        ])
+        users = _FakeTable(
+            [
+                {
+                    "id": "social-user-id",
+                    "first_name": "",
+                    "last_name": "",
+                    "email": "new.user@gmail.com",
+                    "role": "client",
+                    "avatar_url": None,
+                    "is_suspended": False,
+                    "deleted_at": None,
+                }
+            ]
+        )
         with patch("app.api.auth.supabase") as mock_supabase, patch(
             "app.api.auth.supabase_auth"
         ) as mock_auth:
@@ -722,18 +729,20 @@ class TestSocialExchange:
         """A social re-login must never demote an established business_owner,
         even if the client cheekily passes role='client'."""
         app.state.limiter.reset()
-        users = _FakeTable([
-            {
-                "id": "social-user-id",
-                "first_name": "Ada",
-                "last_name": "Lovelace",
-                "email": "new.user@gmail.com",
-                "role": "business_owner",
-                "avatar_url": "https://x/y",
-                "is_suspended": False,
-                "deleted_at": None,
-            }
-        ])
+        users = _FakeTable(
+            [
+                {
+                    "id": "social-user-id",
+                    "first_name": "Ada",
+                    "last_name": "Lovelace",
+                    "email": "new.user@gmail.com",
+                    "role": "business_owner",
+                    "avatar_url": "https://x/y",
+                    "is_suspended": False,
+                    "deleted_at": None,
+                }
+            ]
+        )
         with patch("app.api.auth.supabase") as mock_supabase, patch(
             "app.api.auth.supabase_auth"
         ) as mock_auth:
@@ -759,17 +768,19 @@ class TestSocialExchange:
 
     def test_suspended_account_cannot_sign_in_socially(self, test_client):
         app.state.limiter.reset()
-        users = _FakeTable([
-            {
-                "id": "social-user-id",
-                "first_name": "Ada",
-                "last_name": "L",
-                "email": "a@b.c",
-                "role": "client",
-                "is_suspended": True,
-                "deleted_at": None,
-            }
-        ])
+        users = _FakeTable(
+            [
+                {
+                    "id": "social-user-id",
+                    "first_name": "Ada",
+                    "last_name": "L",
+                    "email": "a@b.c",
+                    "role": "client",
+                    "is_suspended": True,
+                    "deleted_at": None,
+                }
+            ]
+        )
         with patch("app.api.auth.supabase") as mock_supabase, patch(
             "app.api.auth.supabase_auth"
         ) as mock_auth:
@@ -787,17 +798,19 @@ class TestSocialExchange:
 
     def test_soft_deleted_account_cannot_sign_in_socially(self, test_client):
         app.state.limiter.reset()
-        users = _FakeTable([
-            {
-                "id": "social-user-id",
-                "first_name": "Ada",
-                "last_name": "L",
-                "email": "a@b.c",
-                "role": "client",
-                "is_suspended": False,
-                "deleted_at": "2026-07-01T00:00:00+00:00",
-            }
-        ])
+        users = _FakeTable(
+            [
+                {
+                    "id": "social-user-id",
+                    "first_name": "Ada",
+                    "last_name": "L",
+                    "email": "a@b.c",
+                    "role": "client",
+                    "is_suspended": False,
+                    "deleted_at": "2026-07-01T00:00:00+00:00",
+                }
+            ]
+        )
         with patch("app.api.auth.supabase") as mock_supabase, patch(
             "app.api.auth.supabase_auth"
         ) as mock_auth:
@@ -852,17 +865,19 @@ class TestSocialIdToken:
         and only to the native SDK — never in the identity token itself. So the
         client passes it and we use it to fill the NOT NULL name columns."""
         app.state.limiter.reset()
-        users = _FakeTable([
-            {
-                "id": "social-user-id",
-                "first_name": "",
-                "last_name": "",
-                "email": "relay@privaterelay.appleid.com",
-                "role": "client",
-                "is_suspended": False,
-                "deleted_at": None,
-            }
-        ])
+        users = _FakeTable(
+            [
+                {
+                    "id": "social-user-id",
+                    "first_name": "",
+                    "last_name": "",
+                    "email": "relay@privaterelay.appleid.com",
+                    "role": "client",
+                    "is_suspended": False,
+                    "deleted_at": None,
+                }
+            ]
+        )
         with patch("app.api.auth.supabase") as mock_supabase, patch(
             "app.api.auth.supabase_auth"
         ) as mock_auth:

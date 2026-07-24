@@ -57,7 +57,9 @@ SUPABASE_URL = (os.getenv("SUPABASE_URL") or "").rstrip("/")
 # Legacy projects use SUPABASE_SERVICE_KEY (JWT service_role); newer ones use
 # the SUPABASE_SECRET_KEY (sb_secret_…) API key. Either grants the writes
 # this script needs — take whichever is populated.
-SERVICE_KEY = os.getenv("SUPABASE_SERVICE_KEY") or os.getenv("SUPABASE_SECRET_KEY") or ""
+SERVICE_KEY = (
+    os.getenv("SUPABASE_SERVICE_KEY") or os.getenv("SUPABASE_SECRET_KEY") or ""
+)
 
 if not SUPABASE_URL or not SERVICE_KEY:
     sys.exit(
@@ -118,7 +120,9 @@ def ensure_account(client: httpx.Client, acct: dict, password: str) -> str:
 
     # Already exists → find it by email and reset its password/metadata.
     lookup = admin_call(
-        client, "GET", f"{AUTH}/admin/users",
+        client,
+        "GET",
+        f"{AUTH}/admin/users",
         params={"page": 1, "per_page": 1, "filter": acct["email"]},
     )
     existing = None
@@ -134,7 +138,9 @@ def ensure_account(client: httpx.Client, acct: dict, password: str) -> str:
         )
 
     upd = admin_call(
-        client, "PUT", f"{AUTH}/admin/users/{existing['id']}",
+        client,
+        "PUT",
+        f"{AUTH}/admin/users/{existing['id']}",
         json={
             "password": password,
             "email_confirm": True,
@@ -180,10 +186,16 @@ def count_rows(client: httpx.Client, table: str, ids: list[str]) -> int:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--dry-run", action="store_true",
-                    help="build the dataset and print counts, write nothing")
-    ap.add_argument("--verify", action="store_true",
-                    help="only count seeded rows already in the database")
+    ap.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="build the dataset and print counts, write nothing",
+    )
+    ap.add_argument(
+        "--verify",
+        action="store_true",
+        help="only count seeded rows already in the database",
+    )
     args = ap.parse_args()
 
     data = ds.build(datetime.now(timezone.utc))

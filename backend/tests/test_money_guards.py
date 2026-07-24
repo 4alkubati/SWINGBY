@@ -15,7 +15,6 @@ Covers the four things the 2026-07-23 money-path investigation found:
 Nothing here talks to Stripe or a real database.
 """
 
-import os
 from unittest.mock import MagicMock, patch
 
 import pytest

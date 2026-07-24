@@ -38,7 +38,9 @@ SUPABASE_URL = (os.getenv("SUPABASE_URL") or "").rstrip("/")
 # Legacy projects use SUPABASE_SERVICE_KEY (JWT service_role); newer ones use
 # the SUPABASE_SECRET_KEY (sb_secret_…) API key. Either grants the writes
 # this script needs — take whichever is populated.
-SERVICE_KEY = os.getenv("SUPABASE_SERVICE_KEY") or os.getenv("SUPABASE_SECRET_KEY") or ""
+SERVICE_KEY = (
+    os.getenv("SUPABASE_SERVICE_KEY") or os.getenv("SUPABASE_SECRET_KEY") or ""
+)
 if not SUPABASE_URL or not SERVICE_KEY:
     sys.exit("SUPABASE_URL and SUPABASE_SERVICE_KEY must be set in backend/.env.")
 
@@ -141,8 +143,10 @@ def main() -> int:
                 if email.endswith("@" + ds.SEED_DOMAIN):
                     safe.append(row["id"])
                 else:
-                    log(f"REFUSING to delete {row['id']} — email {email!r} is not "
-                        f"on {ds.SEED_DOMAIN}")
+                    log(
+                        f"REFUSING to delete {row['id']} — email {email!r} is not "
+                        f"on {ds.SEED_DOMAIN}"
+                    )
 
         # 2b. an id in the manifest whose public.users row is already gone can
         #     still have an auth.users row behind it (that happened once when a

@@ -119,9 +119,7 @@ class TestS1ColumnLockdown:
 
     def test_service_posts_address_column_revoked_from_authenticated(self):
         text = (REPO_ROOT / "docs" / "rls_policies.sql").read_text().lower()
-        assert (
-            "revoke select (address) on service_posts from authenticated" in text
-        )
+        assert "revoke select (address) on service_posts from authenticated" in text
 
     def test_service_posts_revoke_does_not_also_hide_lat_lng(self):
         """lat/lng are intentionally still visible pre-acceptance (approximate
@@ -152,14 +150,17 @@ class TestS1ColumnLockdown:
 
     def test_new_migration_mirrors_the_same_revokes(self):
         migration = (
-            REPO_ROOT
-            / "supabase"
-            / "migrations"
-            / "20260720000000_s1_column_lockdown_and_unique_constraints.sql"
-        ).read_text().lower()
+            (
+                REPO_ROOT
+                / "supabase"
+                / "migrations"
+                / "20260720000000_s1_column_lockdown_and_unique_constraints.sql"
+            )
+            .read_text()
+            .lower()
+        )
         assert (
-            "revoke select (address) on service_posts from authenticated"
-            in migration
+            "revoke select (address) on service_posts from authenticated" in migration
         )
         assert "stripe_customer_id" in migration
         assert "license_number" in migration
@@ -179,11 +180,15 @@ class TestUniqueConstraintsAreGuarded:
 
     def test_all_three_unique_constraints_are_guarded(self):
         migration = (
-            REPO_ROOT
-            / "supabase"
-            / "migrations"
-            / "20260720000000_s1_column_lockdown_and_unique_constraints.sql"
-        ).read_text().lower()
+            (
+                REPO_ROOT
+                / "supabase"
+                / "migrations"
+                / "20260720000000_s1_column_lockdown_and_unique_constraints.sql"
+            )
+            .read_text()
+            .lower()
+        )
         for constraint_name in (
             "businesses_owner_id_key",
             "interests_post_id_business_id_key",
