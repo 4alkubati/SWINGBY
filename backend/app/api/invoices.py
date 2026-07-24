@@ -21,6 +21,7 @@ from fastapi.responses import StreamingResponse
 
 from app.deps import get_current_user, get_current_user_allow_query_token
 from app.supabase_client import supabase
+from app.services import escrow
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +34,8 @@ def _load_invoice_data(booking_id: str, current_user: dict) -> dict:
         supabase.table("bookings")
         .select(
             "id, client_id, business_id, employee_id, service_category, total_amount, "
-            "platform_fee, commission_rate, status, payment_status, "
+            "total_amount_cents, platform_fee, platform_fee_cents, "
+            "commission_rate, status, payment_status, "
             "confirmed_date, created_at, "
             "businesses(business_name, category, license_status), "
             "employees(role_title, users(first_name, last_name))"
@@ -75,7 +77,8 @@ def _load_invoice_data(booking_id: str, current_user: dict) -> dict:
         supabase.table("payments")
         .select(
             "status, method, stripe_payment_intent_id, "
-            "total_charged, platform_cut, released_to_business"
+            "total_charged, platform_cut, released_to_business, "
+            "total_charged_cents, platform_cut_cents, released_to_business_cents"
         )
         .eq("booking_id", booking_id)
         .order("created_at", desc=True)
@@ -84,9 +87,32 @@ def _load_invoice_data(booking_id: str, current_user: dict) -> dict:
     )
     payment = (pay_res.data or [{}])[0]
 
-    total_amount = float(booking.get("total_amount") or 0)
-    platform_cut = float(booking.get("platform_fee") or round(total_amount * 0.10, 2))
-    to_business = round(total_amount - platform_cut, 2)
+    # Invoice arithmetic in integer cents (migration 20260723120000). Doing the
+    # 10% fee in float dollars rounded twice is how an invoice ends up one cent
+    # short of the charge on totals like $33.33 — subtotal - fee is now an exact
+    # integer remainder, so the three lines always add up.
+    total_c = None
+    if booking.get("total_amount_cents") is not None:
+        total_c = int(booking["total_amount_cents"])
+    else:
+        total_c = escrow.to_cents(booking.get("total_amount"))
+
+    if booking.get("platform_fee_cents") is not None:
+        cut_c = int(booking["platform_fee_cents"])
+    elif booking.get("platform_fee") is not None:
+        cut_c = escrow.to_cents(booking.get("platform_fee"))
+    else:
+        cut_c = escrow.platform_cut_cents(total_c)
+    to_business_c = max(total_c - cut_c, 0)
+
+    total_amount = escrow.to_dollars(total_c)
+    platform_cut = escrow.to_dollars(cut_c)
+    to_business = escrow.to_dollars(to_business_c)
+
+    # FINDING C: an invoice must not imply money was collected when no charge
+    # exists behind it. `capture_backed` says whether a real Stripe capture (or
+    # a recorded off-platform payment) sits behind this invoice.
+    capture_backed = escrow.is_capture_backed(payment)
 
     biz = booking.get("businesses") or {}
     emp = booking.get("employees") or {}
@@ -140,6 +166,10 @@ def _load_invoice_data(booking_id: str, current_user: dict) -> dict:
             "platform_cut": platform_cut,
             "paid_to_business": to_business,
             "total_charged": total_amount,
+            "subtotal_cents": total_c,
+            "platform_cut_cents": cut_c,
+            "paid_to_business_cents": to_business_c,
+            "total_charged_cents": total_c,
         },
         "payment": {
             "method": payment.get("method") or "stripe_card",
@@ -147,6 +177,7 @@ def _load_invoice_data(booking_id: str, current_user: dict) -> dict:
             or booking.get("payment_status")
             or "pending",
             "processor_ref": payment.get("stripe_payment_intent_id"),
+            "capture_backed": capture_backed,
         },
     }
 

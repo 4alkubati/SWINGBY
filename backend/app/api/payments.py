@@ -78,21 +78,47 @@ def list_my_payments(current_user: dict = Depends(get_current_user)):
         )
 
     items = pay.data or []
-    total_released = sum(float(p.get("released_to_business") or 0) for p in items)
+
+    # All totals are summed in INTEGER CENTS and converted once at the end.
+    # Summing float dollars accumulates binary drift across a business's whole
+    # history; the *_cents columns (migration 20260723120000) are authoritative.
+    total_released_c = sum(escrow.money_cents(p, "released_to_business") for p in items)
     # fix C: the old filter used bookings.payment_status literals which never
     # matched payments.status, so total_pending was always 0. "Pending" here =
     # money held in escrow, not yet released to the business. Sourced from
-    # escrow.HELD_NOT_RELEASED so the two vocabularies (pre/post migration
-    # 0001) stay defined in exactly one place.
-    total_pending = sum(
-        float(p.get("escrow_held") or 0)
+    # escrow.HELD_NOT_RELEASED so both status vocabularies live in one place.
+    total_pending_c = sum(
+        escrow.money_cents(p, "escrow_held")
         for p in items
         if p.get("status") in escrow.HELD_NOT_RELEASED
     )
+
+    # FINDING C transparency. 24 of 29 production payment rows read
+    # 'fully_released' with no Stripe charge behind them — $4,675.50 of payouts
+    # nobody ever paid. Those rows are legacy data and are NOT rewritten here,
+    # but the reader must stop presenting them as money that moved. `verified`
+    # counts only capture-backed rows; the difference is surfaced explicitly so
+    # a caller (or an Earnings screen) can show the honest figure instead of
+    # silently adding phantom dollars into a headline number.
+    verified_released_c = sum(
+        escrow.money_cents(p, "released_to_business")
+        for p in items
+        if escrow.is_capture_backed(p)
+    )
+    unverified_released_c = total_released_c - verified_released_c
+
     return {
         "items": items,
-        "total_released": round(total_released, 2),
-        "total_pending": round(total_pending, 2),
+        "total_released": escrow.to_dollars(total_released_c),
+        "total_pending": escrow.to_dollars(total_pending_c),
+        # Cents are the authoritative figures; the dollar keys above are kept
+        # for the existing mobile/admin readers.
+        "total_released_cents": total_released_c,
+        "total_pending_cents": total_pending_c,
+        "verified_released": escrow.to_dollars(verified_released_c),
+        "verified_released_cents": verified_released_c,
+        "unverified_released": escrow.to_dollars(unverified_released_c),
+        "unverified_released_cents": unverified_released_c,
     }
 
 

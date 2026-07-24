@@ -633,6 +633,22 @@ def complete_booking(booking_id: str, current_user: dict = Depends(get_current_u
 
         try:
             outcome = escrow.release_escrow_on_complete(booking_id)
+        except escrow.CaptureRequiredError:
+            # FINDING C (money audit, 2026-07-23). Completing a job used to pay
+            # the business whether or not anyone had ever paid — proven live by
+            # releasing $180 against a booking with no Stripe charge. The guard
+            # lives in escrow.assert_capture_backed() so admin force-complete
+            # inherits it too.
+            logger.exception(
+                "complete_booking: BLOCKED — booking %s has no captured payment",
+                booking_id,
+            )
+            raise HTTPException(
+                status_code=409,
+                detail="Cannot complete: this booking has not been paid. "
+                "No Stripe charge was captured and no off-platform payment was "
+                "recorded, so there is no money to release to the business.",
+            )
         except escrow.EscrowError:
             logger.exception(
                 "complete_booking: no releasable payment for booking %s", booking_id
@@ -786,17 +802,21 @@ def cancel_booking(
         # read as 50% released to the business.
         payment = escrow.load_single_payment(booking_id)
         if payment:
-            supabase.table("payments").update(
-                {
-                    "status": "refunded",
-                    "released_to_business": split["business_keeps"],
-                    "escrow_held": 0,
-                    # No platform cut is taken on a cancellation — the retained
-                    # penalty goes entirely to the business as compensation.
-                    "platform_cut": 0,
-                    "released_at": datetime.now(timezone.utc).isoformat(),
-                }
-            ).eq("id", payment["id"]).execute()
+            # Integer cents (migration 20260723120000): the split is computed in
+            # cents, so write cents and let escrow.ledger_write emit the legacy
+            # dollar mirror from the same integer.
+            cancel_ledger = escrow.ledger_write(
+                released_to_business=split["business_keeps_cents"],
+                escrow_held=0,
+                # No platform cut is taken on a cancellation — the retained
+                # penalty goes entirely to the business as compensation.
+                platform_cut=0,
+            )
+            cancel_ledger["status"] = "refunded"
+            cancel_ledger["released_at"] = datetime.now(timezone.utc).isoformat()
+            supabase.table("payments").update(cancel_ledger).eq(
+                "id", payment["id"]
+            ).execute()
 
             # Real money movement: only call Stripe when a real charge was
             # captured (stripe_payment_intent_id present). In beta almost no
