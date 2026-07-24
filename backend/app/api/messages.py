@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 from typing import Optional
 from app.deps import get_current_user
 from app.privacy import mask_service_post_row, mask_user_public
+from app.services.contact_masking import mask_contact_info
 from app.supabase_client import supabase
 from app.services.push import send_push_to_user
 
@@ -286,6 +287,18 @@ def send_message(
     uid = current_user["id"]
     recipient_id = None
 
+    # Off-platform-leakage guard (item 31): strip phone numbers / emails BEFORE
+    # anything is stored or compared, so a swapped contact detail never lands in
+    # a readable form in the DB and can't be pulled back out via any read path.
+    # Chat unlocks on the interest (quote) thread the moment a business quotes
+    # an OPEN post — pre-acceptance, pre-payment — which is the exact window a
+    # client + business would use to take the job off-platform. Masking (not
+    # gating) is used deliberately: pre-booking chat on interest threads is a
+    # shipped, smoke-covered flow (CLAUDE.md "MESSAGES span the quote → booking
+    # arc"), so gating it would break the demo. mask_contact_info is
+    # false-positive-safe for prices/addresses/dates (tests/test_contact_masking).
+    masked_content, was_masked = mask_contact_info(data.content)
+
     if data.booking_id:
         booking_res = (
             supabase.table("bookings")
@@ -323,7 +336,11 @@ def send_message(
         else:
             recipient_id = booking["client_id"]
 
-        row = {"booking_id": data.booking_id, "sender_id": uid, "content": data.content}
+        row = {
+            "booking_id": data.booking_id,
+            "sender_id": uid,
+            "content": masked_content,
+        }
     else:
         interest = _get_interest_thread(data.interest_id)
         _assert_interest_access(interest, current_user)
@@ -354,7 +371,7 @@ def send_message(
         row = {
             "interest_id": data.interest_id,
             "sender_id": uid,
-            "content": data.content,
+            "content": masked_content,
         }
 
     # Retry-safe insert: only retried requests carry X-Send-Retry, so the happy
@@ -372,14 +389,18 @@ def send_message(
                 .select("*")
                 .eq(thread_field, thread_id)
                 .eq("sender_id", uid)
-                .eq("content", data.content)
+                .eq("content", masked_content)
                 .gte("sent_at", cutoff)
                 .order("sent_at", desc=True)
                 .limit(1)
                 .execute()
             )
             if existing.data:
-                return {"message": "Sent", "data": existing.data[0]}
+                return {
+                    "message": "Sent",
+                    "data": existing.data[0],
+                    "masked": was_masked,
+                }
         except Exception:
             pass  # dedupe is best-effort — fall through to a normal insert
 
@@ -393,10 +414,12 @@ def send_message(
         # written; the push fans out after. send_push_to_user never raises.
         if recipient_id and recipient_id != uid:
             background_tasks.add_task(
-                send_push_to_user, recipient_id, "New message", data.content[:100]
+                send_push_to_user, recipient_id, "New message", masked_content[:100]
             )
 
-        return {"message": "Sent", "data": res.data[0]}
+        # `masked` lets the mobile client surface a "we hid that contact info —
+        # keep it on SwingBy" notice on the just-sent message.
+        return {"message": "Sent", "data": res.data[0], "masked": was_masked}
     except HTTPException:
         raise
     except Exception:
