@@ -682,8 +682,12 @@ def _split_provider_name(meta: dict, email: str) -> Tuple[str, str]:
     return first[:80], last[:80]
 
 
-def _provision_social_user(auth_user, provider: str, requested_role: Optional[str],
-                           name_hint: Optional[Dict[str, str]] = None):
+def _provision_social_user(
+    auth_user,
+    provider: str,
+    requested_role: Optional[str],
+    name_hint: Optional[Dict[str, str]] = None,
+):
     """Guarantee a complete `users` row for a social identity.
 
     Returns (user_row, is_new_user).
@@ -793,8 +797,12 @@ def _provision_social_user(auth_user, provider: str, requested_role: Optional[st
     return row, is_new
 
 
-def _social_session_response(res, provider: str, requested_role: Optional[str],
-                             name_hint: Optional[Dict[str, str]] = None) -> dict:
+def _social_session_response(
+    res,
+    provider: str,
+    requested_role: Optional[str],
+    name_hint: Optional[Dict[str, str]] = None,
+) -> dict:
     """Shared tail for both social flows: provision, then return the SAME
     token envelope /auth/login returns so the mobile client has one code path.
     """
