@@ -16,8 +16,16 @@
 // shown to business users, whose navigator has no CancellationFlow route, so
 // the button silently did nothing.
 
+//
+// 2026-07-25: D5 collapsed the stacked action column into ONE primary CTA plus
+// an overflow menu, so three of these stopped finding their controls. What they
+// guard is unchanged — the assertions were re-pointed at the new layout, not
+// relaxed: the pay CTA is now labelled "Pay now", and cancel / mark-as-paid
+// live behind the overflow, which the test opens first. Every "must NOT be
+// offered" case still asserts absence with the menu OPEN, which is strictly
+// stronger than the closed-menu check it replaced.
 import React from 'react';
-import { render } from '@testing-library/react-native';
+import { render, fireEvent } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ThemeProvider } from '../theme/ThemeProvider';
 import { AuthProvider } from '../context/AuthContext';
@@ -202,10 +210,20 @@ async function renderWithPayment(paymentRow) {
   return renderScreen();
 }
 
+// D5: everything that is not the primary CTA lives behind the overflow. Open it
+// before asserting on cancel / mark-as-paid. A missing overflow button is not a
+// failure here — when there are no secondary actions at all the menu is not
+// rendered, and the assertion that follows (absence) is what we wanted anyway.
+function openOverflow(utils) {
+  const more = utils.queryByLabelText('More booking actions');
+  if (more) fireEvent.press(more);
+  return utils;
+}
+
 describe('BookingDetailsScreen does not invite a second charge', () => {
   it('hides "Pay with card" once the payment is captured (status: held)', async () => {
     const { queryByText } = await renderWithPayment({ status: 'held', total_charged: 200 });
-    expect(queryByText('Pay with card')).toBeNull();
+    expect(queryByText('Pay now')).toBeNull();
   });
 
   it('hides "Pay with card" once escrow has been released', async () => {
@@ -213,7 +231,7 @@ describe('BookingDetailsScreen does not invite a second charge', () => {
       status: 'fully_released',
       total_charged: 200,
     });
-    expect(queryByText('Pay with card')).toBeNull();
+    expect(queryByText('Pay now')).toBeNull();
   });
 
   it('still shows "Pay with card" while the booking is unpaid', async () => {
@@ -221,7 +239,7 @@ describe('BookingDetailsScreen does not invite a second charge', () => {
       status: 'pending_payment',
       total_charged: 200,
     });
-    expect(queryByText('Pay with card')).not.toBeNull();
+    expect(queryByText('Pay now')).not.toBeNull();
   });
 
   it('does not offer cash mark-as-paid on a completed, card-captured booking', async () => {
@@ -234,7 +252,7 @@ describe('BookingDetailsScreen does not invite a second charge', () => {
       }
       return Promise.resolve({});
     });
-    const { queryByText } = await renderScreen();
+    const { queryByText } = openOverflow(await renderScreen());
     expect(queryByText('Mark as paid (cash / e-transfer)')).toBeNull();
     // ...and it is still offered when the job really is unpaid.
   });
@@ -249,7 +267,7 @@ describe('BookingDetailsScreen does not invite a second charge', () => {
       }
       return Promise.resolve({});
     });
-    const { queryByText } = await renderScreen();
+    const { queryByText } = openOverflow(await renderScreen());
     expect(queryByText('Mark as paid (cash / e-transfer)')).not.toBeNull();
   });
 });
@@ -260,28 +278,25 @@ describe('BookingDetailsScreen does not show a cancel button that goes nowhere',
   // user on a confirmed booking saw "Cancel booking" and tapping it did nothing.
   it('shows "Cancel booking" to the client on a confirmed booking', async () => {
     mockUser = CLIENT_USER;
-    const { queryByText } = await renderWithPayment({
-      status: 'pending_payment',
-      total_charged: 200,
-    });
+    const { queryByText } = openOverflow(
+      await renderWithPayment({ status: 'pending_payment', total_charged: 200 }),
+    );
     expect(queryByText('Cancel booking')).not.toBeNull();
   });
 
   it('hides "Cancel booking" from a business user on the same booking', async () => {
     mockUser = OWNER_USER;
-    const { queryByText } = await renderWithPayment({
-      status: 'pending_payment',
-      total_charged: 200,
-    });
+    const { queryByText } = openOverflow(
+      await renderWithPayment({ status: 'pending_payment', total_charged: 200 }),
+    );
     expect(queryByText('Cancel booking')).toBeNull();
   });
 
   it('hides "Cancel booking" from an employee too', async () => {
     mockUser = { id: 'u3', role: 'employee', first_name: 'Emp', last_name: 'Loyee' };
-    const { queryByText } = await renderWithPayment({
-      status: 'pending_payment',
-      total_charged: 200,
-    });
+    const { queryByText } = openOverflow(
+      await renderWithPayment({ status: 'pending_payment', total_charged: 200 }),
+    );
     expect(queryByText('Cancel booking')).toBeNull();
   });
 
@@ -296,7 +311,7 @@ describe('BookingDetailsScreen does not show a cancel button that goes nowhere',
       }
       return Promise.resolve({});
     });
-    const { queryByText } = await renderScreen();
+    const { queryByText } = openOverflow(await renderScreen());
     expect(queryByText('Cancel booking')).toBeNull();
   });
 });
