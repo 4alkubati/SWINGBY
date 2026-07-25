@@ -6,7 +6,11 @@ any REQUIRED variable is missing, rather than surfacing a confusing error at
 request time.
 """
 
+import logging
 import os
+import re
+
+logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # Required vars — the app cannot function without these
@@ -45,6 +49,80 @@ _OPTIONAL = [
     "STRIPE_SUCCESS_URL",  # browser landing after Checkout success (defaults to web)
     "STRIPE_CANCEL_URL",  # browser landing after Checkout cancel  (defaults to web)
 ]
+
+
+# ---------------------------------------------------------------------------
+# STRIPE_SECRET_KEY shape validation — SEN-1 (walkthrough audit 2026-07-24)
+# ---------------------------------------------------------------------------
+#
+# Sentry: `APIConnectionError` on PATCH /interests/{id}/accept, chained cause
+#     UnicodeEncodeError: 'latin-1' codec can't encode character '…'
+#     in position 21   — raised inside urllib3's putheader().
+#
+# Offset 21 of `Authorization: Bearer sk_…` is the key itself. A real Stripe
+# key is pure ASCII and cannot raise that. A key COPIED FROM THE STRIPE
+# DASHBOARD IN ITS MASKED FORM (`sk_test_51ABC…`) can: the dashboard renders
+# the elision as U+2026 HORIZONTAL ELLIPSIS, and latin-1 (what HTTP headers are
+# encoded as) has no code point for it. So the failure is not a network fault
+# and not a missing key — it is a malformed one, and it also explains B14
+# ("cannot create Stripe checkout session").
+#
+# The old check was `if not settings.STRIPE_SECRET_KEY` — non-empty was the
+# only bar, so a truncated key sailed through config, through
+# stripe_service._require_stripe(), and died four layers down in the socket
+# stack with a message that names neither Stripe nor the env var.
+STRIPE_KEY_RE = re.compile(r"^sk_(test|live)_[A-Za-z0-9]+$")
+
+
+def stripe_secret_key_error(raw: str) -> str:
+    """Return an actionable error string for a bad key, or "" if it is fine.
+
+    An EMPTY key is not an error here — Stripe is optional on this deployment
+    (local dev, CI, the demo box all run without it) and the endpoints already
+    answer 503 when it is absent. This validates SHAPE, for a key that is set.
+    """
+    if not raw:
+        return ""
+    if not raw.isascii():
+        bad = next((c for c in raw if not c.isascii()), "")
+        return (
+            "STRIPE_SECRET_KEY contains the non-ASCII character "
+            f"{bad!r} (U+{ord(bad):04X}) at position {raw.index(bad)}. That is "
+            "the signature of a key copied from the Stripe dashboard while it "
+            "was still MASKED (sk_test_51ABC…) — the '…' is a real character in "
+            "the value. Re-copy the key with the dashboard's reveal/copy button "
+            "and set it again on Render. Left as-is, every Stripe call dies "
+            "inside urllib3 with a latin-1 UnicodeEncodeError (Sentry SEN-1)."
+        )
+    if not STRIPE_KEY_RE.match(raw):
+        return (
+            "STRIPE_SECRET_KEY does not look like a Stripe secret key: expected "
+            "^sk_(test|live)_[A-Za-z0-9]+$ (got a value of length "
+            f"{len(raw)} starting {raw[:8]!r}). Check you did not paste a "
+            "publishable key (pk_…), a restricted key (rk_…), a webhook secret "
+            "(whsec_…), or a value with surrounding quotes/whitespace."
+        )
+    return ""
+
+
+# Validate at config load — loudly, and before any request can reach the socket
+# layer. Default posture is CRITICAL-log rather than refusing to boot: a
+# malformed payment key must not take down signup, browse and messaging, which
+# work fine without Stripe. Set STRIPE_KEY_STRICT=1 (recommended for prod) to
+# make a malformed key a hard startup failure instead.
+STRIPE_KEY_ERROR = stripe_secret_key_error(os.getenv("STRIPE_SECRET_KEY", "").strip())
+if STRIPE_KEY_ERROR:
+    if os.getenv("STRIPE_KEY_STRICT", "0").strip().lower() not in (
+        "0",
+        "false",
+        "no",
+        "off",
+        "",
+    ):
+        raise RuntimeError(STRIPE_KEY_ERROR)
+    logger.critical(
+        "INVALID STRIPE_SECRET_KEY — payments are disabled. %s", STRIPE_KEY_ERROR
+    )
 
 
 class _Settings:
@@ -112,7 +190,9 @@ class _Settings:
 
     @property
     def STRIPE_SECRET_KEY(self) -> str:
-        return os.getenv("STRIPE_SECRET_KEY", "")
+        # Stripped: a trailing newline from a copy-paste into the Render
+        # dashboard is itself enough to break the Authorization header.
+        return os.getenv("STRIPE_SECRET_KEY", "").strip()
 
     @property
     def STRIPE_WEBHOOK_SECRET(self) -> str:

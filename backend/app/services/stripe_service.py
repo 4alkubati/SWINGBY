@@ -15,22 +15,35 @@ from typing import Any
 
 from fastapi import HTTPException
 
-from app.config import settings
+from app.config import settings, stripe_secret_key_error
 
 logger = logging.getLogger(__name__)
 
 
 class StripeNotConfigured(RuntimeError):
-    """Raised when an endpoint is hit but STRIPE_SECRET_KEY is unset."""
+    """Raised when STRIPE_SECRET_KEY is unset — or set to something unusable."""
 
 
 def _require_stripe():
     """Import + configure the stripe SDK, or raise StripeNotConfigured."""
-    if not settings.STRIPE_SECRET_KEY:
+    key = settings.STRIPE_SECRET_KEY
+    if not key:
         raise StripeNotConfigured(
             "Stripe is not configured on this environment. "
             "Set STRIPE_SECRET_KEY (and STRIPE_WEBHOOK_SECRET) to enable payments."
         )
+    # SEN-1: "non-empty" was the entire check. A masked key copied out of the
+    # Stripe dashboard (`sk_test_51ABC…`, ellipsis and all) passed it and then
+    # crashed inside urllib3.putheader with a latin-1 UnicodeEncodeError,
+    # surfacing as an APIConnectionError on whatever route happened to trigger
+    # the call. Refuse it here, where the message can say what is actually
+    # wrong and how to fix it. Re-checked per call (not just at import) so a
+    # corrected env var takes effect on restart-free redeploys and so tests can
+    # monkeypatch it.
+    shape_error = stripe_secret_key_error(key)
+    if shape_error:
+        logger.error("stripe_key_invalid: %s", shape_error)
+        raise StripeNotConfigured(shape_error)
     try:
         import stripe  # local import — never crash boot just because lib missing
     except ImportError as exc:
