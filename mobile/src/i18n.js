@@ -747,6 +747,112 @@ const translations = {
   },
 };
 
+// ─── Lane 3 (payments + flow-breakers) ───────────────────────────────────────
+// APPENDED, never merged into the blocks above — several lanes append to this
+// file in parallel and a hunk in the middle of `translations` conflicts with
+// all of them. English only: i18n.enableFallback is on below, so fr-CA and ar
+// resolve these through the en fallback until they are translated.
+const lane3 = {
+  // Pay sheet — design/handoff-jet-pulse/PAYMENTS.md
+  'pay.titleHold': 'Hold payment',
+  'pay.titlePay': 'Pay quote',
+  'pay.ctaHold': 'Confirm & hold',
+  'pay.ctaPay': 'Confirm & pay',
+  'pay.holding': 'Holding payment…',
+  'pay.paying': 'Taking payment…',
+  'pay.jobTotal': 'Job total',
+  'pay.quote': 'Quote',
+  'pay.serviceFee': 'Service fee',
+  'pay.onHoldToday': 'On hold today',
+  'pay.total': 'Total',
+  'pay.payWith': 'Pay with',
+  'pay.change': 'Change',
+  'pay.expires': 'Expires %{date}',
+  'pay.savedCard': 'Saved card',
+  'pay.addMethod': 'Add a payment method',
+  'pay.noMethodHint': 'Add a card to continue. Nothing is charged until you confirm.',
+  'pay.escrow':
+    'Held in escrow — released only when you approve the work. Cancel free up to 24 h before.',
+  'pay.declined': 'That card was declined. Try another one.',
+  'pay.amountChanged': 'This quote changed — check the new total before you confirm.',
+  'pay.quoteError': 'Could not price this job. Try again.',
+  'pay.noAmount': 'No amount to charge for this job.',
+
+  // Path A — post a job, pay on post
+  'postJob.reviewTitle': 'Review job',
+  'postJob.rowService': 'Service',
+  'postJob.rowWhen': 'When',
+  'postJob.rowWhere': 'Where',
+  'postJob.rowBudget': 'Your budget',
+  'postJob.rowBusiness': 'Business',
+  'postJob.escrowExplainer':
+    "when you post — you'll see the total before confirming. Businesses only see paid jobs, and the money moves only when you approve the work.",
+  'postJob.escrowExplainerLead': 'We place your payment on hold',
+  'postJob.ctaPostAndPay': 'Post job & pay',
+  'postJob.ctaSendRequest': 'Send request',
+  'postJob.holdFailed': 'Payment was not taken, so the job was not posted. Your draft is safe.',
+  'postJob.addressLabel': "Address (where's the job?)",
+  'postJob.addressHint': "We use this to show the job to pros nearby. It stays hidden until you accept a quote.",
+  'postJob.addressRequired': 'Add the address so nearby pros can find the job.',
+
+  // Path A success
+  'postJob.postedTitle': 'Job posted',
+  'postJob.postedBodyHeld': 'is on hold. Nearby pros are being notified now.',
+  'postJob.postedBodyNoHold': 'Nearby pros are being notified now.',
+  'postJob.postedRowHold': 'Payment on hold',
+  'postJob.postedRowHoldSub': 'Releases when you approve the work',
+  'postJob.postedRowQuotes': 'Expect quotes within',
+  'postJob.postedRowQuotesValue': '~2 h',
+  'postJob.viewJob': 'View job',
+
+  // Path B — accept a quote
+  'quotes.acceptAndPay': 'Accept & pay',
+  'quotes.payFirstNote': "You'll see the total before you confirm. Nothing is charged until then.",
+  'quotes.accepted': 'Quote accepted',
+
+  // Request sent — PROOF-REQUEST-WEB-AUTOBID.md §2
+  'requestSent.title': 'Request sent',
+  'requestSent.subReply': '%{business} usually replies in about %{time}.',
+  'requestSent.subFallback': '%{business} usually replies within a few hours.',
+  'requestSent.subFallbackGeneric': 'Pros nearby usually reply within a few hours.',
+  'requestSent.step1Title': 'They send a quote',
+  'requestSent.step1Body': 'It lands behind the Quotes bubble in Messages.',
+  'requestSent.step2Title': 'You chat and agree',
+  'requestSent.step2Body': 'Ask anything before you commit.',
+  'requestSent.step3Title': 'Accept & pay',
+  'requestSent.step3Body': 'Only then is it booked.',
+  'requestSent.noPaymentLead': 'No payment yet.',
+  'requestSent.noPaymentBody': 'Nothing is charged until you accept.',
+  'requestSent.openConversation': 'Open the conversation',
+  'requestSent.trackRequest': 'Track this request',
+  'requestSent.morePros': 'Request from more pros',
+
+  // Booking details — B15 / B16 / D5
+  'booking.liveStatus': 'Live status',
+  'booking.liveStatusEmpty': 'Updates appear here as the pro works.',
+  'booking.liveStatusError': 'Could not load live status.',
+  'booking.eventDatesProposed': 'Times proposed',
+  'booking.eventDateConfirmed': 'Date confirmed',
+  'booking.eventEnRoute': 'On the way',
+  'booking.eventArrived': 'Pro arrived',
+  'booking.eventStarted': 'Job started',
+  'booking.eventPaused': 'Job paused',
+  'booking.eventResumed': 'Job resumed',
+  'booking.eventCompleted': 'Job complete',
+  'booking.eventCancelled': 'Cancelled',
+  'booking.eventGeneric': 'Booking updated',
+  'booking.timeSetAtPosting': 'Time set at posting: %{when}',
+  'booking.moreActions': 'More',
+  'booking.moreActionsA11y': 'More booking actions',
+  'booking.reportProblem': 'Report a problem',
+  'booking.cancelBooking': 'Cancel booking',
+  'booking.viewReceipt': 'View receipt',
+  'booking.markPaidOffPlatform': 'Mark as paid (cash / e-transfer)',
+  'booking.payNow': 'Pay now',
+  'booking.message': 'Message',
+};
+Object.assign(translations.en, lane3);
+
 const i18n = new I18n(translations);
 
 // Default fallback
