@@ -33,6 +33,7 @@ import PaymentMethodScreen from '../screens/profile/PaymentMethodScreen';
 import DisputeFlowScreen from '../screens/flows/DisputeFlowScreen';
 import InvoiceScreen from '../screens/shared/InvoiceScreen';
 import MyDisputesScreen from '../screens/client/MyDisputesScreen';
+import RequestSentScreen from '../screens/client/RequestSentScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -81,6 +82,14 @@ export default function ClientNavigator() {
       <Stack.Screen name="DisputeFlow" component={DisputeFlowScreen} />
       <Stack.Screen name="Invoice" component={InvoiceScreen} options={{ headerShown: false }} />
       <Stack.Screen name="MyDisputes" component={MyDisputesScreen} />
+      {/* D9 / B9 — the request-sent reassurance screen. Reached with
+          navigation.reset() so the just-submitted form is not one back-press
+          away; gestureEnabled off for the same reason on iOS. */}
+      <Stack.Screen
+        name="RequestSent"
+        component={RequestSentScreen}
+        options={{ gestureEnabled: false }}
+      />
     </Stack.Navigator>
     </ErrorBoundary>
   );
