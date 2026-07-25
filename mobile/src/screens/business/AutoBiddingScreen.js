@@ -52,11 +52,6 @@ function dollars(cents) {
   return String(Math.round(Number(cents || 0) / 100));
 }
 
-function toCents(text) {
-  const n = parseFloat(String(text).replace(/[^0-9.]/g, ''));
-  return Number.isFinite(n) ? Math.round(n * 100) : 0;
-}
-
 // ─── Gradient on/off hero ────────────────────────────────────────────────────
 function AutoBidHero({ enabled, locked, onToggle }) {
   return (

@@ -31,6 +31,7 @@ import InvoiceScreen from '../screens/shared/InvoiceScreen';
 import BusinessInvoicesScreen from '../screens/business/BusinessInvoicesScreen';
 import ProfileEditScreen from '../screens/profile/ProfileEditScreen';
 import ProofOfWorkScreen from '../screens/business/ProofOfWorkScreen';
+import AutoBiddingScreen from '../screens/business/AutoBiddingScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -120,6 +121,9 @@ export default function BusinessNavigator() {
       {/* LANE 5 — proof of work. Entered from a job the business is finishing;
           "Send for approval" is what puts the release in the client's hands. */}
       <Stack.Screen name="ProofOfWork" component={ProofOfWorkScreen} />
+      {/* LANE 5 — auto-bidding rules. Subscribers only; non-subscribers still
+          reach the route and get the locked upgrade state. */}
+      <Stack.Screen name="AutoBidding" component={AutoBiddingScreen} />
       {/* SettingsScreen ("Edit profile") is registered in BOTH navigators and
           navigates to `ProfileEdit` with no role guard — business owners and
           employees previously hit a dead route and had no way to edit their
