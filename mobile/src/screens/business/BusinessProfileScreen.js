@@ -3,7 +3,7 @@ import {
   TextInput, Switch, FlatList, Linking, TouchableOpacity, Pressable,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Animated, {
   useSharedValue, useAnimatedStyle, withSpring, interpolate,
   useAnimatedScrollHandler, Extrapolation,

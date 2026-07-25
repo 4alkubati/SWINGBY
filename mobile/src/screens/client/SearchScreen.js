@@ -6,7 +6,7 @@
 // only when coords are available (degrades gracefully when denied).
 // `route.params.q` seeds the box so arriving from Home lands on results.
 // All colors/spacing via tokens. No StyleSheet.create.
-import { View, FlatList, Pressable, Platform } from 'react-native';
+import { View, FlatList, Pressable } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,

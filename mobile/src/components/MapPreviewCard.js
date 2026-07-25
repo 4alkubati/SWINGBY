@@ -13,7 +13,7 @@ import Svg, {
 } from 'react-native-svg';
 import Text from './Text';
 import PulseDot from './PulseDot';
-import { colors, radius, spacing } from '../theme/tokens';
+import { colors, radius, spacing, shadows } from '../theme/tokens';
 
 // Faux "map" background: dark blue-tinted gradient + faint 34px grid overlay.
 // Used as home map preview and as base for the ActiveBooking hero.
@@ -36,9 +36,9 @@ export function MapCanvas({ children, style }) {
   );
 }
 
-// 34px grid, ~5% opacity purple lines.
+// 34px grid, faint neutral lines (mapGrid token).
 function MapGridOverlay() {
-  const stroke = 'rgba(136,120,249,0.05)';
+  const stroke = colors.mapGrid;
   const step = 34;
   const cols = new Array(20).fill(0);
   const rows = new Array(20).fill(0);
@@ -67,6 +67,50 @@ function MapGridOverlay() {
         />
       ))}
     </G>
+  );
+}
+
+// ─── View-based pins (D10) ───────────────────────────────────────────────────
+// The SVG `MapPin` below is fine for the static 170px home preview, but the
+// full-screen map needs pins that pulse and that can carry a label. Reanimated
+// cannot drive SVG attributes here, so these are absolutely-positioned Views —
+// which is also closer to how the mock draws them (a dot with a soft ring).
+//
+// `x` / `y` are percentages of the canvas so callers can project real lat/lng
+// without knowing the pixel size of the container.
+export function MapDot({ x, y, top = false, live = false, size = 14 }) {
+  const color = top ? colors.success : colors.accent;
+  const ring = top ? colors.successRing : colors.accentRing;
+  return (
+    <View
+      style={[styles.pinAbs, { left: `${x}%`, top: `${y}%` }]}
+      pointerEvents="none"
+    >
+      <View style={[styles.pinRing, { width: size + 16, height: size + 16, borderRadius: (size + 16) / 2, backgroundColor: ring }]} />
+      {live ? (
+        <PulseDot size={size} color={color} />
+      ) : (
+        <View style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: color }} />
+      )}
+    </View>
+  );
+}
+
+// The selected pin: a 44px purple circle with a white ring and the business
+// initials, lifted off the map by the sanctioned accentGlow shadow.
+export function MapAvatarPin({ x, y, initials: label, onPress }) {
+  return (
+    <TouchableOpacity
+      activeOpacity={0.85}
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`${label} location`}
+      style={[styles.pinAbs, { left: `${x}%`, top: `${y}%` }]}
+    >
+      <View style={[styles.avatarPin, shadows.accentGlow]}>
+        <Text style={styles.avatarPinText}>{label}</Text>
+      </View>
+    </TouchableOpacity>
   );
 }
 
@@ -205,5 +249,35 @@ const styles = StyleSheet.create({
   overlayRight: {
     flexDirection: 'row',
     alignItems: 'center',
+  },
+
+  // ── View-based pins (D10) ──
+  pinAbs: {
+    position: 'absolute',
+    alignItems: 'center',
+    justifyContent: 'center',
+    // Translate by half the pin so the given point is its centre, not its
+    // top-left — otherwise every pin sits down-right of where it belongs.
+    transform: [{ translateX: -15 }, { translateY: -15 }],
+    width: 30,
+    height: 30,
+  },
+  pinRing: {
+    position: 'absolute',
+  },
+  avatarPin: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: colors.accent,
+    borderWidth: 3,
+    borderColor: colors.textPrimary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarPinText: {
+    fontFamily: 'SpaceGrotesk_700Bold',
+    fontSize: 13,
+    color: colors.textPrimary,
   },
 });
