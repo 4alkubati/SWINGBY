@@ -34,6 +34,7 @@ import DisputeFlowScreen from '../screens/flows/DisputeFlowScreen';
 import InvoiceScreen from '../screens/shared/InvoiceScreen';
 import MyDisputesScreen from '../screens/client/MyDisputesScreen';
 import RequestSentScreen from '../screens/client/RequestSentScreen';
+import ApproveWorkScreen from '../screens/client/ApproveWorkScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -90,6 +91,9 @@ export default function ClientNavigator() {
         component={RequestSentScreen}
         options={{ gestureEnabled: false }}
       />
+      {/* LANE 5 — review the before/after proof and release escrow, or route to
+          DisputeFlow with the funds still held. */}
+      <Stack.Screen name="ApproveWork" component={ApproveWorkScreen} />
     </Stack.Navigator>
     </ErrorBoundary>
   );

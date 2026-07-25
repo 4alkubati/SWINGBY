@@ -127,6 +127,13 @@ from app.api.booking_photos import router as booking_photos_router
 
 app.include_router(booking_photos_router, prefix="/bookings", tags=["booking-photos"])
 
+# LANE 5 — proof of work (before/after + voice memo → client approve → release).
+# Mounted on /bookings alongside booking_photos; the photo UPLOAD path stays in
+# booking_photos.py, this router owns the submission/approval lifecycle.
+from app.api.proof_of_work import router as proof_of_work_router
+
+app.include_router(proof_of_work_router, prefix="/bookings", tags=["proof-of-work"])
+
 from app.api.payments import router as payments_router
 
 app.include_router(payments_router, prefix="/payments", tags=["payments"])
@@ -150,6 +157,11 @@ app.include_router(invoices_router, prefix="/bookings", tags=["invoices"])
 from app.api.subscriptions import router as subscriptions_router
 
 app.include_router(subscriptions_router, prefix="/businesses", tags=["subscriptions"])
+
+# LANE 5 — auto-bidding rules + dry run. Subscribers only (checked per route).
+from app.api.auto_bidding import router as auto_bidding_router
+
+app.include_router(auto_bidding_router, prefix="/businesses", tags=["auto-bidding"])
 
 from app.api.disputes import router as disputes_router
 
