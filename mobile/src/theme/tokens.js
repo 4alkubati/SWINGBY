@@ -46,6 +46,11 @@ export const colors = {
   successRing: 'rgba(46,189,133,0.16)',
   // Faint grid stroke drawn over the map gradient.
   mapGrid: 'rgba(139,146,160,0.07)',
+  // Dashboard earnings hero gradient (135deg) — one of the two sanctioned
+  // glow moments (README §10b). Nothing else may use these.
+  earningsTop: '#2A2247',
+  earningsMid: '#1A1533',
+  earningsBottom: '#141127',
 };
 
 export const spacing = {

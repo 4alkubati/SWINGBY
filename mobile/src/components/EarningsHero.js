@@ -28,13 +28,13 @@ export default function EarningsHero({
       <Svg style={StyleSheet.absoluteFill} width="100%" height="100%">
         <Defs>
           <LinearGradient id="earnBg" x1="0" y1="0" x2="1" y2="1">
-            <Stop offset="0" stopColor="#2A2247" stopOpacity="1" />
-            <Stop offset="0.6" stopColor="#1A1533" stopOpacity="1" />
-            <Stop offset="1" stopColor="#141127" stopOpacity="1" />
+            <Stop offset="0" stopColor={colors.earningsTop} stopOpacity="1" />
+            <Stop offset="0.6" stopColor={colors.earningsMid} stopOpacity="1" />
+            <Stop offset="1" stopColor={colors.earningsBottom} stopOpacity="1" />
           </LinearGradient>
           <RadialGradient id="earnGlow" cx="85%" cy="15%" rx="60%" ry="80%">
-            <Stop offset="0" stopColor="#8878F9" stopOpacity="0.2" />
-            <Stop offset="1" stopColor="#8878F9" stopOpacity="0" />
+            <Stop offset="0" stopColor={colors.accentText} stopOpacity="0.2" />
+            <Stop offset="1" stopColor={colors.accentText} stopOpacity="0" />
           </RadialGradient>
         </Defs>
         <Rect x="0" y="0" width="100%" height="100%" fill="url(#earnBg)" rx="22" />
@@ -85,7 +85,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.borderAccent,
     overflow: 'hidden',
-    backgroundColor: '#141127',
+    backgroundColor: colors.earningsBottom,
   },
   inner: {
     padding: spacing.base + 2,

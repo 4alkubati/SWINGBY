@@ -3,8 +3,11 @@ import { View, TextInput, Pressable } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { colors, spacing } from '../theme/tokens';
 
-export default function SearchField({ value, onChangeText, placeholder = 'Search...', debounceMs = 300, style, showMic = false, ...props }) {
+export default function SearchField({ value, onChangeText, placeholder = 'Search...', debounceMs = 300, style, showMic = false, onFocus, onBlur, ...props }) {
   const [localValue, setLocalValue] = useState(value || '');
+  // POLISH-TIPS §6 — focus moves the border to accent. The width stays 1px so
+  // focusing never shifts layout.
+  const [focused, setFocused] = useState(false);
   const timerRef = useRef(null);
 
   useEffect(() => {
@@ -33,7 +36,7 @@ export default function SearchField({ value, onChangeText, placeholder = 'Search
           backgroundColor: colors.surface,
           borderRadius: 14,
           borderWidth: 1,
-          borderColor: colors.border,
+          borderColor: focused ? colors.accent : colors.border,
           paddingHorizontal: spacing.base,
           height: 52,
           gap: spacing.sm,
@@ -41,7 +44,7 @@ export default function SearchField({ value, onChangeText, placeholder = 'Search
         style,
       ]}
     >
-      <Feather name="search" size={18} color={colors.textSecondary} accessibilityElementsHidden={true} importantForAccessibility="no" />
+      <Feather name="search" size={18} strokeWidth={1.8} color={focused ? colors.accentText : colors.textSecondary} accessibilityElementsHidden={true} importantForAccessibility="no" />
       <TextInput
         value={localValue}
         onChangeText={handleChange}
@@ -58,6 +61,8 @@ export default function SearchField({ value, onChangeText, placeholder = 'Search
         }}
         selectionColor={colors.accent}
         returnKeyType="search"
+        onFocus={(e) => { setFocused(true); onFocus?.(e); }}
+        onBlur={(e) => { setFocused(false); onBlur?.(e); }}
         {...props}
       />
       {localValue.length > 0 ? (
@@ -67,10 +72,10 @@ export default function SearchField({ value, onChangeText, placeholder = 'Search
           accessibilityRole="button"
           accessibilityLabel="Clear search"
         >
-          <Feather name="x-circle" size={18} color={colors.textSecondary} accessibilityElementsHidden={true} importantForAccessibility="no" />
+          <Feather name="x-circle" size={18} strokeWidth={1.8} color={colors.textSecondary} accessibilityElementsHidden={true} importantForAccessibility="no" />
         </Pressable>
       ) : showMic ? (
-        <Feather name="mic" size={18} color={colors.textSecondary} accessibilityElementsHidden={true} importantForAccessibility="no" />
+        <Feather name="mic" size={18} strokeWidth={1.8} color={colors.textSecondary} accessibilityElementsHidden={true} importantForAccessibility="no" />
       ) : null}
     </View>
   );

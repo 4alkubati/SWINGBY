@@ -77,7 +77,9 @@ function TabItem({ route, isActive, onPress, iconMap, totalUnread, raised }) {
     );
   }
 
-  const activeColor = isActive ? colors.accentText : colors.textSecondary;
+  // Inactive nav is textTertiary — that is what the token was added for
+  // (README §Design Tokens: "inactive nav labels"). Active is accentText.
+  const activeColor = isActive ? colors.accentText : colors.textTertiary;
 
   return (
     <AnimatedPressable
@@ -94,7 +96,7 @@ function TabItem({ route, isActive, onPress, iconMap, totalUnread, raised }) {
           name={iconName}
           size={21}
           color={activeColor}
-          strokeWidth={isActive ? 2.2 : 1.8}
+          strokeWidth={isActive ? 2.1 : 1.9}
         />
         {showBadge && <Badge count={totalUnread} color="accent" style={styles.badge} />}
       </View>
@@ -171,7 +173,7 @@ const styles = StyleSheet.create({
     paddingTop: spacing.sm + 2,
     borderTopWidth: 1,
     borderTopColor: colors.border,
-    backgroundColor: '#0A0B0E',
+    backgroundColor: colors.navBg,
   },
   tab: {
     alignItems: 'center',
@@ -200,7 +202,7 @@ const styles = StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: 26,
-    backgroundColor: colors.accent,
+    backgroundColor: colors.accentBtn,
     alignItems: 'center',
     justifyContent: 'center',
   },

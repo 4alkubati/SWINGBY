@@ -25,8 +25,8 @@ export default function EarningsSparkline({
       <Svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none">
         <Defs>
           <LinearGradient id="sparkFill" x1="0" y1="0" x2="0" y2="1">
-            <Stop offset="0" stopColor="#8878F9" stopOpacity="0.28" />
-            <Stop offset="1" stopColor="#8878F9" stopOpacity="0" />
+            <Stop offset="0" stopColor={colors.accentText} stopOpacity="0.28" />
+            <Stop offset="1" stopColor={colors.accentText} stopOpacity="0" />
           </LinearGradient>
         </Defs>
         <Path d={areaD} fill="url(#sparkFill)" />

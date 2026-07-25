@@ -1,10 +1,15 @@
 // T37 — Skeleton loader components
 import React, { useEffect, useRef } from 'react';
 import { View, Animated, StyleSheet } from 'react-native';
+import { colors, radius, spacing } from '../theme/tokens';
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
-const SKELETON_BG = '#131618';
-const SKELETON_BORDER = '#1a1d1f';
+// POLISH-TIPS §8: skeletons match the final card exactly (radius included),
+// fill `surface`, shimmer toward `surfaceAlt`. The old #131618 / #1a1d1f pair
+// were near-miss hexes for exactly those two tokens (§"common failure modes").
+const SKELETON_BG = colors.skeletonBase;
+const SKELETON_BORDER = colors.border;
+const SKELETON_FG = colors.skeletonShimmer;
 const SHIMMER_MIN = 0.4;
 const SHIMMER_MAX = 0.8;
 const SHIMMER_DURATION = 1200;
@@ -35,7 +40,7 @@ function useShimmer() {
 }
 
 // ─── SkeletonBox ──────────────────────────────────────────────────────────────
-export function SkeletonBox({ width, height, borderRadius = 12, style }) {
+export function SkeletonBox({ width, height, borderRadius = radius.input, style }) {
   const opacity = useShimmer();
 
   return (
@@ -93,22 +98,23 @@ const styles = StyleSheet.create({
     backgroundColor: SKELETON_BG,
     borderWidth: 1,
     borderColor: SKELETON_BORDER,
-    borderRadius: 18,
-    padding: 13,
-    marginBottom: 10,
+    // Matches NearbyCard: radius 20 card, 16px padding, 48px avatar tile.
+    borderRadius: radius.card,
+    padding: spacing.base,
+    marginBottom: spacing.sm + 2,
   },
   avatar: {
-    width: 46,
-    height: 46,
-    borderRadius: 14,
-    backgroundColor: '#1a1d1f',
-    marginRight: 12,
+    width: 48,
+    height: 48,
+    borderRadius: 15,
+    backgroundColor: SKELETON_FG,
+    marginRight: spacing.md,
   },
   textBlock: {
     flex: 1,
   },
   line: {
     borderRadius: 6,
-    backgroundColor: '#1a1d1f',
+    backgroundColor: SKELETON_FG,
   },
 });

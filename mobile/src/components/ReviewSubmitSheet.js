@@ -119,7 +119,7 @@ export default function ReviewSubmitSheet({
             activeOpacity={0.85}
           >
             {submitting
-              ? <ActivityIndicator color="#ffffff" />
+              ? <ActivityIndicator color={colors.textPrimary} />
               : <Text style={styles.submitBtnText}>Submit review</Text>
             }
           </TouchableOpacity>
@@ -225,5 +225,5 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   submitBtnDisabled: { opacity: 0.4 },
-  submitBtnText: { fontSize: 15, fontWeight: '700', color: '#ffffff', letterSpacing: 0.1 },
+  submitBtnText: { fontSize: 15, fontWeight: '700', color: colors.textPrimary, letterSpacing: 0.1 },
 });
