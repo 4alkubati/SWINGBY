@@ -8,6 +8,7 @@ from app.categories import allowed_categories_for, resolve_create_category
 from app.deps import get_current_user
 from app.privacy import mask_service_post_row
 from app.services.geocoding import resolve_coordinates
+from app.services.push import send_push_to_user
 from app.supabase_client import supabase
 
 logger = logging.getLogger(__name__)
@@ -163,10 +164,11 @@ def create_service_post(
     # ignores category entirely, so the derived value is belt-and-suspenders —
     # category can never be why a targeted post is invisible to its target.
     target_business_id = data.target_business_id
+    target_owner_id = None
     if target_business_id:
         biz_res = (
             supabase.table("businesses")
-            .select("id, category")
+            .select("id, category, owner_id")
             .eq("id", target_business_id)
             .single()
             .execute()
@@ -174,6 +176,7 @@ def create_service_post(
         if not biz_res.data:
             raise HTTPException(status_code=404, detail="Business not found")
         category = resolve_create_category(biz_res.data.get("category") or "")
+        target_owner_id = biz_res.data.get("owner_id")
     else:
         category = resolve_create_category(data.category)
 
@@ -202,6 +205,30 @@ def create_service_post(
             .execute()
         )
         post = res.data[0]
+
+        # M12 / direct-request notification. A targeted "Book now" post is one
+        # client asking ONE company for a quote — a different event from an
+        # open-post broadcast, and the only signal that company gets that
+        # somebody is waiting on them. Labelled "Requesting a quote" so the
+        # business can tell it apart from an ordinary lead.
+        #
+        # The body carries the job title and nothing about the client: this push
+        # fires pre-acceptance, so it obeys the same rule as the feed (see
+        # app/privacy.py) — no name, no address, no photos. Best-effort; a push
+        # failure must never fail the post.
+        if target_owner_id:
+            try:
+                send_push_to_user(
+                    target_owner_id,
+                    "Requesting a quote",
+                    f"A client asked your company directly: {data.title}",
+                )
+            except Exception:
+                logger.warning(
+                    "direct_request_push_failed for post %s",
+                    post.get("id"),
+                    exc_info=True,
+                )
 
         # TRIGGER 1 (charge-before-service, ruling 2026-07-21): the intent is to
         # collect money at post time. This CANNOT capture in the current schema
@@ -326,8 +353,28 @@ def list_open_posts(
                 rows = biz_res.data or []
                 biz_id = rows[0].get("id") if rows else None
                 biz_category = rows[0].get("category") if rows else None
-                if biz_category and _BUSINESS_CATEGORY_RE.match(biz_category):
-                    allowed = allowed_categories_for(biz_category)
+                # A business category is user-entered, and its value is
+                # interpolated into a PostgREST `or=(...)` expression below, so
+                # it cannot be trusted raw — a comma or a paren would break out
+                # of the filter. The OLD guard was a regex on the raw category
+                # that, on a miss, threw the category filter away entirely and
+                # showed that business EVERY open post in the city. Any category
+                # containing an ampersand, a hyphen or a digit ("Lawn & Garden",
+                # "24-7 Plumbing"), or an empty one, silently landed there.
+                #
+                # Filtering the ALLOWLIST instead of gating on the input is
+                # strictly better: allowed_categories_for() snaps to the
+                # canonical labels and always appends "General", which is
+                # itself safe — so the sanitized list is never empty and an
+                # unrecognised category degrades to a TIGHT feed (General +
+                # anything targeted at me) instead of an unfiltered one. The
+                # spam shield holds for every category shape.
+                allowed = [
+                    c
+                    for c in allowed_categories_for(biz_category or "")
+                    if _BUSINESS_CATEGORY_RE.match(c)
+                ]
+                if allowed:
                     cat_terms = ",".join(f"category.ilike.{c}" for c in allowed)
                     # Untargeted posts matching my category, OR any post targeted
                     # directly at me (category ignored on the targeted branch —
@@ -340,8 +387,9 @@ def list_open_posts(
                     else:
                         query = query.or_(cat_branch)
                 else:
-                    # Degrade to unfiltered category-wise, but still never leak
-                    # a post targeted at some OTHER business.
+                    # Unreachable in practice (GENERAL is always allowed and
+                    # always safe) — kept so a future edit to categories.py
+                    # cannot turn this into an unfiltered feed by accident.
                     query = query.is_("target_business_id", "null")
             except Exception:
                 # Never let a lookup failure 500 the feed — degrade to unfiltered

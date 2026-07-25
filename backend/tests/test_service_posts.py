@@ -106,8 +106,16 @@ class TestBusinessOwnerAutoFilter:
             ]:
                 assert term in filter_str
 
-    def test_no_business_row_degrades_to_unfiltered(self, test_client, as_owner):
-        """No business row for this owner -> no or_ filter applied; still 200."""
+    def test_no_business_row_degrades_to_general_only_not_unfiltered(
+        self, test_client, as_owner
+    ):
+        """No business row -> General-only feed, NOT every job in the city.
+
+        Changed 2026-07-24 (audit L1 follow-up). The old behaviour dropped the
+        category filter entirely, so an owner whose business row was missing —
+        or whose category simply had an ampersand in it, see below — was shown
+        every open post on the platform. That is the spam shield off.
+        """
         businesses_stub = SupabaseTableStub(select_data=[])
         posts_stub = SupabaseTableStub(select_data=[])
 
@@ -119,10 +127,19 @@ class TestBusinessOwnerAutoFilter:
             )
 
             assert response.status_code == 200
-            assert _get_or_call(posts_stub) is None
+            or_call = _get_or_call(posts_stub)
+            assert or_call is not None
+            assert or_call[1][0] == (
+                "and(target_business_id.is.null,or(category.ilike.General))"
+            )
 
-    def test_bad_category_guard_degrades_to_unfiltered(self, test_client, as_owner):
-        """Category fails ^[A-Za-z ]+$ guard -> no or_ filter applied; still 200."""
+    def test_unsafe_category_degrades_to_general_only(self, test_client, as_owner):
+        """A category that can't be safely interpolated must not open the feed.
+
+        "Weird;DROP" cannot go into a PostgREST or=(...) expression, so it is
+        dropped from the allow-list — but "General" survives, so the business
+        still gets a tight feed instead of an unfiltered one.
+        """
         businesses_stub = SupabaseTableStub(select_data=[{"category": "Weird;DROP"}])
         posts_stub = SupabaseTableStub(select_data=[])
 
@@ -134,7 +151,32 @@ class TestBusinessOwnerAutoFilter:
             )
 
             assert response.status_code == 200
-            assert _get_or_call(posts_stub) is None
+            filter_str = _get_or_call(posts_stub)[1][0]
+            assert "category.ilike.General" in filter_str
+            assert "Weird" not in filter_str
+
+    def test_ampersand_category_no_longer_opens_the_whole_feed(
+        self, test_client, as_owner
+    ):
+        """"Lawn & Garden" — the shape that silently disabled the filter."""
+        businesses_stub = SupabaseTableStub(
+            select_data=[{"id": "biz-1", "category": "Lawn & Garden"}]
+        )
+        posts_stub = SupabaseTableStub(select_data=[])
+
+        with patch("app.api.service_posts.supabase") as mock_supabase:
+            mock_supabase.table.side_effect = [posts_stub, businesses_stub]
+
+            response = test_client.get(
+                "/service-posts/", headers={"Authorization": "Bearer test-token"}
+            )
+
+            assert response.status_code == 200
+            filter_str = _get_or_call(posts_stub)[1][0]
+            assert "category.ilike.General" in filter_str
+            assert "&" not in filter_str
+            # Still sees anything addressed directly to it.
+            assert "target_business_id.eq.biz-1" in filter_str
 
     def test_business_lookup_raises_degrades_to_unfiltered(self, test_client, as_owner):
         """Business lookup raising an exception must not 500 the feed."""
@@ -361,6 +403,84 @@ class TestTargetedBookNow:
         assert response.status_code in [200, 201], response.text
         assert posts_stub.inserted["target_business_id"] == "biz-9"
         assert posts_stub.inserted["category"] == "Cleaning"
+
+    def test_targeted_post_pushes_requesting_a_quote_to_the_target_owner(
+        self, test_client, as_client
+    ):
+        """M12 — a direct request is a different event from a broadcast lead.
+
+        The target business is the only party who knows somebody is waiting on
+        them, and the notification must be distinguishable from an open-post
+        lead. It must also carry NOTHING about the client: this fires
+        pre-acceptance, so the same rule as the feed applies (app/privacy.py).
+        """
+        businesses_stub = SupabaseTableStub(
+            select_data={"id": "biz-9", "category": "Cleaning", "owner_id": "owner-9"}
+        )
+        posts_stub = SupabaseTableStub(
+            insert_data=[{"id": "post-t9", "title": "Deep clean please"}]
+        )
+
+        with patch("app.api.service_posts.supabase") as mock_supabase:
+            mock_supabase.table.side_effect = [businesses_stub, posts_stub]
+            with patch("app.api.service_posts.send_push_to_user") as mock_push:
+                response = test_client.post(
+                    "/service-posts/",
+                    json={
+                        "title": "Deep clean please",
+                        "budget": 120,
+                        "target_business_id": "biz-9",
+                    },
+                    headers={"Authorization": "Bearer test-token"},
+                )
+
+        assert response.status_code in [200, 201], response.text
+        mock_push.assert_called_once()
+        user_id, title, body = mock_push.call_args[0]
+        assert user_id == "owner-9"
+        assert title == "Requesting a quote"
+        assert "Deep clean please" in body
+        # No client identity rides along on the push.
+        assert "client-1" not in body
+
+    def test_open_post_does_not_push_a_direct_request(self, test_client, as_client):
+        posts_stub = SupabaseTableStub(insert_data=[{"id": "post-open"}])
+        with patch("app.api.service_posts.supabase") as mock_supabase:
+            mock_supabase.table.return_value = posts_stub
+            with patch("app.api.service_posts.send_push_to_user") as mock_push:
+                response = test_client.post(
+                    "/service-posts/",
+                    json={
+                        "title": "Need a plumber",
+                        "category": "Plumbing",
+                        "budget": 150,
+                    },
+                    headers={"Authorization": "Bearer test-token"},
+                )
+        assert response.status_code in [200, 201]
+        mock_push.assert_not_called()
+
+    def test_push_failure_never_fails_the_post(self, test_client, as_client):
+        businesses_stub = SupabaseTableStub(
+            select_data={"id": "biz-9", "category": "Cleaning", "owner_id": "owner-9"}
+        )
+        posts_stub = SupabaseTableStub(insert_data=[{"id": "post-t10"}])
+        with patch("app.api.service_posts.supabase") as mock_supabase:
+            mock_supabase.table.side_effect = [businesses_stub, posts_stub]
+            with patch(
+                "app.api.service_posts.send_push_to_user",
+                side_effect=RuntimeError("expo is down"),
+            ):
+                response = test_client.post(
+                    "/service-posts/",
+                    json={
+                        "title": "Deep clean please",
+                        "budget": 120,
+                        "target_business_id": "biz-9",
+                    },
+                    headers={"Authorization": "Bearer test-token"},
+                )
+        assert response.status_code in [200, 201], response.text
 
     def test_create_targeted_post_ignores_client_category_on_mismatch(
         self, test_client, as_client
