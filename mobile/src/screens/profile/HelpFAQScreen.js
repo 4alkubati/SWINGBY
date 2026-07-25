@@ -54,7 +54,7 @@ const FAQS = [
     id: '6',
     question: 'How do I delete my account?',
     answer:
-      'Go to Settings → Delete my account. You\'ll be asked to confirm. Your account and all personal data will be permanently deleted within 30 days, except where retention is required by law. If you have an active booking, please complete or cancel it before deleting. Need help? Contact us at 4alkubati@gmail.com.',
+      'Go to Settings, then Delete my account. You\'ll be asked to confirm. Your account and all personal data will be permanently deleted within 30 days, except where retention is required by law. If you have an active booking, please complete or cancel it before deleting. Need help? Contact us at 4alkubati@gmail.com.',
   },
 ];
 

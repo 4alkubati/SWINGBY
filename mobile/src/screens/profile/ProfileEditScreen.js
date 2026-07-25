@@ -21,12 +21,11 @@ import { RatingStarsDisplay } from '../../components/RatingStars';
 import Text from '../../components/Text';
 import Stack from '../../components/Stack';
 import Inline from '../../components/Inline';
-import Surface from '../../components/Surface';
 import Avatar from '../../components/Avatar';
 import Button from '../../components/Button';
 import TextField from '../../components/TextField';
 
-import { colors, spacing, radius, shadows, motion } from '../../theme/tokens';
+import { colors, spacing, radius, motion } from '../../theme/tokens';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -152,39 +151,43 @@ export default function ProfileEditScreen() {
         style={{
           flexDirection: 'row',
           alignItems: 'center',
-          justifyContent: 'space-between',
-          paddingHorizontal: spacing.base,
-          paddingTop: insets.top + spacing.sm,
+          gap: spacing.md,
+          paddingHorizontal: spacing.lg,
+          paddingTop: insets.top + spacing.md,
           paddingBottom: spacing.md,
-          borderBottomWidth: 1,
-          borderBottomColor: colors.border,
         }}
       >
+        {/* 38px bordered circle, per the frame. No bottom hairline under the
+            header — the mock has none, and the first thing below it is the
+            avatar block, not a list. */}
         <Pressable
           onPress={() => navigation.goBack()}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          style={{
-            width: 40,
-            height: 40,
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+          style={({ pressed }) => ({
+            width: 38,
+            height: 38,
+            borderRadius: 19,
+            backgroundColor: pressed ? colors.surfaceAlt : colors.surface,
+            borderWidth: 1,
+            borderColor: colors.border,
             alignItems: 'center',
             justifyContent: 'center',
-          }}
+          })}
         >
-          <Feather name="arrow-left" size={22} color={colors.textPrimary} />
+          <Feather name="arrow-left" size={19} strokeWidth={1.8} color={colors.textPrimary} />
         </Pressable>
 
-        <Text variant="h2">Edit Profile</Text>
-
-        {/* spacer to keep title centered */}
-        <View style={{ width: 40 }} />
+        <Text variant="h2" accessibilityRole="header">Edit profile</Text>
       </View>
 
       {/* ── Scrollable body ── */}
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{
-          paddingHorizontal: spacing.base,
-          paddingTop: spacing.lg,
+          paddingHorizontal: spacing.lg,
+          paddingTop: spacing.md,
           paddingBottom: 120,
         }}
         showsVerticalScrollIndicator={false}
@@ -206,8 +209,7 @@ export default function ProfileEditScreen() {
               <Avatar
                 name={fullName || '?'}
                 source={avatarUrl}
-                size="xl"
-                style={shadows.subtle}
+                size={88}
               />
               {/* Uploading spinner overlay */}
               {uploadingPhoto && (
@@ -231,25 +233,27 @@ export default function ProfileEditScreen() {
               <View
                 style={{
                   position: 'absolute',
-                  bottom: 2,
-                  right: 2,
+                  bottom: 0,
+                  right: 0,
                   width: 28,
                   height: 28,
                   borderRadius: radius.pill,
-                  backgroundColor: colors.surfaceAlt,
-                  borderWidth: 2,
+                  backgroundColor: colors.accentBtn,
+                  borderWidth: 3,
                   borderColor: colors.bg,
                   alignItems: 'center',
                   justifyContent: 'center',
-                  ...shadows.subtle,
                 }}
               >
-                <Feather name="camera" size={13} color={colors.textPrimary} />
+                <Feather name="camera" size={12} strokeWidth={2} color={colors.textPrimary} />
               </View>
             </AnimatedPressable>
 
-            <Text variant="caption" color="secondary">
-              {uploadingPhoto ? i18n.t('profile.photoUploading') : 'Tap to change photo'}
+            <Text
+              variant="smallMedium"
+              style={{ fontSize: 13, color: colors.accentText }}
+            >
+              {uploadingPhoto ? i18n.t('profile.photoUploading') : 'Change photo'}
             </Text>
 
             {/* Rating row (if available) */}
@@ -264,11 +268,10 @@ export default function ProfileEditScreen() {
           </Stack>
 
           {/* ── Editable fields ── */}
-          <Surface elevation="subtle" padding="base">
-            <Stack spacing="base">
+          <Stack spacing="base">
 
               <TextField
-                label="First Name"
+                label="First name"
                 value={firstName}
                 onChangeText={setFirstName}
                 autoCapitalize="words"
@@ -277,7 +280,7 @@ export default function ProfileEditScreen() {
               />
 
               <TextField
-                label="Last Name"
+                label="Last name"
                 value={lastName}
                 onChangeText={setLastName}
                 autoCapitalize="words"
@@ -285,48 +288,52 @@ export default function ProfileEditScreen() {
                 maxLength={80}
               />
 
-              {/* Email — read-only */}
-              <Stack spacing="xs">
-                <View
-                  style={{
-                    backgroundColor: colors.surfaceAlt,
-                    borderRadius: radius.input,
-                    borderWidth: 1,
-                    borderColor: colors.border,
-                    paddingHorizontal: spacing.base,
-                    paddingVertical: spacing.md,
-                    opacity: 0.75,
-                    minHeight: 52,
-                    justifyContent: 'center',
-                  }}
-                >
-                  <Inline spacing="sm">
-                    <Feather name="lock" size={15} color={colors.textSecondary} />
-                    <Text
-                      variant="body"
-                      color="secondary"
-                      numberOfLines={1}
-                      style={{ flex: 1 }}
-                    >
-                      {user?.email ?? '—'}
-                    </Text>
-                  </Inline>
-                </View>
-                <Text variant="caption" color="secondary" style={{ marginLeft: spacing.xs }}>
-                  Email — contact support to change
-                </Text>
-              </Stack>
-
               <TextField
                 label="Phone"
                 value={phone}
                 onChangeText={setPhone}
                 keyboardType="phone-pad"
                 returnKeyType="done"
+                placeholder="+1 (403) 555-0142"
               />
 
+              {/* Email — read-only. Same 52px geometry as a real field so the
+                  column has one left edge and one height, with a "Locked"
+                  marker instead of an input caret. */}
+              <Stack spacing="xs">
+                <Text variant="label" color="secondary" style={{ marginBottom: 7 }}>
+                  Email
+                </Text>
+                <View
+                  style={{
+                    backgroundColor: colors.surface,
+                    borderRadius: radius.input,
+                    borderWidth: 1,
+                    borderColor: colors.border,
+                    paddingHorizontal: spacing.base,
+                    height: 52,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: spacing.sm,
+                  }}
+                >
+                  <Text
+                    variant="small"
+                    color="secondary"
+                    numberOfLines={1}
+                    style={{ flex: 1, fontSize: 15 }}
+                  >
+                    {user?.email ?? '—'}
+                  </Text>
+                  <Feather name="lock" size={13} strokeWidth={1.8} color={colors.textTertiary} />
+                  <Text variant="caption" style={{ color: colors.textTertiary }}>Locked</Text>
+                </View>
+                <Text variant="caption" color="secondary">
+                  {i18n.t('profile.emailLocked')}
+                </Text>
+              </Stack>
+
             </Stack>
-          </Surface>
 
         </Stack>
       </ScrollView>
@@ -334,17 +341,15 @@ export default function ProfileEditScreen() {
       {/* ── Sticky save CTA ── */}
       <View
         style={{
-          paddingHorizontal: spacing.base,
+          paddingHorizontal: spacing.lg,
           paddingTop: spacing.md,
           paddingBottom: insets.bottom + spacing.base,
           backgroundColor: colors.bg,
-          borderTopWidth: 1,
-          borderTopColor: colors.border,
         }}
       >
         <Button
           variant="primary"
-          label="Save Changes"
+          label="Save changes"
           onPress={handleSave}
           loading={saving}
           disabled={saving}

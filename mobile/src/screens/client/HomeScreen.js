@@ -184,7 +184,10 @@ export default function HomeScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
 
-  const [activeCategory, setActiveCategory] = useState('cleaning');
+  // 'all' so Home opens showing every nearby business. It used to default to
+  // 'cleaning', which silently hid every other trade behind an unexplained
+  // active tile (half of B4).
+  const [activeCategory, setActiveCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
 
   const [businesses, setBusinesses] = useState([]);
@@ -420,11 +423,15 @@ export default function HomeScreen({ navigation }) {
           <View style={styles.categoryWrap}>
             <CategoryGrid
               activeCategory={activeCategory}
-              onSelect={setActiveCategory}
+              onSelect={(id) => {
+                // B4 — a category tap now OPENS that category's businesses.
+                // Selecting still marks the tile so the state is visible on
+                // the way back.
+                setActiveCategory(id);
+                navigation.navigate('Search', { category: id });
+              }}
               data={CATEGORY_TILES}
-              onMorePress={() =>
-                navigation.navigate('Search', { q: searchQuery })
-              }
+              onMorePress={() => navigation.navigate('Search', {})}
             />
           </View>
 
@@ -581,7 +588,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.accent,
     borderRadius: 4,
     borderWidth: 1.5,
-    borderColor: '#0A0B0E',
+    borderColor: colors.navBg,
   },
 
   greetingSection: {

@@ -66,11 +66,14 @@ export default function JobOpportunityCard({
             <Text variant="caption" color="secondary">{photoCount}</Text>
           </View>
         )}
+        {/* The mock renders "Quote →". The arrow is drawn as a Feather icon,
+            not a glyph — iconography is Feather-only (POLISH-TIPS §5). */}
         <Button
           variant="ghost"
-          label="Quote →"
+          label="Quote"
           onPress={onSendQuote}
           style={styles.quoteLink}
+          iconRight={<Feather name="arrow-right" size={15} strokeWidth={1.8} color={colors.accentText} />}
         />
       </View>
     );

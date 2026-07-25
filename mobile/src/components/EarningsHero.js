@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, Pressable, StyleSheet } from 'react-native';
 import Svg, {
   Defs,
   LinearGradient,
@@ -15,26 +15,42 @@ import { colors, spacing } from '../theme/tokens';
 // Sanctioned "gradient earnings hero" card. 135deg purple-charcoal gradient
 // with inner top-right radial glow, purple-tinted border. Money in success green
 // deltas but the big $ amount is textPrimary — per handoff.
+// B18 — the hero was a plain View, so the week's number was the biggest thing
+// on the dashboard and the only thing you could not touch. `onPress` turns the
+// whole card into a target (with a pressed state and an a11y label); without
+// it the card renders exactly as before.
 export default function EarningsHero({
   amount,
   deltaPct = null,
   data,
   height = 172,
+  onPress,
+  accessibilityLabel,
 }) {
   const hasDelta = deltaPct != null && Number.isFinite(deltaPct);
   const deltaUp = hasDelta && deltaPct >= 0;
+  const Wrapper = onPress ? Pressable : View;
   return (
-    <View style={styles.wrap}>
+    <Wrapper
+      onPress={onPress}
+      accessibilityRole={onPress ? 'button' : undefined}
+      accessibilityLabel={onPress ? (accessibilityLabel || `This week ${amount}`) : undefined}
+      // View does not accept a function style, so only the Pressable branch
+      // gets one.
+      style={onPress
+        ? ({ pressed }) => [styles.wrap, pressed && styles.wrapPressed]
+        : styles.wrap}
+    >
       <Svg style={StyleSheet.absoluteFill} width="100%" height="100%">
         <Defs>
           <LinearGradient id="earnBg" x1="0" y1="0" x2="1" y2="1">
-            <Stop offset="0" stopColor="#2A2247" stopOpacity="1" />
-            <Stop offset="0.6" stopColor="#1A1533" stopOpacity="1" />
-            <Stop offset="1" stopColor="#141127" stopOpacity="1" />
+            <Stop offset="0" stopColor={colors.earningsTop} stopOpacity="1" />
+            <Stop offset="0.6" stopColor={colors.earningsMid} stopOpacity="1" />
+            <Stop offset="1" stopColor={colors.earningsBottom} stopOpacity="1" />
           </LinearGradient>
           <RadialGradient id="earnGlow" cx="85%" cy="15%" rx="60%" ry="80%">
-            <Stop offset="0" stopColor="#8878F9" stopOpacity="0.2" />
-            <Stop offset="1" stopColor="#8878F9" stopOpacity="0" />
+            <Stop offset="0" stopColor={colors.accentText} stopOpacity="0.2" />
+            <Stop offset="1" stopColor={colors.accentText} stopOpacity="0" />
           </RadialGradient>
         </Defs>
         <Rect x="0" y="0" width="100%" height="100%" fill="url(#earnBg)" rx="22" />
@@ -74,8 +90,15 @@ export default function EarningsHero({
             <EarningsSparkline data={data} />
           </View>
         ) : null}
+
+        {onPress ? (
+          <View style={styles.affordance} pointerEvents="none">
+            <Text style={styles.affordanceText}>See analytics</Text>
+            <Feather name="chevron-right" size={14} strokeWidth={2} color={colors.accentSoft} />
+          </View>
+        ) : null}
       </View>
-    </View>
+    </Wrapper>
   );
 }
 
@@ -85,7 +108,21 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.borderAccent,
     overflow: 'hidden',
-    backgroundColor: '#141127',
+    backgroundColor: colors.earningsBottom,
+  },
+  wrapPressed: { opacity: 0.9 },
+  affordance: {
+    position: 'absolute',
+    right: spacing.base + 2,
+    bottom: spacing.base,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+  },
+  affordanceText: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 12,
+    color: colors.accentSoft,
   },
   inner: {
     padding: spacing.base + 2,

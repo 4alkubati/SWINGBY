@@ -315,5 +315,5 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   sendBtnDisabled: { opacity: 0.7 },
-  sendBtnText: { fontSize: 15, fontWeight: '700', color: '#ffffff', letterSpacing: 0.1 },
+  sendBtnText: { fontSize: 15, fontWeight: '700', color: colors.textPrimary, letterSpacing: 0.1 },
 });

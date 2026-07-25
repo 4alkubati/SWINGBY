@@ -1,14 +1,19 @@
-// T38 — Empty-state component
-// T72 — Idle pulse animation on icon wrapper
-import React, { useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withRepeat,
-  withTiming,
-  Easing,
-} from 'react-native-reanimated';
+// Empty-state block — POLISH-TIPS §8.
+//
+// Exact spec: "Feather icon 28px in a 64px tinted circle (#161A21), one
+// 15.5px/600 line, one 13.5px #8B92A0 line, optional secondary button. No
+// illustrations, no emoji."
+//
+// Two things were off-system before and are deliberately gone now:
+//   - an infinite scale pulse on the icon. §7 reserves pulse for genuinely
+//     live things (a provider on the way, a live map pin). An empty inbox is
+//     the least live thing in the app.
+//   - a purple CTA with a purple glow shadow. §2 gives a screen ONE primary
+//     purple CTA, and an empty state is never the screen's primary action —
+//     so the button is the secondary treatment (surfaceAlt + border), and §3
+//     allows no resting shadow on it at all.
+import React from 'react';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 
 import { colors, spacing, radius } from '../theme/tokens';
@@ -19,43 +24,26 @@ export default function EmptyState({
   body,
   action, // { label, onPress }
 }) {
-  const scale = useSharedValue(1);
-
-  useEffect(() => {
-    scale.value = withRepeat(
-      withTiming(1.05, { duration: 2000, easing: Easing.inOut(Easing.ease) }),
-      -1, // infinite
-      true, // reverse (1.05 → 1.0 → 1.05 …)
-    );
-  }, []);
-
-  const pulseStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
-
   return (
     <View style={styles.container}>
-      {/* Icon */}
-      <Animated.View style={[styles.iconWrapper, pulseStyle]}>
-        <Feather name={icon} size={32} color={colors.accentText} strokeWidth={1.8} />
-      </Animated.View>
+      <View style={styles.iconWrapper}>
+        <Feather name={icon} size={28} color={colors.textSecondary} strokeWidth={1.8} />
+      </View>
 
-      {/* Title */}
-      <Text style={styles.title}>{title}</Text>
+      <Text style={styles.title} accessibilityRole="header">{title}</Text>
 
-      {/* Body */}
       {!!body && <Text style={styles.body}>{body}</Text>}
 
-      {/* Optional CTA */}
       {action && (
-        <TouchableOpacity
-          style={styles.button}
+        <Pressable
+          style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}
           onPress={action.onPress}
-          activeOpacity={0.8}
+          accessibilityRole="button"
+          accessibilityLabel={action.label}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
           <Text style={styles.buttonLabel}>{action.label}</Text>
-        </TouchableOpacity>
+        </Pressable>
       )}
     </View>
   );
@@ -66,54 +54,49 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 32,
+    padding: spacing.xl,
   },
   iconWrapper: {
     width: 64,
     height: 64,
-    borderRadius: 20,
-    backgroundColor: colors.accentMuted,
-    borderWidth: 1,
-    borderColor: colors.borderAccent,
+    borderRadius: 32,
+    backgroundColor: colors.surfaceAlt,
     alignItems: 'center',
     justifyContent: 'center',
   },
   title: {
-    fontFamily: 'SpaceGrotesk_700Bold',
-    fontSize: 18,
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 15.5,
+    lineHeight: 22,
     color: colors.textPrimary,
-    marginTop: 20,
+    marginTop: spacing.base,
     textAlign: 'center',
-    letterSpacing: -0.5,
   },
   body: {
     fontFamily: 'Inter_400Regular',
-    fontSize: 14,
+    fontSize: 13.5,
+    lineHeight: 20,
     color: colors.textSecondary,
-    marginTop: 8,
-    lineHeight: 22,
+    marginTop: spacing.sm,
     maxWidth: 280,
     textAlign: 'center',
   },
   button: {
     marginTop: spacing.lg,
-    backgroundColor: colors.accent,
+    backgroundColor: colors.surfaceAlt,
+    borderWidth: 1,
+    borderColor: colors.border,
     borderRadius: radius.button,
     paddingVertical: 13,
-    paddingHorizontal: 28,
+    paddingHorizontal: 24,
     minHeight: 44,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: colors.accent,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.35,
-    shadowRadius: 14,
-    elevation: 8,
   },
+  buttonPressed: { opacity: 0.9, backgroundColor: colors.surface },
   buttonLabel: {
     fontFamily: 'Inter_600SemiBold',
-    fontSize: 15,
-    color: colors.textPrimary,
-    letterSpacing: 0.2,
+    fontSize: 14,
+    color: colors.textSecondary,
   },
 });

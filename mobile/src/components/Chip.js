@@ -27,18 +27,26 @@ export default function Chip({ label, icon, selected = false, onPress, style }) 
           gap: spacing.xs,
           paddingVertical: spacing.sm,
           paddingHorizontal: spacing.md,
+          // ≥44px hit area even though the visual is ~36px (POLISH-TIPS §6).
+          minHeight: 36,
           borderRadius: radius.chip,
           borderWidth: 1,
-          borderColor: selected ? colors.accent : colors.border,
+          // Selected border is the purple-tinted borderAccent, not solid
+          // accent — a solid purple outline on every selected chip breaks the
+          // purple-scarcity rule (§2).
+          borderColor: selected ? colors.borderAccent : colors.border,
         },
         animatedStyle,
         style,
       ]}
+      hitSlop={{ top: 6, bottom: 6, left: 0, right: 0 }}
     >
       {icon}
       <Text
         variant="smallMedium"
-        color={selected ? 'accent' : 'secondary'}
+        // Purple TEXT is always accentText — accent (#6E56F7) fails contrast
+        // on dark (§2).
+        style={{ color: selected ? colors.accentText : colors.textSecondary }}
       >
         {label}
       </Text>

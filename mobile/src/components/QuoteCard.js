@@ -76,7 +76,7 @@ const styles = StyleSheet.create({
   },
   recommendedText: {
     fontSize: 9,
-    color: '#ffffff',
+    color: colors.textPrimary,
     fontWeight: '700',
     letterSpacing: 1.2,
   },
@@ -124,5 +124,5 @@ const styles = StyleSheet.create({
     borderColor: colors.accent,
   },
   selectBtnText: { fontSize: 13, fontWeight: '700', color: colors.textSecondary, letterSpacing: 0.1 },
-  selectBtnTextActive: { color: '#ffffff' },
+  selectBtnTextActive: { color: colors.textPrimary },
 });

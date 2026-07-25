@@ -15,10 +15,14 @@ function getInitials(name) {
 
 const fontSizeMap = { xs: 10, sm: 12, md: 18, lg: 24, xl: 36 };
 
-export default function Avatar({ source, name, size = 'md', showStatus, online, style }) {
+// `shape="tile"` is the squared 16px-radius variant used for business logos
+// (My Business header, map result sheet). `shape="circle"` (default) is the
+// person avatar. Radius scale per POLISH-TIPS §3.
+export default function Avatar({ source, name, size = 'md', showStatus, online, shape = 'circle', style }) {
   const dim = sizeMap[size] || size;
   const fontSize = fontSizeMap[size] || Math.round(dim * 0.38);
   const statusSize = Math.max(8, Math.round(dim * 0.22));
+  const shapeRadius = shape === 'tile' ? Math.min(18, Math.round(dim * 0.3)) : radius.avatar;
 
   return (
     <View
@@ -33,7 +37,7 @@ export default function Avatar({ source, name, size = 'md', showStatus, online, 
           style={{
             width: dim,
             height: dim,
-            borderRadius: radius.avatar,
+            borderRadius: shapeRadius,
             backgroundColor: colors.surfaceAlt,
           }}
           accessible={false}
@@ -43,13 +47,16 @@ export default function Avatar({ source, name, size = 'md', showStatus, online, 
           style={{
             width: dim,
             height: dim,
-            borderRadius: radius.avatar,
+            borderRadius: shapeRadius,
             backgroundColor: colors.accentMuted,
             alignItems: 'center',
             justifyContent: 'center',
           }}
         >
-          <Text style={{ fontSize, fontFamily: 'SpaceGrotesk_700Bold', color: colors.accent }}>
+          {/* POLISH-TIPS §8 — initials tile is accentMuted bg + accentText
+              Space Grotesk 700. Never gray, never a person icon, and never
+              solid `accent` (fails contrast on the muted tile). */}
+          <Text style={{ fontSize, fontFamily: 'SpaceGrotesk_700Bold', color: colors.accentText }}>
             {getInitials(name)}
           </Text>
         </View>

@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet } from 'react-native';
 import Svg, { Defs, RadialGradient, Stop, Rect } from 'react-native-svg';
+import { colors } from '../theme/tokens';
 
 // Faint radial purple glow behind a screen header.
 // radial-gradient(rgba(110,86,247,0.25) → transparent), pointer-events none.
@@ -31,8 +32,8 @@ export default function HeaderGlow({
     >
       <Defs>
         <RadialGradient id="glow" cx={cx} cy="30%" rx="60%" ry="70%">
-          <Stop offset="0" stopColor="#6E56F7" stopOpacity={opacity} />
-          <Stop offset="1" stopColor="#6E56F7" stopOpacity="0" />
+          <Stop offset="0" stopColor={colors.accent} stopOpacity={opacity} />
+          <Stop offset="1" stopColor={colors.accent} stopOpacity="0" />
         </RadialGradient>
       </Defs>
       <Rect x="0" y="0" width="100%" height="100%" fill="url(#glow)" />

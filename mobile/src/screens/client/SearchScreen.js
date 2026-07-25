@@ -6,7 +6,7 @@
 // only when coords are available (degrades gracefully when denied).
 // `route.params.q` seeds the box so arriving from Home lands on results.
 // All colors/spacing via tokens. No StyleSheet.create.
-import { View, FlatList, Pressable, Platform } from 'react-native';
+import { View, FlatList, Pressable } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -21,7 +21,7 @@ import { api } from '../../services/api';
 import { getUserLocation } from '../../services/location';
 import i18n from '../../i18n';
 import NearbyCard from '../../components/NearbyCard';
-import CategoryScroll from '../../components/CategoryScroll';
+import CategoryScroll, { CATEGORIES } from '../../components/CategoryScroll';
 import EmptyState from '../../components/EmptyState';
 import { SkeletonList } from '../../components/Skeleton';
 import SearchField from '../../components/SearchField';
@@ -109,7 +109,9 @@ export default function SearchScreen({ navigation, route }) {
   // empty box. HomeScreen already navigates `Search` with { q } — without this
   // the term was dropped on the floor and the screen opened blank (LANE F).
   const [query, setQuery] = useState(route?.params?.q ?? '');
-  const [activeCategory, setActiveCategory] = useState('all');
+  // B4 — Home's category tiles push here with { category }. Seeding it means
+  // arriving from a tile lands on that category's RESULTS.
+  const [activeCategory, setActiveCategory] = useState(route?.params?.category ?? 'all');
 
   const [results, setResults] = useState([]);
   const [loadState, setLoadState] = useState('idle'); // idle | loading | done | empty | error
@@ -145,14 +147,34 @@ export default function SearchScreen({ navigation, route }) {
     }
   }, [seededQuery]);
 
-  // ─── Search trigger — fires after SearchField debounce updates `query` ───
+  // Same re-seed for the category (the screen is reused on a second push).
+  const seededCategory = route?.params?.category;
   useEffect(() => {
-    if (!query.trim()) {
+    if (typeof seededCategory === 'string' && seededCategory) {
+      setActiveCategory(seededCategory);
+    }
+  }, [seededCategory]);
+
+  // ─── Search trigger — fires after SearchField debounce updates `query` ───
+  //
+  // B4 ("tapping a category never shows businesses; search works, category
+  // doesn't"). This early-returned to `idle` whenever the text box was empty,
+  // so selecting a category chip with nothing typed cleared the list and ran
+  // nothing — the one interaction Kira hit twice in the walkthrough.
+  //
+  // GET /businesses/ takes `q` and `category` independently and requires
+  // neither (backend/app/api/businesses.py::list_businesses), so a
+  // category-only search is a valid request that was simply never sent. Only
+  // the truly empty case (no text AND no category) is idle now.
+  useEffect(() => {
+    const q = query.trim();
+    const hasCategory = activeCategory && activeCategory !== 'all';
+    if (!q && !hasCategory) {
       setLoadState('idle');
       setResults([]);
       return;
     }
-    runSearch(query.trim(), activeCategory);
+    runSearch(q, activeCategory);
   }, [query, activeCategory]);
 
   // ─── Core search logic ───────────────────────────────────────────────────
@@ -170,7 +192,10 @@ export default function SearchScreen({ navigation, route }) {
     const coords = coordsRef.current;
 
     try {
-      const params = { q, limit: 50 };
+      const params = { limit: 50 };
+      // Omit `q` entirely on a category-only search rather than sending an
+      // empty string — the backend ilikes '%%' on a blank term.
+      if (q) params.q = q;
       if (category && category !== 'all') params.category = category;
       // Send coords when we have them so the backend can return an authoritative
       // distance_km. Never required — omitting them just means no distance.
@@ -201,7 +226,7 @@ export default function SearchScreen({ navigation, route }) {
 
       setResults(list);
       setLoadState(list.length === 0 ? 'empty' : 'done');
-      saveRecent(q);
+      if (q) saveRecent(q);
     } catch (err) {
       if (controller.signal.aborted) return;
       setErrorMsg(err.message || i18n.t('common.error'));
@@ -219,6 +244,7 @@ export default function SearchScreen({ navigation, route }) {
 
   const handleClear = useCallback(() => {
     setQuery('');
+    setActiveCategory('all');
     setResults([]);
     setLoadState('idle');
   }, []);
@@ -270,12 +296,22 @@ export default function SearchScreen({ navigation, route }) {
     }
 
     if (loadState === 'empty') {
+      const categoryLabel = CATEGORIES.find((c) => c.id === activeCategory)?.label;
+      const isCategoryOnly = !query.trim() && !!categoryLabel;
       return (
         <EmptyState
           icon="slash"
           title={i18n.t('search.noMatchesTitle')}
-          body={i18n.t('search.noMatchesBody', { query })}
-          action={{ label: i18n.t('search.clear'), onPress: handleClear }}
+          body={
+            isCategoryOnly
+              ? `No ${categoryLabel.toLowerCase()} businesses are listed yet.`
+              : i18n.t('search.noMatchesBody', { query })
+          }
+          action={
+            isCategoryOnly
+              ? { label: 'Show all categories', onPress: () => setActiveCategory('all') }
+              : { label: i18n.t('search.clear'), onPress: handleClear }
+          }
         />
       );
     }

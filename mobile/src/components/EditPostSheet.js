@@ -253,7 +253,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   saveBtnDisabled: { opacity: 0.7 },
-  saveBtnText: { fontSize: 15, fontWeight: '700', color: '#ffffff', letterSpacing: 0.1 },
+  saveBtnText: { fontSize: 15, fontWeight: '700', color: colors.textPrimary, letterSpacing: 0.1 },
   cancelBtn: {
     alignItems: 'center',
     paddingVertical: spacing.sm,

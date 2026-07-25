@@ -1,9 +1,9 @@
 import {
   View, ScrollView, StyleSheet, RefreshControl, Alert, Platform,
-  TextInput, Switch, FlatList, Linking, TouchableOpacity, Animated as RNAnimated,
+  TextInput, Switch, FlatList, Linking, TouchableOpacity, Pressable,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Animated, {
   useSharedValue, useAnimatedStyle, withSpring, interpolate,
   useAnimatedScrollHandler, Extrapolation,
@@ -14,17 +14,15 @@ import { api } from '../../services/api';
 import { getUserLocation } from '../../services/location';
 import { useFavorites } from '../../hooks/useFavorites';
 import * as toast from '../../services/toast';
-import { colors, spacing, radius, shadows, motion } from '../../theme/tokens';
+import { colors, spacing, radius, motion } from '../../theme/tokens';
 import Text from '../../components/Text';
 import Button from '../../components/Button';
 import Avatar from '../../components/Avatar';
-import Badge from '../../components/Badge';
 import Chip from '../../components/Chip';
 import Surface from '../../components/Surface';
 import Stack from '../../components/Stack';
 import Inline from '../../components/Inline';
-import Card from '../../components/Card';
-import ProgressBar from '../../components/ProgressBar';
+import HeaderGlow from '../../components/HeaderGlow';
 import { SkeletonBox, SkeletonCard } from '../../components/Skeleton';
 import { RatingStarsDisplay } from '../../components/RatingStars';
 import i18n from '../../i18n';
@@ -70,11 +68,6 @@ function computeProfileCompleteness(business) {
 }
 
 const AnimatedScrollView = Animated.createAnimatedComponent(ScrollView);
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-function initials(name = '') {
-  return name.split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2);
-}
 
 // ─── Loading skeleton ─────────────────────────────────────────────────────────
 function BusinessProfileSkeleton() {
@@ -147,6 +140,55 @@ function SectionHeader({ title }) {
     <View style={styles.sectionHeader}>
       <Text variant="label" color="secondary">{title}</Text>
     </View>
+  );
+}
+
+// ─── Owner-view grouped row (D4) ──────────────────────────────────────────────
+// The owner blocks in the mock are grouped cards of 14px rows: label left,
+// an optional muted value or tinted status pill, chevron right. Dividers use
+// borderSubtle — the darker divider that separates rows *inside* a card.
+function ManageRow({ label, value, pill, pillTone = 'success', onPress, last, accent }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={!onPress}
+      accessibilityRole={onPress ? 'button' : 'text'}
+      accessibilityLabel={value ? `${label}, ${value}` : label}
+      style={({ pressed }) => [
+        styles.manageRow,
+        !last && styles.manageRowDivided,
+        pressed && styles.manageRowPressed,
+      ]}
+    >
+      <Text
+        variant="small"
+        style={[styles.manageLabel, accent && { color: colors.accentText }]}
+        numberOfLines={1}
+      >
+        {label}
+      </Text>
+      {pill ? (
+        <View style={[styles.manageePill, pillTone === 'success' ? styles.pillSuccess : styles.pillNeutral]}>
+          <Text
+            variant="caption"
+            style={{
+              fontFamily: 'Inter_600SemiBold',
+              color: pillTone === 'success' ? colors.success : colors.textSecondary,
+            }}
+          >
+            {pill}
+          </Text>
+        </View>
+      ) : null}
+      {value ? (
+        <Text variant="small" color="secondary" style={styles.manageValue} numberOfLines={1}>
+          {value}
+        </Text>
+      ) : null}
+      {onPress ? (
+        <Feather name="chevron-right" size={16} strokeWidth={1.8} color={colors.textTertiary} />
+      ) : null}
+    </Pressable>
   );
 }
 
@@ -276,7 +318,11 @@ export default function BusinessProfileScreen({ navigation, route }) {
   const [bizId, setBizId] = useState(businessId || user?.business_id || null);
 
   const isOwnProfile = !businessId || businessId === user?.business_id;
-  const isOwner = user?.role === 'business_owner' && isOwnProfile;
+  // D4 — "Preview public" flips the owner into the visitor render tree so they
+  // can see exactly what a client sees. Local UI state only: same screen, same
+  // fetch, same route.
+  const [previewPublic, setPreviewPublic] = useState(false);
+  const isOwner = user?.role === 'business_owner' && isOwnProfile && !previewPublic;
 
   // CARD-12 — Favorites. FavoritesScreen + useFavorites (AsyncStorage,
   // persists across restarts) already existed, but nothing in the app ever
@@ -417,9 +463,259 @@ export default function BusinessProfileScreen({ navigation, route }) {
     opacity: interpolate(scrollY.value, [0, 80], [1, 0.8], Extrapolation.CLAMP),
   }));
 
+  // ─── Owner render: "My Business" (D4) ──────────────────────────────────────
+  //
+  // The walkthrough logged this as "a different screen entirely": the owner was
+  // getting the visitor layout (centred hero, rating, review list) with an
+  // 8-row settings menu bolted underneath. The mock's owner view is a
+  // management console — identity, completeness, Services & Pricing, Manage,
+  // Plan, Account.
+  //
+  // Three of the mock's Manage rows have no field behind them and are NOT
+  // faked here:
+  //   · per-service pricing  — `businesses` has no services/prices column;
+  //     `business.services` is read where present but is never written by any
+  //     endpoint, so the block renders its empty state rather than an
+  //     "Add service" row that could not save.
+  //   · working hours        — no column, no endpoint. Omitted entirely.
+  //   · payout account       — there is no Stripe Connect onboarding in this
+  //     build. The two real money surfaces (how escrow pays out, and the
+  //     invoice list) are linked instead.
+  if (isOwner && !editMode && !loading && !error) {
+    const { pct, tip } = computeProfileCompleteness(business || {});
+    const services = Array.isArray(business?.services) ? business.services : [];
+    const locality = business?.address || null;
+    const subLine = [business?.category, locality].filter(Boolean).join(' · ');
+
+    return (
+      <View style={[styles.container, { paddingTop: insets.top }]}>
+        <HeaderGlow width={420} height={320} offsetTop={-120} align="center" opacity={0.26} />
+
+        <AnimatedScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={[styles.ownerContent, { paddingBottom: insets.bottom + 100 }]}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={() => { setRefreshing(true); load(); }}
+              tintColor={colors.accent}
+            />
+          }
+        >
+          {/* ── Title row ── */}
+          <View style={styles.ownerTitleRow}>
+            <Text style={styles.ownerTitle} accessibilityRole="header" maxFontSizeMultiplier={1.3}>
+              My Business
+            </Text>
+            <Pressable
+              onPress={() => setPreviewPublic(true)}
+              accessibilityRole="button"
+              accessibilityLabel="Preview public profile"
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              style={({ pressed }) => [styles.previewBtn, pressed && styles.manageRowPressed]}
+            >
+              <Text style={styles.previewBtnText}>Preview public</Text>
+            </Pressable>
+          </View>
+
+          {/* ── Identity ── */}
+          <View style={styles.ownerIdentity}>
+            <Pressable
+              onPress={() => setEditMode(true)}
+              accessibilityRole="button"
+              accessibilityLabel="Edit business details"
+              style={{ position: 'relative' }}
+            >
+              <Avatar name={business?.business_name || ''} size={60} shape="tile" />
+              <View style={styles.ownerEditBadge}>
+                <Feather name="edit-2" size={11} strokeWidth={2} color={colors.textPrimary} />
+              </View>
+            </Pressable>
+
+            <View style={styles.ownerIdentityText}>
+              <View style={styles.ownerNameRow}>
+                <Text style={styles.ownerName} numberOfLines={1}>
+                  {business?.business_name || '—'}
+                </Text>
+                {business?.license_status === 'verified' && (
+                  <View style={styles.verifiedPill}>
+                    <Text style={styles.verifiedPillText}>Verified</Text>
+                  </View>
+                )}
+              </View>
+              {subLine ? (
+                <Text variant="small" color="secondary" numberOfLines={1}>{subLine}</Text>
+              ) : null}
+            </View>
+          </View>
+
+          {/* ── Profile completeness ── */}
+          <View style={styles.completeCard}>
+            <View style={{ flex: 1, gap: 2 }}>
+              <Text variant="caption" color="secondary">
+                {i18n.t('businessProfile.completenessLabel')}
+              </Text>
+              <Text variant="smallMedium" numberOfLines={1}>
+                {tip ? `${pct}% — ${tip}` : `${pct}% complete`}
+              </Text>
+            </View>
+            <View style={styles.completeTrack}>
+              <View style={[styles.completeFill, { width: `${Math.max(2, Math.min(100, pct))}%` }]} />
+            </View>
+          </View>
+
+          {/* ── Services & pricing ── */}
+          <Text variant="label" color="secondary" style={styles.ownerSectionLabel}>
+            Services & pricing
+          </Text>
+          <View style={styles.ownerBlock}>
+            {services.length > 0 ? (
+              services.map((svc, i) => (
+                <ManageRow
+                  key={`${svc}-${i}`}
+                  label={typeof svc === 'string' ? svc : svc?.name || 'Service'}
+                  value={typeof svc === 'object' && svc?.price ? `from $${svc.price}` : undefined}
+                  last={i === services.length - 1}
+                />
+              ))
+            ) : (
+              <View style={styles.ownerEmptyRow}>
+                <Feather name="tag" size={16} strokeWidth={1.8} color={colors.textSecondary} />
+                <View style={{ flex: 1, gap: 2 }}>
+                  <Text variant="smallMedium">No services listed yet</Text>
+                  <Text variant="caption" color="secondary">
+                    The trades you picked during setup show here.
+                  </Text>
+                </View>
+              </View>
+            )}
+          </View>
+
+          {/* ── Manage ── */}
+          <Text variant="label" color="secondary" style={styles.ownerSectionLabel}>Manage</Text>
+          <View style={styles.ownerBlock}>
+            <ManageRow
+              label="Team & employees"
+              value={String(employees.length)}
+              onPress={() => navigation.navigate('EmployeeManagement')}
+            />
+            <ManageRow
+              label="Service area"
+              value={business?.service_radius_km ? `${Math.round(business.service_radius_km)} km` : undefined}
+              onPress={() => setEditMode(true)}
+            />
+            <ManageRow
+              label="How you get paid"
+              onPress={() => navigation.navigate('PaymentMethod')}
+            />
+            <ManageRow
+              label="Invoices"
+              onPress={() => navigation.navigate('BusinessInvoices')}
+              last
+            />
+          </View>
+
+          {/* ── Plan ── */}
+          {subscription ? (
+            <>
+              <Text variant="label" color="secondary" style={styles.ownerSectionLabel}>Plan</Text>
+              <View style={styles.ownerBlock}>
+                <ManageRow
+                  label={
+                    subscription.tier === 'team' ? 'Team ($80/mo)'
+                      : subscription.tier === 'enterprise' ? 'Enterprise'
+                        : 'Solo ($30/mo)'
+                  }
+                  pill={(subscription.status || 'trialing').toUpperCase()}
+                  pillTone={subscription.status === 'active' ? 'success' : 'neutral'}
+                  last
+                />
+              </View>
+              <View style={styles.ownerCtaWrap}>
+                {subscription.manage_url ? (
+                  <Button
+                    variant="secondary"
+                    label="Manage subscription"
+                    onPress={() => Linking.openURL(subscription.manage_url)}
+                  />
+                ) : (
+                  <Button
+                    label={subActionInFlight ? 'Starting…' : 'Start subscription'}
+                    onPress={async () => {
+                      setSubActionInFlight(true);
+                      try {
+                        const res = await api.post('/businesses/me/subscribe', {});
+                        if (res.checkout_url) await Linking.openURL(res.checkout_url);
+                        else await load();
+                      } catch { /* toast via api */ } finally {
+                        setSubActionInFlight(false);
+                      }
+                    }}
+                    disabled={subActionInFlight}
+                    loading={subActionInFlight}
+                  />
+                )}
+              </View>
+            </>
+          ) : null}
+
+          {/* ── Account ──
+              Notifications stays here. D11 removes it from the CLIENT profile
+              because the client home header carries the bell; the business
+              dashboard has no bell, so this is the only way in. */}
+          <Text variant="label" color="secondary" style={styles.ownerSectionLabel}>Account</Text>
+          <View style={styles.ownerBlock}>
+            <ManageRow label="Notifications" onPress={() => navigation.navigate('NotificationsCenter')} />
+            <ManageRow label="Settings" onPress={() => navigation.navigate('Settings')} />
+            <ManageRow label="Help & FAQ" onPress={() => navigation.navigate('HelpFAQ')} />
+            <ManageRow label="Privacy Policy" onPress={() => navigation.navigate('PrivacyPolicy')} />
+            <ManageRow label="Terms of Service" onPress={() => navigation.navigate('TermsOfService')} last />
+          </View>
+
+          {/* ── Log out ── */}
+          <Pressable
+            onPress={handleLogout}
+            disabled={loggingOut}
+            accessibilityRole="button"
+            accessibilityLabel="Log out"
+            accessibilityState={{ disabled: loggingOut, busy: loggingOut }}
+            style={({ pressed }) => [
+              styles.ownerLogout,
+              pressed && styles.manageRowPressed,
+              loggingOut && { opacity: 0.4 },
+            ]}
+          >
+            <Text style={styles.ownerLogoutText}>
+              {loggingOut ? 'Logging out…' : 'Log out'}
+            </Text>
+          </Pressable>
+        </AnimatedScrollView>
+      </View>
+    );
+  }
+
   // ─── Render ────────────────────────────────────────────────────────────────
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
+
+      {/* Owner previewing their public page — one tap back to management. */}
+      {previewPublic && (
+        <Pressable
+          onPress={() => setPreviewPublic(false)}
+          accessibilityRole="button"
+          accessibilityLabel="Exit public preview"
+          style={styles.previewBanner}
+        >
+          <Feather name="eye" size={14} strokeWidth={1.8} color={colors.accentText} />
+          <Text variant="caption" style={{ flex: 1, color: colors.accentText }}>
+            Previewing your public profile
+          </Text>
+          <Text variant="caption" style={{ color: colors.accentText, fontFamily: 'Inter_600SemiBold' }}>
+            Done
+          </Text>
+        </Pressable>
+      )}
+
 
       {/* ── Animated sticky header (appears on scroll) ── */}
       <Animated.View style={[styles.stickyHeader, headerOpacity]}>
@@ -600,26 +896,10 @@ export default function BusinessProfileScreen({ navigation, route }) {
             </Stack>
           </Animated.View>
 
-          {/* ── Owner-view profile-completeness meter ── */}
-          {isOwner && !editMode && business && (() => {
-            const { pct, tip } = computeProfileCompleteness(business);
-            return (
-              <View style={styles.hPad}>
-                <Surface elevation="subtle" padding="base" rounded="card">
-                  <Stack spacing="sm">
-                    <Inline justify="space-between">
-                      <Text variant="smallMedium">{i18n.t('businessProfile.completenessLabel')}</Text>
-                      <Text variant="smallMedium" color="accent">{pct}%</Text>
-                    </Inline>
-                    <ProgressBar value={pct} />
-                    {tip ? (
-                      <Text variant="caption" color="secondary">{tip}</Text>
-                    ) : null}
-                  </Stack>
-                </Surface>
-              </View>
-            );
-          })()}
+          {/* Completeness, Plan, Account and Log out now live in the owner
+              render tree above (D4). They are deliberately absent here: this
+              tree is the PUBLIC page, and it is also what "Preview public"
+              shows the owner. */}
 
           {/* ── Services / Tags chips row ── */}
           {!editMode && business?.services && business.services.length > 0 && (
@@ -711,111 +991,6 @@ export default function BusinessProfileScreen({ navigation, route }) {
             </View>
           )}
 
-          {/* ── D2.4 Plan card — only on own profile ── */}
-          {isOwner && subscription && (
-            <View style={styles.hPad}>
-              <SectionHeader title="Plan" />
-              <Surface elevation="subtle" padding="base" rounded="card">
-                <Stack spacing="sm">
-                  <Inline justify="space-between">
-                    <Text variant="bodyMedium">
-                      {subscription.tier === 'team' ? 'Team ($80/mo)' : subscription.tier === 'enterprise' ? 'Enterprise' : 'Solo ($30/mo)'}
-                    </Text>
-                    <View style={[styles.subPill, subscription.status === 'active' ? styles.subActive : subscription.status === 'past_due' ? styles.subPastDue : styles.subTrialing]}>
-                      <Text variant="caption" style={[styles.subPillText, subscription.status === 'active' ? styles.subActiveText : subscription.status === 'past_due' ? styles.subPastDueText : styles.subTrialingText]}>{(subscription.status || 'trialing').toUpperCase()}</Text>
-                    </View>
-                  </Inline>
-                  {subscription.current_period_end ? (
-                    <Text variant="caption" color="secondary">
-                      Next billing: {new Date(subscription.current_period_end).toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' })}
-                    </Text>
-                  ) : null}
-                  {subscription.manage_url ? (
-                    <Button
-                      variant="secondary"
-                      label="Manage subscription"
-                      onPress={() => Linking.openURL(subscription.manage_url)}
-                    />
-                  ) : (
-                    <Button
-                      label={subActionInFlight ? 'Starting…' : 'Start subscription'}
-                      onPress={async () => {
-                        setSubActionInFlight(true);
-                        try {
-                          const res = await api.post('/businesses/me/subscribe', {});
-                          if (res.checkout_url) await Linking.openURL(res.checkout_url);
-                          else await load();
-                        } catch { /* toast via api */ }
-                        finally { setSubActionInFlight(false); }
-                      }}
-                      disabled={subActionInFlight}
-                      loading={subActionInFlight}
-                    />
-                  )}
-                </Stack>
-              </Surface>
-            </View>
-          )}
-
-          {/* ── Account menu — only on own profile ── */}
-          {isOwnProfile && (
-            <>
-              <SectionHeader title="Account" />
-              <View style={styles.acctMenu}>
-                <TouchableOpacity style={styles.acctRow} activeOpacity={0.7} onPress={() => navigation.navigate('NotificationsCenter')}>
-                  <Feather name="bell" size={18} color={colors.textSecondary} />
-                  <Text variant="body" style={styles.acctLabel}>Notifications</Text>
-                  <Feather name="chevron-right" size={16} color={colors.textSecondary} />
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.acctRow} activeOpacity={0.7} onPress={() => navigation.navigate('PaymentMethod')}>
-                  <Feather name="credit-card" size={18} color={colors.textSecondary} />
-                  <Text variant="body" style={styles.acctLabel}>Payment methods</Text>
-                  <Feather name="chevron-right" size={16} color={colors.textSecondary} />
-                </TouchableOpacity>
-                {user?.role === 'business_owner' && (
-                  <TouchableOpacity style={styles.acctRow} activeOpacity={0.7} onPress={() => navigation.navigate('BusinessInvoices')}>
-                    <Feather name="file-text" size={18} color={colors.textSecondary} />
-                    <Text variant="body" style={styles.acctLabel}>Invoices</Text>
-                    <Feather name="chevron-right" size={16} color={colors.textSecondary} />
-                  </TouchableOpacity>
-                )}
-                <TouchableOpacity style={styles.acctRow} activeOpacity={0.7} onPress={() => navigation.navigate('Settings')}>
-                  <Feather name="settings" size={18} color={colors.textSecondary} />
-                  <Text variant="body" style={styles.acctLabel}>Settings</Text>
-                  <Feather name="chevron-right" size={16} color={colors.textSecondary} />
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.acctRow} activeOpacity={0.7} onPress={() => navigation.navigate('HelpFAQ')}>
-                  <Feather name="help-circle" size={18} color={colors.textSecondary} />
-                  <Text variant="body" style={styles.acctLabel}>Help & FAQ</Text>
-                  <Feather name="chevron-right" size={16} color={colors.textSecondary} />
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.acctRow} activeOpacity={0.7} onPress={() => navigation.navigate('PrivacyPolicy')}>
-                  <Feather name="shield" size={18} color={colors.textSecondary} />
-                  <Text variant="body" style={styles.acctLabel}>Privacy Policy</Text>
-                  <Feather name="chevron-right" size={16} color={colors.textSecondary} />
-                </TouchableOpacity>
-                <TouchableOpacity style={[styles.acctRow, styles.acctRowLast]} activeOpacity={0.7} onPress={() => navigation.navigate('TermsOfService')}>
-                  <Feather name="file-text" size={18} color={colors.textSecondary} />
-                  <Text variant="body" style={styles.acctLabel}>Terms of Service</Text>
-                  <Feather name="chevron-right" size={16} color={colors.textSecondary} />
-                </TouchableOpacity>
-              </View>
-            </>
-          )}
-
-          {/* ── Logout — only on own profile ── */}
-          {isOwnProfile && (
-            <View style={[styles.hPad, { marginTop: spacing.lg, marginBottom: spacing.sm }]}>
-              <Button
-                variant="secondary"
-                label={loggingOut ? 'Logging out…' : 'Log out'}
-                onPress={handleLogout}
-                disabled={loggingOut}
-                loading={loggingOut}
-                style={styles.logoutBtn}
-              />
-            </View>
-          )}
         </AnimatedScrollView>
       )}
 
@@ -838,6 +1013,93 @@ export default function BusinessProfileScreen({ navigation, route }) {
 
 const styles = StyleSheet.create({
   container:    { flex: 1, backgroundColor: colors.bg },
+
+  // ── Owner view: "My Business" (D4) ──────────────────────────────────────
+  ownerContent: { paddingHorizontal: spacing.lg, paddingTop: spacing.lg },
+  ownerTitleRow: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    gap: spacing.md,
+  },
+  ownerTitle: {
+    fontSize: 24, fontFamily: 'SpaceGrotesk_700Bold',
+    color: colors.textPrimary, letterSpacing: -0.8,
+  },
+  previewBtn: {
+    borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface,
+    borderRadius: 10, paddingHorizontal: spacing.base, paddingVertical: spacing.sm,
+    minHeight: 36, justifyContent: 'center',
+  },
+  previewBtnText: { fontSize: 13, fontFamily: 'Inter_600SemiBold', color: colors.accentText },
+  previewBanner: {
+    flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
+    marginHorizontal: spacing.lg, marginTop: spacing.sm,
+    paddingHorizontal: spacing.md, paddingVertical: spacing.sm + 2,
+    borderRadius: radius.input,
+    backgroundColor: colors.accentMuted, borderWidth: 1, borderColor: colors.borderAccent,
+  },
+
+  ownerIdentity: {
+    marginTop: 18, flexDirection: 'row', alignItems: 'center', gap: 14,
+  },
+  ownerIdentityText: { flex: 1, gap: 3 },
+  ownerNameRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  ownerName: {
+    flexShrink: 1, fontSize: 17, fontFamily: 'Inter_600SemiBold', color: colors.textPrimary,
+  },
+  ownerEditBadge: {
+    position: 'absolute', bottom: -4, right: -4,
+    width: 24, height: 24, borderRadius: 12,
+    backgroundColor: colors.accentBtn, borderWidth: 3, borderColor: colors.bg,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  verifiedPill: {
+    backgroundColor: colors.successTint, borderRadius: radius.pill,
+    paddingHorizontal: spacing.sm, paddingVertical: 3,
+  },
+  verifiedPillText: { fontSize: 10.5, fontFamily: 'Inter_600SemiBold', color: colors.success },
+
+  completeCard: {
+    marginTop: spacing.base,
+    flexDirection: 'row', alignItems: 'center', gap: spacing.md,
+    backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border,
+    borderRadius: 16, paddingHorizontal: spacing.base, paddingVertical: 14,
+  },
+  completeTrack: {
+    width: 110, height: 6, borderRadius: radius.pill,
+    backgroundColor: colors.border, overflow: 'hidden',
+  },
+  completeFill: { height: '100%', backgroundColor: colors.accent, borderRadius: radius.pill },
+
+  ownerSectionLabel: { marginTop: 18, marginBottom: 9 },
+  ownerBlock: {
+    backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border,
+    borderRadius: radius.card, overflow: 'hidden',
+  },
+  ownerEmptyRow: {
+    flexDirection: 'row', alignItems: 'center', gap: spacing.md,
+    paddingHorizontal: spacing.base, paddingVertical: spacing.base,
+  },
+  ownerCtaWrap: { marginTop: spacing.md },
+  ownerLogout: {
+    marginTop: spacing.lg,
+    borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface,
+    borderRadius: 14, paddingVertical: 14, minHeight: 48,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  ownerLogoutText: { fontSize: 14, fontFamily: 'Inter_600SemiBold', color: colors.danger },
+
+  // Grouped-row primitives shared by every owner block.
+  manageRow: {
+    flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
+    paddingHorizontal: spacing.base, paddingVertical: 14, minHeight: 50,
+  },
+  manageRowDivided: { borderBottomWidth: 1, borderBottomColor: colors.borderSubtle },
+  manageRowPressed: { backgroundColor: colors.surfaceAlt },
+  manageLabel: { flex: 1, fontSize: 14, fontFamily: 'Inter_600SemiBold', color: colors.textPrimary },
+  manageValue: { fontSize: 13, marginRight: 2 },
+  manageePill: { borderRadius: radius.pill, paddingHorizontal: 9, paddingVertical: 3 },
+  pillSuccess: { backgroundColor: colors.successTint },
+  pillNeutral: { backgroundColor: colors.surfaceAlt },
 
   // Sticky animated header title
   stickyHeader: {

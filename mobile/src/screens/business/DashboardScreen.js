@@ -422,6 +422,9 @@ export default function DashboardScreen({ navigation }) {
           }
           deltaPct={deltaPct}
           data={hasSparkData ? sparkData : undefined}
+          // B18 — "this week $150" was not tappable. It opens analytics.
+          onPress={() => navigation.navigate('BusinessAnalytics')}
+          accessibilityLabel={`This week ${weekEarnings > 0 ? `$${Math.round(weekEarnings)}` : '$0'}, open analytics`}
         />
 
         {/* KPI row (Today / Rating) */}
