@@ -284,12 +284,17 @@ def list_open_posts(
     current_user: dict = Depends(get_current_user),
 ):
     try:
-        # Pull the poster's lifecycle flags alongside the public profile so we
-        # can drop posts from ghosted / suspended / soft-deleted clients from
-        # the business-facing feed. The flags are stripped before returning.
+        # AUDIT L1 (2026-07-24): the embed used to be
+        #   users(first_name, last_name, avatar_url, is_ghosted, …)
+        # and the name/avatar were fetched only to be stripped again. Don't
+        # fetch what may never be returned — one bad `return res.data` and the
+        # whole feed leaks. The ONLY reason a users join survives here is the
+        # lifecycle filter below (posts by ghosted / suspended / soft-deleted
+        # clients must not appear), so the projection is exactly those three
+        # flags and nothing else. The `users` key itself is removed from every
+        # row before it leaves this function.
         query = supabase.table("service_posts").select(
-            "*, users(first_name, last_name, avatar_url, "
-            "is_ghosted, is_suspended, deleted_at)"
+            "*, users(is_ghosted, is_suspended, deleted_at)"
         )
         # When no status filter given, default to showing only open posts
         # (preserves existing behaviour); with an explicit status, filter by it
@@ -363,12 +368,14 @@ def list_open_posts(
 
         # Two independent protections on the feed, BOTH required:
         #  1) Account lifecycle (PR #29): drop posts whose poster is hidden from
-        #     discovery (ghosted / suspended / soft-deleted), then strip those
-        #     lifecycle flags off the embedded users object so they never leak.
-        #  2) CARD-23 PII masking (main): mask full address + client last name
-        #     for everyone except the post's own owner. Feed posts are
-        #     pre-acceptance by construction, so there is no "winning business"
-        #     exception here — the unmasked view lives on the booking.
+        #     discovery (ghosted / suspended / soft-deleted). The flags are the
+        #     only thing the users join is for, and the join is dropped from the
+        #     row immediately afterwards.
+        #  2) PII masking (audit L1/L2/L3 + ruling S1, 2026-07-24): a business
+        #     sees NOTHING identifying about a client pre-acceptance — no name,
+        #     no avatar, no client_id, no budget, no photos, locality only. Feed
+        #     posts are pre-acceptance by construction, so there is no "winning
+        #     business" exception here — the unmasked view lives on the booking.
         items = []
         for post in raw_items:
             poster = post.get("users") or {}
@@ -379,12 +386,13 @@ def list_open_posts(
             )
             if hidden:
                 continue
-            if isinstance(poster, dict):
-                for flag in ("is_ghosted", "is_suspended", "deleted_at"):
-                    poster.pop(flag, None)
-            items.append(
-                post if post.get("client_id") == uid else mask_service_post_row(post)
-            )
+            if post.get("client_id") == uid:
+                # The client's own post — nothing to hide from themselves. The
+                # lifecycle join is internal plumbing, so it goes either way.
+                post.pop("users", None)
+                items.append(post)
+            else:
+                items.append(mask_service_post_row(post))
 
         # Paginate on the pre-filter page size so dropping a hidden poster's
         # post never prematurely ends the feed.
@@ -403,17 +411,20 @@ def list_open_posts(
 @router.get("/{post_id}")
 def get_service_post(post_id: str, current_user: dict = Depends(get_current_user)):
     try:
+        # No users(...) join at all: the owner does not need their own profile
+        # echoed back, and nobody else may see it (audit L1). Same reasoning as
+        # list_open_posts — never fetch PII a response must not contain.
         res = (
             supabase.table("service_posts")
-            .select("*, users(first_name, last_name, avatar_url)")
+            .select("*")
             .eq("id", post_id)
             .single()
             .execute()
         )
         if not res.data:
             raise HTTPException(status_code=404, detail="Post not found")
-        # CARD-23: same masking rule as the feed — owner sees their own post
-        # unmasked, everyone else gets locality-only address + first name only.
+        # Same masking rule as the feed — the owner sees their own post
+        # unmasked, everyone else gets the anonymous pre-acceptance view.
         if res.data.get("client_id") == current_user["id"]:
             return res.data
         # LANE C — a targeted "Book now" post is readable by exactly one

@@ -508,10 +508,10 @@ def list_threads(current_user: dict = Depends(get_current_user)):
             if not agg:
                 continue  # no conversation yet
             post = i.get("service_posts") or {}
-            # CARD-23: quote threads are pre-acceptance by default — only an
-            # accepted interest may show the client's last name in the chat
-            # header. Address never appears in this payload, so no address
-            # masking is needed here (only the users(...) join is present).
+            # Quote threads are pre-acceptance by default — until the client
+            # accepts, the business's chat header shows the anonymous "Client"
+            # label, no name and no avatar (audit L1, 2026-07-24). Only an
+            # accepted interest reveals the person on the other side.
             if i.get("status") != "accepted":
                 post = mask_service_post_row(post)
             client_user = post.get("users") or {}
@@ -523,6 +523,7 @@ def list_threads(current_user: dict = Depends(get_current_user)):
                         [client_user.get("first_name"), client_user.get("last_name")],
                     )
                 )
+                or client_user.get("display_name")
                 or "Chat"
             )
             threads.append(
@@ -617,8 +618,8 @@ def get_interest_messages(
         # last name must not ride along on their own chat messages until
         # the interest is accepted. Only the client's own messages carry
         # their name via this join, so only those need masking.
-        if interest["status"] != "accepted":
-            client_id = interest["service_posts"]["client_id"]
+        client_id = interest["service_posts"]["client_id"]
+        if interest["status"] != "accepted" and current_user["id"] != client_id:
             for item in items:
                 if item.get("sender_id") == client_id and item.get("users"):
                     item["users"] = mask_user_public(item["users"])
