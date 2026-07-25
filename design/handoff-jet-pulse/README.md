@@ -1,10 +1,6 @@
----
-group: build
-project: swingby
-hub: "[[MOC-Build]]"
-tags: [build]
----
 # Handoff: SwingBy Mobile UI Repolish ("Jet × Pulse" direction)
+
+> Also read `POLISH-TIPS.md` in this folder — craft-level rules and a per-screen self-review checklist. Both files are binding.
 
 ## Overview
 This package documents a visual repolish of the SwingBy mobile app (React Native / Expo, `mobile/` in the monorepo). The chosen direction is **2a "Jet × Pulse"**: the existing dark token system executed with far more discipline — solid surfaces, square 12px buttons, purple reserved for actions and live states — plus selected "live energy" moments (glow headers, map preview, gradient earnings card).
@@ -92,8 +88,3 @@ No image assets. All icons are Feather (already available via `@expo/vector-icon
 
 ## Suggested overnight prompt for Claude Code
 > Read `design_handoff_swingby_polish/README.md`. Implement direction 2a across `mobile/src/`, starting with `screens/client/HomeScreen.js`, `screens/client/ActiveBookingScreen.js`, `screens/business/DashboardScreen.js` and the components they use (`Chip`, `FeaturedCard`, `NearbyCard`, `Button`, `BottomNav`, `CategoryScroll`, `StatusPill`, `BookingStatusTimeline`, `JobOpportunityCard`). Then sweep every remaining screen for the global rules: remove all emoji iconography in favor of Feather icons, enforce purple discipline, square 12px buttons, uppercase section labels, green money values, and pulse animations on live states. Update `theme/tokens.js` with the new tokens. Keep all data fetching, navigation and state exactly as-is. Run lint after each screen.
-
-<!-- graph-wire:start -->
----
-**Up:** [[MOC-Build]] · **Home:** [[SWINGBY]]
-<!-- graph-wire:end -->

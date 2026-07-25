@@ -54,7 +54,7 @@ SwingBy/
 ├── workers/        Cloudflare Workers
 ├── docs/           API.md, SECURITY.md, SESSIONS.md, RUNNING_LOCALLY.md, DEPLOY.md, ROLLBACK.md, schema, RLS, ops
 ├── AGENTS          gitignored symlink → ~/brain/10-swingby/agents/ (agent kit: orchestrator, BOH/FOH, memory — lives in the brain)
-├── design/         Mockups, system
+├── design/         Design system — START AT design/DESIGN-SYSTEM.md ("Jet × Pulse", binding)
 ├── marketing/      Content, emails, social
 └── CLAUDE.md       this file
 ```
