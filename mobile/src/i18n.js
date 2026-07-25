@@ -110,6 +110,7 @@ const translations = {
     // Job opportunity card / quote sheet — client-uploaded photos (business side)
     'jobCard.photosLabel': 'Photos (%{count})',
     'jobCard.photoAlt': 'Job photo %{index} of %{count}',
+    'imageViewer.close': 'Close',
 
     // Post a job — category picker
     'postJob.categoryOther': 'Other / General',
@@ -355,6 +356,7 @@ const translations = {
     // Job opportunity card / quote sheet — client-uploaded photos (business side)
     'jobCard.photosLabel': 'Photos (%{count})',
     'jobCard.photoAlt': 'Photo du travail %{index} sur %{count}',
+    'imageViewer.close': 'Fermer',
 
     // Post a job — category picker
     'postJob.categoryOther': 'Autre / Général',
@@ -601,6 +603,7 @@ const translations = {
     // Job opportunity card / quote sheet — client-uploaded photos (business side)
     'jobCard.photosLabel': 'الصور (%{count})',
     'jobCard.photoAlt': 'صورة العمل %{index} من %{count}',
+    'imageViewer.close': 'إغلاق',
 
     // Post a job — category picker
     'postJob.categoryOther': 'أخرى / عام',

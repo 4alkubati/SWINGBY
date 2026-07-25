@@ -7,6 +7,7 @@ import { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Text from './Text';
 import SwImage from './SwImage';
+import ImageViewer from './ImageViewer';
 import i18n from '../i18n';
 import { api } from '../services/api';
 import { colors, spacing } from '../theme/tokens';
@@ -19,6 +20,7 @@ export default function SendQuoteSheet({ visible, onClose, post, onQuoted }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [sent, setSent] = useState(false);
+  const [viewerIndex, setViewerIndex] = useState(null);
 
   const clientFirstName = post?.users?.first_name;
   const photos = Array.isArray(post?.image_urls) ? post.image_urls.filter(Boolean) : [];
@@ -126,16 +128,30 @@ export default function SendQuoteSheet({ visible, onClose, post, onQuoted }) {
                 contentContainerStyle={styles.photoRow}
               >
                 {photos.map((url, i) => (
-                  <SwImage
+                  <TouchableOpacity
                     key={url || i}
-                    source={{ uri: url }}
-                    style={styles.photoThumb}
+                    activeOpacity={0.8}
+                    onPress={() => setViewerIndex(i)}
+                    accessibilityRole="button"
                     accessibilityLabel={i18n.t('jobCard.photoAlt', { index: i + 1, count: photos.length })}
-                  />
+                  >
+                    <SwImage
+                      source={{ uri: url }}
+                      style={styles.photoThumb}
+                      accessibilityLabel=""
+                    />
+                  </TouchableOpacity>
                 ))}
               </ScrollView>
             </View>
           )}
+
+          <ImageViewer
+            visible={viewerIndex !== null}
+            images={photos}
+            initialIndex={viewerIndex ?? 0}
+            onClose={() => setViewerIndex(null)}
+          />
 
           <Text style={styles.fieldLabel}>YOUR QUOTED PRICE</Text>
           <View style={styles.priceRow}>
