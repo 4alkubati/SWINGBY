@@ -17,6 +17,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Feather } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
+import { useUnread } from '../../context/UnreadContext';
 import { api } from '../../services/api';
 import { show as showToast } from '../../services/toast';
 import * as haptics from '../../services/haptics';
@@ -27,7 +28,11 @@ import Inline from '../../components/Inline';
 import Button from '../../components/Button';
 import ConfirmDateCard from '../../components/ConfirmDateCard';
 import ChatBookingSummary from '../../components/ChatBookingSummary';
-import QuoteBubble from '../../components/QuoteBubble';
+import ChatQuoteCard from '../../components/ChatQuoteCard';
+// LANE 3 owns components/PaySheet.js (design/handoff-jet-pulse/PAYMENTS.md).
+// This screen is Path B's entry point: "Accept & pay" opens the ONE shared
+// sheet, and no dollar figure may appear anywhere before it does.
+import PaySheet from '../../components/PaySheet';
 import { SkeletonBox } from '../../components/Skeleton';
 import { colors, spacing, radius, shadows, motion } from '../../theme/tokens';
 
@@ -316,6 +321,7 @@ function deriveBookingCounterpart(bookingMeta, role) {
 export default function ChatScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
+  const { mark } = useUnread();
   // A chat thread is either a booking thread or a pre-booking quote (interest) thread.
   const { bookingId, interestId, otherPartyName } = route.params || {};
 
@@ -333,6 +339,9 @@ export default function ChatScreen({ navigation, route }) {
   const [cursor, setCursor] = useState(null);
   const [hasMore, setHasMore] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
+  // Quote card (canvas 3a) — Path B of PAYMENTS.md runs from here.
+  const [paySheetVisible, setPaySheetVisible] = useState(false);
+  const [quoteBusy, setQuoteBusy] = useState(false);
 
   const listRef = useRef(null);
   // load() runs on a 5s interval, so it must not close over `messages` — the
@@ -379,6 +388,17 @@ export default function ChatScreen({ navigation, route }) {
     if (!canOpenBusiness) return;
     navigation.navigate('BusinessProfile', { businessId: counterpartBusinessId });
   }, [canOpenBusiness, counterpartBusinessId, navigation]);
+
+  // B13 — the unread badge did not clear after opening a thread. The server
+  // marks the thread read on GET, but the tab-bar badge renders from
+  // UnreadContext's cached 30s poll, so it kept showing "(1)" for up to half a
+  // minute after the messages were plainly on screen. Zero it locally the
+  // moment the thread is open. (UnreadContext keys its map by booking id only,
+  // so a quote thread's unread still waits for the next poll — see the PR
+  // notes; fixing that needs a change in context/UnreadContext.js.)
+  useEffect(() => {
+    if (bookingId) mark(bookingId);
+  }, [bookingId, mark]);
 
   const load = useCallback(async (before = null) => {
     if (!before) setError(null);
@@ -502,6 +522,96 @@ export default function ChatScreen({ navigation, route }) {
     }
   }
 
+  // ── The quote card (canvas 3a) ───────────────────────────────────────────────
+  // A quote thread's whole reason to exist is the quote, so it renders as the
+  // first bubble in the stream (an interest always predates every message on
+  // it). On a booking thread the same component renders the collapsed
+  // "Accepted" record above the conversation.
+  const isBusinessSide = user?.role === 'business_owner' || user?.role === 'employee';
+
+  // pending | accepted | expired | declined — derived from the interest row the
+  // messages endpoint hands back alongside the thread.
+  const quoteStatus = (() => {
+    if (!threadInfo) return null;
+    if (threadInfo.status === 'accepted') return 'accepted';
+    if (threadInfo.status === 'rejected') return 'declined';
+    const postStatus = threadInfo.post_status;
+    if (postStatus && postStatus !== 'open' && postStatus !== 'matched') return 'expired';
+    return 'pending';
+  })();
+
+  const quotePending = !bookingId && quoteStatus === 'pending';
+
+  async function handleDeclineQuote() {
+    if (quoteBusy || !interestId) return;
+    setQuoteBusy(true);
+    try {
+      await api.patch(`/interests/${interestId}/reject`);
+      setThreadInfo((prev) => (prev ? { ...prev, status: 'rejected' } : prev));
+      haptics.buttonTap();
+    } catch (err) {
+      showToast({
+        type: 'error',
+        text1: i18n.t('quoteCard.declineError'),
+        text2: err?.message || '',
+      });
+    } finally {
+      setQuoteBusy(false);
+    }
+  }
+
+  // PAYMENTS.md Path B: charge first, accept second. The sheet owns the charge
+  // and calls this only once its CTA is confirmed; accepting is what turns the
+  // quote into a booking (and creates the escrow payment row server-side).
+  async function handleConfirmPayment() {
+    const res = await api.patch(`/interests/${interestId}/accept`);
+    const newBookingId = res?.booking?.id;
+    setPaySheetVisible(false);
+    setThreadInfo((prev) => (prev ? { ...prev, status: 'accepted' } : prev));
+    if (newBookingId) {
+      navigation.replace('Chat', { bookingId: newBookingId, otherPartyName: headerName });
+    }
+  }
+
+  function renderQuoteCard() {
+    if (bookingId) {
+      // Resolved record — the quote that became this booking.
+      if (!threadInfo) return null;
+      return (
+        <ChatQuoteCard
+          status="accepted"
+          side={isBusinessSide ? 'business' : 'client'}
+          price={threadInfo.quoted_price}
+          paidTotal={bookingMeta?.total_amount ?? threadInfo.quoted_price}
+          when={bookingMeta?.confirmed_date
+            ? new Date(bookingMeta.confirmed_date).toLocaleDateString('en-CA', {
+              weekday: 'short', month: 'short', day: 'numeric',
+            })
+            : null}
+          onView={() => navigation.navigate('BookingDetails', { bookingId })}
+        />
+      );
+    }
+    if (!threadInfo || !quoteStatus) return null;
+    return (
+      <ChatQuoteCard
+        status={quoteStatus}
+        side={isBusinessSide ? 'business' : 'client'}
+        price={threadInfo.quoted_price}
+        service={threadInfo.post_title}
+        expiresAt={threadInfo.expires_at}
+        busy={quoteBusy}
+        onAccept={() => setPaySheetVisible(true)}
+        onDecline={handleDeclineQuote}
+        // Withdraw / edit of a sent quote have no backend route yet
+        // (interests exposes create / accept / reject only), so the buttons
+        // render disabled rather than lying about what they do.
+        canWithdraw={false}
+        canEdit={false}
+      />
+    );
+  }
+
   // ── Loading ──────────────────────────────────────────────────────────────────
 
   if (loading) {
@@ -585,14 +695,19 @@ export default function ChatScreen({ navigation, route }) {
                 <Feather name="chevron-right" size={14} color={colors.textSecondary} />
               ) : null}
             </Inline>
-            {/* Interest threads only: booking threads surface their quote in the
-                floating QuoteBubble, not the header subtitle. */}
+            {/* Interest threads only. While the quote is live the subtitle
+                says exactly what this thread is — "Quote · not booked yet" in
+                amber — so nobody mistakes a negotiation for a booking (5a).
+                No price here: the quote's own card carries the figure. */}
             {threadInfo && !bookingId ? (
-              <Text variant="caption" color="secondary" numberOfLines={1}>
-                {[
-                  threadInfo.post_title,
-                  threadInfo.quoted_price != null ? `$${threadInfo.quoted_price} quoted` : null,
-                ].filter(Boolean).join(' · ')}
+              <Text
+                variant="caption"
+                numberOfLines={1}
+                style={quotePending ? { color: colors.warning } : { color: colors.textSecondary }}
+              >
+                {quotePending
+                  ? i18n.t('chat.quoteNotBooked')
+                  : (threadInfo.post_title || '')}
               </Text>
             ) : null}
           </View>
@@ -613,10 +728,11 @@ export default function ChatScreen({ navigation, route }) {
             onPress={() => navigation.navigate('BookingDetails', { bookingId })}
           />
 
-          {/* #13 — the demoted quote. Backend already hands booking threads
-              their quote context under `interest` (_quote_context_for_booking),
-              so this is presentation only. */}
-          <QuoteBubble quote={threadInfo} />
+          {/* The quote that became this booking, collapsed to its one-line
+              resolved record (3a). Backend already hands booking threads their
+              quote context under `interest` (_quote_context_for_booking), so
+              this is presentation only. */}
+          {renderQuoteCard()}
 
           {/* CARD-20 — "disappearing chat" framing. A booking thread with no
               confirmed_date yet is the pre-confirm state of D2's entry flow:
@@ -664,11 +780,15 @@ export default function ChatScreen({ navigation, route }) {
           if (atBottomRef.current) listRef.current?.scrollToEnd({ animated: false });
         }}
         ListHeaderComponent={
-          loadingMore ? (
-            <View style={styles.loadMore}>
-              <ActivityIndicator size="small" color={colors.accent} />
-            </View>
-          ) : null
+          <>
+            {loadingMore ? (
+              <View style={styles.loadMore}>
+                <ActivityIndicator size="small" color={colors.accent} />
+              </View>
+            ) : null}
+            {/* Quote threads: the quote is the first thing in the stream. */}
+            {!bookingId ? renderQuoteCard() : null}
+          </>
         }
         ListEmptyComponent={
           <View style={styles.emptyChat}>
@@ -720,6 +840,20 @@ export default function ChatScreen({ navigation, route }) {
           loading={sending}
         />
       </Surface>
+
+      {/* PAYMENTS.md Path B — the one shared sheet. It owns the fee, the total
+          and the charge; this screen only says which quote is being paid. */}
+      <PaySheet
+        visible={paySheetVisible}
+        mode="pay"
+        quote={{
+          interestId,
+          subtotal: threadInfo?.quoted_price,
+          summary: threadInfo?.post_title,
+        }}
+        onClose={() => setPaySheetVisible(false)}
+        onConfirm={handleConfirmPayment}
+      />
     </KeyboardAvoidingView>
   );
 }
@@ -781,13 +915,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.sm,
   },
+  // POLISH-TIPS §8 — empty states are a 28px Feather icon in a 64px tinted
+  // circle. This was a 20px-radius square on `surface`.
   emptyIcon: {
     width: 64,
     height: 64,
-    borderRadius: radius.card,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
+    borderRadius: radius.pill,
+    backgroundColor: colors.surfaceAlt,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.sm,

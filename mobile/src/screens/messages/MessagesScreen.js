@@ -1,6 +1,20 @@
-// T48 — Messages screen — UX polish pass
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { FlatList, Pressable, RefreshControl, View } from 'react-native';
+// Messages — the inbox model from design/handoff-jet-pulse/MESSAGES-AND-QUOTES.md
+// (canvas section 5a). Replaces the old unified list that mixed quotes and
+// bookings together (walkthrough D2: "does not look good at all", and Kira's
+// complaint that "a chat opened without the client approving anything").
+//
+// THE RULE: the chat list holds BOOKED WORK ONLY. A thread appears here the
+// moment a quote is accepted and paid — never before. Everything still being
+// negotiated sits behind ONE docked bubble; tapping it swaps the list in place
+// (same screen, no navigation push) and the bubble becomes "Back to chats".
+//
+// Same component on both sides — only copy and row content differ:
+//   client   → received quotes  ("3 open · not booked yet")
+//   business → sent quotes      ("4 out · $1,145 pending")
+// Business Jobs no longer lists pending quotes at all (JobManagementScreen);
+// a job lands in Jobs on acceptance only.
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { FlatList, Pressable, RefreshControl, View, StyleSheet } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -10,413 +24,818 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 
 import { useAuth } from '../../context/AuthContext';
+import { useUnread } from '../../context/UnreadContext';
 import { api } from '../../services/api';
 import i18n from '../../i18n';
-import { colors, spacing, radius, shadows, motion } from '../../theme/tokens';
+import { colors, spacing, radius, motion } from '../../theme/tokens';
 
 import Text from '../../components/Text';
-import Stack from '../../components/Stack';
-import Inline from '../../components/Inline';
-import Surface from '../../components/Surface';
-import Avatar from '../../components/Avatar';
-import Badge from '../../components/Badge';
 import Button from '../../components/Button';
 import SearchField from '../../components/SearchField';
 import EmptyState from '../../components/EmptyState';
+import QuotesBubble from '../../components/QuotesBubble';
+import { formatMoney } from '../../components/ChatQuoteCard';
 import { SkeletonList } from '../../components/Skeleton';
+
+// Local token — the actionable quote border is rgba(136,120,249,0.28), one
+// step stronger than tokens.colors.borderAccent (0.25, "new card"). Lane 4
+// owns theme/tokens.js; promote this if a third surface needs it.
+const QUOTE_BORDER = 'rgba(136,120,249,0.28)';
+// List dividers sitting on the screen background are darker than the 1px
+// dividers inside a card (POLISH-TIPS §3).
+const LIST_DIVIDER = '#14171D';
+
+const DAY_MS = 86400000;
+// Declined and expired quotes stay in the quotes list, greyed, for 30 days —
+// then drop off. Nothing is ever deleted by hand.
+const RESOLVED_TTL_MS = 30 * DAY_MS;
+// A quote with no expiry of its own inherits the post's 7-day window.
+const DEFAULT_QUOTE_WINDOW_MS = 7 * DAY_MS;
+// Client quotes list: /interests/post/{id} is per-post, so the list is an N+1.
+// Cap the fan-out — the newest posts are the ones with live quotes.
+const MAX_QUOTE_POSTS = 10;
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function initials(name = '') {
-  return name
+  return String(name)
     .split(' ')
+    .filter(Boolean)
     .map((w) => w[0])
     .join('')
     .toUpperCase()
-    .slice(0, 2);
+    .slice(0, 2) || '?';
 }
 
+// Relative under 24h, then "Thu" / "Jun 30" (POLISH-TIPS §8).
 function timeAgo(dateStr) {
   if (!dateStr) return '';
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return 'now';
+  const then = new Date(dateStr).getTime();
+  if (Number.isNaN(then)) return '';
+  const mins = Math.floor((Date.now() - then) / 60000);
+  if (mins < 1) return i18n.t('messages.now');
   if (mins < 60) return `${mins}m`;
   const hrs = Math.floor(mins / 60);
   if (hrs < 24) return `${hrs}h`;
-  return `${Math.floor(hrs / 24)}d`;
+  const d = new Date(then);
+  if (hrs < 24 * 7) return d.toLocaleDateString('en-CA', { weekday: 'short' });
+  return d.toLocaleDateString('en-CA', { month: 'short', day: 'numeric' });
 }
 
-// ─── Floating side-chat element (CARD-20, D2) ────────────────────────────────
-// Replaces the old plain "Booking"/"Quote" text pill. Booking threads get a
-// small elevated chip that CARRIES the booking — tapping it jumps straight to
-// BookingDetails, independent of tapping the row (which opens the chat).
-// Quote (pre-booking interest) threads have no booking yet to carry, so they
-// keep a flat, non-interactive label.
-function BookingBadge({ thread, onPress }) {
-  const isBooking = thread.thread_type === 'booking';
+function hoursLeft(expiresAt) {
+  if (!expiresAt) return null;
+  const ms = new Date(expiresAt).getTime() - Date.now();
+  if (Number.isNaN(ms)) return null;
+  return ms / 3600000;
+}
 
-  if (!isBooking) {
-    return (
-      <View style={badgeStyles.staticPill}>
-        <Text variant="caption" style={badgeStyles.staticPillText}>
-          {i18n.t('messages.badgeQuote')}
-        </Text>
-      </View>
-    );
+// Quotes carry no expires_at column of their own — they inherit the post's
+// window, and fall back to created_at + 7d when the post payload omits it
+// (/interests/mine does not select expires_at).
+function quoteExpiry(interest, post) {
+  if (post?.expires_at) return post.expires_at;
+  const created = interest?.created_at ? new Date(interest.created_at).getTime() : null;
+  if (!created || Number.isNaN(created)) return null;
+  return new Date(created + DEFAULT_QUOTE_WINDOW_MS).toISOString();
+}
+
+function resolveQuoteStatus(interest, post, expiresAt) {
+  if (interest.status === 'accepted') return 'accepted';
+  if (interest.status === 'rejected') return 'declined';
+  const postStatus = post?.status;
+  if (postStatus && postStatus !== 'open' && postStatus !== 'matched') return 'expired';
+  const left = hoursLeft(expiresAt);
+  if (left != null && left <= 0) return 'expired';
+  return 'pending';
+}
+
+function isResolved(status) {
+  return status === 'declined' || status === 'expired';
+}
+
+// Booked-thread meta line: "Today · 9:00 AM" / "Upcoming · Jul 19" /
+// "Completed · Jul 2". Never a raw enum or ISO string (walkthrough B16).
+function bookingMeta(thread) {
+  const when = thread.confirmed_date ? new Date(thread.confirmed_date) : null;
+  const valid = when && !Number.isNaN(when.getTime());
+  if (thread.status === 'completed') {
+    return valid
+      ? i18n.t('messages.metaCompletedOn', {
+        date: when.toLocaleDateString('en-CA', { month: 'short', day: 'numeric' }),
+      })
+      : i18n.t('messages.metaCompleted');
   }
+  if (!valid) return i18n.t('messages.metaAwaitingTime');
+  const today = new Date();
+  const sameDay = when.toDateString() === today.toDateString();
+  const time = when.toLocaleTimeString('en-CA', { hour: 'numeric', minute: '2-digit' });
+  if (sameDay) return i18n.t('messages.metaToday', { time });
+  if (when.getTime() < today.getTime()) return i18n.t('messages.metaInProgress');
+  return i18n.t('messages.metaUpcoming', {
+    date: when.toLocaleDateString('en-CA', { month: 'short', day: 'numeric' }),
+  });
+}
 
-  const isPending = !thread.confirmed_date;
+// ─── Booked chat row ─────────────────────────────────────────────────────────
+
+function ChatRow({ thread, onPress }) {
+  const scale = useSharedValue(1);
+  const animatedStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+  const spring = { stiffness: motion.spring.stiffness, damping: motion.spring.damping };
+  const unread = thread.unread_count > 0;
+
+  return (
+    <Animated.View style={animatedStyle}>
+      <Pressable
+        onPress={onPress}
+        onPressIn={() => { scale.value = withSpring(0.98, spring); }}
+        onPressOut={() => { scale.value = withSpring(1, spring); }}
+        accessibilityRole="button"
+        accessibilityLabel={`${thread.counterpart_name}, ${bookingMeta(thread)}${unread ? `, ${thread.unread_count} unread` : ''}`}
+        style={({ pressed }) => [styles.chatRow, pressed && styles.rowPressed]}
+      >
+        <View style={[styles.chatTile, unread && styles.tileActive]}>
+          <Text
+            variant="caption"
+            numberOfLines={1}
+            style={[styles.tileText, { fontSize: 16 }, unread && styles.tileTextActive]}
+          >
+            {initials(thread.counterpart_name)}
+          </Text>
+        </View>
+
+        <View style={styles.chatBody}>
+          <View style={styles.chatTopLine}>
+            <Text variant="caption" numberOfLines={1} style={styles.chatName}>
+              {thread.counterpart_name || i18n.t('messages.chatFallback')}
+            </Text>
+            <Text
+              variant="caption"
+              numberOfLines={1}
+              style={[styles.chatTime, unread && styles.chatTimeUnread]}
+            >
+              {timeAgo(thread.last_at)}
+            </Text>
+          </View>
+
+          <View style={styles.chatTopLine}>
+            <Text
+              variant="caption"
+              numberOfLines={1}
+              style={[styles.chatPreview, unread && styles.chatPreviewUnread]}
+            >
+              {thread.last_message || i18n.t('messages.noMessagesYet')}
+            </Text>
+            {unread && (
+              <View style={styles.unreadBadge}>
+                <Text variant="caption" numberOfLines={1} style={styles.unreadBadgeText}>
+                  {thread.unread_count > 99 ? '99+' : thread.unread_count}
+                </Text>
+              </View>
+            )}
+          </View>
+
+          <Text variant="caption" numberOfLines={1} style={styles.chatMeta}>
+            {bookingMeta(thread)}
+          </Text>
+        </View>
+      </Pressable>
+    </Animated.View>
+  );
+}
+
+// ─── Quote row ───────────────────────────────────────────────────────────────
+
+function QuoteRow({ quote, active, onPress }) {
+  const expired = quote.status === 'expired';
+  const declined = quote.status === 'declined';
+  const grey = expired || declined;
+  const left = hoursLeft(quote.expiresAt);
+  const expiringSoon = quote.status === 'pending' && left != null && left < 24;
+
+  let statusColor = colors.textSecondary;
+  if (expiringSoon) statusColor = colors.warning;
+  if (grey) statusColor = colors.textTertiary;
 
   return (
     <Pressable
       onPress={onPress}
-      hitSlop={8}
       accessibilityRole="button"
-      accessibilityLabel={i18n.t('messages.badgeBookingA11y')}
+      accessibilityLabel={`${quote.name}, ${quote.service}, ${quote.statusLabel}`}
       style={({ pressed }) => [
-        badgeStyles.floatingChip,
-        pressed && badgeStyles.floatingChipPressed,
+        styles.quoteRow,
+        // Purple-tinted border ONLY while it awaits the viewer's own action.
+        { borderColor: quote.awaitsViewer ? QUOTE_BORDER : colors.border },
+        pressed && styles.rowPressed,
       ]}
     >
-      <Feather
-        name={isPending ? 'clock' : 'calendar'}
-        size={11}
-        color={colors.accentText}
-      />
-      <Text variant="caption" style={badgeStyles.floatingChipText}>
-        {isPending ? i18n.t('messages.badgeBookingPending') : i18n.t('messages.badgeBooking')}
-      </Text>
+      <View style={[styles.quoteTile, active && styles.tileActive]}>
+        <Text
+          variant="caption"
+          numberOfLines={1}
+          style={[styles.tileText, active && styles.tileTextActive, grey && styles.tileTextGrey]}
+        >
+          {initials(quote.name)}
+        </Text>
+      </View>
+
+      <View style={styles.quoteBody}>
+        <Text variant="caption" numberOfLines={1} style={[styles.quoteName, grey && styles.textGrey]}>
+          {quote.name}
+        </Text>
+        <Text variant="caption" numberOfLines={1} style={[styles.quoteService, grey && styles.textGrey]}>
+          {quote.service}
+        </Text>
+        <Text variant="caption" numberOfLines={1} style={[styles.quoteStatus, { color: statusColor }]}>
+          {quote.statusLabel}
+        </Text>
+      </View>
+
+      <View style={styles.quoteRight}>
+        {!!quote.price && (
+          <Text
+            variant="caption"
+            numberOfLines={1}
+            style={[styles.quotePrice, grey && { color: colors.textTertiary }]}
+          >
+            {formatMoney(quote.price)}
+          </Text>
+        )}
+        <Text variant="caption" numberOfLines={1} style={styles.quoteStamp}>
+          {timeAgo(quote.createdAt)}
+        </Text>
+      </View>
     </Pressable>
   );
 }
 
-const badgeStyles = {
-  staticPill: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 1,
-    borderRadius: radius.pill,
-    backgroundColor: colors.surfaceAlt,
-  },
-  staticPillText: {
-    color: colors.textSecondary,
-    fontWeight: '600',
-    letterSpacing: 0.4,
-  },
-  floatingChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 3,
-    borderRadius: radius.pill,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.borderAccent,
-    ...shadows.subtle,
-  },
-  floatingChipPressed: {
-    opacity: 0.7,
-  },
-  floatingChipText: {
-    color: colors.accentText,
-    fontWeight: '600',
-    letterSpacing: 0.3,
-  },
-};
-
-// ─── AnimatedPressable row ────────────────────────────────────────────────────
-
-const AnimatedPressableRN = Animated.createAnimatedComponent(Pressable);
-
-function ConversationRow({ thread, onPress, onBadgePress }) {
-  const scale = useSharedValue(1);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
-
-  const handlePressIn = () => {
-    scale.value = withSpring(0.98, {
-      stiffness: motion.spring.stiffness,
-      damping: motion.spring.damping,
-    });
-  };
-
-  const handlePressOut = () => {
-    scale.value = withSpring(1, {
-      stiffness: motion.spring.stiffness,
-      damping: motion.spring.damping,
-    });
-  };
-
-  const isQuote = thread.thread_type === 'interest';
-  const otherParty = thread.counterpart_name || 'Chat';
-  const subtitle = isQuote
-    ? [thread.title, thread.quoted_price != null ? `$${thread.quoted_price}` : null]
-        .filter(Boolean).join(' · ')
-    : (thread.title !== otherParty ? thread.title : 'Booking');
-
-  return (
-    <AnimatedPressableRN
-      onPress={onPress}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
-      style={[
-        {
-          flexDirection: 'row',
-          alignItems: 'center',
-          gap: spacing.md,
-          paddingVertical: spacing.base,
-          paddingHorizontal: spacing.base,
-          borderBottomWidth: 1,
-          borderBottomColor: colors.border,
-        },
-        animatedStyle,
-      ]}
-    >
-      {/* Avatar */}
-      <Avatar name={otherParty} size="md" source={thread.counterpart_avatar} />
-
-      {/* Text content */}
-      <Stack spacing="xs" style={{ flex: 1 }}>
-        <Inline spacing="sm" style={{ alignItems: 'center' }}>
-          <Text variant="bodyMedium" numberOfLines={1} style={{ flexShrink: 1 }}>
-            {otherParty}
-          </Text>
-          <BookingBadge thread={thread} onPress={onBadgePress} />
-        </Inline>
-        <Text variant="small" color="secondary" numberOfLines={1}>
-          {subtitle}
-        </Text>
-        <Text
-          variant="caption"
-          color="secondary"
-          numberOfLines={1}
-          style={thread.unread_count > 0 ? { color: colors.textPrimary, fontWeight: '600' } : null}
-        >
-          {thread.last_message || 'Tap to open chat →'}
-        </Text>
-      </Stack>
-
-      {/* Right side: time + unread badge */}
-      <Stack spacing="xs" align="flex-end">
-        <Text variant="caption" color="secondary">
-          {timeAgo(thread.last_at)}
-        </Text>
-        {thread.unread_count > 0 && (
-          <Badge count={thread.unread_count} color="accent" />
-        )}
-      </Stack>
-    </AnimatedPressableRN>
-  );
-}
-
-// ─── Screen ───────────────────────────────────────────────────────────────────
+// ─── Screen ──────────────────────────────────────────────────────────────────
 
 export default function MessagesScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
+  const { mark } = useUnread();
 
+  const isBusiness = user?.role === 'business_owner' || user?.role === 'employee';
+
+  const [tab, setTab] = useState('chats'); // 'chats' | 'quotes'
   const [threads, setThreads] = useState([]);
+  const [quotes, setQuotes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
   const [query, setQuery] = useState('');
+  const mounted = useRef(true);
+
+  useEffect(() => () => { mounted.current = false; }, []);
+
+  // ── Quotes: business = /interests/mine, client = per-post fan-out ──────────
+  const loadBusinessQuotes = useCallback(async () => {
+    const data = await api.get('/interests/mine', { _silent: true });
+    const items = data?.items || (Array.isArray(data) ? data : []);
+    return items.map((i) => {
+      const post = i.service_posts || {};
+      const client = post.users || {};
+      const name = [client.first_name, client.last_name].filter(Boolean).join(' ')
+        || i18n.t('messages.clientFallback');
+      const expiresAt = quoteExpiry(i, post);
+      const status = resolveQuoteStatus(i, post, expiresAt);
+      const left = hoursLeft(expiresAt);
+      let statusLabel = i18n.t('messages.quoteAwaitingReply');
+      if (status === 'pending' && left != null && left < 48) {
+        statusLabel = i18n.t('messages.quoteAwaitingReplyLeft', { left: `${Math.max(1, Math.round(left))} h` });
+      }
+      if (status === 'declined') statusLabel = i18n.t('messages.quoteDeclined');
+      if (status === 'expired') statusLabel = i18n.t('messages.quoteExpired');
+      return {
+        key: `i-${i.id}`,
+        interestId: i.id,
+        name,
+        service: post.title || i18n.t('messages.jobFallback'),
+        price: i.quoted_price,
+        createdAt: i.created_at,
+        expiresAt,
+        status,
+        statusLabel,
+        // Business side: a sent quote is waiting on THEM, so it never gets the
+        // purple "you must act" border.
+        awaitsViewer: false,
+      };
+    });
+  }, []);
+
+  const loadClientQuotes = useCallback(async () => {
+    const postsRes = await api.get('/service-posts/my', {
+      params: { limit: MAX_QUOTE_POSTS * 2 },
+      _silent: true,
+    });
+    const posts = (postsRes?.items || (Array.isArray(postsRes) ? postsRes : [])).slice(0, MAX_QUOTE_POSTS * 2);
+
+    // Direct "Book now" requests that nobody has quoted yet still belong in
+    // the quotes list — they are the client's proof the request went somewhere
+    // (walkthrough B17/D9). They carry no price and no thread yet.
+    const awaiting = posts
+      .filter((p) => p.target_business_id && !p.interest_count && p.status === 'open')
+      .map((p) => ({
+        key: `p-${p.id}`,
+        postId: p.id,
+        name: p.title || i18n.t('messages.jobFallback'),
+        service: i18n.t('messages.quoteAwaitingTheirs'),
+        price: null,
+        createdAt: p.created_at,
+        expiresAt: p.expires_at,
+        status: 'awaiting',
+        statusLabel: i18n.t('messages.quoteRequested', { when: timeAgo(p.created_at) }),
+        awaitsViewer: false,
+      }));
+
+    const withQuotes = posts.filter((p) => p.interest_count > 0).slice(0, MAX_QUOTE_POSTS);
+    const perPost = await Promise.all(
+      withQuotes.map((p) =>
+        api.get(`/interests/post/${p.id}`, { _silent: true })
+          .then((res) => ({ post: p, interests: Array.isArray(res) ? res : (res?.items || []) }))
+          .catch(() => ({ post: p, interests: [] })),
+      ),
+    );
+
+    const rows = [];
+    for (const { post, interests } of perPost) {
+      for (const i of interests) {
+        const expiresAt = quoteExpiry(i, post);
+        const status = resolveQuoteStatus(i, post, expiresAt);
+        if (status === 'accepted') continue; // it is a booking now — it lives in chats
+        const left = hoursLeft(expiresAt);
+        let statusLabel = i18n.t('messages.quoteAwaitingYou');
+        if (status === 'pending' && left != null) {
+          statusLabel = left < 48
+            ? i18n.t('messages.quoteExpiresIn', { left: `${Math.max(1, Math.round(left))} h` })
+            : i18n.t('messages.quoteExpiresInDays', { n: Math.floor(left / 24) });
+        }
+        if (status === 'declined') statusLabel = i18n.t('messages.quoteYouDeclined');
+        if (status === 'expired') statusLabel = i18n.t('messages.quoteExpired');
+        rows.push({
+          key: `i-${i.id}`,
+          interestId: i.id,
+          businessId: i.business_id,
+          name: i.businesses?.business_name || i18n.t('messages.businessFallback'),
+          service: post.title || i18n.t('messages.jobFallback'),
+          price: i.quoted_price,
+          createdAt: i.created_at,
+          expiresAt,
+          status,
+          statusLabel,
+          // Client side: a pending quote is waiting on the viewer.
+          awaitsViewer: status === 'pending',
+        });
+      }
+    }
+    return [...rows, ...awaiting];
+  }, []);
 
   const load = useCallback(async () => {
     setError(null);
     try {
-      // Unified inbox: booking threads + pre-booking quote threads in one call
-      const data = await api.get('/messages/threads');
-      setThreads(data?.items || []);
-    } catch (err) {
-      setError('Could not load conversations. Check your connection.');
+      const [threadRes, quoteRows] = await Promise.all([
+        api.get('/messages/threads'),
+        (isBusiness ? loadBusinessQuotes() : loadClientQuotes()).catch(() => []),
+      ]);
+      if (!mounted.current) return;
+      // BOOKED ONLY. Quote (interest) threads are deliberately dropped here —
+      // they live behind the bubble, not in the chat list.
+      setThreads((threadRes?.items || []).filter((t) => t.thread_type === 'booking'));
+      setQuotes(quoteRows);
+    } catch {
+      if (mounted.current) setError(i18n.t('messages.loadError'));
     } finally {
-      setLoading(false);
-      setRefreshing(false);
+      if (mounted.current) {
+        setLoading(false);
+        setRefreshing(false);
+      }
     }
-  }, []);
+  }, [isBusiness, loadBusinessQuotes, loadClientQuotes]);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  useEffect(() => { load(); }, [load]);
+  useEffect(() => navigation.addListener('focus', load), [navigation, load]);
 
-  // Refresh the inbox whenever the tab regains focus (fresh unread state)
-  useEffect(() => {
-    const unsub = navigation.addListener('focus', load);
-    return unsub;
-  }, [navigation, load]);
-
-  // Filter conversations by search query
-  const filtered = useMemo(() => {
+  // ── Derived ───────────────────────────────────────────────────────────────
+  const filteredThreads = useMemo(() => {
     if (!query.trim()) return threads;
     const q = query.trim().toLowerCase();
     return threads.filter(
-      (t) =>
-        (t.counterpart_name || '').toLowerCase().includes(q) ||
-        (t.title || '').toLowerCase().includes(q)
+      (t) => (t.counterpart_name || '').toLowerCase().includes(q)
+        || (t.last_message || '').toLowerCase().includes(q),
     );
   }, [threads, query]);
 
-  // ── Loading state ──
+  const visibleQuotes = useMemo(() => {
+    const cutoff = Date.now() - RESOLVED_TTL_MS;
+    const kept = quotes.filter((q) => {
+      if (!isResolved(q.status)) return true;
+      const t = q.createdAt ? new Date(q.createdAt).getTime() : 0;
+      return !t || t >= cutoff; // 30-day greyed lifecycle, then it drops off
+    });
+    const rank = { pending: 0, awaiting: 1, expired: 2, declined: 3 };
+    return kept.sort((a, b) => {
+      const r = (rank[a.status] ?? 9) - (rank[b.status] ?? 9);
+      if (r !== 0) return r;
+      const ea = new Date(a.expiresAt || a.createdAt || 0).getTime();
+      const eb = new Date(b.expiresAt || b.createdAt || 0).getTime();
+      return a.status === 'pending' ? ea - eb : eb - ea;
+    });
+  }, [quotes]);
+
+  const liveQuotes = visibleQuotes.filter((q) => q.status === 'pending' || q.status === 'awaiting');
+  const expiringSoon = visibleQuotes.filter((q) => {
+    if (q.status !== 'pending') return false;
+    const left = hoursLeft(q.expiresAt);
+    return left != null && left > 0 && left < 24;
+  }).length;
+  const pendingValue = visibleQuotes
+    .filter((q) => q.status === 'pending')
+    .reduce((sum, q) => sum + (Number(q.price) || 0), 0);
+
+  // First live row gets the accent tile — the one the eye should land on.
+  const activeQuoteKey = liveQuotes[0]?.key;
+
+  const openChats = tab === 'chats';
+
+  // ── B13: the unread badge must clear the instant a thread is opened, not on
+  // the next 30s poll. The server marks the thread read on GET, but the inbox
+  // row and the tab-bar badge both render from cached client state — so zero
+  // them here as well.
+  function openThread(thread) {
+    setThreads((prev) => prev.map((t) => (t.id === thread.id ? { ...t, unread_count: 0 } : t)));
+    mark(thread.id);
+    navigation.navigate('Chat', {
+      bookingId: thread.id,
+      otherPartyName: thread.counterpart_name,
+    });
+  }
+
+  function openQuote(quote) {
+    if (quote.status === 'awaiting' && quote.postId) {
+      navigation.navigate('QuoteComparison', { postId: quote.postId, postTitle: quote.name });
+      return;
+    }
+    if (!quote.interestId) return;
+    navigation.navigate('Chat', { interestId: quote.interestId, otherPartyName: quote.name });
+  }
+
+  // ── Header ────────────────────────────────────────────────────────────────
+  function renderHeader() {
+    if (openChats) {
+      return (
+        <View style={styles.header}>
+          <Text variant="display2" style={styles.title}>{i18n.t('messages.title')}</Text>
+        </View>
+      );
+    }
+    const subtitle = isBusiness
+      ? i18n.t('messages.quotesSubtitleBusiness', {
+        n: liveQuotes.length,
+        amount: formatMoney(pendingValue) || '$0',
+      })
+      : i18n.t('messages.quotesSubtitleClient', { n: liveQuotes.length });
+    return (
+      <View style={styles.header}>
+        <Text variant="display2" style={styles.title}>
+          {isBusiness ? i18n.t('messages.sentQuotesTitle') : i18n.t('messages.quotesTitle')}
+        </Text>
+        <Text variant="caption" style={styles.subtitle} numberOfLines={1}>{subtitle}</Text>
+      </View>
+    );
+  }
+
+  const bubble = (
+    <QuotesBubble
+      count={liveQuotes.length}
+      expiringSoon={expiringSoon}
+      open={!openChats}
+      label={isBusiness ? i18n.t('messages.bubbleSent') : i18n.t('messages.bubbleQuotes')}
+      closedLabel={i18n.t('messages.bubbleBack')}
+      onPress={() => setTab((t) => (t === 'chats' ? 'quotes' : 'chats'))}
+    />
+  );
+
+  // ── Loading ───────────────────────────────────────────────────────────────
   if (loading) {
     return (
-      <View
-        style={{
-          flex: 1,
-          backgroundColor: colors.bg,
-          paddingTop: insets.top,
-        }}
-      >
-        {/* Header skeleton */}
-        <View
-          style={{
-            paddingHorizontal: spacing.base,
-            paddingTop: spacing.md,
-            paddingBottom: spacing.base,
-          }}
-        >
-          <Text variant="display3">Messages</Text>
+      <View style={[styles.screen, { paddingTop: insets.top }]}>
+        <View style={styles.header}>
+          <Text variant="display2" style={styles.title}>{i18n.t('messages.title')}</Text>
         </View>
-        <View style={{ paddingHorizontal: spacing.base }}>
+        <View style={styles.gutter}>
           <SkeletonList count={5} />
         </View>
       </View>
     );
   }
 
-  // ── Error state ──
+  // ── Error ─────────────────────────────────────────────────────────────────
   if (error) {
     return (
-      <View
-        style={{
-          flex: 1,
-          backgroundColor: colors.bg,
-          paddingTop: insets.top,
-          paddingHorizontal: spacing.base,
-        }}
-      >
-        <View
-          style={{
-            paddingTop: spacing.md,
-            paddingBottom: spacing.base,
-          }}
-        >
-          <Text variant="display3">Messages</Text>
+      <View style={[styles.screen, { paddingTop: insets.top }]}>
+        <View style={styles.header}>
+          <Text variant="display2" style={styles.title}>{i18n.t('messages.title')}</Text>
         </View>
-
-        <Surface
-          elevation="subtle"
-          background="alt"
-          rounded="card"
-          padding="lg"
-          style={{ marginTop: spacing.xl }}
-        >
-          <Stack spacing="md" align="center">
-            <Text variant="bodyMedium" color="danger" style={{ textAlign: 'center' }}>
-              {error}
-            </Text>
-            <Button
-              variant="secondary"
-              label="Retry"
-              onPress={() => {
-                setLoading(true);
-                load();
-              }}
-            />
-          </Stack>
-        </Surface>
+        <View style={[styles.gutter, styles.errorWrap]}>
+          <View style={styles.errorIcon}>
+            <Feather name="wifi-off" size={28} color={colors.warning} strokeWidth={1.8} />
+          </View>
+          <Text variant="caption" style={styles.errorTitle}>{i18n.t('messages.errorTitle')}</Text>
+          <Text variant="caption" style={styles.errorBody}>{error}</Text>
+          <Button
+            variant="secondary"
+            label={i18n.t('common.retry')}
+            onPress={() => { setLoading(true); load(); }}
+            style={{ minWidth: 140 }}
+          />
+        </View>
       </View>
     );
   }
 
-  // ── Main content ──
+  // ── Content ───────────────────────────────────────────────────────────────
+  const refreshControl = (
+    <RefreshControl
+      refreshing={refreshing}
+      onRefresh={() => { setRefreshing(true); load(); }}
+      tintColor={colors.accent}
+      colors={[colors.accent]}
+      progressBackgroundColor={colors.surface}
+    />
+  );
+
   return (
-    <View
-      style={{
-        flex: 1,
-        backgroundColor: colors.bg,
-        paddingTop: insets.top,
-      }}
-    >
-      {/* Header */}
-      <View
-        style={{
-          paddingHorizontal: spacing.base,
-          paddingTop: spacing.md,
-          paddingBottom: spacing.sm,
-        }}
-      >
-        <Text variant="display3">Messages</Text>
-      </View>
+    <View style={[styles.screen, { paddingTop: insets.top }]}>
+      {renderHeader()}
 
-      {/* Search field */}
-      <View
-        style={{
-          paddingHorizontal: spacing.base,
-          paddingBottom: spacing.md,
-        }}
-      >
-        <SearchField
-          value={query}
-          onChangeText={setQuery}
-          placeholder="Search conversations..."
-          debounceMs={200}
-        />
-      </View>
-
-      {/* Conversation list or empty state */}
-      {filtered.length === 0 ? (
-        <EmptyState
-          icon="message-circle"
-          title={query ? 'No results' : 'No conversations yet'}
-          body={
-            query
-              ? `No conversations match "${query}".`
-              : user?.role === 'client'
-                ? 'Chat opens when a business quotes your job or a booking is confirmed.'
-                : 'Chat opens when you send a quote or a booking is confirmed.'
-          }
-        />
-      ) : (
-        <FlatList
-          data={filtered}
-          keyExtractor={(t) => `${t.thread_type}-${t.id}`}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: spacing.xl + insets.bottom }}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={() => {
-                setRefreshing(true);
-                load();
-              }}
-              tintColor={colors.accent}
-              colors={[colors.accent]}
-              progressBackgroundColor={colors.surface}
-            />
-          }
-          renderItem={({ item }) => (
-            <ConversationRow
-              thread={item}
-              onPress={() =>
-                navigation.navigate('Chat', {
-                  ...(item.thread_type === 'interest'
-                    ? { interestId: item.id }
-                    : { bookingId: item.id }),
-                  otherPartyName: item.counterpart_name,
-                })
-              }
-              onBadgePress={
-                item.thread_type === 'booking'
-                  ? () => navigation.navigate('BookingDetails', { bookingId: item.id })
-                  : undefined
-              }
-            />
-          )}
-        />
+      {openChats && (
+        <View style={styles.searchWrap}>
+          <SearchField
+            value={query}
+            onChangeText={setQuery}
+            placeholder={i18n.t('messages.searchPlaceholder')}
+            debounceMs={200}
+          />
+        </View>
       )}
+
+      {openChats ? (
+        filteredThreads.length === 0 ? (
+          <View style={styles.emptyWrap}>
+            <EmptyState
+              icon={query ? 'search' : 'message-circle'}
+              title={query ? i18n.t('messages.emptySearchTitle') : i18n.t('messages.emptyChatsTitle')}
+              body={query
+                ? i18n.t('messages.emptySearchBody', { query })
+                : i18n.t('messages.emptyChatsBody')}
+            />
+          </View>
+        ) : (
+          <FlatList
+            data={filteredThreads}
+            keyExtractor={(t) => `b-${t.id}`}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={[styles.listContent, styles.listContentFlush]}
+            refreshControl={refreshControl}
+            ListHeaderComponent={
+              <Text variant="caption" style={styles.sectionLabel}>
+                {i18n.t('messages.bookedSection')}
+              </Text>
+            }
+            ItemSeparatorComponent={() => <View style={styles.divider} />}
+            renderItem={({ item }) => (
+              <ChatRow thread={item} onPress={() => openThread(item)} />
+            )}
+          />
+        )
+      ) : (
+        visibleQuotes.length === 0 ? (
+          <View style={styles.emptyWrap}>
+            <EmptyState
+              icon="briefcase"
+              title={i18n.t('messages.emptyQuotesTitle')}
+              body={isBusiness
+                ? i18n.t('messages.emptyQuotesBodyBusiness')
+                : i18n.t('messages.emptyQuotesBodyClient')}
+            />
+          </View>
+        ) : (
+          <FlatList
+            data={visibleQuotes}
+            keyExtractor={(q) => q.key}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.listContent}
+            refreshControl={refreshControl}
+            renderItem={({ item }) => (
+              <QuoteRow
+                quote={item}
+                active={item.key === activeQuoteKey}
+                onPress={() => openQuote(item)}
+              />
+            )}
+            ListFooterComponent={
+              <View style={styles.footerNote}>
+                <Feather name="info" size={13} color={colors.textTertiary} strokeWidth={1.8} />
+                <Text variant="caption" style={styles.footerNoteText}>
+                  {isBusiness
+                    ? i18n.t('messages.quotesFooterBusiness')
+                    : i18n.t('messages.quotesFooterClient')}
+                </Text>
+              </View>
+            }
+          />
+        )
+      )}
+
+      {bubble}
     </View>
   );
 }
+
+// ─── Styles ──────────────────────────────────────────────────────────────────
+
+const styles = StyleSheet.create({
+  screen: { flex: 1, backgroundColor: colors.bg },
+  gutter: { paddingHorizontal: spacing.lg },
+
+  header: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
+    gap: 2,
+  },
+  title: { letterSpacing: -1 },
+  subtitle: { fontSize: 13, lineHeight: 18, color: colors.textSecondary },
+
+  searchWrap: {
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.md,
+  },
+
+  sectionLabel: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 11,
+    lineHeight: 14,
+    letterSpacing: 1.4,
+    textTransform: 'uppercase',
+    color: colors.textSecondary,
+    marginBottom: spacing.md,
+  },
+
+  // Clears the tab bar AND the docked bubble (bottom 104 + 56 tall).
+  listContent: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.xs,
+    paddingBottom: 180,
+    gap: spacing.md,
+  },
+  // Booked chats are a hairline-separated list, not a stack of cards — the
+  // divider replaces the 12px gap the quote cards need.
+  listContentFlush: { gap: 0 },
+  divider: { height: 1, backgroundColor: LIST_DIVIDER },
+
+  rowPressed: { backgroundColor: '#12151B' },
+
+  // ── Booked chat row ──
+  chatRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingVertical: spacing.base,
+    borderRadius: radius.card,
+    marginHorizontal: -spacing.sm,
+    paddingHorizontal: spacing.sm,
+  },
+  chatTile: {
+    width: 50,
+    height: 50,
+    borderRadius: 16,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tileActive: {
+    backgroundColor: colors.accentMuted,
+    borderWidth: 0,
+  },
+  tileText: {
+    fontFamily: 'SpaceGrotesk_700Bold',
+    fontSize: 15,
+    lineHeight: 20,
+    color: colors.textSecondary,
+  },
+  tileTextActive: { color: colors.accentText },
+  tileTextGrey: { color: colors.textTertiary },
+  chatBody: { flex: 1, gap: 3 },
+  chatTopLine: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  chatName: {
+    flex: 1,
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 15.5,
+    lineHeight: 21,
+    color: colors.textPrimary,
+  },
+  chatTime: { fontSize: 12, lineHeight: 16, color: colors.textTertiary },
+  chatTimeUnread: { color: colors.accentText, fontFamily: 'Inter_600SemiBold' },
+  chatPreview: { flex: 1, fontSize: 13.5, lineHeight: 19, color: colors.textSecondary },
+  chatPreviewUnread: { color: colors.textPrimary, fontFamily: 'Inter_600SemiBold' },
+  chatMeta: { fontSize: 11.5, lineHeight: 16, color: colors.textSecondary },
+  unreadBadge: {
+    minWidth: 19,
+    height: 19,
+    paddingHorizontal: 5,
+    borderRadius: 999,
+    backgroundColor: colors.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  unreadBadgeText: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 11,
+    lineHeight: 14,
+    color: colors.textPrimary,
+    fontVariant: ['tabular-nums'],
+  },
+
+  // ── Quote row ──
+  quoteRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    padding: spacing.base,
+    borderRadius: 16,
+    borderWidth: 1,
+    backgroundColor: colors.surface,
+  },
+  quoteTile: {
+    width: 46,
+    height: 46,
+    borderRadius: 14,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  quoteBody: { flex: 1, gap: 3 },
+  quoteName: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 15,
+    lineHeight: 20,
+    color: colors.textPrimary,
+  },
+  quoteService: { fontSize: 13, lineHeight: 18, color: colors.textSecondary },
+  quoteStatus: { fontFamily: 'Inter_600SemiBold', fontSize: 11.5, lineHeight: 16 },
+  textGrey: { color: colors.textTertiary },
+  quoteRight: { alignItems: 'flex-end', gap: 2 },
+  quotePrice: {
+    fontFamily: 'SpaceGrotesk_700Bold',
+    fontSize: 19,
+    lineHeight: 24,
+    letterSpacing: -0.5,
+    color: colors.success,
+    fontVariant: ['tabular-nums'],
+  },
+  quoteStamp: { fontSize: 11.5, lineHeight: 15, color: colors.textTertiary },
+
+  footerNote: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.sm,
+    paddingTop: spacing.sm,
+  },
+  footerNoteText: {
+    flex: 1,
+    fontSize: 11.5,
+    lineHeight: 17,
+    color: colors.textTertiary,
+  },
+
+  emptyWrap: { flex: 1, paddingBottom: 120 },
+
+  errorWrap: { alignItems: 'center', gap: spacing.md, paddingTop: spacing['2xl'] },
+  errorIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 999,
+    backgroundColor: colors.surfaceAlt,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  errorTitle: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 15.5,
+    lineHeight: 21,
+    color: colors.textPrimary,
+  },
+  errorBody: {
+    fontSize: 13.5,
+    lineHeight: 20,
+    color: colors.textSecondary,
+    textAlign: 'center',
+  },
+});

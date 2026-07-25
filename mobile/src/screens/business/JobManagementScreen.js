@@ -575,16 +575,14 @@ function JobDetailScreen({ navigation, route }) {
 // same route (`JobManagement`, {bookingId}) — nothing about the
 // detail/status/review flow above changes.
 
-const INTEREST_STATUS_COLOR = {
-  pending: colors.warning,
-  accepted: colors.success,
-  rejected: colors.textSecondary,
-};
-const INTEREST_STATUS_LABEL = {
-  pending: 'jobManagement.interestPending',
-  accepted: 'jobManagement.interestAccepted',
-  rejected: 'jobManagement.interestRejected',
-};
+// Sent quotes no longer appear in Jobs at all — they live behind the Quotes
+// bubble on Messages (design/handoff-jet-pulse/MESSAGES-AND-QUOTES.md §5a:
+// "Business Jobs no longer lists pending quotes at all. A job lands in Jobs on
+// acceptance."). This also closes walkthrough B11: the same lead used to render
+// twice — once as a "New request" opportunity card still offering "Send quote",
+// and again below under "Quotes awaiting response" — which is why re-quoting
+// answered "You already expressed interest in this post" (B12). Interests are
+// still fetched, but only to know which posts this business has already quoted.
 
 const NEEDS_ACTION_REASON_KEY = {
   unassigned: 'jobManagement.needsActionUnassigned',
@@ -702,40 +700,11 @@ function PastJobRow({ booking, onPress }) {
   );
 }
 
-function QuoteListRow({ interest, onMessage }) {
-  const post = interest.service_posts || {};
-  const clientUser = post.users || {};
-  const clientName = [clientUser.first_name, clientUser.last_name].filter(Boolean).join(' ') || 'Client';
-  const color = INTEREST_STATUS_COLOR[interest.status] || colors.textSecondary;
-  const labelKey = INTEREST_STATUS_LABEL[interest.status];
-  const canMessage = post.status === 'open' || post.status === 'matched' || interest.status === 'accepted';
-
-  return (
-    <Surface elevation="subtle" rounded="card" padding="base">
-      <Inline justify="space-between" style={{ marginBottom: spacing.xs }}>
-        <Text variant="smallMedium" numberOfLines={1} style={{ flex: 1 }}>{post.title || 'Job post'}</Text>
-        <StatusChip label={labelKey ? i18n.t(labelKey) : interest.status} color={color} />
-      </Inline>
-      <Text variant="small" color="secondary">
-        {clientName} · <Text variant="smallMedium" style={{ color: colors.success, fontFamily: 'SpaceGrotesk_700Bold' }}>${interest.quoted_price}</Text>
-      </Text>
-      {canMessage && (
-        <Button
-          variant="ghost"
-          label={i18n.t('jobManagement.messageAction')}
-          onPress={onMessage}
-          style={{ alignSelf: 'flex-start', paddingHorizontal: 0, marginTop: spacing.xs }}
-        />
-      )}
-    </Surface>
-  );
-}
-
-// "Needs action" stacks up to three unrelated queues — new leads, bookings
-// blocked on the owner, quotes awaiting a client reply. They used to run
-// together as one undifferentiated column of cards under three bare labels.
-// Each queue now gets its own titled band with a count and a hairline rule
-// above it, so the boundaries are visible at a glance.
+// "Needs action" stacks two queues — new leads and bookings blocked on the
+// owner. (It used to stack a third, "quotes awaiting response"; sent quotes
+// now live behind the Quotes bubble on Messages.) Each queue gets its own
+// titled band with a count and a hairline rule above it, so the boundaries
+// are visible at a glance.
 function ActionGroup({ label, count, first, children }) {
   return (
     <View style={!first && styles.actionGroupDivided}>
@@ -750,7 +719,9 @@ function JobsListScreen({ navigation, route }) {
 
   const [bookings, setBookings] = useState([]);
   const [posts, setPosts] = useState([]);
-  const [quotes, setQuotes] = useState([]);
+  // Post ids this business has already quoted on. Not rendered — used purely
+  // to keep an already-quoted lead out of "New leads" (B11/B12).
+  const [quotedPostIds, setQuotedPostIds] = useState(() => new Set());
   const [dismissedIds, setDismissedIds] = useState(new Set());
   const [filter, setFilter] = useState(route?.params?.filter || 'today');
   const [loading, setLoading] = useState(true);
@@ -769,9 +740,13 @@ function JobsListScreen({ navigation, route }) {
       ]);
       const openPosts = (p?.items || p || []).filter((post) => post.status === 'open');
       setPosts(openPosts);
-      // Only quotes still waiting on the client belong in Needs Action —
-      // accepted ones are already a booking, rejected ones are dead.
-      setQuotes((i?.items || i || []).filter((q) => q.status === 'pending'));
+      // A lead I have ALREADY quoted is not a lead. It used to stay in the
+      // feed offering "Send quote" a second time (which the API rejects with
+      // "You already expressed interest in this post" — B12) while also
+      // appearing below as "Quotes awaiting response" — B11's two states from
+      // one row. The quote itself now lives on Messages, behind the bubble.
+      const myInterests = i?.items || i || [];
+      setQuotedPostIds(new Set(myInterests.map((q) => q.post_id).filter(Boolean)));
       setBookings(b?.items || b || []);
     } catch (err) {
       setError(err?.message || 'Could not load jobs.');
@@ -798,7 +773,7 @@ function JobsListScreen({ navigation, route }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [route?.params?.filter]);
 
-  const visiblePosts = posts.filter((p) => !dismissedIds.has(p.id));
+  const visiblePosts = posts.filter((p) => !dismissedIds.has(p.id) && !quotedPostIds.has(p.id));
 
   const todayJobs = bookings.filter((b) => bucketBooking(b) === 'today').sort(byJobDateAsc);
   const upcomingJobs = bookings.filter((b) => bucketBooking(b) === 'upcoming').sort(byJobDateAsc);
@@ -824,7 +799,7 @@ function JobsListScreen({ navigation, route }) {
     needsAction: 'jobManagement.filterNeedsAction',
     past: 'jobManagement.filterPast',
   };
-  const needsActionCount = visiblePosts.length + quotes.length + needsActionBookings.length;
+  const needsActionCount = visiblePosts.length + needsActionBookings.length;
   const FILTER_COUNT = {
     today: todayJobs.length,
     upcoming: upcomingJobs.length,
@@ -884,26 +859,6 @@ function JobsListScreen({ navigation, route }) {
       )),
     });
   }
-  if (quotes.length > 0) {
-    needsActionGroups.push({
-      key: 'quotes',
-      label: i18n.t('jobManagement.needsActionQuotesSent'),
-      count: quotes.length,
-      items: quotes.map((q) => (
-        <QuoteListRow
-          key={q.id}
-          interest={q}
-          onMessage={() =>
-            navigation.navigate('Chat', {
-              interestId: q.id,
-              otherPartyName: q.service_posts?.users?.first_name || 'Client',
-            })
-          }
-        />
-      )),
-    });
-  }
-
   return (
     <View style={[styles.screen, { paddingTop: insets.top }]}>
       <View style={styles.listHeader}>
@@ -965,21 +920,32 @@ function JobsListScreen({ navigation, route }) {
         )}
 
         {filter === 'needsAction' && (
-          needsActionCount === 0 ? (
-            <EmptyState
-              icon="check-circle"
-              title={i18n.t('jobManagement.emptyNeedsActionTitle')}
-              body={i18n.t('jobManagement.emptyNeedsActionBody')}
-            />
-          ) : (
-            <Stack spacing="lg">
-              {needsActionGroups.map((g, i) => (
-                <ActionGroup key={g.key} label={g.label} count={g.count} first={i === 0}>
-                  {g.items}
-                </ActionGroup>
-              ))}
-            </Stack>
-          )
+          <Stack spacing="lg">
+            {needsActionCount === 0 ? (
+              <EmptyState
+                icon="check-circle"
+                title={i18n.t('jobManagement.emptyNeedsActionTitle')}
+                body={i18n.t('jobManagement.emptyNeedsActionBody')}
+              />
+            ) : (
+              <Stack spacing="lg">
+                {needsActionGroups.map((g, i) => (
+                  <ActionGroup key={g.key} label={g.label} count={g.count} first={i === 0}>
+                    {g.items}
+                  </ActionGroup>
+                ))}
+              </Stack>
+            )}
+
+            {/* Where the sent quotes went. Jobs deliberately no longer lists
+                them — one line so nobody hunts for a quote that "disappeared". */}
+            <Inline spacing="sm" align="flex-start">
+              <Feather name="info" size={13} color={colors.textTertiary} strokeWidth={1.8} />
+              <Text variant="caption" color="secondary" style={{ flex: 1 }}>
+                {i18n.t('jobManagement.sentQuotesMoved')}
+              </Text>
+            </Inline>
+          </Stack>
         )}
 
         {filter === 'past' && (
@@ -1012,6 +978,12 @@ function JobsListScreen({ navigation, route }) {
         onClose={() => setSheetVisible(false)}
         post={selectedPost}
         onQuoted={(interest, note) => {
+          // B12 — collapse the lead the instant the quote is sent, without
+          // waiting on the refetch below to come back (or on the write to be
+          // readable). It is now a sent quote, and sent quotes live on
+          // Messages behind the Quotes bubble.
+          const quotedId = interest?.post_id || selectedPost?.id;
+          if (quotedId) setQuotedPostIds((prev) => new Set(prev).add(quotedId));
           load();
           if (note) {
             navigation.navigate('Chat', {
