@@ -204,23 +204,25 @@ def health_check():
     # SEN-1 shipped a truncated key to Render and the only evidence was a
     # UnicodeEncodeError four layers down in urllib3, which named neither
     # Stripe nor the env var. Values: "ok" | "not_configured" | "malformed".
-    if not settings.STRIPE_SECRET_KEY:
-        stripe_state = "not_configured"
-    elif config_module.STRIPE_KEY_ERROR:
-        stripe_state = "malformed"
-    else:
-        stripe_state = "ok"
+    stripe_info = config_module.stripe_key_diagnosis()
+    stripe_state = stripe_info.pop("state")
+    # Only the failure detail rides along, and only when there IS a failure.
+    stripe_detail = stripe_info if stripe_state == "malformed" else None
 
     try:
         with engine.connect() as conn:
             conn.execute(text("SELECT 1"))
-        return {"status": "ok", "database": "connected", "stripe": stripe_state}
+        body = {"status": "ok", "database": "connected", "stripe": stripe_state}
     except Exception:
-        return {
+        body = {
             "status": "error",
             "detail": "Database unavailable",
             "stripe": stripe_state,
         }
+
+    if stripe_detail:
+        body["stripe_detail"] = stripe_detail
+    return body
 
 
 @app.get("/healthz")

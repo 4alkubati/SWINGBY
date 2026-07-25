@@ -111,6 +111,54 @@ def stripe_secret_key_error(raw: str) -> str:
 # work fine without Stripe. Set STRIPE_KEY_STRICT=1 (recommended for prod) to
 # make a malformed key a hard startup failure instead.
 STRIPE_KEY_ERROR = stripe_secret_key_error(os.getenv("STRIPE_SECRET_KEY", "").strip())
+
+
+def stripe_key_diagnosis() -> dict:
+    """Non-secret facts about the configured key, safe to expose on /health.
+
+    "It looks correct in the dashboard" is the normal reaction to this failure —
+    the ellipsis in a masked copy-paste is one glyph wide, and a stray quote or
+    a wrong prefix reads as noise when you are skimming. This reports WHICH
+    check failed and how long the value is, so the cause is identified without
+    anyone reading logs or pasting a secret into a chat.
+
+    Deliberately excludes the key, any substring of it, and any character of it.
+    Length and a failure category are not usable to reconstruct a credential.
+    """
+    raw = os.getenv("STRIPE_SECRET_KEY", "")
+    stripped = raw.strip()
+    if not stripped:
+        return {"state": "not_configured"}
+    if not STRIPE_KEY_ERROR:
+        return {"state": "ok", "length": len(stripped)}
+
+    if not stripped.isascii():
+        # The masked-copy case: 'sk_test_51ABC…'. One non-ASCII glyph.
+        problem = "non_ascii_character"
+    elif stripped[:1] in ("'", '"') or stripped[-1:] in ("'", '"'):
+        problem = "wrapped_in_quotes"
+    elif stripped.startswith("pk_"):
+        problem = "publishable_key_not_secret_key"
+    elif stripped.startswith("rk_"):
+        problem = "restricted_key_not_secret_key"
+    elif stripped.startswith("whsec_"):
+        problem = "webhook_secret_not_secret_key"
+    elif not stripped.startswith(("sk_test_", "sk_live_")):
+        problem = "wrong_prefix"
+    else:
+        # Right prefix, pure ASCII, no quotes — so the body has a character
+        # outside [A-Za-z0-9]. A literal "..." from a hand-typed elision does
+        # this, and so does an embedded space or newline.
+        problem = "illegal_character_in_body"
+
+    return {
+        "state": "malformed",
+        "problem": problem,
+        "length": len(stripped),
+        "had_surrounding_whitespace": raw != stripped,
+    }
+
+
 if STRIPE_KEY_ERROR:
     if os.getenv("STRIPE_KEY_STRICT", "0").strip().lower() not in (
         "0",
