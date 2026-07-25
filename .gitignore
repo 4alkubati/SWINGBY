@@ -64,3 +64,10 @@ AGENTS/claude/automation/RESUME
 AGENTS/claude/automation/*.log
 AGENTS/claude/memory/DOCTOR-LATEST.md
 AGENTS
+
+# Agent-skill installs (`npx skills add ...`) — machine-local tooling, not app
+# code. Reproducible on any box; committing them just creates dirty-tree noise
+# that the SwingBy doctor reports as a real problem every session.
+backend/.agents/
+backend/.claude/
+backend/skills-lock.json
