@@ -39,6 +39,134 @@ class CancelBooking(BaseModel):
     reason: Optional[str] = Field(None, max_length=2000)
 
 
+# ── Money truth (audit L5 / L6, 2026-07-24) ──────────────────────────────────
+#
+# The shipped app showed "$150 held in escrow" and "Confirmed — pending payment
+# $150" on bookings where nothing had ever been captured. Both surfaces were
+# reading `bookings.total_amount` — the AGREED PRICE — and captioning it with
+# escrow copy. A booking row cannot tell you whether money moved; only the
+# payments ledger can, and only when a Stripe capture (or a recorded
+# off-platform payment) stands behind it.
+#
+# So every booking read now carries an explicit `payment_state` block that
+# separates the two numbers that were being conflated:
+#
+#     amount_due    — what the client still owes. Real money that has NOT moved.
+#     amount_held   — what is actually captured and sitting in escrow.
+#     amount_released — what has actually gone out to the business.
+#
+# Invariant the clients can rely on: **amount_held is non-zero only when
+# escrow.is_capture_backed() is true.** A ledger row that merely *says* 'held'
+# with no PaymentIntent behind it (which is what production is full of — see
+# escrow.CaptureRequiredError) reports amount_held = 0 and
+# capture_backed = false, so no surface can render escrow that does not exist.
+# Anything unknown fails closed to "unpaid".
+
+_PAYMENT_LABELS = {
+    "unpaid": "Payment due",
+    "held": "Held in escrow",
+    "released": "Released to the business",
+    "paid_off_platform": "Paid directly to the business",
+    "refunded": "Refunded",
+}
+
+
+def _payment_state(booking: dict, payment: Optional[dict]) -> dict:
+    """Build the honest money block for one booking. Never raises."""
+    from app.services import escrow
+
+    total_c = (
+        int(booking["total_amount_cents"])
+        if booking.get("total_amount_cents") is not None
+        else escrow.to_cents(booking.get("total_amount"))
+    )
+
+    payment = payment or {}
+    status = payment.get("status")
+    off_platform = (
+        status == "paid_off_platform"
+        or payment.get("method") in escrow.OFF_PLATFORM_METHODS
+    )
+    # escrow.is_capture_backed() answers "is escrow real *right now*", so it
+    # deliberately excludes 'fully_released' (escrow is gone, it was paid out).
+    # For a display state we also need "was this ever really paid", hence the
+    # explicit PaymentIntent check on the released branch. A 'fully_released'
+    # row with NO intent is FINDING C's phantom payout — 24 such rows and
+    # $4,675.50 exist in production — and must not be shown as money that moved.
+    captured = escrow.is_capture_backed(payment) or (
+        status == "fully_released" and bool(payment.get("stripe_payment_intent_id"))
+    )
+
+    held_c = 0
+    released_c = 0
+    due_c = total_c
+
+    if status == "refunded":
+        state = "refunded"
+        due_c = 0
+    elif captured and off_platform:
+        # Money changed hands off SwingBy: nothing is held, nothing is owed to
+        # us, and there is no escrow to release.
+        state = "paid_off_platform"
+        due_c = 0
+    elif captured and status == "fully_released":
+        state = "released"
+        released_c = escrow.money_cents(payment, "released_to_business")
+        due_c = 0
+    elif captured:
+        state = "held"
+        held_c = escrow.money_cents(payment, "escrow_held")
+        released_c = escrow.money_cents(payment, "released_to_business")
+        due_c = max(total_c - held_c - released_c, 0)
+    else:
+        # No payments row, no PaymentIntent, or a status claiming money that
+        # never arrived. All three mean the same thing to a human: unpaid.
+        state = "unpaid"
+
+    return {
+        "state": state,
+        "label": _PAYMENT_LABELS[state],
+        # True only when a Stripe capture or a recorded off-platform payment
+        # stands behind the figures below.
+        "capture_backed": captured,
+        "currency": "CAD",
+        "amount_due": escrow.to_dollars(due_c),
+        "amount_held": escrow.to_dollars(held_c),
+        "amount_released": escrow.to_dollars(released_c),
+        "amount_total": escrow.to_dollars(total_c),
+        "amount_due_cents": due_c,
+        "amount_held_cents": held_c,
+        "amount_released_cents": released_c,
+        "amount_total_cents": total_c,
+        # The raw ledger status, for debugging/admin. Never render this.
+        "ledger_status": status,
+    }
+
+
+def _attach_payment_state(bookings: list[dict]) -> list[dict]:
+    """Annotate each booking with `payment_state`, in one batched ledger read.
+
+    Best-effort by design: if the payments read fails, every booking reports
+    the conservative "unpaid" state rather than inheriting last release's lie
+    that the money is in escrow.
+    """
+    rows = [b for b in bookings if b]
+    ids = [b["id"] for b in rows if b.get("id")]
+    by_booking: dict = {}
+    if ids:
+        try:
+            res = (
+                supabase.table("payments").select("*").in_("booking_id", ids).execute()
+            )
+            for p in res.data or []:
+                by_booking[p.get("booking_id")] = p
+        except Exception:
+            logger.warning("payment_state_lookup_failed", exc_info=True)
+    for b in rows:
+        b["payment_state"] = _payment_state(b, by_booking.get(b.get("id")))
+    return bookings
+
+
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 
@@ -192,7 +320,7 @@ def list_my_bookings(
         else:
             return {"items": [], "limit": limit, "offset": offset, "next_offset": None}
 
-        items = res.data or []
+        items = _attach_payment_state(res.data or [])
         next_offset = offset + limit if len(items) == limit else None
         return {
             "items": items,
@@ -222,6 +350,9 @@ def get_booking(booking_id: str, current_user: dict = Depends(get_current_user))
             .execute()
         )
         _assert_booking_access(res.data, current_user)
+        # Money truth (L5/L6): the booking row alone cannot say whether anything
+        # was paid — attach the ledger-derived state so no screen has to guess.
+        _attach_payment_state([res.data])
         return res.data
     except HTTPException:
         raise
