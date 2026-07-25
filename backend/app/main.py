@@ -6,6 +6,7 @@ load_dotenv()
 
 # T15 — Fail fast on missing required env vars (must come before anything that
 # reads those vars, e.g. database.py / supabase_client.py).
+from app import config as config_module  # noqa: E402  (for STRIPE_KEY_ERROR)
 from app.config import settings  # noqa: E402  (intentional early import)
 
 # T11 — Configure structured logging before the FastAPI app is created so that
@@ -198,12 +199,28 @@ app.include_router(contact_router, prefix="/contact", tags=["contact"])
 
 @app.get("/health")
 def health_check():
+    # `stripe` reports the SHAPE of the configured key, never the key. It exists
+    # so a malformed key is provable from outside the box with one curl:
+    # SEN-1 shipped a truncated key to Render and the only evidence was a
+    # UnicodeEncodeError four layers down in urllib3, which named neither
+    # Stripe nor the env var. Values: "ok" | "not_configured" | "malformed".
+    if not settings.STRIPE_SECRET_KEY:
+        stripe_state = "not_configured"
+    elif config_module.STRIPE_KEY_ERROR:
+        stripe_state = "malformed"
+    else:
+        stripe_state = "ok"
+
     try:
         with engine.connect() as conn:
             conn.execute(text("SELECT 1"))
-        return {"status": "ok", "database": "connected"}
+        return {"status": "ok", "database": "connected", "stripe": stripe_state}
     except Exception:
-        return {"status": "error", "detail": "Database unavailable"}
+        return {
+            "status": "error",
+            "detail": "Database unavailable",
+            "stripe": stripe_state,
+        }
 
 
 @app.get("/healthz")
