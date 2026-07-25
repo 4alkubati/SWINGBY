@@ -597,17 +597,7 @@ class TestWebhookIdempotency:
 
 
 class TestReportingLiterals:
-    def test_total_pending_sums_held_statuses(self, test_client, as_client):
-        items = [
-            {"released_to_business": 0, "escrow_held": 100.0, "status": "pending"},
-            {"released_to_business": 0, "escrow_held": 50.0, "status": "paid_full"},
-            {
-                "released_to_business": 90.0,
-                "escrow_held": 0,
-                "status": "fully_released",
-            },
-            {"released_to_business": 0, "escrow_held": 20.0, "status": "refunded"},
-        ]
+    def _mine(self, test_client, items):
         stubs = {
             "bookings": SupabaseTableStub(select_data=[{"id": "booking-1"}]),
             "payments": SupabaseTableStub(select_data=items),
@@ -622,7 +612,72 @@ class TestReportingLiterals:
         finally:
             patcher.stop()
         assert resp.status_code == 200, resp.text
-        body = resp.json()
-        # pending(100) + paid_full(50) held; fully_released/refunded excluded.
-        assert body["total_pending"] == 150.0
+        return resp.json()
+
+    def test_total_pending_sums_held_statuses_that_are_capture_backed(
+        self, test_client, as_client
+    ):
+        items = [
+            {
+                "released_to_business": 0,
+                "escrow_held": 100.0,
+                "status": "pending",
+                "stripe_payment_intent_id": "pi_1",
+            },
+            {
+                "released_to_business": 0,
+                "escrow_held": 50.0,
+                "status": "paid_full",
+                "stripe_payment_intent_id": "pi_2",
+            },
+            {
+                "released_to_business": 90.0,
+                "escrow_held": 0,
+                "status": "fully_released",
+                "stripe_payment_intent_id": "pi_3",
+            },
+            {
+                "released_to_business": 0,
+                "escrow_held": 20.0,
+                "status": "refunded",
+                "stripe_payment_intent_id": "pi_4",
+            },
+        ]
+        body = self._mine(test_client, items)
+        # Held-status rows are pending(100) + paid_full(50); fully_released and
+        # refunded are excluded from "pending" as before.
+        #
+        # Of those two, only paid_full(50) is capture backed. 'pending' means a
+        # PaymentIntent may exist but has NOT been captured — escrow.
+        # CAPTURED_ON_PLATFORM deliberately excludes it — so its $100 is
+        # reported as unverified rather than as escrow.
+        assert body["total_pending"] == 50.0
+        assert body["unverified_pending"] == 100.0
         assert body["total_released"] == 90.0
+
+    def test_escrow_with_no_capture_behind_it_is_reported_separately(
+        self, test_client, as_client
+    ):
+        """Audit L5 — "$150 held in escrow" for a booking nobody paid for.
+
+        These are the accept-time rows: the status says money is held, no card
+        was ever charged. They must not land in the merchant-facing escrow
+        figure; they are surfaced as `unverified_pending` instead.
+        """
+        items = [
+            {
+                "released_to_business": 0,
+                "escrow_held": 150.0,
+                "status": "pending",
+                "stripe_payment_intent_id": None,
+            },
+            {
+                "released_to_business": 0,
+                "escrow_held": 40.0,
+                "status": "held",
+                "stripe_payment_intent_id": "pi_real",
+            },
+        ]
+        body = self._mine(test_client, items)
+        assert body["total_pending"] == 40.0
+        assert body["unverified_pending"] == 150.0

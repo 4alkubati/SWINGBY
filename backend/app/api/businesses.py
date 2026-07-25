@@ -532,11 +532,27 @@ def _search_by_work(
             by_id = {b.get("id"): b for b in (hydrated.data or [])}
 
     # Rebuild in rank order, carrying the score/reason onto each row.
+    #
+    # AUDIT L8 (2026-07-24): "5 results" then six businesses listed. Nothing in
+    # this response carries a count — the app derives it from the same array it
+    # renders — so the count cannot disagree with the list unless the list
+    # itself contains a row twice. The ranking RPC returns one row per business
+    # today, but that is a property of its current SQL, not a guarantee this
+    # endpoint enforces: a future `join bookings` in the ranker, or a
+    # duplicated row in the tier-3 candidate scan, would silently emit the same
+    # business twice, and every downstream count/dedupe would disagree. Pin it
+    # here, at the point where the response list is assembled.
     items = []
+    seen: set = set()
     for row in ranked:
-        biz = by_id.get(row["business_id"])
+        bid = row["business_id"]
+        if bid in seen:
+            logger.warning("search_duplicate_ranked_business", biz_id=bid, query=q)
+            continue
+        biz = by_id.get(bid)
         if not biz:
             continue
+        seen.add(bid)
         items.append(
             {
                 **biz,
