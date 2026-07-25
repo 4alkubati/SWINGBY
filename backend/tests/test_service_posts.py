@@ -158,7 +158,7 @@ class TestBusinessOwnerAutoFilter:
     def test_ampersand_category_no_longer_opens_the_whole_feed(
         self, test_client, as_owner
     ):
-        """"Lawn & Garden" — the shape that silently disabled the filter."""
+        """ "Lawn & Garden" — the shape that silently disabled the filter."""
         businesses_stub = SupabaseTableStub(
             select_data=[{"id": "biz-1", "category": "Lawn & Garden"}]
         )
