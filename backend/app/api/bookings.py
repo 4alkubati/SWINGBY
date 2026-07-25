@@ -212,8 +212,9 @@ def get_booking(booking_id: str, current_user: dict = Depends(get_current_user))
             supabase.table("bookings")
             .select(
                 "*, users!bookings_client_id_fkey(first_name, last_name, avatar_url), "
-                "businesses(business_name, category, avg_rating, review_count), "
-                "employees(role_title, avatar_url, users(first_name, last_name)), "
+                "businesses(business_name, category, avg_rating, review_count, "
+                "owner:users!businesses_owner_id_fkey(phone)), "
+                "employees(role_title, avatar_url, users(first_name, last_name, phone)), "
                 "service_posts(title, address, lat, lng)"
             )
             .eq("id", booking_id)

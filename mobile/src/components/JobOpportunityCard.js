@@ -1,10 +1,11 @@
-import React from 'react';
-import { View, ScrollView, StyleSheet } from 'react-native';
+import React, { useState } from 'react';
+import { View, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import Text from './Text';
 import Button from './Button';
 import Avatar from './Avatar';
 import SwImage from './SwImage';
+import ImageViewer from './ImageViewer';
 import i18n from '../i18n';
 import { colors, spacing, radius } from '../theme/tokens';
 
@@ -30,6 +31,7 @@ export default function JobOpportunityCard({
 
   const photos = Array.isArray(post.image_urls) ? post.image_urls.filter(Boolean) : [];
   const photoCount = photos.length;
+  const [viewerIndex, setViewerIndex] = useState(null);
 
   if (compact) {
     return (
@@ -131,15 +133,29 @@ export default function JobOpportunityCard({
           contentContainerStyle={styles.photoRow}
         >
           {photos.map((url, i) => (
-            <SwImage
+            <TouchableOpacity
               key={url || i}
-              source={{ uri: url }}
-              style={styles.photoThumb}
+              activeOpacity={0.8}
+              onPress={() => setViewerIndex(i)}
+              accessibilityRole="button"
               accessibilityLabel={i18n.t('jobCard.photoAlt', { index: i + 1, count: photoCount })}
-            />
+            >
+              <SwImage
+                source={{ uri: url }}
+                style={styles.photoThumb}
+                accessibilityLabel=""
+              />
+            </TouchableOpacity>
           ))}
         </ScrollView>
       )}
+
+      <ImageViewer
+        visible={viewerIndex !== null}
+        images={photos}
+        initialIndex={viewerIndex ?? 0}
+        onClose={() => setViewerIndex(null)}
+      />
 
       <View style={styles.buttonRow}>
         <Button

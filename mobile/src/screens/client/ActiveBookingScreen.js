@@ -5,6 +5,8 @@ import {
   RefreshControl,
   TouchableOpacity,
   StatusBar,
+  Linking,
+  Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useState, useEffect, useCallback } from 'react';
@@ -297,6 +299,22 @@ export default function ActiveBookingScreen({ navigation, route }) {
   const companyName =
     booking?.businesses?.business_name || booking?.business_name || null;
   const rating = booking?.businesses?.avg_rating;
+  // Assigned employee's number wins; fall back to the business owner's.
+  const providerPhone =
+    booking?.employees?.users?.phone || booking?.businesses?.owner?.phone || null;
+
+  function handleCall() {
+    if (!providerPhone) {
+      Alert.alert(
+        'No number available',
+        "This provider hasn't added a phone number yet. Try messaging them instead.",
+      );
+      return;
+    }
+    Linking.openURL(`tel:${providerPhone}`).catch(() =>
+      Alert.alert('Could not place call', 'Your device could not open the dialer.'),
+    );
+  }
   const eyebrow = STATUS_EYEBROW[booking?.status] || 'STATUS';
   const heroTitle = buildTitle(booking);
 
@@ -425,7 +443,7 @@ export default function ActiveBookingScreen({ navigation, route }) {
                       style={styles.callBtn}
                       accessibilityRole="button"
                       accessibilityLabel="Call"
-                      onPress={() => {}}
+                      onPress={handleCall}
                     >
                       <Feather name="phone" size={18} color={colors.textPrimary} />
                     </TouchableOpacity>
