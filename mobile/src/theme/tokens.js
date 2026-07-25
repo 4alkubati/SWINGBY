@@ -25,6 +25,27 @@ export const colors = {
   mapBgBottom: '#0E1320',
   // Solid overlay for glass-lite pill on map (rgba(10,11,14,0.78)).
   overlayScrim: 'rgba(10,11,14,0.78)',
+  // Bottom nav bar surface — one step darker than `surface` so the bar reads as
+  // chrome, not as a card. Was hardcoded '#0A0B0E' in BottomNav.
+  navBg: '#0A0B0E',
+  // List dividers sitting directly on `bg` are darker than dividers inside a
+  // card (POLISH-TIPS §3 — this distinction is deliberate).
+  borderSubtle: '#14171D',
+  // Skeleton fill + shimmer target (POLISH-TIPS §8: fill surface, shimmer to
+  // surfaceAlt). Aliased so skeletons can never drift to near-miss hexes.
+  skeletonBase: '#0F1115',
+  skeletonShimmer: '#161A21',
+  // 14%-alpha tints. Every non-accent colored fill is a tint, never a solid
+  // (POLISH-TIPS §2) — these are the canonical four.
+  successTint: 'rgba(46,189,133,0.14)',
+  warningTint: 'rgba(246,178,59,0.14)',
+  dangerTint: 'rgba(255,92,92,0.14)',
+  accentTint: 'rgba(110,86,247,0.16)',
+  // Purple pulse ring around live dots / map pins.
+  accentRing: 'rgba(110,86,247,0.18)',
+  successRing: 'rgba(46,189,133,0.16)',
+  // Faint grid stroke drawn over the map gradient.
+  mapGrid: 'rgba(139,146,160,0.07)',
 };
 
 export const spacing = {
