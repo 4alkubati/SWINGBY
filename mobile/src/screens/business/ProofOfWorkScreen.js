@@ -9,14 +9,13 @@
 //
 // Route params: { bookingId, businessName? }
 //
-// ⚠ VOICE MEMO — AUDIO CAPTURE IS STUBBED. ⚠
-// There is no audio dependency in mobile/package.json (no expo-av, no
-// expo-audio) and this lane may not add one. The memo UI below is fully built
-// and interactive — record/stop/playback, equal-flex waveform, tabular timer,
-// 60 s hard cap, re-record replaces — but it is driven by a timer, not a
-// microphone. See RECORDER_TODO. The screen shows an on-screen notice so the
-// state is never mistaken for a real recording, and the CTA is never blocked on
-// the memo either way (spec §1).
+// VOICE MEMO — real capture as of 2026-07-25.
+// `expo-audio` (~1.1.1, the SDK 54 pairing; expo-av is deprecated) replaced the
+// timer-driven stub that shipped in the first cut of this screen. It is a
+// native module, so it only exists in a build made AFTER it was added — Expo Go
+// and any older APK will not have it. The UI is unchanged from the spec:
+// record/stop/playback, equal-flex waveform, tabular timer, 60 s hard cap,
+// re-record replaces. The CTA is still never blocked on the memo (spec §1).
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
@@ -30,6 +29,15 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import {
+  RecordingPresets,
+  requestRecordingPermissionsAsync,
+  setAudioModeAsync,
+  useAudioPlayer,
+  useAudioPlayerStatus,
+  useAudioRecorder,
+  useAudioRecorderState,
+} from 'expo-audio';
 
 import Text from '../../components/Text';
 import SwImage from '../../components/SwImage';
@@ -105,6 +113,15 @@ function fileFromAsset(asset) {
     type: asset.mimeType || `image/${ext === 'jpg' ? 'jpeg' : ext}`,
     name: asset.fileName || `proof_${Date.now()}.${ext}`,
   };
+}
+
+// expo-audio writes an .m4a (MPEG-4/AAC) on both platforms with the
+// HIGH_QUALITY preset. Android reports that container as audio/mp4, iOS as
+// audio/m4a — the upload endpoint accepts both, plus the extension fallbacks.
+function fileFromRecording(uri) {
+  const ext = (uri.split('.').pop() || 'm4a').toLowerCase().split('?')[0];
+  const type = ext === 'wav' ? 'audio/wav' : ext === 'mp3' ? 'audio/mpeg' : 'audio/mp4';
+  return { uri, type, name: `voice_${Date.now()}.${ext}` };
 }
 
 function formatClock(seconds) {
@@ -192,90 +209,139 @@ function TileSpacer() {
 // ─── Voice memo card ─────────────────────────────────────────────────────────
 const WAVE_BARS = 34;
 
-function VoiceNoteCard({ note, onRecordedStub, onDelete }) {
-  const [mode, setMode] = useState('idle'); // idle | recording | playing
-  const [elapsed, setElapsed] = useState(0);
-  const timer = useRef(null);
+function VoiceNoteCard({ note, saving, onRecorded, onDelete }) {
+  const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
+  // 250 ms matches the old stub's tick, so the waveform advances at the same
+  // rate the design was reviewed at.
+  const recorderState = useAudioRecorderState(recorder, 250);
 
+  const hasNote = !!note?.url;
   const duration = note?.duration_seconds ?? 0;
-  const hasNote = !!note;
 
-  useEffect(() => () => clearInterval(timer.current), []);
+  const player = useAudioPlayer(hasNote ? { uri: note.url } : null);
+  const playerStatus = useAudioPlayerStatus(player);
 
-  function stopTimer() {
-    clearInterval(timer.current);
-    timer.current = null;
+  const isRecording = !!recorderState?.isRecording;
+  const playing = !!playerStatus?.playing;
+  // Guards a re-entrant stop: the 60 s auto-stop effect and a fast double-tap
+  // can both land inside stopRecording() before the first await returns.
+  const stopping = useRef(false);
+
+  const recordedSeconds = (recorderState?.durationMillis ?? 0) / 1000;
+
+  const stopRecording = useCallback(async () => {
+    if (stopping.current) return;
+    stopping.current = true;
+
+    // Read the length BEFORE stopping — the recorder zeroes its duration once
+    // it has stopped, and a memo saved as 0 s fails the API's ge=1 check.
+    const seconds = Math.max(
+      1,
+      Math.min(MAX_VOICE_SECONDS, Math.round((recorderState?.durationMillis ?? 0) / 1000)),
+    );
+
+    try {
+      await recorder.stop();
+      await setAudioModeAsync({ allowsRecording: false, playsInSilentMode: true });
+      const uri = recorder.uri;
+      if (!uri) throw new Error('The recorder produced no file');
+      await onRecorded(uri, seconds);
+    } catch (err) {
+      Alert.alert(
+        "Couldn't save the recording",
+        err?.message || 'Try recording it again.',
+      );
+    } finally {
+      stopping.current = false;
+    }
+  }, [recorder, recorderState?.durationMillis, onRecorded]);
+
+  // Hard cap at 60 s (spec §1). The native `forDuration` option would also stop
+  // the recorder, but it does not tell JS that it did — this way the same code
+  // path saves the memo whether the cap or the user stopped it.
+  useEffect(() => {
+    if (isRecording && recordedSeconds >= MAX_VOICE_SECONDS) {
+      stopRecording();
+    }
+  }, [isRecording, recordedSeconds, stopRecording]);
+
+  // Leaving mid-recording must not strand a live microphone session.
+  useEffect(
+    () => () => {
+      if (recorder?.isRecording) recorder.stop().catch(() => {});
+    },
+    [recorder],
+  );
+
+  async function startRecording() {
+    const perm = await requestRecordingPermissionsAsync();
+    if (!perm.granted) {
+      Alert.alert(
+        'Microphone permission needed',
+        'Allow microphone access to record a voice note about the job.',
+      );
+      return;
+    }
+
+    try {
+      await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
+      await recorder.prepareToRecordAsync();
+      recorder.record();
+    } catch (err) {
+      Alert.alert(
+        "Couldn't start recording",
+        err?.message || 'The microphone is unavailable right now.',
+      );
+    }
   }
 
   function handleRecordPress() {
     haptics.buttonTap?.();
+    if (saving) return;
 
-    if (mode === 'recording') {
-      stopTimer();
-      const captured = Math.max(1, Math.round(elapsed));
-      setMode('idle');
-      setElapsed(0);
-      // RECORDER_TODO — hand `captured` plus a real audio file to
-      // PUT /bookings/:id/proof/voice-note once an audio dependency exists.
-      onRecordedStub(captured);
-      return;
-    }
-
-    if (mode === 'playing') {
-      stopTimer();
-      setMode('idle');
-      setElapsed(0);
+    if (isRecording) {
+      stopRecording();
       return;
     }
 
     if (hasNote) {
-      // Playback of a saved memo — also stubbed; it walks the waveform so the
-      // player's behaviour is reviewable.
-      setMode('playing');
-      setElapsed(0);
-      timer.current = setInterval(() => {
-        setElapsed((prev) => {
-          if (prev + 0.25 >= duration) {
-            stopTimer();
-            setMode('idle');
-            return 0;
-          }
-          return prev + 0.25;
-        });
-      }, 250);
+      if (playing) {
+        player.pause();
+        player.seekTo(0);
+      } else {
+        // A finished player sits at the end — rewind or play() is a no-op.
+        if (playerStatus?.didJustFinish) player.seekTo(0);
+        player.play();
+      }
       return;
     }
 
-    setMode('recording');
-    setElapsed(0);
-    timer.current = setInterval(() => {
-      setElapsed((prev) => {
-        const next = prev + 0.25;
-        if (next >= MAX_VOICE_SECONDS) {
-          // Hard cap at 60 s — stop dead rather than trimming later.
-          stopTimer();
-          setMode('idle');
-          onRecordedStub(MAX_VOICE_SECONDS);
-          return 0;
-        }
-        return next;
-      });
-    }, 250);
+    startRecording();
   }
 
-  const total = mode === 'recording' ? MAX_VOICE_SECONDS : duration || MAX_VOICE_SECONDS;
+  // While recording, the bar fills against the 60 s ceiling; while playing, it
+  // tracks real playback position.
+  const elapsed = isRecording ? recordedSeconds : playing ? (playerStatus?.currentTime ?? 0) : 0;
+  const total = isRecording ? MAX_VOICE_SECONDS : duration || MAX_VOICE_SECONDS;
   const ratio = total > 0 ? Math.min(1, elapsed / total) : 0;
   const filledBars = Math.round(ratio * WAVE_BARS);
 
-  const stateLabel =
-    mode === 'recording' ? 'Recording…' : hasNote ? 'Voice note saved' : 'Tap to record';
-  const stateColor = mode === 'recording' ? colors.danger : colors.textSecondary;
+  const stateLabel = isRecording
+    ? 'Recording…'
+    : saving
+      ? 'Saving…'
+      : playing
+        ? 'Playing'
+        : hasNote
+          ? 'Voice note saved'
+          : 'Tap to record';
+  const stateColor = isRecording ? colors.danger : colors.textSecondary;
 
   return (
     <View style={styles.section}>
       <View style={styles.sectionHead}>
         <Text style={styles.sectionLabel}>VOICE NOTE · OPTIONAL</Text>
-        {hasNote && (
+        {hasNote && !isRecording && !saving && (
           <TouchableOpacity
             onPress={onDelete}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
@@ -291,28 +357,32 @@ function VoiceNoteCard({ note, onRecordedStub, onDelete }) {
         <View style={styles.voiceRow}>
           <Pressable
             onPress={handleRecordPress}
+            disabled={saving}
             style={({ pressed }) => [
               styles.recordBtn,
-              {
-                backgroundColor:
-                  mode === 'recording' ? colors.danger : colors.accent,
-              },
+              { backgroundColor: isRecording ? colors.danger : colors.accent },
+              saving && { opacity: 0.55 },
               pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] },
             ]}
             accessibilityRole="button"
+            accessibilityState={{ disabled: !!saving }}
             accessibilityLabel={
-              mode === 'recording'
+              isRecording
                 ? 'Stop recording'
                 : hasNote
-                  ? 'Play voice note'
+                  ? playing
+                    ? 'Stop playing the voice note'
+                    : 'Play voice note'
                   : 'Record a voice note'
             }
           >
-            {mode === 'recording' ? (
+            {saving ? (
+              <ActivityIndicator size="small" color={colors.textPrimary} />
+            ) : isRecording ? (
               <View style={styles.recordStopSquare} />
             ) : (
               <Feather
-                name={hasNote && mode !== 'playing' ? 'play' : 'mic'}
+                name={hasNote ? (playing ? 'square' : 'play') : 'mic'}
                 size={18}
                 color={colors.textPrimary}
               />
@@ -341,20 +411,11 @@ function VoiceNoteCard({ note, onRecordedStub, onDelete }) {
             <View style={styles.voiceMeta}>
               <Text style={[styles.voiceState, { color: stateColor }]}>{stateLabel}</Text>
               <Text style={styles.voiceTimer}>
-                {formatClock(mode === 'idle' && hasNote ? duration : elapsed)} /{' '}
+                {formatClock(hasNote && !isRecording && !playing ? duration : elapsed)} /{' '}
                 {formatClock(MAX_VOICE_SECONDS)}
               </Text>
             </View>
           </View>
-        </View>
-
-        {/* Loud, on-screen, and shipped — nobody at a demo should mistake the
-            stub for a working microphone. */}
-        <View style={styles.stubNotice}>
-          <Feather name="alert-triangle" size={13} color={colors.warning} />
-          <Text style={styles.stubNoticeText}>
-            Preview only — audio capture needs a dev build. Nothing is recorded yet.
-          </Text>
         </View>
       </View>
     </View>
@@ -370,6 +431,7 @@ export default function ProofOfWorkScreen({ route, navigation }) {
   const [proof, setProof] = useState(null);
   const [pending, setPending] = useState([]); // in-flight/failed uploads
   const [submitting, setSubmitting] = useState(false);
+  const [savingVoice, setSavingVoice] = useState(false);
   const [viewer, setViewer] = useState(null);
   const mounted = useRef(true);
 
@@ -514,20 +576,43 @@ export default function ProofOfWorkScreen({ route, navigation }) {
     }
   }
 
-  async function handleVoiceStub(seconds) {
-    // RECORDER_TODO — with a real recorder this uploads the audio file first,
-    // then PUTs { url, path, duration_seconds }. Until then the endpoint is not
-    // called at all: writing a row with no audio behind it would be a lie in
-    // the database, which is worse than the feature being absent.
-    Alert.alert(
-      'Voice notes need a dev build',
-      `Captured ${seconds}s in the preview. Recording ships once an audio module is added — nothing was saved.`,
-    );
+  // Upload the file FIRST, then write the row. If the upload fails there is no
+  // row — a memo row pointing at nothing would show the client a player that
+  // plays silence and tell them the business documented the job when it didn't.
+  async function handleVoiceRecorded(uri, seconds) {
+    setSavingVoice(true);
+    try {
+      const up = await uploadWithProgress('/uploads/audio', fileFromRecording(uri), null);
+      await api.put(`/bookings/${bookingId}/proof/voice-note`, {
+        url: up.url,
+        path: up.path,
+        duration_seconds: seconds,
+      });
+      await load();
+      haptics.successTap?.();
+      toast.show({ type: 'success', text1: 'Voice note saved' });
+    } catch (err) {
+      Alert.alert(
+        "Couldn't save the voice note",
+        err?.response?.data?.detail || err?.message || 'Try recording it again.',
+      );
+    } finally {
+      if (mounted.current) setSavingVoice(false);
+    }
   }
 
   async function handleVoiceDelete() {
+    const path = proof?.voice_note?.path;
     try {
       await api.delete(`/bookings/${bookingId}/proof/voice-note`);
+      // Drop the object too — the row is the only reference to it, so skipping
+      // this would leave the audio sitting in the bucket after the business
+      // deliberately removed it.
+      if (path) {
+        await api
+          .delete('/uploads/audio', { params: { path } })
+          .catch(() => {});
+      }
       await load();
     } catch {
       toast.show({ type: 'error', text1: "Couldn't remove the voice note" });
@@ -668,7 +753,8 @@ export default function ProofOfWorkScreen({ route, navigation }) {
 
         <VoiceNoteCard
           note={proof?.voice_note}
-          onRecordedStub={handleVoiceStub}
+          saving={savingVoice}
+          onRecorded={handleVoiceRecorded}
           onDelete={handleVoiceDelete}
         />
       </ScrollView>
@@ -887,16 +973,6 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     fontVariant: ['tabular-nums'],
   },
-  stubNotice: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 8,
-    backgroundColor: 'rgba(246,178,59,0.14)',
-    borderRadius: 10,
-    paddingVertical: 9,
-    paddingHorizontal: 12,
-  },
-  stubNoticeText: { flex: 1, fontSize: 11.5, lineHeight: 18, color: colors.warning },
 
   footer: {
     position: 'absolute',

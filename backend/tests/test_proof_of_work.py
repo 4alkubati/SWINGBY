@@ -30,6 +30,9 @@ MIGRATION = (
     / "migrations"
     / "20260724090000_proof_of_work_and_auto_bidding.sql"
 )
+BUCKET_MIGRATION = (
+    REPO_ROOT / "supabase" / "migrations" / "20260725190000_voice_notes_bucket.sql"
+)
 
 
 def _photo(phase, source="business", n=1):
@@ -268,6 +271,98 @@ class TestVoiceNoteCap:
         v = pow_api.VoiceNoteIn(url="u", path="p", duration_seconds=18)
         assert v.duration_seconds == 18
 
+    def test_path_is_required_but_url_is_not(self):
+        """`path` is the source of truth; `url` is a signed URL that expires.
+
+        A signing hiccup at upload time must not lose audio that IS in the
+        bucket, so the row can be written with an empty url and still be
+        playable — reads re-sign the path.
+        """
+        v = pow_api.VoiceNoteIn(path="p", duration_seconds=5)
+        assert v.url == ""
+        with pytest.raises(Exception):
+            pow_api.VoiceNoteIn(url="u", duration_seconds=5)
+
+
+# ── Private audio: signed on read, owned by the uploader ─────────────────────
+
+
+class TestVoiceNoteIsPrivate:
+    """The `voice-notes` bucket is private (unlike `job-photos`). Two things
+    have to hold: reads hand out a fresh signed URL, and a provider cannot
+    attach an object they did not upload."""
+
+    def test_read_resigns_the_path_and_discards_the_stored_url(self):
+        row = {
+            "booking_id": "b-1",
+            "path": "voice-notes/owner-1/abc.m4a",
+            "url": "https://stale.example/expired-hours-ago",
+            "duration_seconds": 18,
+        }
+        result = MagicMock()
+        result.data = row
+
+        with patch.object(pow_api.supabase, "table") as table, patch.object(
+            pow_api, "sign_audio_path", return_value="https://signed.example/fresh"
+        ) as sign:
+            table.return_value.select.return_value.eq.return_value.single.return_value.execute.return_value = (  # noqa: E501
+                result
+            )
+            note = pow_api._voice_note("b-1")
+
+        sign.assert_called_once_with("voice-notes/owner-1/abc.m4a")
+        assert note["url"] == "https://signed.example/fresh"
+        assert note["duration_seconds"] == 18
+
+    def test_a_missing_object_reads_as_no_url_not_a_dead_player(self):
+        row = {"booking_id": "b-1", "path": "voice-notes/owner-1/gone.m4a", "url": "x"}
+        result = MagicMock()
+        result.data = row
+
+        with patch.object(pow_api.supabase, "table") as table, patch.object(
+            pow_api, "sign_audio_path", return_value=None
+        ):
+            table.return_value.select.return_value.eq.return_value.single.return_value.execute.return_value = (  # noqa: E501
+                result
+            )
+            note = pow_api._voice_note("b-1")
+
+        assert note["url"] is None
+
+    def test_provider_cannot_attach_someone_elses_recording(self, as_provider):
+        """Otherwise a business could point a booking it controls at another
+        business's memo — recorded inside a different client's home — and the
+        signed-URL reader would serve it."""
+        with pytest.raises(HTTPException) as exc:
+            pow_api.put_voice_note(
+                "b-1",
+                pow_api.VoiceNoteIn(
+                    path="voice-notes/some-other-owner/abc.m4a",
+                    url="",
+                    duration_seconds=10,
+                ),
+                current_user=OWNER,
+            )
+        assert exc.value.status_code == 403
+
+    def test_provider_can_attach_their_own_recording(self, as_provider):
+        saved = MagicMock()
+        saved.data = [{"booking_id": "b-1", "duration_seconds": 10}]
+
+        with patch.object(pow_api.supabase, "table") as table:
+            table.return_value.upsert.return_value.execute.return_value = saved
+            out = pow_api.put_voice_note(
+                "b-1",
+                pow_api.VoiceNoteIn(
+                    path=f"voice-notes/{OWNER['id']}/abc.m4a",
+                    url="",
+                    duration_seconds=10,
+                ),
+                current_user=OWNER,
+            )
+
+        assert out["duration_seconds"] == 10
+
 
 # ── The migration ships with the code ────────────────────────────────────────
 
@@ -311,3 +406,16 @@ class TestMigrationShipsWithTheCode:
     def test_auto_bid_cannot_be_enabled_without_a_dry_run_at_the_db_level(self):
         lowered = MIGRATION.read_text().lower()
         assert "enabled = false or dry_run_passed_at is not null" in lowered
+
+    def test_the_bucket_the_audio_lands_in_ships_too(self):
+        """The 0724 migration made the row but not the bucket — capture was
+        still stubbed then. Recording without a bucket is a 500 per memo."""
+        assert BUCKET_MIGRATION.exists(), f"missing {BUCKET_MIGRATION}"
+        assert len(sqlparse.parse(BUCKET_MIGRATION.read_text())) >= 1
+
+    def test_the_voice_note_bucket_is_private(self):
+        """`job-photos` is public-read; audio recorded inside a client's home
+        is not allowed to be. Reads go out as signed URLs instead."""
+        lowered = BUCKET_MIGRATION.read_text().lower()
+        assert "'voice-notes'" in lowered
+        assert "false" in lowered.split("values", 1)[1].split(")", 1)[0]

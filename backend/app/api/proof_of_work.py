@@ -40,6 +40,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
+from app.api.uploads import sign_audio_path
 from app.deps import get_current_user
 from app.services import escrow
 from app.supabase_client import supabase
@@ -60,8 +61,12 @@ MAX_VOICE_NOTE_SECONDS = 60
 
 
 class VoiceNoteIn(BaseModel):
-    url: str = Field(..., min_length=1, max_length=2048)
+    # `path` is the source of truth — `url` is only ever a signed URL that has
+    # already started expiring, so it is accepted but never relied on (reads
+    # re-sign the path). It stays nullable so a signing hiccup at upload time
+    # cannot lose a recording that IS safely in the bucket.
     path: str = Field(..., min_length=1, max_length=512)
+    url: str = Field(default="", max_length=2048)
     duration_seconds: int = Field(..., ge=1, le=MAX_VOICE_NOTE_SECONDS)
 
 
@@ -199,6 +204,15 @@ def _photos(booking_id: str) -> list[dict]:
 
 
 def _voice_note(booking_id: str) -> Optional[dict]:
+    """The memo row, with a FRESHLY SIGNED url.
+
+    The `voice-notes` bucket is private (see uploads.py). The `url` column holds
+    whatever was signed at upload time, which has almost certainly expired by
+    the time anyone reviews the job — so the stored value is deliberately
+    discarded here and the path is re-signed per read. A row whose object has
+    gone missing returns url=None, which both clients render as "no memo"
+    rather than as a broken player.
+    """
     try:
         res = (
             supabase.table("booking_voice_notes")
@@ -207,9 +221,14 @@ def _voice_note(booking_id: str) -> Optional[dict]:
             .single()
             .execute()
         )
-        return res.data
+        row = res.data
     except Exception:
         return None
+
+    if not row:
+        return None
+
+    return {**row, "url": sign_audio_path(row.get("path") or "")}
 
 
 def _client_supplied_photos(booking: dict) -> list[str]:
@@ -331,6 +350,13 @@ def put_voice_note(
     """Record or re-record the memo. One per booking — this REPLACES."""
     booking = _load_booking(booking_id)
     _require_provider(booking, current_user)
+
+    # The path is client-supplied, so pin it to this uploader's own prefix —
+    # otherwise a provider could attach any object in the private bucket
+    # (including another business's memo on another client's home) to a booking
+    # they control, and the signed-URL reader would happily hand it over.
+    if not body.path.startswith(f"voice-notes/{current_user['id']}/"):
+        raise HTTPException(status_code=403, detail="That recording is not yours")
 
     row = {
         "booking_id": booking_id,

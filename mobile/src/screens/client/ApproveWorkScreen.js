@@ -22,6 +22,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
+import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 
 import Text from '../../components/Text';
 import SwImage from '../../components/SwImage';
@@ -113,42 +114,36 @@ function CompareColumn({ label, labelColor, borderColor, photos, onOpen, emptyLa
 }
 
 // ─── Voice note player ───────────────────────────────────────────────────────
-// Playback is stubbed for the same reason capture is on the business side: no
-// audio dependency exists in mobile/package.json and this lane may not add one.
-// The player is real UI over a timer — see RECORDER_TODO in ProofOfWorkScreen.
+// Real playback via expo-audio (see ProofOfWorkScreen for the capture side).
+// `note.url` is a SIGNED, EXPIRING url minted per read by the API — never cache
+// it across sessions, and treat a missing url as "no memo" rather than as a
+// player that will fail when tapped.
 function VoiceNotePlayer({ note, recordedBy }) {
-  const [playing, setPlaying] = useState(false);
-  const [elapsed, setElapsed] = useState(0);
-  const timer = useRef(null);
+  const url = note?.url || null;
+  const player = useAudioPlayer(url ? { uri: url } : null);
+  const status = useAudioPlayerStatus(player);
 
-  useEffect(() => () => clearInterval(timer.current), []);
+  // Every hook runs before this early return — the memo is optional, so this
+  // component renders nothing far more often than it renders a player.
+  if (!note || !url) return null;
 
-  if (!note) return null;
-
-  const duration = note.duration_seconds || 0;
+  const playing = !!status?.playing;
+  // Prefer the recorded length from the row: it is what the business actually
+  // captured, and it is on screen before the file has finished loading.
+  const duration = note.duration_seconds || status?.duration || 0;
+  const elapsed = playing ? (status?.currentTime ?? 0) : 0;
   const ratio = duration > 0 ? Math.min(1, elapsed / duration) : 0;
   const filledBars = Math.round(ratio * WAVE_BARS);
 
   function toggle() {
     haptics.buttonTap?.();
     if (playing) {
-      clearInterval(timer.current);
-      setPlaying(false);
-      setElapsed(0);
+      player.pause();
+      player.seekTo(0);
       return;
     }
-    setPlaying(true);
-    setElapsed(0);
-    timer.current = setInterval(() => {
-      setElapsed((prev) => {
-        if (prev + 0.25 >= duration) {
-          clearInterval(timer.current);
-          setPlaying(false);
-          return 0;
-        }
-        return prev + 0.25;
-      });
-    }, 250);
+    if (status?.didJustFinish) player.seekTo(0);
+    player.play();
   }
 
   return (

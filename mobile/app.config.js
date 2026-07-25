@@ -25,9 +25,21 @@ module.exports = ({ config }) => ({
   // iOS build exists AND an Apple Developer account backs the entitlement
   // (see docs/SOCIAL_SIGNIN_SETUP.md). expo-web-browser and expo-crypto need
   // no plugin entry — they are plain autolinked modules.
+  // expo-audio's config plugin is what writes RECORD_AUDIO into the
+  // AndroidManifest and NSMicrophoneUsageDescription into Info.plist. Without
+  // it the module autolinks and still cannot record: Android throws at
+  // prepareToRecordAsync() and iOS is rejected at review. The permission string
+  // is user-facing — it is the sentence shown in the OS prompt.
   plugins: [
     ...(config.plugins || []),
     'expo-apple-authentication',
+    [
+      'expo-audio',
+      {
+        microphonePermission:
+          'SwingBy uses the microphone so you can record a short voice note about the work you did.',
+      },
+    ],
   ],
   // NB: the two platforms take DIFFERENT shapes here, and getting it wrong
   // fails `expo doctor` in the cloud build (not locally, where doctor isn't
