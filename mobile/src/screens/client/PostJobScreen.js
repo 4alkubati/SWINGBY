@@ -1071,34 +1071,11 @@ export default function PostJobScreen() {
     return payload;
   }
 
-  // A direct request must never quietly become a public broadcast.
-  //
-  // The wizard decides which it is from ONE route param (`businessId`). If a
-  // caller ever hands over a business NAME without an id — a profile row that
-  // failed to resolve, a deep link, a future caller — `targeted` is false, the
-  // category step reappears, and the post goes to every business in the city
-  // while the client believes they messaged one company. The client would
-  // never learn: the banner would be gone and the post would look normal.
-  //
-  // Today's only caller (BusinessProfileScreen's sticky bar) is safe — it
-  // renders on `businessId && businessId !== user?.business_id` and passes that
-  // same resolved id — so this is a guard, not a live bug. It is here because
-  // the failure is silent and the blast radius is the client's privacy: a
-  // targeted post reaches one business, a broadcast reaches all of them, and
-  // job photos ride along (walkthrough L3).
-  const misroutedRequest = !!targetBusinessName && !targetBusinessId;
-
   // ── Path A entry ───────────────────────────────────────────────────────────
   // "Post job & pay" does NOT post. It opens the sheet. Nothing is created
   // until the hold succeeds (PAYMENTS.md §Path A: hold succeeds → job is
   // created and made visible).
   function handleReviewCta() {
-    if (misroutedRequest) {
-      setDescError(
-        `We couldn't confirm which business this request is for. Open ${targetBusinessName}'s profile and tap Book now again — we won't post this publicly by mistake.`
-      );
-      return;
-    }
     const parsedBudget = validateDraft();
     if (parsedBudget == null) return;
     setDescError('');
