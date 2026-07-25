@@ -30,6 +30,7 @@ import DisputeFlowScreen from '../screens/flows/DisputeFlowScreen';
 import InvoiceScreen from '../screens/shared/InvoiceScreen';
 import BusinessInvoicesScreen from '../screens/business/BusinessInvoicesScreen';
 import ProfileEditScreen from '../screens/profile/ProfileEditScreen';
+import ProofOfWorkScreen from '../screens/business/ProofOfWorkScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -116,6 +117,9 @@ export default function BusinessNavigator() {
       <Stack.Screen name="DisputeFlow" component={DisputeFlowScreen} />
       <Stack.Screen name="Invoice" component={InvoiceScreen} options={{ headerShown: false }} />
       <Stack.Screen name="BusinessInvoices" component={BusinessInvoicesScreen} />
+      {/* LANE 5 — proof of work. Entered from a job the business is finishing;
+          "Send for approval" is what puts the release in the client's hands. */}
+      <Stack.Screen name="ProofOfWork" component={ProofOfWorkScreen} />
       {/* SettingsScreen ("Edit profile") is registered in BOTH navigators and
           navigates to `ProfileEdit` with no role guard — business owners and
           employees previously hit a dead route and had no way to edit their
