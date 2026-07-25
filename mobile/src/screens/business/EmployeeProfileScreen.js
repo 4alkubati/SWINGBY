@@ -232,7 +232,7 @@ export default function EmployeeProfileScreen({ navigation, route }) {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={8}>
-          <Text variant="display3" color="secondary">←</Text>
+          <Feather name="arrow-left" size={20} strokeWidth={1.8} color={colors.textSecondary} />
         </TouchableOpacity>
         <Text variant="bodyMedium">Profile</Text>
         <View style={{ width: 32 }} />
