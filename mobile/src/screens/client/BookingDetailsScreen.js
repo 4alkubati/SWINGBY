@@ -3,6 +3,7 @@
 // Route params: { bookingId }
 import React, { useState, useEffect, useCallback } from 'react';
 import {
+  ActivityIndicator,
   View,
   ScrollView,
   Pressable,
@@ -23,8 +24,8 @@ import i18n from '../../i18n';
 import * as toast from '../../services/toast';
 import * as haptics from '../../services/haptics';
 import BookingStatusTimeline from '../../components/BookingStatusTimeline';
-import LiveStatusTimeline from '../../components/LiveStatusTimeline';
 import ConfirmDateCard from '../../components/ConfirmDateCard';
+import PaySheet, { CHECKOUT_METHOD } from '../../components/PaySheet';
 import BookingPhotos from '../../components/BookingPhotos';
 import { RatingStarsDisplay } from '../../components/RatingStars';
 import { SkeletonBox } from '../../components/Skeleton';
@@ -85,6 +86,92 @@ function formatTime(iso) {
   try {
     return new Date(iso).toLocaleTimeString('en-CA', { hour: '2-digit', minute: '2-digit' });
   } catch { return ''; }
+}
+
+// ─── B16 — humanise booking_events ────────────────────────────────────────────
+// The screen printed the raw column value (`date_confirmed`) and, inside the
+// note, a raw ISO instant (`2026-07-25T20:30:00+00:00`) straight at the client.
+// Every event_type the backend will accept is listed in
+// backend/app/api/booking_events.py `_ALLOWED_EVENT_TYPES`; all nine are
+// covered here, and anything a future backend adds falls back to a neutral
+// sentence instead of a snake_case enum.
+const EVENT_COPY = {
+  dates_proposed:  { icon: 'calendar',      key: 'booking.eventDatesProposed' },
+  date_confirmed:  { icon: 'check-circle',  key: 'booking.eventDateConfirmed' },
+  en_route:        { icon: 'navigation',    key: 'booking.eventEnRoute' },
+  arrived:         { icon: 'map-pin',       key: 'booking.eventArrived' },
+  started:         { icon: 'play-circle',   key: 'booking.eventStarted' },
+  paused:          { icon: 'pause-circle',  key: 'booking.eventPaused' },
+  resumed:         { icon: 'play-circle',   key: 'booking.eventResumed' },
+  completed:       { icon: 'check-circle',  key: 'booking.eventCompleted' },
+  cancelled_event: { icon: 'x-circle',      key: 'booking.eventCancelled' },
+};
+
+const ISO_IN_TEXT = /\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}(:\d{2})?(\.\d+)?(Z|[+-]\d{2}:?\d{2})?/g;
+
+function formatDateTime(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  try {
+    return `${d.toLocaleDateString('en-CA', { weekday: 'short', month: 'short', day: 'numeric' })}, ${d.toLocaleTimeString('en-CA', { hour: 'numeric', minute: '2-digit' })}`;
+  } catch {
+    return iso;
+  }
+}
+
+// The backend writes notes like "Time set at posting: 2026-07-25T20:30:00+00:00".
+// Rewrite any ISO instant inside a note into the reader's local wall clock.
+export function humaniseNote(note) {
+  if (!note) return '';
+  return note.replace(ISO_IN_TEXT, (m) => formatDateTime(m));
+}
+
+export function eventTitle(eventType) {
+  const meta = EVENT_COPY[eventType];
+  return meta ? i18n.t(meta.key) : i18n.t('booking.eventGeneric');
+}
+
+export function eventIcon(eventType) {
+  return EVENT_COPY[eventType]?.icon || 'circle';
+}
+
+// ─── B15 — the progress bar must be earned, not elapsed ───────────────────────
+// "On the way" / "In progress" were lighting up on bookings where nothing had
+// happened, because the bar was driven by bookings.status — a column that
+// ConfirmDateCard alone flips to 'in_progress' the moment a DATE is confirmed
+// (components/ConfirmDateCard.js:103), long before anyone is in progress.
+//
+// booking_events is the trust spine (see the module docstring in
+// backend/app/api/booking_events.py): the provider physically taps On my way /
+// Arrived / Start / Complete and an immutable row is appended. Only those rows
+// may advance the bar. Nothing else — not the clock, not a scheduled date, not
+// a status column written by a side effect.
+const STAGE_FOR_EVENT = {
+  en_route: 'on_the_way',
+  arrived: 'on_the_way',
+  started: 'in_progress',
+  paused: 'in_progress',
+  resumed: 'in_progress',
+  completed: 'completed',
+};
+const STAGE_ORDER = ['confirmed', 'on_the_way', 'in_progress', 'completed'];
+
+export function stageFromEvents(events, bookingStatus) {
+  if (bookingStatus === 'cancelled') return 'cancelled';
+  // 'completed' is a terminal fact the bookings row also carries honestly
+  // (PATCH /bookings/{id}/complete writes it), so it is trusted directly.
+  if (bookingStatus === 'completed') return 'completed';
+
+  let best = 0; // 'confirmed' — the booking exists, that much is true
+  for (const ev of events || []) {
+    if (ev?.event_type === 'cancelled_event') return 'cancelled';
+    const stage = STAGE_FOR_EVENT[ev?.event_type];
+    if (!stage) continue;
+    const idx = STAGE_ORDER.indexOf(stage);
+    if (idx > best) best = idx;
+  }
+  return STAGE_ORDER[best];
 }
 
 function paymentPillStyle(status) {
@@ -232,6 +319,89 @@ function EscrowMilestones({ payment }) {
   );
 }
 
+// ─── Live status (humanised) ─────────────────────────────────────────────────
+// components/LiveStatusTimeline.js is the shared component this replaced on
+// this screen. It is untouched — another lane owns shared components this
+// session, and JobManagementScreen still renders it — but it is the source of
+// B16 (its COPY map has no entry for date_confirmed / dates_proposed, so it
+// falls through to `title: ev.event_type`, and it appends ev.note verbatim).
+// The same fix belongs there next.
+function LiveStatusCard({ events, status, onRetry }) {
+  if (status === 'loading') {
+    return (
+      <Surface elevation="subtle">
+        <Inline justify="center" spacing="sm">
+          <ActivityIndicator size="small" color={colors.accent} />
+          <Text variant="small" color="secondary">{i18n.t('common.loading')}</Text>
+        </Inline>
+      </Surface>
+    );
+  }
+
+  if (status === 'error') {
+    return (
+      <Surface elevation="subtle">
+        <Stack spacing="sm">
+          <Text variant="small" color="secondary">{i18n.t('booking.liveStatusError')}</Text>
+          <Pressable
+            onPress={onRetry}
+            accessibilityRole="button"
+            accessibilityLabel={i18n.t('common.retry')}
+            style={{ minHeight: 44, justifyContent: 'center' }}
+          >
+            <Text variant="smallMedium" color={colors.accentText}>{i18n.t('common.retry')}</Text>
+          </Pressable>
+        </Stack>
+      </Surface>
+    );
+  }
+
+  return (
+    <Surface elevation="subtle">
+      <Stack spacing="sm">
+        <Text variant="label" color="secondary" accessibilityRole="header">
+          {i18n.t('booking.liveStatus')}
+        </Text>
+
+        {!events.length ? (
+          <Text variant="small" color="secondary">
+            {i18n.t('booking.liveStatusEmpty')}
+          </Text>
+        ) : (
+          events.map((ev, i) => (
+            <Inline
+              key={ev.id || `${ev.event_type}-${i}`}
+              spacing="sm"
+              align="flex-start"
+              style={{ paddingVertical: spacing.xs }}
+            >
+              <View style={{
+                width: 26, height: 26, borderRadius: 13,
+                backgroundColor: colors.accentMuted,
+                alignItems: 'center', justifyContent: 'center',
+              }}>
+                <Feather
+                  name={eventIcon(ev.event_type)}
+                  size={14}
+                  color={colors.accentText}
+                  strokeWidth={1.8}
+                />
+              </View>
+              <Stack spacing={2} style={{ flex: 1 }}>
+                <Text variant="smallMedium">{eventTitle(ev.event_type)}</Text>
+                <Text variant="caption" color="secondary">
+                  {formatTime(ev.created_at)}
+                  {ev.note ? ` · ${humaniseNote(ev.note)}` : ''}
+                </Text>
+              </Stack>
+            </Inline>
+          ))
+        )}
+      </Stack>
+    </Surface>
+  );
+}
+
 // ─── Skeleton layout ──────────────────────────────────────────────────────────
 function BookingSkeleton() {
   return (
@@ -336,6 +506,23 @@ export default function BookingDetailsScreen({ route, navigation }) {
   const [payment, setPayment] = useState(null);
   const [status, setStatus] = useState('loading'); // loading | ready | error | deleted
 
+  // B15 / B16 — the live timeline is fetched here so the progress bar and the
+  // event list are driven by the same rows, and neither can disagree with the
+  // other or with reality.
+  const [events, setEvents] = useState([]);
+  const [eventsStatus, setEventsStatus] = useState('loading');
+
+  const fetchEvents = useCallback(async () => {
+    if (!bookingId) return;
+    try {
+      const res = await api.get(`/bookings/${bookingId}/events`);
+      setEvents(Array.isArray(res?.items) ? res.items : []);
+      setEventsStatus('ready');
+    } catch {
+      setEventsStatus((prev) => (prev === 'ready' ? 'ready' : 'error'));
+    }
+  }, [bookingId]);
+
   const fetchBooking = useCallback(async () => {
     if (!bookingId) { setStatus('deleted'); return; }
     setStatus('loading');
@@ -381,6 +568,13 @@ export default function BookingDetailsScreen({ route, navigation }) {
   }, [bookingId]);
 
   useEffect(() => { fetchBooking(); }, [fetchBooking]);
+
+  // Poll the event feed on the same 8s cadence the shared timeline used.
+  useEffect(() => {
+    fetchEvents();
+    const id = setInterval(fetchEvents, 8000);
+    return () => clearInterval(id);
+  }, [fetchEvents]);
 
   const handleShare = async () => {
     const link = `swingby://booking/${bookingId}`;
@@ -432,9 +626,12 @@ export default function BookingDetailsScreen({ route, navigation }) {
     });
   };
 
-  const [payInFlight, setPayInFlight] = useState(false);
   const [offPayVisible, setOffPayVisible] = useState(false);
   const [offPayInFlight, setOffPayInFlight] = useState(false);
+  // D5 — one primary CTA plus an overflow menu.
+  const [moreVisible, setMoreVisible] = useState(false);
+  // M9 — the SwingBy-branded pay sheet in front of the existing mechanism.
+  const [payVisible, setPayVisible] = useState(false);
 
   async function submitOffPlatform(method) {
     if (offPayInFlight) return;
@@ -451,32 +648,26 @@ export default function BookingDetailsScreen({ route, navigation }) {
     }
   }
 
+  // Runs from inside PaySheet: it owns the spinner, the declined chip and the
+  // re-enable, so this throws rather than toasting (PAYMENTS.md §States).
   const handlePay = async () => {
-    if (payInFlight) return;
-    setPayInFlight(true);
+    let res;
     try {
-      const res = await api.post(`/payments/stripe/checkout/${bookingId}`, {});
-      if (res?.url) {
-        await Linking.openURL(res.url);
-      } else {
-        toast.show({ type: 'error', text1: 'Could not start checkout' });
-      }
+      res = await api.post(`/payments/stripe/checkout/${bookingId}`, {});
     } catch (err) {
       const msg = err?.message ?? '';
       // The 503 path surfaces as the detail string ("Stripe is not configured…"),
       // not a status code, after the axios interceptor unwrap.
       if (msg.toLowerCase().includes('stripe is not configured') || msg.includes('STRIPE_SECRET_KEY')) {
-        toast.show({
-          type: 'error',
-          text1: 'Payments not enabled yet',
-          text2: 'Stripe sandbox is being configured.',
-        });
-      } else {
-        toast.show({ type: 'error', text1: 'Checkout failed', text2: msg });
+        throw new Error('Payments are not switched on yet. Nothing was charged.');
       }
-    } finally {
-      setPayInFlight(false);
+      throw new Error(msg || 'Could not start the payment. Try again.');
     }
+    if (!res?.url) throw new Error('Could not start the payment. Try again.');
+    await Linking.openURL(res.url);
+    setPayVisible(false);
+    // The capture lands via the Stripe webhook, so re-read on return.
+    fetchBooking();
   };
 
   // ── Loading state ──
@@ -540,6 +731,32 @@ export default function BookingDetailsScreen({ route, navigation }) {
   const canCancel =
     user?.role === 'client' && ['confirmed', 'on_the_way'].includes(booking?.status);
 
+  // B15 — earned, not elapsed.
+  const timelineStage = stageFromEvents(events, booking?.status);
+
+  const owesMoney =
+    user?.role === 'client' && isAwaitingPayment(payment) && booking?.status !== 'cancelled';
+  const isCompleted = booking?.status === 'completed';
+
+  // D5 — ONE primary CTA. Everything else moves behind the overflow. The old
+  // stacked column (Pay with card / Message / Cancel booking / Report a
+  // problem) took roughly a quarter of the viewport and covered the content it
+  // was about.
+  const primaryAction = owesMoney
+    ? { label: i18n.t('booking.payNow'), icon: 'credit-card', onPress: () => setPayVisible(true) }
+    : { label: i18n.t('booking.message'), icon: 'message-circle', onPress: handleMessage };
+
+  const overflowActions = [
+    owesMoney && { key: 'message', label: i18n.t('booking.message'), icon: 'message-circle', onPress: handleMessage },
+    user?.role === 'client' && isCompleted && { key: 'rebook', label: i18n.t('rebook.button'), icon: 'refresh-cw', onPress: handleRebook },
+    isCompleted && { key: 'receipt', label: i18n.t('booking.viewReceipt'), icon: 'file-text', onPress: () => navigation.navigate('Invoice', { bookingId }) },
+    isCompleted && isAwaitingPayment(payment) && { key: 'offplatform', label: i18n.t('booking.markPaidOffPlatform'), icon: 'dollar-sign', onPress: () => setOffPayVisible(true) },
+    canCancel && { key: 'cancel', label: i18n.t('booking.cancelBooking'), icon: 'x-circle', onPress: handleCancel },
+    (isCompleted || booking?.status === 'confirmed' || booking?.status === 'in_progress') && {
+      key: 'dispute', label: i18n.t('booking.reportProblem'), icon: 'alert-triangle', onPress: () => navigation.navigate('DisputeFlow', { bookingId }),
+    },
+  ].filter(Boolean);
+
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg, paddingTop: insets.top }}>
       {/* Header */}
@@ -564,11 +781,11 @@ export default function BookingDetailsScreen({ route, navigation }) {
           padding={0}
           style={{ paddingVertical: spacing.base, paddingHorizontal: spacing.sm }}
         >
-          <BookingStatusTimeline currentStatus={booking?.status ?? 'confirmed'} />
+          <BookingStatusTimeline currentStatus={timelineStage} />
         </Surface>
 
-        {/* Live Job Status — real-time provider events */}
-        <LiveStatusTimeline bookingId={bookingId} />
+        {/* Live Job Status — real-time provider events, humanised (B16) */}
+        <LiveStatusCard events={events} status={eventsStatus} onRetry={fetchEvents} />
 
         {/* Before / After photos — proof of work */}
         <BookingPhotos bookingId={bookingId} />
@@ -727,8 +944,8 @@ export default function BookingDetailsScreen({ route, navigation }) {
         {/* Escrow milestones — read-only (GAP-AUDIT #10) */}
         <EscrowMilestones payment={payment} />
 
-        {/* Spacer for bottom bar */}
-        <View style={{ height: 120 }} />
+        {/* Spacer for the (now single-row) bottom bar */}
+        <View style={{ height: 96 }} />
       </ScrollView>
 
       {/* Action buttons — bottom thumb-reach zone */}
@@ -747,82 +964,112 @@ export default function BookingDetailsScreen({ route, navigation }) {
           gap: spacing.sm + 2,
         }}
       >
-        {/* CARD-12 — Rebook. First action on a completed job: cheapest nudge
-            back on-platform for job #2 (audit faults I6/I2). */}
-        {user?.role === 'client' && booking?.status === 'completed' && (
-          <Button
-            variant="secondary"
-            label={i18n.t('rebook.button')}
-            onPress={handleRebook}
-            icon={<Feather name="refresh-cw" size={18} color={colors.textSecondary} />}
-          />
-        )}
-
-        {/* Offer to pay ONLY while the booking genuinely still owes money.
-            See isAwaitingPayment — a captured payment now reads 'held', and
-            testing for the retired 'paid_full' left this button on screen
-            after a successful charge, so a second tap opened a second Stripe
-            checkout. */}
-        {user?.role === 'client' && isAwaitingPayment(payment) && booking?.status !== 'cancelled' && (
+        {/* D5 — one primary CTA plus an overflow. The pay CTA still appears
+            ONLY while the booking genuinely owes money (isAwaitingPayment):
+            a captured payment reads 'held', and the retired 'paid_full' test
+            used to leave the button up after a successful charge, so a second
+            tap opened a SECOND Stripe checkout. That guard is unchanged. */}
+        <Inline spacing="sm" align="center">
           <Button
             variant="primary"
-            label={payInFlight ? 'Opening checkout…' : 'Pay with card'}
-            onPress={handlePay}
-            disabled={payInFlight}
-            icon={<Feather name="credit-card" size={18} color={colors.textPrimary} />}
+            label={primaryAction.label}
+            onPress={primaryAction.onPress}
+            icon={<Feather name={primaryAction.icon} size={18} color={colors.textPrimary} />}
+            style={{ flex: 1, minHeight: 52 }}
           />
-        )}
-
-        {/* D2.3 — off-platform mark-as-paid (only after completion, only if
-            unpaid). Same stale-vocabulary bug: after a card capture the status
-            is 'held', so this offered to ALSO record the job as paid in cash. */}
-        {booking?.status === 'completed' && isAwaitingPayment(payment) && (
-          <Button
-            variant="secondary"
-            label="Mark as paid (cash / e-transfer)"
-            onPress={() => setOffPayVisible(true)}
-            icon={<Feather name="dollar-sign" size={18} color={colors.textPrimary} />}
-          />
-        )}
-
-        {/* D2.2 — view receipt after completion */}
-        {booking?.status === 'completed' && (
-          <Button
-            variant="ghost"
-            label="View receipt"
-            onPress={() => navigation.navigate('Invoice', { bookingId })}
-            icon={<Feather name="file-text" size={18} color={colors.textPrimary} />}
-          />
-        )}
-
-        {/* Once the money is in, Message becomes the primary action. Was keyed
-            to the retired 'paid_full', so it never promoted itself again. */}
-        <Button
-          variant={hasBeenCharged(payment) ? 'primary' : 'ghost'}
-          label="Message"
-          onPress={handleMessage}
-          icon={<Feather name="message-circle" size={18} color={colors.textPrimary} />}
-        />
-
-        {canCancel && (
-          <Button
-            variant="ghost"
-            label="Cancel booking"
-            onPress={handleCancel}
-            style={{ minHeight: 44 }}
-          />
-        )}
-
-        {(booking?.status === 'completed' || booking?.status === 'confirmed' || booking?.status === 'in_progress') && (
-          <Button
-            variant="ghost"
-            label="Report a problem"
-            onPress={() => navigation.navigate('DisputeFlow', { bookingId })}
-            icon={<Feather name="alert-triangle" size={18} color={colors.textPrimary} />}
-            style={{ minHeight: 44 }}
-          />
-        )}
+          {overflowActions.length > 0 && (
+            <Pressable
+              onPress={() => setMoreVisible(true)}
+              accessibilityRole="button"
+              accessibilityLabel={i18n.t('booking.moreActionsA11y')}
+              style={({ pressed }) => [{
+                width: 52, height: 52, borderRadius: radius.button,
+                backgroundColor: colors.surfaceAlt,
+                borderWidth: 1, borderColor: colors.border,
+                alignItems: 'center', justifyContent: 'center',
+              }, pressed && { opacity: 0.9 }]}
+            >
+              <Feather name="more-horizontal" size={20} color={colors.textSecondary} strokeWidth={1.8} />
+            </Pressable>
+          )}
+        </Inline>
       </View>
+
+      {/* D5 — overflow menu */}
+      {moreVisible && (
+        <Pressable
+          style={{
+            position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+            backgroundColor: 'rgba(4,5,7,0.68)', justifyContent: 'flex-end',
+          }}
+          onPress={() => setMoreVisible(false)}
+          accessibilityRole="button"
+          accessibilityLabel="Close menu"
+        >
+          <Pressable
+            onPress={() => {}}
+            style={{
+              backgroundColor: colors.surface,
+              borderTopWidth: 1, borderColor: colors.border,
+              borderTopLeftRadius: 24, borderTopRightRadius: 24,
+              paddingTop: spacing.md,
+              paddingBottom: insets.bottom + spacing.lg,
+            }}
+          >
+            <View style={{
+              alignSelf: 'center', width: 38, height: 4,
+              borderRadius: radius.pill, backgroundColor: colors.border,
+              marginBottom: spacing.md,
+            }} />
+            {overflowActions.map((action, i) => (
+              <Pressable
+                key={action.key}
+                onPress={() => { setMoreVisible(false); action.onPress(); }}
+                accessibilityRole="button"
+                accessibilityLabel={action.label}
+                style={({ pressed }) => [{
+                  flexDirection: 'row', alignItems: 'center', gap: spacing.md,
+                  minHeight: 52,
+                  paddingHorizontal: spacing.lg - 4,
+                  borderTopWidth: i === 0 ? 0 : 1,
+                  borderTopColor: colors.border,
+                }, pressed && { backgroundColor: colors.surfaceAlt }]}
+              >
+                <Feather
+                  name={action.icon}
+                  size={18}
+                  color={action.key === 'dispute' || action.key === 'cancel'
+                    ? colors.danger
+                    : colors.textSecondary}
+                  strokeWidth={1.8}
+                />
+                <Text
+                  variant="smallMedium"
+                  color={action.key === 'dispute' || action.key === 'cancel' ? 'danger' : 'primary'}
+                >
+                  {action.label}
+                </Text>
+              </Pressable>
+            ))}
+          </Pressable>
+        </Pressable>
+      )}
+
+      {/* M9 — SwingBy-branded pay sheet in front of the existing mechanism */}
+      <PaySheet
+        visible={payVisible}
+        mode="pay"
+        amount={parseFloat(booking?.total_amount ?? booking?.quoted_price ?? booking?.price ?? 0) || 0}
+        summary={[booking?.category, formatDate(booking?.scheduled_at)].filter(Boolean).join(' · ')}
+        bookingId={bookingId}
+        method={CHECKOUT_METHOD}
+        onClose={() => setPayVisible(false)}
+        onAddMethod={() => {
+          setPayVisible(false);
+          navigation.navigate('PaymentMethod');
+        }}
+        onConfirm={handlePay}
+      />
 
       {/* D2.3 — off-platform pay modal */}
       {offPayVisible && (

@@ -78,6 +78,46 @@ function isMissingEndpoint(err) {
   );
 }
 
+// A caller-supplied quote, in the shape PAYMENTS.md's component sketch uses:
+//   { summary, subtotal, fee, total, method }
+// Accepted verbatim so a caller that already priced the job server-side (Lane
+// 2's quote card, which has the interest row in hand) can hand it straight in.
+// Still no arithmetic here: subtotal and fee are rendered as given, and `total`
+// is whatever the caller's server said — it is never recomputed from the parts.
+export function quoteFromProp(quote, mode) {
+  if (!quote) return null;
+  const lines = [];
+  if (Array.isArray(quote.lines) && quote.lines.length) {
+    quote.lines.forEach((l, i) => {
+      if (l && l.value != null) {
+        lines.push({ key: l.key || `line-${i}`, label: l.label || '', value: l.value });
+      }
+    });
+  } else {
+    if (quote.subtotal != null) {
+      lines.push({
+        key: 'subtotal',
+        label: mode === 'hold' ? i18n.t('pay.jobTotal') : i18n.t('pay.quote'),
+        value: quote.subtotal,
+      });
+    }
+    if (quote.fee != null) {
+      lines.push({ key: 'fee', label: i18n.t('pay.serviceFee'), value: quote.fee });
+    }
+  }
+
+  return {
+    summary: quote.summary || '',
+    lines,
+    total: quote.total,
+    totalLabel:
+      quote.totalLabel ||
+      (mode === 'hold' ? i18n.t('pay.onHoldToday') : i18n.t('pay.total')),
+    method: quote.method || null,
+    provisional: false,
+  };
+}
+
 function normaliseQuote(res, fallbackSummary, mode) {
   const lines = Array.isArray(res.lines)
     ? res.lines
@@ -252,11 +292,20 @@ function PaymentMethodRow({ method, declined, onAddMethod }) {
 
 // ─── PaySheet ────────────────────────────────────────────────────────────────
 /**
+ * Two ways to give the sheet its figures. Both are supported; `quote` wins.
+ *
+ *   A) quote  — the documented PAYMENTS.md prop. Pass a server-priced object:
+ *               { summary, subtotal, fee, total, method }. The sheet renders it
+ *               as-is and does not price anything itself.
+ *   B) amount + summary — the sheet asks the server (POST /payments/quote) and
+ *               manages its own loading / error / stale-total states.
+ *
  * @param {boolean}  visible
  * @param {'hold'|'pay'} mode
- * @param {number}   amount     server-held amount for this job
- * @param {string}   summary    "Deep clean · Sat, Jul 11"
- * @param {object}   [method]   { brand, last4, exp_month, exp_year } or null
+ * @param {object}   [quote]    server-priced { summary, subtotal, fee, total, method }
+ * @param {number}   [amount]   server-held amount, when the sheet should price it
+ * @param {string}   [summary]  "Deep clean · Sat, Jul 11"
+ * @param {object}   [method]   { brand, last4, exp_month, exp_year }, CHECKOUT_METHOD, or null
  * @param {string}   [bookingId]
  * @param {string}   [interestId]
  * @param {Function} onClose
@@ -267,9 +316,10 @@ function PaymentMethodRow({ method, declined, onAddMethod }) {
 export default function PaySheet({
   visible,
   mode = 'hold',
+  quote: quoteProp,
   amount,
   summary,
-  method = null,
+  method,
   bookingId,
   interestId,
   onClose,
@@ -290,7 +340,12 @@ export default function PaySheet({
     return () => { alive.current = false; };
   }, []);
 
+  // A caller-supplied quote needs no fetch and must never be re-priced behind
+  // the caller's back.
+  const external = quoteFromProp(quoteProp, mode);
+
   const load = useCallback(async () => {
+    if (quoteProp) { setQuote(quoteFromProp(quoteProp, mode)); return; }
     setLoading(true);
     setLoadError('');
     try {
@@ -303,6 +358,10 @@ export default function PaySheet({
     } finally {
       if (alive.current) setLoading(false);
     }
+    // quoteProp is intentionally read fresh, not depended on — the effect below
+    // re-runs on `visible` and a caller changing figures mid-sheet is the
+    // stale-amount case, handled at confirm time.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode, amount, bookingId, interestId, summary]);
 
   // Fetch on open; wipe transient state on close so a reopen is never showing
@@ -318,7 +377,13 @@ export default function PaySheet({
     load();
   }, [visible, load]);
 
-  const canConfirm = !!quote && !!method && !busy && !loading;
+  // Resolution order: the `method` prop, then whatever the quote carries, then
+  // the mechanism that exists today. Pass `method={null}` explicitly to force
+  // the no-card-on-file state.
+  const activeMethod =
+    method !== undefined ? method : (quote?.method || external?.method || CHECKOUT_METHOD);
+
+  const canConfirm = !!quote && !!activeMethod && !busy && !loading;
 
   async function handleConfirm() {
     if (!canConfirm) return;
@@ -328,10 +393,13 @@ export default function PaySheet({
     try {
       // Never charge a stale amount (PAYMENTS.md §States). Re-price immediately
       // before charging; if the total moved under the client, stop and show the
-      // new figure instead of taking the old one.
-      const fresh = await fetchPayQuote({ mode, amount, bookingId, interestId, summary });
+      // new figure instead of taking the old one. A caller-supplied quote is
+      // the caller's to re-price — we just don't touch it.
+      const fresh = quoteProp
+        ? quote
+        : await fetchPayQuote({ mode, amount, bookingId, interestId, summary });
       if (!alive.current) return;
-      if (quote && fresh.total !== quote.total) {
+      if (!quoteProp && quote && fresh.total !== quote.total) {
         setQuote(fresh);
         setStale(true);
         setBusy(false);
@@ -421,7 +489,7 @@ export default function PaySheet({
                 {i18n.t('pay.payWith')}
               </Text>
               <PaymentMethodRow
-                method={method}
+                method={activeMethod}
                 declined={!!error}
                 onAddMethod={onAddMethod}
               />
@@ -479,7 +547,7 @@ export default function PaySheet({
               )}
             </Pressable>
 
-            {!method && (
+            {!activeMethod && (
               <Text style={styles.noMethodHint}>{i18n.t('pay.noMethodHint')}</Text>
             )}
           </ScrollView>
