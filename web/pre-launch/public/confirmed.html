@@ -483,6 +483,18 @@
 
         var params = new URLSearchParams(window.location.search);
 
+        // 0. Supabase's implicit confirm flow returns the session in the URL
+        //    FRAGMENT (#access_token=...&refresh_token=...), which never reaches
+        //    the server. Fold it into the same bag as the query string so the
+        //    deep link below can carry a real session into the app. A fragment
+        //    that is one of our own state markers is left alone.
+        var rawHash = (window.location.hash || "").replace(/^#/, "");
+        if (rawHash && rawHash.indexOf("=") !== -1) {
+          new URLSearchParams(rawHash).forEach(function (value, key) {
+            if (!params.has(key)) params.set(key, value);
+          });
+        }
+
         // 1. Map the server's ?state= / ?status= onto the CSS :target fragment,
         //    so the confirm endpoint can redirect to a plain query string.
         if (!window.location.hash) {
@@ -516,7 +528,7 @@
         //    of a login screen. The app side still has to claim `token` and
         //    route on `next`; see the report / README for the exact config.
         var deepLinkParams = new URLSearchParams();
-        ["token", "role", "next", "email"].forEach(function (key) {
+        ["access_token", "refresh_token", "token_hash", "type", "code", "token", "role", "next", "email"].forEach(function (key) {
           var value = params.get(key);
           if (value) deepLinkParams.set(key, value);
         });
