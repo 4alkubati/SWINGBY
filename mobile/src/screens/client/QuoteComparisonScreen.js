@@ -1,8 +1,8 @@
 import {
-  View, ScrollView, StyleSheet, Pressable,
+  View, ScrollView, StyleSheet, Pressable, Linking,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Animated, {
   useSharedValue, useAnimatedStyle, withSpring,
 } from 'react-native-reanimated';
@@ -14,7 +14,7 @@ import Avatar from '../../components/Avatar';
 import Surface from '../../components/Surface';
 import Stack from '../../components/Stack';
 import Inline from '../../components/Inline';
-import BottomSheet from '../../components/BottomSheet';
+import PaySheet, { CHECKOUT_METHOD } from '../../components/PaySheet';
 import EmptyState from '../../components/EmptyState';
 import { SkeletonCard } from '../../components/Skeleton';
 import { RatingStarsDisplay } from '../../components/RatingStars';
@@ -36,13 +36,17 @@ function QuoteSkeletons() {
 }
 
 // ─── Empty state ─────────────────────────────────────────────────────────────
+// B9 — "ends on a screen reading 0 business quotes". This is no longer where a
+// request lands (that's RequestSentScreen now), but it is still where "View
+// job" goes seconds after posting, so the empty state has to read as waiting,
+// not as failure.
 function QuotesEmpty() {
   return (
     <View style={styles.emptyContainer}>
       <EmptyState
         icon="clock"
-        title="No quotes yet"
-        body={"Businesses in your area will respond shortly.\nCheck back in a few minutes."}
+        title="Waiting on quotes"
+        body={'Nearby pros have been notified. Most reply within a couple of hours — we’ll ping you the moment one does.'}
       />
     </View>
   );
@@ -142,9 +146,13 @@ function QuoteListCard({ quote, isRecommended, onSelect, onViewProfile, onMessag
               <Text variant="h1" style={styles.priceValue}>
                 ${quote.quoted_price}
               </Text>
+              {/* PAYMENTS.md §Path B: the CTA carries no figure. The quoted
+                  price above it is the business's bid — the thing the client
+                  is comparing — not a total. The total (bid + client-side
+                  service fee) exists only inside the sheet. */}
               <Button
                 variant={isRecommended ? 'primary' : 'secondary'}
-                label="Select"
+                label={i18n.t('quotes.acceptAndPay')}
                 onPress={onSelect}
                 style={styles.selectBtn}
               />
@@ -174,45 +182,16 @@ function QuoteListCard({ quote, isRecommended, onSelect, onViewProfile, onMessag
   );
 }
 
-// ─── Confirm BottomSheet ──────────────────────────────────────────────────────
-function ConfirmSheet({ visible, quote, onConfirm, onClose, confirming }) {
-  if (!quote) return null;
-  const businessName = quote.businesses?.business_name || 'this business';
-
-  return (
-    <BottomSheet visible={visible} onClose={onClose} snapPoints={[0.38]}>
-      <Stack spacing="lg" style={styles.sheetInner}>
-        <Stack spacing="sm">
-          <Text variant="h1">Confirm booking</Text>
-          <Text variant="body" color="secondary">
-            You're about to book{' '}
-            <Text variant="bodyMedium">{businessName}</Text>
-            {' '}for{' '}
-            <Text variant="bodyMedium" style={styles.priceInline}>${quote.quoted_price}</Text>.
-          </Text>
-        </Stack>
-
-        <Inline spacing="sm">
-          <Button
-            variant="secondary"
-            label="Cancel"
-            onPress={onClose}
-            disabled={confirming}
-            style={{ flex: 1 }}
-          />
-          <Button
-            variant="primary"
-            label="Confirm"
-            onPress={onConfirm}
-            loading={confirming}
-            disabled={confirming}
-            style={{ flex: 1 }}
-          />
-        </Inline>
-      </Stack>
-    </BottomSheet>
-  );
-}
+// The bespoke "Confirm booking" BottomSheet that used to live here is gone.
+// It quoted "$204" in a note before any pay surface opened (the one thing
+// PAYMENTS.md forbids), it had no breakdown, no escrow copy and no declined
+// state, and it was a second payment surface to maintain. Both paths now open
+// the one shared PaySheet.
+//
+// It was also a crash surface: BottomSheet's exit animation runs while the
+// component returns null on the same tick that handleConfirm calls
+// navigation.replace() — a Reanimated animation targeting a shadow node that
+// React is detaching, on the screen Sentry caught deadlocking (SEN-2).
 
 // ─── Main screen ─────────────────────────────────────────────────────────────
 export default function QuoteComparisonScreen({ navigation, route }) {
@@ -223,11 +202,16 @@ export default function QuoteComparisonScreen({ navigation, route }) {
   const [quotes, setQuotes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
-  const [confirming, setConfirming] = useState(false);
 
   // Sheet state
   const [sheetVisible, setSheetVisible] = useState(false);
   const [selectedQuote, setSelectedQuote] = useState(null);
+
+  const alive = useRef(true);
+  useEffect(() => {
+    alive.current = true;
+    return () => { alive.current = false; };
+  }, []);
 
   // Decline state — tracks which quote id is mid-flight so its button can spin
   const [decliningId, setDecliningId] = useState(null);
@@ -271,36 +255,49 @@ export default function QuoteComparisonScreen({ navigation, route }) {
   // same chat opens as the "disappearing" pre-confirm chat — a banner asks
   // for a time and the propose/accept handshake (ConfirmDateCard) runs right
   // there; once a date is confirmed the banner drops and it's the booking chat.
+  // PaySheet owns the busy/error UI: throwing from here shows the message
+  // inside the sheet on the declined-chip and re-enables the CTA, exactly as
+  // PAYMENTS.md §States describes. No try/catch, no second error surface.
   async function handleConfirm() {
     if (!selectedQuote) return;
-    setConfirming(true);
-    try {
-      // Response shape: { message, booking, payment }
-      const res = await api.patch(`/interests/${selectedQuote.id}/accept`);
-      const bookingId = res?.booking?.id;
-      setSheetVisible(false);
-      if (bookingId) {
-        navigation.replace('Chat', {
-          bookingId,
-          otherPartyName: selectedQuote.businesses?.business_name || 'Business',
-        });
+
+    // Charge-then-accept is what PAYMENTS.md asks for. It is not reachable
+    // from the client: POST /payments/stripe/checkout/{booking_id} needs a
+    // booking, and the only thing that creates one is
+    // PATCH /interests/{id}/accept. So accept runs first and payment
+    // immediately after, and the booking sits at payment_status
+    // 'pending_payment' in between — which is the state BookingDetailsScreen
+    // already renders honestly. Closing the gap needs a backend endpoint that
+    // authorises against the interest before creating the booking; the client
+    // ordering here is one call away from correct once it exists.
+    const res = await api.patch(`/interests/${selectedQuote.id}/accept`);
+    const bookingId = res?.booking?.id;
+
+    if (bookingId) {
+      const checkout = await api.post(`/payments/stripe/checkout/${bookingId}`, {});
+      if (checkout?.url) {
+        await Linking.openURL(checkout.url);
       } else {
-        // Booking was created but id missing — land on My Jobs so it's visible
+        throw new Error('Could not start the payment. Try again from the booking.');
+      }
+    }
+
+    if (!alive.current) return;
+    setSheetVisible(false);
+    toast.show({ type: 'success', text1: i18n.t('quotes.accepted') });
+
+    // Landing is a separate tick from closing the sheet — a navigation
+    // transition must not share a commit with a modal teardown (SEN-2).
+    const name = selectedQuote.businesses?.business_name || 'Business';
+    requestAnimationFrame(() => {
+      if (!alive.current) return;
+      if (bookingId) {
+        navigation.replace('Chat', { bookingId, otherPartyName: name });
+      } else {
         navigation.navigate('ClientTabs', { screen: 'My Jobs' });
       }
-    } catch (err) {
-      // Close sheet and surface error inline
-      setSheetVisible(false);
-      setLoadError(false); // keep quotes visible
-      // Re-use a simple inline error — show as a caption under the list
-      setConfirmError(err.message || 'Could not confirm booking. Try again.');
-    } finally {
-      setConfirming(false);
-    }
+    });
   }
-
-  // Inline confirm error
-  const [confirmError, setConfirmError] = useState('');
 
   // ── Decline a quote — G1 (GAP-AUDIT #1). PATCH /interests/{id}/reject exists
   // on the backend but had no mobile caller; businesses' pending quotes hung
@@ -342,7 +339,11 @@ export default function QuoteComparisonScreen({ navigation, route }) {
         </Pressable>
         <Stack spacing="xs" style={styles.headerCenter}>
           <Text variant="h1" style={styles.headerTitle}>
-            {loading ? 'Loading quotes…' : `${quotes.length} ${quotes.length === 1 ? 'business' : 'businesses'} quoted`}
+            {loading
+              ? 'Loading quotes…'
+              : quotes.length === 0
+                ? 'Your job'
+                : `${quotes.length} ${quotes.length === 1 ? 'business' : 'businesses'} quoted`}
           </Text>
           {postTitle ? (
             <Text variant="caption" color="secondary" numberOfLines={1}>
@@ -371,17 +372,10 @@ export default function QuoteComparisonScreen({ navigation, route }) {
             Sorted by best rating × price. Tap a name to view profile.
           </Text>
 
-          {confirmError ? (
-            <Surface
-              elevation="none"
-              background="alt"
-              rounded="input"
-              padding="sm"
-              style={styles.confirmErrorBanner}
-            >
-              <Text variant="small" color="danger">{confirmError}</Text>
-            </Surface>
-          ) : null}
+          {/* Pre-sheet copy states the rule instead of quoting a total. */}
+          <Text variant="caption" color="secondary" style={styles.sortHint}>
+            {i18n.t('quotes.payFirstNote')}
+          </Text>
 
           <Stack spacing="sm">
             {quotes.map((quote, index) => (
@@ -407,13 +401,23 @@ export default function QuoteComparisonScreen({ navigation, route }) {
         </ScrollView>
       )}
 
-      {/* ── Confirm BottomSheet ───────────────────────────────────────────── */}
-      <ConfirmSheet
-        visible={sheetVisible}
-        quote={selectedQuote}
-        onConfirm={handleConfirm}
+      {/* ── The one shared pay sheet — Path B ─────────────────────────────── */}
+      <PaySheet
+        visible={sheetVisible && !!selectedQuote}
+        mode="pay"
+        amount={Number(selectedQuote?.quoted_price) || 0}
+        summary={[
+          selectedQuote?.businesses?.business_name,
+          postTitle,
+        ].filter(Boolean).join(' · ')}
+        interestId={selectedQuote?.id}
+        method={CHECKOUT_METHOD}
         onClose={() => setSheetVisible(false)}
-        confirming={confirming}
+        onAddMethod={() => {
+          setSheetVisible(false);
+          navigation.navigate('PaymentMethod');
+        }}
+        onConfirm={handleConfirm}
       />
     </View>
   );
@@ -440,9 +444,6 @@ const styles = StyleSheet.create({
 
   // Sort hint
   sortHint: { textAlign: 'center', marginBottom: spacing.sm },
-
-  // Error banner
-  confirmErrorBanner: { marginBottom: spacing.sm },
 
   // List
   listContent: {
@@ -481,10 +482,6 @@ const styles = StyleSheet.create({
     color: colors.success,
     fontVariant: ['tabular-nums'],
   },
-  priceInline: {
-    color: colors.success,
-    fontFamily: 'SpaceGrotesk_700Bold',
-  },
 
   // Empty / error
   emptyContainer: {
@@ -492,10 +489,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: spacing.xl,
-  },
-
-  // BottomSheet inner content
-  sheetInner: {
-    paddingTop: spacing.sm,
   },
 });
