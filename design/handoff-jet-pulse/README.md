@@ -1,5 +1,7 @@
 # Handoff: SwingBy Mobile UI Repolish ("Jet × Pulse" direction)
 
+> Also read `POLISH-TIPS.md` in this folder — craft-level rules and a per-screen self-review checklist. Both files are binding.
+
 ## Overview
 This package documents a visual repolish of the SwingBy mobile app (React Native / Expo, `mobile/` in the monorepo). The chosen direction is **2a "Jet × Pulse"**: the existing dark token system executed with far more discipline — solid surfaces, square 12px buttons, purple reserved for actions and live states — plus selected "live energy" moments (glow headers, map preview, gradient earnings card).
 
