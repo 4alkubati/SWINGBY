@@ -576,6 +576,79 @@ class TestInterestMessagesMasksClientSenderPreAcceptance:
         assert client_msg["users"]["last_name"] == "Client"
 
 
+# ── GET /bookings/{id} — the unlock, post-acceptance ────────────────────────
+#
+# The other half of the rule: everything the feed hides must still arrive, in
+# full, for the business that actually WON the job. If this ever regressed the
+# masking would look like a fix and be a broken product.
+
+
+BOOKING_ROW = {
+    "id": "booking-1",
+    "client_id": "client-1",
+    "business_id": "biz-1",
+    "total_amount": 150.0,
+    "status": "confirmed",
+    "users": {"first_name": "Jane", "last_name": "Client", "avatar_url": "a.png"},
+    "service_posts": {
+        "title": "Need a plumber",
+        "address": FULL_ADDRESS,
+        "lat": 51.128456,
+        "lng": -114.098765,
+    },
+}
+
+
+class TestWinningBusinessGetsEverything:
+    def test_booking_returns_full_name_and_exact_address(self, test_client, as_owner):
+        bookings_stub = SupabaseTableStub(select_data=dict(BOOKING_ROW))
+        businesses_stub = SupabaseTableStub(select_data={"id": "biz-1"})
+        payments_stub = SupabaseTableStub(select_data=[])
+
+        with patch("app.api.bookings.supabase") as mock_supabase:
+            mock_supabase.table.side_effect = _multi_table(
+                {
+                    "bookings": bookings_stub,
+                    "businesses": businesses_stub,
+                    "payments": payments_stub,
+                }
+            )
+            response = test_client.get(
+                "/bookings/booking-1", headers={"Authorization": "Bearer test-token"}
+            )
+
+        assert response.status_code == 200
+        body = response.json()
+        assert body["users"]["first_name"] == "Jane"
+        assert body["users"]["last_name"] == "Client"
+        assert body["users"]["avatar_url"] == "a.png"
+        assert body["service_posts"]["address"] == FULL_ADDRESS
+        assert body["service_posts"]["lat"] == 51.128456
+        assert body["client_id"] == "client-1"
+
+    def test_a_different_business_is_denied(self, test_client, as_owner):
+        bookings_stub = SupabaseTableStub(select_data=dict(BOOKING_ROW))
+        # This owner's business is biz-2 — not the one on the booking.
+        businesses_stub = SupabaseTableStub(select_data={"id": "biz-2"})
+        payments_stub = SupabaseTableStub(select_data=[])
+
+        with patch("app.api.bookings.supabase") as mock_supabase:
+            mock_supabase.table.side_effect = _multi_table(
+                {
+                    "bookings": bookings_stub,
+                    "businesses": businesses_stub,
+                    "payments": payments_stub,
+                }
+            )
+            response = test_client.get(
+                "/bookings/booking-1", headers={"Authorization": "Bearer test-token"}
+            )
+
+        assert response.status_code == 403
+        assert "Jane" not in response.text
+        assert "123 Main St" not in response.text
+
+
 # ── app.privacy unit tests ───────────────────────────────────────────────────
 
 
