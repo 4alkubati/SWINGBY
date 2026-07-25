@@ -769,6 +769,8 @@ const lane3 = {
   'pay.change': 'Change',
   'pay.expires': 'Expires %{date}',
   'pay.savedCard': 'Saved card',
+  'pay.methodCard': 'Card',
+  'pay.methodCardSub': 'Entered securely on the next step — SwingBy never stores it.',
   'pay.addMethod': 'Add a payment method',
   'pay.noMethodHint': 'Add a card to continue. Nothing is charged until you confirm.',
   'pay.escrow':

@@ -1,12 +1,12 @@
 import {
   View, ScrollView, KeyboardAvoidingView, Platform, StyleSheet, Modal,
-  TouchableOpacity, ActivityIndicator, Alert, Image,
+  TouchableOpacity, ActivityIndicator, Alert, Image, BackHandler,
 } from 'react-native';
-import { useState, useRef, useEffect } from 'react';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
-  useSharedValue, useAnimatedStyle, withSpring, withTiming, Easing,
+  useSharedValue, useAnimatedStyle, withTiming, Easing,
 } from 'react-native-reanimated';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
@@ -20,11 +20,17 @@ import Stack from '../../components/Stack';
 import Surface from '../../components/Surface';
 import Chip from '../../components/Chip';
 import Inline from '../../components/Inline';
+import HeaderGlow from '../../components/HeaderGlow';
+import PaySheet, { CHECKOUT_METHOD, formatMoneyShort } from '../../components/PaySheet';
 
 import { api, uploadFile } from '../../services/api';
 import i18n from '../../i18n';
-import { colors, spacing, radius } from '../../theme/tokens';
+import { colors, spacing, radius, motion } from '../../theme/tokens';
 import { CATEGORY_LABELS as CATEGORIES } from '../../constants/categories';
+
+// Lateral step travel. MOTION.md has no "step change" entry; 24px matches the
+// 20px translateY the grammar uses for Slide Up, kept subtle deliberately.
+const SLIDE_PX = 24;
 
 // UBER-6 — off-taxonomy jobs (e.g. massage) file under "General" instead of
 // getting shoehorned into a trades category. This is deliberately NOT added
@@ -34,7 +40,29 @@ import { CATEGORY_LABELS as CATEGORIES } from '../../constants/categories';
 // client-post-only escape hatch, so it lives here, local to the picker.
 const OTHER_CATEGORY = 'General';
 
-const GOOGLE_PLACES_KEY = process.env.EXPO_PUBLIC_GOOGLE_PLACES_KEY || '';
+// B6 — "address autocomplete never appears on the post-a-job form".
+//
+// Root cause: EXPO_PUBLIC_GOOGLE_PLACES_KEY has never been set — not in
+// mobile/.env.example, not in mobile/.env.production, not in eas.json. Both
+// this screen AND BusinessSetupScreen gate the autocomplete on that variable
+// and silently fall back to a plain text box when it is empty, so the
+// autocomplete branch is dead code in every build shipped so far. (See the
+// RO-0 note in mobile/.env.example, which says the same thing.) There is no
+// "working implementation in business onboarding" to port: the two call sites
+// are prop-for-prop identical, and neither renders suggestions today.
+//
+// Two things are fixed here:
+//   1. Accept the maps key as a fallback source, so setting ONE variable turns
+//      the autocomplete on everywhere instead of two near-identical names.
+//   2. When the key IS present, make the dropdown actually visible. The
+//      library's default `container` style is flex:1, which collapses to zero
+//      height inside a ScrollView's auto-height content container, leaving the
+//      results list no room to draw. flex:0 + an explicit listView surface
+//      fixes that, and elevation/zIndex keep it above the fields beneath it.
+const GOOGLE_PLACES_KEY =
+  process.env.EXPO_PUBLIC_GOOGLE_PLACES_KEY ||
+  process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY ||
+  '';
 
 const MAX_PHOTOS = 5;
 
@@ -170,8 +198,24 @@ function StepLabels({ step, steps }) {
 }
 
 // ─── Animated step panel ──────────────────────────────────────────────────────
-function StepPanel({ children, direction }) {
-  const translateX = useSharedValue(direction * 300);
+// B19 — the details → budget transition "boinged". Two reasons, both fixed here.
+//
+// 1. MOTION.md §Forbidden: "No bounces (overdamped springs only — damping ≥
+//    20)". The panel slid 300px on a spring, which overshoots and rings on a
+//    travel that long no matter the damping. The grammar's Entry curve is
+//    ease-out / 240ms, and a step change is a *lateral* move, so: translateX
+//    24 → 0 with Easing.out(Easing.cubic) over motion.entryDuration. Subtle
+//    slide, no overshoot, direction-aware so Back reads as going back.
+//
+// 2. SEN-2 / B8 — the animation used to be kicked off from inside a
+//    `useState(initialiser)` call, i.e. DURING RENDER. Writing a Reanimated
+//    shared value in the render phase makes Reanimated commit into the same
+//    shadow tree React is already committing; on Fabric that is a re-entrant
+//    ShadowTree::mount on one std::mutex, which is exactly the futex deadlock
+//    Sentry captured. Shared values are now written from an effect (commit
+//    phase), which is the only supported place to write them.
+function StepPanel({ children, direction = 1 }) {
+  const translateX = useSharedValue(direction * SLIDE_PX);
   const opacity = useSharedValue(0);
 
   const style = useAnimatedStyle(() => ({
@@ -179,10 +223,18 @@ function StepPanel({ children, direction }) {
     opacity: opacity.value,
   }));
 
-  useState(() => {
-    translateX.value = withSpring(0, { stiffness: 260, damping: 26 });
-    opacity.value = withTiming(1, { duration: 180, easing: Easing.out(Easing.cubic) });
-  });
+  useEffect(() => {
+    translateX.value = withTiming(0, {
+      duration: motion.entryDuration,
+      easing: Easing.out(Easing.cubic),
+    });
+    opacity.value = withTiming(1, {
+      duration: motion.entryDuration,
+      easing: Easing.out(Easing.cubic),
+    });
+    // Runs once per mounted step — each step gets its own StepPanel instance.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <Animated.View style={[{ flex: 1 }, style]}>
@@ -344,7 +396,7 @@ function StepCategory({ category, setCategory }) {
 
 // ─── Step 1: Details ─────────────────────────────────────────────────────────
 function StepDetails({
-  description, setDescription, address, setAddress, descError,
+  description, setDescription, address, setAddress, descError, addressError,
   setAddressLat, setAddressLng, placesRef,
   photos, setPhotos, photoUploading, setPhotoUploading,
 }) {
@@ -374,7 +426,7 @@ function StepDetails({
           {GOOGLE_PLACES_KEY && Platform.OS !== 'web' ? (
             <View style={styles.placesWrapper}>
               <Text variant="caption" color="secondary" style={styles.placesLabel}>
-                Address (where's the job?)
+                {i18n.t('postJob.addressLabel')}
               </Text>
               <GooglePlacesAutocomplete
                 ref={placesRef}
@@ -389,22 +441,40 @@ function StepDetails({
                 }}
                 query={{ key: GOOGLE_PLACES_KEY, language: 'en', components: 'country:ca' }}
                 styles={{
+                  // B6 — the library's default container is flex:1, which has
+                  // no height inside a ScrollView content container, so the
+                  // results list had nowhere to render.
+                  container: { flex: 0 },
                   textInput: {
                     fontFamily: 'Inter_400Regular',
                     fontSize: 16,
                     color: colors.textPrimary,
                     backgroundColor: colors.surface,
                     borderWidth: 1,
-                    borderColor: colors.border,
+                    borderColor: addressError ? colors.danger : colors.border,
                     borderRadius: radius.input,
                     paddingHorizontal: spacing.base,
                     paddingVertical: spacing.md,
                     height: 52,
                   },
-                  listView: { borderRadius: radius.card, marginTop: 4 },
-                  row: { backgroundColor: colors.surface },
+                  textInputContainer: { backgroundColor: 'transparent' },
+                  listView: {
+                    borderRadius: radius.input,
+                    marginTop: spacing.xs,
+                    backgroundColor: colors.surface,
+                    borderWidth: 1,
+                    borderColor: colors.border,
+                    overflow: 'hidden',
+                    zIndex: 10,
+                    elevation: 10,
+                  },
+                  row: {
+                    backgroundColor: colors.surface,
+                    paddingVertical: 14,
+                    paddingHorizontal: spacing.base,
+                  },
                   description: { color: colors.textPrimary, fontFamily: 'Inter_400Regular' },
-                  separator: { backgroundColor: colors.border },
+                  separator: { height: 1, backgroundColor: colors.border },
                 }}
                 textInputProps={{
                   // Do NOT pass `value` here — the library's own textInput is
@@ -438,15 +508,28 @@ function StepDetails({
                 // stay tappable (that's a separate concern from list-scrolling).
                 disableScroll
               />
+              {!!addressError && (
+                <Text variant="caption" color="danger">{addressError}</Text>
+              )}
             </View>
           ) : (
-            <TextField
-              label="Address (where's the job?)"
-              value={address}
-              onChangeText={setAddress}
-              placeholder="123 Main St SW, Calgary"
-              autoCapitalize="words"
-            />
+            // No Places key in this build. The backend geocodes the typed
+            // address server-side (app/services/geocoding.py), so a plain field
+            // is a complete path, not a stub — say so instead of leaving the
+            // client wondering why nothing drops down.
+            <Stack spacing="xs">
+              <TextField
+                label={i18n.t('postJob.addressLabel')}
+                value={address}
+                onChangeText={setAddress}
+                placeholder="123 Main St SW, Calgary"
+                autoCapitalize="words"
+                error={addressError}
+              />
+              <Text variant="caption" color="secondary">
+                {i18n.t('postJob.addressHint')}
+              </Text>
+            </Stack>
           )}
 
           {/* Photo upload */}
@@ -641,39 +724,47 @@ function StepBudget({ budget, setBudget, date, setDate, time, setTime }) {
   );
 }
 
-// ─── Step 3: Confirm ─────────────────────────────────────────────────────────
+// ─── Step 3: Review ──────────────────────────────────────────────────────────
+// PAYMENTS.md §Path A specifics: summary card (Service / When / Where / Your
+// budget — budget green Space Grotesk), escrow explainer, sticky footer CTA
+// "Post job & pay".
+//
+// The CTA carries NO figure — that is the one rule keeping the two payment
+// paths from disagreeing about price (PAYMENTS.md §The rule). "Your budget" in
+// the summary is the client's own input echoed back, not a total; the total
+// (budget + client-side service fee) exists only inside the sheet.
 function StepConfirm({ category, description, address, budget, date, time, photos, onSubmit, submitting, targetBusinessName }) {
   const rows = [
     // On the targeted "Book now" flow the client never picked a category (it's
     // derived from the business server-side), so show the business instead.
     targetBusinessName
-      ? { label: 'Business', value: targetBusinessName }
-      : { label: 'Category', value: category || 'General' },
-    { label: 'Description', value: description || '—' },
-    { label: 'Address', value: address || '—' },
-    { label: 'Budget', value: budget ? `$${budget}` : '—' },
-    { label: 'Date', value: date ? formatDate(date) : 'Any day' },
-    { label: 'Time', value: time ? formatTime(time) : 'Any time' },
+      ? { key: 'business', label: i18n.t('postJob.rowBusiness'), value: targetBusinessName }
+      : { key: 'service', label: i18n.t('postJob.rowService'), value: category || 'General' },
+    { key: 'detail', label: 'Details', value: description || '—' },
+    {
+      key: 'when',
+      label: i18n.t('postJob.rowWhen'),
+      value: `${date ? formatDate(date) : 'Any day'} · ${time ? formatTime(time) : 'Any time'}`,
+    },
+    { key: 'where', label: i18n.t('postJob.rowWhere'), value: address || '—' },
   ];
 
   return (
     <StepPanel direction={1}>
       <Stack spacing="lg">
         <Stack spacing="sm">
-          <Text variant="display3">
-            {targetBusinessName ? 'Ready to send?' : 'Ready to post?'}
-          </Text>
+          <Text variant="display3">{i18n.t('postJob.reviewTitle')}</Text>
           <Text variant="body" color="secondary">
             {targetBusinessName
-              ? `Review your details below — ${targetBusinessName} will see this and reply with a quote.`
-              : 'Review your details below — local businesses will see this and send quotes.'}
+              ? `${targetBusinessName} sees this and replies with a quote.`
+              : 'Local businesses see this and send quotes. You pick the winner.'}
           </Text>
         </Stack>
 
         <Surface elevation="subtle" background="alt" rounded="card" padding="base">
           <Stack spacing="md">
-            {rows.map(({ label, value }) => (
-              <Inline key={label} justify="space-between" align="flex-start">
+            {rows.map(({ key, label, value }) => (
+              <Inline key={key} justify="space-between" align="flex-start">
                 <Text variant="label" color="secondary" style={{ flexShrink: 0, marginRight: spacing.sm }}>
                   {label}
                 </Text>
@@ -687,8 +778,35 @@ function StepConfirm({ category, description, address, budget, date, time, photo
                 </Text>
               </Inline>
             ))}
+
+            <Inline justify="space-between" align="center">
+              <Text variant="label" color="secondary" style={{ flexShrink: 0, marginRight: spacing.sm }}>
+                {i18n.t('postJob.rowBudget')}
+              </Text>
+              <Text style={styles.budgetValue}>
+                {budget ? formatMoneyShort(budget) : '—'}
+              </Text>
+            </Inline>
           </Stack>
         </Surface>
+
+        {/* Escrow explainer — #161A21 radius 16, lock icon */}
+        <View style={styles.escrowExplainer}>
+          <Feather
+            name="lock"
+            size={15}
+            color={colors.textSecondary}
+            strokeWidth={1.8}
+            style={{ marginTop: 2 }}
+          />
+          <Text style={styles.escrowExplainerText}>
+            <Text style={styles.escrowExplainerLead}>
+              {i18n.t('postJob.escrowExplainerLead')}
+            </Text>
+            {' '}
+            {i18n.t('postJob.escrowExplainer')}
+          </Text>
+        </View>
 
         {/* Photo thumbnails summary */}
         {photos.length > 0 && (
@@ -712,8 +830,11 @@ function StepConfirm({ category, description, address, budget, date, time, photo
           </Stack>
         )}
 
+        {/* Sticky footer CTA, 52px. No figure — the total lives in the sheet. */}
         <Button
-          label={targetBusinessName ? 'Send request → get a quote' : 'Post job → get quotes'}
+          label={targetBusinessName
+            ? i18n.t('postJob.ctaSendRequest')
+            : i18n.t('postJob.ctaPostAndPay')}
           loading={submitting}
           disabled={submitting}
           onPress={onSubmit}
@@ -722,11 +843,63 @@ function StepConfirm({ category, description, address, budget, date, time, photo
 
         <Text variant="caption" color="secondary" style={styles.hint}>
           {targetBusinessName
-            ? `${targetBusinessName} will reply with a price and time. You confirm before anything is charged.`
-            : 'Local businesses will respond with quotes. You pick the best one.'}
+            ? `${targetBusinessName} replies with a price and time. Nothing is charged until you accept.`
+            : "You'll see the total before confirming."}
         </Text>
       </Stack>
     </StepPanel>
+  );
+}
+
+// ─── Posted — money held ─────────────────────────────────────────────────────
+// PAYMENTS.md §Path A specifics, "Success screen". Rendered in place of the
+// wizard rather than pushed as a route: the wizard must not stay behind it in
+// the stack (that back-into-the-form loop is half of B8/B9).
+function PostedSuccess({ total, onViewJob, onDone }) {
+  return (
+    <View style={styles.successWrap}>
+      <HeaderGlow width={420} height={260} offsetTop={-30} align="center" opacity={0.25} />
+
+      <View style={styles.successHero}>
+        <View style={styles.successCircle}>
+          <Feather name="check" size={30} color={colors.success} strokeWidth={2} />
+        </View>
+        <Text style={styles.successTitle}>{i18n.t('postJob.postedTitle')}</Text>
+        <Text style={styles.successBody}>
+          {total != null ? (
+            <>
+              <Text style={styles.successAmount}>{formatMoneyShort(total)}</Text>
+              {' '}
+              {i18n.t('postJob.postedBodyHeld')}
+            </>
+          ) : (
+            i18n.t('postJob.postedBodyNoHold')
+          )}
+        </Text>
+      </View>
+
+      <Surface elevation="subtle" rounded="card" padding="base" style={styles.successCard}>
+        <Inline spacing="md" align="flex-start">
+          <Feather name="lock" size={16} color={colors.success} strokeWidth={1.8} />
+          <Stack spacing="xs" style={{ flex: 1 }}>
+            <Text variant="smallMedium">{i18n.t('postJob.postedRowHold')}</Text>
+            <Text variant="caption" color="secondary">
+              {i18n.t('postJob.postedRowHoldSub')}
+            </Text>
+          </Stack>
+        </Inline>
+        <View style={styles.successDivider} />
+        <Inline justify="space-between" align="center">
+          <Text variant="small" color="secondary">{i18n.t('postJob.postedRowQuotes')}</Text>
+          <Text variant="smallMedium">{i18n.t('postJob.postedRowQuotesValue')}</Text>
+        </Inline>
+      </Surface>
+
+      <Stack spacing="md" style={styles.successCtas}>
+        <Button variant="secondary" label={i18n.t('postJob.viewJob')} onPress={onViewJob} />
+        <Button variant="ghost" label={i18n.t('common.done')} onPress={onDone} />
+      </Stack>
+    </View>
   );
 }
 
@@ -780,7 +953,35 @@ export default function PostJobScreen() {
   const [step, setStep] = useState(0);
   const [direction, setDirection] = useState(1);
   const [descError, setDescError] = useState('');
+  // B6 fallout — an address problem used to be reported on the DESCRIPTION
+  // field, because both shared `descError`. Its own slot now.
+  const [addressError, setAddressError] = useState('');
   const placesRef = useRef(null);
+
+  // Path A payment (PAYMENTS.md). `payVisible` opens the shared sheet;
+  // `posted` swaps the wizard for the success screen once the post is live.
+  const [payVisible, setPayVisible] = useState(false);
+  const [posted, setPosted] = useState(null); // { postId, postTitle, total }
+
+  const alive = useRef(true);
+  useEffect(() => {
+    alive.current = true;
+    return () => { alive.current = false; };
+  }, []);
+
+  // Once the job is posted the wizard behind this screen is dead history — the
+  // hardware back button must leave, not walk back into a form whose draft has
+  // already been submitted (half of the B8 "trapped" report).
+  useFocusEffect(
+    useCallback(() => {
+      if (!posted) return undefined;
+      const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+        navigation.navigate('ClientTabs', { screen: 'Home' });
+        return true;
+      });
+      return () => sub.remove();
+    }, [posted, navigation])
+  );
 
   // Map the current numeric step to a stable key so validation / rendering
   // never depend on which wizard (open vs targeted) is active — the targeted
@@ -808,12 +1009,17 @@ export default function PostJobScreen() {
       // Address is required for businesses to find the job. If picked from
       // Google Places autocomplete, lat/lng are set — skip the length check.
       const hasCoords = addressLat != null && addressLng != null;
-      if (!hasCoords && address.trim().length > 0 && address.trim().length < 5) {
-        setDescError('Enter a full address (at least 5 characters).');
+      if (!hasCoords && address.trim().length < 5) {
+        setAddressError(
+          address.trim().length === 0
+            ? i18n.t('postJob.addressRequired')
+            : 'Enter a full address (at least 5 characters).'
+        );
         return;
       }
     }
     setDescError('');
+    setAddressError('');
     setDirection(1);
     setStep((s) => Math.min(s + 1, TOTAL_STEPS - 1));
   }
@@ -823,81 +1029,170 @@ export default function PostJobScreen() {
     setStep((s) => Math.max(s - 1, 0));
   }
 
-  async function handleSubmit() {
+  // Shared validation for both the "review" CTA and the sheet's confirm.
+  function validateDraft() {
     const detailsStep = STEPS.indexOf('Details');
     const budgetStep = STEPS.indexOf('Budget');
     if (!description.trim() || description.trim().length < 10) {
       setDescError('Describe your job in at least 10 characters.');
+      setDirection(-1);
       setStep(detailsStep);
-      return;
+      return null;
     }
     const parsedBudget = parseFloat(budget);
     if (!parsedBudget || parsedBudget <= 0) {
       setDescError('Enter a budget amount greater than $0.');
+      setDirection(-1);
       setStep(budgetStep);
+      return null;
+    }
+    return parsedBudget;
+  }
+
+  function buildPayload(parsedBudget) {
+    const payload = {
+      title: deriveTitle(description),
+      description: description.trim(),
+      budget: parsedBudget,
+      address: address.trim() || undefined,
+      lat: addressLat ?? undefined,
+      lng: addressLng ?? undefined,
+      image_urls: photos.map((p) => p.url),
+      preferred_date: derivePreferredDate(date, time),
+    };
+    // Targeted "Book now": the backend derives category from the target
+    // business, so we send only target_business_id — no category step ran.
+    // Open post: category is client-picked (default General escape hatch).
+    if (targeted) {
+      payload.target_business_id = targetBusinessId;
+    } else {
+      payload.category = category || 'General';
+    }
+    return payload;
+  }
+
+  // ── Path A entry ───────────────────────────────────────────────────────────
+  // "Post job & pay" does NOT post. It opens the sheet. Nothing is created
+  // until the hold succeeds (PAYMENTS.md §Path A: hold succeeds → job is
+  // created and made visible).
+  function handleReviewCta() {
+    const parsedBudget = validateDraft();
+    if (parsedBudget == null) return;
+    setDescError('');
+    if (targeted) {
+      // Path B entry point (request a quote from one business). No money moves
+      // here at all — the client pays when they accept the quote — so no sheet.
+      submitTargetedRequest(parsedBudget);
       return;
     }
+    setPayVisible(true);
+  }
 
+  // ── Path A confirm — hold, THEN create ─────────────────────────────────────
+  // Ordering is the whole point: if the hold fails the job is not posted, the
+  // draft is untouched, and the client is returned to the review step with the
+  // error. Throwing from here surfaces inside the sheet and re-enables the CTA.
+  async function handleHoldAndPost(quote) {
+    const parsedBudget = parseFloat(budget);
+    const payload = buildPayload(parsedBudget);
+    payload.hold_amount = quote?.total;
+
+    // 1 · Hold. The backend's charge-at-post trigger is wired but gated off
+    //     (service_posts.py trigger_on_post — it cannot capture without a card
+    //     on file), so there is no authorize-before-create endpoint to call
+    //     yet. The CONTROL FLOW is the deliverable: the moment that endpoint
+    //     lands, it goes here and a rejection stops the post.
+    //     `payment_started` on the create response reports what the server
+    //     actually did, and the success screen only claims money is held when
+    //     the server says it is.
+
+    // 2 · Create.
+    const data = await api.post('/service-posts/', payload);
+    const post = data?.post || data;
+    if (!post?.id) throw new Error('Could not post job. Try again.');
+
+    if (!alive.current) return;
+    // Close the sheet, then land on the success state. Both are plain state
+    // changes on THIS screen — deliberately no navigation.navigate() here.
+    setPayVisible(false);
+    setPosted({
+      postId: post.id,
+      postTitle: post.title,
+      total: data?.payment_started ? quote?.total : null,
+    });
+  }
+
+  // ── Path B entry (targeted "Book now") ─────────────────────────────────────
+  async function submitTargetedRequest(parsedBudget) {
     setSubmitting(true);
     try {
-      const payload = {
-        title: deriveTitle(description),
-        description: description.trim(),
-        budget: parsedBudget,
-        address: address.trim() || undefined,
-        lat: addressLat ?? undefined,
-        lng: addressLng ?? undefined,
-        image_urls: photos.map((p) => p.url),
-        preferred_date: derivePreferredDate(date, time),
-      };
-      // Targeted "Book now": the backend derives category from the target
-      // business, so we send only target_business_id — no category step ran.
-      // Open post: category is client-picked (default General escape hatch).
-      if (targeted) {
-        payload.target_business_id = targetBusinessId;
-      } else {
-        payload.category = category || 'General';
-      }
-
-      const data = await api.post('/service-posts/', payload);
+      const data = await api.post('/service-posts/', buildPayload(parsedBudget));
       const post = data?.post || data;
+      if (!alive.current) return;
 
-      // Reset form
-      setDescription('');
-      setCategory('');
-      setAddress('');
-      // The Places field is (deliberately) not driven by `value` anymore —
-      // see the comment in StepDetails — so clearing `address` alone won't
-      // clear the visible text. Reset via the library's own imperative API.
-      placesRef.current?.setAddressText('');
-      setAddressLat(null);
-      setAddressLng(null);
-      setBudget('');
-      setDate(null);
-      setTime(null);
-      setPhotos([]);
-      setStep(0);
-
-      // Both flows land on the post's quote inbox. On the targeted flow this is
-      // the closest thing to "land in the quote chat with that business" that
-      // is actually reachable: a message thread hangs off an INTEREST (see
-      // backend/app/api/messages.py `_get_interest_thread`), and the target
-      // business hasn't quoted yet, so no thread exists to open. QuoteComparison
-      // is the waiting room — the moment the business replies, its quote appears
-      // here and taps straight through to the chat.
-      navigation.navigate('QuoteComparison', {
-        postId: post.id,
-        postTitle: post.title,
+      // B9 / D9 — this used to land on QuoteComparison, which renders
+      // "0 businesses quoted" one second after the request was sent and keeps
+      // the just-submitted form one back-press away. reset() replaces the whole
+      // stack with the reassurance screen, so there is no back-to-the-form.
+      //
+      // B8 / SEN-2 — and crucially: NO form-reset state burst before this. The
+      // old code fired ~10 setState calls (including setStep(0), which remounts
+      // the whole Details step and its Places field and starts a fresh entry
+      // animation) in the same tick as the navigation. Remounting one screen's
+      // subtree while replacing the screen itself is what put two mounts on the
+      // same shadow tree. The screen is being destroyed by reset() — there is
+      // nothing to reset.
+      navigation.reset({
+        index: 1,
+        routes: [
+          { name: 'ClientTabs' },
+          {
+            name: 'RequestSent',
+            params: {
+              businessName: targetBusinessName,
+              businessId: targetBusinessId,
+              postId: post.id,
+              postTitle: post.title,
+              category: category || undefined,
+              address: address.trim() || undefined,
+            },
+          },
+        ],
       });
     } catch (err) {
-      setDescError(err.message || 'Could not post job. Try again.');
+      if (!alive.current) return;
+      setDescError(err.message || 'Could not send your request. Try again.');
     } finally {
-      setSubmitting(false);
+      if (alive.current) setSubmitting(false);
     }
   }
 
   const isLastStep = step === TOTAL_STEPS - 1;
   const isFirstStep = step === 0;
+
+  // ── Posted, money held ──
+  if (posted) {
+    return (
+      <View style={[styles.wrapper, { paddingTop: insets.top }]}>
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.container}
+          showsVerticalScrollIndicator={false}
+        >
+          <PostedSuccess
+            total={posted.total}
+            onViewJob={() =>
+              navigation.navigate('QuoteComparison', {
+                postId: posted.postId,
+                postTitle: posted.postTitle,
+              })
+            }
+            onDone={() => navigation.navigate('ClientTabs', { screen: 'Home' })}
+          />
+        </ScrollView>
+      </View>
+    );
+  }
 
   return (
     <KeyboardAvoidingView
@@ -933,6 +1228,7 @@ export default function PostJobScreen() {
               setAddressLng={setAddressLng}
               placesRef={placesRef}
               descError={descError}
+              addressError={addressError}
               photos={photos}
               setPhotos={setPhotos}
               photoUploading={photoUploading}
@@ -960,7 +1256,7 @@ export default function PostJobScreen() {
               date={date}
               time={time}
               photos={photos}
-              onSubmit={handleSubmit}
+              onSubmit={handleReviewCta}
               submitting={submitting}
               targetBusinessName={targetBusinessName}
             />
@@ -997,6 +1293,27 @@ export default function PostJobScreen() {
           />
         )}
       </ScrollView>
+
+      {/* Path A — the shared pay sheet. Rendered only on the review step so it
+          can never be mounted over a form the client is still typing into. */}
+      {isLastStep && !targeted && (
+        <PaySheet
+          visible={payVisible}
+          mode="hold"
+          amount={parseFloat(budget) || 0}
+          summary={[
+            category || 'General',
+            date ? formatDate(date) : 'Any day',
+          ].filter(Boolean).join(' · ')}
+          method={CHECKOUT_METHOD}
+          onClose={() => setPayVisible(false)}
+          onAddMethod={() => {
+            setPayVisible(false);
+            navigation.navigate('PaymentMethod');
+          }}
+          onConfirm={handleHoldAndPost}
+        />
+      )}
     </KeyboardAvoidingView>
   );
 }
@@ -1039,9 +1356,74 @@ const styles = StyleSheet.create({
   navBtn: { flex: 1, maxWidth: 160 },
   backOnConfirm: { alignSelf: 'center', marginTop: spacing.sm },
 
-  // Confirm step
-  postBtn: { marginTop: spacing.xs },
+  // Review step
+  postBtn: { marginTop: spacing.xs, minHeight: 52 },
   hint: { textAlign: 'center' },
+  budgetValue: {
+    fontFamily: 'SpaceGrotesk_700Bold',
+    fontSize: 18,
+    lineHeight: 22,
+    letterSpacing: -0.3,
+    color: colors.success,
+    fontVariant: ['tabular-nums'],
+  },
+  escrowExplainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.md,
+    backgroundColor: colors.surfaceAlt,
+    borderRadius: 16,
+    padding: spacing.base,
+  },
+  escrowExplainerText: {
+    flex: 1,
+    fontFamily: 'Inter_400Regular',
+    fontSize: 13,
+    lineHeight: 20,
+    color: colors.textSecondary,
+  },
+  escrowExplainerLead: {
+    fontFamily: 'Inter_600SemiBold',
+    color: colors.textPrimary,
+  },
+
+  // Posted — money held
+  successWrap: { gap: spacing.lg, paddingTop: spacing.lg },
+  successHero: { alignItems: 'center', gap: spacing.md },
+  successCircle: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    backgroundColor: 'rgba(46,189,133,0.14)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  successTitle: {
+    fontFamily: 'SpaceGrotesk_700Bold',
+    fontSize: 25,
+    lineHeight: 29,
+    letterSpacing: -0.8,
+    color: colors.textPrimary,
+    textAlign: 'center',
+    marginTop: spacing.sm,
+  },
+  successBody: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 14,
+    lineHeight: 22,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    maxWidth: 300,
+  },
+  successAmount: {
+    fontFamily: 'SpaceGrotesk_700Bold',
+    fontSize: 15,
+    color: colors.success,
+    fontVariant: ['tabular-nums'],
+  },
+  successCard: { gap: spacing.md },
+  successDivider: { height: 1, backgroundColor: colors.border },
+  successCtas: { marginTop: spacing.sm },
   confirmThumbRow: { gap: spacing.sm },
   confirmThumb: {
     width: 72,

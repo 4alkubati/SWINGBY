@@ -153,6 +153,14 @@ export async function fetchPayQuote({ mode, amount, bookingId, interestId, summa
   };
 }
 
+// The payment instrument for the mechanism that actually exists today: the
+// client enters a card on Stripe's page and SwingBy never stores it. Card-on-
+// file (a Stripe SetupIntent + a saved-methods endpoint) does not exist in this
+// repo — see mobile/src/screens/profile/PaymentMethodScreen.js, which says so
+// in as many words. Pass a real saved card here the moment there is one; the
+// sheet renders either without caring.
+export const CHECKOUT_METHOD = { kind: 'checkout' };
+
 // ─── Pieces ──────────────────────────────────────────────────────────────────
 function GrabHandle() {
   return <View style={styles.grab} />;
@@ -193,6 +201,20 @@ function PaymentMethodRow({ method, declined, onAddMethod }) {
         <Feather name="plus" size={16} color={colors.accentText} strokeWidth={1.8} />
         <Text style={styles.addMethodText}>{i18n.t('pay.addMethod')}</Text>
       </Pressable>
+    );
+  }
+
+  if (method.kind === 'checkout') {
+    return (
+      <View style={[styles.methodCard, declined && styles.methodCardDeclined]}>
+        <View style={styles.brandTile}>
+          <Feather name="credit-card" size={14} color={colors.textSecondary} strokeWidth={1.8} />
+        </View>
+        <View style={styles.methodInfo}>
+          <Text variant="smallMedium">{i18n.t('pay.methodCard')}</Text>
+          <Text style={styles.methodExpiry}>{i18n.t('pay.methodCardSub')}</Text>
+        </View>
+      </View>
     );
   }
 
