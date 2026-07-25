@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<!--
+  SwingBy — "Email confirmed" landing page.
+  Spec: design/handoff-jet-pulse/PROOF-REQUEST-WEB-AUTOBID.md §3
+  Walkthrough: M1 (page did not exist at all — the confirm link dead-ended),
+               B3 (same bug from the QA side), M2 / A5 (deep-link back into the
+               app with the session already verified, no second login).
+
+  Canonical path in the repo is web/confirmed.html — a symlink to THIS file.
+  The real file lives under web/pre-launch/public/ because that is the directory
+  Cloudflare Pages actually publishes; a page that only exists at web/ would fix
+  nothing. Cloudflare serves it at both /confirmed and /confirmed.html (Pages
+  resolves extensionless HTML before applying the SPA catch-all in _redirects).
+
+  HARD REQUIREMENTS, both met:
+   * Works with JavaScript disabled. The three states (success / expired /
+     already confirmed) are selected by URL fragment through CSS :target —
+     #expired and #already, with success as the default. JS is a progressive
+     enhancement only: it maps ?state= / ?status= onto the fragment, greets the
+     person by name, and threads the deep-link params through.
+   * No external requests. Fonts fall back to the system stack (the deployed CSP
+     in public/_headers allows font-src 'self' data: only, so a Google Fonts
+     link would be blocked), and every icon is an inline Feather SVG.
+-->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#07080A" />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta
+      name="description"
+      content="Your SwingBy email is confirmed. Head back to the app to finish setting up."
+    />
+    <title>Email confirmed · SwingBy</title>
+
+    <style>
+      /* ── Tokens (mirrors mobile/src/theme/tokens.js) ───────────────────── */
+      :root {
+        --bg: #07080a;
+        --surface: #0f1115;
+        --surface-alt: #161a21;
+        --border: #1f232b;
+        --text-primary: #f4f6fa;
+        --text-secondary: #8b92a0;
+        --text-tertiary: #565d6b;
+        --accent: #6e56f7;
+        --accent-muted: #2a2247;
+        --accent-text: #8878f9;
+        --success: #2ebd85;
+        --warning: #f6b23b;
+
+        --font-display: "Space Grotesk", "Inter", -apple-system,
+          BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        --font-body: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
+          Roboto, Helvetica, Arial, sans-serif;
+      }
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+
+      html {
+        -webkit-text-size-adjust: 100%;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: var(--bg);
+        color: var(--text-primary);
+        font-family: var(--font-body);
+        font-size: 15px;
+        line-height: 1.5;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 40px 20px 32px;
+        position: relative;
+        overflow-x: hidden;
+      }
+
+      /* Sanctioned glow moment (README §10a). Decorative, never interactive. */
+      .glow {
+        position: absolute;
+        top: -120px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 620px;
+        height: 340px;
+        max-width: 140vw;
+        pointer-events: none;
+        background: radial-gradient(
+          ellipse at 50% 40%,
+          rgba(110, 86, 247, 0.22) 0%,
+          rgba(110, 86, 247, 0) 70%
+        );
+      }
+
+      .wordmark {
+        position: relative;
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: 20px;
+        letter-spacing: -0.4px;
+        margin-bottom: 56px;
+      }
+      .wordmark span {
+        color: var(--accent-text);
+      }
+
+      main {
+        position: relative;
+        width: 100%;
+        max-width: 560px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      /* ── State switching, CSS-only ──────────────────────────────────────
+         #success is LAST in the DOM so the general-sibling combinator can hide
+         it when an error fragment is targeted. No :has(), no JS. */
+      .variant {
+        display: none;
+        width: 100%;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+      }
+      #success {
+        display: flex;
+      }
+      .variant:target {
+        display: flex;
+      }
+      .variant:target ~ #success {
+        display: none;
+      }
+
+      .badge {
+        width: 76px;
+        height: 76px;
+        border-radius: 999px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 26px;
+      }
+      .badge-success {
+        background: rgba(46, 189, 133, 0.14);
+      }
+      .badge-warning {
+        background: rgba(246, 178, 59, 0.14);
+      }
+
+      h1 {
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: 40px;
+        line-height: 1.1;
+        letter-spacing: -1.5px;
+        margin: 0;
+      }
+
+      .sub {
+        margin: 14px 0 0;
+        max-width: 430px;
+        font-size: 16px;
+        line-height: 26px;
+        color: var(--text-secondary);
+      }
+
+      .actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 32px;
+        width: 100%;
+        justify-content: center;
+      }
+
+      .btn {
+        height: 52px;
+        border-radius: 12px; /* never a pill */
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 24px;
+        font-family: var(--font-body);
+        font-size: 15.5px;
+        font-weight: 600;
+        text-decoration: none;
+        border: 1px solid transparent;
+        transition: transform 0.12s ease, opacity 0.12s ease;
+      }
+      .btn:active {
+        transform: scale(0.98);
+        opacity: 0.9;
+      }
+      .btn-primary {
+        background: var(--accent);
+        color: #fff;
+      }
+      .btn-secondary {
+        background: var(--surface-alt);
+        border-color: var(--border);
+        color: var(--text-secondary);
+      }
+      .btn:focus-visible {
+        outline: 2px solid var(--accent-text);
+        outline-offset: 2px;
+      }
+
+      /* ── Fallback card ─────────────────────────────────────────────────── */
+      .fallback {
+        width: 100%;
+        max-width: 560px;
+        margin-top: 40px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        padding: 18px;
+        display: flex;
+        gap: 14px;
+        align-items: flex-start;
+        text-align: left;
+      }
+      .fallback-tile {
+        flex: 0 0 40px;
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        background: var(--accent-muted);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .fallback-title {
+        margin: 0;
+        font-size: 14.5px;
+        font-weight: 600;
+        line-height: 1.4;
+      }
+      .fallback-body {
+        margin: 4px 0 0;
+        font-size: 13px;
+        line-height: 20px;
+        color: var(--text-secondary);
+      }
+      .fallback-link {
+        display: inline-block;
+        margin-top: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--accent-text);
+        text-decoration: none;
+        /* 44px hit area without growing the visual link */
+        padding: 12px 0;
+        margin-bottom: -12px;
+      }
+      .fallback-link:hover {
+        text-decoration: underline;
+      }
+
+      /* Per-state copy inside the shared card, still JS-free. */
+      .fb-expired {
+        display: none;
+      }
+      #expired:target ~ .fallback .fb-expired {
+        display: block;
+      }
+      #expired:target ~ .fallback .fb-default {
+        display: none;
+      }
+
+      footer {
+        position: relative;
+        margin-top: 48px;
+        font-size: 12px;
+        line-height: 20px;
+        color: var(--text-tertiary);
+        text-align: center;
+      }
+      footer a {
+        color: var(--text-secondary);
+        font-weight: 600;
+        text-decoration: none;
+        /* 44px hit area */
+        display: inline-block;
+        padding: 12px 4px;
+        margin: -12px 0;
+      }
+      footer a:hover {
+        text-decoration: underline;
+      }
+
+      /* ── Mobile ────────────────────────────────────────────────────────── */
+      @media (max-width: 640px) {
+        body {
+          padding: 32px 24px 28px;
+        }
+        .wordmark {
+          margin-bottom: 40px;
+        }
+        h1 {
+          font-size: 30px;
+          letter-spacing: -1px;
+        }
+        .sub {
+          font-size: 15px;
+          line-height: 24px;
+        }
+        .actions {
+          flex-direction: column;
+          width: 100%;
+        }
+        .btn {
+          width: 100%;
+        }
+        .fallback {
+          padding: 16px;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .btn {
+          transition: none;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="glow" aria-hidden="true"></div>
+
+    <div class="wordmark">Swing<span>By</span></div>
+
+    <main>
+      <!-- ── Error: the link expired ──────────────────────────────────── -->
+      <section class="variant" id="expired" aria-labelledby="expired-title">
+        <div class="badge badge-warning">
+          <svg
+            width="34"
+            height="34"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#F6B23B"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
+        </div>
+        <h1 id="expired-title">This link expired</h1>
+        <p class="sub">
+          Confirmation links are good for 24 hours. Send yourself a fresh one and
+          you'll be set up in a minute.
+        </p>
+        <div class="actions">
+          <a class="btn btn-primary" href="https://swingbyy.com/resend-confirmation"
+            >Send a new link</a
+          >
+          <a class="btn btn-secondary" href="https://swingbyy.com/browse"
+            >Browse pros on the web</a
+          >
+        </div>
+      </section>
+
+      <!-- ── Already confirmed ────────────────────────────────────────── -->
+      <section class="variant" id="already" aria-labelledby="already-title">
+        <div class="badge badge-success">
+          <svg
+            width="34"
+            height="34"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#2EBD85"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </div>
+        <h1 id="already-title">Already confirmed</h1>
+        <p class="sub">
+          This email was confirmed earlier. Nothing else to do here — open the app
+          and carry on.
+        </p>
+        <div class="actions">
+          <a class="btn btn-primary" data-deeplink href="swingby://confirmed"
+            >Open SwingBy</a
+          >
+          <a class="btn btn-secondary" href="https://swingbyy.com/browse"
+            >Browse pros on the web</a
+          >
+        </div>
+      </section>
+
+      <!-- ── Success (default — no fragment) ──────────────────────────── -->
+      <section class="variant" id="success" aria-labelledby="success-title">
+        <div class="badge badge-success">
+          <svg
+            width="34"
+            height="34"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#2EBD85"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </div>
+        <h1 id="success-title">Email confirmed</h1>
+        <p class="sub" data-greeting>
+          You're all set. Head back to the app to finish setting up and post your
+          first job.
+        </p>
+        <div class="actions">
+          <a class="btn btn-primary" data-deeplink href="swingby://confirmed"
+            >Open SwingBy</a
+          >
+          <a class="btn btn-secondary" href="https://swingbyy.com/browse"
+            >Browse pros on the web</a
+          >
+        </div>
+      </section>
+
+      <!-- Shared across all three states; only the second line changes. -->
+      <div class="fallback">
+        <div class="fallback-tile">
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#8878F9"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+            <line x1="12" y1="18" x2="12" y2="18"></line>
+          </svg>
+        </div>
+        <div>
+          <p class="fallback-title">Didn't open automatically?</p>
+          <p class="fallback-body fb-default">
+            Get the app on iOS or Android — your account is already confirmed.
+          </p>
+          <p class="fallback-body fb-expired">
+            Get the app on iOS or Android, then ask for a new confirmation link
+            from the sign-in screen.
+          </p>
+          <a class="fallback-link" href="https://swingbyy.com/get-the-app"
+            >Get the app</a
+          >
+        </div>
+      </div>
+    </main>
+
+    <footer>
+      Wasn't you? <a href="https://swingbyy.com/security">Secure this account</a>
+      · SwingBy, Calgary AB
+    </footer>
+
+    <script>
+      /* Progressive enhancement ONLY. Everything above works without this file
+         ever running — the page just shows the success state, greets nobody by
+         name, and opens the app with a param-free deep link. */
+      (function () {
+        "use strict";
+
+        var params = new URLSearchParams(window.location.search);
+
+        // 1. Map the server's ?state= / ?status= onto the CSS :target fragment,
+        //    so the confirm endpoint can redirect to a plain query string.
+        if (!window.location.hash) {
+          var state = (params.get("state") || params.get("status") || "")
+            .toLowerCase()
+            .trim();
+          if (state === "expired" || state === "invalid") {
+            window.location.replace("#expired");
+          } else if (state === "already" || state === "already_confirmed") {
+            window.location.replace("#already");
+          }
+        }
+
+        // 2. Greet by first name. Only the first token, length-capped, and
+        //    inserted with textContent — never innerHTML — so a crafted link
+        //    cannot inject markup into the page.
+        var rawName = (params.get("name") || params.get("first_name") || "").trim();
+        var firstName = rawName.split(/\s+/)[0].slice(0, 24);
+        if (firstName) {
+          var greeting = document.querySelector("[data-greeting]");
+          if (greeting) {
+            greeting.textContent =
+              "You're all set, " +
+              firstName +
+              ". Head back to the app to finish setting up and post your first job.";
+          }
+        }
+
+        // 3. M2 / A5 — carry the verified session and the resume point into the
+        //    app so a business owner lands back on "list your business" instead
+        //    of a login screen. The app side still has to claim `token` and
+        //    route on `next`; see the report / README for the exact config.
+        var deepLinkParams = new URLSearchParams();
+        ["token", "role", "next", "email"].forEach(function (key) {
+          var value = params.get(key);
+          if (value) deepLinkParams.set(key, value);
+        });
+        // Sensible default resume point when the email didn't carry one.
+        if (!deepLinkParams.get("next")) {
+          deepLinkParams.set(
+            "next",
+            params.get("role") === "business_owner" ? "business-setup" : "home"
+          );
+        }
+        var deepLink = "swingby://confirmed?" + deepLinkParams.toString();
+
+        var links = document.querySelectorAll("[data-deeplink]");
+        for (var i = 0; i < links.length; i++) {
+          links[i].setAttribute("href", deepLink);
+        }
+
+        // 4. Store fallback. If the custom scheme doesn't resolve the page stays
+        //    visible, so only redirect when the tab is still in the foreground
+        //    after a beat — a backgrounded tab means the app DID open.
+        var STORE_URL = "https://swingbyy.com/get-the-app";
+        for (var j = 0; j < links.length; j++) {
+          links[j].addEventListener("click", function () {
+            var openedAt = Date.now();
+            window.setTimeout(function () {
+              if (document.hidden) return;
+              if (Date.now() - openedAt > 2500) return; // tab was suspended
+              window.location.href = STORE_URL;
+            }, 1400);
+          });
+        }
+      })();
+    </script>
+  </body>
+</html>
