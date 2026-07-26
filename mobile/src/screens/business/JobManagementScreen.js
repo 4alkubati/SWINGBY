@@ -18,6 +18,7 @@ import Surface from '../../components/Surface';
 import Stack from '../../components/Stack';
 import Inline from '../../components/Inline';
 import Badge from '../../components/Badge';
+import StatusBadge from '../../components/StatusBadge';
 import Button from '../../components/Button';
 import ListItem from '../../components/ListItem';
 import EmptyState from '../../components/EmptyState';
@@ -99,6 +100,37 @@ function SectionLabel({ children }) {
   );
 }
 
+// ─── Assignee credentials (walkthrough M8) ────────────────────────────────────
+// Jobs completed + tenure, both derived server-side (bookings.py::_attach_assignee)
+// from real rows. A null figure is a figure we could not compute — it renders as
+// NOTHING, never as "0 jobs", because a fabricated zero reads as a real (and
+// damning) credential. A genuine zero is different: it's true, and it says
+// "new to the team" rather than a bare numeral.
+function assigneeCredentials(assignee) {
+  if (!assignee || assignee.type !== 'employee') return [];
+  const bits = [];
+  const jobs = assignee.jobs_completed;
+  if (jobs != null) {
+    bits.push(jobs === 0 ? 'New to the team' : `${jobs} job${jobs === 1 ? '' : 's'} completed`);
+  }
+  if (assignee.tenure_label) {
+    bits.push(
+      assignee.business_name
+        ? `${assignee.tenure_label} with ${assignee.business_name}`
+        : assignee.tenure_label,
+    );
+  }
+  return bits;
+}
+
+function AssigneeCredentials({ assignee }) {
+  const bits = assigneeCredentials(assignee);
+  if (bits.length === 0) return null;
+  return (
+    <Text variant="caption" color="secondary">{bits.join(' · ')}</Text>
+  );
+}
+
 /** Appends a 2-char hex alpha to a 6-char hex token color string. */
 function withAlpha(hexColor, alpha) {
   return hexColor + alpha;
@@ -155,9 +187,13 @@ function JobDetailScreen({ navigation, route }) {
   const load = useCallback(async () => {
     setError(null);
     try {
-      const [bData, eData] = await Promise.all([
+      // M8: the roster comes from the BOOKING, not from `GET /employees/`.
+      // That list holds invited staff only — never the owner — which is why a
+      // solo business saw "No active employees found." and could not assign
+      // the job to anyone. `/assignees` always includes the owner.
+      const [bData, roster] = await Promise.all([
         api.get(`/bookings/${bookingId}`),
-        api.get('/employees/').catch(() => []),
+        api.get(`/bookings/${bookingId}/assignees`).catch(() => null),
       ]);
       // Flatten the nested joins (users / employees / service_posts) into the
       // flat fields this screen renders.
@@ -171,7 +207,7 @@ function JobDetailScreen({ navigation, route }) {
         address: bData.service_posts?.address || null,
         scheduled_date: bData.confirmed_date || bData.proposed_date_1 || null,
       });
-      setEmployees((eData || []).filter((e) => e.is_active));
+      setEmployees(roster?.items || []);
     } catch (err) {
       setError(err?.message || 'Could not load job details.');
     } finally {
@@ -212,6 +248,9 @@ function JobDetailScreen({ navigation, route }) {
     }
   }
 
+  // `employeeId` may be the literal 'owner' — the backend materialises the
+  // owner's own employees row on demand, so an owner with no staff can always
+  // put themselves on the job.
   async function handleAssign(employeeId) {
     setAssigning(true);
     setAssignPickerVisible(false);
@@ -285,6 +324,19 @@ function JobDetailScreen({ navigation, route }) {
 
   const isDone = booking.status === 'completed';
 
+  // M8. `assignee` is derived server-side (bookings.py::_attach_assignee) so
+  // the business name / person name / job count / tenure are never guessed here.
+  const assignee = booking.assignee;
+  const isAssigned = !!booking.employee_id && assignee?.type === 'employee';
+  const assigneeName =
+    (isAssigned ? assignee?.name || booking.employee_name : assignee?.name)
+    || booking.businesses?.business_name
+    || 'Your business';
+  // Assigning is possible BEFORE the date handshake closes — the owner decides
+  // who is going first. Only terminal jobs are locked (mirrors the backend's
+  // deny-list in assign_employee).
+  const canAssign = !isDone && booking.status !== 'cancelled';
+
   return (
     <View style={[styles.screen, { paddingTop: insets.top }]}>
       {/* ── Header ─────────────────────────────────────────────────────────── */}
@@ -357,34 +409,45 @@ function JobDetailScreen({ navigation, route }) {
                 </Stack>
               </Surface>
 
-              {/* Employee assignment card */}
+              {/* Who's going — walkthrough M8.
+                  Until somebody is assigned this reads as the BUSINESS (the
+                  client hired the company, and that is who is on the hook), not
+                  as an empty slot. Once assigned it reads as that person, with
+                  the credentials the server derived for them. */}
               <Surface elevation="subtle" rounded="card" padding="base" style={styles.cardMargin}>
                 <Inline justify="space-between" style={{ marginBottom: spacing.sm }}>
-                  <SectionLabel>Assigned Employee</SectionLabel>
-                  {!isDone && (
+                  <SectionLabel>{isAssigned ? 'Assigned to' : "Who's going"}</SectionLabel>
+                  {canAssign && (
                     <Button
                       variant="ghost"
-                      label={booking.employee_id ? 'Reassign' : '+ Assign'}
+                      label={isAssigned ? 'Reassign' : '+ Assign'}
                       loading={assigning}
                       onPress={() => setAssignPickerVisible(true)}
                       style={styles.assignBtnInline}
                     />
                   )}
                 </Inline>
-                {booking.employee_id ? (
-                  <Inline spacing="md">
-                    <AvatarCircle name={booking.employee_name || 'E'} isActive />
-                    <Stack spacing={2} style={{ flex: 1 }}>
-                      <Text variant="bodyMedium">{booking.employee_name || 'Assigned'}</Text>
-                      {booking.employee_role && (
-                        <Text variant="caption" color="secondary">{booking.employee_role}</Text>
-                      )}
-                    </Stack>
-                    <Badge dot color="success" />
-                  </Inline>
-                ) : (
-                  <Text variant="small" color="secondary">No employee assigned yet</Text>
-                )}
+                <Inline spacing="md">
+                  <AvatarCircle name={assigneeName} isActive={isAssigned} />
+                  <Stack spacing={2} style={{ flex: 1 }}>
+                    <Text variant="bodyMedium">{assigneeName}</Text>
+                    {isAssigned ? (
+                      <>
+                        {!!(assignee?.role_title || booking.employee_role) && (
+                          <Text variant="caption" color="secondary">
+                            {assignee?.role_title || booking.employee_role}
+                          </Text>
+                        )}
+                        <AssigneeCredentials assignee={assignee} />
+                      </>
+                    ) : (
+                      <Text variant="caption" color="secondary">
+                        Nobody assigned yet — the job sits with the business.
+                      </Text>
+                    )}
+                  </Stack>
+                  {isAssigned && <Badge dot color="success" />}
+                </Inline>
               </Surface>
 
               {/* Message client */}
@@ -431,22 +494,22 @@ function JobDetailScreen({ navigation, route }) {
               <Stack spacing="xs" style={styles.cardMargin}>
                 <SectionLabel>Actions</SectionLabel>
                 {!isDone && (
-                  <>
-                    <ListItem
-                      title="Advance status"
-                      subtitle="Move job to the next stage"
-                      left={<Feather name="play" size={16} color={colors.accentText} strokeWidth={2} />}
-                      onPress={() => handleAdvance(booking.status === 'in_progress' ? 'completed' : 'on_the_way')}
-                      showChevron
-                    />
-                    <ListItem
-                      title="Reassign employee"
-                      subtitle={booking.employee_id ? booking.employee_name : 'Not assigned yet'}
-                      left={<Feather name="user" size={16} color={colors.textSecondary} strokeWidth={2} />}
-                      onPress={() => setAssignPickerVisible(true)}
-                      showChevron
-                    />
-                  </>
+                  <ListItem
+                    title="Advance status"
+                    subtitle="Move job to the next stage"
+                    left={<Feather name="play" size={16} color={colors.accentText} strokeWidth={2} />}
+                    onPress={() => handleAdvance(booking.status === 'in_progress' ? 'completed' : 'on_the_way')}
+                    showChevron
+                  />
+                )}
+                {canAssign && (
+                  <ListItem
+                    title={isAssigned ? 'Reassign this job' : 'Assign this job'}
+                    subtitle={isAssigned ? assigneeName : 'Pick who is going'}
+                    left={<Feather name="user" size={16} color={colors.textSecondary} strokeWidth={2} />}
+                    onPress={() => setAssignPickerVisible(true)}
+                    showChevron
+                  />
                 )}
                 <ListItem
                   title="Message client"
@@ -505,33 +568,55 @@ function JobDetailScreen({ navigation, route }) {
         />
         <View style={[styles.modalSheet, { paddingBottom: Math.max(insets.bottom, 24) }]}>
           <View style={styles.modalHandle} />
-          <Text variant="bodyMedium" style={{ marginBottom: spacing.base }}>Assign Employee</Text>
+          <Text variant="bodyMedium" style={{ marginBottom: spacing.base }}>Assign this job</Text>
 
+          {/* M8: this list is never empty. The owner is always in it (the server
+              materialises their staffing row), so the old "No active employees
+              found." dead end — which left a solo business unable to assign a
+              job to anybody, including themselves — cannot happen. The fallback
+              below only fires if the roster request itself failed, and it still
+              offers the one assignment that always works. */}
           {employees.length === 0 ? (
-            <Stack spacing="sm" align="center" style={{ paddingVertical: spacing.xl }}>
-              <Feather name="users" size={28} color={colors.textTertiary} strokeWidth={1.8} />
-              <Text variant="small" color="secondary">No active employees found.</Text>
+            <Stack spacing="md" align="center" style={{ paddingVertical: spacing.lg }}>
+              <Feather name="user-check" size={28} color={colors.textTertiary} strokeWidth={1.8} />
+              <Text variant="small" color="secondary" style={{ textAlign: 'center' }}>
+                We couldn&apos;t load your team just now.
+              </Text>
+              <Button
+                variant="primary"
+                label="Assign to me"
+                onPress={() => handleAssign('owner')}
+              />
             </Stack>
           ) : (
             <FlatList
               data={employees}
-              keyExtractor={(e) => e.id}
+              keyExtractor={(e) => e.employee_id}
               showsVerticalScrollIndicator={false}
               renderItem={({ item }) => {
-                const fullName = item.user
-                  ? `${item.user.first_name} ${item.user.last_name}`
-                  : 'Employee';
-                const isCurrent = item.id === booking.employee_id;
+                const fullName = item.name || (item.is_you ? 'You' : 'Team member');
+                const isCurrent = item.employee_id === booking.employee_id;
+                const credentials = assigneeCredentials(item);
                 return (
                   <TouchableOpacity
                     style={[styles.empRow, isCurrent && styles.empRowActive]}
-                    onPress={() => handleAssign(item.id)}
+                    onPress={() => handleAssign(item.employee_id)}
                     activeOpacity={0.8}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Assign to ${fullName}`}
                   >
                     <AvatarCircle name={fullName} isActive={isCurrent} />
                     <Stack spacing={2} style={{ flex: 1 }}>
-                      <Text variant="smallMedium">{fullName}</Text>
-                      <Text variant="caption" color="secondary">{item.role_title || 'Staff'}</Text>
+                      <Inline spacing="xs">
+                        <Text variant="smallMedium">{fullName}</Text>
+                        {item.is_you && <StatusBadge label="You" tone="accent" />}
+                      </Inline>
+                      <Text variant="caption" color="secondary">
+                        {item.role_title || (item.is_owner ? 'Owner' : 'Staff')}
+                      </Text>
+                      {credentials.length > 0 && (
+                        <Text variant="caption" color="secondary">{credentials.join(' · ')}</Text>
+                      )}
                     </Stack>
                     {isCurrent && (
                       <Feather name="check" size={16} color={colors.success} strokeWidth={2.4} />
@@ -639,6 +724,16 @@ function JobRow({ booking, showDate, onPress }) {
             <Text variant="caption" color="secondary" numberOfLines={1} style={{ flex: 1 }}>{address}</Text>
           </Inline>
         )}
+        {/* M8: who is going, at a glance. Unassigned jobs say so plainly rather
+            than leaving the row silent about it. */}
+        <Inline spacing="xs" style={{ marginTop: spacing.xs }}>
+          <Feather name="user" size={12} color={colors.textTertiary} strokeWidth={2} />
+          <Text variant="caption" color="secondary" numberOfLines={1} style={{ flex: 1 }}>
+            {booking.assignee?.type === 'employee' && booking.assignee?.name
+              ? booking.assignee.name
+              : 'Unassigned'}
+          </Text>
+        </Inline>
       </Surface>
     </TouchableOpacity>
   );

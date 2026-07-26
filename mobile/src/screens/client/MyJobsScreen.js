@@ -164,14 +164,43 @@ function QuoteRow({ interest, onMessage }) {
   );
 }
 
-function BookingRow({ booking, onPress, onReview, onDetails, onRebook, userRole }) {
+// Walkthrough M8, client side: a booking presents the BUSINESS until somebody
+// is assigned to it, then it presents that person — plus what they have
+// actually done. `assignee` is derived server-side (bookings.py::_attach_assignee)
+// so nothing here is guessed. A null figure means "could not compute" and
+// renders as nothing at all; a genuine zero says "new to the team". Neither is
+// ever shown as a bare placeholder number.
+function assigneeLine(assignee) {
+  if (!assignee || assignee.type !== 'employee') return null;
+  const bits = [];
+  if (assignee.role_title) bits.push(assignee.role_title);
+  if (assignee.jobs_completed != null) {
+    bits.push(
+      assignee.jobs_completed === 0
+        ? 'new to the team'
+        : `${assignee.jobs_completed} job${assignee.jobs_completed === 1 ? '' : 's'} completed`,
+    );
+  }
+  if (assignee.tenure_label) bits.push(`${assignee.tenure_label} on the team`);
+  return bits.length > 0 ? bits.join(' · ') : null;
+}
+
+function BookingRow({ booking, onPress, onReview, onDetails, onRebook, onInvoice, userRole }) {
   const status = BOOKING_STATUS[booking.status] || BOOKING_STATUS.confirmed;
   const service = booking.service_posts?.title || booking.service_category || 'Service';
+  const assignee = booking.assignee;
+  const businessName = booking.businesses?.business_name || booking.business_name || 'Business';
+  const assignedPerson = assignee?.type === 'employee' ? assignee.name : null;
   const counterparty = userRole === 'client'
-    ? (booking.businesses?.business_name || booking.business_name || 'Business')
+    ? (assignedPerson || businessName)
     : (booking.users?.first_name
         ? [booking.users.first_name, booking.users.last_name].filter(Boolean).join(' ')
         : (booking.client_name || 'Client'));
+  // When a person is named above, the company they work for still belongs on
+  // the row — the client hired the business, not a stranger.
+  const credentials = userRole === 'client' && assignedPerson
+    ? [businessName, assigneeLine(assignee)].filter(Boolean).join(' · ')
+    : null;
   const when = booking.confirmed_date || booking.proposed_date_1;
   const date = shortDate(when);
   const isDone = booking.status === 'completed';
@@ -180,6 +209,19 @@ function BookingRow({ booking, onPress, onReview, onDetails, onRebook, userRole 
   if (onDetails) {
     actionEls.push(
       <ActionButton key="details" label="Details" onPress={onDetails} />
+    );
+  }
+  // M4 — "Invoices off the Past tab". The business side has linked Past →
+  // Invoice since CARD-24; the client, who is the one who actually paid, had
+  // no route to their own receipt from anywhere in the app.
+  if (isDone && onInvoice) {
+    actionEls.push(
+      <ActionButton
+        key="invoice"
+        label={i18n.t('jobManagement.viewInvoice')}
+        icon={<Feather name="file-text" size={13} color={colors.textSecondary} strokeWidth={1.8} />}
+        onPress={onInvoice}
+      />
     );
   }
   if (isDone && onReview) {
@@ -201,7 +243,20 @@ function BookingRow({ booking, onPress, onReview, onDetails, onRebook, userRole 
       title={service}
       badge={<StatusBadge label={status.label} tone={status.tone} />}
       subtitle={counterparty}
-      meta={date ? <Text variant="caption" color="secondary" style={styles.rowMeta}>{date}</Text> : null}
+      meta={
+        (credentials || date) ? (
+          <>
+            {!!credentials && (
+              <Text variant="caption" color="secondary" numberOfLines={1} style={styles.rowMeta}>
+                {credentials}
+              </Text>
+            )}
+            {!!date && (
+              <Text variant="caption" color="secondary" style={styles.rowMeta}>{date}</Text>
+            )}
+          </>
+        ) : null
+      }
       actions={
         actionEls.length > 0 ? (
           <Inline spacing="sm" justify="flex-end" wrap>{actionEls}</Inline>
@@ -542,6 +597,9 @@ export default function MyJobsScreen({ navigation }) {
               userRole={user?.role}
               onPress={() => handleBookingPress(item)}
               onDetails={isClient ? () => navigation.navigate('BookingDetails', { bookingId: item.id }) : undefined}
+              // Same route + params as the business side's Past tab, so one
+              // InvoiceScreen serves both halves of the marketplace.
+              onInvoice={() => navigation.navigate('Invoice', { bookingId: item.id })}
               onRebook={isClient ? () =>
                 navigation.navigate('PostJob', {
                   rebookBusinessId: item.business_id,
