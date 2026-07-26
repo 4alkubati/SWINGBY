@@ -73,3 +73,40 @@ jobs:
         if: "!contains(steps.pkg.outputs.scripts, '\"typecheck\"') && hashFiles('mobile/tsconfig.json') != ''"
         working-directory: mobile
         run: npx tsc --noEmit
+
+  # The jest suite. This job did not exist until 2026-07-26, which meant Mobile
+  # CI had never run a single mobile test: the `typecheck` job above gates both
+  # of its steps on a `typecheck` script or a tsconfig.json, and this project has
+  # neither — so the job did nothing and reported success. Every "Mobile CI
+  # green" before this commit was green on an empty job.
+  #
+  # No `continue-on-error` here on purpose. A test job that cannot fail the
+  # build is the same as no test job, which is exactly the hole being closed.
+  test:
+    name: test
+    runs-on: ubuntu-latest
+    needs: doctor
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Install dependencies
+        working-directory: mobile
+        run: npm install --legacy-peer-deps --no-audit --no-fund
+
+      # `npm ci` has produced a node_modules with no .bin links on this project
+      # before (exit 0, then "expo: not found"). npm install is used above for
+      # that reason; this makes the jest binary's absence loud rather than a
+      # confusing failure inside the test run.
+      - name: Verify the test runner is installed
+        working-directory: mobile
+        run: npx jest --version
+
+      - name: Jest
+        working-directory: mobile
+        run: npm run test:ci
