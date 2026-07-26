@@ -32,7 +32,85 @@ class EmployeeCreate(BaseModel):
         return v
 
 
+# ── "Small business" ──────────────────────────────────────────────────────────
+#
+# PRODUCT JUDGEMENT — the founder may want to retune this number. It exists in
+# exactly one place on purpose; do not inline the figure anywhere else.
+#
+# Context (founder ruling, 2026-07-25): the jobs lane gave every business owner a
+# real `employees` row so a solo operator can assign a job to themselves. Correct
+# internally — and it also put the owner on the PUBLIC team trust card for every
+# business, which is only right for SMALL ones. A two-person outfit whose card
+# hides the owner looks like it has one employee; a forty-person company whose
+# card leads with "Owner" looks like a founder doing the mopping.
+#
+# "Small" = this many ACTIVE team members or fewer, counting the owner. At 3, a
+# solo operator, a pair, and an owner-plus-two all still show the owner.
+SMALL_BUSINESS_MAX_TEAM_SIZE = 3
+
+
 # ── Helper ────────────────────────────────────────────────────────────────────
+
+
+def _owner_user_id(business_id: str) -> Optional[str]:
+    """The `users.id` of this business's owner, or None if it can't be read.
+
+    None is a real answer, not an error: every caller treats "we don't know who
+    the owner is" as "don't filter anything out", so a Supabase hiccup degrades
+    the trust card to its previous behaviour instead of blanking a team.
+    """
+    try:
+        res = (
+            supabase.table("businesses")
+            .select("owner_id")
+            .eq("id", business_id)
+            .single()
+            .execute()
+        )
+        data = res.data
+        # .single() should give a dict; be defensive about a list slipping
+        # through, because guessing wrong here would hide a real employee.
+        if isinstance(data, list):
+            data = data[0] if data else None
+        if isinstance(data, dict):
+            return data.get("owner_id")
+    except Exception:
+        logger.warning(
+            "owner lookup failed for business %s", business_id, exc_info=True
+        )
+    return None
+
+
+def _owner_employee_id(business_id: str) -> Optional[str]:
+    """The ``employees.id`` of the owner's own row, or None if unknown.
+
+    Looked up separately rather than by selecting ``user_id`` on the roster
+    query, because the 2026-07-21 hardening says ``user_id`` must not appear in
+    the public payload — and the cheapest way to keep that true is never to
+    fetch it alongside the rows we are about to return.
+    """
+    owner_id = _owner_user_id(business_id)
+    if not owner_id:
+        return None
+    try:
+        res = (
+            supabase.table("employees")
+            .select("id")
+            .eq("business_id", business_id)
+            .eq("user_id", owner_id)
+            .limit(1)
+            .execute()
+        )
+        rows = res.data
+        if isinstance(rows, dict):
+            rows = [rows]
+        if rows and isinstance(rows[0], dict):
+            return rows[0].get("id")
+    except Exception:
+        logger.warning(
+            "owner employee lookup failed for business %s", business_id, exc_info=True
+        )
+    return None
 
 
 def _get_owner_business(owner_id: str) -> dict:
@@ -220,6 +298,13 @@ def list_employees_for_business(
     Owner ruling (2026-07-21): stays public, but only ACTIVE employees are
     shown and the internal ``user_id`` is never exposed in the payload — a trust
     card needs a name, photo and role, not the account id behind it.
+
+    Founder ruling (2026-07-25): the owner has a real ``employees`` row now (see
+    bookings._ensure_owner_employee) so a solo operator can be assigned work.
+    That row belongs on this PUBLIC card only when the business is small — see
+    SMALL_BUSINESS_MAX_TEAM_SIZE. The INTERNAL assignable roster (``GET
+    /employees/`` and the assignee picker) is untouched: the owner is always
+    assignable, at every size. This filter is presentation, never permission.
     """
     try:
         res = (
@@ -232,10 +317,25 @@ def list_employees_for_business(
             .order("created_at")
             .execute()
         )
-        return res.data or []
+        rows = res.data or []
     except Exception:
         logger.exception("Could not list employees for business")
         raise HTTPException(status_code=400, detail="Could not list employees")
+
+    # `rows` is already the active-only team INCLUDING the owner's row, so its
+    # length is exactly the "total active team members, counting the owner"
+    # the threshold is defined in terms of. Small businesses short-circuit here
+    # and cost no extra queries at all.
+    if len(rows) <= SMALL_BUSINESS_MAX_TEAM_SIZE:
+        return rows
+
+    owner_employee_id = _owner_employee_id(business_id)
+    if not owner_employee_id:
+        # Owner unknown, or they have no employees row. Nothing identifiable to
+        # drop — return the team rather than guessing and hiding a real person.
+        return rows
+
+    return [r for r in rows if r.get("id") != owner_employee_id]
 
 
 @router.get("/{employee_id}/profile")

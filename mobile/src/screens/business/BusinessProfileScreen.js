@@ -378,10 +378,26 @@ export default function BusinessProfileScreen({ navigation, route }) {
       setBizId(id);
 
       const isOwn = !businessId || businessId === id;
+      const isOwnerView = isOwn && user?.role === 'business_owner';
       const [emps, revs, sub, imported] = await Promise.all([
-        api.get(`/employees/business/${id}`).catch(() => []),
+        // Two rosters, deliberately (founder ruling 2026-07-25).
+        //
+        // `/employees/business/{id}` is the PUBLIC trust card and now omits the
+        // owner's own employees row once the business is past
+        // SMALL_BUSINESS_MAX_TEAM_SIZE. That is right for a stranger reading the
+        // profile and WRONG for the owner reading their own — this screen is
+        // also the team-management surface (Manage / the active toggles), so
+        // filtering the owner out of it would hide them from their own team and
+        // undercount "Team & employees" by one.
+        //
+        // `/employees/` is the internal roster: owner-authenticated, always
+        // complete, and the same list the assignee picker uses.
+        (isOwnerView
+          ? api.get('/employees/')
+          : api.get(`/employees/business/${id}`)
+        ).catch(() => []),
         api.get(`/reviews/business/${id}`).catch(() => []),
-        isOwn && user?.role === 'business_owner'
+        isOwnerView
           ? api.get('/businesses/me/subscription').catch(() => null)
           : Promise.resolve(null),
         // Returns an empty list while the feature flag is off, so this is a
