@@ -991,7 +991,11 @@ const lane3 = {
   'pay.expires': 'Expires %{date}',
   'pay.savedCard': 'Saved card',
   'pay.methodCard': 'Card',
-  'pay.methodCardSub': 'Entered securely on the next step — SwingBy never stores it.',
+  // Two different promises, deliberately. 'native' = Stripe's Payment Sheet
+  // opens right here (M9). 'Sub' (hosted Checkout fallback) has to warn that a
+  // browser is about to open, or the client thinks the app broke.
+  'pay.methodCardSub': 'Opens a secure Stripe page — SwingBy never stores your card.',
+  'pay.methodCardSubNative': 'Entered securely in the app — SwingBy never stores it.',
   'pay.addMethod': 'Add a payment method',
   'pay.noMethodHint': 'Add a card to continue. Nothing is charged until you confirm.',
   'pay.escrow':

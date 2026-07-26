@@ -233,7 +233,28 @@ export async function payForBookingNatively({ bookingId, email } = {}) {
     throw new Error(message || 'That payment did not go through.');
   }
 
-  // Confirmed on-device. The ledger moves when the webhook lands.
+  // 5 · Tell the server to settle NOW rather than waiting on the webhook.
+  //     Not a second source of truth: the server re-reads the intent from
+  //     Stripe and runs the same ledger function the webhook runs. This exists
+  //     to close a window — between the sheet closing and the webhook landing,
+  //     the booking still looks unpaid, and anything that offers to "pay" in
+  //     that window would take the money twice.
+  //
+  //     Best-effort on purpose. If this call fails the webhook still settles
+  //     the booking; the client has already paid and must not be shown an
+  //     error, let alone asked to pay again.
+  try {
+    await api.post(
+      `/payments/stripe/payment-intent/${bookingId}/confirm`,
+      { payment_intent_id: sheet.payment_intent_id },
+      { _silent: true },
+    );
+  } catch (err) {
+    // Intentionally swallowed. Logged only.
+    // eslint-disable-next-line no-console
+    console.warn('[nativePay] confirm failed, webhook will settle:', err?.message);
+  }
+
   return {
     paymentIntentId: sheet.payment_intent_id,
     amountCents: sheet.amount_cents,
