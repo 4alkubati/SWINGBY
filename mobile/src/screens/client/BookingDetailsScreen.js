@@ -27,6 +27,7 @@ import BookingStatusTimeline from '../../components/BookingStatusTimeline';
 import ConfirmDateCard from '../../components/ConfirmDateCard';
 import PaySheet, { CHECKOUT_METHOD } from '../../components/PaySheet';
 import BookingPhotos from '../../components/BookingPhotos';
+import ProviderLiveLocation from '../../components/ProviderLiveLocation';
 import { RatingStarsDisplay } from '../../components/RatingStars';
 import { SkeletonBox } from '../../components/Skeleton';
 import EmptyState from '../../components/EmptyState';
@@ -783,6 +784,15 @@ export default function BookingDetailsScreen({ route, navigation }) {
         >
           <BookingStatusTimeline currentStatus={timelineStage} />
         </Surface>
+
+        {/* M7 — where the provider actually IS while en route. Renders itself
+            away entirely outside the en-route window (the backend re-derives
+            that window on every poll, so this cannot be left on by a stale
+            client). Client-only: the provider reading their own dot back here
+            belongs on the business Status tab, not on the customer's screen. */}
+        {user?.role === 'client' && (
+          <ProviderLiveLocation bookingId={bookingId} providerName={workerName} />
+        )}
 
         {/* Live Job Status — real-time provider events, humanised (B16) */}
         <LiveStatusCard events={events} status={eventsStatus} onRetry={fetchEvents} />

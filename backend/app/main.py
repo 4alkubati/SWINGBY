@@ -128,6 +128,14 @@ from app.api.booking_photos import router as booking_photos_router
 
 app.include_router(booking_photos_router, prefix="/bookings", tags=["booking-photos"])
 
+# WALKTHROUGH M7 — live provider location while en route. Mounted on /bookings
+# beside booking_events, which owns the en_route event this feed keys off.
+from app.api.booking_location import router as booking_location_router
+
+app.include_router(
+    booking_location_router, prefix="/bookings", tags=["booking-location"]
+)
+
 # LANE 5 — proof of work (before/after + voice memo → client approve → release).
 # Mounted on /bookings alongside booking_photos; the photo UPLOAD path stays in
 # booking_photos.py, this router owns the submission/approval lifecycle.

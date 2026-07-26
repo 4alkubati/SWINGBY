@@ -469,7 +469,8 @@ export default function ActiveBookingScreen({ navigation, route }) {
                     <TouchableOpacity
                       style={styles.messageBtn}
                       accessibilityRole="button"
-                      accessibilityLabel="Message"
+                      accessibilityLabel={`Message ${workerName}`}
+                      accessibilityHint="Opens the chat for this booking"
                       onPress={() =>
                         navigation.navigate('Chat', {
                           bookingId: booking.id,
@@ -542,21 +543,15 @@ export default function ActiveBookingScreen({ navigation, route }) {
               />
             </SpringCard>
 
-            {/* Secondary chat button */}
-            <SpringCard delay={140} style={styles.hPad}>
-              <Button
-                variant="secondary"
-                label={`Message ${workerName.split(' ')[0]}`}
-                icon={<Feather name="message-circle" size={17} color={colors.textPrimary} />}
-                onPress={() =>
-                  navigation.navigate('Chat', {
-                    bookingId: booking.id,
-                    otherPartyName: workerName,
-                  })
-                }
-                style={styles.messageAction}
-              />
-            </SpringCard>
+            {/* D6 — the full-width "Message <name>" button that used to sit
+                here is gone. It was the FOURTH route to the same chat on one
+                screen: the message icon in the provider row directly above (a
+                44 pt target beside Call, where a person looks for it), the
+                Message action inside the call sheet, and the primary CTA on
+                Full details. Removing the duplicate loses nobody their only
+                way in — the icon above is the survivor, and it now names the
+                provider out loud so the shortened label costs no clarity to a
+                screen-reader user either. */}
 
             {/* My disputes — GAP-AUDIT #6. GET /disputes/mine existed with
                 zero mobile callers; this is the entry point into the new
