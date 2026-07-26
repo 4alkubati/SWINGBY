@@ -5,8 +5,6 @@ import {
   RefreshControl,
   TouchableOpacity,
   StatusBar,
-  Linking,
-  Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useState, useEffect, useCallback } from 'react';
@@ -25,10 +23,12 @@ import BookingStatusTimeline from '../../components/BookingStatusTimeline';
 import { MapCanvas, MapPin, MapRoute } from '../../components/MapPreviewCard';
 import PulseDot from '../../components/PulseDot';
 import Text from '../../components/Text';
+import CallContactSheet from '../../components/CallContactSheet';
 import Button from '../../components/Button';
 import Surface from '../../components/Surface';
 import Stack from '../../components/Stack';
 import { SkeletonBox } from '../../components/Skeleton';
+import * as haptics from '../../services/haptics';
 import { colors, spacing, radius, motion, shadows } from '../../theme/tokens';
 
 // Map hero height per handoff spec.
@@ -267,6 +267,7 @@ export default function ActiveBookingScreen({ navigation, route }) {
   const [booking, setBooking] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [callVisible, setCallVisible] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(async () => {
@@ -309,21 +310,29 @@ export default function ActiveBookingScreen({ navigation, route }) {
   const companyName =
     booking?.businesses?.business_name || booking?.business_name || null;
   const rating = booking?.businesses?.avg_rating;
-  // Assigned employee's number wins; fall back to the business owner's.
-  const providerPhone =
-    booking?.employees?.users?.phone || booking?.businesses?.owner?.phone || null;
+
+  // Kira's ruling (2026-07-25): tapping Call shows the number so it can be
+  // COPIED, rather than firing `tel:` blind. Both parties are offered — the
+  // person actually coming (the assigned employee) and the business — instead
+  // of the old employee-else-business fallback, which hid one of them.
+  const callContacts = [
+    {
+      key: 'employee',
+      name: employeeName || 'Your provider',
+      role: booking?.employees?.role_title || 'Assigned to your job',
+      phone: booking?.employees?.users?.phone || null,
+    },
+    {
+      key: 'business',
+      name: companyName || 'The business',
+      role: 'Business',
+      phone: booking?.businesses?.owner?.phone || null,
+    },
+  ].filter((c) => c.phone);
 
   function handleCall() {
-    if (!providerPhone) {
-      Alert.alert(
-        'No number available',
-        "This provider hasn't added a phone number yet. Try messaging them instead.",
-      );
-      return;
-    }
-    Linking.openURL(`tel:${providerPhone}`).catch(() =>
-      Alert.alert('Could not place call', 'Your device could not open the dialer.'),
-    );
+    haptics.buttonTap?.();
+    setCallVisible(true);
   }
   const eyebrow = STATUS_EYEBROW[booking?.status] || 'STATUS';
   const heroTitle = buildTitle(booking);
@@ -594,6 +603,18 @@ export default function ActiveBookingScreen({ navigation, route }) {
           </ScrollView>
         </>
       )}
+
+      <CallContactSheet
+        visible={callVisible}
+        onClose={() => setCallVisible(false)}
+        contacts={callContacts}
+        onMessage={() =>
+          navigation.navigate('Chat', {
+            bookingId: booking?.id,
+            otherPartyName: workerName,
+          })
+        }
+      />
     </View>
   );
 }
