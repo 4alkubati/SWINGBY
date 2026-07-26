@@ -11,4 +11,9 @@
 // The `MessageThread` route stays registered (both navigators, plus the
 // `messages/:bookingId` deep link in services/linking.js) and takes the same
 // { bookingId } param ChatScreen reads, so callers need no change.
+//
+// Walkthrough M11 ("the thread is text-only") therefore lands in ChatScreen,
+// not here: photo bubbles (components/ChatImageBubble.js), the in-thread
+// agreement card (components/ChatTermsCard.js) and its composer
+// (./SendTermsSheet.js) are all wired there, so BOTH routes get them.
 export { default } from './ChatScreen';

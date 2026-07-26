@@ -1,9 +1,14 @@
 import {
   View, FlatList, TextInput, StyleSheet, ActivityIndicator,
-  KeyboardAvoidingView, Platform, TouchableOpacity,
+  KeyboardAvoidingView, Platform, TouchableOpacity, Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+// Already a dependency (mobile/package.json), already used by
+// business/ProofOfWorkScreen.js, client/PostJobScreen.js and the dispute flow.
+// M11 adds no native module: photos ride the SAME picker and the SAME
+// POST /uploads/image endpoint, so this ships as a JS-only OTA update.
+import * as ImagePicker from 'expo-image-picker';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -18,7 +23,7 @@ import Animated, {
 import { Feather } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 import { useUnread } from '../../context/UnreadContext';
-import { api } from '../../services/api';
+import { api, uploadFile } from '../../services/api';
 import { show as showToast } from '../../services/toast';
 import * as haptics from '../../services/haptics';
 import i18n from '../../i18n';
@@ -29,6 +34,12 @@ import Button from '../../components/Button';
 import ConfirmDateCard from '../../components/ConfirmDateCard';
 import ChatBookingSummary from '../../components/ChatBookingSummary';
 import ChatQuoteCard from '../../components/ChatQuoteCard';
+// M11 — the thread stops being text-only. Both cards are new files; the
+// lightbox is the one that already exists and is reused as-is.
+import ChatImageBubble from '../../components/ChatImageBubble';
+import ChatTermsCard from '../../components/ChatTermsCard';
+import ImageViewer from '../../components/ImageViewer';
+import SendTermsSheet from './SendTermsSheet';
 // LANE 3 owns components/PaySheet.js (design/handoff-jet-pulse/PAYMENTS.md).
 // This screen is Path B's entry point: "Accept & pay" opens the ONE shared
 // sheet, and no dollar figure may appear anywhere before it does.
@@ -342,6 +353,11 @@ export default function ChatScreen({ navigation, route }) {
   // Quote card (canvas 3a) — Path B of PAYMENTS.md runs from here.
   const [paySheetVisible, setPaySheetVisible] = useState(false);
   const [quoteBusy, setQuoteBusy] = useState(false);
+  // M11 — photos + in-thread agreements.
+  const [viewerIndex, setViewerIndex] = useState(null); // null = lightbox closed
+  const [termsSheetVisible, setTermsSheetVisible] = useState(false);
+  const [termsSending, setTermsSending] = useState(false);
+  const [termsBusyId, setTermsBusyId] = useState(null);
 
   const listRef = useRef(null);
   // load() runs on a 5s interval, so it must not close over `messages` — the
@@ -519,6 +535,211 @@ export default function ChatScreen({ navigation, route }) {
       setText(trimmed);
     } finally {
       setSending(false);
+    }
+  }
+
+  // ── Photos in the thread (M11) ───────────────────────────────────────────────
+  //
+  // Upload FIRST, write the message row SECOND — the same order
+  // ProofOfWorkScreen and the dispute flow already use. A failed upload leaves
+  // no half-message behind, and a failed message leaves an orphaned object in
+  // storage rather than a broken bubble.
+  //
+  // PRIVACY: this deliberately reuses POST /uploads/image, the one path every
+  // other photo in the app already takes. It does NOT widen who can see
+  // anything — a thread photo is only ever handed out by the two participant-
+  // gated message reads (see backend/app/api/messages.py::_attachment_url for
+  // the full reasoning and the note on moving to signed URLs later).
+  const threadKey = interestId
+    ? { interest_id: interestId }
+    : { booking_id: bookingId };
+
+  // Every photo in the thread, in send order — the lightbox pages through them
+  // all, not just the one that was tapped.
+  const photos = useMemo(
+    () =>
+      messages
+        .filter((m) => m.message_type === 'image')
+        .map((m) => m._localUri || m.attachment_url)
+        .filter(Boolean),
+    [messages],
+  );
+
+  function photoIndexOf(item) {
+    const uri = item?._localUri || item?.attachment_url;
+    const i = photos.indexOf(uri);
+    return i >= 0 ? i : 0;
+  }
+
+  async function handlePickPhoto() {
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (perm.status !== 'granted') {
+      Alert.alert(
+        'Photos permission needed',
+        'Allow photo access so you can show them what you mean.',
+      );
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      quality: 0.85,
+      // No EXIF: a job photo's GPS tag is the client's home address, and the
+      // walkthrough audit's worst finding (L3) was photos leaking exactly that.
+      exif: false,
+    });
+    if (result.canceled || !result.assets?.length) return;
+
+    for (const asset of result.assets) sendPhoto(asset);
+  }
+
+  async function sendPhoto(asset, existingId = null) {
+    const tempId = existingId || `_img_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+    const now = new Date().toISOString();
+
+    // Optimistic bubble showing the LOCAL file, so the photo is in the thread
+    // before the upload finishes (#7a, same contract as an optimistic text send).
+    setMessages((prev) => {
+      const withoutTemp = prev.filter((m) => m.id !== tempId);
+      return [
+        ...withoutTemp,
+        {
+          id: tempId,
+          message_type: 'image',
+          content: 'Photo',
+          sender_id: user?.id,
+          sent_at: now,
+          created_at: now,
+          attachment_width: asset?.width,
+          attachment_height: asset?.height,
+          _localUri: asset?.uri,
+          _asset: asset,
+          _optimistic: true,
+        },
+      ];
+    });
+    atBottomRef.current = true;
+    setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 60);
+
+    try {
+      haptics.buttonTap();
+      const ext = (asset.uri.split('.').pop() || 'jpg').toLowerCase();
+      const mimeType = asset.mimeType || `image/${ext === 'jpg' ? 'jpeg' : ext}`;
+      const up = await uploadFile('/uploads/image', {
+        uri: asset.uri,
+        type: mimeType,
+        name: asset.fileName || `chat_${Date.now()}.${ext}`,
+      });
+
+      const res = await api.post(
+        '/messages/',
+        {
+          ...threadKey,
+          message_type: 'image',
+          attachment_url: up.url,
+          attachment_path: up.path,
+          ...(asset?.width ? { attachment_width: Math.round(asset.width) } : {}),
+          ...(asset?.height ? { attachment_height: Math.round(asset.height) } : {}),
+        },
+        { _retryNonGet: true },
+      );
+      const msg = res?.data || res;
+      setMessages((prev) => reconcileSent(prev, tempId, msg));
+      setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 60);
+    } catch {
+      // Keep the bubble and mark it — the photo is still tappable to retry, so
+      // a flaky upload never silently eats what somebody tried to send.
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === tempId ? { ...m, _optimistic: true, _failed: true } : m,
+        ),
+      );
+    }
+  }
+
+  // ── Terms in the thread (M11) ────────────────────────────────────────────────
+
+  function replaceTerms(messageId, terms) {
+    setMessages((prev) =>
+      prev.map((m) => (m.id === messageId ? { ...m, terms } : m)),
+    );
+  }
+
+  async function handleSendTerms({ title, terms_text }) {
+    setTermsSending(true);
+    try {
+      const res = await api.post('/messages/terms', { ...threadKey, title, terms_text });
+      const msg = res?.data || res;
+      if (msg?.id) setMessages((prev) => mergeMessagesById(prev, [msg]));
+      setTermsSheetVisible(false);
+      haptics.successTap?.();
+      atBottomRef.current = true;
+      setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 60);
+      return true;
+    } catch (err) {
+      showToast({
+        type: 'error',
+        text1: "Couldn't send those terms",
+        text2: err?.message || '',
+      });
+      return false;
+    } finally {
+      setTermsSending(false);
+    }
+  }
+
+  // The tap that makes it an agreement. Confirmed first — an accepted record is
+  // permanent for both sides, so it must not be reachable by a mis-tap.
+  function handleAcceptTerms(item) {
+    const terms = item?.terms;
+    if (!terms?.id || termsBusyId) return;
+    Alert.alert(
+      'Agree to these terms?',
+      'Your name and the time are recorded against this exact wording. Neither side can edit it afterwards.',
+      [
+        { text: 'Not yet', style: 'cancel' },
+        {
+          text: 'I agree',
+          onPress: async () => {
+            setTermsBusyId(terms.id);
+            try {
+              const res = await api.post(`/messages/terms/${terms.id}/accept`);
+              const updated = res?.data || res;
+              if (updated?.id) replaceTerms(item.id, updated);
+              haptics.successTap?.();
+            } catch (err) {
+              showToast({
+                type: 'error',
+                text1: "Couldn't record your agreement",
+                text2: err?.message || '',
+              });
+              load();
+            } finally {
+              setTermsBusyId(null);
+            }
+          },
+        },
+      ],
+    );
+  }
+
+  async function handleWithdrawTerms(item) {
+    const terms = item?.terms;
+    if (!terms?.id || termsBusyId) return;
+    setTermsBusyId(terms.id);
+    try {
+      const res = await api.post(`/messages/terms/${terms.id}/withdraw`);
+      const updated = res?.data || res;
+      if (updated?.id) replaceTerms(item.id, updated);
+    } catch (err) {
+      showToast({
+        type: 'error',
+        text1: "Couldn't withdraw those terms",
+        text2: err?.message || '',
+      });
+      load();
+    } finally {
+      setTermsBusyId(null);
     }
   }
 
@@ -805,6 +1026,34 @@ export default function ChatScreen({ navigation, route }) {
         }
         renderItem={({ item }) => {
           const isMine = item.sender_id === user?.id;
+
+          // M11 — a thread row is now typed. Anything unrecognised falls
+          // through to the text bubble it has always been, so an older client
+          // reading a newer message type still renders its preview line
+          // instead of a blank row.
+          if (item.message_type === 'image') {
+            return (
+              <ChatImageBubble
+                item={item}
+                isMine={isMine}
+                onPress={() => setViewerIndex(photoIndexOf(item))}
+                onRetry={() => item._asset && sendPhoto(item._asset, item.id)}
+              />
+            );
+          }
+
+          if (item.message_type === 'terms' && item.terms) {
+            return (
+              <ChatTermsCard
+                terms={item.terms}
+                isMine={isMine}
+                busy={termsBusyId === item.terms.id}
+                onAccept={() => handleAcceptTerms(item)}
+                onWithdraw={() => handleWithdrawTerms(item)}
+              />
+            );
+          }
+
           return <MessageBubble item={item} isMine={isMine} />;
         }}
         ListFooterComponent={isTyping ? <TypingIndicator /> : null}
@@ -824,6 +1073,33 @@ export default function ChatScreen({ navigation, route }) {
         padding={0}
         style={[styles.inputBar, { paddingBottom: Math.max(insets.bottom, spacing.base) }]}
       >
+        {/* Attachments. Neutral, never accent — the send button is this
+            screen's one purple element (POLISH-TIPS §2). 36px visual with a
+            44px hit area via hitSlop (§6). */}
+        <TouchableOpacity
+          onPress={handlePickPhoto}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          accessibilityRole="button"
+          accessibilityLabel="Send a photo"
+          style={styles.attachBtn}
+        >
+          <Feather name="image" size={19} color={colors.textSecondary} strokeWidth={1.8} />
+        </TouchableOpacity>
+
+        {/* Only the provider side proposes terms — the client is the party who
+            agrees, and the server enforces the same rule. */}
+        {isBusinessSide && (
+          <TouchableOpacity
+            onPress={() => setTermsSheetVisible(true)}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            accessibilityRole="button"
+            accessibilityLabel="Send terms to agree"
+            style={styles.attachBtn}
+          >
+            <Feather name="file-text" size={19} color={colors.textSecondary} strokeWidth={1.8} />
+          </TouchableOpacity>
+        )}
+
         <TextInput
           style={styles.input}
           placeholder="Type a message…"
@@ -853,6 +1129,22 @@ export default function ChatScreen({ navigation, route }) {
         }}
         onClose={() => setPaySheetVisible(false)}
         onConfirm={handleConfirmPayment}
+      />
+
+      {/* The existing lightbox, reused as-is — it already pages, counts and
+          dismisses. Thread photos are just another set of URIs to it. */}
+      <ImageViewer
+        visible={viewerIndex !== null}
+        images={photos}
+        initialIndex={viewerIndex ?? 0}
+        onClose={() => setViewerIndex(null)}
+      />
+
+      <SendTermsSheet
+        visible={termsSheetVisible}
+        sending={termsSending}
+        onClose={() => setTermsSheetVisible(false)}
+        onSend={handleSendTerms}
       />
     </KeyboardAvoidingView>
   );
@@ -942,6 +1234,13 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: colors.border,
     backgroundColor: colors.bg,
+  },
+  // Attachment buttons sit on the input row's baseline with the composer.
+  attachBtn: {
+    width: 36,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   leakageNote: {
     textAlign: 'center',
