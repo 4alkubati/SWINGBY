@@ -2,10 +2,16 @@ import React from 'react';
 import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import Text from './Text';
+import BusinessLogo from './BusinessLogo';
 import { colors, spacing, radius } from '../theme/tokens';
 
-// Compact nearby-business row. Purple initials avatar, ★ rating, distance chip.
-export default function NearbyCard({ name, initials, rating, jobs, distance, onPress }) {
+// Compact nearby-business row. Business logo (or purple initials tile when
+// there is none — the usual case), ★ rating, distance chip.
+//
+// `logoUrl` is optional and `initials` is still honoured, so the callers that
+// have not been given a business object with a logo on it render exactly as
+// before.
+export default function NearbyCard({ name, initials, logoUrl, rating, jobs, distance, onPress }) {
   return (
     <TouchableOpacity
       style={styles.container}
@@ -19,9 +25,13 @@ export default function NearbyCard({ name, initials, rating, jobs, distance, onP
       }
       accessibilityHint="Opens business profile"
     >
-      <View style={styles.avatar} accessible={false}>
-        <Text style={styles.avatarText}>{initials}</Text>
-      </View>
+      <BusinessLogo
+        uri={logoUrl}
+        name={name || initials}
+        size={46}
+        radius={14}
+        fontSize={15}
+      />
       <View style={styles.info}>
         <Text style={styles.name} numberOfLines={1} maxFontSizeMultiplier={1.3}>
           {name}
@@ -58,21 +68,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-  },
-  avatar: {
-    width: 46,
-    height: 46,
-    borderRadius: 14,
-    backgroundColor: colors.accentMuted,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-  avatarText: {
-    fontFamily: 'SpaceGrotesk_700Bold',
-    fontSize: 15,
-    color: colors.accentText,
-    letterSpacing: -0.2,
   },
   info: {
     flex: 1,

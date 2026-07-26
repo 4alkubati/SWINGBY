@@ -1,6 +1,7 @@
 import {
   View, ScrollView, StyleSheet, RefreshControl, Alert, Platform,
   TextInput, Switch, FlatList, Linking, TouchableOpacity, Pressable,
+  ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useState, useEffect, useCallback } from 'react';
@@ -9,8 +10,9 @@ import Animated, {
   useAnimatedScrollHandler, Extrapolation,
 } from 'react-native-reanimated';
 import { Feather } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '../../context/AuthContext';
-import { api } from '../../services/api';
+import { api, uploadFile } from '../../services/api';
 import { getUserLocation } from '../../services/location';
 import { useFavorites } from '../../hooks/useFavorites';
 import * as toast from '../../services/toast';
@@ -18,6 +20,7 @@ import { colors, spacing, radius, motion } from '../../theme/tokens';
 import Text from '../../components/Text';
 import Button from '../../components/Button';
 import Avatar from '../../components/Avatar';
+import BusinessLogo from '../../components/BusinessLogo';
 import Chip from '../../components/Chip';
 import Surface from '../../components/Surface';
 import Stack from '../../components/Stack';
@@ -61,6 +64,11 @@ function computeProfileCompleteness(business) {
     !!business?.category,
     !!business?.description,
     !!business?.service_radius_km,
+    // A logo counts toward completeness, so uploading one visibly moves the
+    // bar. No matching entry is added to the tip chain below on purpose: those
+    // strings are translated into FR and AR in the shared catalogue, and this
+    // screen should not be the thing that ships an English-only tip.
+    !!business?.logo_url,
     Array.isArray(business?.photos) && business.photos.length > 0,
     Array.isArray(business?.services) && business.services.length > 0,
   ];
@@ -320,6 +328,7 @@ export default function BusinessProfileScreen({ navigation, route }) {
   const [editRadius, setEditRadius] = useState('');
   const [saving, setSaving] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
 
   // Scroll-based header animation
   const scrollY = useSharedValue(0);
@@ -445,6 +454,65 @@ export default function BusinessProfileScreen({ navigation, route }) {
     }
   }
 
+  // Business logo. Mirrors the client-avatar path in ProfileEditScreen exactly
+  // — permission → library → POST /uploads/image → PATCH the url onto the row
+  // — because that path is proven and a business had no equivalent at all.
+  //
+  // Two deliberate differences, both about not destroying work:
+  //   · the PATCH sends ONLY logo_url, so it can never overwrite a name or
+  //     radius the owner is midway through editing;
+  //   · success updates `business` in place instead of calling load(), because
+  //     load() re-seeds editName/editCategory/editRadius from the server and
+  //     would silently throw away whatever is currently typed in those fields.
+  // A failure leaves every piece of state untouched and says so in a toast, so
+  // a dropped upload costs the photo and nothing else.
+  async function handleLogoPress() {
+    if (uploadingLogo) return;
+
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (perm.status !== 'granted') {
+      toast.show({
+        type: 'error',
+        text1: 'Photo access needed',
+        text2: 'Allow photo access to upload your logo.',
+      });
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      quality: 0.85,
+      exif: false,
+      allowsEditing: true,
+      aspect: [1, 1],
+    });
+    if (result.canceled || !result.assets?.length) return;
+
+    const asset = result.assets[0];
+    const ext = (asset.uri.split('.').pop() || 'jpg').toLowerCase();
+    const mimeType = asset.mimeType || `image/${ext === 'jpg' ? 'jpeg' : ext}`;
+
+    setUploadingLogo(true);
+    try {
+      const up = await uploadFile('/uploads/image', {
+        uri: asset.uri,
+        type: mimeType,
+        name: asset.fileName || `logo_${Date.now()}.${ext}`,
+      });
+      await api.patch(`/businesses/${bizId}`, { logo_url: up.url });
+      setBusiness((prev) => (prev ? { ...prev, logo_url: up.url } : prev));
+      toast.show({ type: 'success', text1: 'Logo updated' });
+    } catch (err) {
+      toast.show({
+        type: 'error',
+        text1: 'Could not upload logo',
+        text2: err?.message || 'Try again.',
+      });
+    } finally {
+      setUploadingLogo(false);
+    }
+  }
+
   async function handleLogout() {
     if (Platform.OS === 'web') {
       if (window.confirm('Are you sure you want to log out?')) {
@@ -553,15 +621,36 @@ export default function BusinessProfileScreen({ navigation, route }) {
 
           {/* ── Identity ── */}
           <View style={styles.ownerIdentity}>
+            {/* The tile IS the logo control. A business had no picture
+                anywhere in the product, and this is the one place its owner
+                reliably looks at their own identity — so tapping it changes
+                the logo, exactly like tapping your avatar on ProfileEditScreen
+                changes your photo. Editing name/category/radius did not lose
+                an entry point: it moved to a labelled "Business name &
+                category" row in Manage below, which is more discoverable than
+                a pencil on a tile ever was. */}
             <Pressable
-              onPress={() => setEditMode(true)}
+              onPress={handleLogoPress}
+              disabled={uploadingLogo}
               accessibilityRole="button"
-              accessibilityLabel="Edit business details"
+              accessibilityLabel={
+                business?.logo_url ? 'Change business logo' : 'Add a business logo'
+              }
+              accessibilityState={{ busy: uploadingLogo }}
               style={{ position: 'relative' }}
             >
-              <Avatar name={business?.business_name || ''} size={60} shape="tile" />
+              <BusinessLogo
+                uri={business?.logo_url}
+                name={business?.business_name || ''}
+                size={60}
+              />
+              {uploadingLogo && (
+                <View style={styles.ownerLogoBusy}>
+                  <ActivityIndicator size="small" color={colors.textPrimary} />
+                </View>
+              )}
               <View style={styles.ownerEditBadge}>
-                <Feather name="edit-2" size={11} strokeWidth={2} color={colors.textPrimary} />
+                <Feather name="camera" size={11} strokeWidth={2} color={colors.textPrimary} />
               </View>
             </Pressable>
 
@@ -627,6 +716,23 @@ export default function BusinessProfileScreen({ navigation, route }) {
           {/* ── Manage ── */}
           <Text variant="label" color="secondary" style={styles.ownerSectionLabel}>Manage</Text>
           <View style={styles.ownerBlock}>
+            {/* Took over the tile's old job as the edit affordance. */}
+            <ManageRow
+              label="Business name & category"
+              value={business?.category || undefined}
+              onPress={() => setEditMode(true)}
+            />
+            {/* A second, named way in. The tile above is the fast path once
+                you know it is tappable; this is the one an owner finds when
+                they are looking for "where do I put my logo". */}
+            <ManageRow
+              label="Logo"
+              value={
+                uploadingLogo ? 'Uploading…' : business?.logo_url ? undefined : 'Add'
+              }
+              pill={!uploadingLogo && business?.logo_url ? 'Added' : undefined}
+              onPress={handleLogoPress}
+            />
             <ManageRow
               label="Team & employees"
               value={String(employees.length)}
@@ -841,9 +947,19 @@ export default function BusinessProfileScreen({ navigation, route }) {
           {/* ── Hero section ── */}
           <Animated.View style={[styles.heroSection, heroScale]}>
             <Stack spacing="md" align="center">
-              <Avatar
+              {/* The public face of the business. A tile, not a circle:
+                  businesses are tiles and people are circles throughout the
+                  system (Avatar shape="tile"), and this hero was the one place
+                  a business was drawn as a person. */}
+              <BusinessLogo
+                uri={business?.logo_url}
                 name={business?.business_name || ''}
-                size="xl"
+                size={96}
+                accessibilityLabel={
+                  business?.business_name
+                    ? `${business.business_name} logo`
+                    : 'Business logo'
+                }
               />
 
               {editMode ? (
@@ -1102,6 +1218,11 @@ const styles = StyleSheet.create({
   ownerNameRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   ownerName: {
     flexShrink: 1, fontSize: 17, fontFamily: 'Inter_600SemiBold', color: colors.textPrimary,
+  },
+  ownerLogoBusy: {
+    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+    borderRadius: 18, backgroundColor: 'rgba(0,0,0,0.45)',
+    alignItems: 'center', justifyContent: 'center',
   },
   ownerEditBadge: {
     position: 'absolute', bottom: -4, right: -4,

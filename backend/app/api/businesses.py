@@ -32,6 +32,62 @@ def _escape_ilike(v: str) -> str:
     return v.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
 
 
+def _validate_logo_url(v):
+    """
+    Normalize a business logo URL, or reject it.
+
+    Same contract as `users.avatar_url`: an absolute http(s) URL produced by
+    POST /uploads/image. Scheme is checked here because this value is rendered
+    as an <Image> source on every client — a `javascript:` or `data:` URL has
+    no business reaching a react-native Image, and an arbitrary third-party
+    host would turn every search result into a tracking beacon for whoever
+    owns it. Empty string normalizes to None so "remove my logo" is expressible
+    without a separate endpoint.
+    """
+    if v is None:
+        return None
+    v = str(v).strip()
+    if not v:
+        return None
+    if not v.lower().startswith(("http://", "https://")):
+        raise ValueError("logo_url must be an absolute http(s) URL")
+    return v
+
+
+def _is_missing_logo_column(exc: Exception) -> bool:
+    """
+    True when the database rejected a write because `businesses.logo_url` does
+    not exist yet (migration 20260726120000 filed but not applied).
+
+    Postgres raises 42703 "column ... does not exist"; PostgREST answers a write
+    naming an unknown column with PGRST204. Either way the fix is the same and
+    it must NOT be to fail the request: a business owner editing their NAME
+    should not have their save rejected because a logo column is missing, and a
+    signup must never 500 on it. Deliberately narrow — it only matches when the
+    error text also names this specific column, so a genuinely broken write
+    still surfaces as an error instead of being silently retried.
+    """
+    text = str(exc)
+    return "logo_url" in text and ("42703" in text or "PGRST204" in text)
+
+
+def _without_logo(payload: dict) -> dict:
+    return {k: v for k, v in payload.items() if k != "logo_url"}
+
+
+def _with_logo_key(row):
+    """
+    Guarantee `logo_url` is present on a business the API hands back.
+
+    `select("*")` simply omits the key while the column is unapplied, which
+    would make the field flicker in and out of the response shape depending on
+    migration state. Pinning it to None keeps one contract for the app.
+    """
+    if isinstance(row, dict) and "logo_url" not in row:
+        return {**row, "logo_url": None}
+    return row
+
+
 def _haversine_km(lat1: float, lng1: float, lat2: float, lng2: float) -> float:
     """Great-circle distance in km between two lat/lng points."""
     R = 6371.0
@@ -58,11 +114,17 @@ class BusinessCreate(BaseModel):
     lat: Optional[float] = Field(None, ge=-90.0, le=90.0)
     lng: Optional[float] = Field(None, ge=-180.0, le=180.0)
     service_radius_km: Optional[float] = Field(25.0, ge=1.0, le=500.0)
+    logo_url: Optional[str] = Field(None, max_length=2048)
 
     @field_validator("business_name", "category", mode="before")
     @classmethod
     def strip_str(cls, v):
         return str(v).strip() if v else v
+
+    @field_validator("logo_url", mode="before")
+    @classmethod
+    def check_logo_url(cls, v):
+        return _validate_logo_url(v)
 
 
 class BusinessUpdate(BaseModel):
@@ -75,6 +137,12 @@ class BusinessUpdate(BaseModel):
     lat: Optional[float] = Field(None, ge=-90.0, le=90.0)
     lng: Optional[float] = Field(None, ge=-180.0, le=180.0)
     service_radius_km: Optional[float] = Field(None, ge=1.0, le=500.0)
+    logo_url: Optional[str] = Field(None, max_length=2048)
+
+    @field_validator("logo_url", mode="before")
+    @classmethod
+    def check_logo_url(cls, v):
+        return _validate_logo_url(v)
 
 
 # ── Endpoints ─────────────────────────────────────────────────────────────────
@@ -117,8 +185,17 @@ def create_business(
             data.lat, data.lng, data.address, with_provenance=True
         )
         payload.update({k: v for k, v in coords.items() if v is not None})
-        res = supabase.table("businesses").insert(payload).execute()
-        return {"message": "Business created", "business": res.data[0]}
+        try:
+            res = supabase.table("businesses").insert(payload).execute()
+        except Exception as exc:
+            # Migration 20260726120000 not applied yet. A logo is decoration;
+            # signup is the business existing at all. Drop the logo and create
+            # the row rather than failing the only step that matters.
+            if not (payload.get("logo_url") and _is_missing_logo_column(exc)):
+                raise
+            logger.warning("create_business_logo_column_missing")
+            res = supabase.table("businesses").insert(_without_logo(payload)).execute()
+        return {"message": "Business created", "business": _with_logo_key(res.data[0])}
     except Exception:
         logger.exception("create_business_error")
         raise HTTPException(status_code=400, detail="Could not create business")
@@ -235,7 +312,7 @@ def get_my_business(current_user: dict = Depends(get_current_user)):
                 .single()
                 .execute()
             )
-            return {**res.data, "is_employee": True}
+            return {**_with_logo_key(res.data), "is_employee": True}
         except Exception:
             raise HTTPException(
                 status_code=404, detail="No business linked to this employee"
@@ -253,7 +330,7 @@ def get_my_business(current_user: dict = Depends(get_current_user)):
             .single()
             .execute()
         )
-        return res.data
+        return _with_logo_key(res.data)
     except Exception:
         raise HTTPException(
             status_code=404, detail="No business found for this account"
@@ -660,7 +737,7 @@ def get_business(business_id: str, current_user: dict = Depends(get_current_user
             .single()
             .execute()
         )
-        return res.data
+        return _with_logo_key(res.data)
     except Exception:
         raise HTTPException(status_code=404, detail="Business not found")
 
@@ -707,13 +784,36 @@ def update_business(
         update_data.update({k: v for k, v in coords.items() if v is not None})
 
     try:
-        res = (
-            supabase.table("businesses")
-            .update(update_data)
-            .eq("id", business_id)
-            .execute()
-        )
-        return {"message": "Business updated", "business": res.data[0]}
+        try:
+            res = (
+                supabase.table("businesses")
+                .update(update_data)
+                .eq("id", business_id)
+                .execute()
+            )
+        except Exception as exc:
+            # Same degradation as create. Critically this also protects edits
+            # that merely travel alongside a logo: without it, an owner
+            # renaming their business in the same PATCH would lose the rename
+            # too, on a DB where only the migration is missing.
+            if not (update_data.get("logo_url") and _is_missing_logo_column(exc)):
+                raise
+            logger.warning("update_business_logo_column_missing", biz_id=business_id)
+            remaining = _without_logo(update_data)
+            if not remaining:
+                raise HTTPException(
+                    status_code=503,
+                    detail="Logo uploads are not available yet. Try again later.",
+                )
+            res = (
+                supabase.table("businesses")
+                .update(remaining)
+                .eq("id", business_id)
+                .execute()
+            )
+        return {"message": "Business updated", "business": _with_logo_key(res.data[0])}
+    except HTTPException:
+        raise
     except Exception:
         logger.exception("update_business_error")
         raise HTTPException(status_code=400, detail="Could not update business")

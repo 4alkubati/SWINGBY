@@ -489,6 +489,7 @@ export default function HomeScreen({ navigation }) {
               <FeaturedCard
                 name={topRated.business_name}
                 initials={toInitials(topRated.business_name)}
+                logoUrl={topRated.logo_url}
                 rating={topRated.avg_rating?.toFixed(1) ?? '—'}
                 jobs={topRated.review_count ?? 0}
                 distance={topRated._distance}
@@ -536,6 +537,7 @@ export default function HomeScreen({ navigation }) {
                   key={b.id}
                   name={b.business_name}
                   initials={toInitials(b.business_name)}
+                  logoUrl={b.logo_url}
                   rating={b.avg_rating?.toFixed(1) ?? '—'}
                   jobs={b.review_count ?? 0}
                   distance={b._distance}

@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import {
   ScrollView, KeyboardAvoidingView, Platform, View, StyleSheet,
-  ActivityIndicator,
+  ActivityIndicator, Pressable,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
+import { Feather } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 
 import { colors, spacing, radius } from '../../theme/tokens';
 import Text from '../../components/Text';
@@ -13,8 +15,9 @@ import TextField from '../../components/TextField';
 import Button from '../../components/Button';
 import Chip from '../../components/Chip';
 import HeaderGlow from '../../components/HeaderGlow';
+import BusinessLogo from '../../components/BusinessLogo';
 import GoogleReviewsConnect from '../../components/GoogleReviewsConnect';
-import { api } from '../../services/api';
+import { api, uploadFile } from '../../services/api';
 import { show as showToast } from '../../services/toast';
 import { getStatus as getGoogleReviewsStatus } from '../../services/googleReviews';
 import { CATEGORY_LABELS as CATEGORIES } from '../../constants/categories';
@@ -31,6 +34,9 @@ export default function BusinessSetupScreen({ onComplete }) {
   const [lat, setLat] = useState(null);
   const [lng, setLng] = useState(null);
   const [radiusKm, setRadiusKm] = useState(25);
+  const [logoUrl, setLogoUrl] = useState(null);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [logoError, setLogoError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   // Walkthrough M3 — the "Connect Google" step of business signup. It only
@@ -39,6 +45,57 @@ export default function BusinessSetupScreen({ onComplete }) {
   // is a second step rather than another field above.
   const [step, setStep] = useState('details');
   const [importedCount, setImportedCount] = useState(0);
+
+  // The logo is uploaded the moment it is picked, not on submit — the business
+  // row does not exist yet, but POST /uploads/image only needs an authenticated
+  // caller, so we can hold a real URL and hand it to POST /businesses/ as just
+  // another field.
+  //
+  // Every failure path here is contained: a denied permission, a cancelled
+  // picker or a failed upload sets a message next to the tile and touches
+  // NOTHING else. The name, category, address, radius and description the user
+  // already typed are never re-rendered from scratch and never cleared, and the
+  // form stays submittable — a business with no logo is a complete signup, so a
+  // broken upload must not be able to block one.
+  async function handlePickLogo() {
+    if (uploadingLogo) return;
+    setLogoError('');
+
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (perm.status !== 'granted') {
+      setLogoError('Allow photo access to add a logo. You can add one later.');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      quality: 0.85,
+      exif: false,
+      allowsEditing: true,
+      aspect: [1, 1],
+    });
+    if (result.canceled || !result.assets?.length) return;
+
+    const asset = result.assets[0];
+    const ext = (asset.uri.split('.').pop() || 'jpg').toLowerCase();
+    const mimeType = asset.mimeType || `image/${ext === 'jpg' ? 'jpeg' : ext}`;
+
+    setUploadingLogo(true);
+    try {
+      const up = await uploadFile('/uploads/image', {
+        uri: asset.uri,
+        type: mimeType,
+        name: asset.fileName || `logo_${Date.now()}.${ext}`,
+      });
+      setLogoUrl(up.url);
+    } catch (err) {
+      // Keep whatever logo was already accepted rather than blanking the tile
+      // because a REPLACEMENT failed.
+      setLogoError(err?.message || 'Could not upload that image. Try another.');
+    } finally {
+      setUploadingLogo(false);
+    }
+  }
 
   async function handleSubmit() {
     setError('');
@@ -62,6 +119,9 @@ export default function BusinessSetupScreen({ onComplete }) {
         lat: lat ?? undefined,
         lng: lng ?? undefined,
         service_radius_km: radiusKm,
+        // Omitted entirely when there is no logo, so a signup without one is
+        // byte-for-byte the request it was before this field existed.
+        logo_url: logoUrl || undefined,
       };
       await api.post('/businesses/', payload);
       showToast({ type: 'success', text1: 'Business created', text2: 'You can now receive jobs.' });
@@ -153,6 +213,55 @@ export default function BusinessSetupScreen({ onComplete }) {
               placeholder="e.g. Calgary Clean Co."
               autoCapitalize="words"
             />
+          </View>
+
+          {/* Logo — optional, and sits AFTER the name on purpose: the tile
+              previews the monogram built from what has been typed, so an owner
+              who skips this still sees the identity they are going to get
+              rather than an empty hole. */}
+          <View style={styles.field}>
+            <Text style={styles.fieldLabel}>Logo (optional)</Text>
+            <Pressable
+              onPress={handlePickLogo}
+              disabled={uploadingLogo}
+              accessibilityRole="button"
+              accessibilityLabel={logoUrl ? 'Change business logo' : 'Add a business logo'}
+              accessibilityState={{ busy: uploadingLogo }}
+              style={({ pressed }) => [styles.logoRow, pressed && styles.logoRowPressed]}
+            >
+              <View>
+                <BusinessLogo
+                  uri={logoUrl}
+                  name={businessName || '?'}
+                  size={56}
+                />
+                {uploadingLogo && (
+                  <View style={styles.logoBusy}>
+                    <ActivityIndicator size="small" color={colors.textPrimary} />
+                  </View>
+                )}
+              </View>
+              <View style={styles.logoCopy}>
+                <Text style={styles.logoTitle}>
+                  {uploadingLogo
+                    ? 'Uploading…'
+                    : logoUrl
+                      ? 'Logo added — tap to replace'
+                      : 'Add your logo'}
+                </Text>
+                <Text variant="caption" color="secondary">
+                  {logoUrl
+                    ? 'Clients see this on your profile and in search.'
+                    : 'Optional. Without one we use your initials.'}
+                </Text>
+              </View>
+              <Feather
+                name={logoUrl ? 'refresh-cw' : 'plus'}
+                size={16}
+                color={colors.textSecondary}
+              />
+            </Pressable>
+            {!!logoError && <Text style={styles.logoError}>{logoError}</Text>}
           </View>
 
           <View style={styles.field}>
@@ -306,6 +415,34 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: colors.textSecondary,
     marginBottom: spacing.sm,
+  },
+  logoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.card,
+    padding: spacing.md,
+  },
+  logoRowPressed: { backgroundColor: colors.surfaceAlt },
+  logoBusy: {
+    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+    borderRadius: 17, backgroundColor: 'rgba(0,0,0,0.45)',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  logoCopy: { flex: 1, gap: 2 },
+  logoTitle: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 14,
+    color: colors.textPrimary,
+  },
+  logoError: {
+    marginTop: spacing.sm,
+    fontFamily: 'Inter_400Regular',
+    fontSize: 12,
+    color: colors.danger,
   },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   chip: { marginRight: 0 },

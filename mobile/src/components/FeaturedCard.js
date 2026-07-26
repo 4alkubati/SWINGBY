@@ -2,13 +2,16 @@ import React from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import Text from './Text';
+import BusinessLogo from './BusinessLogo';
 import { colors, spacing, radius } from '../theme/tokens';
 
-// Featured "TOP RATED NEAR YOU" card — 48px initials tile (purple-tinted),
+// Featured "TOP RATED NEAR YOU" card — 48px business logo, falling back to the
+// purple-tinted initials tile when the business has none (the usual case),
 // name + green Verified pill, ★ rating meta, chevron right.
 export default function FeaturedCard({
   name,
   initials,
+  logoUrl,
   rating,
   jobs,
   distance,
@@ -36,9 +39,13 @@ export default function FeaturedCard({
       accessibilityRole="button"
       accessibilityLabel={a11yLabel}
     >
-      <View style={styles.avatar} accessible={false}>
-        <Text style={styles.avatarText}>{initials}</Text>
-      </View>
+      <BusinessLogo
+        uri={logoUrl}
+        name={name || initials}
+        size={48}
+        radius={14}
+        fontSize={16}
+      />
 
       <View style={styles.info}>
         <View style={styles.nameRow}>
@@ -107,21 +114,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-  },
-  avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    backgroundColor: colors.accentMuted,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-  avatarText: {
-    fontFamily: 'SpaceGrotesk_700Bold',
-    fontSize: 16,
-    color: colors.accentText,
-    letterSpacing: -0.3,
   },
   info: {
     flex: 1,
