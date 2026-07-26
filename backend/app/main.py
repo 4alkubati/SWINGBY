@@ -172,6 +172,12 @@ from app.api.reviews import router as reviews_router
 
 app.include_router(reviews_router, prefix="/reviews", tags=["reviews"])
 
+from app.api.google_reviews import router as google_reviews_router
+
+app.include_router(
+    google_reviews_router, prefix="/google-reviews", tags=["google-reviews"]
+)
+
 from app.api.messages import router as messages_router
 
 app.include_router(messages_router, prefix="/messages", tags=["messages"])
