@@ -1,18 +1,37 @@
 """
-payments_stripe.py — Stripe sandbox Checkout endpoints.
+payments_stripe.py — Stripe sandbox payment endpoints.
 
 Endpoints
 ---------
+POST /payments/stripe/payment-intent/{booking_id}
+    Auth: the client who owns the booking.
+    Returns the client_secret / ephemeral key / customer id that Stripe's
+    NATIVE Payment Sheet needs, so the client pays INSIDE the app.
+    This is the default path (M9, walkthrough audit 2026-07-24).
+
 POST /payments/stripe/checkout/{booking_id}
     Auth: the client who owns the booking.
     Creates a Stripe Checkout Session for the booking's total_amount and
-    returns its URL. Mobile opens this with Linking.openURL.
+    returns its URL. Mobile opens this with Linking.openURL. FALLBACK ONLY —
+    used when the native sheet is unavailable (no publishable key, native
+    module missing, Expo Go, older build).
 
 POST /payments/stripe/webhook
     No auth header — Stripe signs the body. We verify with STRIPE_WEBHOOK_SECRET.
-    Handles `checkout.session.completed`: marks the booking's payment row as
-    fully paid (Stripe sandbox simulates the cash side; on-platform escrow
-    accounting already split via /interests accept). Other event types ack.
+    Handles `checkout.session.completed` AND `payment_intent.succeeded`: both
+    mark the booking's payment row as captured, through the SAME
+    `_mark_payment_paid` function. Other event types ack.
+
+MONEY SEMANTICS
+---------------
+The native sheet changes WHERE the client types their card, not what the ledger
+does. Both entry points resolve the charge amount through the one
+`_resolve_charge_amount` helper (booking total, minus any credit redemption) and
+neither writes to `payments`. The ledger only ever moves in
+`_mark_payment_paid`, off a signature-verified webhook, with the same
+amount-verification, replay-dedupe and FINDING D remainder math it has always
+had. There is exactly one place money is accounted for, and this file did not
+add a second one.
 """
 
 from __future__ import annotations
@@ -37,11 +56,31 @@ class CheckoutResponse(BaseModel):
     url: str
 
 
-@router.post("/checkout/{booking_id}", response_model=CheckoutResponse)
-def create_checkout(
-    booking_id: str,
-    current_user: dict = Depends(get_current_user),
-):
+class PaymentSheetResponse(BaseModel):
+    """Everything Stripe's native Payment Sheet needs to open in-app."""
+
+    payment_intent_id: str
+    client_secret: str
+    ephemeral_key: str
+    customer_id: str
+    publishable_key: str
+    amount_cents: int
+    currency: str
+    merchant_display_name: str
+
+
+# ---------------------------------------------------------------------------
+# Shared charge resolution — ONE source of truth for both payment entry points
+# ---------------------------------------------------------------------------
+
+
+def _load_payable_booking(booking_id: str, current_user: dict) -> dict:
+    """Load a booking and assert this caller may pay it.
+
+    Raises 404 (missing), 403 (not the booking's client), 400 (cancelled).
+    Identical for the native sheet and hosted Checkout — a client who cannot
+    start a Checkout Session must not be able to start a PaymentIntent either.
+    """
     booking_res = (
         supabase.table("bookings")
         .select("id, client_id, total_amount, service_category, status")
@@ -59,6 +98,64 @@ def create_checkout(
     if booking["status"] in ("cancelled",):
         raise HTTPException(status_code=400, detail="Booking is cancelled")
 
+    return booking
+
+
+def _assert_not_already_paid(booking_id: str) -> None:
+    """Refuse to start a SECOND charge against an already-captured booking.
+
+    Before this guard, every "pay" surface would happily mint another Checkout
+    Session / PaymentIntent for a booking that was already captured — a real
+    double-charge path that only luck (the client not tapping twice) kept shut.
+    It also became load-bearing the moment two mechanisms existed: the mobile
+    PaySheet pays natively and legacy callers may still hit /checkout right
+    after, and this is what makes that second call a refusal rather than a
+    second charge.
+
+    Mirrors payment_triggers.trigger_on_accept's `already_paid` reason and uses
+    the same `escrow.is_capture_backed` definition of "really paid", so the
+    three places that ask the question cannot drift apart.
+
+    The lookup goes through THIS module's `supabase` handle (not escrow's) so it
+    is patchable in the endpoint tests alongside the booking lookup.
+    """
+    from app.services import escrow
+
+    try:
+        res = (
+            supabase.table("payments")
+            .select("*")
+            .eq("booking_id", booking_id)
+            .single()
+            .execute()
+        )
+        payment = res.data
+    except Exception:
+        # No payments row, or the lookup failed. Not proof of payment — let the
+        # charge proceed; the escrow capture guard is the backstop on release.
+        return
+
+    if payment and escrow.is_capture_backed(payment):
+        raise HTTPException(
+            status_code=409,
+            detail="already_paid: this booking has already been paid.",
+        )
+
+
+def _resolve_charge_amount(booking: dict, booking_id: str, current_user: dict) -> float:
+    """The authoritative amount to charge, in dollars.
+
+    Booking total, minus any customer credit redeemed against this booking.
+    Extracted verbatim from the original create_checkout body so the native
+    sheet and hosted Checkout can never charge different numbers for the same
+    booking — that divergence is exactly how a "which total is real?" money bug
+    starts.
+
+    `redeem_credit_for_booking` is idempotent (one redemption debit per booking,
+    enforced by a partial UNIQUE index), so it is safe for both entry points to
+    call it — a client who opens the native sheet, backs out, and falls back to
+    hosted Checkout redeems once, not twice.
+    """
     amount = float(booking.get("total_amount") or 0)
     if amount <= 0:
         raise HTTPException(status_code=400, detail="Booking total_amount must be > 0")
@@ -87,15 +184,164 @@ def create_checkout(
                 detail="Credit covers the full amount; no Stripe charge needed",
             )
 
-    email: Optional[str] = current_user.get("email")
-    description = (
-        f"SwingBy — {booking.get('service_category') or 'booking'} #{booking_id[:8]}"
+    return amount
+
+
+def _charge_description(booking: dict, booking_id: str) -> str:
+    return f"SwingBy — {booking.get('service_category') or 'booking'} #{booking_id[:8]}"
+
+
+# ---------------------------------------------------------------------------
+# Native Payment Sheet — the default path (M9)
+# ---------------------------------------------------------------------------
+
+
+@router.post("/payment-intent/{booking_id}", response_model=PaymentSheetResponse)
+def create_payment_intent(
+    booking_id: str,
+    current_user: dict = Depends(get_current_user),
+):
+    """Start an IN-APP payment for a booking.
+
+    M9: hosted Checkout throws the client into a browser. This returns the
+    PaymentIntent client_secret plus the customer + ephemeral key that let
+    Stripe's native Payment Sheet render inside SwingBy, branded as SwingBy.
+
+    Same auth, same booking preconditions and the same amount as
+    /checkout/{booking_id} — the only difference is where the card is typed.
+    Capture is immediate (Stripe's default), matching the hosted path, which is
+    what charge-before-service requires. The `payments` ledger is untouched here
+    and moves only when the `payment_intent.succeeded` webhook arrives.
+    """
+    from app.services import escrow, stripe_payment_sheet
+
+    booking = _load_payable_booking(booking_id, current_user)
+    _assert_not_already_paid(booking_id)
+    amount = _resolve_charge_amount(booking, booking_id, current_user)
+
+    if not stripe_payment_sheet.publishable_key():
+        # Without a publishable key the device cannot confirm the intent, so
+        # creating one would strand a real PaymentIntent in Stripe. Refuse
+        # clearly; the mobile client reads this as "native unavailable" and
+        # falls back to hosted Checkout.
+        # The `native_sheet_unavailable:` prefix is a MACHINE token. The mobile
+        # axios interceptor throws away the status code and keeps only the
+        # detail string, so this prefix is the only thing the client can match
+        # on to decide "fall back to hosted Checkout" rather than "show the
+        # client an error". Do not reword it without updating
+        # mobile/src/services/nativePay.js.
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                "native_sheet_unavailable: STRIPE_PUBLISHABLE_KEY is not set, so "
+                "the in-app payment sheet cannot run on this environment."
+            ),
+        )
+
+    first = current_user.get("first_name") or ""
+    last = current_user.get("last_name") or ""
+    sheet = stripe_payment_sheet.create_payment_sheet(
+        booking_id=booking_id,
+        amount_cents=escrow.to_cents(amount),
+        description=_charge_description(booking, booking_id),
+        user_id=current_user["id"],
+        email=current_user.get("email"),
+        name=(f"{first} {last}".strip() or None),
     )
+    return PaymentSheetResponse(**sheet)
+
+
+class ConfirmPaymentRequest(BaseModel):
+    payment_intent_id: str
+
+
+class ConfirmPaymentResponse(BaseModel):
+    status: str
+    settled: bool
+
+
+@router.post(
+    "/payment-intent/{booking_id}/confirm", response_model=ConfirmPaymentResponse
+)
+def confirm_payment_intent(
+    booking_id: str,
+    body: ConfirmPaymentRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    """Settle the ledger immediately after the native sheet reports success.
+
+    WHY THIS EXISTS: the webhook is authoritative but not instant. Between the
+    Payment Sheet closing and `payment_intent.succeeded` arriving, the payments
+    row still reads `pending_payment` with no PaymentIntent — which is
+    indistinguishable from "never paid". In that window `_assert_not_already_paid`
+    would wave through a SECOND charge for a booking that was just paid. This
+    endpoint closes the window deterministically instead of hoping the webhook
+    wins the race.
+
+    It is NOT a second ledger path. It re-reads the intent from Stripe and hands
+    the verified figures to the very same `_mark_payment_paid` the webhook calls
+    — same amount check, same replay guard, same FINDING D remainder math. Both
+    running is harmless: whichever lands second is a no-op.
+
+    The device is not trusted. The intent's own `metadata.booking_id` must match
+    the booking in the URL, so a client cannot settle one booking by pointing at
+    another booking's successful intent.
+    """
+    from app.services import stripe_payment_sheet
+
+    _load_payable_booking(booking_id, current_user)
+
+    intent = stripe_payment_sheet.retrieve_payment_intent(body.payment_intent_id)
+
+    if intent.get("booking_id") != str(booking_id):
+        logger.error(
+            "confirm_payment_intent: intent %s claims booking %r but was posted "
+            "to booking %r — refusing to settle.",
+            body.payment_intent_id,
+            intent.get("booking_id"),
+            booking_id,
+        )
+        raise HTTPException(
+            status_code=400, detail="That payment does not belong to this booking."
+        )
+
+    if intent.get("status") != "succeeded":
+        # Not an error the client can fix by retrying this call; the sheet will
+        # have shown the real reason. Report honestly and settle nothing.
+        return ConfirmPaymentResponse(
+            status=intent.get("status") or "unknown", settled=False
+        )
+
+    _mark_payment_paid(
+        booking_id,
+        None,
+        intent.get("amount_received"),
+        intent.get("id"),
+    )
+    return ConfirmPaymentResponse(status="succeeded", settled=True)
+
+
+@router.post("/checkout/{booking_id}", response_model=CheckoutResponse)
+def create_checkout(
+    booking_id: str,
+    current_user: dict = Depends(get_current_user),
+):
+    """Hosted Stripe Checkout — FALLBACK ONLY.
+
+    Kept for clients that cannot present the native sheet (no publishable key,
+    Expo Go, a build predating @stripe/stripe-react-native). Mobile only reaches
+    this after `POST /payment-intent/{booking_id}` has failed.
+    """
+    booking = _load_payable_booking(booking_id, current_user)
+    _assert_not_already_paid(booking_id)
+    amount = _resolve_charge_amount(booking, booking_id, current_user)
+
+    email: Optional[str] = current_user.get("email")
 
     session = stripe_service.create_checkout_session(
         booking_id=booking_id,
         amount_cad=amount,
-        description=description,
+        description=_charge_description(booking, booking_id),
         client_email=email,
     )
     return CheckoutResponse(session_id=session["id"], url=session["url"])
@@ -189,6 +435,46 @@ async def webhook(request: Request):
             logger.warning(
                 "checkout.session.completed missing booking_id / business_id metadata"
             )
+    elif etype == "payment_intent.succeeded" and data_object is not None:
+        # M9 — the NATIVE Payment Sheet's capture event. Deliberately routed
+        # into the very same _mark_payment_paid as hosted Checkout: identical
+        # amount verification, identical replay guard, identical FINDING D
+        # remainder math. The native sheet did not get its own ledger path.
+        #
+        # Attribution is by metadata.booking_id, which
+        # stripe_payment_sheet.create_payment_sheet always sets. A PaymentIntent
+        # created BY a hosted Checkout Session does NOT carry it (Checkout
+        # copies session metadata to the session, not to the intent), so a
+        # hosted payment is still settled exactly once — by
+        # checkout.session.completed above — and lands here as a no-op.
+        pi_metadata = _obj_get(data_object, "metadata") or {}
+        pi_booking_id = (
+            pi_metadata.get("booking_id") if hasattr(pi_metadata, "get") else None
+        )
+        if pi_booking_id:
+            _mark_payment_paid(
+                pi_booking_id,
+                None,
+                _obj_get(data_object, "amount_received"),
+                _obj_get(data_object, "id"),
+            )
+        else:
+            logger.info(
+                "payment_intent.succeeded with no booking_id metadata — ignored "
+                "(expected for hosted-Checkout intents)."
+            )
+    elif etype == "payment_intent.payment_failed" and data_object is not None:
+        # Nothing to undo: no ledger row is written until a capture succeeds.
+        # Logged so a run of declines is visible without digging in Stripe.
+        logger.warning(
+            "payment_intent.payment_failed for intent %s (booking %s)",
+            _obj_get(data_object, "id"),
+            (
+                (_obj_get(data_object, "metadata") or {}).get("booking_id")
+                if hasattr(_obj_get(data_object, "metadata") or {}, "get")
+                else None
+            ),
+        )
     elif (
         etype
         in (
