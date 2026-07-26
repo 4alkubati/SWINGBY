@@ -6,7 +6,7 @@ tags: [market, ops, automation]
 ---
 # 14 — Marketing Automation Stack
 
-> What is actually running, what the reply bot should be, and how the content/funnel pipeline gets built. Verified against the live server on 2026-07-25.
+> What is actually running, what the reply bot should be, and how the content/funnel pipeline gets built. Verified against the live server on 2026-07-26.
 
 Related: [11-n8n-social-workflow.md](11-n8n-social-workflow.md) · [13-accounts-and-identity.md](13-accounts-and-identity.md) · [07-content-calendar.md](07-content-calendar.md)
 
@@ -21,7 +21,7 @@ Related: [11-n8n-social-workflow.md](11-n8n-social-workflow.md) · [13-accounts-
 | n8n credentials store | ❌ **Empty** | No stored credentials. Telegram works off container env vars, not the credential vault. |
 | Telegram bot | ✅ **Live** | `TELEGRAM_BOT_TOKEN` + `TELEGRAM_CHAT_ID` in the container env |
 | Brain mount | ✅ | `~/brain` → `/data/brain` (read-only), `swingby/` → `/data/swingby` (read-only) |
-| Transactional email | ⚠️ **Keyed, unverified** | `RESEND_API_KEY` present in `backend/.env`; domain verification still pending (see [13](13-accounts-and-identity.md)) |
+| Transactional email | ✅ **Wired end to end** | `RESEND_API_KEY` in `backend/.env`; `swingbyy.com` verified at Resend (`resend._domainkey` + `send.swingbyy.com` with bounce MX). Sender is `hello@swingbyy.com`. |
 | Discord | ❌ Not set up | No server, no bot, nothing on the box |
 | Local LLM | ❌ Not installed | No Ollama, no model weights — and see the hardware verdict below |
 
@@ -165,7 +165,7 @@ The templated tier does most of the volume and costs nothing — a Docker step t
 | Templated image rendering | $0 |
 | Generated images (~20/mo, optional) | ~$1 |
 | Cloudflare (DNS, email routing, analytics) | $0 |
-| Resend (free tier: 3k emails/mo) | $0 |
+| Resend (free tier: 3k emails/mo — already verified) | $0 |
 | Domain defensive registrations | ~$2 amortised |
 | **Total** | **~$10/mo** |
 
