@@ -38,6 +38,8 @@ flowchart LR
     DisputeFlow["DisputeFlow"]
     Invoice["Invoice"]
     BusinessInvoices["BusinessInvoices"]
+    ProofOfWork["ProofOfWork"]
+    AutoBidding["AutoBidding"]
     ProfileEdit["ProfileEdit"]
     BusinessProfile["BusinessProfile"]
   end
@@ -72,6 +74,8 @@ flowchart LR
     DisputeFlow["DisputeFlow"]
     Invoice["Invoice"]
     MyDisputes["MyDisputes"]
+    RequestSent["RequestSent"]
+    ApproveWork["ApproveWork"]
   end
   subgraph transitions
   end
@@ -83,8 +87,9 @@ flowchart LR
   Settings --> PrivacyPolicy
   Settings --> TermsOfService
   Settings --> HelpFAQ
+  Profile --> ProfileEdit
   Profile --> Favorites
-  Profile --> NotificationsCenter
+  Profile --> PaymentMethod
   Profile --> ReferralScreen
   Profile --> Settings
   Profile --> HelpFAQ
@@ -97,26 +102,28 @@ flowchart LR
   NotificationsCenter --> MessageThread
   NotificationsCenter --> BookingDetails
   My_Business --> EmployeeManagement
-  My_Business --> EmployeeProfile
-  My_Business --> NotificationsCenter
   My_Business --> PaymentMethod
   My_Business --> BusinessInvoices
+  My_Business --> AutoBidding
+  My_Business --> NotificationsCenter
   My_Business --> Settings
   My_Business --> HelpFAQ
   My_Business --> PrivacyPolicy
   My_Business --> TermsOfService
+  My_Business --> EmployeeProfile
   My_Business --> PostJob
   Dashboard --> Jobs
   Dashboard --> Messages
   Dashboard --> My_Business
   Dashboard --> JobManagement
-  Dashboard --> Earnings
   Dashboard --> BusinessAnalytics
+  Dashboard --> Earnings
   Dashboard --> EmployeeManagement
   Dashboard --> Chat
   BusinessInvoices --> Invoice
   EmployeeProfile --> BusinessProfile
   Jobs --> Chat
+  Jobs --> ProofOfWork
   Jobs --> Invoice
   Jobs --> DisputeFlow
   Jobs --> JobManagement
@@ -129,6 +136,11 @@ flowchart LR
   ActiveBooking --> BookingDetails
   ActiveBooking --> MyDisputes
   ActiveBooking --> CancellationFlow
+  RequestSent --> ClientTabs
+  RequestSent --> Home
+  RequestSent --> Chat
+  RequestSent --> QuoteComparison
+  RequestSent --> Search
   Home --> PostJob
   Home --> ActiveBooking
   Home --> My_Jobs
@@ -141,26 +153,34 @@ flowchart LR
   My_Jobs --> QuoteComparison
   My_Jobs --> Chat
   My_Jobs --> BookingDetails
+  My_Jobs --> Invoice
   My_Jobs --> PostJob
   My_Jobs --> Review
   Search --> BusinessProfile
+  ApproveWork --> DisputeFlow
   QuoteComparison --> Chat
-  QuoteComparison --> ClientTabs
-  QuoteComparison --> My_Jobs
+  QuoteComparison --> BookingDetails
   QuoteComparison --> BusinessProfile
+  QuoteComparison --> PaymentMethod
   NearbyMap --> BusinessProfile
+  PostJob --> ClientTabs
+  PostJob --> Home
   PostJob --> QuoteComparison
+  PostJob --> PaymentMethod
   BookingDetails --> MessageThread
   BookingDetails --> CancellationFlow
   BookingDetails --> PostJob
-  BookingDetails --> BusinessProfile
+  BookingDetails --> ApproveWork
   BookingDetails --> Invoice
   BookingDetails --> DisputeFlow
+  BookingDetails --> BusinessProfile
+  BookingDetails --> PaymentMethod
   Chat --> BusinessProfile
   Chat --> BookingDetails
   Messages --> Chat
-  Messages --> BookingDetails
+  Messages --> QuoteComparison
   BottomNav --> PostJob
+  class RequestSent orphan;
 ```
 
 
@@ -174,24 +194,28 @@ Screens that call `navigation.navigate('X')` where **X is not registered** in an
 
 Registered screens with **no incoming navigation from anywhere** (excluding navigator roots).
 
-*None.* Every screen is reachable somewhere.
+- `RequestSent`
 
 ## Orphan screens (per-navigator)
 
 Screens that ARE registered in a navigator but **cannot be reached by that user role's flow**. A screen may be reachable from ClientNavigator yet still be unreachable to a Business user, and vice-versa.
 
-*None.* Every screen is reachable from within its own navigator.
+### `ClientNavigator`
+
+- `RequestSent`
 
 ## Broken API calls
 
 Mobile calls to endpoints **not exposed by the backend** (path params normalized).
 
-*None.* Every API call resolves.
+| From file:line | Method | Path (raw) | Normalized |
+|---|---|---|---|
+| `mobile/src/components/PaySheet.js:168` | POST | `/payments/quote` | `/payments/quote` |
 
 ## Inventory
 
 - Navigators: **4**  
-- Registered screens: **58**  
-- Navigation edges: **103**  
-- Backend routes: **81**  
-- Mobile API calls: **87**  
+- Registered screens: **62**  
+- Navigation edges: **126**  
+- Backend routes: **114**  
+- Mobile API calls: **129**  

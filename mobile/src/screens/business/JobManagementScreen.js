@@ -10,6 +10,7 @@ import Animated, {
 import { api } from '../../services/api';
 import StatusTracker from '../../components/StatusTracker';
 import LiveStatusActions from '../../components/LiveStatusActions';
+import LiveLocationSharing from '../../components/LiveLocationSharing';
 import LiveStatusTimeline from '../../components/LiveStatusTimeline';
 import BookingPhotos from '../../components/BookingPhotos';
 import Text from '../../components/Text';
@@ -479,6 +480,12 @@ function JobDetailScreen({ navigation, route }) {
               <View style={styles.cardMargin}>
                 <LiveStatusActions bookingId={booking.id} onEventPosted={() => load()} />
               </View>
+              {/* Renders nothing unless this provider opened the en-route window
+                  themselves by tapping "On my way" above — so it costs no space
+                  on a job that is not in motion. */}
+              <View style={styles.cardMargin}>
+                <LiveLocationSharing bookingId={booking.id} bookingStatus={booking.status} />
+              </View>
               <View style={styles.cardMargin}>
                 <LiveStatusTimeline bookingId={booking.id} />
               </View>
@@ -513,6 +520,17 @@ function JobDetailScreen({ navigation, route }) {
                     showChevron
                   />
                 )}
+                {/* The ONLY route into ProofOfWorkScreen. The screen was
+                    registered in BusinessNavigator with nothing navigating to
+                    it, so before/after photos and the voice memo were
+                    unreachable in the running app even though both shipped. */}
+                <ListItem
+                  title="Proof of work"
+                  subtitle="Before/after photos and a voice note"
+                  left={<Feather name="camera" size={16} color={colors.textSecondary} strokeWidth={2} />}
+                  onPress={() => navigation.navigate('ProofOfWork', { bookingId: booking.id })}
+                  showChevron
+                />
                 <ListItem
                   title="Message client"
                   subtitle="Open the chat"

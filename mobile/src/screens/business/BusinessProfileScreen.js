@@ -812,6 +812,10 @@ export default function BusinessProfileScreen({ navigation, route }) {
               dashboard has no bell, so this is the only way in. */}
           <Text variant="label" color="secondary" style={styles.ownerSectionLabel}>Account</Text>
           <View style={styles.ownerBlock}>
+            {/* AutoBiddingScreen shipped registered in BusinessNavigator with
+                no route into it. It is subscriber-only and gates itself, so it
+                belongs next to the subscription block rather than behind one. */}
+            <ManageRow label="Auto-bidding" onPress={() => navigation.navigate('AutoBidding')} />
             <ManageRow label="Notifications" onPress={() => navigation.navigate('NotificationsCenter')} />
             <ManageRow label="Settings" onPress={() => navigation.navigate('Settings')} />
             <ManageRow label="Help & FAQ" onPress={() => navigation.navigate('HelpFAQ')} />

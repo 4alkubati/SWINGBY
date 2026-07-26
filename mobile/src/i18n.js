@@ -1074,6 +1074,7 @@ const lane3 = {
   'booking.reportProblem': 'Report a problem',
   'booking.cancelBooking': 'Cancel booking',
   'booking.viewReceipt': 'View receipt',
+  'booking.reviewRelease': 'Review work & release payment',
   'booking.markPaidOffPlatform': 'Mark as paid (cash / e-transfer)',
   'booking.payNow': 'Pay now',
   'booking.message': 'Message',

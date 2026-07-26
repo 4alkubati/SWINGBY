@@ -749,6 +749,15 @@ export default function BookingDetailsScreen({ route, navigation }) {
 
   const overflowActions = [
     owesMoney && { key: 'message', label: i18n.t('booking.message'), icon: 'message-circle', onPress: handleMessage },
+    // ApproveWorkScreen was registered in ClientNavigator with nothing
+    // navigating to it, so the client had no way to see the provider's
+    // before/after photos and voice note, or to release the held payment.
+    // The screen handles "proof not submitted yet" and "already approved"
+    // itself, so this only needs the job to be done.
+    isCompleted && {
+      key: 'approve', label: i18n.t('booking.reviewRelease'), icon: 'check-circle',
+      onPress: () => navigation.navigate('ApproveWork', { bookingId }),
+    },
     user?.role === 'client' && isCompleted && { key: 'rebook', label: i18n.t('rebook.button'), icon: 'refresh-cw', onPress: handleRebook },
     isCompleted && { key: 'receipt', label: i18n.t('booking.viewReceipt'), icon: 'file-text', onPress: () => navigation.navigate('Invoice', { bookingId }) },
     isCompleted && isAwaitingPayment(payment) && { key: 'offplatform', label: i18n.t('booking.markPaidOffPlatform'), icon: 'dollar-sign', onPress: () => setOffPayVisible(true) },
