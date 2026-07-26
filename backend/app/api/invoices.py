@@ -9,12 +9,20 @@ GET /bookings/{booking_id}/invoice
 
 GET /bookings/{booking_id}/invoice.pdf
     Same auth. Returns a rendered PDF (reportlab). iOS Safari opens inline.
+
+Walkthrough M4 — "Invoices off the Past tab: past jobs + invoice + before/after
+photos." The receipt is the artefact a client keeps, so the proof of what was
+actually done belongs ON it, not one screen away: `proof.before` / `proof.after`
+carry the business-captured photos for the booking. Reads `booking_photos`
+directly (the same table proof_of_work.py serves) — no second write path, and
+no dependency on a proof bundle having been submitted.
 """
 
 from __future__ import annotations
 
 import io
 import logging
+from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
@@ -26,6 +34,82 @@ from app.services import escrow
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+
+def _proof_photos(booking_id: str) -> dict:
+    """Before/after proof photos for the receipt (walkthrough M4).
+
+    Best-effort: a receipt must still render when the photo read fails. The
+    `source` split mirrors proof_of_work.py — client-supplied job-post photos
+    are labelled as such and never masquerade as the business's own record of
+    the work.
+    """
+    empty = {"before": [], "after": [], "client_supplied": []}
+    try:
+        res = (
+            supabase.table("booking_photos")
+            .select("id, url, phase, caption, source, created_at")
+            .eq("booking_id", booking_id)
+            .order("created_at", desc=False)
+            .execute()
+        )
+        rows = res.data if isinstance(res.data, list) else []
+    except Exception:
+        logger.warning(
+            "could not load proof photos for invoice %s", booking_id, exc_info=True
+        )
+        return empty
+
+    out = {"before": [], "after": [], "client_supplied": []}
+    for row in rows:
+        if not isinstance(row, dict) or not row.get("url"):
+            continue
+        photo = {
+            "id": row.get("id"),
+            "url": row.get("url"),
+            "caption": row.get("caption"),
+            "source": row.get("source") or "business",
+        }
+        if photo["source"] == "client":
+            out["client_supplied"].append(photo)
+        elif row.get("phase") == "after":
+            out["after"].append(photo)
+        elif row.get("phase") == "before":
+            out["before"].append(photo)
+    return out
+
+
+def _completed_at(booking_id: str) -> Optional[str]:
+    """When the job was actually finished.
+
+    `_load_invoice_data` read `booking.completed_at` in three places but never
+    selected it, so "Completed" on every receipt rendered as an em dash and
+    `issued_at` silently fell back to the booking's CREATED date. The obvious
+    fix — adding the column to the SELECT — is not safe: nothing in
+    backend/app writes or reads that column, no migration defines it, and
+    docs/swingby_database_schema.md flags it as a partial reconstruction.
+    Naming a column that does not exist is precisely how every invoice 500'd
+    once before (tests/test_invoices.py exists because of `payments.notes`).
+
+    So the date comes from the `completed` booking_events row instead, which
+    proof_of_work.py's approve path demonstrably writes. Unknown → None, and
+    the receipt shows nothing rather than a wrong date.
+    """
+    try:
+        res = (
+            supabase.table("booking_events")
+            .select("created_at")
+            .eq("booking_id", booking_id)
+            .eq("event_type", "completed")
+            .order("created_at", desc=True)
+            .limit(1)
+            .execute()
+        )
+        rows = res.data if isinstance(res.data, list) else []
+    except Exception:
+        logger.warning("could not resolve completion date for invoice %s", booking_id)
+        return None
+    return (rows[0] or {}).get("created_at") if rows else None
 
 
 def _load_invoice_data(booking_id: str, current_user: dict) -> dict:
@@ -118,9 +202,12 @@ def _load_invoice_data(booking_id: str, current_user: dict) -> dict:
     emp = booking.get("employees") or {}
     emp_user = (emp.get("users") or {}) if isinstance(emp, dict) else {}
 
+    completed_at = booking.get("completed_at") or _completed_at(booking_id)
+    proof = _proof_photos(booking_id)
+
     return {
         "invoice_number": f"SWB-{booking['id'][:8].upper()}",
-        "issued_at": (booking.get("completed_at") or booking.get("created_at")),
+        "issued_at": (completed_at or booking.get("created_at")),
         "booking_id": booking["id"],
         "client": {
             "name": " ".join(
@@ -152,8 +239,10 @@ def _load_invoice_data(booking_id: str, current_user: dict) -> dict:
         },
         "schedule": {
             "confirmed_date": booking.get("confirmed_date"),
-            "completed_at": booking.get("completed_at"),
+            "completed_at": completed_at,
         },
+        # M4: the before/after record of the work, on the receipt itself.
+        "proof": proof,
         "line_items": [
             {"label": "Service", "amount": total_amount},
             {
@@ -302,6 +391,21 @@ def get_invoice_pdf(
     )
     story.append(tbl)
     story.append(Spacer(1, 14))
+
+    # M4: the PDF names the proof that exists rather than embedding it — the
+    # images live in Supabase Storage behind signed/public URLs and fetching
+    # them here would make every receipt download a network fan-out.
+    proof = data.get("proof") or {}
+    n_before, n_after = len(proof.get("before") or []), len(proof.get("after") or [])
+    if n_before or n_after:
+        story.append(
+            Paragraph(
+                f"<b>Proof of work:</b> {n_before} before / {n_after} after "
+                "photo(s) — view them on this job in the SwingBy app.",
+                body,
+            )
+        )
+        story.append(Spacer(1, 10))
 
     pay_line = (
         f"Payment: {data['payment']['method']} · Status: {data['payment']['status']}"
