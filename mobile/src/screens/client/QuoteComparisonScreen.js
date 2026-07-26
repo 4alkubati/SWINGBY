@@ -1,5 +1,5 @@
 import {
-  View, ScrollView, StyleSheet, Pressable, Linking,
+  View, ScrollView, StyleSheet, Pressable,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useState, useEffect, useRef } from 'react';
@@ -14,12 +14,18 @@ import Avatar from '../../components/Avatar';
 import Surface from '../../components/Surface';
 import Stack from '../../components/Stack';
 import Inline from '../../components/Inline';
-import PaySheet, { CHECKOUT_METHOD } from '../../components/PaySheet';
+import PaySheet from '../../components/PaySheet';
 import EmptyState from '../../components/EmptyState';
 import { SkeletonCard } from '../../components/Skeleton';
 import { RatingStarsDisplay } from '../../components/RatingStars';
 
 import { api } from '../../services/api';
+import {
+  acceptQuoteAndPay,
+  ACCEPT_CANCELLED,
+  ACCEPT_CHECKOUT,
+  ACCEPT_PAID,
+} from '../../services/acceptAndPay';
 import * as toast from '../../services/toast';
 import i18n from '../../i18n';
 import { colors, spacing, radius } from '../../theme/tokens';
@@ -258,44 +264,76 @@ export default function QuoteComparisonScreen({ navigation, route }) {
   // PaySheet owns the busy/error UI: throwing from here shows the message
   // inside the sheet on the declined-chip and re-enables the CTA, exactly as
   // PAYMENTS.md §States describes. No try/catch, no second error surface.
+  //
+  // FOUNDER RULING 2026-07-25 — "the client should get charged the moment they
+  // click accept". This used to accept the quote and then hand the client a
+  // hosted Checkout URL through Linking.openURL, i.e. throw them into Chrome.
+  // services/acceptAndPay.js now does accept-then-native-sheet in one call;
+  // hosted Checkout survives only as the fallback for a build that cannot
+  // present the native sheet.
+  //
+  // Survives across CTA taps so a declined card can be retried without a second
+  // PATCH /interests/{id}/accept (which would 400 "Interest is not pending").
+  // It is also how `handleSheetClose` knows a booking is on the hook.
+  const acceptedRef = useRef(null);
+
   async function handleConfirm() {
     if (!selectedQuote) return;
 
-    // Charge-then-accept is what PAYMENTS.md asks for. It is not reachable
-    // from the client: POST /payments/stripe/checkout/{booking_id} needs a
-    // booking, and the only thing that creates one is
-    // PATCH /interests/{id}/accept. So accept runs first and payment
-    // immediately after, and the booking sits at payment_status
-    // 'pending_payment' in between — which is the state BookingDetailsScreen
-    // already renders honestly. Closing the gap needs a backend endpoint that
-    // authorises against the interest before creating the booking; the client
-    // ordering here is one call away from correct once it exists.
-    const res = await api.patch(`/interests/${selectedQuote.id}/accept`);
-    const bookingId = res?.booking?.id;
-
-    if (bookingId) {
-      const checkout = await api.post(`/payments/stripe/checkout/${bookingId}`, {});
-      if (checkout?.url) {
-        await Linking.openURL(checkout.url);
-      } else {
-        throw new Error('Could not start the payment. Try again from the booking.');
-      }
-    }
+    const result = await acceptQuoteAndPay({
+      interestId: selectedQuote.id,
+      accepted: acceptedRef.current,
+      onAccepted: (accepted) => { acceptedRef.current = accepted; },
+    });
 
     if (!alive.current) return;
+
+    // Dismissing Stripe's sheet is not a failure and not an exit. Leave our
+    // sheet open with the CTA live so paying is one tap away; if they walk away
+    // from this one too, handleSheetClose is what makes that visible.
+    if (result.outcome === ACCEPT_CANCELLED) return;
+
     setSheetVisible(false);
-    toast.show({ type: 'success', text1: i18n.t('quotes.accepted') });
+    acceptedRef.current = null;
+
+    if (result.outcome === ACCEPT_PAID) {
+      toast.show({ type: 'success', text1: i18n.t('quotes.paidAndBooked') });
+    } else if (result.outcome === ACCEPT_CHECKOUT) {
+      toast.show({
+        type: 'info',
+        text1: i18n.t('quotes.accepted'),
+        text2: i18n.t('quotes.finishInBrowser'),
+      });
+    }
 
     // Landing is a separate tick from closing the sheet — a navigation
     // transition must not share a commit with a modal teardown (SEN-2).
     const name = selectedQuote.businesses?.business_name || 'Business';
     requestAnimationFrame(() => {
       if (!alive.current) return;
-      if (bookingId) {
-        navigation.replace('Chat', { bookingId, otherPartyName: name });
-      } else {
-        navigation.navigate('ClientTabs', { screen: 'My Jobs' });
-      }
+      navigation.replace('Chat', { bookingId: result.bookingId, otherPartyName: name });
+    });
+  }
+
+  // Closing the sheet after the accept already ran leaves a real, unpaid
+  // booking. The accept cannot be rolled back from here (the server has already
+  // rejected the rival quotes and matched the post), so the requirement is that
+  // it never happens QUIETLY: say what state they are in and land them on the
+  // one screen where paying is a single tap.
+  function handleSheetClose() {
+    const pending = acceptedRef.current;
+    setSheetVisible(false);
+    if (!pending?.bookingId) return;
+
+    acceptedRef.current = null;
+    toast.show({
+      type: 'warning',
+      text1: i18n.t('quotes.notPaidYet'),
+      text2: i18n.t('quotes.notPaidYetBody'),
+    });
+    requestAnimationFrame(() => {
+      if (!alive.current) return;
+      navigation.replace('BookingDetails', { bookingId: pending.bookingId });
     });
   }
 
@@ -411,8 +449,7 @@ export default function QuoteComparisonScreen({ navigation, route }) {
           postTitle,
         ].filter(Boolean).join(' · ')}
         interestId={selectedQuote?.id}
-        method={CHECKOUT_METHOD}
-        onClose={() => setSheetVisible(false)}
+        onClose={handleSheetClose}
         onAddMethod={() => {
           setSheetVisible(false);
           navigation.navigate('PaymentMethod');

@@ -24,6 +24,12 @@ import { Feather } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 import { useUnread } from '../../context/UnreadContext';
 import { api, uploadFile } from '../../services/api';
+import {
+  acceptQuoteAndPay,
+  ACCEPT_CANCELLED,
+  ACCEPT_CHECKOUT,
+  ACCEPT_PAID,
+} from '../../services/acceptAndPay';
 import { show as showToast } from '../../services/toast';
 import * as haptics from '../../services/haptics';
 import i18n from '../../i18n';
@@ -781,17 +787,68 @@ export default function ChatScreen({ navigation, route }) {
     }
   }
 
-  // PAYMENTS.md Path B: charge first, accept second. The sheet owns the charge
-  // and calls this only once its CTA is confirmed; accepting is what turns the
-  // quote into a booking (and creates the escrow payment row server-side).
+  // PAYMENTS.md §S2(c) — "client agrees → client pays THEN".
+  //
+  // FOUNDER RULING 2026-07-25: accepting charges immediately, in-app. This used
+  // to accept the quote and navigate, leaving the booking at 'pending_payment'
+  // and the client to find the pay button later (or, from
+  // QuoteComparisonScreen, to be thrown into a browser). The ordering and the
+  // cancel/decline semantics live in services/acceptAndPay.js so this screen
+  // and QuoteComparisonScreen cannot drift apart.
+  //
+  // Persisted across CTA taps: PATCH /interests/{id}/accept is not repeatable,
+  // so a retry after a declined card must charge the SAME booking rather than
+  // re-accepting. Also tells handleClosePaySheet that a booking is on the hook.
+  const acceptedRef = useRef(null);
+
   async function handleConfirmPayment() {
-    const res = await api.patch(`/interests/${interestId}/accept`);
-    const newBookingId = res?.booking?.id;
+    const result = await acceptQuoteAndPay({
+      interestId,
+      email: user?.email,
+      accepted: acceptedRef.current,
+      onAccepted: (accepted) => { acceptedRef.current = accepted; },
+    });
+
+    // A dismissed Stripe sheet is a choice, not a failure. Keep our sheet open
+    // so retrying is one tap; handleClosePaySheet covers walking away entirely.
+    if (result.outcome === ACCEPT_CANCELLED) return;
+
     setPaySheetVisible(false);
+    acceptedRef.current = null;
     setThreadInfo((prev) => (prev ? { ...prev, status: 'accepted' } : prev));
-    if (newBookingId) {
-      navigation.replace('Chat', { bookingId: newBookingId, otherPartyName: headerName });
+
+    if (result.outcome === ACCEPT_PAID) {
+      showToast({ type: 'success', text1: i18n.t('quotes.paidAndBooked') });
+    } else if (result.outcome === ACCEPT_CHECKOUT) {
+      showToast({
+        type: 'info',
+        text1: i18n.t('quotes.accepted'),
+        text2: i18n.t('quotes.finishInBrowser'),
+      });
     }
+
+    navigation.replace('Chat', {
+      bookingId: result.bookingId,
+      otherPartyName: headerName,
+    });
+  }
+
+  // The accept already ran and the client backed out of paying. It cannot be
+  // rolled back from here — the server has rejected the rival quotes and matched
+  // the post — so the rule is simply that it is never left behind QUIETLY.
+  function handleClosePaySheet() {
+    const pending = acceptedRef.current;
+    setPaySheetVisible(false);
+    if (!pending?.bookingId) return;
+
+    acceptedRef.current = null;
+    setThreadInfo((prev) => (prev ? { ...prev, status: 'accepted' } : prev));
+    showToast({
+      type: 'warning',
+      text1: i18n.t('quotes.notPaidYet'),
+      text2: i18n.t('quotes.notPaidYetBody'),
+    });
+    navigation.navigate('BookingDetails', { bookingId: pending.bookingId });
   }
 
   function renderQuoteCard() {
@@ -1118,16 +1175,22 @@ export default function ChatScreen({ navigation, route }) {
       </Surface>
 
       {/* PAYMENTS.md Path B — the one shared sheet. It owns the fee, the total
-          and the charge; this screen only says which quote is being paid. */}
+          and the charge; this screen only says which quote is being paid.
+
+          `amount` + `interestId`, NOT a `quote` object: a caller-supplied quote
+          is rendered verbatim and this screen has no server TOTAL to supply —
+          only the business's bid. It was passing `{ subtotal }` with no `total`,
+          so the sheet rendered "Confirm & pay —" and an em-dash where the figure
+          belongs. Handing over the amount instead lets PaySheet price it against
+          the server (POST /payments/quote), which is what PAYMENTS.md §Release
+          means by "server-authoritative", and enables its stale-amount guard. */}
       <PaySheet
         visible={paySheetVisible}
         mode="pay"
-        quote={{
-          interestId,
-          subtotal: threadInfo?.quoted_price,
-          summary: threadInfo?.post_title,
-        }}
-        onClose={() => setPaySheetVisible(false)}
+        amount={Number(threadInfo?.quoted_price) || 0}
+        summary={threadInfo?.post_title}
+        interestId={interestId}
+        onClose={handleClosePaySheet}
         onConfirm={handleConfirmPayment}
       />
 

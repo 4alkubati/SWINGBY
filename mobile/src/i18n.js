@@ -1080,6 +1080,25 @@ const lane3 = {
 };
 Object.assign(translations.en, lane3);
 
+// ─── Accept charges now (founder ruling 2026-07-25) ──────────────────────────
+// Appended as its own block for the same reason as lane3 above: parallel lanes
+// edit this file and a hunk in the middle of `translations` conflicts with all
+// of them. English only — enableFallback is on.
+const acceptChargesNow = {
+  // Path B outcomes — accepting a quote now charges in-app, immediately.
+  'quotes.paidAndBooked': 'Paid — it’s booked',
+  'quotes.finishInBrowser': 'Finish the payment in your browser to confirm it.',
+  // The sheet was dismissed. The booking is real and unpaid, and saying so is
+  // the whole point — the one thing we never do is leave it there quietly.
+  'quotes.notPaidYet': 'Not paid yet',
+  'quotes.notPaidYetBody':
+    'Your booking is held but unpaid. Pay it to confirm — the pro isn’t scheduled until you do.',
+  'quotes.payFailed': 'Could not take the payment. Your booking is held but unpaid.',
+  'quotes.noQuote': 'No quote selected.',
+  'quotes.noBooking': 'That quote could not be turned into a booking. Nothing was charged.',
+};
+Object.assign(translations.en, acceptChargesNow);
+
 const i18n = new I18n(translations);
 
 // Default fallback
