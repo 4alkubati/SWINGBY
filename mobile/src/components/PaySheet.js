@@ -34,6 +34,12 @@ import { Feather } from '@expo/vector-icons';
 
 import Text from './Text';
 import { api } from '../services/api';
+import {
+  isAlreadyPaidError,
+  isNativePaySupported,
+  payForBookingNatively,
+  PaymentCancelledError,
+} from '../services/nativePay';
 import i18n from '../i18n';
 import { colors, radius, spacing } from '../theme/tokens';
 
@@ -193,13 +199,34 @@ export async function fetchPayQuote({ mode, amount, bookingId, interestId, summa
   };
 }
 
-// The payment instrument for the mechanism that actually exists today: the
-// client enters a card on Stripe's page and SwingBy never stores it. Card-on-
-// file (a Stripe SetupIntent + a saved-methods endpoint) does not exist in this
-// repo — see mobile/src/screens/profile/PaymentMethodScreen.js, which says so
-// in as many words. Pass a real saved card here the moment there is one; the
-// sheet renders either without caring.
+// The payment instrument for the mechanism that actually exists today. Two
+// shapes, and which one you get is a runtime fact, not a preference:
+//
+//   kind: 'native'    Stripe's Payment Sheet opens INSIDE SwingBy (M9). This is
+//                     the default wherever it can run.
+//   kind: 'checkout'  Hosted Stripe Checkout in a browser. FALLBACK ONLY — a
+//                     build without the native module, or a backend with no
+//                     publishable key.
+//
+// Card-on-file still has no saved-methods endpoint in this repo (see
+// mobile/src/screens/profile/PaymentMethodScreen.js), but the native sheet does
+// pass a Stripe Customer + ephemeral key, so a card the client saves in the
+// sheet is offered back to them on their next booking. Pass a real saved-card
+// object here the moment a saved-methods endpoint exists; the sheet renders any
+// of the three without caring.
 export const CHECKOUT_METHOD = { kind: 'checkout' };
+export const NATIVE_METHOD = { kind: 'native' };
+
+/**
+ * The method to show when the caller did not pin one.
+ *
+ * Deliberately a function, not a constant: `isNativePaySupported()` requires
+ * the native module, and evaluating that at module scope would run it during
+ * Jest's import of every screen that touches PaySheet.
+ */
+export function defaultMethod() {
+  return isNativePaySupported() ? NATIVE_METHOD : CHECKOUT_METHOD;
+}
 
 // ─── Pieces ──────────────────────────────────────────────────────────────────
 function GrabHandle() {
@@ -244,7 +271,11 @@ function PaymentMethodRow({ method, declined, onAddMethod }) {
     );
   }
 
-  if (method.kind === 'checkout') {
+  // Native sheet and hosted Checkout render the same row shape but must NOT
+  // promise the same thing. 'native' says the card is entered here; 'checkout'
+  // has to warn that a browser is about to open, because a client who taps
+  // "Confirm & pay" and lands in Chrome with no warning assumes it broke.
+  if (method.kind === 'native' || method.kind === 'checkout') {
     return (
       <View style={[styles.methodCard, declined && styles.methodCardDeclined]}>
         <View style={styles.brandTile}>
@@ -252,7 +283,11 @@ function PaymentMethodRow({ method, declined, onAddMethod }) {
         </View>
         <View style={styles.methodInfo}>
           <Text variant="smallMedium">{i18n.t('pay.methodCard')}</Text>
-          <Text style={styles.methodExpiry}>{i18n.t('pay.methodCardSub')}</Text>
+          <Text style={styles.methodExpiry}>
+            {method.kind === 'native'
+              ? i18n.t('pay.methodCardSubNative')
+              : i18n.t('pay.methodCardSub')}
+          </Text>
         </View>
       </View>
     );
@@ -309,8 +344,25 @@ function PaymentMethodRow({ method, declined, onAddMethod }) {
  * @param {string}   [bookingId]
  * @param {string}   [interestId]
  * @param {Function} onClose
- * @param {Function} onConfirm  async (quote) => void. Throw to show the error
- *                              inline and re-enable the CTA. Resolve to close.
+ * @param {Function} onConfirm  async (quote, paid?) => void. Throw to show the
+ *                              error inline and re-enable the CTA. Resolve to
+ *                              close. `paid` is present only when this sheet
+ *                              already took the money natively.
+ * @param {Function} [onPaid]   async ({ paymentIntentId, amountCents, quote })
+ *                              => void. Called INSTEAD of onConfirm once the
+ *                              native sheet has succeeded and the server has
+ *                              settled. Callers that currently charge inside
+ *                              onConfirm should move to this: it separates "the
+ *                              money is in" from "now do the booking work", and
+ *                              removes any chance of the caller charging again.
+ *
+ *                              A caller whose booking does not exist until
+ *                              onConfirm runs (accept-a-quote) cannot use the
+ *                              native path from here at all — there is nothing
+ *                              to charge yet. Those screens should call
+ *                              `payForBookingNatively` from
+ *                              services/nativePay.js themselves, right after
+ *                              the accept returns a booking id.
  * @param {Function} [onAddMethod]
  */
 export default function PaySheet({
@@ -324,6 +376,7 @@ export default function PaySheet({
   interestId,
   onClose,
   onConfirm,
+  onPaid,
   onAddMethod,
 }) {
   const [quote, setQuote] = useState(null);
@@ -332,6 +385,12 @@ export default function PaySheet({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [stale, setStale] = useState(false);
+
+  // Can this runtime present Stripe's native sheet at all? Resolved once, on
+  // mount, and never during module import — `isNativePaySupported()` requires
+  // the native module, and calling it at module scope would run it inside
+  // Jest's import of every screen that renders a PaySheet.
+  const [canPayNatively] = useState(() => isNativePaySupported());
 
   // Guards every setState against a sheet that has been dismissed mid-request.
   const alive = useRef(true);
@@ -378,10 +437,21 @@ export default function PaySheet({
   }, [visible, load]);
 
   // Resolution order: the `method` prop, then whatever the quote carries, then
-  // the mechanism that exists today. Pass `method={null}` explicitly to force
-  // the no-card-on-file state.
-  const activeMethod =
+  // whatever this runtime can actually do. Pass `method={null}` explicitly to
+  // force the no-card-on-file state.
+  //
+  // A caller that pins CHECKOUT_METHOD is describing the OLD mechanism, not
+  // choosing it — every current caller wrote that line before the native sheet
+  // existed. So a pinned 'checkout' is upgraded to 'native' when native can
+  // run: the alternative is the browser bounce M9 removes, which no caller
+  // actually wants. Any other pinned method (a real saved card, or null) is
+  // left exactly as the caller asked.
+  const resolvedMethod =
     method !== undefined ? method : (quote?.method || external?.method || CHECKOUT_METHOD);
+  const activeMethod =
+    resolvedMethod?.kind === 'checkout' && canPayNatively
+      ? NATIVE_METHOD
+      : resolvedMethod;
 
   const canConfirm = !!quote && !!activeMethod && !busy && !loading;
 
@@ -405,12 +475,69 @@ export default function PaySheet({
         setBusy(false);
         return;
       }
-      await onConfirm?.(fresh);
-      if (alive.current) setBusy(false);
+
+      // ── M9 · The native path ────────────────────────────────────────────
+      // This is the whole point of the lane: the client pays HERE, in a Stripe
+      // Payment Sheet styled as SwingBy, instead of being thrown into a
+      // browser. It needs a booking to charge against, so it engages only when
+      // the caller gave us a bookingId. Callers that create the booking inside
+      // onConfirm (accept-a-quote) fall through to the legacy path below —
+      // see the note on `onPaid` in the props docblock.
+      if (canPayNatively && activeMethod?.kind === 'native' && bookingId) {
+        let paid;
+        try {
+          paid = await payForBookingNatively({ bookingId });
+        } catch (err) {
+          if (!alive.current) return;
+          if (err instanceof PaymentCancelledError || err?.cancelled) {
+            // Dismissing the sheet is not a failure. Say nothing, charge
+            // nothing, leave the CTA ready.
+            setBusy(false);
+            return;
+          }
+          if (err?.nativePayUnavailable) {
+            // ONLY an unavailable native module falls back to the browser. A
+            // decline must never do this — bouncing a declined client to a
+            // hosted page is the M9 bug wearing an error handler.
+            await runLegacyConfirm(fresh);
+            return;
+          }
+          throw err;
+        }
+
+        if (!alive.current) return;
+        // Money has moved and the server has settled the ledger.
+        if (onPaid) {
+          await onPaid({ ...paid, quote: fresh });
+        } else {
+          // Legacy callers charge inside onConfirm. Their charge call now hits
+          // the server's already-paid guard (409) because nativePay confirmed
+          // the capture server-side before we got here — so it refuses instead
+          // of taking the money a second time. Swallow exactly that refusal;
+          // anything else is a real failure and must surface.
+          try {
+            await onConfirm?.(fresh, paid);
+          } catch (err) {
+            if (!isAlreadyPaidError(err)) throw err;
+            onClose?.();
+          }
+        }
+        if (alive.current) setBusy(false);
+        return;
+      }
+
+      await runLegacyConfirm(fresh);
     } catch (err) {
       if (!alive.current) return;
       setError(err?.message || i18n.t('pay.declined'));
       setBusy(false);
+    }
+
+    // Hosted Checkout / caller-owned charging — what every caller did before
+    // M9, kept verbatim as the fallback.
+    async function runLegacyConfirm(fresh) {
+      await onConfirm?.(fresh);
+      if (alive.current) setBusy(false);
     }
   }
 

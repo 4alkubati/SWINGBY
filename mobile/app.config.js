@@ -40,6 +40,30 @@ module.exports = ({ config }) => ({
           'SwingBy uses the microphone so you can record a short voice note about the work you did.',
       },
     ],
+    // M9 — the native Stripe Payment Sheet. This plugin is what makes the
+    // in-app sheet buildable at all: on iOS it adds the blank Swift file the
+    // Stripe native module needs to link, and on Android it manages the Google
+    // Pay manifest meta-data.
+    //
+    // The props object is REQUIRED. `withStripe` destructures
+    // `props.merchantIdentifier` and `props.enableGooglePay` directly, so
+    // registering this plugin as the bare string '@stripe/stripe-react-native'
+    // (which is what `npx expo install` prints) crashes prebuild with a
+    // TypeError on undefined. Always pass an object.
+    //
+    // merchantIdentifier is Apple Pay ONLY, and it is deliberately EMPTY.
+    // A non-empty value writes the `com.apple.developer.in-app-payments`
+    // entitlement, which fails iOS provisioning until a merchant ID is actually
+    // registered with Apple — and there is no Apple Developer account yet.
+    // Card payments do not need it. Set STRIPE_MERCHANT_IDENTIFIER
+    // (e.g. merchant.com.swingby.app) once Apple Pay is genuinely wanted.
+    [
+      '@stripe/stripe-react-native',
+      {
+        merchantIdentifier: process.env.STRIPE_MERCHANT_IDENTIFIER || '',
+        enableGooglePay: false,
+      },
+    ],
   ],
   // NB: the two platforms take DIFFERENT shapes here, and getting it wrong
   // fails `expo doctor` in the cloud build (not locally, where doctor isn't
