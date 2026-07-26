@@ -1,0 +1,8 @@
+# WebGazer is GPLv3 — fetched at runtime, never committed.
+vendor/
+
+# Recordings contain a voice track and whatever was on screen. Keep them local.
+sessions/
+
+# Built app bundle.
+appbuild/

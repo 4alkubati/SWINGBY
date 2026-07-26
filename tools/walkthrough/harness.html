@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>SwingBy — walkthrough recorder</title>
+<style>
+  :root {
+    --bg: #08090c; --surface: #101319; --surface-2: #171b23; --border: #232936;
+    --text: #eef1f6; --muted: #99a2b3; --accent: #7c5cff; --accent-dim: #2a2247;
+    --ok: #2ebd85; --warn: #f6b23b; --bad: #ff5c5c;
+    --mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 15px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  header {
+    display: flex; align-items: center; gap: 14px;
+    padding: 12px 20px; border-bottom: 1px solid var(--border); background: var(--surface);
+    position: sticky; top: 0; z-index: 50;
+  }
+  header h1 { font-size: 15px; margin: 0; font-weight: 650; letter-spacing: -0.01em; }
+  header .sp { flex: 1; }
+  .pill {
+    font: 600 11px/1 var(--mono); text-transform: uppercase; letter-spacing: .08em;
+    padding: 6px 10px; border-radius: 999px; background: var(--surface-2);
+    color: var(--muted); border: 1px solid var(--border);
+  }
+  .pill.live { background: rgba(255,92,92,.14); color: #ff9d9d; border-color: rgba(255,92,92,.4); }
+  .pill.ok   { background: rgba(46,189,133,.14); color: #7ee0b8; border-color: rgba(46,189,133,.4); }
+
+  button {
+    font: 600 14px/1 inherit; padding: 11px 18px; border-radius: 10px;
+    border: 1px solid var(--border); background: var(--surface-2); color: var(--text);
+    cursor: pointer; transition: .12s;
+  }
+  button:hover:not(:disabled) { border-color: #36405480; background: #1d2230; }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  button.primary:hover:not(:disabled) { background: #6d4df5; }
+  button.danger { background: var(--bad); border-color: var(--bad); color: #fff; }
+  button:disabled { opacity: .4; cursor: not-allowed; }
+
+  main { display: grid; grid-template-columns: 420px 1fr; gap: 20px; padding: 20px; align-items: start; }
+  @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 18px; }
+  .card h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .09em; color: var(--muted); margin: 0 0 14px; }
+
+  label.field { display: block; margin-bottom: 12px; }
+  label.field span { display: block; font-size: 12px; color: var(--muted); margin-bottom: 5px; }
+  input[type=text] {
+    width: 100%; padding: 10px 12px; border-radius: 9px; background: var(--bg);
+    border: 1px solid var(--border); color: var(--text); font: inherit;
+  }
+  .check { display: flex; align-items: center; gap: 9px; margin-bottom: 9px; font-size: 14px; }
+  .check input { width: 16px; height: 16px; accent-color: var(--accent); }
+  .hint { font-size: 12.5px; color: var(--muted); margin: 10px 0 0; }
+
+  /* phone */
+  .stage { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+  .phone {
+    position: relative; width: 390px; height: 844px; border-radius: 30px;
+    border: 1px solid var(--border); overflow: hidden; background: #000;
+    box-shadow: 0 30px 80px rgba(0,0,0,.6);
+  }
+  .phone iframe { width: 390px; height: 844px; border: 0; display: block; }
+  #gazeDot {
+    position: absolute; width: 26px; height: 26px; margin: -13px 0 0 -13px;
+    border-radius: 50%; border: 2px solid rgba(124,92,255,.9);
+    background: rgba(124,92,255,.22); pointer-events: none; display: none;
+    transition: left .05s linear, top .05s linear; z-index: 10;
+  }
+  #hilite {
+    position: absolute; border: 1.5px dashed rgba(124,92,255,.75); border-radius: 7px;
+    pointer-events: none; display: none; z-index: 9;
+  }
+
+  /* calibration */
+  #calib {
+    position: fixed; inset: 0; background: rgba(5,6,9,.97); z-index: 200; display: none;
+  }
+  #calib .msg {
+    position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%);
+    text-align: center; max-width: 460px;
+  }
+  #calib .msg h3 { font-size: 20px; margin: 0 0 10px; }
+  #calib .msg p { color: var(--muted); margin: 0 0 8px; font-size: 14px; }
+  .cdot {
+    position: absolute; width: 26px; height: 26px; margin: -13px 0 0 -13px;
+    border-radius: 50%; background: var(--accent); cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font: 700 11px var(--mono); color: #fff; opacity: .35; transition: .15s;
+  }
+  .cdot:hover { transform: scale(1.25); }
+  .cdot.done { background: var(--ok); opacity: .9; cursor: default; }
+
+  /* feeds */
+  .feeds { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 1400px) { .feeds { grid-template-columns: 1fr; } }
+  .feed { height: 260px; overflow-y: auto; font: 12px/1.55 var(--mono); }
+  .feed .row { padding: 3px 0; border-bottom: 1px solid #1a1f2a; display: flex; gap: 8px; }
+  .feed .t { color: #5d6675; flex: none; }
+  .feed .k { flex: none; font-weight: 700; }
+  .k.gaze { color: #9b86ff; } .k.tap { color: #7ee0b8; } .k.screen { color: #f6b23b; }
+  .k.say  { color: #6fd3ff; } .k.note { color: #ff9d9d; } .k.scroll { color: #5d6675; }
+  .feed .v { color: var(--text); overflow-wrap: anywhere; }
+  .stat { display: flex; gap: 18px; font: 12px var(--mono); color: var(--muted); }
+  .stat b { color: var(--text); font-weight: 700; }
+  .warnbox {
+    background: rgba(246,178,59,.1); border: 1px solid rgba(246,178,59,.35);
+    border-radius: 10px; padding: 12px 14px; font-size: 13px; color: #f0cb8a; margin-bottom: 16px;
+  }
+  code { font: 12px var(--mono); background: var(--surface-2); padding: 2px 6px; border-radius: 5px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>SwingBy · walkthrough recorder</h1>
+  <span class="pill" id="statusPill">idle</span>
+  <span class="sp"></span>
+  <span class="stat">
+    <span>gaze <b id="nGaze">0</b></span>
+    <span>taps <b id="nTap">0</b></span>
+    <span>said <b id="nSay">0</b></span>
+    <span id="clock">00:00</span>
+  </span>
+  <button id="btnStop" class="danger" disabled>Stop &amp; save</button>
+</header>
+
+<main>
+  <div>
+    <div class="card" id="setupCard">
+      <h2>Set up</h2>
+      <div id="secureWarn" class="warnbox" style="display:none">
+        <b>Camera and mic are blocked here.</b><br />
+        This page isn't a secure context, so the browser won't allow eye tracking
+        or voice. Open it on <code>localhost</code>, or serve it over HTTPS — see
+        the README for the Tailscale one-liner.
+      </div>
+
+      <label class="field">
+        <span>What are you walking through?</span>
+        <input type="text" id="goal" placeholder="e.g. post a job and pick a quote" />
+      </label>
+      <label class="field">
+        <span>Who are you pretending to be?</span>
+        <input type="text" id="persona" placeholder="e.g. first-time client, never seen the app" />
+      </label>
+
+      <div class="check"><input type="checkbox" id="useGaze" checked /><label for="useGaze">Track my eyes</label></div>
+      <div class="check"><input type="checkbox" id="useVoice" checked /><label for="useVoice">Record what I say</label></div>
+      <div class="check"><input type="checkbox" id="showDot" checked /><label for="showDot">Show me the gaze dot</label></div>
+
+      <p class="hint">
+        The dot is worth leaving on the first time so you can see whether the
+        tracking is any good. It does pull your eye toward it, so turn it off
+        once you trust it.
+      </p>
+
+      <div style="display:flex; gap:10px; margin-top:16px">
+        <button class="primary" id="btnStart">Start walkthrough</button>
+        <button id="btnRecal" disabled>Recalibrate</button>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:20px">
+      <h2>While you walk</h2>
+      <p class="hint" style="margin-top:0">
+        Say what you're thinking out loud — especially the boring parts.
+        "Where's the button", "why is this empty", "I expected that to do
+        something". Confusion is the signal; silence tells us nothing.
+      </p>
+      <p class="hint">
+        Press <code>Space</code> twice to drop a marker on anything that felt
+        wrong. It lands on the timeline and is flagged in the report.
+      </p>
+    </div>
+  </div>
+
+  <div class="stage">
+    <div class="phone">
+      <iframe id="app" src="/app/" title="SwingBy"></iframe>
+      <div id="hilite"></div>
+      <div id="gazeDot"></div>
+    </div>
+
+    <div class="feeds" style="width:100%">
+      <div class="card"><h2>Timeline</h2><div class="feed" id="feed"></div></div>
+      <div class="card"><h2>What you said</h2><div class="feed" id="says"></div></div>
+    </div>
+  </div>
+</main>
+
+<div id="calib">
+  <div class="msg">
+    <h3>Calibrate — about 30 seconds</h3>
+    <p>Click each purple dot <b>5 times</b>, looking straight at it as you click.</p>
+    <p>Sit how you'll actually sit. Don't move your head much afterward.</p>
+    <p id="calibCount" style="color:var(--accent); font-weight:700"></p>
+    <button id="btnSkipCalib" style="margin-top:12px">Skip — record without gaze</button>
+  </div>
+</div>
+
+<script src="/vendor/webgazer.js"></script>
+<script src="/harness.js"></script>
+</body>
+</html>
