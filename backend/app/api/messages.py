@@ -1,15 +1,22 @@
+import hashlib
 import logging
 from datetime import datetime, timedelta, timezone
 from uuid import UUID
 
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Depends, Query, Request
 from pydantic import BaseModel, Field, field_validator, model_validator
-from typing import Optional
+from typing import Literal, Optional
 from app.deps import get_current_user
 from app.privacy import mask_service_post_row, mask_user_public
 from app.services.contact_masking import mask_contact_info
 from app.supabase_client import supabase
 from app.services.push import send_push_to_user
+
+# Thread photos ride the SAME bucket the rest of the app's images already use
+# (POST /uploads/image). Imported rather than re-declared so there is one
+# definition of where an image lives — see _attachment_url() for the privacy
+# reasoning and for why reads re-derive the URL from the stored path.
+from app.api.uploads import BUCKET as IMAGE_BUCKET
 
 logger = logging.getLogger(__name__)
 
@@ -41,14 +48,60 @@ class MessageSend(BaseModel):
     # (interest) — pre-booking negotiation happens on the interest thread.
     booking_id: Optional[str] = Field(None, min_length=1, max_length=500)
     interest_id: Optional[str] = Field(None, min_length=1, max_length=500)
-    content: str = Field(..., min_length=1, max_length=2000)
+    # M11: a thread message is now typed. 'text' keeps the exact old contract
+    # (required, non-blank content); 'image' carries the photo in the
+    # attachment_* fields and treats `content` as an optional caption.
+    # 'terms' is NOT sendable here — it goes through POST /messages/terms so an
+    # agreement can never be forged by hand-posting a message row.
+    message_type: Literal["text", "image"] = "text"
+    content: Optional[str] = Field(None, max_length=2000)
+    attachment_url: Optional[str] = Field(None, max_length=2000)
+    attachment_path: Optional[str] = Field(None, max_length=1000)
+    attachment_width: Optional[int] = Field(None, gt=0, le=20000)
+    attachment_height: Optional[int] = Field(None, gt=0, le=20000)
 
     @field_validator("content", mode="before")
     @classmethod
     def strip_content(cls, v):
+        if v is None:
+            return None
+        return str(v).strip() or None
+
+    @model_validator(mode="after")
+    def one_thread_only(self):
+        if bool(self.booking_id) == bool(self.interest_id):
+            raise ValueError("Provide exactly one of booking_id or interest_id")
+        return self
+
+    @model_validator(mode="after")
+    def payload_matches_type(self):
+        if self.message_type == "text":
+            if not self.content:
+                raise ValueError("Message content cannot be blank")
+        else:
+            if not self.attachment_url or not self.attachment_path:
+                raise ValueError("An image message needs attachment_url and path")
+            # The list preview and the accessibility label both read `content`,
+            # so an uncaptioned photo still says what it is.
+            if not self.content:
+                self.content = "Photo"
+        return self
+
+
+class TermsPropose(BaseModel):
+    """A business proposing scope of work for the client to explicitly accept."""
+
+    booking_id: Optional[str] = Field(None, min_length=1, max_length=500)
+    interest_id: Optional[str] = Field(None, min_length=1, max_length=500)
+    title: str = Field(..., min_length=1, max_length=120)
+    terms_text: str = Field(..., min_length=1, max_length=4000)
+
+    @field_validator("title", "terms_text", mode="before")
+    @classmethod
+    def strip_text(cls, v):
         v = str(v).strip()
         if not v:
-            raise ValueError("Message content cannot be blank")
+            raise ValueError("Terms cannot be blank")
         return v
 
     @model_validator(mode="after")
@@ -136,6 +189,253 @@ def _assert_interest_access(interest: dict, current_user: dict):
     raise HTTPException(
         status_code=403, detail="You are not a participant in this conversation"
     )
+
+
+# ── M11: typed messages — photos and in-thread agreements ────────────────────
+
+
+def _attachment_url(row: dict) -> Optional[str]:
+    """Viewable URL for an image message, re-derived from the stored path.
+
+    PRIVACY (walkthrough audit L3 — client photos as "a burglary recon tool"):
+    thread photos deliberately reuse the SAME upload path and bucket as every
+    other image in the app (`job-photos`, public-read, POST /uploads/image).
+    That bucket is public-read, so the URL itself is the capability — but the
+    object key is a server-generated UUIDv4 under the uploader's user id, so it
+    is not enumerable, and the URL is only ever *handed out* by the two thread
+    reads below, both of which already gate on participation
+    (_assert_message_access / _assert_interest_access). Nothing here widens who
+    can read a thread: a business still sees only photos posted into a thread
+    it is a party to, and pre-acceptance quote threads keep their existing
+    masking.
+
+    The deliberate part is that the URL is re-derived from `attachment_path` on
+    every read instead of replaying the URL frozen at write time — the same
+    discipline uploads.sign_audio_path uses for the PRIVATE voice-note bucket.
+    That means moving thread photos to a private bucket + short-lived signed
+    URLs later is a change to this one function, not a migration over every
+    historical row. It was not done now because it needs a second bucket and a
+    storage-policy change that cannot ship as part of an over-the-air JS update
+    alongside this feature.
+    """
+    path = row.get("attachment_path")
+    stored = row.get("attachment_url")
+    if not path:
+        return stored
+    try:
+        url = supabase.storage.from_(IMAGE_BUCKET).get_public_url(path)
+    except Exception:
+        logger.warning("attachment_url_derive_failed", exc_info=True)
+        return stored
+    # Under test doubles / a storage outage this can come back as anything;
+    # never hand a non-string down to the serializer.
+    return url if isinstance(url, str) and url else stored
+
+
+def _attachment_columns(data: "MessageSend") -> dict:
+    """Extra insert columns for a typed message.
+
+    A plain text send returns {} so its stored row is byte-identical to what
+    this endpoint has always written (message_type defaults to 'text' in the
+    DB) — no behaviour change for the 99% path.
+    """
+    if data.message_type != "image":
+        return {}
+    return {
+        "message_type": "image",
+        "attachment_url": data.attachment_url,
+        "attachment_path": data.attachment_path,
+        "attachment_width": data.attachment_width,
+        "attachment_height": data.attachment_height,
+    }
+
+
+def _terms_fingerprint(
+    message_id: str, proposed_by: str, title: str, terms_text: str
+) -> str:
+    """SHA-256 over exactly what was proposed, bound to the message it rode in.
+
+    Any edit to the wording, the title, the author, or which message this
+    belongs to produces a different digest — which is what makes a silent
+    rewrite detectable at read time rather than only arguable after the fact.
+    """
+    canonical = "\n".join(
+        [
+            "swingby-terms-v1",
+            str(message_id),
+            str(proposed_by),
+            title,
+            terms_text,
+        ]
+    )
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+def _acceptance_fingerprint(terms_hash: str, accepted_by: str, accepted_at: str) -> str:
+    """SHA-256 over the acceptance, chained to the terms digest.
+
+    Chained on purpose: because the acceptance digest is computed OVER
+    terms_hash, changing one character of the agreed text breaks the terms link
+    AND the acceptance link together. There is no way to keep a valid-looking
+    acceptance attached to altered wording.
+    """
+    canonical = "\n".join(
+        [
+            "swingby-terms-accept-v1",
+            str(terms_hash),
+            str(accepted_by),
+            str(accepted_at),
+        ]
+    )
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+def _terms_public(row: dict, viewer_id: str, thread_client_id: Optional[str]) -> dict:
+    """Shape a message_terms row for the app, with its integrity re-checked.
+
+    `verified` is recomputed from the stored columns on EVERY read. The DB
+    trigger (migration 20260725230000) already refuses edits — including from
+    the backend's own service_role key — so a false here means something
+    changed the row out of band, and the app is expected to render that as a
+    broken record rather than as a valid agreement.
+    """
+    expected_terms = _terms_fingerprint(
+        row.get("message_id"),
+        row.get("proposed_by"),
+        row.get("title") or "",
+        row.get("terms_text") or "",
+    )
+    verified = bool(row.get("terms_hash")) and row.get("terms_hash") == expected_terms
+
+    if verified and row.get("accepted_at"):
+        expected_acceptance = _acceptance_fingerprint(
+            row.get("terms_hash"),
+            row.get("accepted_by"),
+            row.get("accepted_at"),
+        )
+        verified = row.get("acceptance_hash") == expected_acceptance
+
+    return {
+        "id": row.get("id"),
+        "message_id": row.get("message_id"),
+        "title": row.get("title"),
+        "terms_text": row.get("terms_text"),
+        "status": row.get("status"),
+        "proposed_by": row.get("proposed_by"),
+        "created_at": row.get("created_at"),
+        "accepted_by": row.get("accepted_by"),
+        "accepted_at": row.get("accepted_at"),
+        "accepted_name": row.get("accepted_name"),
+        "verified": verified,
+        # Only the thread's client accepts, and never their own proposal. The
+        # server re-checks this on POST .../accept — this is just so the app
+        # knows whether to draw the button.
+        "can_accept": (
+            row.get("status") == "pending"
+            and bool(thread_client_id)
+            and viewer_id == thread_client_id
+            and viewer_id != row.get("proposed_by")
+        ),
+    }
+
+
+def _decorate_messages(
+    items: list, viewer_id: str, thread_client_id: Optional[str] = None
+) -> list:
+    """Attach image URLs and agreement records to a page of messages.
+
+    Best-effort by design: a message list must still render if the terms lookup
+    fails, so a failure here downgrades a terms bubble to its preview line
+    rather than 500-ing the whole thread.
+    """
+    if not items:
+        return items
+
+    for row in items:
+        if row.get("message_type") == "image":
+            row["attachment_url"] = _attachment_url(row)
+
+    terms_ids = [row.get("id") for row in items if row.get("message_type") == "terms"]
+    if not terms_ids:
+        return items
+
+    try:
+        res = (
+            supabase.table("message_terms")
+            .select("*")
+            .in_("message_id", terms_ids)
+            .execute()
+        )
+        by_message = {
+            r["message_id"]: r for r in (res.data or []) if r.get("message_id")
+        }
+    except Exception:
+        logger.warning("terms_lookup_failed", exc_info=True)
+        return items
+
+    for row in items:
+        if row.get("message_type") != "terms":
+            continue
+        terms_row = by_message.get(row.get("id"))
+        row["terms"] = (
+            _terms_public(terms_row, viewer_id, thread_client_id) if terms_row else None
+        )
+    return items
+
+
+def _resolve_thread(
+    booking_id: Optional[str], interest_id: Optional[str], current_user: dict
+) -> dict:
+    """Access-checked lookup shared by the terms endpoints.
+
+    Returns {thread_field, thread_id, client_id, business_id, recipient_id}.
+    Raises the same 403/404s the send/read paths already raise.
+    """
+    uid = current_user["id"]
+
+    if booking_id:
+        _require_uuid(booking_id, "Booking")
+        res = (
+            supabase.table("bookings")
+            .select("*")
+            .eq("id", booking_id)
+            .single()
+            .execute()
+        )
+        if not res.data:
+            raise HTTPException(status_code=404, detail="Booking not found")
+        booking = res.data
+        _assert_message_access(booking, current_user)
+        client_id = booking["client_id"]
+        business_id = booking["business_id"]
+        thread_field, thread_id = "booking_id", booking_id
+    else:
+        _require_uuid(interest_id, "Quote thread")
+        interest = _get_interest_thread(interest_id)
+        _assert_interest_access(interest, current_user)
+        client_id = interest["service_posts"]["client_id"]
+        business_id = interest["business_id"]
+        thread_field, thread_id = "interest_id", interest_id
+
+    if client_id == uid:
+        owner = (
+            supabase.table("businesses")
+            .select("owner_id")
+            .eq("id", business_id)
+            .single()
+            .execute()
+        )
+        recipient_id = owner.data["owner_id"] if owner.data else None
+    else:
+        recipient_id = client_id
+
+    return {
+        "thread_field": thread_field,
+        "thread_id": thread_id,
+        "client_id": client_id,
+        "business_id": business_id,
+        "recipient_id": recipient_id,
+    }
 
 
 def _quote_context_for_booking(booking: dict) -> Optional[dict]:
@@ -340,6 +640,7 @@ def send_message(
             "booking_id": data.booking_id,
             "sender_id": uid,
             "content": masked_content,
+            **_attachment_columns(data),
         }
     else:
         interest = _get_interest_thread(data.interest_id)
@@ -372,6 +673,7 @@ def send_message(
             "interest_id": data.interest_id,
             "sender_id": uid,
             "content": masked_content,
+            **_attachment_columns(data),
         }
 
     # Retry-safe insert: only retried requests carry X-Send-Retry, so the happy
@@ -384,21 +686,32 @@ def send_message(
             datetime.now(timezone.utc) - timedelta(seconds=RESEND_DEDUPE_SECONDS)
         ).isoformat()
         try:
-            existing = (
+            query = (
                 supabase.table("messages")
                 .select("*")
                 .eq(thread_field, thread_id)
                 .eq("sender_id", uid)
                 .eq("content", masked_content)
-                .gte("sent_at", cutoff)
+            )
+            # Two different photos sent seconds apart share the default "Photo"
+            # caption, so content alone would collapse them into one. The
+            # storage path is unique per upload, which makes it the right
+            # identity for an image retry.
+            if data.message_type == "image":
+                query = query.eq("attachment_path", data.attachment_path)
+            existing = (
+                query.gte("sent_at", cutoff)
                 .order("sent_at", desc=True)
                 .limit(1)
                 .execute()
             )
             if existing.data:
+                row_out = existing.data[0]
+                if row_out.get("message_type") == "image":
+                    row_out["attachment_url"] = _attachment_url(row_out)
                 return {
                     "message": "Sent",
-                    "data": existing.data[0],
+                    "data": row_out,
                     "masked": was_masked,
                 }
         except Exception:
@@ -413,18 +726,290 @@ def send_message(
         # to BackgroundTasks lets the response return the instant the row is
         # written; the push fans out after. send_push_to_user never raises.
         if recipient_id and recipient_id != uid:
+            push_body = (
+                f"Photo · {masked_content[:80]}"
+                if data.message_type == "image" and masked_content != "Photo"
+                else (
+                    "Sent a photo"
+                    if data.message_type == "image"
+                    else masked_content[:100]
+                )
+            )
             background_tasks.add_task(
-                send_push_to_user, recipient_id, "New message", masked_content[:100]
+                send_push_to_user, recipient_id, "New message", push_body
             )
 
         # `masked` lets the mobile client surface a "we hid that contact info —
         # keep it on SwingBy" notice on the just-sent message.
-        return {"message": "Sent", "data": res.data[0], "masked": was_masked}
+        sent_row = res.data[0]
+        if sent_row.get("message_type") == "image":
+            sent_row["attachment_url"] = _attachment_url(sent_row)
+        return {"message": "Sent", "data": sent_row, "masked": was_masked}
     except HTTPException:
         raise
     except Exception:
         logger.exception("Could not send message")
         raise HTTPException(status_code=400, detail="Could not send message")
+
+
+# ── In-thread agreements (M11) ────────────────────────────────────────────────
+#
+# Why this is not just a message with a button on it: "agreed" has to survive
+# somebody later saying "that is not what I signed up for". So the record has
+# to answer WHO agreed, to exactly WHAT text, and WHEN — and none of those may
+# be editable afterwards.
+#
+#   • the wording lives in message_terms.terms_text, verbatim, and is the same
+#     string the bubble renders — there is no second, prettier copy;
+#   • acceptance stores accepted_by, accepted_at AND accepted_name (the name as
+#     shown at the moment of acceptance, so a later profile rename cannot
+#     restate who signed);
+#   • both are fingerprinted (SHA-256, chained) and re-verified on every read;
+#   • the DB trigger from migration 20260725230000 refuses edits — including
+#     from this service, which holds the service_role key.
+#
+# Deliberately carries NO money. The price lives in the quote card and the pay
+# sheet (PAYMENTS.md), and a second place to state a total is a second place to
+# be wrong about what was charged.
+
+
+@router.post("/terms")
+def propose_terms(
+    data: TermsPropose,
+    background_tasks: BackgroundTasks,
+    current_user: dict = Depends(get_current_user),
+):
+    """Business proposes scope of work for the client to explicitly accept."""
+    uid = current_user["id"]
+
+    # Only the provider side proposes; the client is the one who agrees. A
+    # client "agreeing" with themselves would be a worthless record. Checked
+    # before the thread lookup — it needs no DB round-trip to answer.
+    if current_user.get("role") not in ("business_owner", "employee"):
+        raise HTTPException(
+            status_code=403, detail="Only the business can send terms to agree to"
+        )
+
+    thread = _resolve_thread(data.booking_id, data.interest_id, current_user)
+    if thread["client_id"] == uid:
+        raise HTTPException(status_code=403, detail="You cannot send yourself terms")
+
+    # Same off-platform-leakage guard as ordinary chat (item 31), applied
+    # BEFORE the fingerprint — otherwise "terms" would be the one message type
+    # you could smuggle a phone number through, and the stored text would not
+    # be the text that was hashed.
+    title, _ = mask_contact_info(data.title)
+    terms_text, was_masked = mask_contact_info(data.terms_text)
+
+    preview = f"Scope of work: {title}"[:200]
+    message_row = {
+        thread["thread_field"]: thread["thread_id"],
+        "sender_id": uid,
+        "content": preview,
+        "message_type": "terms",
+    }
+
+    try:
+        msg_res = supabase.table("messages").insert(message_row).execute()
+        message = msg_res.data[0]
+    except Exception:
+        logger.exception("Could not create the terms message")
+        raise HTTPException(status_code=400, detail="Could not send these terms")
+
+    terms_row = {
+        "message_id": message["id"],
+        thread["thread_field"]: thread["thread_id"],
+        "proposed_by": uid,
+        "title": title,
+        "terms_text": terms_text,
+        "terms_hash": _terms_fingerprint(message["id"], uid, title, terms_text),
+        "status": "pending",
+    }
+
+    try:
+        terms_res = supabase.table("message_terms").insert(terms_row).execute()
+        terms = terms_res.data[0]
+    except Exception:
+        logger.exception("Could not store the terms record")
+        # The bubble would otherwise render as an agreement with nothing behind
+        # it. The message has no acceptance yet, so removing it is safe (the
+        # trigger only protects accepted rows).
+        try:
+            supabase.table("messages").delete().eq("id", message["id"]).execute()
+        except Exception:
+            logger.warning("orphan_terms_message_cleanup_failed", exc_info=True)
+        raise HTTPException(status_code=400, detail="Could not send these terms")
+
+    if thread["recipient_id"] and thread["recipient_id"] != uid:
+        background_tasks.add_task(
+            send_push_to_user,
+            thread["recipient_id"],
+            "Terms to review",
+            f"{title[:80]} — tap to read and agree",
+        )
+
+    message["terms"] = _terms_public(terms, uid, thread["client_id"])
+    return {"message": "Sent", "data": message, "masked": was_masked}
+
+
+@router.post("/terms/{terms_id}/accept")
+def accept_terms(
+    terms_id: str,
+    background_tasks: BackgroundTasks,
+    current_user: dict = Depends(get_current_user),
+):
+    """The client agrees. This writes the record that has to hold up later."""
+    _require_uuid(terms_id, "Terms")
+    uid = current_user["id"]
+
+    res = (
+        supabase.table("message_terms")
+        .select("*")
+        .eq("id", terms_id)
+        .single()
+        .execute()
+    )
+    if not res.data:
+        raise HTTPException(status_code=404, detail="Terms not found")
+    terms = res.data
+
+    thread = _resolve_thread(
+        terms.get("booking_id"), terms.get("interest_id"), current_user
+    )
+    if uid != thread["client_id"]:
+        raise HTTPException(
+            status_code=403, detail="Only the client on this job can agree to terms"
+        )
+    if uid == terms.get("proposed_by"):
+        raise HTTPException(
+            status_code=403, detail="You cannot agree to your own terms"
+        )
+    if terms.get("status") != "pending":
+        raise HTTPException(
+            status_code=409, detail=f"These terms were already {terms.get('status')}"
+        )
+
+    # Refuse to sign something that no longer matches what was proposed. If the
+    # stored wording and its fingerprint have drifted apart, the honest answer
+    # is "this cannot be agreed to", not "sign it anyway".
+    expected = _terms_fingerprint(
+        terms.get("message_id"),
+        terms.get("proposed_by"),
+        terms.get("title") or "",
+        terms.get("terms_text") or "",
+    )
+    if terms.get("terms_hash") != expected:
+        logger.error("terms_fingerprint_mismatch id=%s", terms_id)
+        raise HTTPException(
+            status_code=409,
+            detail="These terms can no longer be verified — ask for them to be re-sent",
+        )
+
+    accepted_at = datetime.now(timezone.utc).isoformat()
+    accepted_name = (
+        " ".join(
+            filter(
+                None,
+                [current_user.get("first_name"), current_user.get("last_name")],
+            )
+        ).strip()
+        or current_user.get("email")
+        or "Client"
+    )
+    update = {
+        "status": "accepted",
+        "accepted_by": uid,
+        "accepted_at": accepted_at,
+        "accepted_name": accepted_name,
+        "acceptance_hash": _acceptance_fingerprint(
+            terms["terms_hash"], uid, accepted_at
+        ),
+    }
+
+    try:
+        # Conditional on status='pending': two taps racing each other cannot
+        # both write an acceptance, and the second one comes back empty rather
+        # than overwriting the first one's timestamp.
+        upd = (
+            supabase.table("message_terms")
+            .update(update)
+            .eq("id", terms_id)
+            .eq("status", "pending")
+            .execute()
+        )
+    except Exception:
+        logger.exception("Could not record the terms acceptance")
+        raise HTTPException(status_code=400, detail="Could not record your agreement")
+
+    if not upd.data:
+        raise HTTPException(status_code=409, detail="These terms were already resolved")
+
+    if terms.get("proposed_by") and terms["proposed_by"] != uid:
+        background_tasks.add_task(
+            send_push_to_user,
+            terms["proposed_by"],
+            "Terms agreed",
+            f"{accepted_name} agreed to “{(terms.get('title') or '')[:60]}”",
+        )
+
+    return {
+        "message": "Agreed",
+        "data": _terms_public(upd.data[0], uid, thread["client_id"]),
+    }
+
+
+@router.post("/terms/{terms_id}/withdraw")
+def withdraw_terms(terms_id: str, current_user: dict = Depends(get_current_user)):
+    """The proposer pulls back terms the client has not agreed to yet.
+
+    Only ever pending → withdrawn. An accepted agreement is final: the trigger
+    rejects the update even if this route somehow reached it.
+    """
+    _require_uuid(terms_id, "Terms")
+    uid = current_user["id"]
+
+    res = (
+        supabase.table("message_terms")
+        .select("*")
+        .eq("id", terms_id)
+        .single()
+        .execute()
+    )
+    if not res.data:
+        raise HTTPException(status_code=404, detail="Terms not found")
+    terms = res.data
+
+    thread = _resolve_thread(
+        terms.get("booking_id"), terms.get("interest_id"), current_user
+    )
+    if terms.get("proposed_by") != uid:
+        raise HTTPException(
+            status_code=403, detail="Only whoever sent these terms can withdraw them"
+        )
+    if terms.get("status") != "pending":
+        raise HTTPException(
+            status_code=409, detail=f"These terms were already {terms.get('status')}"
+        )
+
+    try:
+        upd = (
+            supabase.table("message_terms")
+            .update({"status": "withdrawn"})
+            .eq("id", terms_id)
+            .eq("status", "pending")
+            .execute()
+        )
+    except Exception:
+        logger.exception("Could not withdraw the terms")
+        raise HTTPException(status_code=400, detail="Could not withdraw these terms")
+
+    if not upd.data:
+        raise HTTPException(status_code=409, detail="These terms were already resolved")
+
+    return {
+        "message": "Withdrawn",
+        "data": _terms_public(upd.data[0], uid, thread["client_id"]),
+    }
 
 
 @router.get("/threads")
@@ -446,7 +1031,8 @@ def list_threads(current_user: dict = Depends(get_current_user)):
         msgs = []
         if booking_ids or interest_ids:
             q = supabase.table("messages").select(
-                "id, booking_id, interest_id, sender_id, content, sent_at, read_at"
+                "id, booking_id, interest_id, sender_id, content, sent_at, "
+                "read_at, message_type"
             )
             if booking_ids and interest_ids:
                 q = q.or_(
@@ -499,6 +1085,10 @@ def list_threads(current_user: dict = Depends(get_current_user)):
                     "confirmed_date": b.get("confirmed_date"),
                     "last_message": (agg["last"] or {}).get("content"),
                     "last_at": (agg["last"] or {}).get("sent_at"),
+                    # M11: lets the inbox row badge a photo / an agreement
+                    # instead of showing its plain-text preview line.
+                    "last_message_type": (agg["last"] or {}).get("message_type")
+                    or "text",
                     "unread_count": agg["unread"],
                 }
             )
@@ -540,6 +1130,8 @@ def list_threads(current_user: dict = Depends(get_current_user)):
                     "business_id": i.get("business_id"),
                     "last_message": (agg["last"] or {}).get("content"),
                     "last_at": (agg["last"] or {}).get("sent_at"),
+                    "last_message_type": (agg["last"] or {}).get("message_type")
+                    or "text",
                     "unread_count": agg["unread"],
                 }
             )
@@ -623,6 +1215,10 @@ def get_interest_messages(
             for item in items:
                 if item.get("sender_id") == client_id and item.get("users"):
                     item["users"] = mask_user_public(item["users"])
+        # M11: image URLs re-derived from their stored path, agreement records
+        # attached to their terms bubbles. Runs AFTER masking so it cannot
+        # reintroduce anything masking just removed.
+        items = _decorate_messages(items, current_user["id"], client_id)
         if _has_unread(items, current_user["id"]):
             _mark_read("interest_id", interest_id, current_user["id"])
         next_before = items[-1]["sent_at"] if items else None
@@ -679,6 +1275,9 @@ def get_messages(
         query = query.order("sent_at", desc=True).limit(limit)
         res = query.execute()
         items = res.data or []
+        items = _decorate_messages(
+            items, current_user["id"], booking_res.data.get("client_id")
+        )
         if _has_unread(items, current_user["id"]):
             _mark_read("booking_id", booking_id, current_user["id"])
         next_before = items[-1]["sent_at"] if items else None

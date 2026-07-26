@@ -35,6 +35,7 @@ from unittest.mock import patch
 import pytest
 from fastapi import BackgroundTasks
 
+from app.api import messages as messages_mod
 from app.deps import get_current_user
 from app.main import app
 from tests.conftest import SupabaseTableStub
@@ -679,3 +680,682 @@ class TestContactMaskingOnSend:
         assert response.status_code == 200, response.text
         assert response.json()["masked"] is False
         assert messages_stub.inserted["content"] == "The job is $250.00 total"
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# M11 — photos and in-thread agreements
+#
+# Walkthrough item: "Share photos / agree to terms inside the message thread —
+# the thread is currently text-only." Two shapes are covered below:
+#
+#   1. an image message (typed row + attachment columns, URL re-derived from
+#      the stored storage path on read, retry identity keyed on that path);
+#   2. a terms message — the one that has to hold up if somebody later says
+#      "that is not what I agreed to". These tests are mostly about what CANNOT
+#      happen: the client is the only party who can accept, nobody accepts their
+#      own terms, an accepted record is never re-written, and altered wording
+#      fails verification instead of quietly passing.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+BUSINESS = {
+    "id": "owner-1",
+    "role": "business_owner",
+    "first_name": "Test",
+    "last_name": "Cleaning",
+    "email": "biz@example.com",
+}
+
+INTEREST_ID = "44444444-4444-4444-4444-444444444444"
+TERMS_ID = "55555555-5555-5555-5555-555555555555"
+
+
+@pytest.fixture
+def as_business():
+    app.dependency_overrides[get_current_user] = lambda: BUSINESS
+    yield BUSINESS
+    app.dependency_overrides.pop(get_current_user, None)
+
+
+def _interest_thread_stubs(viewer="business"):
+    """interests + businesses stubs for a quote thread between client-1/biz-1.
+
+    `viewer` picks the shape the businesses table has to answer with: the
+    business side hits _my_business_id (a list), the client side hits the
+    owner_id lookup that decides who gets the push (a single row).
+    """
+    interests_stub = SupabaseTableStub(
+        select_data={
+            "id": "interest-1",
+            "business_id": "biz-1",
+            "status": "pending",
+            "quoted_price": 200,
+            "service_posts": {
+                "id": "post-1",
+                "title": "Repaint the hallway",
+                "status": "open",
+                "client_id": "client-1",
+            },
+        }
+    )
+    businesses_stub = SupabaseTableStub(
+        # _my_business_id does .limit(1) then reads [0]["id"] — list, not dict.
+        select_data=(
+            [{"id": "biz-1"}] if viewer == "business" else {"owner_id": "owner-1"}
+        )
+    )
+    return interests_stub, businesses_stub
+
+
+def _last_update_payload(stub):
+    """The dict handed to the most recent .update(...) on a stub."""
+    for name, args, _kwargs in reversed(stub.calls):
+        if name == "update" and args:
+            return args[0]
+    raise AssertionError("no .update(...) was called on this stub")
+
+
+class TestImageMessages:
+    """A photo is a typed message row, not a URL pasted into chat text."""
+
+    def test_image_send_stores_type_and_attachment_columns(
+        self, test_client, as_client
+    ):
+        booking_stub, businesses_stub, messages_stub = _booking_send_stubs(
+            insert_data=[
+                {
+                    "id": "msg-1",
+                    "booking_id": "booking-1",
+                    "sender_id": "client-1",
+                    "content": "Photo",
+                    "message_type": "image",
+                    "attachment_url": "https://cdn.example/posts/client-1/a.jpg",
+                    "attachment_path": "posts/client-1/a.jpg",
+                }
+            ]
+        )
+        with patch("app.api.messages.supabase") as mock_supabase:
+            mock_supabase.table.side_effect = _multi_table(
+                {
+                    "bookings": booking_stub,
+                    "businesses": businesses_stub,
+                    "messages": messages_stub,
+                },
+                messages_stub,
+            )
+            mock_supabase.storage.from_.return_value.get_public_url.return_value = (
+                "https://cdn.example/posts/client-1/a.jpg"
+            )
+            with patch("app.api.messages.send_push_to_user"):
+                with patch.object(BackgroundTasks, "add_task"):
+                    response = test_client.post(
+                        "/messages/",
+                        json={
+                            "booking_id": "booking-1",
+                            "message_type": "image",
+                            "attachment_url": "https://cdn.example/posts/client-1/a.jpg",
+                            "attachment_path": "posts/client-1/a.jpg",
+                            "attachment_width": 1200,
+                            "attachment_height": 900,
+                        },
+                    )
+
+        assert response.status_code == 200, response.text
+        stored = messages_stub.inserted
+        assert stored["message_type"] == "image"
+        assert stored["attachment_path"] == "posts/client-1/a.jpg"
+        assert stored["attachment_width"] == 1200
+        # An uncaptioned photo still says what it is in the inbox preview.
+        assert stored["content"] == "Photo"
+
+    def test_image_send_without_an_attachment_is_rejected(self, test_client, as_client):
+        """message_type=image with no file is a malformed row, not an empty chat."""
+        response = test_client.post(
+            "/messages/",
+            json={"booking_id": "booking-1", "message_type": "image"},
+        )
+        assert response.status_code == 422, response.text
+
+    def test_text_send_still_requires_content(self, test_client, as_client):
+        """The old contract is untouched: a blank text message is still a 422."""
+        response = test_client.post(
+            "/messages/", json={"booking_id": "booking-1", "content": "   "}
+        )
+        assert response.status_code == 422, response.text
+
+    def test_text_send_writes_no_attachment_columns(self, test_client, as_client):
+        """99% path: a plain send stores exactly what it always stored."""
+        booking_stub, businesses_stub, messages_stub = _booking_send_stubs(
+            insert_data=[{"id": "msg-1", "content": "hello"}]
+        )
+        with patch("app.api.messages.supabase") as mock_supabase:
+            mock_supabase.table.side_effect = _multi_table(
+                {
+                    "bookings": booking_stub,
+                    "businesses": businesses_stub,
+                    "messages": messages_stub,
+                },
+                messages_stub,
+            )
+            with patch("app.api.messages.send_push_to_user"):
+                with patch.object(BackgroundTasks, "add_task"):
+                    response = test_client.post(
+                        "/messages/",
+                        json={"booking_id": "booking-1", "content": "hello"},
+                    )
+        assert response.status_code == 200, response.text
+        assert set(messages_stub.inserted) == {"booking_id", "sender_id", "content"}
+
+    def test_read_rederives_the_url_from_the_stored_path(self, test_client, as_client):
+        """
+        Reads never replay the URL frozen at write time — they re-derive it from
+        attachment_path (same discipline uploads.sign_audio_path uses for the
+        private voice-note bucket). That is what makes moving thread photos onto
+        a private bucket a one-function change later.
+        """
+        booking_stub = SupabaseTableStub(
+            select_data={
+                "id": "booking-1",
+                "client_id": "client-1",
+                "business_id": "biz-1",
+                "post_id": None,
+                "status": "confirmed",
+            }
+        )
+        messages_stub = SupabaseTableStub(
+            select_data=[
+                {
+                    "id": "msg-1",
+                    "sender_id": "client-1",
+                    "content": "Photo",
+                    "message_type": "image",
+                    "attachment_url": "https://cdn.example/stale.jpg",
+                    "attachment_path": "posts/client-1/a.jpg",
+                    "sent_at": "2026-07-25T10:00:00Z",
+                    "read_at": "2026-07-25T10:00:01Z",
+                }
+            ]
+        )
+
+        with patch("app.api.messages.supabase") as mock_supabase:
+            mock_supabase.table.side_effect = _multi_table(
+                {"bookings": booking_stub, "messages": messages_stub}, messages_stub
+            )
+            mock_supabase.storage.from_.return_value.get_public_url.return_value = (
+                "https://cdn.example/fresh.jpg"
+            )
+            response = test_client.get("/messages/22222222-2222-2222-2222-222222222222")
+
+        assert response.status_code == 200, response.text
+        assert response.json()["items"][0]["attachment_url"] == (
+            "https://cdn.example/fresh.jpg"
+        )
+
+    def test_storage_failure_falls_back_to_the_stored_url(self):
+        """A storage hiccup must not blank out somebody's photo."""
+        row = {
+            "message_type": "image",
+            "attachment_url": "https://cdn.example/stored.jpg",
+            "attachment_path": "posts/client-1/a.jpg",
+        }
+        with patch("app.api.messages.supabase") as mock_supabase:
+            mock_supabase.storage.from_.side_effect = RuntimeError("storage down")
+            assert messages_mod._attachment_url(row) == (
+                "https://cdn.example/stored.jpg"
+            )
+
+
+class TestProposeTerms:
+    """Only the provider side proposes, and the proposal is fingerprinted."""
+
+    def test_business_proposes_terms_on_a_quote_thread(self, test_client, as_business):
+        interests_stub, businesses_stub = _interest_thread_stubs()
+        messages_stub = SupabaseTableStub(
+            insert_data=[
+                {
+                    "id": "msg-1",
+                    "interest_id": "interest-1",
+                    "sender_id": "owner-1",
+                    "content": "Scope of work: Hallway repaint",
+                    "message_type": "terms",
+                }
+            ]
+        )
+        terms_stub = SupabaseTableStub(
+            insert_data=[
+                {
+                    "id": TERMS_ID,
+                    "message_id": "msg-1",
+                    "interest_id": "interest-1",
+                    "proposed_by": "owner-1",
+                    "title": "Hallway repaint",
+                    "terms_text": "Two coats. We move the furniture. No drywall repair.",
+                    "terms_hash": messages_mod._terms_fingerprint(
+                        "msg-1",
+                        "owner-1",
+                        "Hallway repaint",
+                        "Two coats. We move the furniture. No drywall repair.",
+                    ),
+                    "status": "pending",
+                    "created_at": "2026-07-25T12:00:00Z",
+                }
+            ]
+        )
+
+        with patch("app.api.messages.supabase") as mock_supabase:
+            mock_supabase.table.side_effect = _multi_table(
+                {
+                    "interests": interests_stub,
+                    "businesses": businesses_stub,
+                    "messages": messages_stub,
+                    "message_terms": terms_stub,
+                },
+                messages_stub,
+            )
+            with patch("app.api.messages.send_push_to_user"):
+                with patch.object(BackgroundTasks, "add_task"):
+                    response = test_client.post(
+                        "/messages/terms",
+                        json={
+                            "interest_id": INTEREST_ID,
+                            "title": "Hallway repaint",
+                            "terms_text": (
+                                "Two coats. We move the furniture. "
+                                "No drywall repair."
+                            ),
+                        },
+                    )
+
+        assert response.status_code == 200, response.text
+        # The chat row is typed, and its preview line is what the inbox shows.
+        assert messages_stub.inserted["message_type"] == "terms"
+        assert messages_stub.inserted["content"].startswith("Scope of work:")
+        # The agreement row carries the verbatim wording + its fingerprint.
+        written = terms_stub.inserted
+        assert written["status"] == "pending"
+        assert written["terms_text"].startswith("Two coats.")
+        assert written["terms_hash"] == messages_mod._terms_fingerprint(
+            "msg-1", "owner-1", written["title"], written["terms_text"]
+        )
+        body = response.json()["data"]
+        assert body["terms"]["verified"] is True
+        # The proposer is not the party who can accept it.
+        assert body["terms"]["can_accept"] is False
+
+    def test_client_cannot_propose_terms_to_themselves(self, test_client, as_client):
+        interests_stub, businesses_stub = _interest_thread_stubs("client")
+        messages_stub = SupabaseTableStub()
+
+        with patch("app.api.messages.supabase") as mock_supabase:
+            mock_supabase.table.side_effect = _multi_table(
+                {
+                    "interests": interests_stub,
+                    "businesses": businesses_stub,
+                    "messages": messages_stub,
+                },
+                messages_stub,
+            )
+            response = test_client.post(
+                "/messages/terms",
+                json={
+                    "interest_id": INTEREST_ID,
+                    "title": "Anything",
+                    "terms_text": "I agree with myself",
+                },
+            )
+
+        assert response.status_code == 403, response.text
+        assert messages_stub.inserted is None
+
+    def test_contact_details_are_masked_before_the_fingerprint(
+        self, test_client, as_business
+    ):
+        """
+        'terms' must not become the one message type you can smuggle a phone
+        number through — and the text that gets hashed has to be the text that
+        gets stored, so masking runs BEFORE the fingerprint.
+        """
+        interests_stub, businesses_stub = _interest_thread_stubs()
+        messages_stub = SupabaseTableStub(
+            insert_data=[{"id": "msg-1", "message_type": "terms"}]
+        )
+        terms_stub = SupabaseTableStub(insert_data=[{"id": TERMS_ID}])
+
+        with patch("app.api.messages.supabase") as mock_supabase:
+            mock_supabase.table.side_effect = _multi_table(
+                {
+                    "interests": interests_stub,
+                    "businesses": businesses_stub,
+                    "messages": messages_stub,
+                    "message_terms": terms_stub,
+                },
+                messages_stub,
+            )
+            with patch("app.api.messages.send_push_to_user"):
+                with patch.object(BackgroundTasks, "add_task"):
+                    response = test_client.post(
+                        "/messages/terms",
+                        json={
+                            "interest_id": INTEREST_ID,
+                            "title": "Repaint",
+                            "terms_text": "Call me on 403-555-1234 to arrange",
+                        },
+                    )
+
+        assert response.status_code == 200, response.text
+        written = terms_stub.inserted
+        assert "403" not in written["terms_text"]
+        assert written["terms_hash"] == messages_mod._terms_fingerprint(
+            "msg-1", "owner-1", written["title"], written["terms_text"]
+        )
+
+
+class TestAcceptTerms:
+    """The acceptance record: who, to what exact text, when — and write-once."""
+
+    TITLE = "Hallway repaint"
+    TEXT = "Two coats. We move the furniture. No drywall repair."
+
+    def _terms_row(self, **overrides):
+        row = {
+            "id": TERMS_ID,
+            "message_id": "msg-1",
+            # A real thread key — the accept route re-resolves the thread off
+            # this column, and _require_uuid rejects a non-UUID.
+            "interest_id": INTEREST_ID,
+            "booking_id": None,
+            "proposed_by": "owner-1",
+            "title": self.TITLE,
+            "terms_text": self.TEXT,
+            "terms_hash": messages_mod._terms_fingerprint(
+                "msg-1", "owner-1", self.TITLE, self.TEXT
+            ),
+            "status": "pending",
+            "created_at": "2026-07-25T12:00:00Z",
+            "accepted_by": None,
+            "accepted_at": None,
+            "accepted_name": None,
+            "acceptance_hash": None,
+        }
+        row.update(overrides)
+        return row
+
+    def test_client_acceptance_records_who_what_and_when(self, test_client, as_client):
+        interests_stub, businesses_stub = _interest_thread_stubs("client")
+        terms_stub = SupabaseTableStub(
+            select_data=self._terms_row(),
+            update_data=[self._terms_row(status="accepted")],
+        )
+
+        with patch("app.api.messages.supabase") as mock_supabase:
+            mock_supabase.table.side_effect = _multi_table(
+                {
+                    "message_terms": terms_stub,
+                    "interests": interests_stub,
+                    "businesses": businesses_stub,
+                },
+                terms_stub,
+            )
+            with patch("app.api.messages.send_push_to_user"):
+                with patch.object(BackgroundTasks, "add_task"):
+                    response = test_client.post(f"/messages/terms/{TERMS_ID}/accept")
+
+        assert response.status_code == 200, response.text
+        written = _last_update_payload(terms_stub)
+        assert written["status"] == "accepted"
+        assert written["accepted_by"] == "client-1"
+        assert written["accepted_at"]
+        # The name as shown at the moment of acceptance, so a later profile
+        # rename cannot restate who signed.
+        assert written["accepted_name"] == "Jane Client"
+        # The acceptance digest is chained to the terms digest.
+        assert written["acceptance_hash"] == messages_mod._acceptance_fingerprint(
+            self._terms_row()["terms_hash"], "client-1", written["accepted_at"]
+        )
+
+    def test_acceptance_update_is_conditional_on_still_being_pending(
+        self, test_client, as_client
+    ):
+        """Two taps racing cannot both write an acceptance."""
+        interests_stub, businesses_stub = _interest_thread_stubs("client")
+        terms_stub = SupabaseTableStub(
+            select_data=self._terms_row(),
+            update_data=[self._terms_row(status="accepted")],
+        )
+
+        with patch("app.api.messages.supabase") as mock_supabase:
+            mock_supabase.table.side_effect = _multi_table(
+                {
+                    "message_terms": terms_stub,
+                    "interests": interests_stub,
+                    "businesses": businesses_stub,
+                },
+                terms_stub,
+            )
+            with patch("app.api.messages.send_push_to_user"):
+                with patch.object(BackgroundTasks, "add_task"):
+                    test_client.post(f"/messages/terms/{TERMS_ID}/accept")
+
+        guards = [
+            c
+            for c in terms_stub.calls
+            if c[0] == "eq" and c[1] == ("status", "pending")
+        ]
+        assert guards, "the acceptance UPDATE must be guarded on status='pending'"
+
+    def test_the_business_cannot_accept_its_own_terms(self, test_client, as_business):
+        interests_stub, businesses_stub = _interest_thread_stubs()
+        terms_stub = SupabaseTableStub(select_data=self._terms_row())
+
+        with patch("app.api.messages.supabase") as mock_supabase:
+            mock_supabase.table.side_effect = _multi_table(
+                {
+                    "message_terms": terms_stub,
+                    "interests": interests_stub,
+                    "businesses": businesses_stub,
+                },
+                terms_stub,
+            )
+            response = test_client.post(f"/messages/terms/{TERMS_ID}/accept")
+
+        assert response.status_code == 403, response.text
+        assert not [c for c in terms_stub.calls if c[0] == "update"]
+
+    def test_already_accepted_terms_cannot_be_accepted_again(
+        self, test_client, as_client
+    ):
+        interests_stub, businesses_stub = _interest_thread_stubs("client")
+        terms_stub = SupabaseTableStub(
+            select_data=self._terms_row(
+                status="accepted",
+                accepted_by="client-1",
+                accepted_at="2026-07-25T13:00:00Z",
+                accepted_name="Jane Client",
+                acceptance_hash="whatever",
+            )
+        )
+
+        with patch("app.api.messages.supabase") as mock_supabase:
+            mock_supabase.table.side_effect = _multi_table(
+                {
+                    "message_terms": terms_stub,
+                    "interests": interests_stub,
+                    "businesses": businesses_stub,
+                },
+                terms_stub,
+            )
+            response = test_client.post(f"/messages/terms/{TERMS_ID}/accept")
+
+        assert response.status_code == 409, response.text
+        assert not [c for c in terms_stub.calls if c[0] == "update"]
+
+    def test_tampered_wording_cannot_be_accepted(self, test_client, as_client):
+        """
+        If the stored text and its fingerprint have drifted apart, the honest
+        answer is "this can't be agreed to" — never "sign it anyway".
+        """
+        interests_stub, businesses_stub = _interest_thread_stubs("client")
+        terms_stub = SupabaseTableStub(
+            select_data=self._terms_row(
+                terms_text="Two coats. We move the furniture. Drywall repair included."
+            )
+        )
+
+        with patch("app.api.messages.supabase") as mock_supabase:
+            mock_supabase.table.side_effect = _multi_table(
+                {
+                    "message_terms": terms_stub,
+                    "interests": interests_stub,
+                    "businesses": businesses_stub,
+                },
+                terms_stub,
+            )
+            response = test_client.post(f"/messages/terms/{TERMS_ID}/accept")
+
+        assert response.status_code == 409, response.text
+        assert "verified" in response.json()["detail"]
+        assert not [c for c in terms_stub.calls if c[0] == "update"]
+
+
+class TestTermsVerificationOnRead:
+    """`verified` is recomputed on every read, not trusted from storage."""
+
+    TITLE = "Hallway repaint"
+    TEXT = "Two coats. No drywall repair."
+
+    def _accepted_row(self):
+        terms_hash = messages_mod._terms_fingerprint(
+            "msg-1", "owner-1", self.TITLE, self.TEXT
+        )
+        accepted_at = "2026-07-25T13:00:00Z"
+        return {
+            "id": TERMS_ID,
+            "message_id": "msg-1",
+            "proposed_by": "owner-1",
+            "title": self.TITLE,
+            "terms_text": self.TEXT,
+            "terms_hash": terms_hash,
+            "status": "accepted",
+            "created_at": "2026-07-25T12:00:00Z",
+            "accepted_by": "client-1",
+            "accepted_at": accepted_at,
+            "accepted_name": "Jane Client",
+            "acceptance_hash": messages_mod._acceptance_fingerprint(
+                terms_hash, "client-1", accepted_at
+            ),
+        }
+
+    def test_intact_record_verifies(self):
+        out = messages_mod._terms_public(self._accepted_row(), "client-1", "client-1")
+        assert out["verified"] is True
+        assert out["accepted_name"] == "Jane Client"
+
+    def test_edited_wording_fails_verification(self):
+        row = self._accepted_row()
+        row["terms_text"] = self.TEXT + " Also we repair the drywall."
+        assert messages_mod._terms_public(row, "client-1", "client-1")["verified"] is (
+            False
+        )
+
+    def test_reassigned_acceptance_fails_verification(self):
+        """Re-pointing an acceptance at a different person breaks the chain."""
+        row = self._accepted_row()
+        row["accepted_by"] = "someone-else"
+        assert messages_mod._terms_public(row, "client-1", "client-1")["verified"] is (
+            False
+        )
+
+    def test_backdated_acceptance_fails_verification(self):
+        row = self._accepted_row()
+        row["accepted_at"] = "2026-01-01T00:00:00Z"
+        assert messages_mod._terms_public(row, "client-1", "client-1")["verified"] is (
+            False
+        )
+
+    def test_thread_read_attaches_the_agreement_to_its_bubble(
+        self, test_client, as_client
+    ):
+        booking_stub = SupabaseTableStub(
+            select_data={
+                "id": "booking-1",
+                "client_id": "client-1",
+                "business_id": "biz-1",
+                "post_id": None,
+                "status": "confirmed",
+            }
+        )
+        messages_stub = SupabaseTableStub(
+            select_data=[
+                {
+                    "id": "msg-1",
+                    "sender_id": "owner-1",
+                    "content": "Scope of work: Hallway repaint",
+                    "message_type": "terms",
+                    "sent_at": "2026-07-25T12:00:00Z",
+                    "read_at": "2026-07-25T12:00:01Z",
+                }
+            ]
+        )
+        terms_stub = SupabaseTableStub(select_data=[self._accepted_row()])
+
+        with patch("app.api.messages.supabase") as mock_supabase:
+            mock_supabase.table.side_effect = _multi_table(
+                {
+                    "bookings": booking_stub,
+                    "messages": messages_stub,
+                    "message_terms": terms_stub,
+                },
+                messages_stub,
+            )
+            response = test_client.get("/messages/22222222-2222-2222-2222-222222222222")
+
+        assert response.status_code == 200, response.text
+        item = response.json()["items"][0]
+        assert item["terms"]["status"] == "accepted"
+        assert item["terms"]["verified"] is True
+        assert item["terms"]["terms_text"] == self.TEXT
+        # Already accepted — nobody is offered the button again.
+        assert item["terms"]["can_accept"] is False
+
+    def test_a_terms_lookup_failure_does_not_break_the_thread(
+        self, test_client, as_client
+    ):
+        """A message list must still render if the agreement lookup falls over."""
+        booking_stub = SupabaseTableStub(
+            select_data={
+                "id": "booking-1",
+                "client_id": "client-1",
+                "business_id": "biz-1",
+                "post_id": None,
+                "status": "confirmed",
+            }
+        )
+        messages_stub = SupabaseTableStub(
+            select_data=[
+                {
+                    "id": "msg-1",
+                    "sender_id": "owner-1",
+                    "content": "Scope of work: Hallway repaint",
+                    "message_type": "terms",
+                    "sent_at": "2026-07-25T12:00:00Z",
+                    "read_at": "2026-07-25T12:00:01Z",
+                }
+            ]
+        )
+
+        class _Exploding:
+            def __getattr__(self, name):
+                raise RuntimeError("message_terms unavailable")
+
+        with patch("app.api.messages.supabase") as mock_supabase:
+            mock_supabase.table.side_effect = _multi_table(
+                {
+                    "bookings": booking_stub,
+                    "messages": messages_stub,
+                    "message_terms": _Exploding(),
+                },
+                messages_stub,
+            )
+            response = test_client.get("/messages/22222222-2222-2222-2222-222222222222")
+
+        assert response.status_code == 200, response.text
+        assert response.json()["items"][0]["content"].startswith("Scope of work:")
