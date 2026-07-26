@@ -10,7 +10,7 @@
 
 If you discover a security vulnerability in SwingBy, please report it privately:
 
-**Email:** security@swingbyapp.ca
+**Email:** security@swingbyy.com
 
 Please include:
 - Description of the vulnerability

@@ -258,7 +258,7 @@ This is the big one — make it good enough that a business owner uses it daily.
 
 ### D5. Secrets + ops
 - [ ] D5.1 — Verify `web/launch/.env` is gitignored. (Already handled by global `.env` pattern.)
-- [ ] D5.2 — Add a `web/launch/SECURITY.md` covering: vuln disclosure email (security@swingby.ca), in-scope assets, response SLA.
+- [ ] D5.2 — Add a `web/launch/SECURITY.md` covering: vuln disclosure email (security@swingbyy.com), in-scope assets, response SLA.
 - [ ] D5.3 — Frontend Sentry: filter PII before sending (use `beforeSend` to strip email/phone from error events).
 - [ ] D5.4 — Add a `<MaintenanceMode>` flag readable from env so the site can flip to maintenance without a redeploy.
 
@@ -361,7 +361,7 @@ Next steps for human:
 
 - [ ] `web/launch/` builds and previews successfully (`npm run build && npm run preview`).
 - [ ] Every route in the routing tree renders without error.
-- [ ] Login works for client and business roles with the seed accounts (`client@swingby.app`, `business@swingby.app` once recreated in Supabase).
+- [ ] Login works for client and business roles with the seed accounts (`client@swingbyy.com`, `business@swingbyy.com` once recreated in Supabase).
 - [ ] Business dashboard shows real data (or a clear empty state when no data).
 - [ ] CSV + XLSX exports download a valid file.
 - [ ] `npm audit` shows 0 high/critical.
