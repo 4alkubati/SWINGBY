@@ -30,7 +30,9 @@ import { SkeletonBox, SkeletonList } from '../../components/Skeleton';
 import { Feather } from '@expo/vector-icons';
 import { colors, spacing, radius, shadows, motion } from '../../theme/tokens';
 import i18n from '../../i18n';
-import { bucketBooking, needsActionReason, byJobDateAsc } from '../../utils/bookingBuckets';
+import { bucketBooking, needsActionReason } from '../../utils/bookingBuckets';
+import { groupScheduledJobs, countScheduledJobs } from '../../utils/scheduleGroups';
+import useQuotedPostIds from '../../hooks/useQuotedPostIds';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -648,11 +650,11 @@ function JobDetailScreen({ navigation, route }) {
 // should be listed over there — like the past would move to invoices — and
 // their jobs view they see like today's jobs or anything related to it."
 // Replaces the earlier New/Quoted/Scheduled lead-triage tabs (DQ-6 QA-07)
-// with four groupings built around what a working owner needs *today*:
-// Today, Upcoming, Needs action, Past. New leads + quotes-awaiting-response
-// + bookings-awaiting-a-date all fold into Needs Action; confirmed jobs with
-// a locked-in date partition into Today/Upcoming by date; completed/cancelled
-// fall into Past, each one linking to its invoice. Bucketing logic lives in
+// with groupings built around what a working owner needs *today*. As of D7
+// there are three: Scheduled (default), Needs action, Past. New leads +
+// bookings-awaiting-a-date fold into Needs action; every live job — dated or
+// not — is on Scheduled, one band per day; completed/cancelled fall into
+// Past, each one linking to its invoice. Bucketing logic lives in
 // utils/bookingBuckets.js so these counts always match the Dashboard's.
 // New-lead cards + the send-quote sheet still come from DashboardScreen
 // (JobOpportunityCard + SendQuoteSheet) — reused, not rebuilt. Tapping any
@@ -675,7 +677,48 @@ const NEEDS_ACTION_REASON_KEY = {
   awaitingDate: 'jobManagement.needsActionAwaitingDate',
 };
 
-const LIST_FILTERS = ['today', 'upcoming', 'needsAction', 'past'];
+// D7 — the tabs used to be Today / Upcoming / Needs action / Past. Today and
+// Upcoming were the same list split at midnight, and the split cost the owner
+// a tap to see tomorrow. They are now ONE "Scheduled" list, first and default,
+// spanning ~3 months and grouped by day — so "Today" is the heading you land
+// on and "Tomorrow" is the next one down, no tab switching (walkthrough D7,
+// Kira 2026-07-24). Grouping rules + the undated/horizon decisions live in
+// utils/scheduleGroups.js.
+//
+// Three tabs, not five: `components/Tabs` is a fixed-width segmented control
+// (each tab is flex:1), and five labels-with-counts clip on a phone. Today and
+// Upcoming survive as the first groups of Scheduled, and as route params —
+// see FILTER_ALIAS, which keeps the Dashboard's existing
+// `navigate('Jobs', {filter: 'today'})` deep link landing somewhere sane.
+const LIST_FILTERS = ['scheduled', 'needsAction', 'past'];
+
+// Old filter names still arriving from deep links / saved params.
+const FILTER_ALIAS = { today: 'scheduled', upcoming: 'scheduled' };
+
+function resolveFilter(name) {
+  const resolved = FILTER_ALIAS[name] || name;
+  return LIST_FILTERS.includes(resolved) ? resolved : 'scheduled';
+}
+
+// Headings for the Scheduled day groups. scheduleGroups.js returns a `kind`
+// and stays string-free so it carries no locale; the words are chosen here.
+// `defaultValue` is used for the keys that are not in i18n.js yet — that file
+// belongs to another lane this cycle, and this way adding the keys later turns
+// the translations on with no code change.
+function scheduleGroupHeading(group) {
+  switch (group.kind) {
+    case 'undated':
+      return i18n.t('jobManagement.groupUndated', { defaultValue: 'Date not set' });
+    case 'today':
+      return i18n.t('jobManagement.filterToday');
+    case 'tomorrow':
+      return i18n.t('jobManagement.groupTomorrow', { defaultValue: 'Tomorrow' });
+    case 'later':
+      return i18n.t('jobManagement.groupLater', { defaultValue: 'Later' });
+    default:
+      return formatRowDate(group.date);
+  }
+}
 
 function jobClientName(booking) {
   return booking.users?.first_name
@@ -795,11 +838,13 @@ function PastJobRow({ booking, onPress }) {
   );
 }
 
-// "Needs action" stacks two queues — new leads and bookings blocked on the
-// owner. (It used to stack a third, "quotes awaiting response"; sent quotes
-// now live behind the Quotes bubble on Messages.) Each queue gets its own
-// titled band with a count and a hairline rule above it, so the boundaries
-// are visible at a glance.
+// A titled band with a count and a hairline rule above it, so the boundaries
+// between stacked lists are visible at a glance. Used twice:
+//   * "Needs action", which stacks two queues — new leads and bookings blocked
+//     on the owner. (It used to stack a third, "quotes awaiting response";
+//     sent quotes now live behind the Quotes bubble on Messages.)
+//   * "Scheduled", where each band is one day — "Today", "Tomorrow", then
+//     dated (D7).
 function ActionGroup({ label, count, first, children }) {
   return (
     <View style={!first && styles.actionGroupDivided}>
@@ -815,10 +860,11 @@ function JobsListScreen({ navigation, route }) {
   const [bookings, setBookings] = useState([]);
   const [posts, setPosts] = useState([]);
   // Post ids this business has already quoted on. Not rendered — used purely
-  // to keep an already-quoted lead out of "New leads" (B11/B12).
-  const [quotedPostIds, setQuotedPostIds] = useState(() => new Set());
+  // to keep an already-quoted lead out of "New leads" (B11/B12). Shared with
+  // the Dashboard through hooks/useQuotedPostIds (B10).
+  const { quotedPostIds, syncFromInterests, markQuoted } = useQuotedPostIds();
   const [dismissedIds, setDismissedIds] = useState(new Set());
-  const [filter, setFilter] = useState(route?.params?.filter || 'today');
+  const [filter, setFilter] = useState(resolveFilter(route?.params?.filter));
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -840,8 +886,7 @@ function JobsListScreen({ navigation, route }) {
       // "You already expressed interest in this post" — B12) while also
       // appearing below as "Quotes awaiting response" — B11's two states from
       // one row. The quote itself now lives on Messages, behind the bubble.
-      const myInterests = i?.items || i || [];
-      setQuotedPostIds(new Set(myInterests.map((q) => q.post_id).filter(Boolean)));
+      syncFromInterests(i);
       setBookings(b?.items || b || []);
     } catch (err) {
       setError(err?.message || 'Could not load jobs.');
@@ -849,7 +894,7 @@ function JobsListScreen({ navigation, route }) {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [syncFromInterests]);
 
   useEffect(() => { load(); }, [load]);
   useEffect(() => {
@@ -862,7 +907,7 @@ function JobsListScreen({ navigation, route }) {
   // manually afterward doesn't keep getting overridden.
   useEffect(() => {
     if (route?.params?.filter) {
-      setFilter(route.params.filter);
+      setFilter(resolveFilter(route.params.filter));
       navigation.setParams({ filter: undefined });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -870,8 +915,11 @@ function JobsListScreen({ navigation, route }) {
 
   const visiblePosts = posts.filter((p) => !dismissedIds.has(p.id) && !quotedPostIds.has(p.id));
 
-  const todayJobs = bookings.filter((b) => bucketBooking(b) === 'today').sort(byJobDateAsc);
-  const upcomingJobs = bookings.filter((b) => bucketBooking(b) === 'upcoming').sort(byJobDateAsc);
+  // D7 — one Scheduled list, ~3 months, grouped by day. Empty days produce no
+  // header; undated jobs lead the list; anything past the horizon lands in a
+  // trailing "Later" group. See utils/scheduleGroups.js for the reasoning.
+  const scheduleGroups = groupScheduledJobs(bookings);
+  const scheduledCount = countScheduledJobs(scheduleGroups);
   const needsActionBookings = bookings.filter((b) => bucketBooking(b) === 'needsAction');
   const pastJobs = bookings
     .filter((b) => bucketBooking(b) === 'past')
@@ -888,16 +936,14 @@ function JobsListScreen({ navigation, route }) {
     navigation.navigate('JobManagement', { bookingId });
   }
 
-  const FILTER_LABEL_KEY = {
-    today: 'jobManagement.filterToday',
-    upcoming: 'jobManagement.filterUpcoming',
-    needsAction: 'jobManagement.filterNeedsAction',
-    past: 'jobManagement.filterPast',
+  const FILTER_LABEL = {
+    scheduled: i18n.t('jobManagement.filterScheduled', { defaultValue: 'Scheduled' }),
+    needsAction: i18n.t('jobManagement.filterNeedsAction'),
+    past: i18n.t('jobManagement.filterPast'),
   };
   const needsActionCount = visiblePosts.length + needsActionBookings.length;
   const FILTER_COUNT = {
-    today: todayJobs.length,
-    upcoming: upcomingJobs.length,
+    scheduled: scheduledCount,
     needsAction: needsActionCount,
     past: pastJobs.length,
   };
@@ -965,7 +1011,7 @@ function JobsListScreen({ navigation, route }) {
           identical on both sides of the marketplace. */}
       <View style={styles.listTabsRow}>
         <Tabs
-          tabs={LIST_FILTERS.map((f) => `${i18n.t(FILTER_LABEL_KEY[f])} (${FILTER_COUNT[f]})`)}
+          tabs={LIST_FILTERS.map((f) => `${FILTER_LABEL[f]} (${FILTER_COUNT[f]})`)}
           activeIndex={LIST_FILTERS.indexOf(filter)}
           onChange={(idx) => setFilter(LIST_FILTERS[idx])}
         />
@@ -982,33 +1028,44 @@ function JobsListScreen({ navigation, route }) {
           />
         }
       >
-        {filter === 'today' && (
-          todayJobs.length === 0 ? (
-            <EmptyState
-              icon="sun"
-              title={i18n.t('jobManagement.emptyTodayTitle')}
-              body={i18n.t('jobManagement.emptyTodayBody')}
-            />
-          ) : (
-            <Stack spacing="md">
-              {todayJobs.map((b) => (
-                <JobRow key={b.id} booking={b} onPress={() => openBooking(b.id)} />
-              ))}
-            </Stack>
-          )
-        )}
-
-        {filter === 'upcoming' && (
-          upcomingJobs.length === 0 ? (
+        {/* D7 — Scheduled: the default landing tab. One list, ~3 months,
+            one band per day. Days with nothing on them are never rendered;
+            the grouping is built from the jobs, so there is no such thing as
+            an empty header here. */}
+        {filter === 'scheduled' && (
+          scheduledCount === 0 ? (
             <EmptyState
               icon="calendar"
               title={i18n.t('jobManagement.emptyUpcomingTitle')}
               body={i18n.t('jobManagement.emptyUpcomingBody')}
             />
           ) : (
-            <Stack spacing="md">
-              {upcomingJobs.map((b) => (
-                <JobRow key={b.id} booking={b} showDate onPress={() => openBooking(b.id)} />
+            <Stack spacing="lg">
+              {scheduleGroups.map((group, i) => (
+                <ActionGroup
+                  key={group.key}
+                  label={scheduleGroupHeading(group)}
+                  count={group.jobs.length}
+                  first={i === 0}
+                >
+                  {group.jobs.map((b) => (
+                    group.kind === 'undated'
+                      // No confirmed date means no day to file it under, so
+                      // the row leads with WHY (unassigned / propose a date /
+                      // awaiting the client) instead of a blank time.
+                      ? <ActionBookingRow key={b.id} booking={b} onPress={() => openBooking(b.id)} />
+                      : (
+                        <JobRow
+                          key={b.id}
+                          booking={b}
+                          // The band header already carries the date; only the
+                          // horizon overflow group needs it back on the row.
+                          showDate={group.kind === 'later'}
+                          onPress={() => openBooking(b.id)}
+                        />
+                      )
+                  ))}
+                </ActionGroup>
               ))}
             </Stack>
           )
@@ -1077,8 +1134,7 @@ function JobsListScreen({ navigation, route }) {
           // waiting on the refetch below to come back (or on the write to be
           // readable). It is now a sent quote, and sent quotes live on
           // Messages behind the Quotes bubble.
-          const quotedId = interest?.post_id || selectedPost?.id;
-          if (quotedId) setQuotedPostIds((prev) => new Set(prev).add(quotedId));
+          markQuoted(interest?.post_id || selectedPost?.id);
           load();
           if (note) {
             navigation.navigate('Chat', {

@@ -18,6 +18,7 @@ import SectionHeader from '../../components/SectionHeader';
 import EarningsHero from '../../components/EarningsHero';
 import HeaderGlow from '../../components/HeaderGlow';
 import { bucketBooking, byJobDateAsc } from '../../utils/bookingBuckets';
+import useQuotedPostIds from '../../hooks/useQuotedPostIds';
 
 import { colors, spacing, motion } from '../../theme/tokens';
 import Text from '../../components/Text';
@@ -125,19 +126,39 @@ export default function DashboardScreen({ navigation }) {
   const [selectedPost, setSelectedPost] = useState(null);
   const [sheetVisible, setSheetVisible] = useState(false);
   const [dismissedIds, setDismissedIds] = useState(new Set());
+  // B10 — an opportunity the business already quoted kept sitting under "New
+  // opportunities" offering "Send quote" a second time. /service-posts/ has no
+  // idea who quoted; /interests/mine is the only place that knows. Same fix,
+  // same hook, as the Jobs screen's B12 (5c279ce). Seeded from the warm cache
+  // so the stale-while-refetch paint can't resurrect a collapsed card either —
+  // that repaint IS the "stale cache" half of the audit note.
+  const { quotedPostIds, syncFromInterests, markQuoted } = useQuotedPostIds(
+    _dashboardCache?.quotedPostIds
+  );
+  // `load` is a stable useCallback and has to write the current set into the
+  // module cache; a ref mirror keeps it from having to depend on the state.
+  const quotedPostIdsRef = useRef(quotedPostIds);
+  quotedPostIdsRef.current = quotedPostIds;
 
   const load = useCallback(async () => {
     setError(false);
     try {
-      const [b, p, biz, threads, pay] = await Promise.all([
+      const [b, p, biz, threads, pay, mine] = await Promise.all([
         api.get('/bookings/'),
         api.get('/service-posts/'),
         api.get('/businesses/me').catch(() => null),
         api.get('/messages/threads', { _silent: true }).catch(() => null),
         api.get('/payments/mine', { _silent: true }).catch(() => null),
+        api.get('/interests/mine', { _silent: true }).catch(() => ({ items: [] })),
       ]);
       const nextBookings = b?.items || b || [];
       const nextPosts = (p?.items || p || []).filter((post) => post.status === 'open');
+      const nextQuoted = new Set(quotedPostIdsRef.current);
+      ((mine?.items || mine || [])).forEach((interest) => {
+        const id = interest?.post_id || interest?.service_posts?.id;
+        if (id) nextQuoted.add(id);
+      });
+      syncFromInterests(mine);
       const nextUnread = (threads?.items || []).reduce(
         (sum, t) => sum + (t.unread_count || 0),
         0
@@ -158,6 +179,9 @@ export default function DashboardScreen({ navigation }) {
         business: biz || null,
         unreadTotal: nextUnread,
         payments: nextPayments,
+        // Serialised so the next mount seeds the hook and repaints WITHOUT the
+        // already-quoted cards, instead of flashing them back (B10).
+        quotedPostIds: [...nextQuoted],
       };
     } catch {
       // With cached data on screen, a background failure shouldn't nuke the UI
@@ -166,7 +190,7 @@ export default function DashboardScreen({ navigation }) {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [syncFromInterests]);
 
   useEffect(() => {
     load();
@@ -196,7 +220,12 @@ export default function DashboardScreen({ navigation }) {
     });
   }
 
-  const visiblePosts = posts.filter((p) => !dismissedIds.has(p.id));
+  // A post I have already quoted is not an opportunity — it's a sent quote,
+  // and sent quotes live on Messages behind the Quotes bubble (B10, matching
+  // the Jobs screen's B11/B12 rule).
+  const visiblePosts = posts.filter(
+    (p) => !dismissedIds.has(p.id) && !quotedPostIds.has(p.id)
+  );
 
   // Same bucketing utils/bookingBuckets.js gives the Jobs view — so "3
   // awaiting action" here and the Needs Action tab always agree.
@@ -573,6 +602,19 @@ export default function DashboardScreen({ navigation }) {
         onClose={() => setSheetVisible(false)}
         post={selectedPost}
         onQuoted={(interest, note) => {
+          // B10 — collapse the opportunity the instant the quote is sent,
+          // rather than waiting on a refetch (or on the write to be readable).
+          // The card used to stay put and offer "Send quote" again, which the
+          // API answers with "You already expressed interest in this post".
+          const quotedId = interest?.post_id || selectedPost?.id;
+          markQuoted(quotedId);
+          if (quotedId && _dashboardCache) {
+            _dashboardCache = {
+              ..._dashboardCache,
+              quotedPostIds: [...new Set([...(_dashboardCache.quotedPostIds || []), quotedId])],
+            };
+          }
+          load();
           // A note seeded a chat thread — take the business straight there
           if (note) {
             navigation.navigate('Chat', {
