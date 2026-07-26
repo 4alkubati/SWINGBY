@@ -53,7 +53,7 @@ We're starting in Calgary because it's home — and because every neighbourhood 
 
 Try it at swingbyapp.com
 
-Questions? Our founder reads every message: support@swingbyapp.com
+Questions? Our founder reads every message: support@swingbyy.com
 
 ---
 

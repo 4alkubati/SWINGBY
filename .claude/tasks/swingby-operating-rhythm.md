@@ -401,7 +401,7 @@ Hi,
 
 Thanks for your email. I'm traveling abroad and away from my desk from [start] to [end].
 
-For SwingBy customer issues: please email support@swingby.ca (response within 24h).
+For SwingBy customer issues: please email support@swingbyy.com (response within 24h).
 For SwingBy partner / press inquiries: I'll reply when I'm back.
 For anything urgent: text [phone number] — but please only if truly urgent.
 

@@ -11,7 +11,7 @@ Go to swingbyapp.com, tap "Sign up," enter your name, email, and password. Choos
 Not on the same account. If you want to use SwingBy as both a client and a business owner, create two separate accounts with different email addresses.
 
 **Q3: I didn't receive my confirmation email. What do I do?**  
-Check your spam folder first. If it's not there, wait 5 minutes and try again. Still nothing? Email support@swingbyapp.com and we'll manually confirm your account.
+Check your spam folder first. If it's not there, wait 5 minutes and try again. Still nothing? Email support@swingbyy.com and we'll manually confirm your account.
 
 **Q4: How do I reset my password?**  
 On the login screen, tap "Forgot password." Enter your email and we'll send a reset link. The link expires in 1 hour.
@@ -78,7 +78,7 @@ Credit and debit cards (Visa, Mastercard, Amex). E-transfer is not supported thr
 Yes — once a business has quoted your job, a chat thread opens on that quote and you can message each other before you accept. What you can't do is receive messages from businesses that haven't quoted your job, so there's no cold pitching. When you accept, the same conversation carries over onto the booking.
 
 **Q20: What if a business asks me to pay outside the app?**  
-Do not pay outside the app. Payments made outside SwingBy have no platform-held balance behind them and we cannot help with disputes. Report this request to support@swingbyapp.com.
+Do not pay outside the app. Payments made outside SwingBy have no platform-held balance behind them and we cannot help with disputes. Report this request to support@swingbyy.com.
 
 ---
 
@@ -104,14 +104,14 @@ Your dashboard shows open jobs near you that match your service category. Tap an
 After a job is completed, both the client and the business can leave a review. Reviews are visible on public profiles. We do not allow businesses to remove reviews.
 
 **Q26: Can I dispute a review I think is unfair?**  
-Contact support@swingbyapp.com with details. We investigate reviews that violate our terms (fake reviews, harassment, clearly fraudulent). We do not remove reviews simply because a business disagrees with the rating.
+Contact support@swingbyy.com with details. We investigate reviews that violate our terms (fake reviews, harassment, clearly fraudulent). We do not remove reviews simply because a business disagrees with the rating.
 
 ---
 
 ## Disputes & Issues
 
 **Q27: What if the work wasn't done properly?**  
-Do not mark the job complete. Contact support@swingbyapp.com within 24 hours of the scheduled completion date. We'll open a dispute and work through our dispute playbook to reach a fair resolution.
+Do not mark the job complete. Contact support@swingbyy.com within 24 hours of the scheduled completion date. We'll open a dispute and work through our dispute playbook to reach a fair resolution.
 
 **Q28: What is the cancellation policy?**  
 - Cancel more than 48 hours before scheduled date: 25% of the job value is retained as a cancellation fee.  
@@ -123,4 +123,4 @@ Do not mark the job complete. Contact support@swingbyapp.com within 24 hours of 
 Contact support immediately. Our team reviews the case and decides the refund — note that 50% of the payment is already released to the business at booking confirmation, so a no-show refund is a support decision, not an automatic reversal. Repeated no-shows result in account suspension.
 
 **Q30: How do I close my account?**  
-Email support@swingbyapp.com with subject line "Account closure request." We'll confirm any pending bookings and process the closure within 5 business days.
+Email support@swingbyy.com with subject line "Account closure request." We'll confirm any pending bookings and process the closure within 5 business days.

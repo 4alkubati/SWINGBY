@@ -74,7 +74,7 @@ Involve legal counsel when:
 
 | Channel | For |
 |---|---|
-| support@swingbyapp.com | All inbound support |
+| support@swingbyy.com | All inbound support |
 | Internal Slack #support-urgent | High-urgency issues between team members |
 | Founder direct (phone/text) | Tier 3 issues only |
 | Stripe support | Payment/payout issues that can't be resolved from dashboard |

@@ -176,7 +176,7 @@ A real, lawyer-reviewable Privacy Policy for SwingBy. Must cover, at minimum:
 - International data transfers
 - Security measures (high level — link to security-overview.md)
 - Changes to this policy
-- Contact for privacy requests: privacy@swingby.ca (placeholder)
+- Contact for privacy requests: privacy@swingbyy.com (placeholder)
 - Effective date
 
 Use plain, lawyer-acceptable language. Mark anything truly contested with `> LEGAL REVIEW NEEDED:` blocks for the founder to flag for a lawyer.
@@ -201,7 +201,7 @@ Full Terms of Service. Cover:
 - Dispute resolution and governing law (Alberta, Canada)
 - Termination
 - Changes to terms
-- Contact: legal@swingby.ca
+- Contact: legal@swingbyy.com
 
 ### 11. `privacy-and-security/cookie-policy.md`
 
@@ -274,7 +274,7 @@ Incident response runbook. Cover:
 A public-facing responsible disclosure policy for security researchers. Cover:
 
 - Scope (which assets are in scope, which are out)
-- How to report (security@swingby.ca placeholder)
+- How to report (security@swingbyy.com placeholder)
 - What we commit to (acknowledge within 72h, status update within 7d, fix timeline per severity)
 - Safe harbor (we won't pursue legal action against good-faith researchers)
 - Hall of fame (when applicable)
