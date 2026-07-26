@@ -25,6 +25,13 @@ import Inline from '../../components/Inline';
 import HeaderGlow from '../../components/HeaderGlow';
 import { SkeletonBox, SkeletonCard } from '../../components/Skeleton';
 import { RatingStarsDisplay } from '../../components/RatingStars';
+// Walkthrough M3 — Google review import. `GoogleReviewsConnect` is the owner's
+// control (and renders a "coming soon" card while Google's Business Profile
+// approval is pending); `ImportedReviewsSection` is what a CLIENT sees, in its
+// own labelled block so an imported review is never mistaken for a SwingBy one.
+import GoogleReviewsConnect from '../../components/GoogleReviewsConnect';
+import ImportedReviewsSection from '../../components/ImportedReviewsSection';
+import { getImportedReviews } from '../../services/googleReviews';
 import i18n from '../../i18n';
 
 // Haversine distance in km — same formula as SearchScreen's local helper
@@ -295,6 +302,11 @@ export default function BusinessProfileScreen({ navigation, route }) {
   const [business, setBusiness] = useState(null);
   const [employees, setEmployees] = useState([]);
   const [reviews, setReviews] = useState([]);
+  // Imported Google reviews are kept in their OWN state, never merged into
+  // `reviews`. Merging them would be one refactor away from them appearing in
+  // a count or an average that is supposed to mean "rated on a SwingBy job".
+  const [importedReviews, setImportedReviews] = useState([]);
+  const [importedSummary, setImportedSummary] = useState(null);
   const [subscription, setSubscription] = useState(null);
   const [subActionInFlight, setSubActionInFlight] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -366,17 +378,22 @@ export default function BusinessProfileScreen({ navigation, route }) {
       setBizId(id);
 
       const isOwn = !businessId || businessId === id;
-      const [emps, revs, sub] = await Promise.all([
+      const [emps, revs, sub, imported] = await Promise.all([
         api.get(`/employees/business/${id}`).catch(() => []),
         api.get(`/reviews/business/${id}`).catch(() => []),
         isOwn && user?.role === 'business_owner'
           ? api.get('/businesses/me/subscription').catch(() => null)
           : Promise.resolve(null),
+        // Returns an empty list while the feature flag is off, so this is a
+        // no-op today rather than a call that needs its own gate.
+        getImportedReviews(id).catch(() => null),
       ]);
       setBusiness(biz);
       setEmployees(emps || []);
       setReviews(revs || []);
       setSubscription(sub);
+      setImportedReviews(imported?.reviews || []);
+      setImportedSummary(imported?.summary || null);
       setEditName(biz.business_name || '');
       setEditCategory(biz.category || '');
       setEditRadius(String(biz.service_radius_km || 25));
@@ -614,6 +631,14 @@ export default function BusinessProfileScreen({ navigation, route }) {
               last
             />
           </View>
+
+          {/* ── Reviews (walkthrough M3) ──
+              An owner arriving with years of Google reviews should not start
+              at zero here. While Google's Business Profile approval is pending
+              this card renders as "coming soon" with no pressable control —
+              never a button that fails. */}
+          <Text variant="label" color="secondary" style={styles.ownerSectionLabel}>Reviews</Text>
+          <GoogleReviewsConnect compact onImported={() => load()} />
 
           {/* ── Plan ── */}
           {subscription ? (
@@ -964,8 +989,12 @@ export default function BusinessProfileScreen({ navigation, route }) {
             </>
           )}
 
-          {/* ── Reviews section ── */}
-          <SectionHeader title="Reviews" />
+          {/* ── Reviews section ──
+              "SwingBy reviews" rather than the old bare "Reviews": once a
+              second, differently-earned kind of review can appear on this page,
+              an unqualified heading is the ambiguity. These are the ones left
+              on jobs booked and completed through SwingBy. */}
+          <SectionHeader title="SwingBy reviews" />
           {reviews.length === 0 ? (
             <View style={styles.hPad}>
               <NoReviews />
@@ -976,6 +1005,18 @@ export default function BusinessProfileScreen({ navigation, route }) {
                 <ReviewCard key={rev.id} review={rev} />
               ))}
             </Stack>
+          )}
+
+          {/* ── Imported Google reviews (walkthrough M3) ──
+              Its own block, below the native ones, and it renders nothing at
+              all when there are none. Never merged into the list above and
+              never into business.avg_rating — see the component header. */}
+          {importedReviews.length > 0 && (
+            <ImportedReviewsSection
+              reviews={importedReviews}
+              summary={importedSummary}
+              style={[styles.hPad, styles.importedSection]}
+            />
           )}
 
           {/* ── Save button (edit mode) ── */}
@@ -1206,6 +1247,9 @@ const styles = StyleSheet.create({
   // Reviews
   reviewCard:   { marginBottom: 0 },
   noReviews:    { alignItems: 'center', padding: spacing.xl },
+  // Imported Google reviews sit a full step below the native list — the gap is
+  // doing work here, separating two things a client must not conflate.
+  importedSection: { marginTop: spacing.xl },
 
   // Empty card
   emptyCard:    { padding: spacing.lg, alignItems: 'center' },

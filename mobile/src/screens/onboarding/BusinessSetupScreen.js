@@ -13,8 +13,10 @@ import TextField from '../../components/TextField';
 import Button from '../../components/Button';
 import Chip from '../../components/Chip';
 import HeaderGlow from '../../components/HeaderGlow';
+import GoogleReviewsConnect from '../../components/GoogleReviewsConnect';
 import { api } from '../../services/api';
 import { show as showToast } from '../../services/toast';
+import { getStatus as getGoogleReviewsStatus } from '../../services/googleReviews';
 import { CATEGORY_LABELS as CATEGORIES } from '../../constants/categories';
 
 const GOOGLE_PLACES_KEY = process.env.EXPO_PUBLIC_GOOGLE_PLACES_KEY || '';
@@ -31,6 +33,12 @@ export default function BusinessSetupScreen({ onComplete }) {
   const [radiusKm, setRadiusKm] = useState(25);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  // Walkthrough M3 — the "Connect Google" step of business signup. It only
+  // exists once the business row does (the backend resolves which business to
+  // import into from the caller's own record, never from a posted id), so it
+  // is a second step rather than another field above.
+  const [step, setStep] = useState('details');
+  const [importedCount, setImportedCount] = useState(0);
 
   async function handleSubmit() {
     setError('');
@@ -57,12 +65,65 @@ export default function BusinessSetupScreen({ onComplete }) {
       };
       await api.post('/businesses/', payload);
       showToast({ type: 'success', text1: 'Business created', text2: 'You can now receive jobs.' });
+
+      // Only offer the Google step when the backend says the feature is live.
+      // While Google's Business Profile approval is pending the flag is off,
+      // and an extra screen whose only content is "coming soon" is a step that
+      // costs a tap and gives nothing — so signup goes straight through, and
+      // the coming-soon card lives on the owner's profile instead.
+      let googleEnabled = false;
+      try {
+        googleEnabled = !!(await getGoogleReviewsStatus())?.enabled;
+      } catch {
+        googleEnabled = false;
+      }
+      if (googleEnabled) {
+        setStep('google');
+        return;
+      }
       onComplete?.();
     } catch (err) {
       setError(err.message || 'Could not save. Try again.');
     } finally {
       setSubmitting(false);
     }
+  }
+
+  if (step === 'google') {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <HeaderGlow width={480} height={280} offsetTop={-40} align="right" opacity={0.24} />
+        <ScrollView
+          contentContainerStyle={styles.scroll}
+          showsVerticalScrollIndicator={false}
+        >
+          <Animated.View entering={FadeInDown.duration(400).delay(80)}>
+            <Text style={styles.title}>Don&apos;t start at zero</Text>
+            <Text style={styles.subtitle}>
+              Already have reviews on Google? Connect the account that owns your
+              Business Profile and we&apos;ll bring them across, marked as verified,
+              so new clients see your track record from day one.
+            </Text>
+          </Animated.View>
+
+          <View style={styles.field}>
+            <GoogleReviewsConnect
+              onImported={(result) => setImportedCount(result?.total ?? 0)}
+            />
+          </View>
+
+          <View style={styles.submitWrap}>
+            <Button
+              label={importedCount > 0 ? 'Done' : 'Skip for now'}
+              onPress={() => onComplete?.()}
+            />
+            <Text variant="caption" color="secondary" style={styles.skipHint}>
+              You can connect Google any time from your business profile.
+            </Text>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    );
   }
 
   return (
@@ -255,4 +316,9 @@ const styles = StyleSheet.create({
     color: colors.danger,
   },
   submitWrap: { marginTop: spacing.xl },
+  skipHint: {
+    marginTop: spacing.md,
+    textAlign: 'center',
+    lineHeight: 16,
+  },
 });
