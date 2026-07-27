@@ -164,6 +164,7 @@ flowchart LR
   QuoteComparison --> PaymentMethod
   NearbyMap --> BusinessProfile
   PostJob --> ClientTabs
+  PostJob --> RequestSent
   PostJob --> Home
   PostJob --> QuoteComparison
   PostJob --> PaymentMethod
@@ -180,7 +181,6 @@ flowchart LR
   Messages --> Chat
   Messages --> QuoteComparison
   BottomNav --> PostJob
-  class RequestSent orphan;
 ```
 
 
@@ -194,15 +194,13 @@ Screens that call `navigation.navigate('X')` where **X is not registered** in an
 
 Registered screens with **no incoming navigation from anywhere** (excluding navigator roots).
 
-- `RequestSent`
+*None.* Every screen is reachable somewhere.
 
 ## Orphan screens (per-navigator)
 
 Screens that ARE registered in a navigator but **cannot be reached by that user role's flow**. A screen may be reachable from ClientNavigator yet still be unreachable to a Business user, and vice-versa.
 
-### `ClientNavigator`
-
-- `RequestSent`
+*None.* Every screen is reachable from within its own navigator.
 
 ## Broken API calls
 
@@ -216,6 +214,6 @@ Mobile calls to endpoints **not exposed by the backend** (path params normalized
 
 - Navigators: **4**  
 - Registered screens: **62**  
-- Navigation edges: **126**  
+- Navigation edges: **128**  
 - Backend routes: **114**  
 - Mobile API calls: **129**  

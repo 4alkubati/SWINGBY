@@ -11,7 +11,16 @@ import { colors, spacing, radius } from '../theme/tokens';
 
 const POLL_MS = 8000;
 
+// AUDIT B16 — the two entries below (`dates_proposed`, `date_confirmed`) were
+// missing, so this timeline printed the raw enum `date_confirmed` straight to a
+// business owner's screen. The client-side copy of this renderer was fixed and
+// its comment said "the same fix belongs there next"; it never happened, and
+// this component is still mounted on the business booking screen
+// (JobManagementScreen). Same bug, different screen — the recurring shape of
+// every defect found in this audit.
 const COPY = {
+  dates_proposed: { icon: 'calendar', title: 'Times proposed' },
+  date_confirmed: { icon: 'check-circle', title: 'Time confirmed' },
   en_route: { icon: 'navigation', title: 'On the way' },
   arrived: { icon: 'map-pin', title: 'Provider arrived' },
   started: { icon: 'play-circle', title: 'Job started' },
@@ -20,6 +29,30 @@ const COPY = {
   completed: { icon: 'check-circle', title: 'Job complete' },
   cancelled_event: { icon: 'x-circle', title: 'Cancelled' },
 };
+
+// Notes are written by the backend and routinely embed a raw ISO timestamp
+// (`2026-07-25T20:30:00+00:00`). Appending one verbatim next to a friendly
+// time is the other half of B16.
+const ISO_IN_TEXT = /\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}(:\d{2})?(\.\d+)?(Z|[+-]\d{2}:?\d{2})?/g;
+
+function humaniseNote(note) {
+  if (!note) return '';
+  return String(note).replace(ISO_IN_TEXT, (iso) => {
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return iso;
+    return d.toLocaleString('en-CA', {
+      weekday: 'short', month: 'short', day: 'numeric',
+      hour: 'numeric', minute: '2-digit',
+    });
+  });
+}
+
+/** Turn `cancelled_event` into `Cancelled event` rather than showing the enum. */
+function humaniseEventType(t) {
+  return String(t || '')
+    .replace(/_/g, ' ')
+    .replace(/^./, (c) => c.toUpperCase());
+}
 
 function formatTime(iso) {
   if (!iso) return '';
@@ -99,7 +132,9 @@ export default function LiveStatusTimeline({ bookingId, pollMs = POLL_MS }) {
         {events.map((ev, i) => {
           const meta = COPY[ev.event_type] || {
             icon: 'circle',
-            title: ev.event_type,
+            // Never the bare enum: an unknown event type still gets read by a
+            // human, so spell it like words.
+            title: humaniseEventType(ev.event_type),
           };
           const last = i === events.length - 1;
           return (
@@ -114,7 +149,7 @@ export default function LiveStatusTimeline({ bookingId, pollMs = POLL_MS }) {
                 <Text variant="smallMedium">{meta.title}</Text>
                 <Text variant="caption" color="secondary">
                   {formatTime(ev.created_at)}
-                  {ev.note ? ` · ${ev.note}` : ''}
+                  {ev.note ? ` · ${humaniseNote(ev.note)}` : ''}
                 </Text>
               </Stack>
             </View>

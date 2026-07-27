@@ -20,6 +20,10 @@ import Svg, { Defs, Rect, LinearGradient, Stop } from 'react-native-svg';
 import { api } from '../../services/api';
 import i18n from '../../i18n';
 import BookingStatusTimeline from '../../components/BookingStatusTimeline';
+// AUDIT B15 — the progress bar must be EARNED, not elapsed. Reuse the exact
+// helper BookingDetailsScreen already proved, rather than writing a second
+// definition of "what stage is this job in".
+import { stageFromEvents } from './BookingDetailsScreen';
 import { MapCanvas, MapPin, MapRoute } from '../../components/MapPreviewCard';
 import PulseDot from '../../components/PulseDot';
 import Text from '../../components/Text';
@@ -269,6 +273,7 @@ export default function ActiveBookingScreen({ navigation, route }) {
   const [error, setError] = useState(false);
   const [callVisible, setCallVisible] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [events, setEvents] = useState([]);
 
   const load = useCallback(async () => {
     setError(false);
@@ -285,6 +290,18 @@ export default function ActiveBookingScreen({ navigation, route }) {
     try {
       const data = await api.get(`/bookings/${bookingId}`);
       setBooking(data);
+      // AUDIT B15 — booking.status is not evidence the work started: the
+      // backend flips it to 'in_progress' the moment a DATE is confirmed
+      // (bookings.py confirm-date), so this screen showed "In progress" on
+      // jobs where nobody had moved. The events feed is the record of what
+      // actually happened. Best-effort: a failed events call must not blank
+      // the booking, it just leaves the bar at its honest floor.
+      try {
+        const ev = await api.get(`/bookings/${bookingId}/events`, { _silent: true });
+        setEvents(ev?.items || []);
+      } catch {
+        setEvents([]);
+      }
     } catch {
       setError(true);
     } finally {
@@ -488,7 +505,7 @@ export default function ActiveBookingScreen({ navigation, route }) {
 
                   {/* Segmented progress */}
                   <BookingStatusTimeline
-                    currentStatus={booking.status}
+                    currentStatus={stageFromEvents(events, booking.status)}
                     timestamps={{
                       confirmed: booking.created_at
                         ? formatTime(booking.created_at)
@@ -520,12 +537,30 @@ export default function ActiveBookingScreen({ navigation, route }) {
                     Native renders as a bare text node and throws "Text strings
                     must be rendered within a <Text> component". A $0 total also
                     has nothing to say, so the row is right to disappear. */}
+                {/* AUDIT L5/L6 — this row used to say "held in escrow" for any
+                    non-zero total. `total_amount` is written the instant a quote
+                    is accepted, BEFORE any Stripe charge exists
+                    (interests.py::accept), so a client with an unpaid booking was
+                    told their money was safely held. That is the worst thing this
+                    screen can say, because it is the one claim they would act on.
+
+                    The server already answers this precisely: `payment_state`
+                    carries `capture_backed`, true only when a Stripe capture or a
+                    recorded off-platform payment stands behind the figure. Trust
+                    that, never the total alone. When it is absent (older backend)
+                    we state the amount without claiming anything about it. */}
                 {Number(booking.total_amount) > 0 && (
                   <DetailRow
                     label="Total"
-                    value={`$${booking.total_amount} · held in escrow`}
+                    value={
+                      booking.payment_state?.capture_backed
+                        ? `$${booking.total_amount} · held in escrow`
+                        : `$${booking.total_amount} · not paid yet`
+                    }
                     valueStyle={{
-                      color: colors.success,
+                      color: booking.payment_state?.capture_backed
+                        ? colors.success
+                        : colors.textSecondary,
                       fontFamily: 'SpaceGrotesk_700Bold',
                     }}
                     last

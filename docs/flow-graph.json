@@ -610,21 +610,21 @@
       "from_screen": "BusinessProfileScreen",
       "to_route": "EmployeeManagement",
       "method": "navigate",
-      "line": 1087
+      "line": 1089
     },
     {
       "from_file": "mobile/src/screens/business/BusinessProfileScreen.js",
       "from_screen": "BusinessProfileScreen",
       "to_route": "EmployeeProfile",
       "method": "navigate",
-      "line": 1107
+      "line": 1109
     },
     {
       "from_file": "mobile/src/screens/business/BusinessProfileScreen.js",
       "from_screen": "BusinessProfileScreen",
       "to_route": "PostJob",
       "method": "navigate",
-      "line": 1179
+      "line": 1181
     },
     {
       "from_file": "mobile/src/screens/business/DashboardScreen.js",
@@ -736,56 +736,56 @@
       "from_screen": "JobManagementScreen",
       "to_route": "Chat",
       "method": "navigate",
-      "line": 463
+      "line": 465
     },
     {
       "from_file": "mobile/src/screens/business/JobManagementScreen.js",
       "from_screen": "JobManagementScreen",
       "to_route": "ProofOfWork",
       "method": "navigate",
-      "line": 531
+      "line": 533
     },
     {
       "from_file": "mobile/src/screens/business/JobManagementScreen.js",
       "from_screen": "JobManagementScreen",
       "to_route": "Chat",
       "method": "navigate",
-      "line": 539
+      "line": 541
     },
     {
       "from_file": "mobile/src/screens/business/JobManagementScreen.js",
       "from_screen": "JobManagementScreen",
       "to_route": "Invoice",
       "method": "navigate",
-      "line": 551
+      "line": 553
     },
     {
       "from_file": "mobile/src/screens/business/JobManagementScreen.js",
       "from_screen": "JobManagementScreen",
       "to_route": "DisputeFlow",
       "method": "navigate",
-      "line": 568
+      "line": 570
     },
     {
       "from_file": "mobile/src/screens/business/JobManagementScreen.js",
       "from_screen": "JobManagementScreen",
       "to_route": "JobManagement",
       "method": "navigate",
-      "line": 954
+      "line": 956
     },
     {
       "from_file": "mobile/src/screens/business/JobManagementScreen.js",
       "from_screen": "JobManagementScreen",
       "to_route": "Invoice",
       "method": "navigate",
-      "line": 1136
+      "line": 1138
     },
     {
       "from_file": "mobile/src/screens/business/JobManagementScreen.js",
       "from_screen": "JobManagementScreen",
       "to_route": "Chat",
       "method": "navigate",
-      "line": 1158
+      "line": 1160
     },
     {
       "from_file": "mobile/src/screens/client/FavoritesScreen.js",
@@ -841,28 +841,28 @@
       "from_screen": "ActiveBookingScreen",
       "to_route": "BookingDetails",
       "method": "navigate",
-      "line": 541
+      "line": 546
     },
     {
       "from_file": "mobile/src/screens/client/ActiveBookingScreen.js",
       "from_screen": "ActiveBookingScreen",
       "to_route": "MyDisputes",
       "method": "navigate",
-      "line": 564
+      "line": 569
     },
     {
       "from_file": "mobile/src/screens/client/ActiveBookingScreen.js",
       "from_screen": "ActiveBookingScreen",
       "to_route": "CancellationFlow",
       "method": "navigate",
-      "line": 587
+      "line": 592
     },
     {
       "from_file": "mobile/src/screens/client/ActiveBookingScreen.js",
       "from_screen": "ActiveBookingScreen",
       "to_route": "Chat",
       "method": "navigate",
-      "line": 607
+      "line": 612
     },
     {
       "from_file": "mobile/src/screens/client/RequestSentScreen.js",
@@ -890,14 +890,14 @@
       "from_screen": "RequestSentScreen",
       "to_route": "QuoteComparison",
       "method": "navigate",
-      "line": 101
+      "line": 104
     },
     {
       "from_file": "mobile/src/screens/client/RequestSentScreen.js",
       "from_screen": "RequestSentScreen",
       "to_route": "Search",
       "method": "navigate",
-      "line": 105
+      "line": 112
     },
     {
       "from_file": "mobile/src/screens/client/HomeScreen.js",
@@ -1065,35 +1065,35 @@
       "from_screen": "QuoteComparisonScreen",
       "to_route": "Chat",
       "method": "replace",
-      "line": 314
+      "line": 323
     },
     {
       "from_file": "mobile/src/screens/client/QuoteComparisonScreen.js",
       "from_screen": "QuoteComparisonScreen",
       "to_route": "BookingDetails",
       "method": "replace",
-      "line": 336
+      "line": 345
     },
     {
       "from_file": "mobile/src/screens/client/QuoteComparisonScreen.js",
       "from_screen": "QuoteComparisonScreen",
       "to_route": "BusinessProfile",
       "method": "navigate",
-      "line": 426
+      "line": 435
     },
     {
       "from_file": "mobile/src/screens/client/QuoteComparisonScreen.js",
       "from_screen": "QuoteComparisonScreen",
       "to_route": "Chat",
       "method": "navigate",
-      "line": 429
+      "line": 438
     },
     {
       "from_file": "mobile/src/screens/client/QuoteComparisonScreen.js",
       "from_screen": "QuoteComparisonScreen",
       "to_route": "PaymentMethod",
       "method": "navigate",
-      "line": 455
+      "line": 464
     },
     {
       "from_file": "mobile/src/screens/client/NearbyMapScreen.js",
@@ -1101,6 +1101,20 @@
       "to_route": "BusinessProfile",
       "method": "navigate",
       "line": 458
+    },
+    {
+      "from_file": "mobile/src/screens/client/PostJobScreen.js",
+      "from_screen": "PostJobScreen",
+      "to_route": "ClientTabs",
+      "method": "reset",
+      "line": 1147
+    },
+    {
+      "from_file": "mobile/src/screens/client/PostJobScreen.js",
+      "from_screen": "PostJobScreen",
+      "to_route": "RequestSent",
+      "method": "reset",
+      "line": 1147
     },
     {
       "from_file": "mobile/src/screens/client/PostJobScreen.js",
@@ -1240,21 +1254,21 @@
       "from_screen": "MessagesScreen",
       "to_route": "Chat",
       "method": "navigate",
-      "line": 469
+      "line": 480
     },
     {
       "from_file": "mobile/src/screens/messages/MessagesScreen.js",
       "from_screen": "MessagesScreen",
       "to_route": "QuoteComparison",
       "method": "navigate",
-      "line": 477
+      "line": 488
     },
     {
       "from_file": "mobile/src/screens/messages/MessagesScreen.js",
       "from_screen": "MessagesScreen",
       "to_route": "Chat",
       "method": "navigate",
-      "line": 481
+      "line": 492
     },
     {
       "from_file": "mobile/src/components/BottomNav.js",
@@ -2273,19 +2287,19 @@
       "from_file": "mobile/src/screens/business/JobManagementScreen.js",
       "method": "GET",
       "path": "/service-posts/",
-      "line": 896
+      "line": 898
     },
     {
       "from_file": "mobile/src/screens/business/JobManagementScreen.js",
       "method": "GET",
       "path": "/interests/mine",
-      "line": 897
+      "line": 899
     },
     {
       "from_file": "mobile/src/screens/business/JobManagementScreen.js",
       "method": "GET",
       "path": "/bookings/",
-      "line": 898
+      "line": 900
     },
     {
       "from_file": "mobile/src/screens/business/EarningsScreen.js",
@@ -2393,13 +2407,13 @@
       "from_file": "mobile/src/screens/client/QuoteComparisonScreen.js",
       "method": "GET",
       "path": "/interests/post/${postId}",
-      "line": 230
+      "line": 239
     },
     {
       "from_file": "mobile/src/screens/client/QuoteComparisonScreen.js",
       "method": "PATCH",
       "path": "/interests/${quote.id}/reject",
-      "line": 350
+      "line": 359
     },
     {
       "from_file": "mobile/src/screens/client/NearbyMapScreen.js",
@@ -2489,19 +2503,19 @@
       "from_file": "mobile/src/screens/messages/MessagesScreen.js",
       "method": "GET",
       "path": "/service-posts/my",
-      "line": 328
+      "line": 339
     },
     {
       "from_file": "mobile/src/screens/messages/MessagesScreen.js",
       "method": "GET",
       "path": "/interests/post/${p.id}",
-      "line": 355
+      "line": 366
     },
     {
       "from_file": "mobile/src/screens/messages/MessagesScreen.js",
       "method": "GET",
       "path": "/messages/threads",
-      "line": 399
+      "line": 410
     },
     {
       "from_file": "mobile/src/components/LiveStatusTimeline.js",
@@ -2727,15 +2741,11 @@
     }
   ],
   "broken_edges": [],
-  "orphans": [
-    "RequestSent"
-  ],
+  "orphans": [],
   "per_nav_orphans": {
     "AuthNavigator": [],
     "BusinessNavigator": [],
-    "ClientNavigator": [
-      "RequestSent"
-    ],
+    "ClientNavigator": [],
     "transitions": []
   },
   "broken_api": [

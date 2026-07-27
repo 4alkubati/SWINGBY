@@ -81,6 +81,20 @@ NAV_CALL_RE = re.compile(
 # used by NotificationsCenter and other dispatchers.
 NAV_OBJECT_RE = re.compile(r"screen:\s*['\"]([^'\"]+)['\"]")
 
+# The stack-CLEARING form, which the line-based patterns above cannot see:
+#     navigation.reset({ index: 1, routes: [{ name: 'RequestSent', params: {...} }] })
+# It spans many lines and names its target in an object, not as a call argument.
+# Missing it made this tool report RequestSent as an orphan when PostJobScreen
+# had been reaching it all along — and that false orphan then got written into a
+# test exemption claiming the flow "does not exist yet". A screen reached ONLY
+# by reset() is still reached.
+#
+# Scoped to the inside of a `routes: [...]` array on purpose: a bare `name:`
+# pattern would also match <Feather name="phone" /> and silently mark real
+# orphans as reachable, which is the failure this tool exists to catch.
+NAV_RESET_BLOCK_RE = re.compile(r"routes:\s*\[(.*?)\]", re.S)
+NAV_RESET_NAME_RE = re.compile(r"name:\s*['\"]([^'\"]+)['\"]")
+
 
 def scan_edges() -> list:
     """Every navigation call in mobile/src/screens + components."""
@@ -89,6 +103,16 @@ def scan_edges() -> list:
         for js in root.rglob("*.js"):
             text = js.read_text(encoding="utf-8", errors="replace")
             src = str(js.relative_to(ROOT))
+            for block in NAV_RESET_BLOCK_RE.finditer(text):
+                line_num = text.count("\n", 0, block.start()) + 1
+                for target in NAV_RESET_NAME_RE.findall(block.group(1)):
+                    edges.append({
+                        "from_file": src,
+                        "from_screen": js.stem,
+                        "to_route": target,
+                        "method": "reset",
+                        "line": line_num,
+                    })
             for line_num, line in enumerate(text.splitlines(), start=1):
                 for method, target in NAV_CALL_RE.findall(line):
                     edges.append({

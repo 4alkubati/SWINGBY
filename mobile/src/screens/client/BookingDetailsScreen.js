@@ -268,7 +268,12 @@ function EscrowMilestones({ payment }) {
   const escrowHeld = parseFloat(payment.escrow_held ?? 0);
   const payStatus = (payment.status || '').toLowerCase();
 
-  const fundsHeld = totalCharged > 0;
+  // AUDIT L5 — `total_charged > 0` is not "the money arrived". The column is
+  // populated when the booking is priced, so this ticked "Funds held" on
+  // bookings that were never paid. hasBeenCharged() is defined 10 lines up and
+  // checks the payment STATUS against the captured set — use the helper that
+  // already exists rather than a second, looser definition of "paid".
+  const fundsHeld = hasBeenCharged(payment);
   const halfReleased = releasedToBusiness > 0 || ['partial', 'fully_released'].includes(payStatus);
   const fullyReleased = payStatus === 'fully_released' && escrowHeld === 0;
 
