@@ -31,16 +31,21 @@
 -- ---------------------------------------------------------------------------
 -- THE INVARIANT THIS ENABLES
 -- ---------------------------------------------------------------------------
---   escrow_held + released_to_business + platform_cut + refunded == total_charged
+--   escrow_held + released_to_business + refunded == total_charged
 --
--- in EVERY state, including the two new ones:
+-- THREE terms. platform_cut is NOT one of them: it is the platform's share of
+-- the BUSINESS's payout (spec S1.4), tracked alongside and deducted when money
+-- leaves, not a slice of what the client handed over. Kira's drawing is exactly
+-- this shape -- 50 released + 50 escrow + 50 refunded = 150, with the $10 cut
+-- coming out of the business's $100.
+--
+-- It holds in every state, including the two this amendment introduces:
 --   posted, not yet quoted : escrow = total,  refunded = 0
 --   expired, never accepted: escrow = 0,      refunded = total
 --
--- The CHECK constraint at the bottom enforces it in the database, in cents, so
--- a future code path physically cannot write a row that does not balance. The
--- original spec (S3) says "a test enforces this"; a test only covers the paths
--- someone remembered to write. This covers all of them.
+-- Enforced in code by app/services/budget_settlement.py::ledger_balances, which
+-- is tested directly against the founder's worked example. See the note at the
+-- bottom of this file for why it is NOT a database constraint yet.
 --
 -- Everything here is ADDITIVE and idempotent. No drops, no data rewrite beyond
 -- backfilling two new columns to 0.
@@ -101,36 +106,34 @@ comment on column public.payments.stripe_refund_id is
 -- Cash jobs are exempt: the platform never held the principal, so the sum is
 -- meaningless there (spec S6). They are identified by method, since there is no
 -- is_cash column on this table.
--- NOT VALID is deliberate and load-bearing.
+-- CORRECTED 2026-07-26, hours after the first version of this file.
 --
--- 12 of the 30 existing rows do NOT balance (checked 2026-07-26 against the
--- live project): 6 rows status='fully_released' totalling $1,975 with zero in
--- every component, 3 status='held' for $1,185 holding nothing, and 3 with a
--- platform cut booked before any charge. NONE of the 12 has a
--- stripe_payment_intent_id, so none of them represents money that ever moved --
--- they are seed and test artifacts from before the cents columns existed.
+-- The first draft added a FOUR-term CHECK:
+--     escrow + released + platform_cut + refunded = total_charged
+-- and validated it. That was WRONG, and it took production down: the accept
+-- path (interests.py) correctly writes escrow=0, released=0, cut=10%,
+-- total=full at accept time -- because nothing is captured yet -- and the
+-- constraint rejected it with 23514. Every quote acceptance 500'd until the
+-- constraint was dropped.
 --
--- A plain CHECK would abort this migration. "Fixing" them inline would be worse:
--- zeroing the amounts silently destroys the only record of what those bookings
--- were meant to cost, and stuffing the total into escrow_held would assert that
--- money is held when it is not -- the exact lie (audit L5) fixed hours ago.
+-- The error was conceptual. platform_cut is NOT a slice of the client's money.
+-- It is the platform's share of the BUSINESS's payout (spec S1.4), tracked
+-- alongside the ledger, deducted when money leaves. Including it double-counts.
 --
--- NOT VALID enforces the invariant on every INSERT and UPDATE from now on while
--- leaving the historical rows untouched for a decision that belongs to Kira.
--- Once they are reconciled or deleted:
---     alter table public.payments validate constraint payments_ledger_balances;
--- which re-checks the existing rows without taking a write lock on new ones.
-alter table public.payments
-    drop constraint if exists payments_ledger_balances;
-alter table public.payments
-    add constraint payments_ledger_balances
-    check (
-        coalesce(method, '') = 'off_platform'
-        or escrow_held_cents
-           + released_to_business_cents
-           + platform_cut_cents
-           + refunded_cents
-           = total_charged_cents
-    ) not valid;
+-- Kira's own drawing says so exactly:
+--     50 released + 50 escrow + 50 refunded = 150     <- three terms
+-- with the $10 cut coming out of the business's $100, never out of the $150.
+--
+-- The codebase already had the right shape in payments_ledger_not_over_charged
+-- (escrow + released <= total). The refund-aware equality version belongs here
+-- only once every writer produces balanced rows -- interests.py writes
+-- total_charged before any capture exists, so it cannot satisfy an equality
+-- today. That is a code change, not a constraint change, and it is not worth
+-- risking the accept path a second time to land it early.
+--
+-- So: NO equality constraint is added by this migration. The existing
+-- not-over-charged check continues to hold the line, and app/services/
+-- budget_settlement.py::ledger_balances enforces the three-term invariant in
+-- code, where it is tested against the founder's worked example.
 
 commit;

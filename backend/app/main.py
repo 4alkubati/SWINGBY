@@ -210,6 +210,12 @@ from app.api.contact import router as contact_router
 
 app.include_router(contact_router, prefix="/contact", tags=["contact"])
 
+from app.api.analytics_export import router as analytics_export_router
+
+app.include_router(
+    analytics_export_router, prefix="/analytics", tags=["analytics-export"]
+)
+
 
 @app.get("/health")
 def health_check():

@@ -9,13 +9,17 @@ import {
   StyleSheet,
   Dimensions,
   RefreshControl,
+  Share,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 // victory-native@41 requires Skia + reanimated@4 which conflict with Expo SDK 54.
 // CategoryChart is stubbed with native View bars until we upgrade Expo OR pin
 // victory-native to ~40.x. All other UI on this screen is unaffected.
 import { Feather } from '@expo/vector-icons';
-import { api } from '../../services/api';
+import { api, extractMessage } from '../../services/api';
+import * as toast from '../../services/toast';
 import { SkeletonBox } from '../../components/Skeleton';
 import { RatingStarsDisplay } from '../../components/RatingStars';
 import { colors } from '../../theme/tokens';
@@ -142,6 +146,35 @@ function EmptyAnalytics() {
   );
 }
 
+// ─── Export (CSV/JSON) ──────────────────────────────────────────────────────
+// No native file-system / share-sheet package is in package.json
+// (expo-sharing, expo-file-system) — the founder tests via Expo Go, so this
+// deliberately adds no new native dependency. React Native's core `Share`
+// module needs neither: it hands the exported text straight to the OS share
+// sheet (Mail, Messages, Notes, Save to Files, AirDrop, etc.), which is
+// enough to get the CSV/JSON off the device without a filesystem write.
+// Trade-off, stated plainly: this shares TEXT, not a tagged .csv file — some
+// share targets will paste it as a plain-text body rather than an attachment.
+// If expo-file-system + expo-sharing are added later, swap this for a real
+// tmp-file write + Sharing.shareAsync() and the target app will see a proper
+// .csv/.json file instead.
+async function exportAnalytics(format) {
+  const resp = await api.get(`/analytics/export?format=${format}`, {
+    responseType: 'text',
+    transformResponse: [(data) => data],
+  });
+  // JSON comes back as a raw string too (transformResponse above disables
+  // axios's automatic parse) — pretty-print it so the shared text is readable
+  // rather than one unbroken line.
+  const content =
+    format === 'json' ? JSON.stringify(JSON.parse(resp), null, 2) : resp;
+  const stamp = new Date().toISOString().slice(0, 10);
+  await Share.share({
+    title: `SwingBy analytics — ${stamp}`,
+    message: content,
+  });
+}
+
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 export default function BusinessAnalyticsScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
@@ -154,6 +187,7 @@ export default function BusinessAnalyticsScreen({ navigation, route }) {
   const [categories, setCategories] = useState([]);
   const [reviews, setReviews] = useState([]);
   const [hasData, setHasData] = useState(true);
+  const [exporting, setExporting] = useState(false);
 
   const load = useCallback(async ({ silent = false } = {}) => {
     if (!silent) setLoading(true);
@@ -192,6 +226,30 @@ export default function BusinessAnalyticsScreen({ navigation, route }) {
 
   useEffect(() => { load(); }, [load]);
 
+  const runExport = useCallback(async (format) => {
+    setExporting(true);
+    try {
+      await exportAnalytics(format);
+    } catch (err) {
+      toast.show({
+        type: 'error',
+        text1: 'Export failed',
+        text2: extractMessage(err),
+      });
+    } finally {
+      setExporting(false);
+    }
+  }, []);
+
+  const handleExportPress = useCallback(() => {
+    if (exporting) return;
+    Alert.alert('Export Analytics', 'Choose a format to share or save.', [
+      { text: 'CSV (spreadsheet)', onPress: () => runExport('csv') },
+      { text: 'JSON', onPress: () => runExport('json') },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
+  }, [exporting, runExport]);
+
   if (!loading && error) {
     return (
       <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -226,7 +284,19 @@ export default function BusinessAnalyticsScreen({ navigation, route }) {
             <Feather name="arrow-left" size={20} color={colors.textPrimary} strokeWidth={2} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Analytics</Text>
-          <View style={{ width: 40 }} />
+          <TouchableOpacity
+            onPress={handleExportPress}
+            disabled={exporting}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            style={styles.exportBtn}
+            accessibilityLabel="Export analytics"
+          >
+            {exporting ? (
+              <ActivityIndicator size="small" color={colors.textPrimary} />
+            ) : (
+              <Feather name="share" size={20} color={colors.textPrimary} strokeWidth={2} />
+            )}
+          </TouchableOpacity>
         </View>
         <EmptyAnalytics />
       </View>
@@ -244,7 +314,19 @@ export default function BusinessAnalyticsScreen({ navigation, route }) {
           <Feather name="arrow-left" size={20} color={colors.textPrimary} strokeWidth={2} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Analytics</Text>
-        <View style={{ width: 40 }} />
+        <TouchableOpacity
+          onPress={handleExportPress}
+          disabled={exporting}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          style={styles.exportBtn}
+          accessibilityLabel="Export analytics"
+        >
+          {exporting ? (
+            <ActivityIndicator size="small" color={colors.textPrimary} />
+          ) : (
+            <Feather name="share" size={20} color={colors.textPrimary} strokeWidth={2} />
+          )}
+        </TouchableOpacity>
       </View>
 
       <ScrollView
@@ -358,6 +440,12 @@ const styles = StyleSheet.create({
   },
   backBtn: { fontSize: 24, color: colors.textSecondary, width: 40 },
   headerTitle: { fontSize: 20, fontWeight: '700', color: colors.textPrimary, letterSpacing: -0.5 },
+  exportBtn: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 
   // Hero
   hero: {

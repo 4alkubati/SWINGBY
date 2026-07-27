@@ -36,12 +36,13 @@ class TestKirasWorkedExample:
         assert led["platform_cut_cents"] == 1000
 
     def test_released_and_escrow_are_fifty_fifty_after_the_date_handshake(self):
-        # Kira's "50 released, 50 escrow" is the CLIENT's view of his $100 job.
-        # The business's share of each half is 90%, because the cut comes out of
-        # their payout and never on top of the client's charge (spec S1.4).
+        # "50$ get released and 50$ in escrow" -- literally, in cents, on his
+        # $100 job. These columns track the CLIENT's money. The platform's $10
+        # comes out of the business's payout when it moves, so it is not a
+        # slice of this split (spec S1.4).
         led = bs.settle_on_date_confirmed(bs.settle_on_accept(BUDGET, ACCEPTED))
-        assert led["released_to_business_cents"] == 4500
-        assert led["escrow_held_cents"] == 4500
+        assert led["released_to_business_cents"] == 5000
+        assert led["escrow_held_cents"] == 5000
 
     def test_the_whole_thing_balances_at_every_step(self):
         steps = {}
@@ -58,11 +59,13 @@ class TestKirasWorkedExample:
             bs.settle_on_date_confirmed(bs.settle_on_accept(BUDGET, ACCEPTED))
         )
         assert led["escrow_held_cents"] == 0
-        assert led["released_to_business_cents"] == 9000  # business got 90
-        assert led["platform_cut_cents"] == 1000  # we got 10
+        assert led["released_to_business_cents"] == 10000  # the job was $100
         assert led["refunded_cents"] == 5000  # client got 50 back
-        # 90 + 10 + 50 == 150, the client's whole budget accounted for.
-        assert 9000 + 1000 + 5000 == BUDGET
+        # 100 + 50 == 150. Exactly the drawing.
+        assert 10000 + 5000 == BUDGET
+        # And OUR cut, taken from the business's $100, leaving them $90.
+        assert led["platform_cut_cents"] == 1000
+        assert led["business_net_cents"] == 9000
 
 
 class TestPostedButNotYetQuoted:
@@ -103,12 +106,16 @@ class TestRoundingCannotLoseACent:
         assert bs.ledger_balances(led)
 
     @pytest.mark.parametrize("accepted", [1, 3, 7, 99, 101, 10555, 33333])
-    def test_the_two_tranches_sum_to_the_business_net_exactly(self, accepted):
+    def test_the_two_tranches_sum_to_the_accepted_amount_exactly(self, accepted):
         # "Never round twice" — the second tranche is the remainder of the
         # first, so it cannot drift by a cent on an odd total.
+        #
+        # The tranches sum to the ACCEPTED amount, not the business net: these
+        # columns move the client's money. The platform's cut is subtracted from
+        # the payout when it leaves, and is not a slice of this split.
         acc = bs.settle_on_accept(max(accepted, 100000), accepted)
         done = bs.settle_on_complete(bs.settle_on_date_confirmed(acc))
-        assert done["released_to_business_cents"] == acc["business_net_cents"]
+        assert done["released_to_business_cents"] == accepted
 
     def test_the_cut_is_never_under_ten_percent_from_float_error(self):
         # round(105.55 * 0.10, 2) took 9.9953% instead of 10%, always in the

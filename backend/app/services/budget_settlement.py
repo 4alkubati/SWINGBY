@@ -20,9 +20,12 @@ over-stated by exactly the platform cut for the life of every booking, because
 four components were being written into a three-way split. Pure functions with
 no I/O can be tested against the founder's own worked example directly.
 
-THE INVARIANT, now also enforced by a validated CHECK constraint in Postgres:
+THE INVARIANT (matches the existing payments_ledger_not_over_charged check):
 
-    escrow + released + platform_cut + refunded == total_charged
+    escrow + released + refunded == total_charged
+
+platform_cut is NOT a term: it is deducted from the BUSINESS's payout, never
+from the client's money (spec S1.4).
 
 It holds in every state, including the two states this amendment introduces:
 posted-but-unquoted, and expired-never-accepted.
@@ -104,13 +107,17 @@ def settle_on_accept(budget_cents: int, accepted_cents: int) -> dict:
     cut_c = platform_cut_cents(accepted_cents)
     business_net_c = accepted_cents - cut_c
 
-    # Everything the business will eventually receive starts in escrow; the
-    # first tranche is released on date-confirm, not here.
+    # ESCROW HOLDS THE CLIENT'S MONEY FOR THE JOB -- the full accepted amount,
+    # NOT the business's net. The platform cut is tracked alongside and comes
+    # out of the payout at release (spec S1.4), so it is not a term in the
+    # client-money equation. This is what makes Kira's drawing add up exactly:
+    #     50 released + 50 escrow + 50 refunded = 150
+    # with the $10 cut taken from the business's $100, never from the $150.
     total_charged_c = budget_cents + additional_c
 
     return {
         "total_charged_cents": total_charged_c,
-        "escrow_held_cents": business_net_c,
+        "escrow_held_cents": accepted_cents,
         "released_to_business_cents": 0,
         "platform_cut_cents": cut_c,
         "refunded_cents": refund_c,
@@ -124,9 +131,13 @@ def settle_on_accept(budget_cents: int, accepted_cents: int) -> dict:
 def settle_on_date_confirmed(ledger: dict) -> dict:
     """Release the first half of the business's net on the date handshake.
 
-    Half of `business_net`, not half of the accepted amount: the platform's cut
-    is already out (spec S3). The remainder is carried exactly so the second
-    tranche cannot lose a cent to a second rounding.
+    Half of what is escrowed for the job -- which is the ACCEPTED AMOUNT, the
+    client's money. Kira's "50 released and 50 in escrow" on a $100 job is
+    literal: 5000c and 5000c. The platform's $10 comes out of the business's
+    payout when the money actually moves, not out of this split.
+
+    The remainder is carried exactly so the second tranche cannot lose a cent
+    to a second rounding.
     """
     escrow_c = int(ledger["escrow_held_cents"])
     released_c = int(ledger["released_to_business_cents"])
@@ -165,11 +176,18 @@ def settle_on_expiry(ledger: dict) -> dict:
 
 
 def ledger_balances(ledger: dict) -> bool:
-    """The invariant, checkable anywhere. Mirrors the DB CHECK constraint."""
+    """The invariant, checkable anywhere.
+
+    Three terms, not four. `platform_cut` is deliberately absent: it is the
+    platform's share of the BUSINESS's payout, not a slice of what the client
+    handed over. Including it was a real error -- it made this module disagree
+    with every existing writer in the codebase and, when expressed as a DB
+    constraint, rejected the perfectly correct row that interests.py writes at
+    accept time.
+    """
     return (
         int(ledger["escrow_held_cents"])
         + int(ledger["released_to_business_cents"])
-        + int(ledger["platform_cut_cents"])
         + int(ledger["refunded_cents"])
     ) == int(ledger["total_charged_cents"])
 
