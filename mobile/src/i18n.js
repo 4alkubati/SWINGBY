@@ -1013,8 +1013,8 @@ const lane3 = {
   'postJob.rowBudget': 'Your budget',
   'postJob.rowBusiness': 'Business',
   'postJob.escrowExplainer':
-    "when you post — you'll see the total before confirming. Businesses only see paid jobs, and the money moves only when you approve the work.",
-  'postJob.escrowExplainerLead': 'We place your payment on hold',
+    "when you post, and hold it. Businesses only see paid jobs. Anything you don't spend is refunded when you accept a quote, and all of it is refunded if nobody takes the job.",
+  'postJob.escrowExplainerLead': 'We charge your budget',
   'postJob.ctaPostAndPay': 'Post job & pay',
   'postJob.ctaSendRequest': 'Send request',
   'postJob.holdFailed': 'Payment was not taken, so the job was not posted. Your draft is safe.',
@@ -1024,10 +1024,10 @@ const lane3 = {
 
   // Path A success
   'postJob.postedTitle': 'Job posted',
-  'postJob.postedBodyHeld': 'is on hold. Nearby pros are being notified now.',
+  'postJob.postedBodyHeld': 'was charged and held in escrow. Anything unused is refunded when you accept a quote.',
   'postJob.postedBodyNoHold': 'Nearby pros are being notified now.',
-  'postJob.postedRowHold': 'Payment on hold',
-  'postJob.postedRowHoldSub': 'Releases when you approve the work',
+  'postJob.postedRowHold': 'Payment charged',
+  'postJob.postedRowHoldSub': 'Unused budget is refunded when you accept a quote',
   'postJob.postedRowQuotes': 'Expect quotes within',
   'postJob.postedRowQuotesValue': '~2 h',
   'postJob.viewJob': 'View job',
@@ -1099,6 +1099,22 @@ const acceptChargesNow = {
   'quotes.noBooking': 'That quote could not be turned into a booking. Nothing was charged.',
 };
 Object.assign(translations.en, acceptChargesNow);
+
+// ─── Payment model lock-in (AMENDMENT 1, 2026-07-26) ─────────────────────────
+// Appended as its own block for the same reason as the two above: parallel
+// lanes append to this file and a hunk in the middle of `translations`
+// conflicts with all of them. English only — enableFallback is on.
+//
+// Posting now charges the client's full budget in one action — "Post + Pay
+// (same button)". The review-step CTA must name that amount, and a failed
+// charge needs its own specific copy: no post is created on a decline, unlike
+// the accept-a-quote path (acceptChargesNow, above) where the booking already
+// exists and is merely left unpaid.
+const paymentModelLockin = {
+  'postJob.ctaPostAndPayAmount': 'Post & pay %{amount}',
+  'postJob.chargeDeclined': 'Your card was declined — try another card.',
+};
+Object.assign(translations.en, paymentModelLockin);
 
 const i18n = new I18n(translations);
 

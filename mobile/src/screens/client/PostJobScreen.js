@@ -790,23 +790,30 @@ function StepConfirm({ category, description, address, budget, date, time, photo
           </Stack>
         </Surface>
 
-        {/* Escrow explainer — #161A21 radius 16, lock icon */}
-        <View style={styles.escrowExplainer}>
-          <Feather
-            name="lock"
-            size={15}
-            color={colors.textSecondary}
-            strokeWidth={1.8}
-            style={{ marginTop: 2 }}
-          />
-          <Text style={styles.escrowExplainerText}>
-            <Text style={styles.escrowExplainerLead}>
-              {i18n.t('postJob.escrowExplainerLead')}
+        {/* Escrow explainer — #161A21 radius 16, lock icon.
+            Rendered ONLY on the open-post path. It says money is taken "when
+            you post", which is true there and FALSE in the targeted flow, where
+            the client pays only if they accept a quote in chat. It used to
+            render unconditionally and flatly contradicted the hint text forty
+            lines below it, which was correctly branched all along. */}
+        {!targetBusinessName && (
+          <View style={styles.escrowExplainer}>
+            <Feather
+              name="lock"
+              size={15}
+              color={colors.textSecondary}
+              strokeWidth={1.8}
+              style={{ marginTop: 2 }}
+            />
+            <Text style={styles.escrowExplainerText}>
+              <Text style={styles.escrowExplainerLead}>
+                {i18n.t('postJob.escrowExplainerLead')}
+              </Text>
+              {' '}
+              {i18n.t('postJob.escrowExplainer')}
             </Text>
-            {' '}
-            {i18n.t('postJob.escrowExplainer')}
-          </Text>
-        </View>
+          </View>
+        )}
 
         {/* Photo thumbnails summary */}
         {photos.length > 0 && (
@@ -830,11 +837,24 @@ function StepConfirm({ category, description, address, budget, date, time, photo
           </Stack>
         )}
 
-        {/* Sticky footer CTA, 52px. No figure — the total lives in the sheet. */}
+        {/* AMENDMENT 1 — "Post + Pay (same Button)". The CTA now NAMES the
+            amount on the open-post path, because that single tap charges the
+            client's full budget. The old rule ("no figure — the total lives in
+            the sheet") was written when posting took no money; hiding the
+            number on a button that charges is the opposite of what it was for.
+
+            The TARGETED path is unchanged and still carries no figure: there,
+            nothing is charged until the client accepts a quote in chat. */}
         <Button
-          label={targetBusinessName
-            ? i18n.t('postJob.ctaSendRequest')
-            : i18n.t('postJob.ctaPostAndPay')}
+          label={
+            targetBusinessName
+              ? i18n.t('postJob.ctaSendRequest')
+              : Number(budget) > 0
+                ? i18n.t('postJob.ctaPostAndPayAmount', {
+                    amount: formatMoneyShort(Number(budget)),
+                  })
+                : i18n.t('postJob.ctaPostAndPay')
+          }
           loading={submitting}
           disabled={submitting}
           onPress={onSubmit}
@@ -844,7 +864,9 @@ function StepConfirm({ category, description, address, budget, date, time, photo
         <Text variant="caption" color="secondary" style={styles.hint}>
           {targetBusinessName
             ? `${targetBusinessName} replies with a price and time. Nothing is charged until you accept.`
-            : "You'll see the total before confirming."}
+            : Number(budget) > 0
+              ? `Your ${formatMoneyShort(Number(budget))} budget is charged now. Anything you don't spend comes back when you accept a quote — and all of it comes back if nobody takes the job.`
+              : "You'll see the total before confirming."}
         </Text>
       </Stack>
     </StepPanel>
