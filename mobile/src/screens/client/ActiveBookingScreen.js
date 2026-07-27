@@ -515,7 +515,12 @@ export default function ActiveBookingScreen({ navigation, route }) {
                   />
                 )}
                 {address && <DetailRow label="Where" value={address} />}
-                {booking.total_amount && (
+                {/* Number(...) > 0, not a bare truthiness check: a numeric 0
+                    makes `x && <JSX/>` evaluate to the NUMBER 0, which React
+                    Native renders as a bare text node and throws "Text strings
+                    must be rendered within a <Text> component". A $0 total also
+                    has nothing to say, so the row is right to disappear. */}
+                {Number(booking.total_amount) > 0 && (
                   <DetailRow
                     label="Total"
                     value={`$${booking.total_amount} · held in escrow`}

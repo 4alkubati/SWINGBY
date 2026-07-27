@@ -293,13 +293,24 @@ export default function MessagesScreen({ navigation }) {
   const loadBusinessQuotes = useCallback(async () => {
     const data = await api.get('/interests/mine', { _silent: true });
     const items = data?.items || (Array.isArray(data) ? data : []);
-    return items.map((i) => {
+    return items.flatMap((i) => {
       const post = i.service_posts || {};
       const client = post.users || {};
       const name = [client.first_name, client.last_name].filter(Boolean).join(' ')
         || i18n.t('messages.clientFallback');
       const expiresAt = quoteExpiry(i, post);
       const status = resolveQuoteStatus(i, post, expiresAt);
+      // Same rule the client side has always had (see loadClientQuotes): an
+      // accepted quote is a BOOKING and belongs in chats, not in "Sent quotes".
+      //
+      // Leaving it in caused both bugs on that screen at once. The backend
+      // stops masking a client once they accept — correctly, the business is
+      // working for them now — so an accepted row carried the client's real
+      // name while still being labelled "Awaiting reply", which read as a
+      // privacy leak. And the header counts only `pending`, so it showed
+      // "0 out · $0 pending" above four rows worth $550. One missing filter,
+      // both symptoms.
+      if (status === 'accepted') return [];
       const left = hoursLeft(expiresAt);
       let statusLabel = i18n.t('messages.quoteAwaitingReply');
       if (status === 'pending' && left != null && left < 48) {

@@ -46,13 +46,22 @@ function QuoteSkeletons() {
 // request lands (that's RequestSentScreen now), but it is still where "View
 // job" goes seconds after posting, so the empty state has to read as waiting,
 // not as failure.
-function QuotesEmpty() {
+// `targetBusinessName` is set when the client sent this to ONE business from
+// its profile ("Book now"). Saying "nearby pros have been notified" there is
+// simply false — nobody nearby was told anything, one company was asked
+// directly — and it was the first thing the founder caught on the walkthrough.
+function QuotesEmpty({ targetBusinessName }) {
+  const targeted = !!targetBusinessName;
   return (
     <View style={styles.emptyContainer}>
       <EmptyState
         icon="clock"
-        title="Waiting on quotes"
-        body={'Nearby pros have been notified. Most reply within a couple of hours — we’ll ping you the moment one does.'}
+        title={targeted ? 'Waiting on their reply' : 'Waiting on quotes'}
+        body={
+          targeted
+            ? `${targetBusinessName} has your request. Most reply within a couple of hours — we’ll ping you the moment they do.`
+            : 'Nearby pros have been notified. Most reply within a couple of hours — we’ll ping you the moment one does.'
+        }
       />
     </View>
   );
@@ -204,7 +213,7 @@ export default function QuoteComparisonScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
 
   // Original state — preserved in full
-  const { postId, postTitle } = route.params || {};
+  const { postId, postTitle, targetBusinessName } = route.params || {};
   const [quotes, setQuotes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
@@ -400,7 +409,7 @@ export default function QuoteComparisonScreen({ navigation, route }) {
       ) : loadError ? (
         <ErrorState onRetry={loadQuotes} />
       ) : quotes.length === 0 ? (
-        <QuotesEmpty />
+        <QuotesEmpty targetBusinessName={targetBusinessName} />
       ) : (
         <ScrollView
           showsVerticalScrollIndicator={false}

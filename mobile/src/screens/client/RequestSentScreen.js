@@ -98,7 +98,14 @@ export default function RequestSentScreen({ navigation, route }) {
       });
       return;
     }
-    navigation.navigate('QuoteComparison', { postId, postTitle });
+    // Pass the business through: this is the TARGETED flow, so the quotes
+    // screen must not tell the client that "nearby pros have been notified"
+    // when exactly one company was asked directly.
+    navigation.navigate('QuoteComparison', {
+      postId,
+      postTitle,
+      targetBusinessName: businessName,
+    });
   }
 
   function requestMorePros() {

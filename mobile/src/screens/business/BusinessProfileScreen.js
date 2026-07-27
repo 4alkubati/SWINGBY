@@ -1044,7 +1044,9 @@ export default function BusinessProfileScreen({ navigation, route }) {
                   )}
 
                   {/* Service radius */}
-                  {business?.service_radius_km && (
+                  {/* Same numeric-guard trap: a 0 km radius would render a
+                      bare 0 rather than nothing. */}
+                  {Number(business?.service_radius_km) > 0 && (
                     <Inline spacing="xs">
                       <Feather name="map-pin" size={12} color={colors.textSecondary} />
                       <Text variant="caption" color="secondary">

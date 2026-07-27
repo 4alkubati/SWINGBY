@@ -223,6 +223,20 @@ def health_check():
     # Only the failure detail rides along, and only when there IS a failure.
     stripe_detail = stripe_info if stripe_state == "malformed" else None
 
+    # The SECOND key. Reporting only the secret key made this endpoint lie:
+    # it said "stripe": "ok" while every in-app payment failed with
+    # `native_sheet_unavailable`, because the native Payment Sheet needs the
+    # PUBLISHABLE key and nothing here looked at it. Two keys, two answers.
+    pub_info = config_module.stripe_publishable_diagnosis()
+    pub_state = pub_info.pop("state")
+    pub_detail = pub_info if pub_state == "malformed" else None
+
+    # What Sentry stamps on every issue from this process. Render has no ENV
+    # var set, so production has been tagging its errors "development" — which
+    # makes a prod incident indistinguishable from a laptop. Surfacing it here
+    # means the next person can see the mislabelling without reading main.py.
+    env_name = os.getenv("ENV", "development")
+
     try:
         with engine.connect() as conn:
             conn.execute(text("SELECT 1"))
@@ -234,8 +248,12 @@ def health_check():
             "stripe": stripe_state,
         }
 
+    body["stripe_publishable"] = pub_state
+    body["environment"] = env_name
     if stripe_detail:
         body["stripe_detail"] = stripe_detail
+    if pub_detail:
+        body["stripe_publishable_detail"] = pub_detail
     return body
 
 

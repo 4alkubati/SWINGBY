@@ -404,7 +404,9 @@ function JobDetailScreen({ navigation, route }) {
                       {date} · {new Date(booking.scheduled_date).toLocaleTimeString('en-CA', { hour: 'numeric', minute: '2-digit' })}
                     </Text>
                   )}
-                  {booking.total_amount && (
+                  {/* See ActiveBookingScreen: a bare `x &&` on a numeric field
+                      renders 0 as a loose text node and red-boxes the app. */}
+                  {Number(booking.total_amount) > 0 && (
                     <Text variant="smallMedium" style={{ color: colors.success, fontFamily: 'SpaceGrotesk_700Bold', fontVariant: ['tabular-nums'] }}>
                       ${booking.total_amount} total
                     </Text>

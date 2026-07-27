@@ -159,6 +159,52 @@ def stripe_key_diagnosis() -> dict:
     }
 
 
+def stripe_publishable_diagnosis() -> dict:
+    """Same treatment for STRIPE_PUBLISHABLE_KEY, which /health used to ignore.
+
+    This gap cost a walkthrough. `/health` reported `"stripe": "ok"` off the
+    SECRET key alone, so it stayed green while the in-app Payment Sheet was
+    dead — Sentry was the only place the truth appeared, as
+    `native_sheet_unavailable` on every payment attempt. The secret key powers
+    server-side charges; the publishable key powers the native sheet. Either
+    one missing breaks payments, so a health check that reads only one of them
+    is not a health check.
+
+    Publishable keys are not secret — they ship inside the mobile app — but the
+    value is still withheld here so /health never becomes a place anyone reads
+    credentials from.
+    """
+    raw = os.getenv("STRIPE_PUBLISHABLE_KEY", "")
+    stripped = raw.strip()
+    if not stripped:
+        # The exact failure behind the Sentry issue: the native sheet cannot run.
+        return {"state": "not_configured"}
+
+    if not stripped.isascii():
+        problem = "non_ascii_character"
+    elif stripped[:1] in ("'", '"') or stripped[-1:] in ("'", '"'):
+        problem = "wrapped_in_quotes"
+    elif stripped.startswith("sk_"):
+        # The dangerous inversion: a SECRET key sitting where the publishable
+        # one belongs would be shipped to every phone.
+        problem = "secret_key_not_publishable_key"
+    elif stripped.startswith("whsec_"):
+        problem = "webhook_secret_not_publishable_key"
+    elif not stripped.startswith(("pk_test_", "pk_live_")):
+        problem = "wrong_prefix"
+    elif not stripped[8:].isalnum():
+        problem = "illegal_character_in_body"
+    else:
+        return {"state": "ok", "length": len(stripped)}
+
+    return {
+        "state": "malformed",
+        "problem": problem,
+        "length": len(stripped),
+        "had_surrounding_whitespace": raw != stripped,
+    }
+
+
 if STRIPE_KEY_ERROR:
     if os.getenv("STRIPE_KEY_STRICT", "0").strip().lower() not in (
         "0",

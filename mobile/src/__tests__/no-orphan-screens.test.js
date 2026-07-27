@@ -35,12 +35,6 @@ const REACHABLE_WITHOUT_NAVIGATE = new Set([
   'ClientTabs', 'BusinessTabs', 'AuthTabs',
   // First screen of AuthNavigator; a logged-out user lands here.
   'Onboarding',
-  // KNOWN GAP, not an exemption on the merits. RequestSent is the confirmation
-  // for "client sends a direct booking request to one business" (PAYMENTS.md
-  // Path B). That flow does not exist in the app yet — there is no screen that
-  // sends such a request — so there is nothing to wire it to. Delete this line
-  // the moment Path B ships, and the test will demand the connection.
-  'RequestSent',
 ]);
 
 function walk(dir, out = []) {
@@ -75,6 +69,12 @@ function navigatedNames() {
   const patterns = [
     /\.(?:navigate|push|replace)\(\s*["']([^"']+)["']/g,
     /screen:\s*["']([^"']+)["']/g,
+    // navigation.reset({ routes: [{ name: 'X' }] }) — the stack-clearing form.
+    // Missing this made the test wrongly call RequestSent an orphan, and the
+    // wrong exemption then documented a flow as "not built" when PostJobScreen
+    // had been reaching it via reset() all along. A screen reached ONLY by
+    // reset() is still reachable.
+    /name:\s*["']([^"']+)["']/g,
   ];
   for (const file of walk(SRC)) {
     const src = fs.readFileSync(file, 'utf8');
