@@ -119,6 +119,10 @@ _MONEY_COLUMNS = {
     "escrow_held": "escrow_held_cents",
     "released_to_business": "released_to_business_cents",
     "platform_cut": "platform_cut_cents",
+    # AMENDMENT 1 (2026-07-26) — money returned to the client. Added by
+    # migration 20260727000000. A row can be `held` and partly refunded at the
+    # same time (budget 150, accepted 100), so this is an amount, not a status.
+    "refunded": "refunded_cents",
 }
 
 

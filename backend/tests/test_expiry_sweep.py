@@ -1,0 +1,171 @@
+"""The sweep that makes charge-at-post honest.
+
+Charging a client's full budget when they post is only defensible if the money
+comes back when nobody takes the job. Nothing else in the app would tell them:
+there is no booking, no invoice and no screen for a post that expired unquoted.
+The only party who could notice is the one who cannot see the ledger.
+
+These tests exist because a silent failure here is invisible by construction.
+"""
+
+from unittest.mock import patch
+
+from app.services import expiry_sweep, refunds
+
+
+def _post(pid="post_1", status="open"):
+    return {
+        "id": pid,
+        "client_id": "client_1",
+        "title": "Deep clean",
+        "status": status,
+        "expires_at": "2026-07-01T00:00:00+00:00",
+    }
+
+
+def _payment(held=15000, intent="pi_1"):
+    return {
+        "id": "pay_1",
+        "post_id": "post_1",
+        "stripe_payment_intent_id": intent,
+        "total_charged_cents": 15000,
+        "escrow_held_cents": held,
+        "released_to_business_cents": 0,
+        "platform_cut_cents": 0,
+        "refunded_cents": 0,
+        "status": "held",
+    }
+
+
+class TestTheMoneyComesBack:
+    def test_an_expired_unquoted_post_is_refunded_in_full(self):
+        with patch.object(
+            expiry_sweep, "find_expired_unquoted_posts", return_value=[_post()]
+        ), patch.object(
+            refunds, "load_post_payment", return_value=_payment()
+        ), patch.object(
+            refunds, "refund_payment_row"
+        ) as refund, patch.object(
+            expiry_sweep, "supabase"
+        ):
+            s = expiry_sweep.sweep_once()
+            assert s["refunded"] == 1
+            assert s["refunded_cents"] == 15000
+            assert refund.call_args.kwargs["amount_cents"] == 15000
+            assert refund.call_args.kwargs["reason"] == refunds.REASON_EXPIRED
+
+    def test_the_post_is_marked_expired_after_the_money_moves(self):
+        with patch.object(
+            expiry_sweep, "find_expired_unquoted_posts", return_value=[_post()]
+        ), patch.object(
+            refunds, "load_post_payment", return_value=_payment()
+        ), patch.object(
+            refunds, "refund_payment_row"
+        ), patch.object(
+            expiry_sweep, "supabase"
+        ) as db:
+            expiry_sweep.sweep_once()
+            db.table.return_value.update.assert_called_with({"status": "expired"})
+
+
+class TestFailureLeavesTheDebtVisible:
+    def test_a_failed_refund_does_NOT_mark_the_post_expired(self):
+        # Marking it expired would hide an unpaid debt behind a settled state,
+        # and the next sweep would never look at it again.
+        with patch.object(
+            expiry_sweep, "find_expired_unquoted_posts", return_value=[_post()]
+        ), patch.object(
+            refunds, "load_post_payment", return_value=_payment()
+        ), patch.object(
+            refunds, "refund_payment_row", side_effect=Exception("stripe down")
+        ), patch.object(
+            expiry_sweep, "supabase"
+        ) as db:
+            s = expiry_sweep.sweep_once()
+            assert s["failed"] == 1
+            assert s["expired_marked"] == 0
+            db.table.return_value.update.assert_not_called()
+
+    def test_one_bad_post_does_not_abandon_the_others(self):
+        posts = [_post("bad"), _post("good")]
+        payments = {"bad": _payment(), "good": _payment()}
+        with patch.object(
+            expiry_sweep, "find_expired_unquoted_posts", return_value=posts
+        ), patch.object(
+            refunds, "load_post_payment", side_effect=lambda pid: payments[pid]
+        ), patch.object(
+            refunds, "refund_payment_row", side_effect=[Exception("boom"), None]
+        ), patch.object(
+            expiry_sweep, "supabase"
+        ):
+            s = expiry_sweep.sweep_once()
+            assert s["failed"] == 1
+            assert s["refunded"] == 1
+
+    def test_a_dead_database_yields_an_empty_list_not_an_exception(self):
+        # The REAL function, with the DB blowing up underneath it. A sweep that
+        # dies on startup is a sweep nobody notices has stopped running.
+        with patch.object(expiry_sweep, "supabase") as db:
+            db.table.side_effect = Exception("db gone")
+            assert expiry_sweep.find_expired_unquoted_posts() == []
+
+    def test_sweep_once_survives_a_dead_database(self):
+        with patch.object(expiry_sweep, "supabase") as db:
+            db.table.side_effect = Exception("db gone")
+            s = expiry_sweep.sweep_once()
+            assert s["examined"] == 0
+            assert s["failed"] == 0
+
+
+class TestIdempotence:
+    def test_an_already_swept_post_is_not_refunded_twice(self):
+        # Zero escrow is the evidence, not a flag that could drift from the money.
+        with patch.object(
+            expiry_sweep, "find_expired_unquoted_posts", return_value=[_post()]
+        ), patch.object(
+            refunds, "load_post_payment", return_value=_payment(held=0)
+        ), patch.object(
+            refunds, "refund_payment_row"
+        ) as refund, patch.object(
+            expiry_sweep, "supabase"
+        ):
+            s = expiry_sweep.sweep_once()
+            refund.assert_not_called()
+            assert s["nothing_to_refund"] == 1
+
+    def test_a_post_that_was_never_charged_still_expires_cleanly(self):
+        # Flow B: nothing was taken at post, so there is nothing to give back.
+        with patch.object(
+            expiry_sweep, "find_expired_unquoted_posts", return_value=[_post()]
+        ), patch.object(refunds, "load_post_payment", return_value=None), patch.object(
+            refunds, "refund_payment_row"
+        ) as refund, patch.object(
+            expiry_sweep, "supabase"
+        ):
+            s = expiry_sweep.sweep_once()
+            refund.assert_not_called()
+            assert s["expired_marked"] == 1
+
+    def test_no_captured_intent_is_not_counted_as_a_failure(self):
+        with patch.object(
+            expiry_sweep, "find_expired_unquoted_posts", return_value=[_post()]
+        ), patch.object(
+            refunds, "load_post_payment", return_value=_payment(intent=None)
+        ), patch.object(
+            refunds,
+            "refund_payment_row",
+            side_effect=refunds.RefundNotPossible("nothing to refund"),
+        ), patch.object(
+            expiry_sweep, "supabase"
+        ):
+            s = expiry_sweep.sweep_once()
+            assert s["failed"] == 0
+            assert s["nothing_to_refund"] == 1
+            assert s["expired_marked"] == 1
+
+
+class TestScope:
+    def test_only_open_posts_are_swept(self):
+        # 'matched' has a booking behind it — that money belongs to the job.
+        assert expiry_sweep.SWEEPABLE_STATUSES == ("open",)
+        assert "matched" not in expiry_sweep.SWEEPABLE_STATUSES

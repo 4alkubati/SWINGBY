@@ -115,7 +115,10 @@ def create_checkout_session(
 
 
 def refund_payment_intent(
-    *, payment_intent_id: str, amount_cad: float | None = None
+    *,
+    payment_intent_id: str,
+    amount_cad: float | None = None,
+    idempotency_key: str | None = None,
 ) -> dict[str, Any]:
     """
     Refund a captured PaymentIntent (full or partial).
@@ -142,8 +145,19 @@ def refund_payment_intent(
             )
         kwargs["amount"] = amount_cents
 
+    # AMENDMENT 1 — retries are part of the design, not an edge case. The
+    # expiry sweep re-runs on a schedule and deliberately leaves a failed post
+    # OPEN so the next pass tries again. Without an idempotency key that retry
+    # sends the client's money a SECOND time; with one, Stripe returns the
+    # original Refund object instead. The caller derives the key from the
+    # payment row and the reason, so "refund the unused budget" and "refund
+    # everything on expiry" stay distinct operations on the same row.
+    request_opts: dict[str, Any] = {}
+    if idempotency_key:
+        request_opts["idempotency_key"] = idempotency_key
+
     try:
-        refund = stripe.Refund.create(**kwargs)
+        refund = stripe.Refund.create(**kwargs, **request_opts)
     except Exception:
         logger.exception(
             "stripe.Refund.create failed for payment_intent %s", payment_intent_id

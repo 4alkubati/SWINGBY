@@ -439,12 +439,57 @@ def accept_interest(interest_id: str, current_user: dict = Depends(get_current_u
             .execute()
         )
 
+        # AMENDMENT 1 (Kira, 2026-07-26) — "Budget 150, accept 100 -> 50 get
+        # refunded". If this post's budget was charged up front (Flow A), the
+        # part the client did not spend goes back the moment a cheaper quote is
+        # accepted. Not at completion, not on request: now, while they are
+        # looking at the screen that told them it would.
+        #
+        # BEST-EFFORT ON PURPOSE. A refund that fails must never undo an
+        # accepted booking — the client chose their provider and that stands.
+        # The money is still theirs and still held; the expiry/reconcile sweep
+        # retries it, and Stripe's idempotency means a retry cannot double-pay.
+        # Failing the whole accept over a Stripe hiccup would be a far worse
+        # outcome than a refund that lands a few minutes late.
+        refund_result: dict = {"refunded_cents": 0}
+        try:
+            from app.services import budget_settlement, refunds
+
+            post_payment = refunds.load_post_payment(post["id"])
+            if post_payment:
+                budget_c = escrow.money_cents(post_payment, "total_charged")
+                plan = budget_settlement.settle_on_accept(budget_c, total_c)
+                owed_back_c = plan["refund_cents"]
+                if owed_back_c > 0:
+                    refunds.refund_payment_row(
+                        post_payment,
+                        amount_cents=owed_back_c,
+                        reason=refunds.REASON_UNDER_BUDGET,
+                        actor_id=current_user["id"],
+                    )
+                    refund_result = {"refunded_cents": owed_back_c}
+                # Bind the money to the booking it now belongs to, so every
+                # existing reader that loads a payment BY booking_id finds it.
+                supabase.table("payments").update({"booking_id": booking["id"]}).eq(
+                    "id", post_payment["id"]
+                ).execute()
+        except Exception:
+            logger.exception(
+                "under-budget refund failed for post %s (booking %s) — booking "
+                "stands, money remains held for the sweep to retry",
+                post["id"],
+                booking["id"],
+            )
+
         # TRIGGER 2 (charge-before-service, ruling 2026-07-21): the moment the
         # client accepts, start the charge automatically instead of relying on
         # an optional "Pay with card" button they can skip. Never raises — a
         # Stripe hiccup must not undo an accepted booking; the escrow guard at
         # /complete still refuses to pay the business until a capture exists.
         # Returns a checkout_url the client is sent straight to.
+        #
+        # Flow A posts are already paid by this point, so this is a no-op for
+        # them; it is Flow B (browse -> request one company) that charges here.
         from app.services import payment_triggers
 
         charge = payment_triggers.trigger_on_accept(
@@ -540,6 +585,13 @@ def accept_interest(interest_id: str, current_user: dict = Depends(get_current_u
             # paid later or recorded as off-platform.
             "checkout_url": charge.get("checkout_url"),
             "payment_started": bool(charge.get("triggered")),
+            # AMENDMENT 1 — how much of the pre-paid budget went back because
+            # this quote came in under it. 0 for Flow B (nothing was charged at
+            # post) and for a quote at or above budget. The client app should
+            # say so plainly: they were told at posting that unused budget
+            # comes back, and this is the moment it did.
+            "refunded_cents": refund_result["refunded_cents"],
+            "refunded": escrow.to_dollars(refund_result["refunded_cents"]),
         }
     except HTTPException:
         raise
