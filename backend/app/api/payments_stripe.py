@@ -609,23 +609,6 @@ def _mark_payment_paid(
         if redeemed:
             expected_cents = max(expected_cents - redeemed, 0)
 
-    # Amount verification — refuse to mark paid if Stripe charged a different
-    # amount than the booking total. Better to leave it pending for review than
-    # to silently accept an under/over-charge.
-    if (
-        amount_total_cents is not None
-        and expected_cents is not None
-        and int(amount_total_cents) != expected_cents
-    ):
-        logger.error(
-            "Stripe amount mismatch for booking %s: paid=%s expected=%s cents — "
-            "NOT marking paid. Needs manual review.",
-            booking_id,
-            amount_total_cents,
-            expected_cents,
-        )
-        return
-
     payment = escrow.load_single_payment(booking_id)
     if not payment:
         logger.error(
@@ -643,6 +626,46 @@ def _mark_payment_paid(
         )
         return
 
+    # A Post + Pay client had their BUDGET captured at posting, and interests.py
+    # bound that row to this booking. When the accepted quote came in above that
+    # budget, trigger_on_accept charges only the DELTA — so what Stripe just
+    # captured is the outstanding balance, not the whole booking total. The
+    # amount check has to expect that, or it would reject a perfectly correct
+    # top-up and leave money captured at Stripe with nothing recorded against it.
+    #
+    # Only CAPTURE-BACKED money is subtracted. The ordinary row states the full
+    # amount as *owed* from the moment it is inserted, before anything is
+    # captured; treating that as paid would make `expected` zero and reject
+    # every first capture. Nothing capture-backed means subtracting 0, which is
+    # why the ordinary path below is unchanged.
+    already_captured_c = 0
+    if escrow.is_capture_backed(payment):
+        already_captured_c = max(
+            escrow.money_cents(payment, "total_charged")
+            - escrow.money_cents(payment, "refunded"),
+            0,
+        )
+    if expected_cents is not None:
+        expected_cents = max(expected_cents - already_captured_c, 0)
+
+    # Amount verification — refuse to mark paid if Stripe charged a different
+    # amount than is outstanding on the booking. Better to leave it pending for
+    # review than to silently accept an under/over-charge.
+    if (
+        amount_total_cents is not None
+        and expected_cents is not None
+        and int(amount_total_cents) != expected_cents
+    ):
+        logger.error(
+            "Stripe amount mismatch for booking %s: paid=%s expected=%s cents "
+            "(already captured %s) — NOT marking paid. Needs manual review.",
+            booking_id,
+            amount_total_cents,
+            expected_cents,
+            already_captured_c,
+        )
+        return
+
     # FINDING D (money audit, 2026-07-23) — DOUBLE COUNTING.
     # This used to be a flat `escrow_held = total_charged`, which OVERWRITES the
     # held figure instead of accounting for anything already released. Booking
@@ -655,9 +678,22 @@ def _mark_payment_paid(
     # DB CHECK (payments_ledger_not_over_charged) so it cannot regress silently.
     total_c = escrow.money_cents(payment, "total_charged")
     already_released_c = escrow.money_cents(payment, "released_to_business")
-    hold = escrow.compute_capture_hold(total_c, already_released_c)
 
-    update: dict = escrow.ledger_write(escrow_held=hold["escrow_held_cents"])
+    if already_captured_c and amount_total_cents:
+        # TOP-UP. This capture is money that arrived ON TOP of what the row
+        # already records, so total_charged grows by exactly what Stripe took —
+        # it is the only figure that says how much the client has handed over in
+        # total. Writing the booking total flat instead would be correct only by
+        # coincidence, and wrong the moment any of it had been refunded.
+        refunded_c = escrow.money_cents(payment, "refunded")
+        total_c = total_c + int(amount_total_cents)
+        update: dict = escrow.ledger_write(
+            total_charged=total_c,
+            escrow_held=max(total_c - already_released_c - refunded_c, 0),
+        )
+    else:
+        hold = escrow.compute_capture_hold(total_c, already_released_c)
+        update = escrow.ledger_write(escrow_held=hold["escrow_held_cents"])
     # 'held' is the current vocabulary for "capture confirmed, money in escrow".
     # (The live payments_status_check accepts the legacy 'paid_full' too; we
     # write only the current name. NOTE: earlier comments here cited a
