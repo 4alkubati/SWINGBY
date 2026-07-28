@@ -404,82 +404,156 @@ def accept_interest(interest_id: str, current_user: dict = Depends(get_current_u
                     exc_info=True,
                 )
 
-        # One payments row per booking (payments.py / bookings.py both .single()).
-        # At accept the full amount is HELD, zero is released. status='pending'
-        # until either Stripe capture (→ paid_full) or off-platform mark
-        # (→ paid_off_platform); release to the business happens at /complete.
-        # Integer cents are authoritative (migration 20260723120000).
+        # ONE payments row per booking — payments.booking_id is UNIQUE
+        # (payments_booking_id_key) and payments.py / bookings.py both .single()
+        # on it. WHICH row that is depends on whether the client already paid at
+        # posting, so the charge-at-post row has to be looked up BEFORE deciding
+        # to write anything.
         #
-        # escrow_held is 0 here, not the full amount. Charge-before-service:
-        # nothing is captured at accept, so nothing is "held in escrow" yet —
-        # escrow_held becomes non-zero only when the Stripe capture webhook
-        # confirms the money actually arrived. status='pending_payment' means
-        # "owed, not captured". Setting escrow_held=total here (the old code)
-        # made every unpaid booking read as fully funded.
+        # Flow A (Post + Pay) charged the whole budget up front, so a payments
+        # row already exists holding real captured money, bound to the POST.
+        # That row IS this booking's payment: it gets settled to the accepted
+        # amount and re-pointed at the booking.
         #
-        # ('pending_payment' is the current vocabulary; the live
-        # payments_status_check still accepts the legacy 'pending' too. Earlier
-        # comments blamed a "migration 0001 applied 2026-07-22" — no such
-        # migration exists in the repo or the live list; the value is right, the
-        # cited reason was not.)
-        payment_res = (
-            supabase.table("payments")
-            .insert(
-                {
-                    "booking_id": booking["id"],
-                    **escrow.ledger_write(
-                        total_charged=total_c,
-                        escrow_held=0,
-                        released_to_business=0,
-                        platform_cut=platform_fee_c,
-                    ),
-                    "status": "pending_payment",
-                }
-            )
-            .execute()
-        )
+        # Flow B (browse → request one company) has charged nothing yet, so the
+        # booking needs a fresh row saying exactly that.
+        #
+        # The previous code inserted the Flow B row unconditionally and only
+        # THEN tried to re-point the Flow A row at the same booking. The UNIQUE
+        # constraint rejected that second write and the surrounding except
+        # swallowed it, so a Flow A client's captured money stayed orphaned on
+        # the post while the booking carried a row claiming nothing was paid —
+        # and trigger_on_accept, reading that empty row, charged them a second
+        # time for a job they had already paid for.
+        from app.services import budget_settlement, refunds
 
-        # AMENDMENT 1 (Kira, 2026-07-26) — "Budget 150, accept 100 -> 50 get
-        # refunded". If this post's budget was charged up front (Flow A), the
-        # part the client did not spend goes back the moment a cheaper quote is
-        # accepted. Not at completion, not on request: now, while they are
-        # looking at the screen that told them it would.
-        #
-        # BEST-EFFORT ON PURPOSE. A refund that fails must never undo an
-        # accepted booking — the client chose their provider and that stands.
-        # The money is still theirs and still held; the expiry/reconcile sweep
-        # retries it, and Stripe's idempotency means a retry cannot double-pay.
-        # Failing the whole accept over a Stripe hiccup would be a far worse
-        # outcome than a refund that lands a few minutes late.
+        post_payment = refunds.load_post_payment(post["id"])
         refund_result: dict = {"refunded_cents": 0}
-        try:
-            from app.services import budget_settlement, refunds
 
-            post_payment = refunds.load_post_payment(post["id"])
-            if post_payment:
-                budget_c = escrow.money_cents(post_payment, "total_charged")
-                plan = budget_settlement.settle_on_accept(budget_c, total_c)
+        if post_payment:
+            # ── Flow A — settle the row that already holds the money ──────────
+            plan = budget_settlement.settle_on_accept(
+                escrow.money_cents(post_payment, "total_charged"), total_c
+            )
+
+            # Bind to the booking FIRST, and outside the refund's try. Every
+            # reader finds a payment by booking_id, so if a Stripe failure could
+            # skip this write an already-paid booking would read as unpaid and
+            # /complete would refuse to release it. The refund is retryable by
+            # the sweep; this binding is not.
+            #
+            # platform_cut lands here because settle_at_post deliberately took
+            # none — between posting and acceptance the platform had provided
+            # nothing. It is knowable only now that an amount was accepted.
+            #
+            # status is deliberately untouched: it already describes real
+            # captured money, and the accept-time vocabulary ('pending_payment')
+            # would be a lie about a row that is genuinely paid.
+            #
+            # Only platform_cut is written. total_charged and escrow_held are
+            # left to describe what was ACTUALLY captured: under budget,
+            # refund_payment_row below walks escrow down to the accepted amount;
+            # at budget they are already correct. Writing plan's figures
+            # directly would claim money that has not moved — FINDING C.
+            #
+            # GAP, deliberately not papered over: accepting ABOVE budget leaves
+            # the client owing plan["additional_charge_cents"], and nothing in
+            # the codebase collects it (grep: the key has no readers). The row
+            # stays honest — it says only the budget was charged — so the
+            # business is under-paid rather than the client double-charged.
+            # Collecting the delta needs a ruling on when to charge it, so it is
+            # flagged, not invented here.
+            bind = {
+                "booking_id": booking["id"],
+                **escrow.ledger_write(platform_cut=plan["platform_cut_cents"]),
+            }
+            bound = (
+                supabase.table("payments")
+                .update(bind)
+                .eq("id", post_payment["id"])
+                .execute()
+            )
+            payment_row = ((bound.data or [None])[0]) or {**post_payment, **bind}
+
+            # The booking's own mirror, which the client's screens read. The
+            # money is genuinely held by now, so leaving the insert-time
+            # 'pending_payment' would show a paid job as unpaid.
+            if escrow.is_capture_backed(post_payment):
+                try:
+                    supabase.table("bookings").update({"payment_status": "held"}).eq(
+                        "id", booking["id"]
+                    ).execute()
+                    booking["payment_status"] = "held"
+                except Exception:
+                    logger.warning(
+                        "could not mirror held payment_status onto booking %s",
+                        booking["id"],
+                        exc_info=True,
+                    )
+
+            # AMENDMENT 1 (Kira, 2026-07-26) — "Budget 150, accept 100 -> 50 get
+            # refunded". The part the client did not spend goes back the moment a
+            # cheaper quote is accepted. Not at completion, not on request: now,
+            # while they are looking at the screen that told them it would.
+            #
+            # BEST-EFFORT ON PURPOSE. A refund that fails must never undo an
+            # accepted booking — the client chose their provider and that stands.
+            # The money is still theirs and still held; the expiry/reconcile
+            # sweep retries it, and Stripe's idempotency means a retry cannot
+            # double-pay. Failing the whole accept over a Stripe hiccup would be
+            # a far worse outcome than a refund landing a few minutes late.
+            try:
                 owed_back_c = plan["refund_cents"]
                 if owed_back_c > 0:
-                    refunds.refund_payment_row(
+                    refunded_row = refunds.refund_payment_row(
                         post_payment,
                         amount_cents=owed_back_c,
                         reason=refunds.REASON_UNDER_BUDGET,
                         actor_id=current_user["id"],
                     )
+                    # Carries the post-refund ledger; keep the binding above,
+                    # which refund_payment_row does not write.
+                    payment_row = {**payment_row, **(refunded_row or {})}
                     refund_result = {"refunded_cents": owed_back_c}
-                # Bind the money to the booking it now belongs to, so every
-                # existing reader that loads a payment BY booking_id finds it.
-                supabase.table("payments").update({"booking_id": booking["id"]}).eq(
-                    "id", post_payment["id"]
-                ).execute()
-        except Exception:
-            logger.exception(
-                "under-budget refund failed for post %s (booking %s) — booking "
-                "stands, money remains held for the sweep to retry",
-                post["id"],
-                booking["id"],
+            except Exception:
+                logger.exception(
+                    "under-budget refund failed for post %s (booking %s) — "
+                    "booking stands and the payment is bound; money remains "
+                    "held for the sweep to retry",
+                    post["id"],
+                    booking["id"],
+                )
+        else:
+            # ── Flow B — nothing captured yet, so say so ─────────────────────
+            # escrow_held is 0, not the full amount. Charge-before-service:
+            # nothing is captured at accept, so nothing is "held in escrow" yet —
+            # escrow_held becomes non-zero only when the Stripe capture webhook
+            # confirms the money actually arrived. status='pending_payment'
+            # means "owed, not captured". Setting escrow_held=total here (the
+            # old code) made every unpaid booking read as fully funded.
+            #
+            # ('pending_payment' is the current vocabulary; the live
+            # payments_status_check still accepts the legacy 'pending' too.
+            # Earlier comments blamed a "migration 0001 applied 2026-07-22" — no
+            # such migration exists in the repo or the live list; the value is
+            # right, the cited reason was not.)
+            created = (
+                supabase.table("payments")
+                .insert(
+                    {
+                        "booking_id": booking["id"],
+                        **escrow.ledger_write(
+                            total_charged=total_c,
+                            escrow_held=0,
+                            released_to_business=0,
+                            platform_cut=platform_fee_c,
+                        ),
+                        "status": "pending_payment",
+                    }
+                )
+                .execute()
             )
+            payment_row = (created.data or [None])[0]
 
         # TRIGGER 2 (charge-before-service, ruling 2026-07-21): the moment the
         # client accepts, start the charge automatically instead of relying on
@@ -578,7 +652,7 @@ def accept_interest(interest_id: str, current_user: dict = Depends(get_current_u
         return {
             "message": "Interest accepted — booking and payment created",
             "booking": booking,
-            "payment": payment_res.data[0],
+            "payment": payment_row,
             # Present when charge-at-accept started a Stripe checkout. The client
             # app should open checkout_url immediately. When None (Stripe not
             # configured, e.g. the demo box), the booking still exists and can be
