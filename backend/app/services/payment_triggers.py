@@ -118,13 +118,51 @@ def trigger_on_accept(
     if total_c <= 0:
         return ChargeTriggerResult(triggered=False, reason="zero_amount")
 
-    # Already paid? Never charge twice. This is also the idempotency guard for a
-    # retried accept.
+    # How much of this booking is already paid for? Normally none — the payments
+    # row was created moments ago and nothing has been captured.
+    #
+    # But a Post + Pay client had their whole BUDGET captured at posting, and
+    # interests.py binds that row to this booking at accept. If the quote they
+    # accepted came in ABOVE that budget, the difference is still owed, and
+    # bailing out with "already_paid" would hand the business a job the client
+    # only partly paid for. Kira's ruling (2026-07-28): charge that delta here,
+    # at accept.
+    #
+    # Only CAPTURE-BACKED money counts as paid. `total_charged` on its own will
+    # not do: the Flow B row carries the full amount as *owed* from the moment
+    # it is inserted, before a cent has moved, so reading that as "paid" would
+    # charge nothing and leave every ordinary booking unpaid.
     payment = escrow.load_single_payment(booking_id) if booking_id else None
-    if payment and escrow.is_capture_backed(payment):
-        return ChargeTriggerResult(triggered=False, reason="already_paid")
+    already_paid_c = 0
+    outstanding_c = total_c
 
-    amount_c = total_c
+    if payment and escrow.is_capture_backed(payment):
+        already_paid_c = max(
+            escrow.money_cents(payment, "total_charged")
+            - escrow.money_cents(payment, "refunded"),
+            0,
+        )
+        outstanding_c = max(total_c - already_paid_c, 0)
+
+        if outstanding_c == 0:
+            # Covered in full — a retried accept, or a quote at/under budget
+            # whose unused remainder has already gone back.
+            return ChargeTriggerResult(triggered=False, reason="already_paid")
+
+        if already_paid_c == 0:
+            # Capture-backed, but the row records no amount, so the shortfall
+            # cannot be computed. Charging the full total against a row that
+            # says money already arrived is exactly how a client who has paid
+            # gets billed a second time. Under-charge and let it be reconciled
+            # rather than guess — the guard exists for this.
+            logger.warning(
+                "trigger_on_accept: booking %s has a capture-backed payment row "
+                "with no recorded amount — not charging. Needs reconciliation.",
+                booking_id,
+            )
+            return ChargeTriggerResult(triggered=False, reason="already_paid")
+
+    amount_c = outstanding_c
 
     # Credit redemption, if enabled, reduces what Stripe is asked to charge.
     # Gated off (credits.CREDIT_REDEMPTION_AT_CHECKOUT_ENABLED) pending
@@ -136,7 +174,10 @@ def trigger_on_accept(
             redemption = credits.redeem_credit_for_booking(
                 user_id=client["id"],
                 booking_id=booking_id,
-                gross_amount_cents=total_c,
+                # Credit comes off what is still OWED, not off the headline
+                # total — otherwise a part-paid booking would redeem against
+                # money the client has already handed over.
+                gross_amount_cents=outstanding_c,
             )
             amount_c = int(redemption["net_amount_cents"])
         except Exception:
@@ -145,7 +186,7 @@ def trigger_on_accept(
                 "charging the gross amount",
                 booking_id,
             )
-            amount_c = total_c
+            amount_c = outstanding_c
         if amount_c <= 0:
             return ChargeTriggerResult(
                 triggered=False, reason="fully_covered_by_credit"
@@ -193,10 +234,14 @@ def trigger_on_accept(
     )
     return ChargeTriggerResult(
         triggered=True,
-        reason="charge_at_accept",
+        # Distinguished so the ledger's story is legible after the fact: a
+        # top-up is the client's SECOND charge for one job, and reading it as a
+        # first charge is how double-billing hides.
+        reason="charge_at_accept_delta" if already_paid_c else "charge_at_accept",
         checkout_url=session.get("url"),
         checkout_session_id=session.get("id"),
         amount_cents=amount_c,
+        already_paid_cents=already_paid_c,
     )
 
 

@@ -456,13 +456,15 @@ def accept_interest(interest_id: str, current_user: dict = Depends(get_current_u
             # at budget they are already correct. Writing plan's figures
             # directly would claim money that has not moved — FINDING C.
             #
-            # GAP, deliberately not papered over: accepting ABOVE budget leaves
-            # the client owing plan["additional_charge_cents"], and nothing in
-            # the codebase collects it (grep: the key has no readers). The row
-            # stays honest — it says only the budget was charged — so the
-            # business is under-paid rather than the client double-charged.
-            # Collecting the delta needs a ruling on when to charge it, so it is
-            # flagged, not invented here.
+            # Accepting ABOVE budget leaves the client owing the difference.
+            # Kira's ruling (2026-07-28): it is charged here, at accept —
+            # trigger_on_accept below asks Stripe for the outstanding balance
+            # rather than bailing out as "already paid". It derives that figure
+            # from the row's own ledger (total_charged − refunded, capture-backed
+            # only) instead of plan["additional_charge_cents"], so a refund that
+            # has already gone out is counted and a retried accept cannot charge
+            # twice. Leaving total_charged alone here is what makes that
+            # subtraction honest.
             bind = {
                 "booking_id": booking["id"],
                 **escrow.ledger_write(platform_cut=plan["platform_cut_cents"]),
