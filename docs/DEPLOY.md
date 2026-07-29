@@ -108,10 +108,44 @@ See `docs/ROLLBACK.md`.
 
 ## Frontend — Cloudflare Pages
 
+> ### ⚠ THE LIVE SITE DOES NOT BUILD FROM THIS REPO (found 2026-07-29)
+>
+> `swingbyy.com` is serving a build that predates **2026-06-05**, and no commit
+> since has reached it. Proof, reproducible any time:
+>
+> ```
+> curl -s https://swingbyy.com | grep -o '<title>[^<]*</title>'
+> #   live: <title>SwingBy — Coming Soon</title>
+> # repo:   <title>SwingBy — Local Services Marketplace</title>   (since f0d7635, 2026-06-05)
+> ```
+>
+> Seven further commits have landed in `web/pre-launch/` since that one. None
+> are live. This is also why `og:image` 404'd for months without anyone
+> noticing — Pages' SPA fallback answers **any** missing path `200 text/html`,
+> so a missing asset looks fine in a browser and only breaks for crawlers.
+> `curl -I https://swingbyy.com/does-not-exist.png` returns 200 too.
+>
+> **The Pages project is not wired to `main`.** Most likely it is pinned to a
+> production branch that stopped receiving commits during the July branch churn
+> (39 branches existed at one point), or it is a direct-upload project that only
+> ever deploys by hand. Check first:
+> **Dashboard → Workers & Pages → the pre-launch project → Settings → Builds &
+> deployments → Production branch.** Set it to `main`, then Retry deployment.
+>
+> Two red herrings, so nobody re-chases them:
+> - The Worker named `swingbyy-prelaunch` is **not** serving the site. Its whole
+>   body is `return new Response("Hello world")`, untouched since 2026-05-22.
+>   Safe to delete.
+> - CLAUDE.md calls the project `swingby-prelaunch`; the account has no Worker
+>   by that name. Confirm the real project name in the dashboard.
+>
+> **Nothing on the site can be verified as shipped until this is fixed.** A
+> green CI run means the bundle builds, not that anyone can see it.
+
 **Sites:**
-- `web/launch/` → `swingbyy.com`
-- `web/pre-launch/` → pre-launch site
-- `web/admin/` → admin dashboard
+- `web/launch/` → `swingbyy.com` — **built and CI-green, never deployed**
+- `web/pre-launch/` → currently what `swingbyy.com` serves, from a stale build
+- `web/admin/` → admin dashboard — not deployed, and has no CI workflow
 
 ### Deploy to Cloudflare Pages
 
