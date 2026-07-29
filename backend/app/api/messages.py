@@ -1135,7 +1135,9 @@ def list_threads(current_user: dict = Depends(get_current_user)):
                     "counterpart_name": counterpart,
                     "counterpart_avatar": client_user.get("avatar_url"),
                     "counterpart_type": "business" if i_is_business else "person",
-                    "counterpart_logo": i_biz.get("logo_url") if i_is_business else None,
+                    "counterpart_logo": (
+                        i_biz.get("logo_url") if i_is_business else None
+                    ),
                     "status": i.get("status"),
                     "quoted_price": i.get("quoted_price"),
                     # Lets a client tap through from the inbox / chat header to
@@ -1250,7 +1252,9 @@ def get_interest_messages(
                 # The quoting business's face for the chat header. Safe in both
                 # directions: a business's name and logo are public, and the
                 # client-side masking above only ever concerns the client.
-                "business_name": (interest.get("businesses") or {}).get("business_name"),
+                "business_name": (interest.get("businesses") or {}).get(
+                    "business_name"
+                ),
                 "business_logo": (interest.get("businesses") or {}).get("logo_url"),
                 "post_title": interest["service_posts"].get("title"),
                 "post_status": interest["service_posts"].get("status"),
