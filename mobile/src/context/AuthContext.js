@@ -119,8 +119,28 @@ export function AuthProvider({ children }) {
     setUser((prev) => ({ ...prev, ...updates }));
   }
 
+  // Adopt a session that was established outside this provider — today that
+  // means an email confirmation / magic link opened from the client's inbox,
+  // which services/authLink.js has already written to SecureStore and pushed
+  // into the axios client. This only syncs React state so RootNavigator swaps
+  // to the real app.
+  //
+  // restoredFromStorage stays FALSE: the client acted just now by tapping the
+  // link, so CARD-24's biometric lock must not challenge them for FaceID a
+  // second later. That flag means "cold boot from a stored token", and this is
+  // not that.
+  function adoptSession(profile, accessToken) {
+    if (accessToken) {
+      setAuthToken(accessToken);
+      setToken(accessToken);
+    }
+    setUser(profile);
+    setIsLoading(false);
+    registerForPushAsync().catch(() => { /* non-fatal, as in login() */ });
+  }
+
   return (
-    <AuthContext.Provider value={{ user, token, isLoading, restoredFromStorage, login, signup, logout, updateUser }}>
+    <AuthContext.Provider value={{ user, token, isLoading, restoredFromStorage, login, signup, logout, updateUser, adoptSession }}>
       {children}
     </AuthContext.Provider>
   );

@@ -58,6 +58,7 @@ import OfflineBanner from './src/components/OfflineBanner';
 import Toast from 'react-native-toast-message';
 import { toastConfig } from './src/services/toast';
 import { linkingConfig } from './src/services/linking';
+import { useAuthDeepLink } from './src/hooks/useAuthDeepLink';
 import { ThemeProvider } from './src/theme/ThemeProvider';
 import { colors } from './src/theme/tokens';
 
@@ -65,7 +66,14 @@ import { colors } from './src/theme/tokens';
 configureNotificationHandlers();
 
 function RootNavigator() {
-  const { user, isLoading, restoredFromStorage, logout } = useAuth();
+  const { user, isLoading, restoredFromStorage, logout, adoptSession } = useAuth();
+
+  // M2 — an email confirmation / magic link tapped from the client's inbox.
+  // Lives here rather than in linkingConfig because the link arrives while the
+  // user is logged OUT, and none of the navigators that own routable screens
+  // are mounted yet. Completing the session sets `user`, and the swap below
+  // happens on its own. See services/authLink.js.
+  const { busy: authLinkBusy } = useAuthDeepLink(adoptSession);
 
   // CARD-24 biometric app-lock. Gates only the cold-boot "resumed from a
   // stored token" path — never an interactive login/signup just now — and
@@ -125,7 +133,10 @@ function RootNavigator() {
     return () => sub.remove();
   }, [user]);
 
-  if (isLoading || checkingLock) {
+  // Hold the spinner while a confirmation link is being exchanged. Without
+  // this the client watches the login screen appear and then vanish, which
+  // reads as "it failed" at the exact moment it is working.
+  if (isLoading || checkingLock || authLinkBusy) {
     return (
       <View style={{ flex: 1, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center' }}>
         <ActivityIndicator color={colors.accent} size="large" />
