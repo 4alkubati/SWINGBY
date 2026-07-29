@@ -71,7 +71,15 @@ def login(email):
 
 
 def main():
-    stamp = int(time.time())
+    # Hex, NOT a bare unix timestamp. `int(time.time())` is exactly 10 digits,
+    # which is what contact_masking treats as a phone number, so every marker
+    # this test planted came back as "[contact hidden — keep it on SwingBy]" and
+    # the thread-migration assertion failed against an app that was working
+    # correctly. Masking landed after 2026-07-22 (smoke rows before that date
+    # still carry their marker intact) and has been silently failing the gate
+    # ever since. A letter *prefix* is not enough — the digit run has to be
+    # broken, which hex does.
+    stamp = format(int(time.time()), "x")
 
     ctok = login(CLIENT_EMAIL)
     btok = login(BIZ_EMAIL)
@@ -188,11 +196,26 @@ def main():
     s, _ = call("POST", f"/bookings/{booking_id}/events", btok, {"event_type": "en_route"})
     check("business posts en_route event", s == 200, str(s))
 
+    # FINDING C guard first: a booking nobody paid for must NOT be completable.
+    # This used to be asserted the other way round — the test demanded a 200 and
+    # so it failed permanently once charge-before-service landed, which made the
+    # "mandatory" gate something everyone had to ignore. Refusing to release
+    # money that was never collected is the single most important invariant in
+    # the booking loop, so it is now the thing under test.
     s, _ = call("PATCH", f"/bookings/{booking_id}/complete", btok, {})
-    check("complete booking (escrow release)", s == 200, str(s))
+    check("unpaid booking cannot be completed (money guard)", s == 409, str(s))
+
+    # Now put real money behind it the way a cash / e-transfer job does, and the
+    # same completion must go through.
+    s, _ = call("POST", f"/bookings/{booking_id}/mark-paid-offplatform", btok,
+                {"method": "cash", "note": "e2e smoke"})
+    check("mark paid off-platform", s in (200, 201), str(s))
+
+    s, _ = call("PATCH", f"/bookings/{booking_id}/complete", btok, {})
+    check("paid booking completes", s == 200, str(s))
 
     s, pay = call("GET", f"/payments/{booking_id}", ctok)
-    check("payment fully_released", pay.get("status") == "fully_released",
+    check("payment settled off-platform", pay.get("status") == "paid_off_platform",
           str(pay.get("status")))
 
     return finish()
