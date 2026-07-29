@@ -232,6 +232,7 @@ export default function FavoritesScreen({ navigation }) {
             <NearbyCard
               name={item.business_name}
               initials={toInitials(item.business_name)}
+              logoUrl={item.logo_url}
               rating={item.avg_rating?.toFixed(1) ?? '—'}
               jobs={item.review_count ?? 0}
               distance={item._distance ?? '—'}

@@ -1,6 +1,7 @@
 import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import Text from './Text';
+import BusinessLogo from './BusinessLogo';
 import { colors, spacing } from '../theme/tokens';
 
 function initials(name = '') {
@@ -19,9 +20,13 @@ export default function QuoteCard({ quote, isRecommended, onSelect, onViewProfil
       )}
 
       <TouchableOpacity onPress={onViewProfile} activeOpacity={0.85} style={styles.identity}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{initials(businessName)}</Text>
-        </View>
+        {quote.logo_url ? (
+          <BusinessLogo uri={quote.logo_url} name={businessName} size={48} />
+        ) : (
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>{initials(businessName)}</Text>
+          </View>
+        )}
         <Text style={styles.name} numberOfLines={2}>{businessName}</Text>
       </TouchableOpacity>
 

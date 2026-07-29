@@ -193,7 +193,7 @@ def get_client_reviews(client_id: str, current_user: dict = Depends(get_current_
     try:
         res = (
             supabase.table("reviews")
-            .select("*, businesses(business_name)")
+            .select("*, businesses(business_name, logo_url)")
             .eq("reviewee_id", client_id)
             .eq("reviewee_type", "client")
             .order("created_at", desc=True)

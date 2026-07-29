@@ -51,6 +51,7 @@ import SendTermsSheet from './SendTermsSheet';
 // sheet, and no dollar figure may appear anywhere before it does.
 import PaySheet from '../../components/PaySheet';
 import { SkeletonBox } from '../../components/Skeleton';
+import BusinessLogo from '../../components/BusinessLogo';
 import { colors, spacing, radius, shadows, motion } from '../../theme/tokens';
 
 // Newest-first server rows and locally-appended optimistic rows are merged by
@@ -406,6 +407,12 @@ export default function ChatScreen({ navigation, route }) {
   // business_id in the interest payload).
   const counterpartBusinessId = bookingMeta?.business_id || threadInfo?.business_id || null;
   const canOpenBusiness = user?.role === 'client' && !!counterpartBusinessId;
+  // The header's face. Only a client has a business on the other side, so the
+  // logo is scoped to that lens — a provider keeps the initial-letter circle
+  // for the person they're talking to (businesses are tiles, people circles).
+  const counterpartLogo = user?.role === 'client'
+    ? (bookingMeta?.businesses?.logo_url || threadInfo?.business_logo || null)
+    : null;
   const openBusinessProfile = useCallback(() => {
     if (!canOpenBusiness) return;
     navigation.navigate('BusinessProfile', { businessId: counterpartBusinessId });
@@ -958,14 +965,18 @@ export default function ChatScreen({ navigation, route }) {
           accessibilityLabel={canOpenBusiness ? `View ${headerName || 'business'} profile` : undefined}
           hitSlop={6}
         >
-          <View style={styles.avatarSmall}>
-            <Text
-              variant="caption"
-              style={{ color: colors.accentText, fontWeight: '700' }}
-            >
-              {(headerName || 'C').charAt(0).toUpperCase()}
-            </Text>
-          </View>
+          {counterpartLogo ? (
+            <BusinessLogo uri={counterpartLogo} name={headerName} size={30} radius={9} />
+          ) : (
+            <View style={styles.avatarSmall}>
+              <Text
+                variant="caption"
+                style={{ color: colors.accentText, fontWeight: '700' }}
+              >
+                {(headerName || 'C').charAt(0).toUpperCase()}
+              </Text>
+            </View>
+          )}
           <View>
             <Inline spacing="xs" align="center">
               <Text variant="bodyMedium">{headerName || 'Chat'}</Text>

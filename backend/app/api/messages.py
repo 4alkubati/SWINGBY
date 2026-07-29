@@ -157,7 +157,10 @@ def _get_interest_thread(interest_id: str) -> dict:
     """Interest + its post; 404 if either is missing."""
     res = (
         supabase.table("interests")
-        .select("*, service_posts(id, title, status, client_id)")
+        .select(
+            "*, service_posts(id, title, status, client_id), "
+            "businesses(business_name, logo_url)"
+        )
         .eq("id", interest_id)
         .single()
         .execute()
@@ -524,7 +527,7 @@ def _accessible_thread_ids(current_user: dict):
         booking_rows = (
             supabase.table("bookings")
             .select(
-                "id, status, business_id, confirmed_date, businesses(business_name)"
+                "id, status, business_id, confirmed_date, businesses(business_name, logo_url)"
             )
             .eq("client_id", uid)
             .execute()
@@ -534,7 +537,7 @@ def _accessible_thread_ids(current_user: dict):
             .select(
                 "id, status, quoted_price, business_id, "
                 "service_posts!inner(id, title, status, client_id), "
-                "businesses(business_name)"
+                "businesses(business_name, logo_url)"
             )
             .eq("service_posts.client_id", uid)
             .execute()
@@ -1066,11 +1069,15 @@ def list_threads(current_user: dict = Depends(get_current_user)):
                     None, [client_user.get("first_name"), client_user.get("last_name")]
                 )
             )
-            counterpart = (
-                (b.get("businesses") or {}).get("business_name")
-                or client_name
-                or "Chat"
-            )
+            biz = b.get("businesses") or {}
+            counterpart = biz.get("business_name") or client_name or "Chat"
+            # Who the viewer is looking at decides the shape of the tile:
+            # businesses are TILES with a logo, people are CIRCLES with an
+            # avatar (BusinessLogo.js / POLISH-TIPS §8). Only the client-side
+            # query embeds `businesses`, so this is a business counterpart
+            # exactly when that embed came back — a business never sees its own
+            # logo here.
+            is_business = bool(biz.get("business_name"))
             threads.append(
                 {
                     "thread_type": "booking",
@@ -1078,6 +1085,8 @@ def list_threads(current_user: dict = Depends(get_current_user)):
                     "title": counterpart,
                     "counterpart_name": counterpart,
                     "counterpart_avatar": client_user.get("avatar_url"),
+                    "counterpart_type": "business" if is_business else "person",
+                    "counterpart_logo": biz.get("logo_url") if is_business else None,
                     "status": b.get("status"),
                     # CARD-20 — lets the Messages list render the floating
                     # booking badge as "confirmed" vs "pending a time"
@@ -1105,8 +1114,10 @@ def list_threads(current_user: dict = Depends(get_current_user)):
             if i.get("status") != "accepted":
                 post = mask_service_post_row(post)
             client_user = post.get("users") or {}
+            i_biz = i.get("businesses") or {}
+            i_is_business = bool(i_biz.get("business_name"))
             counterpart = (
-                (i.get("businesses") or {}).get("business_name")
+                i_biz.get("business_name")
                 or " ".join(
                     filter(
                         None,
@@ -1123,6 +1134,8 @@ def list_threads(current_user: dict = Depends(get_current_user)):
                     "title": post.get("title") or "Job post",
                     "counterpart_name": counterpart,
                     "counterpart_avatar": client_user.get("avatar_url"),
+                    "counterpart_type": "business" if i_is_business else "person",
+                    "counterpart_logo": i_biz.get("logo_url") if i_is_business else None,
                     "status": i.get("status"),
                     "quoted_price": i.get("quoted_price"),
                     # Lets a client tap through from the inbox / chat header to
@@ -1234,6 +1247,11 @@ def get_interest_messages(
                 # Header tap-through to the business profile (client side) —
                 # the interest thread has no bookingMeta to read business_id off.
                 "business_id": interest.get("business_id"),
+                # The quoting business's face for the chat header. Safe in both
+                # directions: a business's name and logo are public, and the
+                # client-side masking above only ever concerns the client.
+                "business_name": (interest.get("businesses") or {}).get("business_name"),
+                "business_logo": (interest.get("businesses") or {}).get("logo_url"),
                 "post_title": interest["service_posts"].get("title"),
                 "post_status": interest["service_posts"].get("status"),
             },

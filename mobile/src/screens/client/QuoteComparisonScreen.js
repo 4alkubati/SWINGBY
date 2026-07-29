@@ -11,6 +11,7 @@ import { Feather } from '@expo/vector-icons';
 import Text from '../../components/Text';
 import Button from '../../components/Button';
 import Avatar from '../../components/Avatar';
+import BusinessLogo from '../../components/BusinessLogo';
 import Surface from '../../components/Surface';
 import Stack from '../../components/Stack';
 import Inline from '../../components/Inline';
@@ -132,7 +133,7 @@ function QuoteListCard({ quote, isRecommended, onSelect, onViewProfile, onMessag
           <Inline spacing="md" align="center">
             {/* Avatar — tappable to view profile */}
             <Pressable onPress={onViewProfile} hitSlop={8}>
-              <Avatar name={businessName} size="md" />
+              <BusinessLogo uri={biz.logo_url} name={businessName} size={48} />
             </Pressable>
 
             {/* Business info */}
