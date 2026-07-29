@@ -13,6 +13,7 @@ import Stack from '../../components/Stack';
 import Inline from '../../components/Inline';
 import Surface from '../../components/Surface';
 import Avatar from '../../components/Avatar';
+import BusinessLogo from '../../components/BusinessLogo';
 import Button from '../../components/Button';
 import TextField from '../../components/TextField';
 import { RatingStarsInput } from '../../components/RatingStars';
@@ -25,7 +26,7 @@ const RATING_LABELS = ['', 'Poor', 'Fair', 'Good', 'Great', 'Excellent'];
 
 export default function ReviewScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
-  const { bookingId, workerId, workerName } = route.params || {};
+  const { bookingId, workerId, workerName, isBusiness, businessLogo } = route.params || {};
 
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState('');
@@ -130,7 +131,11 @@ export default function ReviewScreen({ navigation, route }) {
           {/* Worker card */}
           <Surface elevation="subtle" background="default">
             <Stack spacing="sm" style={{ alignItems: 'center' }}>
-              <Avatar name={workerName || 'Provider'} size="xl" />
+              {isBusiness ? (
+                <BusinessLogo uri={businessLogo} name={workerName || 'Provider'} size={96} />
+              ) : (
+                <Avatar name={workerName || 'Provider'} size="xl" />
+              )}
               <Text variant="h2">{workerName || 'Your Provider'}</Text>
               <Text variant="small" color="secondary">
                 How was your experience?

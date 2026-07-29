@@ -626,6 +626,10 @@ export default function MyJobsScreen({ navigation }) {
                       .filter(Boolean).join(' ')
                     || item.businesses?.business_name
                     || 'Provider',
+                  // Who you are reviewing decides the mark: an employee is a
+                  // person, otherwise you are rating the company itself.
+                  isBusiness: !item.employees?.users,
+                  businessLogo: item.businesses?.logo_url || null,
                 }) : undefined
               }
             />
