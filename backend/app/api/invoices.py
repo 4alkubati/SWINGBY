@@ -121,7 +121,7 @@ def _load_invoice_data(booking_id: str, current_user: dict) -> dict:
             "total_amount_cents, platform_fee, platform_fee_cents, "
             "commission_rate, status, payment_status, "
             "confirmed_date, created_at, "
-            "businesses(business_name, category, license_status), "
+            "businesses(business_name, category, license_status, logo_url), "
             "employees(role_title, users(first_name, last_name))"
         )
         .eq("id", booking_id)

@@ -36,6 +36,7 @@ import Stack from '../../components/Stack';
 import Inline from '../../components/Inline';
 import Surface from '../../components/Surface';
 import Avatar from '../../components/Avatar';
+import BusinessLogo from '../../components/BusinessLogo';
 import Button from '../../components/Button';
 import { colors, spacing, radius, shadows, motion } from '../../theme/tokens';
 
@@ -555,8 +556,12 @@ export default function BookingDetailsScreen({ route, navigation }) {
           avatar_url: bookingData.employees?.avatar_url,
           avg_rating: biz?.avg_rating,
           review_count: biz?.review_count,
+          // M8: with nobody assigned the card IS the business, so it should
+          // wear the business's face — a logo tile, not a person circle.
+          is_business: !empUser,
         },
         business_name: biz?.business_name ?? null,
+        business_logo: biz?.logo_url ?? null,
         category: bookingData.service_posts?.title || bookingData.service_category || null,
         scheduled_at: bookingData.confirmed_date || bookingData.proposed_date_1 || null,
         address: bookingData.service_posts?.address ?? null,
@@ -859,7 +864,11 @@ export default function BookingDetailsScreen({ route, navigation }) {
             <Inline spacing="base" align="center">
               {/* Avatar with shadow wrap */}
               <View style={shadows.subtle}>
-                <Avatar size="lg" name={workerName} source={worker.avatar_url ?? worker.photo_url} />
+                {worker.is_business ? (
+                  <BusinessLogo uri={booking?.business_logo} name={workerName} size={64} />
+                ) : (
+                  <Avatar size="lg" name={workerName} source={worker.avatar_url ?? worker.photo_url} />
+                )}
               </View>
 
               {/* Worker info */}

@@ -752,6 +752,14 @@ export default function ProofOfWorkScreen({ route, navigation }) {
         })}
 
         <VoiceNoteCard
+          // The card owns an expo-audio player whose source is derived from
+          // `note.url`. Changing that url in place (memo loads, a new one is
+          // recorded, one is deleted) makes expo-audio release the native
+          // shared object while useAudioPlayerStatus still holds the old JS
+          // handle — the next status read then throws
+          // NativeSharedObjectNotFoundException. Keying on the url remounts the
+          // card instead, so a player's source is fixed for its whole life.
+          key={proof?.voice_note?.url || 'no-voice-note'}
           note={proof?.voice_note}
           saving={savingVoice}
           onRecorded={handleVoiceRecorded}

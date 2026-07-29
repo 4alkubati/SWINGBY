@@ -23,6 +23,7 @@ import { MapCanvas, MapDot, MapAvatarPin } from '../../components/MapPreviewCard
 import Text from '../../components/Text';
 import Button from '../../components/Button';
 import Avatar from '../../components/Avatar';
+import BusinessLogo from '../../components/BusinessLogo';
 import Inline from '../../components/Inline';
 import { Feather } from '@expo/vector-icons';
 import { colors, spacing, radius, shadows, motion } from '../../theme/tokens';
@@ -219,7 +220,7 @@ function ResultSheet({ business, count, onViewProfile, onClose, selected }) {
 
       {business ? (
         <View style={styles.sheetRow}>
-          <Avatar name={business.business_name} size={48} shape="tile" />
+          <BusinessLogo uri={business.logo_url} name={business.business_name} size={48} />
 
           <View style={styles.sheetText}>
             <Inline spacing="sm" style={{ alignItems: 'center' }}>

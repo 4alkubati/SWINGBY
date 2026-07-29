@@ -17,6 +17,7 @@ import Surface from '../../components/Surface';
 import Stack from '../../components/Stack';
 import Inline from '../../components/Inline';
 import Avatar from '../../components/Avatar';
+import BusinessLogo from '../../components/BusinessLogo';
 import Tabs from '../../components/Tabs';
 import StatusBadge from '../../components/StatusBadge';
 import EditPostSheet from '../../components/EditPostSheet';
@@ -239,7 +240,14 @@ function BookingRow({ booking, onPress, onReview, onDetails, onRebook, onInvoice
   return (
     <RowCard
       onPress={onPress}
-      left={<Avatar name={counterparty} size="sm" />}
+      left={
+        // A named employee is a person (circle); the company they work for is
+        // still on the row via `credentials`. With nobody assigned yet, the
+        // business itself is the counterparty and gets its logo tile.
+        userRole === 'client' && !assignedPerson
+          ? <BusinessLogo uri={booking.businesses?.logo_url} name={businessName} size={32} radius={10} />
+          : <Avatar name={counterparty} size="sm" />
+      }
       title={service}
       badge={<StatusBadge label={status.label} tone={status.tone} />}
       subtitle={counterparty}
@@ -618,6 +626,10 @@ export default function MyJobsScreen({ navigation }) {
                       .filter(Boolean).join(' ')
                     || item.businesses?.business_name
                     || 'Provider',
+                  // Who you are reviewing decides the mark: an employee is a
+                  // person, otherwise you are rating the company itself.
+                  isBusiness: !item.employees?.users,
+                  businessLogo: item.businesses?.logo_url || null,
                 }) : undefined
               }
             />

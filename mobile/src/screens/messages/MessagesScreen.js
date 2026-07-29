@@ -28,6 +28,7 @@ import { useUnread } from '../../context/UnreadContext';
 import { api } from '../../services/api';
 import i18n from '../../i18n';
 import { colors, spacing, radius, motion } from '../../theme/tokens';
+import BusinessLogo from '../../components/BusinessLogo';
 
 import Text from '../../components/Text';
 import Button from '../../components/Button';
@@ -154,15 +155,29 @@ function ChatRow({ thread, onPress }) {
         accessibilityLabel={`${thread.counterpart_name}, ${bookingMeta(thread)}${unread ? `, ${thread.unread_count} unread` : ''}`}
         style={({ pressed }) => [styles.chatRow, pressed && styles.rowPressed]}
       >
-        <View style={[styles.chatTile, unread && styles.tileActive]}>
-          <Text
-            variant="caption"
-            numberOfLines={1}
-            style={[styles.tileText, { fontSize: 16 }, unread && styles.tileTextActive]}
-          >
-            {initials(thread.counterpart_name)}
-          </Text>
-        </View>
+        {thread.counterpart_logo ? (
+          // A business the client has booked shows its own face here. The
+          // unread ring is dropped on purpose when a logo is present — the
+          // accent fill exists to carry the monogram, and tinting a real logo
+          // would misrepresent the brand. Unread is still carried by the name,
+          // the preview weight and the badge.
+          <BusinessLogo
+            uri={thread.counterpart_logo}
+            name={thread.counterpart_name}
+            size={50}
+            radius={16}
+          />
+        ) : (
+          <View style={[styles.chatTile, unread && styles.tileActive]}>
+            <Text
+              variant="caption"
+              numberOfLines={1}
+              style={[styles.tileText, { fontSize: 16 }, unread && styles.tileTextActive]}
+            >
+              {initials(thread.counterpart_name)}
+            </Text>
+          </View>
+        )}
 
         <View style={styles.chatBody}>
           <View style={styles.chatTopLine}>
@@ -229,15 +244,23 @@ function QuoteRow({ quote, active, onPress }) {
         pressed && styles.rowPressed,
       ]}
     >
-      <View style={[styles.quoteTile, active && styles.tileActive]}>
-        <Text
-          variant="caption"
-          numberOfLines={1}
-          style={[styles.tileText, active && styles.tileTextActive, grey && styles.tileTextGrey]}
-        >
-          {initials(quote.name)}
-        </Text>
-      </View>
+      {quote.logoUrl ? (
+        // Comparing quotes is the moment a client picks a company, so this is
+        // the row where a logo earns its keep. Expired/declined quotes keep the
+        // logo rather than greying it — the brand did not change, only the
+        // quote's standing, which the status line already says.
+        <BusinessLogo uri={quote.logoUrl} name={quote.name} size={46} radius={14} />
+      ) : (
+        <View style={[styles.quoteTile, active && styles.tileActive]}>
+          <Text
+            variant="caption"
+            numberOfLines={1}
+            style={[styles.tileText, active && styles.tileTextActive, grey && styles.tileTextGrey]}
+          >
+            {initials(quote.name)}
+          </Text>
+        </View>
+      )}
 
       <View style={styles.quoteBody}>
         <Text variant="caption" numberOfLines={1} style={[styles.quoteName, grey && styles.textGrey]}>
@@ -389,6 +412,7 @@ export default function MessagesScreen({ navigation }) {
           interestId: i.id,
           businessId: i.business_id,
           name: i.businesses?.business_name || i18n.t('messages.businessFallback'),
+          logoUrl: i.businesses?.logo_url || null,
           service: post.title || i18n.t('messages.jobFallback'),
           price: i.quoted_price,
           createdAt: i.created_at,

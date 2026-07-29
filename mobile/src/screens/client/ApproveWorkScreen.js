@@ -118,14 +118,20 @@ function CompareColumn({ label, labelColor, borderColor, photos, onOpen, emptyLa
 // `note.url` is a SIGNED, EXPIRING url minted per read by the API — never cache
 // it across sessions, and treat a missing url as "no memo" rather than as a
 // player that will fail when tapped.
+// Mounted only once a url exists (see the call site), so the player is created
+// with its final source and never has it swapped underneath it.
+//
+// It used to be rendered unconditionally and passed `null` until the proof
+// loaded. When the url then arrived, expo-audio replaced the native shared
+// object backing the player while `useAudioPlayerStatus` was still polling the
+// previous one, and the next status read threw
+// `NativeSharedObjectNotFoundException: Unable to find the native shared object
+// associated with given JavaScript object`. The source is stable now, so there
+// is no released object left for the status hook to read.
 function VoiceNotePlayer({ note, recordedBy }) {
-  const url = note?.url || null;
-  const player = useAudioPlayer(url ? { uri: url } : null);
+  const url = note.url;
+  const player = useAudioPlayer({ uri: url });
   const status = useAudioPlayerStatus(player);
-
-  // Every hook runs before this early return — the memo is optional, so this
-  // component renders nothing far more often than it renders a player.
-  if (!note || !url) return null;
 
   const playing = !!status?.playing;
   // Prefer the recorded length from the row: it is what the business actually
@@ -397,7 +403,15 @@ export default function ApproveWorkScreen({ route, navigation }) {
               <Feather name="chevron-right" size={13} color={colors.textTertiary} />
             </View>
 
-            <VoiceNotePlayer note={proof?.voice_note} recordedBy={proof?.business_name} />
+            {proof?.voice_note?.url ? (
+              <VoiceNotePlayer
+                // Remount if the signed url is re-minted, rather than mutating
+                // the source of a live player.
+                key={proof.voice_note.url}
+                note={proof.voice_note}
+                recordedBy={proof?.business_name}
+              />
+            ) : null}
 
             <View style={styles.releaseNotice}>
               <Feather name="lock" size={16} color={colors.success} />

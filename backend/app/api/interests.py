@@ -236,7 +236,7 @@ def list_interests_on_post(
         res = (
             supabase.table("interests")
             .select(
-                "*, businesses(business_name, category, avg_rating, review_count, description)"
+                "*, businesses(business_name, category, avg_rating, review_count, description, logo_url)"
             )
             .eq("post_id", post_id)
             .order("created_at")
