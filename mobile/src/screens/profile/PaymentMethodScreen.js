@@ -2,8 +2,8 @@
 //
 // This screen used to be a Stripe stub: a "COMING SOON" badge, a decorative
 // fake credit card, and an "Add card" button whose only behaviour was a
-// "Coming soon" toast. There is no payment-method endpoint on the backend
-// (no saved cards, no SetupIntent), so nothing on it was ever real.
+// "Coming soon" toast. There is no payment-method MANAGEMENT endpoint on the
+// backend, so nothing on it was ever real.
 //
 // It is no longer linked from the client Profile menu. It stays registered
 // because the business "Account" section still links here, so instead of a
@@ -11,6 +11,15 @@
 // the client is charged when the job is confirmed, SwingBy holds the money,
 // and the business is paid out after completion. Cash / e-transfer jobs are
 // recorded, not charged.
+//
+// IT IS ALSO THE CARD-RETENTION DISCLOSURE. The payment sheet creates its
+// PaymentIntent with `setup_future_usage='off_session'`
+// (backend/app/services/stripe_payment_sheet.py), so Stripe keeps the card on
+// the client's customer record and no Stripe checkbox asks them first — which
+// means the telling is ours to do. This screen used to say the exact opposite,
+// that they "never have to hold a card on file", while the backend was about
+// to start doing precisely that. If card retention is ever turned off, the
+// "Your card is saved for next time" step goes with it.
 import React from 'react';
 import {
   View,
@@ -28,6 +37,11 @@ const STEPS = [
     icon: 'lock',
     title: 'Payment is taken up front',
     body: 'When you accept a quote, the full amount is charged and held by SwingBy — not sent to the business yet.',
+  },
+  {
+    icon: 'credit-card',
+    title: 'Your card is saved for next time',
+    body: 'The card you pay with is stored securely by Stripe, so booking again takes one tap instead of retyping it. SwingBy never sees your card number. You can remove it any time by contacting support.',
   },
   {
     icon: 'check-circle',
@@ -66,7 +80,7 @@ export default function PaymentMethodScreen({ navigation }) {
       >
         <Text style={styles.intro}>
           SwingBy handles the money for every booking made in the app, so you
-          never have to chase a payment or hold a card on file.
+          never have to chase a payment or settle up on the doorstep.
         </Text>
 
         <View style={styles.card}>

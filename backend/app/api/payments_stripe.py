@@ -318,6 +318,13 @@ def confirm_payment_intent(
         intent.get("amount_received"),
         intent.get("id"),
     )
+    # The intent carried setup_future_usage='off_session', so Stripe has kept
+    # this card on the customer. Record WHICH card, so a later off-session
+    # charge can name it instead of guessing among the customer's methods.
+    stripe_payment_sheet.remember_payment_method(
+        user_id=current_user["id"],
+        payment_method_id=intent.get("payment_method"),
+    )
     return ConfirmPaymentResponse(status="succeeded", settled=True)
 
 
@@ -457,6 +464,21 @@ async def webhook(request: Request):
                 None,
                 _obj_get(data_object, "amount_received"),
                 _obj_get(data_object, "id"),
+            )
+            # Remember the card here too, not only in the confirm endpoint: the
+            # sheet can succeed and the app be killed before it confirms, and
+            # this event still arrives. swingby_user_id is on the metadata that
+            # create_payment_sheet always sets, so no booking lookup is needed.
+            # Both paths running is harmless — the second write is identical.
+            from app.services import stripe_payment_sheet
+
+            stripe_payment_sheet.remember_payment_method(
+                user_id=(
+                    pi_metadata.get("swingby_user_id")
+                    if hasattr(pi_metadata, "get")
+                    else None
+                ),
+                payment_method_id=_obj_get(data_object, "payment_method"),
             )
         else:
             logger.info(

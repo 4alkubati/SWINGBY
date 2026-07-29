@@ -172,9 +172,30 @@ def create_payment_sheet(
             # bank's web page — which is the browser bounce we are removing.
             # Card (and any other in-sheet method) only.
             automatic_payment_methods={"enabled": True, "allow_redirects": "never"},
+            # Keep the card on file. Until this was set, `ensure_customer` built
+            # the shelf — a persistent Stripe Customer, reused on every payment,
+            # handed to the sheet with an ephemeral key so saved cards render —
+            # and nothing was ever put on it: the card was discarded after each
+            # charge, so the sheet had nothing to show the next time.
+            #
+            # 'off_session' rather than 'on_session' deliberately. It is what
+            # lets a later PaymentIntent charge this card with the client absent,
+            # which is the missing piece under charge-at-post (a client posting a
+            # job is not standing at a payment sheet). 'on_session' would save
+            # the card but refuse exactly that use.
+            #
+            # CONSENT: this saves without a Stripe checkbox, so the disclosure
+            # has to be ours. It lives on the Payments screen
+            # (mobile/src/screens/profile/PaymentMethodScreen.js), which used to
+            # claim the opposite — "you never have to hold a card on file" — and
+            # was corrected in the same change. Do not turn this on anywhere the
+            # client has not been told.
+            setup_future_usage="off_session",
             # The webhook reads booking_id off THIS metadata to move the ledger.
             # Without it a succeeded intent cannot be attributed to a booking and
             # _mark_payment_paid is never called. Do not drop this key.
+            # swingby_user_id is what lets the succeeded event remember the card
+            # against the right user without a booking lookup.
             metadata={"booking_id": str(booking_id), "swingby_user_id": str(user_id)},
         )
     except Exception:
@@ -222,4 +243,39 @@ def retrieve_payment_intent(payment_intent_id: str) -> dict[str, Any]:
             intent.get("amount_received") if hasattr(intent, "get") else None
         ),
         "booking_id": (metadata or {}).get("booking_id") if metadata else None,
+        # Which card actually paid. Read back from Stripe rather than taken from
+        # the device, for the same reason as everything else here.
+        "payment_method": (
+            intent.get("payment_method") if hasattr(intent, "get") else None
+        ),
     }
+
+
+def remember_payment_method(*, user_id: str, payment_method_id: Optional[str]) -> None:
+    """Record the card a succeeded intent used as this user's default.
+
+    `setup_future_usage='off_session'` is what makes Stripe KEEP the card on the
+    Customer; this is what makes SwingBy able to name it later. Without it,
+    charging at post would mean listing the Customer's payment methods and
+    guessing which one the client meant.
+
+    ``users.default_payment_method_id`` has existed as a column since the
+    account-lifecycle work and had no reader or writer until now.
+
+    Best-effort by design: a bookkeeping write must never fail a payment that
+    Stripe has already captured. The card is still saved on the Stripe Customer
+    either way, so the worst case is that the next charge has to look it up.
+    """
+    if not user_id or not payment_method_id:
+        return
+    try:
+        supabase.table("users").update(
+            {"default_payment_method_id": str(payment_method_id)}
+        ).eq("id", user_id).execute()
+    except Exception:
+        logger.warning(
+            "Could not persist default_payment_method_id for user %s — the card "
+            "is still saved on the Stripe customer.",
+            user_id,
+            exc_info=True,
+        )
