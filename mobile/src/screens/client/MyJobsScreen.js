@@ -418,7 +418,21 @@ export default function MyJobsScreen({ navigation }) {
 
   function handleBookingPress(booking) {
     if (isClient) {
-      navigation.navigate('ActiveBooking', { bookingId: booking.id });
+      // A finished job does not belong on the live-tracking screen. This used
+      // to send EVERY row here, Past tab included, so a job completed weeks ago
+      // opened `ActiveBooking` — which is specced as "Active Booking (live
+      // tracking)" and has no completed state: it kept drawing the faux dashed
+      // "en route" map, a progress timeline pinned at its last segment, and the
+      // caption "Payment releases only when you approve the work" on money that
+      // had already been released. Worse, it offers no invoice, no review and no
+      // rebook, so tapping a Past row gave you strictly LESS than the row you
+      // tapped (this component renders all three — see the `isDone` actions in
+      // BookingRow). `BookingDetails` is the screen the design system specs for
+      // a static booking: status, provider, service/where/total, actions.
+      const finished = booking.status === 'completed' || booking.status === 'cancelled';
+      navigation.navigate(finished ? 'BookingDetails' : 'ActiveBooking', {
+        bookingId: booking.id,
+      });
     } else {
       navigation.navigate('JobManagement', { bookingId: booking.id });
     }

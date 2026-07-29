@@ -204,16 +204,27 @@ function LiveMapHero({ onBack, status }) {
     <View style={styles.hero}>
       <MapCanvas style={styles.mapCanvas}>
         <Svg style={StyleSheet.absoluteFill} width="100%" height="100%" pointerEvents="none">
-          <MapRoute
-            points={[
-              { x: 40, y: 200 },
-              { x: 120, y: 170 },
-              { x: 180, y: 140 },
-              { x: 250, y: 100 },
-              { x: 320, y: 70 },
-            ]}
-          />
-          <MapPin x={40} y={200} />
+          {/* Travel is only drawn while there IS travel. My Jobs no longer
+              routes finished bookings here, but a job can be completed by the
+              business while the client sits on this screen (it re-polls on
+              focus), so the honest presentation has to exist for `completed`
+              too — otherwise the moment the job ends, the client is looking at a
+              provider still dashing toward their house. The destination pin
+              stays either way: where the work happened is still true. */}
+          {isLive && (
+            <>
+              <MapRoute
+                points={[
+                  { x: 40, y: 200 },
+                  { x: 120, y: 170 },
+                  { x: 180, y: 140 },
+                  { x: 250, y: 100 },
+                  { x: 320, y: 70 },
+                ]}
+              />
+              <MapPin x={40} y={200} />
+            </>
+          )}
           <MapPin x={320} y={70} top />
         </Svg>
 
@@ -606,16 +617,23 @@ export default function ActiveBookingScreen({ navigation, route }) {
               />
             </SpringCard>
 
-            {/* Escrow caption */}
-            <View style={styles.escrowRow}>
-              <Feather name="lock" size={12.5} color={colors.textSecondary} />
-              <Text
-                style={styles.escrowCaption}
-                maxFontSizeMultiplier={1.3}
-              >
-                Payment releases only when you approve the work.
-              </Text>
-            </View>
+            {/* Escrow caption — only while the outcome is still ahead of us.
+                This rendered unconditionally, so a completed booking (money
+                already released) and a cancelled one (money refunded) both told
+                the client "Payment releases only when you approve the work."
+                That is the same false-money-statement family as AUDIT L5/L6: a
+                promise about a decision the client no longer has. */}
+            {booking.status !== 'completed' && booking.status !== 'cancelled' && (
+              <View style={styles.escrowRow}>
+                <Feather name="lock" size={12.5} color={colors.textSecondary} />
+                <Text
+                  style={styles.escrowCaption}
+                  maxFontSizeMultiplier={1.3}
+                >
+                  Payment releases only when you approve the work.
+                </Text>
+              </View>
+            )}
 
             {/* Cancel (secondary) */}
             {booking.status === 'confirmed' && (
