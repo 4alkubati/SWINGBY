@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="SwingBy">
+  <!-- Tab icon. The stacked "Swing/By" wordmark (mobile/assets/icon.png) is
+       unreadable at 16px, so the tab gets the initial on a Pulse tile: purple
+       reads against both light and dark browser chrome, where a jet tile would
+       disappear into a dark theme. -->
+  <rect width="32" height="32" rx="8" fill="#6E56F7"/>
+  <text x="16" y="23.5"
+        font-family="Space Grotesk, Inter, Helvetica Neue, Arial, sans-serif"
+        font-size="22" font-weight="700" letter-spacing="-1"
+        text-anchor="middle" fill="#FFFFFF">S</text>
+</svg>

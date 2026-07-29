@@ -131,7 +131,7 @@ See `docs/ROLLBACK.md`.
 |---|---|
 | `VITE_SUPABASE_URL` | Supabase project URL |
 | `VITE_SUPABASE_ANON_KEY` | Supabase anon key (never the service key) |
-| `VITE_API_BASE_URL` | Render backend URL |
+| `VITE_API_URL` | Render backend URL — `https://swingbyy-api.onrender.com` |
 | `VITE_SENTRY_DSN` | Sentry DSN (optional) |
 | `VITE_PLAUSIBLE_DOMAIN` | `swingbyy.com` |
 | `VITE_MAINTENANCE_MODE` | `false` |
