@@ -2,5 +2,8 @@ User-agent: *
 Allow: /
 Disallow: /app/
 Disallow: /auth/
+# Transactional landing for the email confirmation link — reachable by anyone
+# who has the link, but nothing a search result should ever point at.
+Disallow: /confirmed
 
-Sitemap: https://swingbyapp.ca/sitemap.xml
+Sitemap: https://swingbyy.com/sitemap.xml

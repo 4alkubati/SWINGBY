@@ -35,11 +35,15 @@ jobs:
 
       - name: Build
         env:
-          VITE_API_URL: https://api.swingbyapp.ca
+          # swingbyy.com — the double-y domain is the one we actually own.
+          # These used to build against api.swingbyapp.ca / swingbyapp.ca, which
+          # nobody has registered (marketing/13-accounts-and-identity.md), so
+          # the produced bundle pointed at a domain a stranger could buy.
+          VITE_API_URL: https://swingbyy-api.onrender.com
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
           VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
-          VITE_PLAUSIBLE_DOMAIN: swingbyapp.ca
+          VITE_PLAUSIBLE_DOMAIN: swingbyy.com
         run: npm run build
 
       - name: Check bundle size

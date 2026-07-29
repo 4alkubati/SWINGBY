@@ -47,13 +47,13 @@
 Add to `backend/app/main.py` if not present:
 ```python
 from starlette.middleware.trustedhost import TrustedHostMiddleware
-app.add_middleware(TrustedHostMiddleware, allowed_hosts=["api.swingbyapp.ca", "localhost"])
+app.add_middleware(TrustedHostMiddleware, allowed_hosts=["swingbyy-api.onrender.com", "localhost"])
 ```
 
 ### CORS
 Verify `backend/app/main.py` CORS origins include only:
 ```python
-allow_origins=["https://swingbyapp.ca", "https://www.swingbyapp.ca"]
+allow_origins=["https://swingbyy.com", "https://www.swingbyy.com"]
 ```
 Remove `http://localhost:*` from production config.
 

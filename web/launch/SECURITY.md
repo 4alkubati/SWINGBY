@@ -32,8 +32,8 @@ Do not open a public GitHub issue for security vulnerabilities.
 ## Scope
 
 In scope:
-- SwingBy web application (swingbyapp.ca)
-- SwingBy API (api.swingbyapp.ca)
+- SwingBy web application (swingbyy.com)
+- SwingBy API (swingbyy-api.onrender.com)
 - Authentication and session management
 - Data exposure or injection vulnerabilities
 
