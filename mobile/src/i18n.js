@@ -3,6 +3,7 @@ import { I18n } from 'i18n-js';
 import * as Localization from 'expo-localization';
 // Cross-platform storage wrapper (works on web + native).
 import * as SecureStore from './services/storage';
+import { resolveLocale } from './i18n-locales';
 
 const LOCALE_KEY = 'swingby_locale';
 
@@ -1179,11 +1180,12 @@ i18n.defaultSeparator = String.fromCharCode(0);
     if (stored) {
       i18n.locale = stored;
     } else {
-      // Use device locale if supported, else fallback en
+      // Use device locale if supported, else fallback en. `resolveLocale`
+      // is the shared registry's matcher — the same list LanguageSelector
+      // offers, so a language can never be detectable but unpickable (which
+      // is exactly what happened to Arabic) or the reverse.
       const deviceLocale = Localization.getLocales?.()?.[0]?.languageTag ?? Localization.locale ?? 'en';
-      if (deviceLocale.startsWith('fr')) i18n.locale = 'fr-CA';
-      else if (deviceLocale.startsWith('ar')) i18n.locale = 'ar';
-      else i18n.locale = 'en';
+      i18n.locale = resolveLocale(deviceLocale);
     }
   } catch {
     i18n.locale = 'en';

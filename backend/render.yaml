@@ -8,6 +8,15 @@ services:
     autoDeploy: true
     healthCheckPath: /healthz
     envVars:
+      # Sentry's `environment` tag and /health's `environment` field both read
+      # this, defaulting to "development" when unset (app/main.py). It was
+      # never set here, so PRODUCTION reported itself as development and every
+      # Sentry event from the live API was filed under the same environment as
+      # a laptop run — which is why triaging SEN-1/SEN-2 meant guessing whether
+      # an event came from a real user. Not a secret, so it is pinned in the
+      # blueprint rather than set by hand in the dashboard.
+      - key: ENV
+        value: production
       - key: DATABASE_URL
         sync: false
       - key: SUPABASE_URL

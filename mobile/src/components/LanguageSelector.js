@@ -6,14 +6,17 @@ import {
 import { Feather } from '@expo/vector-icons';
 import Text from './Text';
 import i18n, { setLocale } from '../i18n';
+import { READY_LOCALES } from '../i18n-locales';
 import { colors, spacing } from '../theme/tokens';
 
 const SCREEN_HEIGHT = Dimensions.get('window').height;
 
-const LANGUAGES = [
-  { code: 'en', label: 'English', native: 'English' },
-  { code: 'fr-CA', label: 'French (Canada)', native: 'Français (Canada)' },
-];
+// Was a hardcoded pair. Arabic was fully translated — all 264 keys — and
+// missing from this list, so it could only ever activate if the phone itself
+// was Arabic: a newcomer on an English handset had no way to reach the Arabic
+// app that already existed. The list is now the shared registry, which the
+// device detector reads too, so the two cannot drift apart again.
+const LANGUAGES = READY_LOCALES;
 
 export default function LanguageSelector({ visible, onClose, currentLocale }) {
   const translateY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
