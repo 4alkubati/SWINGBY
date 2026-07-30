@@ -12,6 +12,46 @@ Related: [12-social-media-playbook.md](12-social-media-playbook.md) · [13-accou
 
 ---
 
+## The master table
+
+Every social-related thing SwingBy has or needs, in one place. Legend: ✅ live · ⚠️ exists but unverified · ❌ nothing yet · 🚫 held by another company
+
+| # | Item | Type | What we have today | What we need | Handle / address | Login email | Cost | Priority |
+|---|---|---|---|---|---|---|---|---|
+| 1 | **Instagram** | Channel | ⚠️ `@swingbyapp` exists — 1,836 followers, 3,058 following, 159 posts — **ownership unconfirmed** | Confirm we can log in. If not ours, claim `@swingbyyc` and start from zero | `@swingbyapp` or `@swingbyyc` | `amr@swingbyy.com` | **Free** | **P0** |
+| 2 | **Facebook Page** | Channel | 🚫 `/SwingByApp` is *SwingBy, Markham ON* — a food-deals business, 17 likes | Create a new Page at `/swingbyyc` | `/swingbyyc` | `amr@swingbyy.com` | **Free** | **P0** |
+| 3 | **Meta Business Suite** | Platform | ❌ Nothing | Create it, link IG + FB, add a 2nd admin | — | `amr@swingbyy.com` | **Free** | **P0** |
+| 4 | **Google Business Profile** | Channel | ❌ Nothing | Create + verify (postcard takes ~1 week — start early) | SwingBy Calgary | `amr@swingbyy.com` | **Free** | **P0** |
+| 5 | **TikTok** | Channel | ⚠️ Unverifiable — TikTok blocks server-side probes | Check `swingbyyc` inside the app, then claim | `@swingbyyc` | `amr@swingbyy.com` | **Free** | P1 |
+| 6 | **LinkedIn Page** | Channel | 🚫 `/company/swingbyapp` is a rideshare/errand platform | Create a Page at `/swingbyyc` | `/swingbyyc` | `amr@swingbyy.com` | **Free** | P1 |
+| 7 | **X / Twitter** | Channel | 🚫 `@SwingByApp` is *SwingBy UG*, a German company, dormant since 2018 | Claim `@swingbyyc` (confirmed free) | `@swingbyyc` | `amr@swingbyy.com` | **Free** | P2 |
+| 8 | **YouTube** | Channel | ❌ Nothing — every candidate handle is free | Claim `@swingbyyc` | `@swingbyyc` | `amr@swingbyy.com` | **Free** | P2 |
+| 9 | **Reddit** | Channel | ❌ Nothing | Claim `u/swingbyyc`; read r/Calgary for 30 days before posting | `u/swingbyyc` | `amr@swingbyy.com` | **Free** | P2 |
+| 10 | **Telegram bot** | Ops | ✅ **Live** — `@L3thallbot`, responds to `getMe` | Nothing | existing | — | **Free** | ✅ done |
+| 11 | **Discord** | Ops | ❌ Nothing on the box | Server + `#inbox` `#approvals` `#alerts`, wired via the n8n Discord node | SwingBy Ops | `amr@swingbyy.com` | **Free** | P1 |
+| 12 | **n8n** | Tool | ✅ **Self-hosted** — container `swingby-n8n`, port 5678, up 24h, 1 workflow | Build the social + DM workflows | — | — | **$0** | P1 |
+| 13 | **Claude API** | Tool | ❌ Not wired into n8n | Haiku 4.5 for DM replies, Sonnet 5 for captions | — | `amr@swingbyy.com` | **~$5/mo** | P1 |
+| 14 | **Canva** | Tool | ❌ Not set up | Free tier — Pro only adds brand kit + bg removal | — | `amr@swingbyy.com` | **$0** | P1 |
+| 15 | **CapCut** | Tool | ❌ Not set up | Free — includes auto-captions | — | `amr@swingbyy.com` | **$0** | P1 |
+| 16 | ~~Buffer~~ | Tool | — | ❌ **Don't buy** — n8n already does scheduling | — | — | ~~$15/mo~~ | skip |
+| 17 | ~~Descript~~ | Tool | — | ❌ **Don't buy** — CapCut captions free | — | — | ~~$12/mo~~ | skip |
+| 18 | ~~Linktree~~ | Tool | — | ❌ **Don't use** — we own `swingbyy.com` and keep the analytics | — | — | ~~$0–5/mo~~ | skip |
+| 19 | `amr@swingbyy.com` | Email | ❌ **No routing rule yet** | Add it at Cloudflare — it's the login for rows 1–15 | never published | → `4alkubati@gmail.com` | **Free** | **P0** |
+| 20 | `hello@swingbyy.com` | Email | ✅ **Live** — also the Resend `From` | Nothing | in every bio | → `4alkubati@gmail.com` | **Free** | ✅ done |
+| 21 | `support@swingbyy.com` | Email | ⚠️ Documented, not routed | Add the routing rule — DMs escalate here | app + web | → `4alkubati@gmail.com` | **Free** | **P0** |
+| 22 | `press@swingbyy.com` | Email | ⚠️ Documented, not routed | Add rule; put on the link page, not the bio | press kit | → `4alkubati@gmail.com` | **Free** | P1 |
+| 23 | `partnerships@swingbyy.com` | Email | ⚠️ Documented, not routed | Add rule — chambers of commerce, trade schools | partnerships page | → `4alkubati@gmail.com` | **Free** | P1 |
+| 24 | `privacy@` `legal@` `security@` | Email | ⚠️ Documented, not routed | Add rules — these are cited in the legal docs and the app | required public | → `4alkubati@gmail.com` | **Free** | **P0** |
+| 25 | `billing@swingbyy.com` | Email | ⚠️ Documented, not routed | Add rule — ad-platform receipts | internal | → `4alkubati@gmail.com` | **Free** | P1 |
+| 26 | **`www.swingbyy.com`** | Infra | ❌ **Does not resolve** (apex returns 200) | `CNAME www → swingbyy.com`, proxied. **Meta App Review needs a reachable privacy URL** | — | — | **Free** | **P0** |
+| 27 | DMARC `rua=` | Infra | ⚠️ `p=none`, no `rua=` — nobody gets reports | Add `rua=mailto:dmarc-reports@swingbyy.com` | — | — | **Free** | P1 |
+| 28 | Defensive domains | Infra | ❌ `swingbyapp.com` / `.ca` unregistered | Register + park → `swingbyy.com` | — | `amr@swingbyy.com` | **~$25/yr** | P2 |
+| 29 | Paid ads | Spend | ❌ Nothing running | Gated behind M1 — organic first | — | `amr@swingbyy.com` | **$0 now** | ⏸️ hold |
+
+**Totals: every platform and every mailbox is free. The only recurring cost is ~$5/mo for the Claude API**, plus an optional ~$25/yr for defensive domains. Rows 16–18 are things the older docs recommended that would have added **$27+/mo** for capability we already have.
+
+---
+
 ## Read this first: the name is contested
 
 `@swingbyapp` — the handle the whole plan was built around — **is taken on four platforms by three different companies that are not us.**
