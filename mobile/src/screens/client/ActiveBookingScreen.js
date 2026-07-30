@@ -636,7 +636,12 @@ export default function ActiveBookingScreen({ navigation, route }) {
             )}
 
             {/* Cancel (secondary) */}
-            {booking.status === 'confirmed' && (
+            {/* Same reason as BookingDetails' `canCancel`: a booking is only
+                'confirmed' until a date is agreed, at which point confirm-date
+                flips it to 'in_progress'. Gating on 'confirmed' alone meant the
+                client lost every way to cancel the moment they settled on a time
+                — which is precisely when they are most likely to need to. */}
+            {['confirmed', 'in_progress'].includes(booking.status) && (
               <SpringCard delay={200} style={styles.hPad}>
                 <Button
                   variant="secondary"

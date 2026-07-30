@@ -739,8 +739,26 @@ export default function BookingDetailsScreen({ route, navigation }) {
   // allow either side to cancel, so a business-side cancel path is a real gap —
   // but it needs its own flow and its own copy, which is a product decision.
   // Until that exists, don't show a button that goes nowhere.
+  // `in_progress` HAS to be here, and `on_the_way` never did.
+  //
+  // 'on_the_way' is not a bookings.status — nothing in the backend ever writes
+  // it (it is a booking_events.event_type), so that entry matched nothing and
+  // this list effectively read `status === 'confirmed'`.
+  //
+  // Which broke the cancellation ladder outright. `confirm-date` sets
+  // `confirmed_date` and `status: 'in_progress'` in the SAME update
+  // (bookings.py), so a booking is only ever `confirmed` while it has no agreed
+  // date. Cancel therefore only appeared during the one window where
+  // `classify_cancellation_timing()` returns 'no_date' — the single free
+  // outcome. Every timed rung of the published ToS ladder (>48h 100%, ≤48h 75/25,
+  // after the date 50/50) was unreachable, so a business could never be
+  // compensated for a late client cancellation no matter what the Terms said.
+  //
+  // `in_progress` does not mean someone is mid-job here; it means the date is
+  // agreed. Cancelling that is exactly what the ladder is for. The backend
+  // already allows it — cancel_booking only refuses 'completed' and 'cancelled'.
   const canCancel =
-    user?.role === 'client' && ['confirmed', 'on_the_way'].includes(booking?.status);
+    user?.role === 'client' && ['confirmed', 'in_progress'].includes(booking?.status);
 
   // B15 — earned, not elapsed.
   const timelineStage = stageFromEvents(events, booking?.status);

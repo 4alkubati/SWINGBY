@@ -107,6 +107,40 @@ describe('an expired post survives into the Past tab', () => {
   });
 });
 
+describe('the cancellation ladder is actually reachable', () => {
+  // `confirm-date` sets confirmed_date AND status:'in_progress' in one update
+  // (backend/app/api/bookings.py), so a booking is only 'confirmed' while it has
+  // no agreed date. Gating Cancel on 'confirmed' alone therefore exposed exactly
+  // one outcome of the published ToS ladder — 'no_date', the free one. Client
+  // cancels at >48h / <=48h / after the date, and every business-side penalty,
+  // were unreachable no matter what the Terms promised.
+  //
+  // 'on_the_way' is NOT a bookings.status (it is a booking_events.event_type),
+  // so listing it matched nothing and hid the bug behind a plausible-looking
+  // array of two.
+  const files = [
+    'screens/client/BookingDetailsScreen.js',
+    'screens/client/ActiveBookingScreen.js',
+  ];
+
+  for (const f of files) {
+    describe(f.split('/').pop(), () => {
+      const src = code(read(f));
+
+      it('offers cancel on in_progress, not just confirmed', () => {
+        const gates = src.match(/\['confirmed',\s*'[a-z_]+'\]/g) || [];
+        expect(gates.length).toBeGreaterThan(0);
+        for (const g of gates) expect(g).toMatch(/in_progress/);
+      });
+
+      it('does not gate anything on the non-existent on_the_way status', () => {
+        // Guarding a status the backend never writes is a silent no-op.
+        expect(src).not.toMatch(/\[\s*'confirmed',\s*'on_the_way'\s*\]/);
+      });
+    });
+  }
+});
+
 describe('the live screen tells the truth about a finished booking', () => {
   const src = code(read('screens/client/ActiveBookingScreen.js'));
 
