@@ -74,7 +74,35 @@ All RLS enabled. Schema details in `docs/swingby_database_schema.md`.
 | `booking_events` | booking_id, event_type, note, created_at — live status timeline |
 | `booking_photos` | booking_id, url, caption — proof of work |
 
-**Payment escrow:** 50% released on confirmation, 50% on completion (minus 10% platform cut → business gets 90% total). Cancel penalty: 25% if >48h before date, 50% if ≤48h.
+**Payment escrow.** SwingBy keeps **10%** (`escrow.PLATFORM_RATE`), business gets 90%.
+
+> ⚠ Corrected 2026-07-29. This line used to describe a **50% on confirmation /
+> 50% on completion** staged release and a **25%/50%** cancellation penalty.
+> Neither matches the code, and a session trusting it would "fix" working money
+> logic into a wrong shape. `partial_released` is marked in `escrow.py:12` as a
+> *"legacy partial state (kept for back-compat)"* — there is no staged release
+> any more. Money is charged before service and released on completion/approval.
+> **`backend/app/services/escrow.py` is the authority for every figure below.**
+
+**Cancellation ladder** — `escrow.compute_cancellation_split()`, and it matches
+the user-facing copy in `mobile/src/screens/shared/TermsOfServiceScreen.js`
+verbatim. Keep those two in step; that text is what the client agreed to.
+
+| Who cancels | When | Client refund | Business keeps |
+|---|---|---|---|
+| Client | no date confirmed yet | 100% | 0% |
+| Client | >48h before the date (`early`) | **100%** | **0%** |
+| Client | ≤48h before (`late`) | 75% | 25% |
+| Client | date already passed (`no_show`) | 50% | 50% |
+| Business | any time | 100% | 0% |
+
+No platform cut is taken on a cancellation — a retained penalty goes entirely to
+the business.
+
+**Post expiry** (`services/expiry_sweep.py`): a post is charged in full at post
+time, so if it expires with no accepted quote the money is **refunded
+immediately** — not held. That sweep is what makes charging up front defensible;
+do not make it conditional or deferred (Kira's ruling, 2026-07-29).
 
 ---
 

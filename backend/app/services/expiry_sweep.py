@@ -131,6 +131,53 @@ def sweep_once(now: Optional[datetime] = None, limit: int = 200) -> dict:
                 post_id,
             )
 
+        # TELL THEM. This module's whole reason for existing is that a client who
+        # paid for a job that never happened has no way to find out — and until
+        # now the sweep fixed the money and still told them nothing. The refund
+        # landed on a card statement days later with no explanation, against a
+        # post that had quietly disappeared from My Jobs.
+        #
+        # Deliberately last and deliberately swallowed: the money and the status
+        # are the load-bearing parts, and a push failure must never make a
+        # settled post look unsettled to the next run.
+        if held_c > 0:
+            try:
+                _notify_client_of_refund(post, held_c)
+            except Exception:
+                logger.exception(
+                    "expiry sweep: refunded and expired post %s but could not "
+                    "notify the client",
+                    post_id,
+                )
+
     if summary["refunded"] or summary["failed"]:
         logger.info("expiry sweep summary: %s", summary)
     return summary
+
+
+def _notify_client_of_refund(post: dict, refunded_cents: int) -> None:
+    """Tell the client their unquoted post expired and the money is back.
+
+    States the amount, because "your post expired" next to an unexplained card
+    credit is worse than saying nothing. Named jobs read better than "your post",
+    so the title is used when there is one.
+    """
+    client_id = post.get("client_id")
+    if not client_id:
+        return
+
+    # Local import: expiry_sweep is imported by the scheduler at startup, and
+    # push pulls in the Expo SDK. Keeping it lazy means a push-layer import
+    # problem cannot stop the sweep from running at all.
+    from app.services.push import send_push_to_user
+
+    dollars = escrow.to_dollars(refunded_cents)
+    title = (post.get("title") or "").strip()
+    subject = f'"{title}"' if title else "Your job post"
+
+    send_push_to_user(
+        client_id,
+        "Refunded — nobody quoted your job",
+        f"{subject} expired after 7 days with no quotes, so the "
+        f"${dollars:.2f} you paid has been refunded. It's in your Past jobs.",
+    )

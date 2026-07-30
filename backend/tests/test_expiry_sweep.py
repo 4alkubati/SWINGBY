@@ -68,6 +68,71 @@ class TestTheMoneyComesBack:
             db.table.return_value.update.assert_called_with({"status": "expired"})
 
 
+class TestTheClientIsActuallyTold:
+    """The money moving is half the job; the client knowing is the other half.
+
+    For a long time the sweep did the first half only, so the refund arrived as
+    an unexplained card credit against a post that had silently vanished from My
+    Jobs. From the client's side that is indistinguishable from the app losing
+    their job and their money.
+    """
+
+    def test_the_client_gets_a_push_naming_the_amount(self):
+        with patch.object(
+            expiry_sweep, "find_expired_unquoted_posts", return_value=[_post()]
+        ), patch.object(
+            refunds, "load_post_payment", return_value=_payment()
+        ), patch.object(
+            refunds, "refund_payment_row"
+        ), patch.object(
+            expiry_sweep, "supabase"
+        ), patch(
+            "app.services.push.send_push_to_user"
+        ) as push:
+            expiry_sweep.sweep_once()
+
+            assert push.call_count == 1
+            user_id, title, body = push.call_args.args
+            assert user_id == "client_1"
+            # The amount has to be in the message. "Your post expired" next to a
+            # mystery credit on a statement is worse than saying nothing.
+            assert "150.00" in body
+            assert "Deep clean" in body
+            assert "refund" in (title + body).lower()
+
+    def test_no_push_when_there_was_no_money_to_return(self):
+        # Flow B: never charged, so there is nothing to announce. Telling someone
+        # they have been refunded $0 is a support ticket, not a courtesy.
+        with patch.object(
+            expiry_sweep, "find_expired_unquoted_posts", return_value=[_post()]
+        ), patch.object(refunds, "load_post_payment", return_value=None), patch.object(
+            expiry_sweep, "supabase"
+        ), patch(
+            "app.services.push.send_push_to_user"
+        ) as push:
+            expiry_sweep.sweep_once()
+            push.assert_not_called()
+
+    def test_a_broken_push_does_not_unsettle_a_settled_post(self):
+        # The money and the status are load-bearing. A push failure must not make
+        # the next run think this post still owes anything.
+        with patch.object(
+            expiry_sweep, "find_expired_unquoted_posts", return_value=[_post()]
+        ), patch.object(
+            refunds, "load_post_payment", return_value=_payment()
+        ), patch.object(
+            refunds, "refund_payment_row"
+        ), patch.object(
+            expiry_sweep, "supabase"
+        ), patch(
+            "app.services.push.send_push_to_user", side_effect=RuntimeError("expo down")
+        ):
+            s = expiry_sweep.sweep_once()
+            assert s["refunded"] == 1
+            assert s["expired_marked"] == 1
+            assert s["failed"] == 0
+
+
 class TestFailureLeavesTheDebtVisible:
     def test_a_failed_refund_does_NOT_mark_the_post_expired(self):
         # Marking it expired would hide an unpaid debt behind a settled state,
