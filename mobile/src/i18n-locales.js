@@ -22,6 +22,25 @@
 //   'planned' — on the roadmap, NOT offered. Listed here so the priority
 //               order is a fact in the codebase and not a memory.
 //
+// WHERE THIS LIST DEPARTS FROM THE CENSUS, AND WHY (founder call, 2026-07-30)
+// The named target languages are Ukrainian, Arabic, English, Chinese and
+// "Indian". Three notes, because two of those do not map onto a census row:
+//
+//   * UKRAINIAN is not in the 2021 top ten and is in this list anyway. The
+//     census was taken BEFORE the 2022 displacement, and Alberta received more
+//     Ukrainian arrivals per capita than any other province — a cohort that is
+//     newly arrived, often without established English, and squarely the
+//     "newcomer facing a language barrier" case this work exists for. Census
+//     order is evidence, not scripture, and here it is simply out of date.
+//   * "CHINESE" is two locales, not one. Mandarin and Cantonese are both large
+//     in Calgary and they do not share a written form — Simplified for
+//     Mandarin speakers, Traditional for most Cantonese speakers. Shipping one
+//     and calling it "Chinese" leaves the other half reading a foreign script.
+//   * "INDIAN" is not a language. In Calgary the relevant one is PUNJABI,
+//     which is already the single largest non-official language in the city —
+//     ahead of every other entry here. Hindi is added below it as the
+//     second-most-likely fit, but if only one ships, it is Punjabi.
+//
 // Translation is deliberately not machine-generated in bulk. These strings
 // carry payment terms, cancellation penalties and refund promises; a wrong
 // word is the same class of defect as the "your budget is charged now" copy
@@ -112,6 +131,24 @@ export const LOCALES = [
     code: 'ru',
     label: 'Russian',
     native: 'Русский',
+    rtl: false,
+    status: 'planned',
+  },
+
+  // ── Named targets that the 2021 Census does not rank ──────────────────────
+  // Listed after the census block so the ordering above stays a faithful
+  // record of the data, rather than being quietly edited to fit a preference.
+  {
+    code: 'uk',
+    label: 'Ukrainian',
+    native: 'Українська',
+    rtl: false,
+    status: 'planned',
+  },
+  {
+    code: 'hi',
+    label: 'Hindi',
+    native: 'हिन्दी',
     rtl: false,
     status: 'planned',
   },

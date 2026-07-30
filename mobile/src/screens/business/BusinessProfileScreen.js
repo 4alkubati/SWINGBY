@@ -575,6 +575,10 @@ export default function BusinessProfileScreen({ navigation, route }) {
 
         <AnimatedScrollView
           showsVerticalScrollIndicator={false}
+          // Same reason as the edit-mode list below: this owner view carries
+          // tappable rows and the subscription actions, and a swallowed first
+          // tap is indistinguishable from a broken button.
+          keyboardShouldPersistTaps="handled"
           contentContainerStyle={[styles.ownerContent, { paddingBottom: insets.bottom + 100 }]}
           refreshControl={
             <RefreshControl
@@ -920,6 +924,16 @@ export default function BusinessProfileScreen({ navigation, route }) {
           showsVerticalScrollIndicator={false}
           onScroll={scrollHandler}
           scrollEventThrottle={16}
+          // Edit mode puts the business-name/bio TextInputs and the "Save
+          // changes" button inside THIS scroll view. A ScrollView defaults to
+          // keyboardShouldPersistTaps="never", which spends the first tap
+          // outside the focused input on dismissing the keyboard and delivers
+          // it to nothing. So after typing, "Save changes" is on screen, fully
+          // enabled, and dead to the first tap — the button had to be pressed
+          // twice, which reads as "it shows but it isn't clickable".
+          // "handled" keeps the tap-to-dismiss behaviour for taps on blank
+          // space while letting a real control receive the tap immediately.
+          keyboardShouldPersistTaps="handled"
           contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 100 }]}
           refreshControl={
             <RefreshControl

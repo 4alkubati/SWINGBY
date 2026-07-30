@@ -1,27 +1,62 @@
 # iOS — TestFlight and the App Store
 
-Written 2026-07-30, the day the Apple Developer account was paid for and sent for
-confirmation. Everything here is either already done in the repo, or a thing only
-Kira can do. Nothing in it is guesswork about what Apple wants.
+Written 2026-07-30, the day the Apple Developer account was paid for. **Updated
+later the same day: the account is CONFIRMED and Kira is Account Holder/Admin**,
+so every portal and App Store Connect step below is now unblocked and can be done
+in one sitting. Everything here is either already done in the repo, or a thing
+only Kira can do. Nothing in it is guesswork about what Apple wants.
 
-**Read the two blockers first.** They will reject a submission, and neither is a
-code change.
+**Read the blocker first.** It will reject a submission, and it is not a code
+change.
+
+> **Correction, 2026-07-30 (account now confirmed).** This document originally
+> listed the privacy-policy URL as the first of *two* blockers. **It is not a
+> blocker — that was wrong, and it was wrong in the expensive direction:** it
+> pointed at a Cloudflare Pages reconfiguration as "the single highest-leverage
+> thing outstanding" when nothing needed to be done at all. Verified against
+> production, see §1.1. One blocker remains.
 
 ---
 
-## 1. Two things that WILL fail review right now
+## 1. The one thing that WILL fail review right now
 
-### The privacy policy URL does not resolve
+### 1.1 The privacy policy URL — VERIFIED LIVE, not a blocker
 
-App Store Connect requires a live privacy-policy URL, and the reviewer opens it.
-`swingbyy.com` has not built from this repo since before 2026-06-05
-(`docs/DEPLOY.md`), so whatever we put in that field 404s or serves the wrong page.
+`https://swingbyy.com/privacy` serves a complete, current privacy policy: PIPA
+referenced by name, sections on collection / use / rights & retention, and
+`privacy@swingbyy.com` as the contact. `/terms` likewise. Safe to paste into App
+Store Connect today.
 
-Fix: point the Pages project's production branch at `main` and redeploy. That one
-setting also unblocks the marketing site, the OG card and `/confirmed`. It is the
-single highest-leverage thing outstanding on the whole project.
+The earlier claim came from `curl`, and `curl` is the wrong instrument here. The
+site is a client-rendered SPA behind a Cloudflare Pages catch-all, so **every**
+path returns the same 2 851-byte shell titled "SwingBy — Coming Soon" — including
+paths that do not exist. That looks exactly like a broken route and is why this
+was filed as a blocker.
 
-### Sign in with Apple — code is done, entitlement is not
+What settles it is the deployed bundle, which contains the `/privacy` and
+`/terms` routes, the `PrivacyPage` component, and the policy prose itself. A
+reviewer uses a real browser with JavaScript, so they get the policy.
+
+    # Misleading — the SPA shell answers 200 for anything, existing or not
+    curl -s https://swingbyy.com/privacy | grep -i "personal information"   # no match
+
+    # Definitive — the route and its prose are in the shipped JS
+    curl -s https://swingbyy.com/assets/index-*.js | grep -o '"/privacy"'
+    curl -s https://swingbyy.com/assets/index-*.js | grep -o "Personal Information Protection Act"
+
+Two things remain true and are worth keeping separate from review readiness:
+
+* The site still has not rebuilt from this repo since before 2026-06-05, so it
+  serves the **pre-launch** app. Everything above describes what is deployed
+  today, which happens to include a good policy. Fixing the Pages production
+  branch is still worth doing — for the marketing site, the OG card and
+  `/confirmed` — it is simply **not** on the critical path to TestFlight.
+* Because unknown paths return 200 rather than 404, a broken link on this site
+  cannot be detected by status code. Assert on page content, never on the code.
+
+### 1.2 Sign in with Apple — code is done, entitlement is not
+
+**This is the only remaining blocker.**
 
 Apple **requires** Sign in with Apple in any app that offers another social login.
 SwingBy offers Google, so this is a rejection risk, not polish.
@@ -69,8 +104,8 @@ The Android `preview` APK is unchanged.
 **TestFlight before the App Store.** A review rejection costs days; TestFlight
 internal testing costs nothing and needs no review at all.
 
-1. **Account confirms.** Note the **Team ID** (Membership page) and the Apple ID
-   email.
+1. ~~**Account confirms.**~~ **Done — 2026-07-30.** Note the **Team ID**
+   (Membership page) and the Apple ID email; both go into `mobile/eas.json`.
 2. **Create the app in App Store Connect** — name, primary language, bundle ID
    `com.swingby.app`, SKU (anything stable, e.g. `swingby-ios-01`). Note the
    **ASC App ID** (the numeric one in the URL).

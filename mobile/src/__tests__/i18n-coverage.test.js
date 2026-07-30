@@ -54,7 +54,27 @@ describe('the locale registry', () => {
   it("carries Calgary's census priority order for what is not built yet", () => {
     const planned = LOCALES.filter((l) => l.status === 'planned').map((l) => l.code);
     const expected = CENSUS_ORDER.filter((c) => c !== 'ar'); // ar already ships
-    expect(planned).toEqual(expected);
+    // The census block must stay in census order and stay FIRST — the named
+    // additions below it are appended, never interleaved, so this list keeps
+    // reading as the data rather than as someone's preference.
+    expect(planned.slice(0, expected.length)).toEqual(expected);
+  });
+
+  it('carries the named targets the 2021 Census does not rank', () => {
+    const planned = LOCALES.filter((l) => l.status === 'planned').map((l) => l.code);
+    // Ukrainian: the census predates the 2022 arrivals, and Alberta took the
+    // most per capita. Hindi: "Indian" is not a language — Punjabi leads in
+    // Calgary and is already in the census block above, Hindi backs it up.
+    expect(planned).toEqual([...CENSUS_ORDER.filter((c) => c !== 'ar'), 'uk', 'hi']);
+  });
+
+  it('covers every language the founder named on 2026-07-30', () => {
+    // en, ar ship today; the rest are registered as planned. "Chinese" is two
+    // written forms, and "Indian" resolves to Punjabi first, Hindi second.
+    const codes = LOCALES.map((l) => l.code);
+    for (const code of ['uk', 'ar', 'en', 'zh-Hans', 'zh-Hant', 'pa', 'hi']) {
+      expect(codes).toContain(code);
+    }
   });
 });
 

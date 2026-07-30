@@ -15,6 +15,7 @@ These tests are the difference between the two paths, and they matter because bo
 of them move (or deliberately do not move) real money.
 """
 
+from datetime import datetime, timedelta, timezone
 from unittest.mock import patch
 
 import pytest
@@ -41,6 +42,16 @@ def as_admin():
     app.dependency_overrides.pop(get_current_user, None)
 
 
+# Must stay RELATIVE to now. `classify_cancellation_timing` buckets on the
+# distance between the confirmed date and the wall clock, so a pinned literal
+# silently changes meaning as real time passes it: this was
+# "2026-07-30T12:00:00Z", which was 'late' the morning it was written and
+# became 'no_show' that same afternoon — flipping the split from 75/25 to
+# 50/50 and failing three tests on a file nobody had touched.
+# 24h out is inside the 48h window from any clock, so the bucket is 'late'
+# whenever the suite runs.
+CONFIRMED_DATE = (datetime.now(timezone.utc) + timedelta(hours=24)).isoformat()
+
 BOOKING = {
     "id": "booking-1",
     "client_id": "client-1",
@@ -48,7 +59,7 @@ BOOKING = {
     "status": "in_progress",
     "total_amount": 200.0,
     # Inside 48h -> 'late' -> client keeps 75%, business keeps 25%.
-    "confirmed_date": "2026-07-30T12:00:00Z",
+    "confirmed_date": CONFIRMED_DATE,
 }
 
 
