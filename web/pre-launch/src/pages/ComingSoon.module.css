@@ -787,3 +787,37 @@
   .step { padding: 24px 20px; }
   .pill { padding: 16px 20px; gap: 10px; }
 }
+
+/* Service picker — businesses only. Chips rather than a multi-select, because a
+   native <select multiple> is close to unusable on a phone and this form's whole
+   job is not losing a signup. Same tokens as the inputs above. */
+.serviceGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.serviceChip {
+  background: var(--color-surface-alt);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 9px 14px;
+  /* 10px to match the inputs — the design system's "never pills" rule. */
+  border-radius: 10px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+.serviceChip:hover {
+  border-color: color-mix(in srgb, var(--color-accent) 40%, transparent);
+  color: var(--color-text-primary);
+}
+.serviceChipOn {
+  background: var(--color-accent-muted);
+  border-color: color-mix(in srgb, var(--color-accent) 55%, transparent);
+  color: var(--color-accent-text);
+}
+.serviceChip:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--color-accent) 60%, transparent);
+  outline-offset: 2px;
+}

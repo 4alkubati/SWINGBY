@@ -8,6 +8,23 @@ import Footer from '../components/Footer'
 
 const API = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000'
 
+// The app's own categories (backend/app/categories.py CANONICAL_CATEGORIES) plus
+// 'Other', so a trade we have not modelled yet can still raise its hand rather
+// than being forced into "Handyman". These must match the worker's whitelist and
+// the Notion multi_select options exactly — anything else is silently dropped
+// before it reaches Notion.
+const SERVICES = [
+  'Cleaning',
+  'Plumbing',
+  'Electrical',
+  'Landscaping',
+  'Painting',
+  'Carpentry',
+  'Moving',
+  'Handyman',
+  'Other',
+]
+
 const HOW_IT_WORKS = {
   client: {
     post: [
@@ -117,7 +134,7 @@ const FAQ_ITEMS = [
 ]
 
 export default function ComingSoon() {
-  const [form, setForm]       = useState({ name: '', email: '', role: '', city: '', message: '' })
+  const [form, setForm]       = useState({ name: '', email: '', role: '', city: '', message: '', services: [] })
   const [status, setStatus]   = useState('idle') // idle | loading | success | error
   const [errMsg, setErrMsg]   = useState('')
   const [view, setView]       = useState('client')   // 'client' | 'business'
@@ -129,7 +146,24 @@ export default function ComingSoon() {
   }
 
   function handleChange(e) {
-    setForm(f => ({ ...f, [e.target.name]: e.target.value }))
+    setForm(f => {
+      const next = { ...f, [e.target.name]: e.target.value }
+      // Switching back to Client drops any services already picked, so a change
+      // of mind cannot post "Client, offers plumbing" — the Notion column is
+      // what we'd sort supply-side leads by, and a stale tag there is worse than
+      // no tag.
+      if (e.target.name === 'role' && e.target.value !== 'Business') next.services = []
+      return next
+    })
+  }
+
+  function toggleService(service) {
+    setForm(f => ({
+      ...f,
+      services: f.services.includes(service)
+        ? f.services.filter(s => s !== service)
+        : [...f.services, service],
+    }))
   }
 
   async function handleSubmit(e) {
@@ -144,6 +178,9 @@ export default function ComingSoon() {
         role:    form.role || 'Unknown',
         city:    form.city.trim() || undefined,
         message: form.message.trim() || undefined,
+        // Only meaningful for a business; the worker whitelists these against
+        // the same canonical list before they reach Notion.
+        services: form.role === 'Business' ? form.services : [],
       })
       setStatus('success')
     } catch (err) {
@@ -276,13 +313,45 @@ export default function ComingSoon() {
                   </div>
                 </div>
 
+                {/* Only a business has services to declare. Asking a client
+                    "what do you offer?" is noise, and the answer would be
+                    meaningless in the Notion column we sort leads by. */}
+                {form.role === 'Business' && (
+                  <div className={styles.field}>
+                    <label>
+                      What do you offer?{' '}
+                      <span className={styles.optional}>(pick all that apply)</span>
+                    </label>
+                    <div className={styles.serviceGrid}>
+                      {SERVICES.map(service => {
+                        const on = form.services.includes(service)
+                        return (
+                          <button
+                            key={service}
+                            type="button"
+                            onClick={() => toggleService(service)}
+                            className={`${styles.serviceChip} ${on ? styles.serviceChipOn : ''}`}
+                            aria-pressed={on}
+                          >
+                            {service}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
+
                 <div className={styles.field}>
                   <label>Message <span className={styles.optional}>(optional)</span></label>
                   <textarea
                     name="message"
                     value={form.message}
                     onChange={handleChange}
-                    placeholder="What service are you looking for, or what does your business offer?"
+                    placeholder={
+                      form.role === 'Business'
+                        ? 'Anything else about your business — service area, team size, how long you have been going.'
+                        : 'What service are you looking for?'
+                    }
                     rows={3}
                   />
                 </div>
