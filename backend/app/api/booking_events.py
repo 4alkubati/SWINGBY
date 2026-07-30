@@ -176,7 +176,9 @@ def _latest_stage_event(booking_id: str) -> Optional[dict]:
         return rows[0] if rows else None
     except Exception:
         logger.warning(
-            "could not read latest stage event for booking %s", booking_id, exc_info=True
+            "could not read latest stage event for booking %s",
+            booking_id,
+            exc_info=True,
         )
         return None
 

@@ -770,7 +770,9 @@ def get_business(business_id: str, current_user: dict = Depends(get_current_user
         )
         if not res.data:
             raise HTTPException(status_code=404, detail="Business not found")
-        return _with_logo_key({**res.data, "completed_bookings": _completed_bookings(business_id)})
+        return _with_logo_key(
+            {**res.data, "completed_bookings": _completed_bookings(business_id)}
+        )
     except HTTPException:
         raise
     except Exception:
