@@ -13,8 +13,18 @@ GET /disputes/mine
     Auth: any signed-in user. Returns disputes the caller filed OR received.
 
 PATCH /disputes/{dispute_id}/resolve
-    Auth: admin only. Body: {resolution, refund_amount?}
-    Sets status='resolved', resolved_at, resolution_notes.
+    Auth: admin only. Body: {resolution, refund_amount?, approve?}
+    Sets resolution_notes, resolved_at, resolved_by, and status —
+    'resolved' for an approval, 'dismissed' for a decline.
+
+    **This endpoint moves money for one issue_type.** A `cancellation_refund` is
+    opened by bookings.py::cancel_booking when a job is cancelled after proof of
+    work exists; the client's share sits in `escrow_held` until an admin decides,
+    having reviewed the before/after photos and the voice memo (Kira's ruling,
+    2026-07-30). Approving refunds it; declining hands it to the business. Every
+    other issue_type resolves as pure record-keeping, exactly as before.
+
+    Resolving twice is a 409 — the second decision would pay out again.
 """
 
 from __future__ import annotations
@@ -27,6 +37,7 @@ from pydantic import BaseModel, Field
 
 from app.deps import get_current_user
 from app.supabase_client import supabase
+from app.services import escrow, refunds
 from app.services.audit import record_audit
 
 logger = logging.getLogger(__name__)
@@ -42,6 +53,12 @@ VALID_ISSUE_TYPES = {
     "other",
 }
 
+# System-opened only, by bookings.py::cancel_booking. Deliberately absent from
+# VALID_ISSUE_TYPES above so POST /disputes/ refuses it: a client must not be able
+# to open a refund request against a booking they never cancelled, because the
+# request is what decides where held escrow goes.
+CANCELLATION_REFUND = "cancellation_refund"
+
 
 class DisputeCreate(BaseModel):
     booking_id: str
@@ -52,6 +69,11 @@ class DisputeCreate(BaseModel):
 class DisputeResolve(BaseModel):
     resolution: str = Field(..., min_length=1, max_length=1000)
     refund_amount: float | None = None
+    # Only meaningful for a cancellation_refund. True (the default) approves and
+    # pays the client; False declines and hands the held amount to the business.
+    # An ordinary dispute ignores it — resolving one of those has never moved
+    # money and still does not.
+    approve: bool = True
 
 
 def _load_booking_for_auth(booking_id: str, current_user: dict) -> dict:
@@ -186,6 +208,86 @@ def list_my_disputes(current_user: dict = Depends(get_current_user)):
     return {"items": items, "count": len(items)}
 
 
+def _settle_cancellation_refund(
+    *,
+    booking_id: str,
+    approve: bool,
+    requested_amount: float | None,
+    actor_id: str,
+) -> int:
+    """Move the money a cancellation refund request was holding. Returns cents moved.
+
+    `cancel_booking` parked the client's share in `escrow_held` and sent nothing to
+    Stripe. That held figure is the entire subject of the request, so it is read
+    from the ledger here rather than trusted from the request body — the ledger is
+    what actually has money behind it.
+
+    Approve -> refund the client (Stripe, then ledger, via the idempotent helper).
+    Decline -> the same figure crosses to the business; nothing goes to Stripe.
+    """
+    payment = escrow.load_single_payment(booking_id)
+    if not payment:
+        # Nothing was ever collected (the common beta case). The decision is still
+        # recorded; there is simply no money to move.
+        return 0
+
+    held_c = escrow.money_cents(payment, "escrow_held")
+    if held_c <= 0:
+        return 0
+
+    # An admin may refund LESS than is held (a partial goodwill outcome) but never
+    # more — the extra would not exist.
+    move_c = held_c
+    if approve and requested_amount is not None:
+        asked_c = escrow.to_cents(requested_amount)
+        move_c = max(0, min(held_c, asked_c))
+    if move_c <= 0:
+        return 0
+
+    if approve:
+        try:
+            refunds.refund_payment_row(
+                payment,
+                amount_cents=move_c,
+                reason=refunds.REASON_CANCELLATION_APPROVED,
+                actor_id=actor_id,
+            )
+        except refunds.RefundNotPossible as exc:
+            # No captured intent: ledger-only, so clear the hold without pretending
+            # Stripe reversed anything. Same shape as the cancel path's
+            # "ledger-only refund" branch.
+            logger.info(
+                "cancellation refund approved for booking %s but nothing to "
+                "reverse at Stripe (%s) — clearing the hold in the ledger only",
+                booking_id,
+                exc,
+            )
+            cleared = escrow.ledger_write(
+                escrow_held=held_c - move_c,
+                released_to_business=escrow.money_cents(
+                    payment, "released_to_business"
+                ),
+                platform_cut=escrow.money_cents(payment, "platform_cut"),
+            )
+            cleared["status"] = "refunded"
+            supabase.table("payments").update(cleared).eq("id", payment["id"]).execute()
+        return move_c
+
+    # DECLINED. The held share becomes the business's, on top of whatever the
+    # ladder already gave them. No Stripe call — the money was captured long ago
+    # and is simply being allocated.
+    declined = escrow.ledger_write(
+        escrow_held=held_c - move_c,
+        released_to_business=escrow.money_cents(payment, "released_to_business")
+        + move_c,
+        platform_cut=escrow.money_cents(payment, "platform_cut"),
+    )
+    declined["status"] = "fully_released"
+    declined["released_at"] = datetime.now(timezone.utc).isoformat()
+    supabase.table("payments").update(declined).eq("id", payment["id"]).execute()
+    return move_c
+
+
 @router.patch("/{dispute_id}/resolve")
 def resolve_dispute(
     dispute_id: str,
@@ -196,14 +298,55 @@ def resolve_dispute(
     if current_user.get("role") != "admin":
         raise HTTPException(status_code=403, detail="Admin only")
 
+    # Load BEFORE writing. This used to blind-update and inspect the result, which
+    # was fine while resolving moved no money — it cannot stay that way now that a
+    # cancellation_refund's outcome decides where held escrow goes.
+    existing = (
+        supabase.table("disputes")
+        .select("id, booking_id, issue_type, status, refund_amount")
+        .eq("id", dispute_id)
+        .single()
+        .execute()
+    )
+    if not existing.data:
+        raise HTTPException(status_code=404, detail="Dispute not found")
+    dispute = existing.data
+
+    if dispute["status"] in ("resolved", "dismissed"):
+        # Money already moved once. Deciding twice would refund twice.
+        raise HTTPException(
+            status_code=409,
+            detail=f"This dispute is already {dispute['status']}",
+        )
+
+    is_cancellation = dispute["issue_type"] == CANCELLATION_REFUND
+    moved_cents = 0
+
+    if is_cancellation:
+        moved_cents = _settle_cancellation_refund(
+            booking_id=dispute["booking_id"],
+            approve=body.approve,
+            requested_amount=body.refund_amount,
+            actor_id=current_user["id"],
+        )
+
     now = datetime.now(timezone.utc).isoformat()
+    # 'dismissed' is the decline. Both values already pass disputes_status_check.
+    final_status = "dismissed" if (is_cancellation and not body.approve) else "resolved"
     updated = (
         supabase.table("disputes")
         .update(
             {
-                "status": "resolved",
+                "status": final_status,
                 "resolution_notes": body.resolution.strip(),
-                "refund_amount": body.refund_amount,
+                # For a cancellation this records what ACTUALLY moved, not what was
+                # asked for — the two differ when the request is capped by what is
+                # still held, and the ledger is the thing worth believing later.
+                "refund_amount": (
+                    escrow.to_dollars(moved_cents)
+                    if is_cancellation
+                    else body.refund_amount
+                ),
                 "resolved_at": now,
                 "resolved_by": current_user["id"],
             }

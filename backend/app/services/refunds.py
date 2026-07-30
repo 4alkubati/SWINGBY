@@ -51,7 +51,19 @@ REASON_UNDER_BUDGET = "under_budget"
 REASON_EXPIRED = "post_expired"
 REASON_CANCELLED = "post_cancelled"
 
-VALID_REASONS = (REASON_UNDER_BUDGET, REASON_EXPIRED, REASON_CANCELLED)
+# An admin approved a cancellation refund request after reviewing the proof of
+# work. Distinct from REASON_CANCELLED ("post_cancelled", about a POST being
+# withdrawn) so the ledger says which decision moved the money — a refund that
+# went out because someone reviewed photos is a different fact from one that went
+# out automatically.
+REASON_CANCELLATION_APPROVED = "cancellation_refund_approved"
+
+VALID_REASONS = (
+    REASON_UNDER_BUDGET,
+    REASON_EXPIRED,
+    REASON_CANCELLED,
+    REASON_CANCELLATION_APPROVED,
+)
 
 
 class RefundNotPossible(RuntimeError):

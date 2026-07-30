@@ -1213,6 +1213,34 @@ def complete_booking(booking_id: str, current_user: dict = Depends(get_current_u
         raise HTTPException(status_code=400, detail="Could not complete booking")
 
 
+def _has_submitted_proof(booking_id: str) -> bool:
+    """Did the provider submit before/after photos + voice note for this job?
+
+    The question a cancellation refund turns on: with proof there is something for
+    an admin to review, without it there is not. Read-only and defensive — if this
+    lookup fails we answer False, which routes the cancellation down the
+    settle-immediately path. Getting this wrong in the safe direction pays a
+    client back money they might have owed; getting it wrong the other way holds
+    their money hostage to a review with no evidence in it.
+    """
+    try:
+        res = (
+            supabase.table("booking_proofs")
+            .select("submitted_at")
+            .eq("booking_id", booking_id)
+            .limit(1)
+            .execute()
+        )
+        rows = res.data or []
+        return bool(rows and rows[0].get("submitted_at"))
+    except Exception:
+        logger.exception(
+            "could not read proof state for booking %s — treating as no proof",
+            booking_id,
+        )
+        return False
+
+
 @router.patch("/{booking_id}/cancel")
 def cancel_booking(
     booking_id: str,
@@ -1267,12 +1295,28 @@ def cancel_booking(
     # cancel, the business penalty for a business cancel).
     penalty_amount = split["penalty_amount"]
 
+    # Has anyone actually been to the property? Kira's ruling (2026-07-30): a
+    # cancelled job's refund is a REQUEST that SwingBy approves or declines after
+    # reviewing the before/after photos and the voice memo — money no longer
+    # leaves the instant someone taps Cancel.
+    #
+    # But that review only has an object when there IS proof. Cancel the day
+    # before and nobody has visited: no photos, no voice note, nothing to judge.
+    # Holding that money pending a decision nobody can make would be strictly
+    # worse than paying it straight back, so the ladder still settles those
+    # instantly. The request path engages only where work was genuinely begun and
+    # the money is genuinely contestable.
+    proof_submitted = _has_submitted_proof(booking_id)
+
     try:
-        # Update booking
+        # Update booking. `payment_status` must NOT claim 'refunded' on the
+        # request path — nothing has been refunded yet and the money is still
+        # held pending review. 'held' is the honest value and is what
+        # escrow.HELD_NOT_RELEASED already recognises.
         supabase.table("bookings").update(
             {
                 "status": "cancelled",
-                "payment_status": "refunded",
+                "payment_status": "held" if proof_submitted else "refunded",
             }
         ).eq("id", booking_id).execute()
 
@@ -1292,7 +1336,24 @@ def cancel_booking(
         # released_to_business/escrow_held untouched — a cancelled booking still
         # read as 50% released to the business.
         payment = escrow.load_single_payment(booking_id)
-        if payment:
+        if payment and proof_submitted:
+            # THE REQUEST PATH. The business's share is settled by the ladder
+            # exactly as before, but the client's share stays in `escrow_held` —
+            # that column means "collected, destination not yet decided", which is
+            # precisely the state a pending refund request is in. Nothing is sent
+            # to Stripe here. Approving the request refunds this figure; declining
+            # it moves the same figure across to the business.
+            hold_ledger = escrow.ledger_write(
+                released_to_business=split["business_keeps_cents"],
+                escrow_held=split["client_refund_cents"],
+                platform_cut=0,
+            )
+            hold_ledger["status"] = "held"
+            supabase.table("payments").update(hold_ledger).eq(
+                "id", payment["id"]
+            ).execute()
+
+        elif payment:
             # Integer cents (migration 20260723120000): the split is computed in
             # cents, so write cents and let escrow.ledger_write emit the legacy
             # dollar mirror from the same integer.
@@ -1337,6 +1398,44 @@ def cancel_booking(
                     "(no Stripe charge captured)",
                     booking_id,
                     refund_amount,
+                )
+
+        # Open the refund request. Deliberately AFTER the ledger is settled: the
+        # money being correctly held is what makes the request meaningful, and a
+        # request row pointing at un-held money would be worse than none.
+        #
+        # System-opened, always against the business and on the client's behalf
+        # regardless of who cancelled, because it is the client's money whose
+        # destination is in question. `POST /disputes/` rejects this issue_type,
+        # so it cannot be manufactured from a phone.
+        if proof_submitted:
+            try:
+                supabase.table("disputes").insert(
+                    {
+                        "booking_id": booking_id,
+                        "opened_by": current_user["id"],
+                        "against_party": "business",
+                        "issue_type": "cancellation_refund",
+                        "description": (
+                            f"Cancelled by the {actor} ({timing}). "
+                            f"Proof of work was submitted, so ${split['client_refund']:.2f} "
+                            f"is held pending review; the business retains "
+                            f"${split['business_keeps']:.2f} under the cancellation "
+                            f"ladder. Reason given: {data.reason}"
+                        )[:2000],
+                        "status": "open",
+                        "refund_amount": split["client_refund"],
+                    }
+                ).execute()
+            except Exception:
+                # Loud, because the money is now held with nothing tracking it.
+                # Better to surface a stuck hold than to silently refund past a
+                # review Kira asked for.
+                logger.exception(
+                    "cancel booking %s: escrow HELD but the refund request could "
+                    "not be opened — $%.2f has no request against it",
+                    booking_id,
+                    split["client_refund"],
                 )
 
         # Goodwill credit accrual: the ladder grants the client a credit when
