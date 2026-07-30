@@ -26,6 +26,7 @@ import {
   CLIENT_POLL_MS,
 } from '../services/liveLocation';
 import { MapCanvas, MapDot } from './MapPreviewCard';
+import { projectToBox, asPercent } from '../utils/mapProjection';
 import Text from './Text';
 import Stack from './Stack';
 import Inline from './Inline';
@@ -53,8 +54,9 @@ const MAP_HEIGHT = 190;
 // filling the frame the moment they turn a corner.
 const REGION_DELTA = 0.014;
 
-export default function ProviderLiveLocation({ bookingId, providerName }) {
+export default function ProviderLiveLocation({ bookingId, providerName, destination }) {
   const [state, setState] = useState(null);
+  const [box, setBox] = useState(null);
   const mounted = useRef(true);
 
   const poll = useCallback(async () => {
@@ -105,6 +107,20 @@ export default function ProviderLiveLocation({ bookingId, providerName }) {
   const stale = !!loc.is_stale;
   const label = lastUpdatedLabel(loc.age_seconds);
 
+  // Percentages, because MapDot positions with `left/top: %`. Empty until
+  // onLayout has measured the canvas, which is the correct thing to draw then.
+  const projected = projectToBox(
+    [
+      { lat: loc.lat, lng: loc.lng, key: 'provider' },
+      destination ? { ...destination, key: 'destination' } : null,
+    ],
+    box,
+    { padding: 22 }
+  );
+  const fallbackPins = (projected?.points || [])
+    .map((p) => asPercent(p, box))
+    .filter(Boolean);
+
   return (
     <Surface elevation="subtle" padding={0} style={styles.card}>
       <View style={styles.mapWrap}>
@@ -128,12 +144,33 @@ export default function ProviderLiveLocation({ bookingId, providerName }) {
             />
           </MapView>
         ) : (
-          // A single point has no extent to project against, so it sits at the
-          // centre of the canvas. The dot pulses only while the fix is fresh —
-          // animating a stale position would be the app lying about movement it
-          // cannot see.
-          <MapCanvas style={StyleSheet.absoluteFill}>
-            <MapDot x={50} y={50} live={!stale} size={16} />
+          // The no-Play-Services path, which IS the path on the walkthrough
+          // Huawei. Given a `destination` there are two real points to scale
+          // against, so the provider's position relative to the job is drawn
+          // truthfully — no tiles required. Without one there is still only a
+          // single point, and a single point honestly belongs at the centre.
+          //
+          // The dot pulses only while the fix is fresh; animating a stale
+          // position would be the app implying movement it cannot see.
+          <MapCanvas
+            style={StyleSheet.absoluteFill}
+            onLayout={(e) => {
+              const { width, height } = e.nativeEvent.layout;
+              setBox((b) =>
+                b && b.width === width && b.height === height ? b : { width, height }
+              );
+            }}
+          >
+            {fallbackPins.map((p) => (
+              <MapDot
+                key={p.key}
+                x={p.x}
+                y={p.y}
+                top={p.key === 'destination'}
+                live={p.key === 'provider' && !stale}
+                size={p.key === 'provider' ? 16 : 12}
+              />
+            ))}
           </MapCanvas>
         )}
 

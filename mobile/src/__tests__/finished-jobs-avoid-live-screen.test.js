@@ -152,12 +152,23 @@ describe('the live screen tells the truth about a finished booking', () => {
     expect(preceding).toMatch(/completed|cancelled/);
   });
 
-  it('only draws the travel route while there is travel', () => {
-    // MapRoute is the dashed "on the way" path. It must sit behind isLive.
+  it('only draws the travel route between two real points', () => {
+    // Was: MapRoute had to sit behind `isLive`. It now sits behind `prov && dest`,
+    // which is strictly stronger — `prov` is only built when the booking is live
+    // AND a real fix exists, so a finished job cannot draw travel, and neither
+    // can a live one with no location to show.
     const i = src.indexOf('<MapRoute');
     expect(i).toBeGreaterThan(-1);
     const preceding = src.slice(Math.max(0, i - 300), i);
-    expect(preceding).toMatch(/isLive/);
+    expect(preceding).toMatch(/prov && dest/);
+  });
+
+  it('plots real coordinates rather than hardcoded pixels', () => {
+    // The hero used to draw a five-point dashed route through invented pixel
+    // coordinates — on the Huawei (no Play Services, canvas is the only map that
+    // can render) that WAS the live-tracking experience.
+    expect(src).toMatch(/projectToBox/);
+    expect(src).not.toMatch(/\{ x: 40, y: 200 \}/);
   });
 
   it('still defines isLive as live-only statuses', () => {

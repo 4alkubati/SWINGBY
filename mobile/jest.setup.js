@@ -123,6 +123,23 @@ jest.mock('expo-local-authentication', () => ({
   supportedAuthenticationTypesAsync: jest.fn(() => Promise.resolve([1])),
 }));
 
+// Global, not per-test: `services/liveLocation` imports this, so ANY screen that
+// wants the provider's position drags it in. Without a mock here the module is
+// untransformed ESM and the importing screen dies with "Jest encountered an
+// unexpected token" — which surfaces as the whole suite failing to parse, not as
+// anything resembling a location problem. Permissions default to granted;
+// LiveLocation.test.js overrides this locally to exercise the denied paths.
+jest.mock('expo-location', () => ({
+  Accuracy: { Balanced: 3 },
+  getForegroundPermissionsAsync: jest.fn(() =>
+    Promise.resolve({ status: 'granted', canAskAgain: true }),
+  ),
+  requestForegroundPermissionsAsync: jest.fn(() =>
+    Promise.resolve({ status: 'granted', canAskAgain: true }),
+  ),
+  watchPositionAsync: jest.fn(() => Promise.resolve({ remove: jest.fn() })),
+}));
+
 // Silence the noisy RN animation-timer warning under fake DOM.
 jest.spyOn(console, 'warn').mockImplementation((msg) => {
   if (typeof msg === 'string' && /useNativeDriver|VirtualizedLists/.test(msg)) return;

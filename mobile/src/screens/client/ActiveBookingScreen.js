@@ -25,6 +25,8 @@ import BookingStatusTimeline from '../../components/BookingStatusTimeline';
 // definition of "what stage is this job in".
 import { stageFromEvents } from './BookingDetailsScreen';
 import { MapCanvas, MapPin, MapRoute } from '../../components/MapPreviewCard';
+import { projectToBox, distanceKm, formatDistance } from '../../utils/mapProjection';
+import { fetchProviderLocation, CLIENT_POLL_MS } from '../../services/liveLocation';
 import PulseDot from '../../components/PulseDot';
 import Text from '../../components/Text';
 import CallContactSheet from '../../components/CallContactSheet';
@@ -193,39 +195,56 @@ function toInitials(name) {
     .slice(0, 2);
 }
 
-// Faux "live" hero using MapCanvas + purple dashed route.
-function LiveMapHero({ onBack, status }) {
+// The hero map. MapCanvas rather than react-native-maps deliberately: the
+// walkthrough device is a Huawei with no Play Services, so a real map renders
+// nothing there (audit B5/S5). What it plots is real, though — the job address
+// and, while the provider is sharing, their actual last fix. It used to draw a
+// dashed route through five hardcoded pixel coordinates and two pins that had
+// nothing to do with the booking, which meant the "live tracking" screen showed
+// a provider who never moved along a road that did not exist.
+function LiveMapHero({ onBack, status, destination, providerLoc, distanceLabel }) {
   const isLive =
     status === 'on_the_way' ||
     status === 'in_progress' ||
     status === 'confirmed';
 
+  // Pixel geometry needs the real container size, and onLayout has not fired on
+  // the first pass — `projected` is simply null until it has.
+  const [box, setBox] = useState(null);
+
+  // The provider is only ever plotted while the job is live AND a fix exists.
+  // Stale-but-present is still shown; the badge says how old it is. A missing
+  // fix draws nothing rather than a guess.
+  const provider = isLive && providerLoc ? { ...providerLoc, key: 'provider' } : null;
+  const projected = projectToBox(
+    [destination ? { ...destination, key: 'destination' } : null, provider],
+    box
+  );
+  const at = (key) => projected?.points.find((p) => p.key === key) || null;
+  const dest = at('destination');
+  const prov = at('provider');
+
   return (
     <View style={styles.hero}>
-      <MapCanvas style={styles.mapCanvas}>
+      <MapCanvas
+        style={styles.mapCanvas}
+        onLayout={(e) => {
+          const { width, height } = e.nativeEvent.layout;
+          setBox((b) => (b && b.width === width && b.height === height ? b : { width, height }));
+        }}
+      >
         <Svg style={StyleSheet.absoluteFill} width="100%" height="100%" pointerEvents="none">
-          {/* Travel is only drawn while there IS travel. My Jobs no longer
-              routes finished bookings here, but a job can be completed by the
-              business while the client sits on this screen (it re-polls on
-              focus), so the honest presentation has to exist for `completed`
-              too — otherwise the moment the job ends, the client is looking at a
-              provider still dashing toward their house. The destination pin
-              stays either way: where the work happened is still true. */}
-          {isLive && (
+          {/* A bearing line between two REAL points, not a claimed route. Drawn
+              only when both ends exist, so a finished job (My Jobs no longer
+              sends those here, but a job can complete while the client watches)
+              never shows someone still travelling toward the house. */}
+          {prov && dest && (
             <>
-              <MapRoute
-                points={[
-                  { x: 40, y: 200 },
-                  { x: 120, y: 170 },
-                  { x: 180, y: 140 },
-                  { x: 250, y: 100 },
-                  { x: 320, y: 70 },
-                ]}
-              />
-              <MapPin x={40} y={200} />
+              <MapRoute points={[{ x: prov.x, y: prov.y }, { x: dest.x, y: dest.y }]} />
+              <MapPin x={prov.x} y={prov.y} />
             </>
           )}
-          <MapPin x={320} y={70} top />
+          {dest && <MapPin x={dest.x} y={dest.y} top />}
         </Svg>
 
         {/* Subtle dark scrim at the top for chrome legibility */}
@@ -256,7 +275,11 @@ function LiveMapHero({ onBack, status }) {
         <Feather name="arrow-left" size={18} color={colors.textPrimary} />
       </TouchableOpacity>
 
-      {isLive && (
+      {/* When there is a real fix, say the real thing — a distance is worth more
+          than the word "Live", and it also stops the pill claiming liveness over
+          a map showing nothing but the destination. Falls back to the old label
+          when the booking is live but the provider is not sharing. */}
+      {(prov && distanceLabel) || isLive ? (
         <View style={styles.livePill}>
           <PulseDot size={7} />
           <Text
@@ -268,10 +291,10 @@ function LiveMapHero({ onBack, status }) {
             }}
             maxFontSizeMultiplier={1.2}
           >
-            Live
+            {prov && distanceLabel ? `${distanceLabel} away` : 'Live'}
           </Text>
         </View>
-      )}
+      ) : null}
     </View>
   );
 }
@@ -285,6 +308,7 @@ export default function ActiveBookingScreen({ navigation, route }) {
   const [callVisible, setCallVisible] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [events, setEvents] = useState([]);
+  const [providerLoc, setProviderLoc] = useState(null);
 
   const load = useCallback(async () => {
     setError(false);
@@ -324,6 +348,32 @@ export default function ActiveBookingScreen({ navigation, route }) {
   useEffect(() => {
     load();
   }, [load]);
+
+  // The provider's real position for the hero map. Same feed and cadence
+  // ProviderLiveLocation uses on Booking Details, so the two screens cannot
+  // disagree about where someone is. The server decides whether sharing is even
+  // open (`sharing: false` with no coordinates for anyone outside the window),
+  // so there is no status check to duplicate here.
+  useEffect(() => {
+    if (!bookingId) return undefined;
+    let alive = true;
+
+    const tick = async () => {
+      const res = await fetchProviderLocation(bookingId);
+      if (!alive) return;
+      // A null is a failed request, not proof the feed closed — keep the last
+      // fix and let the badge age it. Only an explicit `sharing: false` clears.
+      if (!res) return;
+      setProviderLoc(res.sharing ? res.location || null : null);
+    };
+
+    tick();
+    const id = setInterval(tick, CLIENT_POLL_MS);
+    return () => {
+      alive = false;
+      clearInterval(id);
+    };
+  }, [bookingId]);
 
   // Assigned employee (if any) comes through the employees join
   const employeeUser = booking?.employees?.users;
@@ -368,6 +418,15 @@ export default function ActiveBookingScreen({ navigation, route }) {
   // Job details live on the linked service post; the date on confirmed_date
   const postTitle = booking?.service_posts?.title;
   const address = booking?.service_posts?.address;
+  // The job's real coordinates, already on the booking — bookings.py embeds
+  // `service_posts(title, address, lat, lng)`. A direct browse-flow booking has
+  // no post at all, so this is legitimately null and the hero handles that.
+  const destination =
+    typeof booking?.service_posts?.lat === 'number' &&
+    typeof booking?.service_posts?.lng === 'number'
+      ? { lat: booking.service_posts.lat, lng: booking.service_posts.lng }
+      : null;
+  const distanceLabel = formatDistance(distanceKm(providerLoc, destination));
   const when = booking?.confirmed_date || booking?.proposed_date_1;
   const date = when
     ? new Date(when).toLocaleDateString('en-CA', {
@@ -426,6 +485,9 @@ export default function ActiveBookingScreen({ navigation, route }) {
             <LiveMapHero
               onBack={() => navigation.goBack()}
               status={booking.status}
+              destination={destination}
+              providerLoc={providerLoc}
+              distanceLabel={distanceLabel}
             />
 
             {/* Status card overlapping the map by -32 */}

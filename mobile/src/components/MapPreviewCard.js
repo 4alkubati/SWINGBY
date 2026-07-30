@@ -17,9 +17,12 @@ import { colors, radius, spacing, shadows } from '../theme/tokens';
 
 // Faux "map" background: dark blue-tinted gradient + faint 34px grid overlay.
 // Used as home map preview and as base for the ActiveBooking hero.
-export function MapCanvas({ children, style }) {
+// `...rest` so callers can attach onLayout: plotting real coordinates onto this
+// surface needs its measured pixel size, and without the spread the prop was
+// silently dropped and the projection never got a box.
+export function MapCanvas({ children, style, ...rest }) {
   return (
-    <View style={[styles.canvas, style]}>
+    <View style={[styles.canvas, style]} {...rest}>
       <Svg style={StyleSheet.absoluteFill} width="100%" height="100%">
         <Defs>
           <LinearGradient id="mapBg" x1="0" y1="0" x2="1" y2="1">

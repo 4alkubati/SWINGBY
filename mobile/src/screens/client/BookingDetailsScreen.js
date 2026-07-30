@@ -565,6 +565,18 @@ export default function BookingDetailsScreen({ route, navigation }) {
         category: bookingData.service_posts?.title || bookingData.service_category || null,
         scheduled_at: bookingData.confirmed_date || bookingData.proposed_date_1 || null,
         address: bookingData.service_posts?.address ?? null,
+        // The job's real coordinates. The flatten dropped these, which left the
+        // live-location map with a single point and therefore nothing to scale
+        // against — on a device without Play Services that came out as a dot at
+        // dead centre no matter where the provider actually was.
+        job_lat:
+          typeof bookingData.service_posts?.lat === 'number'
+            ? bookingData.service_posts.lat
+            : null,
+        job_lng:
+          typeof bookingData.service_posts?.lng === 'number'
+            ? bookingData.service_posts.lng
+            : null,
       });
       setPayment(paymentData);
       setStatus('ready');
@@ -828,7 +840,15 @@ export default function BookingDetailsScreen({ route, navigation }) {
             client). Client-only: the provider reading their own dot back here
             belongs on the business Status tab, not on the customer's screen. */}
         {user?.role === 'client' && (
-          <ProviderLiveLocation bookingId={bookingId} providerName={workerName} />
+          <ProviderLiveLocation
+            bookingId={bookingId}
+            providerName={workerName}
+            destination={
+              booking?.job_lat != null && booking?.job_lng != null
+                ? { lat: booking.job_lat, lng: booking.job_lng }
+                : null
+            }
+          />
         )}
 
         {/* Live Job Status — real-time provider events, humanised (B16) */}
