@@ -29,8 +29,17 @@ export default function JobOpportunityCard({
     .filter(Boolean)
     .join(' · ');
 
+  // Pre-acceptance, the backend empties `image_urls` and sends `photo_count`
+  // instead (privacy.py mask_service_post_row, L3) — the business is told a job
+  // HAS photos without being shown the client's home before they are hired.
+  // This card only ever read `image_urls`, so the count was zero on every open
+  // post and the badge below never rendered: a client could attach photos and
+  // the business saw no sign of them at all.
+  //
+  // `photos` stays the real URLs — thumbnails must never be faked from a count.
+  // `photoCount` is what we KNOW exists, masked or not.
   const photos = Array.isArray(post.image_urls) ? post.image_urls.filter(Boolean) : [];
-  const photoCount = photos.length;
+  const photoCount = photos.length || Number(post.photo_count) || 0;
   const [viewerIndex, setViewerIndex] = useState(null);
 
   if (compact) {
@@ -129,7 +138,21 @@ export default function JobOpportunityCard({
         </View>
       ) : null}
 
-      {photoCount > 0 && (
+      {/* Masked (pre-acceptance): we know how many photos there are but not
+          what they show, so say the number. Un-masked: the thumbnails. */}
+      {photos.length === 0 && photoCount > 0 && (
+        <View
+          style={styles.photoCountRow}
+          accessibilityLabel={i18n.t('jobCard.photosLabel', { count: photoCount })}
+        >
+          <Feather name="camera" size={13} color={colors.textSecondary} />
+          <Text variant="caption" color="secondary">
+            {i18n.t('jobCard.photosLabel', { count: photoCount })}
+          </Text>
+        </View>
+      )}
+
+      {photos.length > 0 && (
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -244,6 +267,11 @@ const styles = StyleSheet.create({
   },
   photoRow: {
     gap: spacing.sm,
+  },
+  photoCountRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
   },
   photoThumb: {
     width: 64,

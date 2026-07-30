@@ -1100,21 +1100,67 @@ const acceptChargesNow = {
 };
 Object.assign(translations.en, acceptChargesNow);
 
-// ─── Payment model lock-in (AMENDMENT 1, 2026-07-26) ─────────────────────────
-// Appended as its own block for the same reason as the two above: parallel
-// lanes append to this file and a hunk in the middle of `translations`
-// conflicts with all of them. English only — enableFallback is on.
+// ── Posting takes no money — 2026-07-29 ──────────────────────────────────────
+// Appended for the same merge-conflict reason as the blocks above. English
+// only — enableFallback is on.
 //
-// Posting now charges the client's full budget in one action — "Post + Pay
-// (same button)". The review-step CTA must name that amount, and a failed
-// charge needs its own specific copy: no post is created on a decline, unlike
-// the accept-a-quote path (acceptChargesNow, above) where the booking already
-// exists and is merely left unpaid.
-const paymentModelLockin = {
-  'postJob.ctaPostAndPayAmount': 'Post & pay %{amount}',
-  'postJob.chargeDeclined': 'Your card was declined — try another card.',
+// The block above ("Post + Pay (same button)") described an intention, not the
+// build. Nothing is charged when a client posts a job: the charge-at-post
+// trigger is gated OFF in backend/app/api/service_posts.py because it cannot
+// capture without card-on-file (no matched business, no agreed price, no
+// bookings row for payments.booking_id, no saved card), and `payment_started`
+// on the create response is therefore always false. Money is collected at
+// ACCEPT, through mobile/src/services/acceptAndPay.js.
+//
+// So every string that told the client their budget was charged or held at
+// post time was false — in a payments product. These replace them. The wording
+// matches the targeted-quote branch, which was right all along: nothing is
+// charged until you accept a quote.
+//
+// The keys deliberately dropped rather than reworded, so no screen can revive
+// the old claim by referencing them: postJob.ctaPostAndPay,
+// postJob.ctaPostAndPayAmount, postJob.chargeDeclined, postJob.holdFailed.
+const postTakesNoMoney = {
+  // Review-step explainer (the lock-icon block).
+  'postJob.escrowExplainerLead': 'Nothing is charged now.',
+  'postJob.escrowExplainer':
+    'Your budget tells pros what you have to work with. You pay only when you accept a quote, and you see the exact price first.',
+
+  // Review-step CTA. No amount: naming a figure on a button is how you say
+  // "this charges it", and this one does not.
+  'postJob.ctaPost': 'Post job',
+
+  // Review-step hint. Was a hardcoded English template literal in
+  // PostJobScreen; it belongs here like its neighbours, since the app ships
+  // en / fr-CA / ar.
+  'postJob.hintOpen':
+    "Pros nearby see your job and send quotes. You're not charged until you accept one.",
+  'postJob.hintTargeted':
+    '%{business} replies with a price and time. Nothing is charged until you accept.',
+
+  // Pay sheet, mode="hold" — used only by the post-a-job flow. It is a budget
+  // review, not a checkout: it takes no money, so it no longer says it does,
+  // and PaySheet hides the "Pay with" card picker in this mode.
+  'pay.titleHold': 'Confirm your job',
+  'pay.ctaHold': 'Post job',
+  'pay.holding': 'Posting…',
+  'pay.onHoldToday': 'Your budget',
+  'pay.escrowHold':
+    'Nothing is charged now. You pay when you accept a quote, and unused budget is never taken.',
+
+  // Public business profile, third stat in the mock's row. Real completed
+  // bookings only — see _completed_bookings in backend/app/api/businesses.py.
+  'businessProfile.jobsDone': '%{count} jobs done',
 };
-Object.assign(translations.en, paymentModelLockin);
+Object.assign(translations.en, postTakesNoMoney);
+for (const key of [
+  'postJob.ctaPostAndPay',
+  'postJob.ctaPostAndPayAmount',
+  'postJob.chargeDeclined',
+  'postJob.holdFailed',
+]) {
+  delete translations.en[key];
+}
 
 const i18n = new I18n(translations);
 

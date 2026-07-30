@@ -790,12 +790,13 @@ function StepConfirm({ category, description, address, budget, date, time, photo
           </Stack>
         </Surface>
 
-        {/* Escrow explainer — #161A21 radius 16, lock icon.
-            Rendered ONLY on the open-post path. It says money is taken "when
-            you post", which is true there and FALSE in the targeted flow, where
-            the client pays only if they accept a quote in chat. It used to
-            render unconditionally and flatly contradicted the hint text forty
-            lines below it, which was correctly branched all along. */}
+        {/* Payment explainer — #161A21 radius 16, lock icon.
+            Still gated to the open-post path, because the targeted path says
+            the same thing in its own words a few lines below.
+            It used to read "We charge your budget when you post, and hold it",
+            which was false: nothing is charged at post on EITHER path (see the
+            `postTakesNoMoney` block in i18n.js). It now says what actually
+            happens — you pay when you accept a quote. */}
         {!targetBusinessName && (
           <View style={styles.escrowExplainer}>
             <Feather
@@ -837,23 +838,16 @@ function StepConfirm({ category, description, address, budget, date, time, photo
           </Stack>
         )}
 
-        {/* AMENDMENT 1 — "Post + Pay (same Button)". The CTA now NAMES the
-            amount on the open-post path, because that single tap charges the
-            client's full budget. The old rule ("no figure — the total lives in
-            the sheet") was written when posting took no money; hiding the
-            number on a button that charges is the opposite of what it was for.
-
-            The TARGETED path is unchanged and still carries no figure: there,
-            nothing is charged until the client accepts a quote in chat. */}
+        {/* The CTA carries NO amount. It briefly did ("Post & pay $160"), on
+            the theory that a button which charges must say what it charges —
+            correct rule, wrong premise: this button charges nothing. Naming a
+            figure on it is precisely how it read as a charge. Both paths now
+            describe the action they actually perform. */}
         <Button
           label={
             targetBusinessName
               ? i18n.t('postJob.ctaSendRequest')
-              : Number(budget) > 0
-                ? i18n.t('postJob.ctaPostAndPayAmount', {
-                    amount: formatMoneyShort(Number(budget)),
-                  })
-                : i18n.t('postJob.ctaPostAndPay')
+              : i18n.t('postJob.ctaPost')
           }
           loading={submitting}
           disabled={submitting}
@@ -863,10 +857,8 @@ function StepConfirm({ category, description, address, budget, date, time, photo
 
         <Text variant="caption" color="secondary" style={styles.hint}>
           {targetBusinessName
-            ? `${targetBusinessName} replies with a price and time. Nothing is charged until you accept.`
-            : Number(budget) > 0
-              ? `Your ${formatMoneyShort(Number(budget))} budget is charged now. Anything you don't spend comes back when you accept a quote — and all of it comes back if nobody takes the job.`
-              : "You'll see the total before confirming."}
+            ? i18n.t('postJob.hintTargeted', { business: targetBusinessName })
+            : i18n.t('postJob.hintOpen')}
         </Text>
       </Stack>
     </StepPanel>

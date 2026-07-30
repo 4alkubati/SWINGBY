@@ -2,40 +2,43 @@ import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import Text from './Text';
 import { colors, spacing } from '../theme/tokens';
+import { FLOW, STAGE_LABEL, ACTION_LABEL, stageIndex } from '../utils/jobStages';
 
-const STAGES = [
-  { key: 'on_the_way', label: 'On my way' },
-  { key: 'in_progress', label: 'Started' },
-  { key: 'completed', label: 'Done' },
-];
-
-function stageIndex(bookingStatus) {
-  if (bookingStatus === 'in_progress') return 1;
-  if (bookingStatus === 'completed') return 2;
-  return 0;
-}
-
-export default function StatusTracker({ bookingStatus, onAdvance }) {
-  const current = stageIndex(bookingStatus);
-  const isComplete = bookingStatus === 'completed';
+/**
+ * The JOB STATUS tracker.
+ *
+ * Driven by the booking's EVENTS, not by `booking.status`. It used to read
+ * `booking.status` and map it onto its own three-stage list whose first key,
+ * `on_the_way`, was not a booking status at all — while the tap it offered
+ * posted an `en_route` event. Reading one thing and writing another meant the
+ * tracker never advanced, stayed tappable on stage 0 forever, and appended a
+ * duplicate event on every tap. That is where the three "On the way" rows in
+ * the 2026-07-29 walkthrough came from.
+ *
+ * `events` is the caller's array from GET /bookings/{id}/events — the same one
+ * the timeline and the action button render, fetched once by the screen.
+ */
+export default function StatusTracker({ events, onAdvance, disabled = false }) {
+  const current = stageIndex(events); // -1 before the first event
+  const isComplete = current === FLOW.length - 1;
+  const nextIndex = current + 1;
+  const canAdvance = !disabled && !isComplete;
 
   function handleTap(index) {
-    if (index === current + 1 && !isComplete) {
-      onAdvance(STAGES[index].key);
-    }
+    if (index === nextIndex && canAdvance) onAdvance?.(FLOW[index]);
   }
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>JOB STATUS</Text>
       <View style={styles.track}>
-        {STAGES.map((stage, index) => {
+        {FLOW.map((stage, index) => {
           const isPast = index < current;
           const isActive = index === current;
-          const isNext = index === current + 1;
+          const isNext = index === nextIndex;
 
           return (
-            <View key={stage.key} style={styles.stageWrapper}>
+            <View key={stage} style={styles.stageWrapper}>
               {index > 0 && (
                 <View style={[styles.connector, isPast && styles.connectorDone]} />
               )}
@@ -44,10 +47,16 @@ export default function StatusTracker({ bookingStatus, onAdvance }) {
                   styles.stage,
                   isPast && styles.stageDone,
                   isActive && styles.stageActive,
-                  isNext && !isComplete && styles.stageNext,
+                  isNext && canAdvance && styles.stageNext,
                 ]}
                 onPress={() => handleTap(index)}
-                activeOpacity={isNext && !isComplete ? 0.8 : 1}
+                disabled={!(isNext && canAdvance)}
+                accessibilityRole="button"
+                accessibilityState={{
+                  disabled: !(isNext && canAdvance),
+                  selected: isActive,
+                }}
+                activeOpacity={isNext && canAdvance ? 0.8 : 1}
               >
                 {isPast && (
                   <Feather name="check" size={11} color={colors.accentText} strokeWidth={2.6} />
@@ -57,17 +66,17 @@ export default function StatusTracker({ bookingStatus, onAdvance }) {
                   isPast && styles.stageLabelDone,
                   isActive && styles.stageLabelActive,
                 ]}>
-                  {stage.label}
+                  {STAGE_LABEL[stage]}
                 </Text>
               </TouchableOpacity>
             </View>
           );
         })}
       </View>
-      {!isComplete && current < 2 && (
+      {canAdvance && (
         <View style={styles.hintRow}>
           <Text style={styles.hint}>
-            Tap "{STAGES[current + 1]?.label}" to advance
+            Tap "{STAGE_LABEL[FLOW[nextIndex]]}" — {ACTION_LABEL[FLOW[nextIndex]]}
           </Text>
           <Feather name="arrow-right" size={12} color={colors.textTertiary} strokeWidth={2} />
         </View>
@@ -116,13 +125,15 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: 10,
-    paddingHorizontal: 10,
+    paddingHorizontal: 8,
     paddingVertical: 8,
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
     gap: 4,
-    minWidth: 82,
+    // Four stages share this row now, not three — the tracker speaks the same
+    // vocabulary as the timeline, which always had `arrived`.
+    minWidth: 60,
   },
   stageDone: {
     backgroundColor: colors.accentMuted,

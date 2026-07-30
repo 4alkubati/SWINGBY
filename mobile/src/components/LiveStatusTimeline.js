@@ -1,15 +1,11 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React from 'react';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 
-import { api } from '../services/api';
 import Text from './Text';
 import Stack from './Stack';
 import Inline from './Inline';
-import Surface from './Surface';
-import { colors, spacing, radius } from '../theme/tokens';
-
-const POLL_MS = 8000;
+import { colors, spacing } from '../theme/tokens';
 
 // AUDIT B16 — the two entries below (`dates_proposed`, `date_confirmed`) were
 // missing, so this timeline printed the raw enum `date_confirmed` straight to a
@@ -66,69 +62,44 @@ function formatTime(iso) {
   }
 }
 
-export default function LiveStatusTimeline({ bookingId, pollMs = POLL_MS }) {
-  const [events, setEvents] = useState([]);
-  const [status, setStatus] = useState('loading');
-  const mounted = useRef(true);
-
-  const load = useCallback(async () => {
-    try {
-      const res = await api.get(`/bookings/${bookingId}/events`);
-      if (!mounted.current) return;
-      setEvents(res.items || []);
-      setStatus('ready');
-    } catch {
-      if (!mounted.current) return;
-      setStatus((prev) => (prev === 'ready' ? 'ready' : 'error'));
-    }
-  }, [bookingId]);
-
-  useEffect(() => {
-    mounted.current = true;
-    load();
-    const id = setInterval(load, pollMs);
-    return () => {
-      mounted.current = false;
-      clearInterval(id);
-    };
-  }, [load, pollMs]);
-
+/**
+ * The event timeline.
+ *
+ * CONTROLLED, and headless. It used to poll GET /bookings/{id}/events into its
+ * own state while LiveStatusActions fetched the same endpoint into a second
+ * copy, and both drew a card headed "Live status" — so the business booking
+ * screen showed that heading twice, over two views that could disagree. The
+ * screen owns the fetch and the polling now, and owns the single heading; this
+ * renders rows.
+ *
+ * `status` is the caller's load state: 'loading' | 'ready' | 'error'.
+ */
+export default function LiveStatusTimeline({ events = [], status = 'ready' }) {
   if (status === 'loading') {
     return (
-      <Surface elevation="subtle" rounded="card" padding="base">
-        <Inline justify="center" spacing="sm">
-          <ActivityIndicator size="small" color={colors.accent} />
-          <Text variant="small" color="secondary">Loading status…</Text>
-        </Inline>
-      </Surface>
+      <Inline justify="center" spacing="sm">
+        <ActivityIndicator size="small" color={colors.accent} />
+        <Text variant="small" color="secondary">Loading status…</Text>
+      </Inline>
     );
   }
 
-  if (status === 'error') {
+  if (status === 'error' && !events.length) {
     return (
-      <Surface elevation="subtle" rounded="card" padding="base">
-        <Text variant="small" color="secondary">Could not load live status.</Text>
-      </Surface>
+      <Text variant="small" color="secondary">Could not load live status.</Text>
     );
   }
 
   if (!events.length) {
     return (
-      <Surface elevation="subtle" rounded="card" padding="base">
-        <Stack spacing="xs">
-          <Text variant="bodyMedium">Live status</Text>
-          <Text variant="small" color="secondary">
-            Updates will appear here when the provider starts the job.
-          </Text>
-        </Stack>
-      </Surface>
+      <Text variant="small" color="secondary">
+        Updates will appear here when the job starts moving.
+      </Text>
     );
   }
 
   return (
-    <Surface elevation="subtle" rounded="card" padding="base">
       <Stack spacing="sm">
-        <Text variant="bodyMedium">Live status</Text>
         {events.map((ev, i) => {
           const meta = COPY[ev.event_type] || {
             icon: 'circle',
@@ -156,7 +127,6 @@ export default function LiveStatusTimeline({ bookingId, pollMs = POLL_MS }) {
           );
         })}
       </Stack>
-    </Surface>
   );
 }
 

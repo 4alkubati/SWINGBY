@@ -62,6 +62,19 @@ class CreateEvent(BaseModel):
     lng: Optional[float] = Field(None, ge=-180, le=180)
 
 
+# The stages that describe where a job IS. Re-posting the stage a booking is
+# already on says nothing new, so it collapses onto the existing row (see
+# `_latest_stage_event`). The rest are moments, not stages: `paused` /
+# `resumed` legitimately repeat, and `dates_proposed` repeats every time a new
+# set of times is offered.
+_STAGE_EVENT_TYPES = {
+    "en_route",
+    "arrived",
+    "started",
+    "completed",
+}
+
+
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
 
@@ -141,6 +154,33 @@ def _is_provider(booking: dict, current_user: dict) -> bool:
     return False
 
 
+def _latest_stage_event(booking_id: str) -> Optional[dict]:
+    """The most recent stage event on a booking, or None.
+
+    Ordered by ``created_at`` like the list endpoint, so "current stage" means
+    the same thing to the guard and to the timeline the provider is looking at.
+    A read failure returns None: the guard is a de-duplicator, not an
+    authorisation check, and it must never be the reason a real update is lost.
+    """
+    try:
+        res = (
+            supabase.table("booking_events")
+            .select("*")
+            .eq("booking_id", booking_id)
+            .in_("event_type", sorted(_STAGE_EVENT_TYPES))
+            .order("created_at", desc=True)
+            .limit(1)
+            .execute()
+        )
+        rows = res.data or []
+        return rows[0] if rows else None
+    except Exception:
+        logger.warning(
+            "could not read latest stage event for booking %s", booking_id, exc_info=True
+        )
+        return None
+
+
 # ── Endpoints ────────────────────────────────────────────────────────────────
 
 
@@ -163,6 +203,23 @@ def create_event(
             status_code=403,
             detail="Only the assigned business owner or employee can post job-status events",
         )
+
+    # Idempotency on the stage events. A booking's timeline came back from the
+    # 2026-07-29 walkthrough with three consecutive "On the way" rows, because
+    # two different controls on the business booking screen both posted
+    # `en_route` and neither could tell the stage had already been reached.
+    # The UI side of that is fixed, but an append-only trust spine must not
+    # depend on the UI to stay coherent: re-posting the stage the job is
+    # already on is a no-op that returns the row that already exists.
+    if data.event_type in _STAGE_EVENT_TYPES:
+        existing = _latest_stage_event(booking_id)
+        if existing and existing.get("event_type") == data.event_type:
+            logger.info(
+                "booking_event %s for booking %s collapsed — already the current stage",
+                data.event_type,
+                booking_id,
+            )
+            return existing
 
     payload = {
         "booking_id": booking_id,
