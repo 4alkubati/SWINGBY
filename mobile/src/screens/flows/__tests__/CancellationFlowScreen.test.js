@@ -61,3 +61,60 @@ describe('client cancellation penalty matches the server ladder', () => {
     expect(computePenalty(iso(5), 'abc', NOW).amount).toBe(0);
   });
 });
+
+// ─── business side ────────────────────────────────────────────────────────────
+// The BUSINESS-cancel column of the same ladder (escrow.py, `actor ==
+// "business"`). Until 2026-07-30 nothing in the app could reach this half: the
+// flow was client-only and CancellationFlow was not registered in
+// BusinessNavigator, so every business penalty and every goodwill credit in the
+// published Terms was unreachable. Same tiers as the client column, but the
+// meaning is inverted — the client is always made whole and the percentage is
+// charged AGAINST the provider.
+describe('business cancellation matches the server ladder', () => {
+  const biz = (hours, price = 200) => computePenalty(iso(hours), price, NOW, 'business');
+
+  it('refunds the client in full at every tier', () => {
+    for (const hours of [72, 5, -2]) {
+      expect(biz(hours).clientRefund).toBe(200);
+    }
+    expect(computePenalty(null, 200, NOW, 'business').clientRefund).toBe(200);
+  });
+
+  it('charges the business nothing more than 48h out', () => {
+    expect(biz(72)).toMatchObject({ timing: 'early', pct: 0, amount: 0, credit: 0 });
+  });
+
+  it('charges the business 25% inside 48h, plus a goodwill credit', () => {
+    expect(biz(5)).toMatchObject({ timing: 'late', pct: 0.25, amount: 50, credit: 25 });
+  });
+
+  it('charges the business 50% after the date has passed, plus a credit', () => {
+    expect(biz(-2)).toMatchObject({ timing: 'no_show', pct: 0.5, amount: 100, credit: 25 });
+  });
+
+  it('charges nothing when no date was ever confirmed', () => {
+    expect(computePenalty(null, 200, NOW, 'business')).toMatchObject({
+      pct: 0,
+      amount: 0,
+      credit: 0,
+    });
+  });
+
+  it('never grants a goodwill credit on a CLIENT cancel', () => {
+    // The credit exists to compensate a client let down by a provider. A client
+    // who cancels on themselves is not owed one.
+    for (const hours of [72, 5, -2]) {
+      expect(computePenalty(iso(hours), 200, NOW, 'client').credit).toBe(0);
+    }
+  });
+
+  it('defaults to the client ladder when no actor is given', () => {
+    // Every existing caller omits the argument; defaulting to 'business' would
+    // silently quote the wrong figures to clients.
+    expect(computePenalty(iso(5), 200, NOW)).toMatchObject({ pct: 0.25, credit: 0 });
+  });
+
+  it('leaves the client keeping the remainder on a client cancel', () => {
+    expect(computePenalty(iso(5), 200, NOW, 'client').clientRefund).toBe(150);
+  });
+});

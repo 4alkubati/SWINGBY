@@ -272,10 +272,20 @@ describe('BookingDetailsScreen does not invite a second charge', () => {
   });
 });
 
-describe('BookingDetailsScreen does not show a cancel button that goes nowhere', () => {
-  // CancellationFlow is registered in ClientNavigator only, and its copy is
-  // written from the client's side. `canCancel` had no role gate, so a business
-  // user on a confirmed booking saw "Cancel booking" and tapping it did nothing.
+describe('BookingDetailsScreen offers cancel to whoever can actually cancel', () => {
+  // These two cases were INVERTED until 2026-07-30, and correctly so at the time:
+  // CancellationFlow was registered in ClientNavigator only and its copy quoted
+  // the client's fee, so showing a business the button would have sent it to a
+  // route its navigator had never heard of, or described the wrong party's money.
+  // Hiding it was the honest option while that was true.
+  //
+  // It is no longer true. The flow reads the actor from the session and shows the
+  // provider its own half of the ladder, and it is registered in
+  // BusinessNavigator. The backend always allowed either side to cancel —
+  // cancel_booking derives the actor from the caller's role and refuses only
+  // completed/cancelled — so hiding it was suppressing half of the published
+  // cancellation ladder, including every business penalty and the client's
+  // goodwill credit.
   it('shows "Cancel booking" to the client on a confirmed booking', async () => {
     mockUser = CLIENT_USER;
     const { queryByText } = openOverflow(
@@ -284,20 +294,20 @@ describe('BookingDetailsScreen does not show a cancel button that goes nowhere',
     expect(queryByText('Cancel booking')).not.toBeNull();
   });
 
-  it('hides "Cancel booking" from a business user on the same booking', async () => {
+  it('shows it to a business user on the same booking', async () => {
     mockUser = OWNER_USER;
     const { queryByText } = openOverflow(
       await renderWithPayment({ status: 'pending_payment', total_charged: 200 }),
     );
-    expect(queryByText('Cancel booking')).toBeNull();
+    expect(queryByText('Cancel booking')).not.toBeNull();
   });
 
-  it('hides "Cancel booking" from an employee too', async () => {
+  it('shows it to an employee too', async () => {
     mockUser = { id: 'u3', role: 'employee', first_name: 'Emp', last_name: 'Loyee' };
     const { queryByText } = openOverflow(
       await renderWithPayment({ status: 'pending_payment', total_charged: 200 }),
     );
-    expect(queryByText('Cancel booking')).toBeNull();
+    expect(queryByText('Cancel booking')).not.toBeNull();
   });
 
   it('still hides it from the client once the job is no longer cancellable', async () => {

@@ -27,6 +27,10 @@ import BookingDetailsScreen from '../screens/client/BookingDetailsScreen';
 import MessageThreadScreen from '../screens/messages/MessageThreadScreen';
 import PaymentMethodScreen from '../screens/profile/PaymentMethodScreen';
 import DisputeFlowScreen from '../screens/flows/DisputeFlowScreen';
+// Registered for businesses as of 2026-07-30. It was client-only, so the whole
+// business half of the cancellation ladder was unreachable — the screen is
+// role-aware now and shows the provider its own penalty, not the client's fee.
+import CancellationFlowScreen from '../screens/flows/CancellationFlowScreen';
 import InvoiceScreen from '../screens/shared/InvoiceScreen';
 import BusinessInvoicesScreen from '../screens/business/BusinessInvoicesScreen';
 import ProfileEditScreen from '../screens/profile/ProfileEditScreen';
@@ -116,6 +120,7 @@ export default function BusinessNavigator() {
       <Stack.Screen name="MessageThread" component={MessageThreadScreen} options={{ headerShown: false }} />
       <Stack.Screen name="PaymentMethod" component={PaymentMethodScreen} />
       <Stack.Screen name="DisputeFlow" component={DisputeFlowScreen} />
+      <Stack.Screen name="CancellationFlow" component={CancellationFlowScreen} />
       <Stack.Screen name="Invoice" component={InvoiceScreen} options={{ headerShown: false }} />
       <Stack.Screen name="BusinessInvoices" component={BusinessInvoicesScreen} />
       {/* LANE 5 — proof of work. Entered from a job the business is finishing;

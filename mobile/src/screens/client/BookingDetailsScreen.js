@@ -741,16 +741,16 @@ export default function BookingDetailsScreen({ route, navigation }) {
   const workerJobs = worker.job_count ?? worker.review_count ?? 0;
 
   const payPill = paymentPillStyle(booking?.payment_status);
-  // Clients only. CancellationFlow is registered in ClientNavigator alone, and
-  // its copy is written from the client's side ("you may be charged a
-  // cancellation fee"), so a business user tapping this hit a route their
-  // navigator has never heard of — the button simply did nothing.
+  // Both sides now. This was clients-only because CancellationFlow lived in
+  // ClientNavigator and its copy quoted the client's fee — pointing a business at
+  // it would have described the wrong party's money, so the button was hidden
+  // rather than made to lie.
   //
-  // Registering the route for businesses would be the wrong fix: the screen
-  // would quote the client penalty ladder to the wrong party. The backend does
-  // allow either side to cancel, so a business-side cancel path is a real gap —
-  // but it needs its own flow and its own copy, which is a product decision.
-  // Until that exists, don't show a button that goes nowhere.
+  // Resolved 2026-07-30: the flow reads the actor from the session and shows the
+  // provider its own half of the ladder (client refunded in full, penalty against
+  // the business, goodwill credit to the client), and it is registered in
+  // BusinessNavigator. The backend always permitted it — cancel_booking derives
+  // the actor from the caller's role and refuses only completed/cancelled.
   // `in_progress` HAS to be here, and `on_the_way` never did.
   //
   // 'on_the_way' is not a bookings.status — nothing in the backend ever writes
@@ -769,8 +769,7 @@ export default function BookingDetailsScreen({ route, navigation }) {
   // `in_progress` does not mean someone is mid-job here; it means the date is
   // agreed. Cancelling that is exactly what the ladder is for. The backend
   // already allows it — cancel_booking only refuses 'completed' and 'cancelled'.
-  const canCancel =
-    user?.role === 'client' && ['confirmed', 'in_progress'].includes(booking?.status);
+  const canCancel = ['confirmed', 'in_progress'].includes(booking?.status);
 
   // B15 — earned, not elapsed.
   const timelineStage = stageFromEvents(events, booking?.status);

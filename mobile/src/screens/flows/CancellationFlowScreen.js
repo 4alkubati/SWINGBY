@@ -19,11 +19,24 @@ import * as toast from '../../services/toast';
 import * as haptics from '../../services/haptics';
 import { colors, spacing, radius } from '../../theme/tokens';
 import Text from '../../components/Text';
+import { useAuth } from '../../context/AuthContext';
 
-const REASONS = [
+const CLIENT_REASONS = [
   'Schedule conflict',
   'Found another provider',
   'No longer needed',
+  'Other',
+];
+
+// A business is not "no longer needing" its own job. These are the reasons a
+// provider actually pulls out, and the reason string lands on the cancellations
+// row, so it is also what anyone reviewing a pattern of cancellations will read.
+const BUSINESS_REASONS = [
+  'Schedule conflict',
+  'Short-staffed',
+  'Job is outside what we do',
+  'Cannot reach the client',
+  'Equipment or supply problem',
   'Other',
 ];
 
@@ -42,6 +55,17 @@ const REASONS = [
 // at EVERY tier — it showed a 25% fee to clients who were owed a full refund.
 export const CLIENT_CANCEL_PCT = { no_date: 0, early: 0, late: 0.25, no_show: 0.5 };
 
+// The BUSINESS side of the same ladder (escrow.py compute_cancellation_split,
+// `actor == "business"`). Same tiers, entirely different meaning: the client is
+// always made whole, and the percentage is a penalty charged AGAINST the business
+// rather than a fee it collects. Late and no-show also hand the client a goodwill
+// credit (credits.GOODWILL_CREDIT_CENTS = 2500).
+//
+// This is why the business could not simply be pointed at this screen as it was:
+// every figure and every sentence would have described the wrong party's money.
+export const BUSINESS_CANCEL_PCT = { no_date: 0, early: 0, late: 0.25, no_show: 0.5 };
+export const GOODWILL_CREDIT = 25;
+
 export function classifyTiming(scheduledDateISO, now = Date.now()) {
   if (!scheduledDateISO) return 'no_date';
   const t = new Date(scheduledDateISO).getTime();
@@ -52,11 +76,25 @@ export function classifyTiming(scheduledDateISO, now = Date.now()) {
   return 'early';
 }
 
-export function computePenalty(scheduledDateISO, quotedPrice, now = Date.now()) {
+export function computePenalty(
+  scheduledDateISO,
+  quotedPrice,
+  now = Date.now(),
+  actor = 'client'
+) {
   const price = parseFloat(quotedPrice) || 0;
   const timing = classifyTiming(scheduledDateISO, now);
-  const pct = CLIENT_CANCEL_PCT[timing];
-  return { timing, pct, amount: parseFloat((price * pct).toFixed(2)) };
+  const isBusiness = actor === 'business';
+  const pct = (isBusiness ? BUSINESS_CANCEL_PCT : CLIENT_CANCEL_PCT)[timing];
+  return {
+    timing,
+    pct,
+    amount: parseFloat((price * pct).toFixed(2)),
+    // A business cancel always refunds the client in full; a client cancel
+    // refunds whatever the fee does not consume.
+    clientRefund: parseFloat((isBusiness ? price : price * (1 - pct)).toFixed(2)),
+    credit: isBusiness && (timing === 'late' || timing === 'no_show') ? GOODWILL_CREDIT : 0,
+  };
 }
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
@@ -64,9 +102,17 @@ export default function CancellationFlowScreen({ route, navigation }) {
   const insets = useSafeAreaInsets();
   const { bookingId, scheduledDate, quotedPrice = 0 } = route.params ?? {};
 
-  const { pct, amount, timing } = useMemo(
-    () => computePenalty(scheduledDate, quotedPrice),
-    [scheduledDate, quotedPrice]
+  // Who is cancelling decides which half of the ladder applies, so the role is
+  // read from the session rather than passed in — a caller that forgot the param
+  // would quietly show a business the client's fee.
+  const { user } = useAuth();
+  const isBusiness = user?.role === 'business_owner' || user?.role === 'employee';
+  const actor = isBusiness ? 'business' : 'client';
+  const reasons = isBusiness ? BUSINESS_REASONS : CLIENT_REASONS;
+
+  const { pct, amount, timing, clientRefund, credit } = useMemo(
+    () => computePenalty(scheduledDate, quotedPrice, Date.now(), actor),
+    [scheduledDate, quotedPrice, actor]
   );
 
   const [reason, setReason] = useState('');
@@ -92,9 +138,13 @@ export default function CancellationFlowScreen({ route, navigation }) {
       toast.show({
         type: 'info',
         text1: 'Booking cancelled',
-        text2: finalAmount > 0
-          ? `A $${finalAmount.toFixed(2)} fee applies.`
-          : 'You will be refunded in full.',
+        text2: isBusiness
+          ? finalAmount > 0
+            ? `The client is refunded in full. A $${finalAmount.toFixed(2)} penalty applies to you.`
+            : 'The client is refunded in full. No penalty applies.'
+          : finalAmount > 0
+            ? `A $${finalAmount.toFixed(2)} fee applies.`
+            : 'You will be refunded in full.',
       });
       navigation.popToTop();
     } catch (err) {
@@ -135,25 +185,41 @@ export default function CancellationFlowScreen({ route, navigation }) {
             This action cannot be undone.
           </Text>
 
-          {/* Penalty card — dominant focal point */}
+          {/* Penalty card — dominant focal point. Every figure on it belongs to a
+              different party depending on who is cancelling, so nothing here is
+              shared between the two branches except the layout. */}
           <View style={styles.penaltyCard}>
-            <Text style={styles.penaltyLabel}>Cancellation Fee</Text>
+            <Text style={styles.penaltyLabel}>
+              {isBusiness ? 'Penalty To You' : 'Cancellation Fee'}
+            </Text>
             <Text style={styles.penaltyAmount}>${amount.toFixed(2)}</Text>
             <Text style={styles.penaltyDesc}>
-              {pct === 0
-                ? `You'll be refunded the full $${parseFloat(quotedPrice || 0).toFixed(2)}. No cancellation fee applies.`
-                : `${(pct * 100).toFixed(0)}% of your $${parseFloat(quotedPrice || 0).toFixed(2)} booking will be charged as a cancellation fee.`}
+              {isBusiness
+                ? pct === 0
+                  ? `The client is refunded the full $${clientRefund.toFixed(2)}. No penalty applies to you.`
+                  : `The client is refunded the full $${clientRefund.toFixed(2)}. ${(pct * 100).toFixed(0)}% of the $${parseFloat(quotedPrice || 0).toFixed(2)} job is charged to you${credit > 0 ? `, and they receive a $${credit.toFixed(2)} credit for the late notice` : ''}.`
+                : pct === 0
+                  ? `You'll be refunded the full $${parseFloat(quotedPrice || 0).toFixed(2)}. No cancellation fee applies.`
+                  : `${(pct * 100).toFixed(0)}% of your $${parseFloat(quotedPrice || 0).toFixed(2)} booking will be charged as a cancellation fee.`}
             </Text>
             <View style={styles.penaltyTip}>
               <Feather name="info" size={13} color={colors.accentText} strokeWidth={1.8} />
               <Text style={styles.penaltyTipText}>
-                {timing === 'no_show'
-                  ? 'The scheduled time has already passed — 50% fee applies.'
-                  : timing === 'late'
-                    ? 'Within 48h of your booking — 25% fee applies.'
-                    : timing === 'early'
-                      ? 'More than 48h away — free cancellation, full refund.'
-                      : 'No date confirmed yet — free cancellation, full refund.'}
+                {isBusiness
+                  ? timing === 'no_show'
+                    ? 'The scheduled time has already passed — 50% penalty, and it affects your standing.'
+                    : timing === 'late'
+                      ? 'Within 48h of the job — 25% penalty. Cancelling this late costs the client their plans.'
+                      : timing === 'early'
+                        ? 'More than 48h away — no penalty. Telling them early is the right call.'
+                        : 'No date confirmed yet — no penalty.'
+                  : timing === 'no_show'
+                    ? 'The scheduled time has already passed — 50% fee applies.'
+                    : timing === 'late'
+                      ? 'Within 48h of your booking — 25% fee applies.'
+                      : timing === 'early'
+                        ? 'More than 48h away — free cancellation, full refund.'
+                        : 'No date confirmed yet — free cancellation, full refund.'}
               </Text>
             </View>
           </View>
@@ -161,7 +227,7 @@ export default function CancellationFlowScreen({ route, navigation }) {
           {/* Reason */}
           <Text style={styles.sectionLabel}>Reason for cancellation *</Text>
           <View style={styles.reasonList}>
-            {REASONS.map((r) => (
+            {reasons.map((r) => (
               <TouchableOpacity
                 key={r}
                 style={[styles.reasonRow, reason === r && styles.reasonRowActive]}

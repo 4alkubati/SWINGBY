@@ -570,6 +570,28 @@ function JobDetailScreen({ navigation, route }) {
                   onPress={() => navigation.navigate('DisputeFlow', { bookingId: booking.id })}
                   showChevron
                 />
+                {/* The business could not cancel AT ALL until 2026-07-30 — the
+                    route was registered only in ClientNavigator, so every
+                    business-side rung of the published cancellation ladder
+                    (penalty + the client's goodwill credit) was unreachable and a
+                    provider who genuinely could not make it had to phone. The
+                    backend always allowed it: cancel_booking derives the actor
+                    from the caller's role and refuses only completed/cancelled. */}
+                {!isDone && booking.status !== 'cancelled' && (
+                  <ListItem
+                    title="Cancel this job"
+                    subtitle="The client is refunded in full; a penalty may apply to you"
+                    left={<Feather name="x-circle" size={16} color={colors.danger} strokeWidth={2} />}
+                    onPress={() =>
+                      navigation.navigate('CancellationFlow', {
+                        bookingId: booking.id,
+                        scheduledDate: booking.confirmed_date || booking.proposed_date_1,
+                        quotedPrice: booking.total_amount,
+                      })
+                    }
+                    showChevron
+                  />
+                )}
               </Stack>
             </Stack>
           )}
