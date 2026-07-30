@@ -34,9 +34,14 @@ const BOOKING_STATUS = {
   cancelled:   { label: 'Cancelled',   tone: 'muted' },
 };
 const POST_STATUS = {
-  open:    { label: 'Awaiting quotes', tone: 'accent' },
-  matched: { label: 'Matched',         tone: 'success' },
-  expired: { label: 'Expired',         tone: 'muted' },
+  open:      { label: 'Awaiting quotes', tone: 'accent' },
+  matched:   { label: 'Matched',         tone: 'success' },
+  expired:   { label: 'Expired',         tone: 'muted' },
+  // `DELETE /service-posts/{id}` is a SOFT delete — it sets status='cancelled'
+  // (service_posts.py:567), it does not remove the row. Without this key the
+  // lookup below fell through to POST_STATUS.open, so a cancelled post was one
+  // render away from announcing itself as "Awaiting quotes".
+  cancelled: { label: 'Cancelled',       tone: 'muted' },
 };
 const INTEREST_STATUS = {
   pending:  { label: 'Pending',  tone: 'accent' },
@@ -55,6 +60,20 @@ const CATEGORY_ICON = {
 function shortDate(value) {
   if (!value) return null;
   return new Date(value).toLocaleDateString('en-CA', { month: 'short', day: 'numeric' });
+}
+
+// Sort keys for the mixed Past list. Always a finite number: `new Date(undefined)`
+// gives NaN, and a NaN comparator silently leaves the list in arbitrary order
+// rather than failing loudly.
+function millis(value) {
+  const t = value ? new Date(value).getTime() : NaN;
+  return Number.isFinite(t) ? t : 0;
+}
+function bookingSortTime(b) {
+  return millis(b.confirmed_date || b.proposed_date_1 || b.created_at);
+}
+function postSortTime(p) {
+  return millis(p.expires_at || p.created_at);
 }
 
 // ─── Shared row anatomy ───────────────────────────────────────────────────────
@@ -413,8 +432,28 @@ export default function MyJobsScreen({ navigation }) {
   const active = bookings.filter((b) => b.status === 'confirmed' || b.status === 'in_progress');
   const past = bookings.filter((b) => b.status === 'completed' || b.status === 'cancelled');
   const openPosts = posts.filter((p) => p.status === 'open' || p.status === 'matched');
+  // An expired post used to fall out of this screen entirely: `openPosts` keeps
+  // only open/matched, and the Past tab listed bookings only — so a job the
+  // client PAID for (charge-at-post bills the whole budget up front) simply
+  // vanished seven days later with nothing anywhere to say why. The giveaway was
+  // POST_STATUS.expired: a label defined in this file that no code path could
+  // ever render. It belongs in Past, next to the other things that are over.
+  //
+  // Deleted posts are deliberately NOT resurfaced here. `cancelled` means the
+  // client pressed Delete, and something you deleted should stay gone.
+  const expiredPosts = posts.filter((p) => p.status === 'expired');
   const showingQuotes = tab === 'quotes' && !isClient;
-  const shownBookings = tab === 'active' ? active : past;
+
+  // The Past tab is heterogeneous now, so rows carry their own kind rather than
+  // being inferred from shape at render time.
+  const pastItems = [
+    ...past.map((b) => ({ kind: 'booking', id: b.id, at: bookingSortTime(b), data: b })),
+    ...expiredPosts.map((p) => ({ kind: 'post', id: p.id, at: postSortTime(p), data: p })),
+  ].sort((a, b) => b.at - a.at);
+
+  const shownItems = tab === 'active'
+    ? active.map((b) => ({ kind: 'booking', id: b.id, at: bookingSortTime(b), data: b }))
+    : pastItems;
 
   function handleBookingPress(booking) {
     if (isClient) {
@@ -496,9 +535,11 @@ export default function MyJobsScreen({ navigation }) {
   }
 
   const tabKeys = isClient ? ['active', 'past'] : ['active', 'past', 'quotes'];
+  // Counts the expired posts too, or the badge would contradict the list.
+  const pastCount = pastItems.length;
   const tabLabels = isClient
-    ? [`Active (${active.length})`, `Past (${past.length})`]
-    : [`Active (${active.length})`, `Past (${past.length})`, `Quotes (${quotes.length})`];
+    ? [`Active (${active.length})`, `Past (${pastCount})`]
+    : [`Active (${active.length})`, `Past (${pastCount})`, `Quotes (${quotes.length})`];
 
   // Everything above the list rows lives in the FlatList header so the whole
   // screen is one scroll surface — no more content trapped off-screen.
@@ -596,8 +637,8 @@ export default function MyJobsScreen({ navigation }) {
         />
       ) : (
         <FlatList
-          data={shownBookings}
-          keyExtractor={(b) => b.id}
+          data={shownItems}
+          keyExtractor={(it) => `${it.kind}:${it.id}`}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.list}
           ListHeaderComponent={ListHeader}
@@ -609,45 +650,53 @@ export default function MyJobsScreen({ navigation }) {
               body={
                 tab === 'active'
                   ? 'Book a service or post a job to get started.'
-                  : 'Completed and cancelled jobs will appear here.'
+                  : 'Completed and cancelled jobs will appear here, along with posts that expired.'
               }
             />
           }
-          renderItem={({ item }) => (
-            <BookingRow
-              booking={item}
-              userRole={user?.role}
-              onPress={() => handleBookingPress(item)}
-              onDetails={isClient ? () => navigation.navigate('BookingDetails', { bookingId: item.id }) : undefined}
-              // Same route + params as the business side's Past tab, so one
-              // InvoiceScreen serves both halves of the marketplace.
-              onInvoice={() => navigation.navigate('Invoice', { bookingId: item.id })}
-              onRebook={isClient ? () =>
-                navigation.navigate('PostJob', {
-                  rebookBusinessId: item.business_id,
-                  rebookBusinessName: item.businesses?.business_name,
-                  rebookCategory: item.service_category,
-                  rebookAddress: item.service_posts?.address,
-                  rebookBudget: item.total_amount,
-                }) : undefined
-              }
-              onReview={isClient ? () =>
-                navigation.navigate('Review', {
-                  bookingId: item.id,
-                  workerId: item.employee_id || item.business_id,
-                  workerName:
-                    [item.employees?.users?.first_name, item.employees?.users?.last_name]
-                      .filter(Boolean).join(' ')
-                    || item.businesses?.business_name
-                    || 'Provider',
-                  // Who you are reviewing decides the mark: an employee is a
-                  // person, otherwise you are rating the company itself.
-                  isBusiness: !item.employees?.users,
-                  businessLogo: item.businesses?.logo_url || null,
-                }) : undefined
-              }
-            />
-          )}
+          renderItem={({ item }) => {
+            // An expired post gets no actions: PostRow gates every one of them on
+            // isOpen/isMatched, so this reads as a record of what happened rather
+            // than offering a button that cannot work on a dead post.
+            if (item.kind === 'post') return <PostRow post={item.data} />;
+
+            const booking = item.data;
+            return (
+              <BookingRow
+                booking={booking}
+                userRole={user?.role}
+                onPress={() => handleBookingPress(booking)}
+                onDetails={isClient ? () => navigation.navigate('BookingDetails', { bookingId: booking.id }) : undefined}
+                // Same route + params as the business side's Past tab, so one
+                // InvoiceScreen serves both halves of the marketplace.
+                onInvoice={() => navigation.navigate('Invoice', { bookingId: booking.id })}
+                onRebook={isClient ? () =>
+                  navigation.navigate('PostJob', {
+                    rebookBusinessId: booking.business_id,
+                    rebookBusinessName: booking.businesses?.business_name,
+                    rebookCategory: booking.service_category,
+                    rebookAddress: booking.service_posts?.address,
+                    rebookBudget: booking.total_amount,
+                  }) : undefined
+                }
+                onReview={isClient ? () =>
+                  navigation.navigate('Review', {
+                    bookingId: booking.id,
+                    workerId: booking.employee_id || booking.business_id,
+                    workerName:
+                      [booking.employees?.users?.first_name, booking.employees?.users?.last_name]
+                        .filter(Boolean).join(' ')
+                      || booking.businesses?.business_name
+                      || 'Provider',
+                    // Who you are reviewing decides the mark: an employee is a
+                    // person, otherwise you are rating the company itself.
+                    isBusiness: !booking.employees?.users,
+                    businessLogo: booking.businesses?.logo_url || null,
+                  }) : undefined
+                }
+              />
+            );
+          }}
         />
       )}
 

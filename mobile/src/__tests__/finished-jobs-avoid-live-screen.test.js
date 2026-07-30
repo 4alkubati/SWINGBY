@@ -62,6 +62,51 @@ describe('My Jobs routes finished bookings away from live tracking', () => {
   });
 });
 
+describe('an expired post survives into the Past tab', () => {
+  const src = code(read('screens/client/MyJobsScreen.js'));
+
+  // Charge-at-post bills the client's WHOLE budget the moment they post. When
+  // nobody quotes, expiry_sweep.py settles the money — but this screen used to
+  // drop the post on the floor: `openPosts` keeps only open/matched and the Past
+  // tab listed bookings only, so a paid job vanished after seven days with
+  // nothing anywhere to explain it. POST_STATUS.expired was defined and
+  // unreachable, which is how we know the disappearance was never the intent.
+  it('collects expired posts and puts them in Past', () => {
+    expect(src).toMatch(/expiredPosts\s*=\s*posts\.filter/);
+    expect(src).toMatch(/pastItems/);
+  });
+
+  it('renders posts as well as bookings in that list', () => {
+    expect(src).toMatch(/kind === 'post'/);
+    expect(src).toMatch(/<PostRow post=\{item\.data\}/);
+  });
+
+  it('counts them in the Past tab badge', () => {
+    // A badge that disagrees with the list it labels is its own bug.
+    expect(src).toMatch(/pastCount/);
+    expect(src).toMatch(/Past \(\$\{pastCount\}\)/);
+  });
+
+  it('keeps a label for every post status the backend can write', () => {
+    // service_posts.py: open | matched | expired | cancelled. A missing key fell
+    // through to POST_STATUS.open — i.e. a cancelled post reading as
+    // "Awaiting quotes".
+    const map = src.match(/const POST_STATUS\s*=\s*\{[\s\S]*?\n\};/);
+    expect(map).not.toBeNull();
+    for (const status of ['open', 'matched', 'expired', 'cancelled']) {
+      expect(map[0]).toMatch(new RegExp(`\\b${status}\\s*:`));
+    }
+  });
+
+  it('does not resurface posts the client deleted', () => {
+    // DELETE is a soft delete to 'cancelled'. Deleted should stay deleted, so
+    // only 'expired' is revived.
+    const filter = src.match(/expiredPosts\s*=\s*posts\.filter\([^)]*\)/)[0];
+    expect(filter).toMatch(/expired/);
+    expect(filter).not.toMatch(/cancelled/);
+  });
+});
+
 describe('the live screen tells the truth about a finished booking', () => {
   const src = code(read('screens/client/ActiveBookingScreen.js'));
 
