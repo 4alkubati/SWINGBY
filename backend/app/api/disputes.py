@@ -208,6 +208,58 @@ def list_my_disputes(current_user: dict = Depends(get_current_user)):
     return {"items": items, "count": len(items)}
 
 
+@router.get("/admin/queue")
+def admin_dispute_queue(current_user: dict = Depends(get_current_user)):
+    """Everything awaiting an admin decision, newest first.
+
+    Literal path, so it cannot be shadowed by /{dispute_id}. Carries the money and
+    the counterparties inline: the review screen should not have to fan out a
+    request per row just to render a list.
+
+    `held_amount` comes from the ledger, not from `refund_amount` — the latter is
+    what was proposed at cancellation time, and the ledger is what actually has
+    money behind it now.
+    """
+    if current_user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Admin only")
+
+    res = (
+        supabase.table("disputes")
+        .select(
+            "*, bookings(id, client_id, business_id, service_category, "
+            "total_amount, confirmed_date, status, "
+            "businesses(business_name, logo_url), "
+            "service_posts(title, address))"
+        )
+        .in_("status", ["open", "under_review"])
+        .order("created_at", desc=True)
+        .execute()
+    )
+
+    items = []
+    for row in res.data or []:
+        held = 0.0
+        # Only a cancellation refund has money parked against it; asking the ledger
+        # about an ordinary complaint would be noise.
+        if row.get("issue_type") == CANCELLATION_REFUND:
+            try:
+                payment = escrow.load_single_payment(row["booking_id"])
+                held = escrow.to_dollars(escrow.money_cents(payment, "escrow_held"))
+            except Exception:
+                logger.exception(
+                    "could not read held escrow for dispute %s", row.get("id")
+                )
+        row["held_amount"] = held
+        row["needs_money_decision"] = (
+            row.get("issue_type") == CANCELLATION_REFUND and held > 0
+        )
+        items.append(row)
+
+    # Requests with money waiting outrank record-keeping complaints.
+    items.sort(key=lambda r: (not r["needs_money_decision"], r.get("created_at") or ""))
+    return {"items": items, "count": len(items)}
+
+
 def _settle_cancellation_refund(
     *,
     booking_id: str,

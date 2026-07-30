@@ -50,7 +50,7 @@ import { UnreadProvider } from './src/context/UnreadContext';
 import AuthNavigator from './src/navigation/AuthNavigator';
 import ClientNavigator from './src/navigation/ClientNavigator';
 import BusinessNavigator from './src/navigation/BusinessNavigator';
-import AdminScreen from './src/screens/admin/AdminScreen';
+import AdminNavigator from './src/navigation/AdminNavigator';
 import BiometricLockScreen from './src/screens/shared/BiometricLockScreen';
 import { getBiometricPref, isBiometricAvailable } from './src/services/biometrics';
 import { configureNotificationHandlers } from './src/services/notifications';
@@ -155,7 +155,9 @@ function RootNavigator() {
     );
   }
 
-  if (user.role === 'admin') return <AdminScreen />;
+  // A stack now, not a bare screen: refund decisions drill into a queue and a
+  // review, which needs somewhere to go back to.
+  if (user.role === 'admin') return <AdminNavigator />;
   if (user.role === 'business_owner' || user.role === 'employee') return <BusinessNavigator />;
   return <ClientNavigator />;
 }

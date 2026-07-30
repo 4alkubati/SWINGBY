@@ -60,6 +60,8 @@ function AllProviders({ children }) {
 // doesn't abort the whole file at load time.
 const SCREENS = [
   ['admin/AdminScreen', () => require('../screens/admin/AdminScreen')],
+  ['admin/RefundQueueScreen', () => require('../screens/admin/RefundQueueScreen')],
+  ['admin/RefundReviewScreen', () => require('../screens/admin/RefundReviewScreen')],
   ['auth/ForgotPasswordScreen', () => require('../screens/auth/ForgotPasswordScreen')],
   ['auth/LoginScreen', () => require('../screens/auth/LoginScreen')],
   ['auth/SignupScreen', () => require('../screens/auth/SignupScreen')],
@@ -80,6 +82,10 @@ const SCREENS = [
   ['client/NearbyMapScreen', () => require('../screens/client/NearbyMapScreen')],
   ['client/PostJobScreen', () => require('../screens/client/PostJobScreen')],
   ['client/QuoteComparisonScreen', () => require('../screens/client/QuoteComparisonScreen')],
+  // Both proof-of-work screens were missing from this sweep, which is how
+  // `expo-audio` reached 2026-07-30 with no mock and no coverage anywhere.
+  ['client/ApproveWorkScreen', () => require('../screens/client/ApproveWorkScreen')],
+  ['business/ProofOfWorkScreen', () => require('../screens/business/ProofOfWorkScreen')],
   ['client/ReviewScreen', () => require('../screens/client/ReviewScreen')],
   ['client/SearchScreen', () => require('../screens/client/SearchScreen')],
   ['flows/CancellationFlowScreen', () => require('../screens/flows/CancellationFlowScreen')],

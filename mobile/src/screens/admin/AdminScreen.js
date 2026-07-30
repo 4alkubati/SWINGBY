@@ -1,17 +1,46 @@
+import { useCallback, useState } from 'react';
 import { ScrollView, View, StyleSheet, Linking, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+import { useFocusEffect } from '@react-navigation/native';
 
 import Text from '../../components/Text';
 import Button from '../../components/Button';
 import Surface from '../../components/Surface';
+import Inline from '../../components/Inline';
+import { api } from '../../services/api';
 import { colors, spacing, radius } from '../../theme/tokens';
 import { useAuth } from '../../context/AuthContext';
 
+// NOTE: web/admin is not deployed — swingbyy.com still serves the pre-launch site
+// and has not built from this repo since June (docs/DEPLOY.md). This link is
+// therefore aspirational, which is exactly why refund decisions had to live in the
+// app rather than behind it.
 const WEB_ADMIN_URL = 'https://swingbyy.com/admin';
 
-export default function AdminScreen() {
+export default function AdminScreen({ navigation }) {
   const { user, logout } = useAuth();
+  const [pending, setPending] = useState(0);
+
+  // Refreshed on focus so the badge is right when you come back from deciding one.
+  useFocusEffect(
+    useCallback(() => {
+      let alive = true;
+      (async () => {
+        try {
+          const res = await api.get('/disputes/admin/queue');
+          if (alive) setPending(res?.count ?? (res?.items || []).length);
+        } catch {
+          // A dead count must not break the screen — the queue itself reports
+          // its own errors.
+          if (alive) setPending(0);
+        }
+      })();
+      return () => {
+        alive = false;
+      };
+    }, [])
+  );
 
   async function openWebAdmin() {
     const supported = await Linking.canOpenURL(WEB_ADMIN_URL);
@@ -34,23 +63,37 @@ export default function AdminScreen() {
         </Animated.View>
 
         <Surface style={styles.card}>
-          <Text style={styles.cardTitle}>Admin tools live on the web</Text>
+          <Inline justify="space-between" align="center">
+            <Text style={styles.cardTitle}>Awaiting your decision</Text>
+            {pending > 0 && (
+              <View style={styles.countBadge}>
+                <Text style={styles.countText}>{pending}</Text>
+              </View>
+            )}
+          </Inline>
           <Text style={styles.cardBody}>
-            Open the SwingBy admin panel on your computer for user management, business
-            verification, payouts, disputes, and bulk actions. Mobile is intentionally
-            read-only for now.
+            {pending > 0
+              ? `${pending} ${pending === 1 ? 'case needs' : 'cases need'} a call. Cancelled jobs where work had already started hold the client's money until you approve or decline the refund — you decide from the before/after photos and the voice memo.`
+              : 'Nothing waiting. When a job is cancelled after work started, the refund lands here for you to approve or decline.'}
           </Text>
           <View style={styles.cardAction}>
-            <Button label="Open web admin" onPress={openWebAdmin} />
+            <Button
+              label={pending > 0 ? `Review ${pending}` : 'Open queue'}
+              onPress={() => navigation.navigate('RefundQueue')}
+            />
           </View>
         </Surface>
 
         <Surface style={styles.card}>
-          <Text style={styles.cardTitle}>What's next on the roadmap</Text>
+          <Text style={styles.cardTitle}>Everything else is on the web</Text>
           <Text style={styles.cardBody}>
-            A mobile admin dashboard will land after public launch. Until then, all
-            moderation flows are web-only so audit trails stay clean.
+            User management, business verification, payouts and bulk actions live in the
+            web panel. Refund decisions are here because they need the photos and the
+            voice memo, which is a phone job.
           </Text>
+          <View style={styles.cardAction}>
+            <Button label="Open web admin" variant="secondary" onPress={openWebAdmin} />
+          </View>
         </Surface>
 
         <View style={styles.logoutWrap}>
@@ -103,4 +146,17 @@ const styles = StyleSheet.create({
   },
   cardAction: { marginTop: spacing.md },
   logoutWrap: { marginTop: spacing.lg },
+  countBadge: {
+    minWidth: 26,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 9,
+    backgroundColor: colors.accent,
+    alignItems: 'center',
+  },
+  countText: {
+    fontFamily: 'SpaceGrotesk_700Bold',
+    fontSize: 13,
+    color: colors.textPrimary,
+  },
 });

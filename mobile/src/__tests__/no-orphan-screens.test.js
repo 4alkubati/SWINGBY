@@ -32,7 +32,10 @@ const REACHABLE_WITHOUT_NAVIGATE = new Set([
   // Tab bars render these; the user reaches them by tapping a tab.
   'Home', 'My Jobs', 'Messages', 'Profile', 'Dashboard', 'Jobs',
   // Stack roots — the first screen of their navigator.
-  'ClientTabs', 'BusinessTabs', 'AuthTabs',
+  // 'AdminHome' is AdminNavigator's root: an admin lands on it at sign-in, and
+  // from there navigates to RefundQueue -> RefundReview (both of which this test
+  // does check have routes into them).
+  'ClientTabs', 'BusinessTabs', 'AuthTabs', 'AdminHome',
   // First screen of AuthNavigator; a logged-out user lands here.
   'Onboarding',
 ]);

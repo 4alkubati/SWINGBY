@@ -129,6 +129,17 @@ def _is_party(booking: dict, current_user: dict) -> bool:
 
 
 def _require_party(booking: dict, current_user: dict) -> None:
+    # Admins can READ proof (this guard is only used by GET /proof) because
+    # adjudicating a cancellation refund means looking at the before/after photos
+    # and listening to the voice memo — that is the whole basis of the decision
+    # (Kira's ruling, 2026-07-30). They are not a party to the booking, so without
+    # this they got a 403 on the only evidence they are meant to weigh.
+    #
+    # Note the WRITE guards are separate and unchanged: _require_provider still
+    # gates submitting proof and _require_client still gates approving it, so an
+    # admin cannot submit or approve work on someone's behalf.
+    if current_user.get("role") == "admin":
+        return
     if not _is_party(booking, current_user):
         raise HTTPException(status_code=403, detail="Access denied")
 

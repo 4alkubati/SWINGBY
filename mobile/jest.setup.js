@@ -123,6 +123,51 @@ jest.mock('expo-local-authentication', () => ({
   supportedAuthenticationTypesAsync: jest.fn(() => Promise.resolve([1])),
 }));
 
+// `expo-audio` was mocked NOWHERE, and neither proof-of-work screen was in the
+// mount sweep — so the voice-memo module had never been exercised by a test at
+// all, and the first screen to import it died on `Cannot read properties of
+// undefined (reading 'prototype')` at import time.
+//
+// The player half is shaped so the read-only playback UIs work: a stable object
+// with the methods they call, and a status that reports "loaded but not playing".
+// `useAudioPlayerStatus` returning a fresh object each render would loop, so the
+// status is a module-level constant.
+jest.mock('expo-audio', () => {
+  const status = {
+    playing: false,
+    didJustFinish: false,
+    currentTime: 0,
+    duration: 12,
+    isLoaded: true,
+  };
+  const player = {
+    play: jest.fn(),
+    pause: jest.fn(),
+    seekTo: jest.fn(),
+    remove: jest.fn(),
+    replace: jest.fn(),
+  };
+  const recorderState = { isRecording: false, durationMillis: 0 };
+  const recorder = {
+    record: jest.fn(),
+    stop: jest.fn(() => Promise.resolve()),
+    prepareToRecordAsync: jest.fn(() => Promise.resolve()),
+    uri: null,
+  };
+  return {
+    useAudioPlayer: jest.fn(() => player),
+    useAudioPlayerStatus: jest.fn(() => status),
+    useAudioRecorder: jest.fn(() => recorder),
+    useAudioRecorderState: jest.fn(() => recorderState),
+    setAudioModeAsync: jest.fn(() => Promise.resolve()),
+    requestRecordingPermissionsAsync: jest.fn(() =>
+      Promise.resolve({ status: 'granted', granted: true }),
+    ),
+    RecordingPresets: { HIGH_QUALITY: {} },
+    AudioModule: { requestRecordingPermissionsAsync: jest.fn() },
+  };
+});
+
 // Global, not per-test: `services/liveLocation` imports this, so ANY screen that
 // wants the provider's position drags it in. Without a mock here the module is
 // untransformed ESM and the importing screen dies with "Jest encountered an
