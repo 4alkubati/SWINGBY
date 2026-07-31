@@ -1,76 +1,121 @@
-// "Post + Pay (same Button)" — Kira, handwritten, 2026-07-26.
+// Posting a job takes no money — 2026-07-29.
 //
-// Posting an open job now CHARGES the client's full budget in one tap. The
-// TARGETED flow (browse a company, request a quote) charges nothing at post —
-// the client pays only when they accept a quote in chat.
+// This file used to pin the opposite. It was written for "Post + Pay (same
+// Button)", which described an intention that was never built: the review step
+// said "Post & pay $160" and "Your $160 budget is charged now", the pay sheet
+// said "Hold payment" / "On hold today", and none of it was true. The
+// charge-at-post trigger is gated OFF in backend/app/api/service_posts.py
+// because it cannot capture without card-on-file, `payment_started` is always
+// false, and money is taken at ACCEPT (services/acceptAndPay.js).
 //
-// Those two facts sat in the same screen and the copy did not distinguish them:
-// an explainer reading "We place your payment on hold when you post" rendered
-// unconditionally, including in the targeted flow where no money moves, while
-// the hint text forty lines below it was correctly branched the whole time.
-// These pin the distinction so it cannot collapse again.
+// A false statement about money is the worst thing a payments product can
+// ship, and tests asserting it are how it survives review. These now pin the
+// truth, in both directions: the copy must say what happens, and must not say
+// what doesn't.
 import i18n from '../../../i18n';
 
-describe('Post + Pay copy — the open-post flow', () => {
-  it('names the amount on the CTA, because that tap charges it', () => {
-    // The old rule was "no figure on the button — the total lives in the
-    // sheet", written when posting took no money. A button that charges must
-    // say what it charges.
-    const label = i18n.t('postJob.ctaPostAndPayAmount', { amount: '$150' });
-    expect(label).toContain('$150');
-    expect(label.toLowerCase()).toMatch(/pay/);
+describe('the open-post flow tells the client nothing is charged', () => {
+  it('has a CTA that names an action, not a payment', () => {
+    const label = i18n.t('postJob.ctaPost').toLowerCase();
+    expect(label).toMatch(/post/);
+    expect(label).not.toMatch(/pay|charge|hold/);
   });
 
-  it('tells the client the budget is charged now, not merely held', () => {
+  it('keeps every figure off that CTA', () => {
+    // A number on the button is how it read as a charge, whatever the verb.
+    expect(i18n.t('postJob.ctaPost')).not.toMatch(/\d|%\{amount\}|\$/);
+  });
+
+  it('says outright that nothing is charged now', () => {
     const lead = i18n.t('postJob.escrowExplainerLead').toLowerCase();
-    expect(lead).toMatch(/charge/);
-    expect(lead).not.toMatch(/on hold/);
+    expect(lead).toMatch(/nothing is charged/);
   });
 
-  it('promises BOTH refund paths — the unused part, and the whole thing', () => {
-    // These are the two ways money comes back (AMENDMENT 1). Promising only
-    // the first would leave a client whose job nobody quotes believing their
-    // budget is simply gone.
+  it('names accepting a quote as the moment money moves', () => {
     const body = i18n.t('postJob.escrowExplainer').toLowerCase();
-    expect(body).toMatch(/refund/);
-    expect(body).toMatch(/nobody takes the job|no one takes the job/);
+    expect(body).toMatch(/accept/);
+    // The old copy's specific lies: charged/held AT POST, refunded afterwards.
+    expect(body).not.toMatch(/on hold|held|refund/);
   });
 
-  it('has specific copy for a declined card', () => {
-    // A decline on THIS path must not read like the accept-a-quote path: there
-    // the booking already exists and is left unpaid, here no post is created.
-    expect(i18n.t('postJob.chargeDeclined').toLowerCase()).toMatch(/declined/);
-    expect(i18n.t('postJob.holdFailed').toLowerCase()).toMatch(/not posted|was not posted/);
+  it('repeats it in the hint under the button', () => {
+    const hint = i18n.t('postJob.hintOpen').toLowerCase();
+    expect(hint).toMatch(/not charged until you accept|until you accept/);
   });
 
-  it('says the draft survives a failed charge', () => {
-    expect(i18n.t('postJob.holdFailed').toLowerCase()).toMatch(/draft/);
-  });
-});
-
-describe('Post + Pay copy — the success state', () => {
-  it('no longer claims a hold', () => {
-    const body = i18n.t('postJob.postedBodyHeld').toLowerCase();
-    expect(body).not.toMatch(/on hold/);
-    expect(body).toMatch(/charged/);
-  });
-
-  it('tells the client unused budget comes back', () => {
-    expect(i18n.t('postJob.postedRowHoldSub').toLowerCase()).toMatch(/refund/);
+  it('has no strings left from the charge-at-post copy', () => {
+    // These four described a charge that cannot happen. They were deleted
+    // rather than reworded so no screen can revive the claim by name.
+    for (const key of [
+      'postJob.ctaPostAndPay',
+      'postJob.ctaPostAndPayAmount',
+      'postJob.chargeDeclined',
+      'postJob.holdFailed',
+    ]) {
+      expect(i18n.t(key)).toMatch(/missing|translation/i);
+    }
   });
 });
 
-describe('the targeted flow must not inherit any of it', () => {
+describe('the pay sheet in hold mode is a review, not a checkout', () => {
+  it('does not claim a hold in its title or CTA', () => {
+    expect(i18n.t('pay.titleHold').toLowerCase()).not.toMatch(/hold|pay/);
+    expect(i18n.t('pay.ctaHold').toLowerCase()).not.toMatch(/hold|pay|charge/);
+  });
+
+  it('labels the amount as the budget, not money taken', () => {
+    const label = i18n.t('pay.onHoldToday').toLowerCase();
+    expect(label).toMatch(/budget/);
+    expect(label).not.toMatch(/on hold/);
+  });
+
+  it('has its own caption that promises no charge', () => {
+    const caption = i18n.t('pay.escrowHold').toLowerCase();
+    expect(caption).toMatch(/nothing is charged/);
+    // The pay-mode caption still describes escrow; hold mode must not reuse it.
+    expect(caption).not.toEqual(i18n.t('pay.escrow').toLowerCase());
+  });
+
+  it('takes no payment method and welds no figure to the CTA', () => {
+    // Structural: reading the source is the only way to assert "this does not
+    // render" without standing the sheet up. `takesPayment` gates the card
+    // picker, the no-method hint, the confirm guard, and the CTA amount.
+    const fs = require('fs');
+    const path = require('path');
+    const src = fs.readFileSync(
+      path.join(__dirname, '..', '..', '..', 'components', 'PaySheet.js'),
+      'utf8',
+    );
+    expect(src).toMatch(/const takesPayment = mode !== 'hold'/);
+    expect(src).toMatch(/quote && takesPayment \?/);
+    expect(src).toMatch(/\{takesPayment && \(/);
+    expect(src).toMatch(/takesPayment \? i18n\.t\('pay\.escrow'\)/);
+  });
+});
+
+describe('the targeted flow, which was right all along', () => {
   it('its CTA is a request, not a payment', () => {
     const label = i18n.t('postJob.ctaSendRequest').toLowerCase();
     expect(label).toMatch(/request/);
     expect(label).not.toMatch(/pay/);
   });
 
-  it('the screen gates the charge explainer on the open-post path', () => {
-    // Structural, not textual: the explainer must be behind a
-    // !targetBusinessName guard. Reading the source is the only way to assert
-    // "this does not render in the other flow" without standing up both.
+  it('its hint is now a catalogue string, not a hardcoded literal', () => {
+    // It was an English template literal in the screen while its neighbours
+    // were translated — the app ships en / fr-CA / ar.
+    const hint = i18n.t('postJob.hintTargeted', { business: 'Acme' });
+    expect(hint).toMatch(/Acme/);
+    expect(hint.toLowerCase()).toMatch(/nothing is charged until you accept/);
+  });
+
+  it('both paths now make the same promise', () => {
+    const open = i18n.t('postJob.hintOpen').toLowerCase();
+    const targeted = i18n.t('postJob.hintTargeted', { business: 'Acme' }).toLowerCase();
+    expect(open).toMatch(/until you accept/);
+    expect(targeted).toMatch(/until you accept/);
+  });
+
+  it('the screen still gates the explainer to the open-post path', () => {
     const fs = require('fs');
     const path = require('path');
     const src = fs.readFileSync(

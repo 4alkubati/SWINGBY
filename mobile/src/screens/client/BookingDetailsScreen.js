@@ -39,6 +39,7 @@ import Avatar from '../../components/Avatar';
 import BusinessLogo from '../../components/BusinessLogo';
 import Button from '../../components/Button';
 import { colors, spacing, radius, shadows, motion } from '../../theme/tokens';
+import { TEXT_END } from '../../services/rtl';
 
 // ─── AnimatedPressable helper ─────────────────────────────────────────────────
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -949,7 +950,7 @@ export default function BookingDetailsScreen({ route, navigation }) {
 
             {/* Service row */}
             <DetailRow icon="briefcase" label="Service">
-              <Text variant="bodyMedium" style={{ textAlign: 'right' }}>
+              <Text variant="bodyMedium" style={{ textAlign: TEXT_END }}>
                 {booking?.category ?? booking?.service_type ?? '—'}
               </Text>
             </DetailRow>
@@ -958,7 +959,7 @@ export default function BookingDetailsScreen({ route, navigation }) {
 
             {/* Scheduled row */}
             <DetailRow icon="calendar" label="Scheduled">
-              <Text variant="bodyMedium" style={{ textAlign: 'right' }}>
+              <Text variant="bodyMedium" style={{ textAlign: TEXT_END }}>
                 {formatDate(booking?.scheduled_at)}{' '}
                 {formatTime(booking?.scheduled_at)}
               </Text>
@@ -975,7 +976,7 @@ export default function BookingDetailsScreen({ route, navigation }) {
               <Text
                 variant="small"
                 numberOfLines={2}
-                style={{ textAlign: 'right', color: colors.accentText, textDecorationLine: 'underline' }}
+                style={{ textAlign: TEXT_END, color: colors.accentText, textDecorationLine: 'underline' }}
               >
                 {booking?.address ?? '—'}
               </Text>

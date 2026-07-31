@@ -1161,6 +1161,26 @@ def complete_booking(booking_id: str, current_user: dict = Depends(get_current_u
         ).eq("id", booking_id).execute()
         _ = outcome  # (kept for readability / future event logging)
 
+        # Close the live-status timeline. This endpoint flipped the booking to
+        # completed but never appended the `completed` event, so the trust
+        # spine in booking_events simply stopped at whatever the provider last
+        # tapped — and any view driven by the timeline (the business
+        # JobManagementScreen tracker) could never reach its final stage.
+        # Best-effort: a booking is completed and the money is released by the
+        # time we get here, and a missing timeline row must not undo that.
+        try:
+            supabase.table("booking_events").insert(
+                {
+                    "booking_id": booking_id,
+                    "actor_id": current_user["id"],
+                    "event_type": "completed",
+                }
+            ).execute()
+        except Exception:
+            logger.warning(
+                "completed booking_event not recorded for %s", booking_id, exc_info=True
+            )
+
         # Email the client a completion notice + review nudge — best-effort
         try:
             from app.services.email import send_booking_completed_client

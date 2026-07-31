@@ -3,7 +3,9 @@
 // Spec: design/handoff-jet-pulse/PAYMENTS.md (section 2a "Two ways to pay" in
 // SwingBy All Screens.dc.html). Two entry points, one sheet:
 //
-//   mode="hold"  Path A — client posts a job.   Title "Hold payment", CTA "Confirm & hold $X"
+//   mode="hold"  Path A — client posts a job.    Title "Confirm your job", CTA "Post job".
+//                Takes NO money and shows no card picker: charge-at-post is
+//                gated off server-side and the client pays at accept.
 //   mode="pay"   Path B — client accepts a quote. Title "Pay quote",   CTA "Confirm & pay $X"
 //
 // HARD RULE (PAYMENTS.md §The rule): no dollar figure appears on any button,
@@ -453,7 +455,11 @@ export default function PaySheet({
       ? NATIVE_METHOD
       : resolvedMethod;
 
-  const canConfirm = !!quote && !!activeMethod && !busy && !loading;
+  // mode="hold" moves no money (see the title/CTA note below), so it must not
+  // demand a payment method to continue — that would block posting a job on a
+  // card that is never charged.
+  const takesPayment = mode !== 'hold';
+  const canConfirm = !!quote && (!takesPayment || !!activeMethod) && !busy && !loading;
 
   async function handleConfirm() {
     if (!canConfirm) return;
@@ -541,9 +547,16 @@ export default function PaySheet({
     }
   }
 
+  // mode="hold" is the post-a-job review sheet and takes NO money — the
+  // charge-at-post trigger is gated off server-side (service_posts.py), and the
+  // client pays at accept. It used to read "Hold payment" / "Confirm & hold
+  // $160" / "On hold today", which told the client their money had moved when
+  // it had not. It is now a budget review: honest title, no figure welded to
+  // the CTA, and no card picker (see `takesPayment`).
   const title = mode === 'hold' ? i18n.t('pay.titleHold') : i18n.t('pay.titlePay');
   const ctaVerb = mode === 'hold' ? i18n.t('pay.ctaHold') : i18n.t('pay.ctaPay');
-  const ctaLabel = quote ? `${ctaVerb} ${formatMoneyShort(quote.total)}` : ctaVerb;
+  const ctaLabel =
+    quote && takesPayment ? `${ctaVerb} ${formatMoneyShort(quote.total)}` : ctaVerb;
 
   return (
     <Modal
@@ -610,17 +623,21 @@ export default function PaySheet({
               </View>
             )}
 
-            {/* 3 · PAY WITH */}
-            <View style={styles.section}>
-              <Text variant="label" color="secondary" style={styles.sectionLabel}>
-                {i18n.t('pay.payWith')}
-              </Text>
-              <PaymentMethodRow
-                method={activeMethod}
-                declined={!!error}
-                onAddMethod={onAddMethod}
-              />
-            </View>
+            {/* 3 · PAY WITH — only where something is actually paid. In
+                mode="hold" a card picker is the same false claim as the old
+                copy, drawn instead of written. */}
+            {takesPayment && (
+              <View style={styles.section}>
+                <Text variant="label" color="secondary" style={styles.sectionLabel}>
+                  {i18n.t('pay.payWith')}
+                </Text>
+                <PaymentMethodRow
+                  method={activeMethod}
+                  declined={!!error}
+                  onAddMethod={onAddMethod}
+                />
+              </View>
+            )}
 
             {/* Amount moved under them */}
             {stale && (
@@ -646,7 +663,9 @@ export default function PaySheet({
                 strokeWidth={1.8}
                 style={styles.lockIcon}
               />
-              <Text style={styles.escrowText}>{i18n.t('pay.escrow')}</Text>
+              <Text style={styles.escrowText}>
+                {takesPayment ? i18n.t('pay.escrow') : i18n.t('pay.escrowHold')}
+              </Text>
             </View>
 
             {/* 5 · CTA */}
@@ -674,7 +693,7 @@ export default function PaySheet({
               )}
             </Pressable>
 
-            {!activeMethod && (
+            {takesPayment && !activeMethod && (
               <Text style={styles.noMethodHint}>{i18n.t('pay.noMethodHint')}</Text>
             )}
           </ScrollView>

@@ -21,6 +21,7 @@ import { Feather } from '@expo/vector-icons';
 import { colors, spacing } from '../theme/tokens';
 import i18n from '../i18n';
 import Text from './Text';
+import { TEXT_END } from '../services/rtl';
 
 // Local token: the quote surface's actionable border is rgba(136,120,249,0.28),
 // a shade stronger than tokens.colors.borderAccent (0.25) which marks merely
@@ -368,7 +369,7 @@ const styles = StyleSheet.create({
     fontSize: 12.5,
     lineHeight: 18,
     color: colors.textPrimary,
-    textAlign: 'right',
+    textAlign: TEXT_END,
   },
 
   note: {

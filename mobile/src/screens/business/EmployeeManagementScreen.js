@@ -577,6 +577,11 @@ export default function EmployeeManagementScreen({ navigation, route }) {
         </View>
       ) : (
         <FlatList
+          // The search field sits directly above this list, so the natural
+          // flow — type a name, tap the person who appears — has the keyboard
+          // up and the tap landing on a row. At the default "never" that first
+          // tap only dismisses the keyboard, and the row does not open.
+          keyboardShouldPersistTaps="handled"
           data={filtered}
           keyExtractor={(item) => String(item.id)}
           renderItem={({ item, index }) => (

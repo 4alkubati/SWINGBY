@@ -1,150 +1,67 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React from 'react';
 import { View, Alert, StyleSheet } from 'react-native';
 
-import { api } from '../services/api';
 import Text from './Text';
 import Stack from './Stack';
-import Inline from './Inline';
-import Surface from './Surface';
 import Button from './Button';
-import { colors, spacing } from '../theme/tokens';
+import { spacing } from '../theme/tokens';
+import { ACTION_LABEL, ACTION_CONFIRM, currentStage, nextStage } from '../utils/jobStages';
 
-const FLOW = ['en_route', 'arrived', 'started', 'completed'];
-
-const NEXT_LABEL = {
-  en_route: 'On my way',
-  arrived: 'I have arrived',
-  started: 'Start job',
-  completed: 'Mark complete',
-};
-
-const NEXT_CONFIRM = {
-  en_route: 'Tell the client you are on your way?',
-  arrived: 'Confirm you have arrived?',
-  started: 'Start the job now? The client will be notified.',
-  completed: 'Mark the job complete? This may release final payment.',
-};
-
-function lastFlowEvent(events) {
-  for (let i = events.length - 1; i >= 0; i -= 1) {
-    if (FLOW.includes(events[i].event_type)) return events[i].event_type;
-  }
-  return null;
-}
-
-function nextEventAfter(lastType) {
-  if (!lastType) return FLOW[0];
-  const idx = FLOW.indexOf(lastType);
-  if (idx === -1 || idx === FLOW.length - 1) return null;
-  return FLOW[idx + 1];
-}
-
-export default function LiveStatusActions({ bookingId, onEventPosted }) {
-  const [events, setEvents] = useState([]);
-  const [busy, setBusy] = useState(false);
-  const [loadErr, setLoadErr] = useState(false);
-  const mounted = useRef(true);
-
-  const refresh = useCallback(async () => {
-    try {
-      const res = await api.get(`/bookings/${bookingId}/events`);
-      if (!mounted.current) return;
-      setEvents(res.items || []);
-      setLoadErr(false);
-    } catch {
-      if (!mounted.current) return;
-      setLoadErr(true);
-    }
-  }, [bookingId]);
-
-  useEffect(() => {
-    mounted.current = true;
-    refresh();
-    return () => {
-      mounted.current = false;
-    };
-  }, [refresh]);
-
-  const lastType = lastFlowEvent(events);
-  const nextType = nextEventAfter(lastType);
-
-  const postEvent = async (event_type) => {
-    setBusy(true);
-    try {
-      await api.post(`/bookings/${bookingId}/events`, { event_type });
-      await refresh();
-      onEventPosted?.(event_type);
-    } catch (err) {
-      Alert.alert('Could not post update', err?.message || 'Try again.');
-    } finally {
-      if (mounted.current) setBusy(false);
-    }
-  };
+/**
+ * The provider's "next step" button.
+ *
+ * CONTROLLED. It used to GET /bookings/{id}/events into its own state on
+ * mount, while the timeline beside it polled the same endpoint into a second
+ * copy and the tracker above it read `booking.status` — three views of one
+ * booking that could not agree, and on 2026-07-29 didn't. The screen now
+ * fetches once and passes `events` to all three.
+ *
+ * It also renders no heading of its own: it sits inside the screen's single
+ * "Live status" card, above the timeline. Two cards both titled "Live status"
+ * was the other half of that screen's mess.
+ */
+export default function LiveStatusActions({ events, onAdvance, busy = false }) {
+  const lastType = currentStage(events);
+  const nextType = nextStage(events);
 
   const confirmAndPost = (event_type) => {
     Alert.alert(
-      NEXT_LABEL[event_type] || 'Confirm',
-      NEXT_CONFIRM[event_type] || 'Confirm this update?',
+      ACTION_LABEL[event_type] || 'Confirm',
+      ACTION_CONFIRM[event_type] || 'Confirm this update?',
       [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Yes', onPress: () => postEvent(event_type) },
+        { text: 'Yes', onPress: () => onAdvance?.(event_type) },
       ],
     );
   };
 
-  if (loadErr && !events.length) {
-    return (
-      <Surface elevation="subtle" rounded="card" padding="base">
-        <Stack spacing="sm">
-          <Text variant="bodyMedium">Live status</Text>
-          <Text variant="small" color="secondary">
-            Could not load status.
-          </Text>
-          <Button
-            variant="secondary"
-            label="Retry"
-            loading={busy}
-            onPress={refresh}
-          />
-        </Stack>
-      </Surface>
-    );
-  }
-
   if (!nextType) {
     return (
-      <Surface elevation="subtle" rounded="card" padding="base">
-        <Stack spacing="xs">
-          <Text variant="bodyMedium">Live status</Text>
-          <Text variant="small" color="secondary">
-            Job marked complete. The client has been notified.
-          </Text>
-        </Stack>
-      </Surface>
+      <Text variant="small" color="secondary">
+        Job marked complete. The client has been notified.
+      </Text>
     );
   }
 
   return (
-    <Surface elevation="subtle" rounded="card" padding="base">
-      <Stack spacing="sm">
-        <Text variant="bodyMedium">Live status</Text>
-        <Text variant="small" color="secondary">
-          {lastType
-            ? `Last: ${lastType.replace('_', ' ')}`
-            : 'Next step: tell the client you are on your way.'}
-        </Text>
-        <View style={styles.row}>
-          <Button
-            variant="primary"
-            label={NEXT_LABEL[nextType]}
-            loading={busy}
-            onPress={() => confirmAndPost(nextType)}
-            style={{ flex: 1 }}
-          />
-        </View>
-        {/* secondary actions (pause/resume/cancel) deferred — keep the primary path obvious */}
-      </Stack>
-    </Surface>
+    <Stack spacing="sm">
+      <Text variant="small" color="secondary">
+        {lastType
+          ? `Last: ${lastType.replace('_', ' ')}`
+          : 'Next step: tell the client you are on your way.'}
+      </Text>
+      <View style={styles.row}>
+        <Button
+          variant="primary"
+          label={ACTION_LABEL[nextType]}
+          loading={busy}
+          disabled={busy}
+          onPress={() => confirmAndPost(nextType)}
+          style={{ flex: 1 }}
+        />
+      </View>
+      {/* secondary actions (pause/resume/cancel) deferred — keep the primary path obvious */}
+    </Stack>
   );
 }
 

@@ -3,7 +3,7 @@ import {
   ActivityIndicator, Alert, RefreshControl, Modal, FlatList,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import Animated, {
   useSharedValue, useAnimatedStyle, withTiming,
 } from 'react-native-reanimated';
@@ -34,6 +34,9 @@ import i18n from '../../i18n';
 import { bucketBooking, needsActionReason } from '../../utils/bookingBuckets';
 import { groupScheduledJobs, countScheduledJobs } from '../../utils/scheduleGroups';
 import useQuotedPostIds from '../../hooks/useQuotedPostIds';
+
+// How often the booking detail screen re-reads the live job-status events.
+const EVENTS_POLL_MS = 8000;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -221,6 +224,41 @@ function JobDetailScreen({ navigation, route }) {
 
   useEffect(() => { load(); }, [load]);
 
+  // ── Live job status — ONE fetch, one source of truth ───────────────────────
+  // The tracker, the action button and the timeline all render the same
+  // booking. They used to get their state from three different places: the
+  // tracker from `booking.status`, and the other two from a GET each held
+  // privately. Nothing synced them, so on 2026-07-29 the timeline listed three
+  // "On the way" entries while the button above it still offered "On my way".
+  // The events live here now and are passed down. Polling stays on this screen
+  // for the same reason — one timer, not one per component.
+  const [events, setEvents] = useState([]);
+  const [eventsStatus, setEventsStatus] = useState('loading'); // loading|ready|error
+  const eventsAlive = useRef(true);
+
+  const loadEvents = useCallback(async () => {
+    try {
+      const res = await api.get(`/bookings/${bookingId}/events`);
+      if (!eventsAlive.current) return;
+      setEvents(res.items || []);
+      setEventsStatus('ready');
+    } catch {
+      if (!eventsAlive.current) return;
+      // A failed poll must not blank a timeline that already loaded.
+      setEventsStatus((prev) => (prev === 'ready' ? 'ready' : 'error'));
+    }
+  }, [bookingId]);
+
+  useEffect(() => {
+    eventsAlive.current = true;
+    loadEvents();
+    const id = setInterval(loadEvents, EVENTS_POLL_MS);
+    return () => {
+      eventsAlive.current = false;
+      clearInterval(id);
+    };
+  }, [loadEvents]);
+
   // Tab switch animation
   function handleTabChange(index) {
     contentOpacity.value = withTiming(0, { duration: 80 }, () => {
@@ -233,17 +271,23 @@ function JobDetailScreen({ navigation, route }) {
     opacity: contentOpacity.value,
   }));
 
+  // `stage` is an event type from jobStages.FLOW — whichever stage the control
+  // that called this is actually offering. It used to ignore its argument and
+  // post a hardcoded `en_route` for everything short of completion, which is
+  // half of why the same event could be appended over and over.
   async function handleAdvance(stage) {
     setAdvancing(true);
     try {
       if (stage === 'completed') {
+        // /complete owns payment release, so it stays the completion path; it
+        // writes the `completed` event itself.
         await api.patch(`/bookings/${bookingId}/complete`);
       } else {
-        // Provider heading out — record a live status event. (confirm-date is
-        // the client's action and requires a date; it was wrong here.)
-        await api.post(`/bookings/${bookingId}/events`, { event_type: 'en_route' });
+        await api.post(`/bookings/${bookingId}/events`, { event_type: stage });
       }
-      await load();
+      // Both the booking and the events — the status badge and the tracker
+      // must not be able to describe different stages.
+      await Promise.all([load(), loadEvents()]);
     } catch (err) {
       Alert.alert('Error', err.message || 'Could not update status.');
     } finally {
@@ -475,12 +519,28 @@ function JobDetailScreen({ navigation, route }) {
           {/* ── TAB 1: Status ──────────────────────────────────────────────── */}
           {activeTab === 1 && (
             <Stack spacing="md">
+              {/* The tracker and the card below it read the SAME `events`
+                  array, fetched once by this screen. This tab used to stack
+                  two cards both headed "Live status" over two independent
+                  fetches, plus a tracker reading `booking.status`. */}
+              <StatusTracker
+                events={events}
+                onAdvance={handleAdvance}
+                disabled={advancing || eventsStatus === 'loading'}
+              />
+              {/* ONE "Live status" card: next step on top, timeline beneath. */}
               <View style={styles.cardMargin}>
-                <StatusTracker bookingStatus={booking.status} onAdvance={handleAdvance} />
-              </View>
-              {/* Live Job Status — provider posts events; both parties see timeline */}
-              <View style={styles.cardMargin}>
-                <LiveStatusActions bookingId={booking.id} onEventPosted={() => load()} />
+                <Surface elevation="subtle" rounded="card" padding="base">
+                  <Stack spacing="md">
+                    <Text variant="bodyMedium">Live status</Text>
+                    <LiveStatusActions
+                      events={events}
+                      onAdvance={handleAdvance}
+                      busy={advancing}
+                    />
+                    <LiveStatusTimeline events={events} status={eventsStatus} />
+                  </Stack>
+                </Surface>
               </View>
               {/* Renders nothing unless this provider opened the en-route window
                   themselves by tapping "On my way" above — so it costs no space
@@ -488,11 +548,29 @@ function JobDetailScreen({ navigation, route }) {
               <View style={styles.cardMargin}>
                 <LiveLocationSharing bookingId={booking.id} bookingStatus={booking.status} />
               </View>
+              {/* Proof of work — ONE region. The route into ProofOfWorkScreen
+                  used to be a separate "Proof of work" row down in Actions,
+                  identically titled to the card BookingPhotos draws, so the
+                  screen showed the same name twice for two different things.
+                  It sits with the card it belongs to now.
+
+                  Not deleted, despite the photos card looking like it covers
+                  this: ProofOfWorkScreen is the capture-and-send flow (before/
+                  after plus a voice memo, and sending it is what prompts the
+                  client to approve and release escrow), and this is still its
+                  ONLY route. Dropping the row would stand the screen back up
+                  with nothing navigating to it — the bug it was added to fix. */}
               <View style={styles.cardMargin}>
-                <LiveStatusTimeline bookingId={booking.id} />
-              </View>
-              <View style={styles.cardMargin}>
-                <BookingPhotos bookingId={booking.id} canAttach />
+                <Stack spacing="xs">
+                  <BookingPhotos bookingId={booking.id} canAttach />
+                  <ListItem
+                    title="Send proof to client"
+                    subtitle="Before/after photos and a voice note"
+                    left={<Feather name="camera" size={16} color={colors.textSecondary} strokeWidth={2} />}
+                    onPress={() => navigation.navigate('ProofOfWork', { bookingId: booking.id })}
+                    showChevron
+                  />
+                </Stack>
               </View>
               {advancing && (
                 <Inline justify="center" spacing="sm">
@@ -501,18 +579,14 @@ function JobDetailScreen({ navigation, route }) {
                 </Inline>
               )}
 
-              {/* Quick-action list items */}
+              {/* Quick-action list items.
+                  "Advance status" is gone: it advanced the job, exactly like
+                  the tracker at the top of this tab, and did it by posting a
+                  hardcoded `en_route` whatever stage the job was on. Two
+                  controls for one action, one of them wrong. The tracker is
+                  the one control now. */}
               <Stack spacing="xs" style={styles.cardMargin}>
                 <SectionLabel>Actions</SectionLabel>
-                {!isDone && (
-                  <ListItem
-                    title="Advance status"
-                    subtitle="Move job to the next stage"
-                    left={<Feather name="play" size={16} color={colors.accentText} strokeWidth={2} />}
-                    onPress={() => handleAdvance(booking.status === 'in_progress' ? 'completed' : 'on_the_way')}
-                    showChevron
-                  />
-                )}
                 {canAssign && (
                   <ListItem
                     title={isAssigned ? 'Reassign this job' : 'Assign this job'}
@@ -522,17 +596,6 @@ function JobDetailScreen({ navigation, route }) {
                     showChevron
                   />
                 )}
-                {/* The ONLY route into ProofOfWorkScreen. The screen was
-                    registered in BusinessNavigator with nothing navigating to
-                    it, so before/after photos and the voice memo were
-                    unreachable in the running app even though both shipped. */}
-                <ListItem
-                  title="Proof of work"
-                  subtitle="Before/after photos and a voice note"
-                  left={<Feather name="camera" size={16} color={colors.textSecondary} strokeWidth={2} />}
-                  onPress={() => navigation.navigate('ProofOfWork', { bookingId: booking.id })}
-                  showChevron
-                />
                 <ListItem
                   title="Message client"
                   subtitle="Open the chat"

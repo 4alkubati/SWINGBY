@@ -22,7 +22,9 @@ import { api, extractMessage } from '../../services/api';
 import * as toast from '../../services/toast';
 import { SkeletonBox } from '../../components/Skeleton';
 import { RatingStarsDisplay } from '../../components/RatingStars';
+import ReviewCard from '../../components/ReviewCard';
 import { colors } from '../../theme/tokens';
+import { TEXT_END } from '../../services/rtl';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
@@ -98,30 +100,9 @@ function MetricCard({ label, value, sub, showProgress }) {
   );
 }
 
-// ─── Review card ──────────────────────────────────────────────────────────────
-function ReviewCard({ review }) {
-  return (
-    <View style={styles.reviewCard}>
-      <View style={styles.reviewHeader}>
-        <View style={styles.reviewAvatar}>
-          <Text style={styles.reviewAvatarText}>
-            {(review.client_first_name || 'A')[0].toUpperCase()}
-          </Text>
-        </View>
-        <View style={styles.reviewMeta}>
-          <Text style={styles.reviewName}>{review.client_first_name || 'Client'}</Text>
-          <Text style={styles.reviewDate}>{relativeDate(review.created_at)}</Text>
-        </View>
-        <RatingStarsDisplay rating={review.rating} size={12} />
-      </View>
-      {review.comment ? (
-        <Text style={styles.reviewComment} numberOfLines={2}>
-          {review.comment}
-        </Text>
-      ) : null}
-    </View>
-  );
-}
+// ReviewCard moved to components/ReviewCard.js — see the note there. This
+// screen renders the `detailed` variant, which is this card's old markup and
+// styles unchanged.
 
 // ─── Hero skeleton ────────────────────────────────────────────────────────────
 function HeroSkeleton() {
@@ -415,7 +396,13 @@ export default function BusinessAnalyticsScreen({ navigation, route }) {
         ) : (
           <View style={styles.reviewList}>
             {reviews.map((r) => (
-              <ReviewCard key={r.id} review={r} />
+              <ReviewCard
+                key={r.id}
+                review={r}
+                variant="detailed"
+                dateLabel={relativeDate(r.created_at)}
+                commentLines={2}
+              />
             ))}
           </View>
         )}
@@ -558,7 +545,7 @@ const styles = StyleSheet.create({
   },
   catCount: {
     width: 28,
-    textAlign: 'right',
+    textAlign: TEXT_END,
     fontSize: 12,
     fontWeight: '700',
     color: colors.textPrimary,
@@ -580,36 +567,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   reviewEmptyText: { fontSize: 14, color: colors.textSecondary },
-  reviewCard: {
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 16,
-    padding: 14,
-    gap: 10,
-  },
-  reviewHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  reviewAvatar: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
-    backgroundColor: colors.accentMuted,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  reviewAvatarText: { fontSize: 14, fontWeight: '700', color: colors.accentText },
-  reviewMeta: { flex: 1 },
-  reviewName: { fontSize: 14, fontWeight: '600', color: colors.textPrimary },
-  reviewDate: { fontSize: 11, color: colors.textSecondary },
-  reviewComment: {
-    fontSize: 13,
-    color: colors.textPrimary,
-    lineHeight: 19,
-  },
+  // review* styles moved to components/ReviewCard.js with the component.
 
   // Empty full
   emptyFull: {

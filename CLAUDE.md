@@ -99,10 +99,23 @@ verbatim. Keep those two in step; that text is what the client agreed to.
 No platform cut is taken on a cancellation — a retained penalty goes entirely to
 the business.
 
-**Post expiry** (`services/expiry_sweep.py`): a post is charged in full at post
-time, so if it expires with no accepted quote the money is **refunded
-immediately** — not held. That sweep is what makes charging up front defensible;
-do not make it conditional or deferred (Kira's ruling, 2026-07-29).
+**Nothing is charged when a client posts a job.** The charge-at-post trigger
+(TRIGGER 1) is wired but **gated OFF** in `api/service_posts.py` — it cannot
+capture in this schema (no matched business, so no agreed price; no `bookings`
+row for the NOT NULL `payments.booking_id`; no card on file). `payment_started`
+on the create response is therefore always `false`. Money is collected at
+**accept**, via `mobile/src/services/acceptAndPay.js`. Turning post-time capture
+on needs Stripe SetupIntent / card-on-file, which does not exist in this repo.
+Do not write client-facing copy that says otherwise — that claim shipped once
+and had to be pulled (2026-07-29).
+
+**Post expiry** (`services/expiry_sweep.py`): if a post expires with no accepted
+quote, any escrow held against it is **refunded immediately** — not held. Today
+that is normally a no-op, because nothing was charged at post; the sweep is
+written for it (a missing payment row and a zero-escrow row are both expected
+and skipped). It is the half that would make charging up front defensible if
+card-on-file ever lands, so do not make it conditional or deferred (Kira's
+ruling, 2026-07-29).
 
 ---
 

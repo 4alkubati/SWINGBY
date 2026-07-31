@@ -1,19 +1,23 @@
 import React, { useRef, useEffect } from 'react';
 import {
-  View, TouchableOpacity, Modal, Animated,
+  View, TouchableOpacity, Modal, Animated, Alert,
   StyleSheet, Dimensions, TouchableWithoutFeedback,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import Text from './Text';
 import i18n, { setLocale } from '../i18n';
+import { READY_LOCALES } from '../i18n-locales';
+import { restartApp } from '../services/rtl';
 import { colors, spacing } from '../theme/tokens';
 
 const SCREEN_HEIGHT = Dimensions.get('window').height;
 
-const LANGUAGES = [
-  { code: 'en', label: 'English', native: 'English' },
-  { code: 'fr-CA', label: 'French (Canada)', native: 'Français (Canada)' },
-];
+// Was a hardcoded pair. Arabic was fully translated — all 264 keys — and
+// missing from this list, so it could only ever activate if the phone itself
+// was Arabic: a newcomer on an English handset had no way to reach the Arabic
+// app that already existed. The list is now the shared registry, which the
+// device detector reads too, so the two cannot drift apart again.
+const LANGUAGES = READY_LOCALES;
 
 export default function LanguageSelector({ visible, onClose, currentLocale }) {
   const translateY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
@@ -34,9 +38,45 @@ export default function LanguageSelector({ visible, onClose, currentLocale }) {
     }
   }, [visible]);
 
+  // Switching between an LTR and an RTL language changes the NATIVE layout
+  // direction, and native only reads that at process start. So the app has to
+  // reload — a re-render leaves Arabic text sitting in a left-to-right layout,
+  // which is how this app shipped Arabic until 2026-07-30.
+  //
+  // The user is warned first rather than having the app vanish under them: an
+  // unexplained restart immediately after tapping a language reads as a crash.
+  // If the reload cannot be performed (Expo Go and dev clients have updates
+  // disabled), we say so plainly instead of leaving them on a half-flipped
+  // screen wondering why it looks wrong.
   async function handleSelect(code) {
-    await setLocale(code);
-    onClose(code);
+    const { needsRestart } = await setLocale(code);
+
+    if (!needsRestart) {
+      onClose(code);
+      return;
+    }
+
+    const lang = LANGUAGES.find((l) => l.code === code);
+    Alert.alert(
+      i18n.t('language.restartTitle'),
+      i18n.t('language.restartBody', { language: lang?.native || code }),
+      [
+        {
+          text: i18n.t('language.restartNow'),
+          onPress: async () => {
+            const reloaded = await restartApp();
+            if (!reloaded) {
+              Alert.alert(
+                i18n.t('language.restartTitle'),
+                i18n.t('language.restartManual'),
+              );
+            }
+            onClose(code);
+          },
+        },
+      ],
+      { cancelable: false },
+    );
   }
 
   return (

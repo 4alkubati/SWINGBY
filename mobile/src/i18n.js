@@ -3,6 +3,8 @@ import { I18n } from 'i18n-js';
 import * as Localization from 'expo-localization';
 // Cross-platform storage wrapper (works on web + native).
 import * as SecureStore from './services/storage';
+import { resolveLocale } from './i18n-locales';
+import { applyDirection, syncDirectionOnBoot } from './services/rtl';
 
 const LOCALE_KEY = 'swingby_locale';
 
@@ -1100,21 +1102,97 @@ const acceptChargesNow = {
 };
 Object.assign(translations.en, acceptChargesNow);
 
-// ─── Payment model lock-in (AMENDMENT 1, 2026-07-26) ─────────────────────────
-// Appended as its own block for the same reason as the two above: parallel
-// lanes append to this file and a hunk in the middle of `translations`
-// conflicts with all of them. English only — enableFallback is on.
+// ── Posting takes no money — 2026-07-29 ──────────────────────────────────────
+// Appended for the same merge-conflict reason as the blocks above. English
+// only — enableFallback is on.
 //
-// Posting now charges the client's full budget in one action — "Post + Pay
-// (same button)". The review-step CTA must name that amount, and a failed
-// charge needs its own specific copy: no post is created on a decline, unlike
-// the accept-a-quote path (acceptChargesNow, above) where the booking already
-// exists and is merely left unpaid.
-const paymentModelLockin = {
-  'postJob.ctaPostAndPayAmount': 'Post & pay %{amount}',
-  'postJob.chargeDeclined': 'Your card was declined — try another card.',
+// The block above ("Post + Pay (same button)") described an intention, not the
+// build. Nothing is charged when a client posts a job: the charge-at-post
+// trigger is gated OFF in backend/app/api/service_posts.py because it cannot
+// capture without card-on-file (no matched business, no agreed price, no
+// bookings row for payments.booking_id, no saved card), and `payment_started`
+// on the create response is therefore always false. Money is collected at
+// ACCEPT, through mobile/src/services/acceptAndPay.js.
+//
+// So every string that told the client their budget was charged or held at
+// post time was false — in a payments product. These replace them. The wording
+// matches the targeted-quote branch, which was right all along: nothing is
+// charged until you accept a quote.
+//
+// The keys deliberately dropped rather than reworded, so no screen can revive
+// the old claim by referencing them: postJob.ctaPostAndPay,
+// postJob.ctaPostAndPayAmount, postJob.chargeDeclined, postJob.holdFailed.
+const postTakesNoMoney = {
+  // Review-step explainer (the lock-icon block).
+  'postJob.escrowExplainerLead': 'Nothing is charged now.',
+  'postJob.escrowExplainer':
+    'Your budget tells pros what you have to work with. You pay only when you accept a quote, and you see the exact price first.',
+
+  // Review-step CTA. No amount: naming a figure on a button is how you say
+  // "this charges it", and this one does not.
+  'postJob.ctaPost': 'Post job',
+
+  // Review-step hint. Was a hardcoded English template literal in
+  // PostJobScreen; it belongs here like its neighbours, since the app ships
+  // en / fr-CA / ar.
+  'postJob.hintOpen':
+    "Pros nearby see your job and send quotes. You're not charged until you accept one.",
+  'postJob.hintTargeted':
+    '%{business} replies with a price and time. Nothing is charged until you accept.',
+
+  // Pay sheet, mode="hold" — used only by the post-a-job flow. It is a budget
+  // review, not a checkout: it takes no money, so it no longer says it does,
+  // and PaySheet hides the "Pay with" card picker in this mode.
+  'pay.titleHold': 'Confirm your job',
+  'pay.ctaHold': 'Post job',
+  'pay.holding': 'Posting…',
+  'pay.onHoldToday': 'Your budget',
+  'pay.escrowHold':
+    'Nothing is charged now. You pay when you accept a quote, and unused budget is never taken.',
+
+  // Public business profile, third stat in the mock's row. Real completed
+  // bookings only — see _completed_bookings in backend/app/api/businesses.py.
+  'businessProfile.jobsDone': '%{count} jobs done',
 };
-Object.assign(translations.en, paymentModelLockin);
+Object.assign(translations.en, postTakesNoMoney);
+for (const key of [
+  'postJob.ctaPostAndPay',
+  'postJob.ctaPostAndPayAmount',
+  'postJob.chargeDeclined',
+  'postJob.holdFailed',
+]) {
+  delete translations.en[key];
+}
+
+// ── The restart prompt when layout direction flips — 2026-07-30 ─────────────
+// Translated into ALL THREE locales rather than English-with-fallback, unlike
+// most of the recent append blocks. This particular dialog is shown at the
+// exact moment somebody switches INTO or OUT OF Arabic, so an English-only
+// string here would greet an Arabic speaker in English at the one moment they
+// have just told us they do not want English. It is four strings; there is no
+// excuse for deferring them.
+Object.assign(translations.en, {
+  'language.restartTitle': 'Restart needed',
+  'language.restartBody':
+    'SwingBy needs to restart to switch the layout for %{language}.',
+  'language.restartNow': 'Restart now',
+  'language.restartManual': 'Please close and reopen SwingBy to finish switching.',
+});
+Object.assign(translations['fr-CA'], {
+  'language.restartTitle': 'Redémarrage nécessaire',
+  'language.restartBody':
+    'SwingBy doit redémarrer pour adapter la mise en page à %{language}.',
+  'language.restartNow': 'Redémarrer maintenant',
+  'language.restartManual':
+    'Veuillez fermer puis rouvrir SwingBy pour terminer le changement.',
+});
+Object.assign(translations.ar, {
+  'language.restartTitle': 'يلزم إعادة التشغيل',
+  'language.restartBody':
+    'يحتاج SwingBy إلى إعادة التشغيل لتغيير اتجاه الواجهة إلى %{language}.',
+  'language.restartNow': 'إعادة التشغيل الآن',
+  'language.restartManual': 'يرجى إغلاق SwingBy وفتحه مرة أخرى لإكمال التغيير.',
+});
 
 const i18n = new I18n(translations);
 
@@ -1133,22 +1211,43 @@ i18n.defaultSeparator = String.fromCharCode(0);
     if (stored) {
       i18n.locale = stored;
     } else {
-      // Use device locale if supported, else fallback en
+      // Use device locale if supported, else fallback en. `resolveLocale`
+      // is the shared registry's matcher — the same list LanguageSelector
+      // offers, so a language can never be detectable but unpickable (which
+      // is exactly what happened to Arabic) or the reverse.
       const deviceLocale = Localization.getLocales?.()?.[0]?.languageTag ?? Localization.locale ?? 'en';
-      if (deviceLocale.startsWith('fr')) i18n.locale = 'fr-CA';
-      else if (deviceLocale.startsWith('ar')) i18n.locale = 'ar';
-      else i18n.locale = 'en';
+      i18n.locale = resolveLocale(deviceLocale);
     }
   } catch {
     i18n.locale = 'en';
   }
+  // Line the native layout direction up with whatever locale we just settled
+  // on. Sets the flag only — deliberately does NOT restart here; see the note
+  // on syncDirectionOnBoot about boot loops.
+  syncDirectionOnBoot(i18n.locale);
 })();
 
+/**
+ * Switch language, persist it, and report whether the LAYOUT also has to flip.
+ *
+ * Returns `{ needsRestart }`. Callers must act on it: a locale change between
+ * an LTR and an RTL language leaves the running UI in the old direction until
+ * the app reloads, because native reads the direction once at process start.
+ * Ignoring this is what produces a screen with Arabic text in a left-to-right
+ * layout — the exact state this app shipped in before 2026-07-30.
+ */
 export async function setLocale(locale) {
   i18n.locale = locale;
   try {
     await SecureStore.setItemAsync(LOCALE_KEY, locale);
   } catch { /* non-fatal */ }
+
+  let needsRestart = false;
+  try {
+    needsRestart = applyDirection(locale);
+  } catch { /* direction is best-effort; never block a language change */ }
+
+  return { needsRestart };
 }
 
 export default i18n;

@@ -28,6 +28,8 @@ import Inline from '../../components/Inline';
 import HeaderGlow from '../../components/HeaderGlow';
 import { SkeletonBox, SkeletonCard } from '../../components/Skeleton';
 import { RatingStarsDisplay } from '../../components/RatingStars';
+import SectionHeader from '../../components/SectionHeader';
+import ReviewCard from '../../components/ReviewCard';
 // Walkthrough M3 — Google review import. `GoogleReviewsConnect` is the owner's
 // control (and renders a "coming soon" card while Google's Business Profile
 // approval is pending); `ImportedReviewsSection` is what a CLIENT sees, in its
@@ -54,10 +56,9 @@ function computeDistanceKm(lat1, lng1, lat2, lng2) {
 }
 
 // Owner-view profile-completeness meter. Every check reads a field already
-// fetched on `business` — zero backend dependency. "jobs done" stat is
-// deliberately NOT computed here (see BusinessProfileScreen gap notes) since
-// the spec flagged its exact meaning (reviews vs. total bookings) as
-// ambiguous and unconfirmed by product/backend.
+// fetched on `business` — zero backend dependency. The "jobs done" stat is not
+// part of completeness (it measures work, not a filled-in profile); it is a
+// real figure and renders in the stat row from `completed_bookings`.
 function computeProfileCompleteness(business) {
   const checks = [
     !!business?.business_name,
@@ -149,14 +150,10 @@ function NoReviews() {
   );
 }
 
-// ─── Section header ───────────────────────────────────────────────────────────
-function SectionHeader({ title }) {
-  return (
-    <View style={styles.sectionHeader}>
-      <Text variant="label" color="secondary">{title}</Text>
-    </View>
-  );
-}
+// SectionHeader was redefined locally here, a plainer copy of
+// components/SectionHeader.js that had drifted from it (no header a11y role,
+// no letter-spacing, no font-scaling cap). It now imports the shared one and
+// passes the screen's spacing as `style`.
 
 // ─── Owner-view grouped row (D4) ──────────────────────────────────────────────
 // The owner blocks in the mock are grouped cards of 14px rows: label left,
@@ -207,28 +204,12 @@ function ManageRow({ label, value, pill, pillTone = 'success', onPress, last, ac
   );
 }
 
-// ─── Review card ──────────────────────────────────────────────────────────────
-// NOTE (payload-shape fix, MOBILE-PRODUCT Goal 2): GET /reviews/business/{id}
-// (backend/app/api/reviews.py) returns nested reviewer info under `users`
-// (`.select("*, users(first_name, last_name)")`, joined via reviews.reviewer_id
-// -> users.id) — this was reading `review.reviewer`, a key the response never
-// has, so every review card silently fell back to "Client". Same bug class as
-// the CLAUDE.md payload-drift warning.
-function ReviewCard({ review }) {
-  return (
-    <Surface elevation="subtle" style={styles.reviewCard}>
-      <Inline justify="space-between" style={{ marginBottom: spacing.sm }}>
-        <Text variant="smallMedium">{review.users?.first_name || 'Client'}</Text>
-        <RatingStarsDisplay rating={review.rating || 0} size={12} color={colors.warning} />
-      </Inline>
-      {review.comment ? (
-        <Text variant="small" color="secondary" style={{ lineHeight: 20 }}>
-          {review.comment}
-        </Text>
-      ) : null}
-    </Surface>
-  );
-}
+// ReviewCard moved to components/ReviewCard.js — it existed here and in
+// BusinessAnalyticsScreen with two different ideas of where the reviewer's
+// name lives. GET /reviews/business/{id} nests it under `users`; the analytics
+// payload flattens it to `client_first_name`; this copy read `review.reviewer`,
+// which neither returns, so every card here fell back to "Client". The shared
+// component's `reviewerName()` knows all three.
 
 // ─── Employee card (2-column grid) ────────────────────────────────────────────
 function EmployeeCard({ emp, editMode, onToggle, onPress }) {
@@ -594,6 +575,10 @@ export default function BusinessProfileScreen({ navigation, route }) {
 
         <AnimatedScrollView
           showsVerticalScrollIndicator={false}
+          // Same reason as the edit-mode list below: this owner view carries
+          // tappable rows and the subscription actions, and a swallowed first
+          // tap is indistinguishable from a broken button.
+          keyboardShouldPersistTaps="handled"
           contentContainerStyle={[styles.ownerContent, { paddingBottom: insets.bottom + 100 }]}
           refreshControl={
             <RefreshControl
@@ -939,6 +924,16 @@ export default function BusinessProfileScreen({ navigation, route }) {
           showsVerticalScrollIndicator={false}
           onScroll={scrollHandler}
           scrollEventThrottle={16}
+          // Edit mode puts the business-name/bio TextInputs and the "Save
+          // changes" button inside THIS scroll view. A ScrollView defaults to
+          // keyboardShouldPersistTaps="never", which spends the first tap
+          // outside the focused input on dismissing the keyboard and delivers
+          // it to nothing. So after typing, "Save changes" is on screen, fully
+          // enabled, and dead to the first tap — the button had to be pressed
+          // twice, which reads as "it shows but it isn't clickable".
+          // "handled" keeps the tap-to-dismiss behaviour for taps on blank
+          // space while letting a real control receive the tap immediately.
+          keyboardShouldPersistTaps="handled"
           contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 100 }]}
           refreshControl={
             <RefreshControl
@@ -1023,12 +1018,23 @@ export default function BusinessProfileScreen({ navigation, route }) {
                         {business.review_count} {business.review_count === 1 ? 'review' : 'reviews'}
                       </Text>
                     )}
+                    {/* "Jobs done" — the third stat in the mock's row. It was
+                        left out as "ambiguous, unconfirmed by product"; it is
+                        neither. It is completed bookings, and GET /businesses/
+                        {id} now returns `completed_bookings` for exactly this.
+                        Note it is NOT the analytics endpoint's `total_bookings`
+                        (owner-only, and counts cancelled and pending rows too)
+                        — see _completed_bookings in backend/app/api/businesses.py. */}
+                    {business?.completed_bookings > 0 && (
+                      <Text variant="small" color="secondary">
+                        {i18n.t('businessProfile.jobsDone', {
+                          count: business.completed_bookings,
+                        })}
+                      </Text>
+                    )}
                     {/* Distance from viewer — public view only, real data (viewer
                         coords + business lat/lng), never shown as a fabricated
-                        stat. "Jobs done" from the mock's 3-stat row is deliberately
-                        NOT added here — see BusinessProfileScreen report notes:
-                        ambiguous whether it should equal review_count or a
-                        distinct total_bookings field, unconfirmed by product. */}
+                        stat. */}
                     {!isOwnProfile && viewerCoords && typeof business?.lat === 'number' && typeof business?.lng === 'number' && (
                       <Text variant="small" color="secondary">
                         {i18n.t('businessProfile.distanceAway', {
@@ -1067,7 +1073,7 @@ export default function BusinessProfileScreen({ navigation, route }) {
           {/* ── Services / Tags chips row ── */}
           {!editMode && business?.services && business.services.length > 0 && (
             <>
-              <SectionHeader title="Services" />
+              <SectionHeader title="Services" style={styles.sectionHeader} />
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
@@ -1115,7 +1121,7 @@ export default function BusinessProfileScreen({ navigation, route }) {
           {/* ── Photos carousel ── */}
           {business?.photos && business.photos.length > 0 && (
             <>
-              <SectionHeader title="Photos" />
+              <SectionHeader title="Photos" style={styles.sectionHeader} />
               <FlatList
                 horizontal
                 data={business.photos}
@@ -1132,7 +1138,7 @@ export default function BusinessProfileScreen({ navigation, route }) {
               second, differently-earned kind of review can appear on this page,
               an unqualified heading is the ambiguity. These are the ones left
               on jobs booked and completed through SwingBy. */}
-          <SectionHeader title="SwingBy reviews" />
+          <SectionHeader title="SwingBy reviews" style={styles.sectionHeader} />
           {reviews.length === 0 ? (
             <View style={styles.hPad}>
               <NoReviews />
@@ -1388,7 +1394,6 @@ const styles = StyleSheet.create({
   },
 
   // Reviews
-  reviewCard:   { marginBottom: 0 },
   noReviews:    { alignItems: 'center', padding: spacing.xl },
   // Imported Google reviews sit a full step below the native list — the gap is
   // doing work here, separating two things a client must not conflate.

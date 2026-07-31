@@ -1061,6 +1061,13 @@ export default function ChatScreen({ navigation, route }) {
         keyExtractor={(m) => String(m.id)}
         contentContainerStyle={styles.messagesList}
         showsVerticalScrollIndicator={false}
+        // The composer keeps the keyboard up for most of this screen's life,
+        // and the list header carries the quote card — accept/decline included.
+        // With the default "never", the first tap on any of that is spent
+        // dismissing the keyboard, so accepting a quote mid-conversation
+        // silently does nothing until you tap again. Money path; "handled"
+        // delivers the tap to the control that owns it.
+        keyboardShouldPersistTaps="handled"
         onScroll={handleScroll}
         scrollEventThrottle={64}
         onContentSizeChange={() => {

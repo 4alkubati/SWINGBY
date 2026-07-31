@@ -727,6 +727,37 @@ def list_businesses(
         raise HTTPException(status_code=400, detail="Could not list businesses")
 
 
+def _completed_bookings(business_id: str) -> int:
+    """Jobs this business has actually finished.
+
+    The public "Jobs done" stat. Deliberately NOT the analytics endpoint's
+    ``total_bookings``, which is ``len(all bookings)`` — every row for the
+    business, cancelled and still-pending included. That number is fine as an
+    owner-only volume figure, but publishing it as "jobs done" would overstate
+    a business's track record to the client deciding whether to hire them, and
+    a trust-first product does not inflate trust signals.
+
+    Counts on failure as 0 rather than raising: this is one stat on a profile
+    page, not a reason the profile fails to load.
+    """
+    try:
+        res = (
+            supabase.table("bookings")
+            .select("id", count="exact")
+            .eq("business_id", business_id)
+            .eq("status", "completed")
+            .execute()
+        )
+        if res.count is not None:
+            return int(res.count)
+        return len(res.data or [])
+    except Exception:
+        logger.warning(
+            "completed_bookings_count_failed", biz_id=business_id, exc_info=True
+        )
+        return 0
+
+
 @router.get("/{business_id}")
 def get_business(business_id: str, current_user: dict = Depends(get_current_user)):
     try:
@@ -737,7 +768,13 @@ def get_business(business_id: str, current_user: dict = Depends(get_current_user
             .single()
             .execute()
         )
-        return _with_logo_key(res.data)
+        if not res.data:
+            raise HTTPException(status_code=404, detail="Business not found")
+        return _with_logo_key(
+            {**res.data, "completed_bookings": _completed_bookings(business_id)}
+        )
+    except HTTPException:
+        raise
     except Exception:
         raise HTTPException(status_code=404, detail="Business not found")
 

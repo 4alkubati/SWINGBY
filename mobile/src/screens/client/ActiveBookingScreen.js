@@ -36,6 +36,7 @@ import Stack from '../../components/Stack';
 import { SkeletonBox } from '../../components/Skeleton';
 import * as haptics from '../../services/haptics';
 import { colors, spacing, radius, motion, shadows } from '../../theme/tokens';
+import { TEXT_END } from '../../services/rtl';
 
 // Map hero height per handoff spec.
 const HERO_HEIGHT = 264;
@@ -151,7 +152,7 @@ function DetailRow({ label, value, valueStyle, last }) {
           {
             fontSize: 13.5,
             fontWeight: '600',
-            textAlign: 'right',
+            textAlign: TEXT_END,
             flex: 1,
             marginLeft: spacing.md,
             color: colors.textPrimary,
