@@ -166,6 +166,97 @@ The metadata is the part that actually takes calendar time. None of it is code.
 - **Age rating** questionnaire.
 - **Export compliance** — already answered by `ITSAppUsesNonExemptEncryption`.
 
+## 4b. Guideline blockers closed on 2026-07-31
+
+Three guideline problems that would have failed review were fixed rather than
+flagged. All three are in the repo now; none of them needs an account action.
+
+### Guideline 1.2 — user-generated content
+
+The app carried UGC on six surfaces (chat, voice notes, reviews, job posts,
+proof-of-work photos, avatars) and had **no report or block anywhere**. Apple
+requires four things for a UGC app, and all four now exist:
+
+| Requirement | Where |
+|---|---|
+| (a) filter objectionable material | `backend/app/services/content_moderation.py`, applied on write in `send_message` |
+| (b) report mechanism | `POST /moderation/reports`; `mobile/src/components/ReportSheet.js` on chat, reviews, posts, businesses, people |
+| (c) block abusive users | `POST /moderation/blocks`; Settings → Safety → Blocked accounts |
+| (d) published contact info | `support@swingbyy.com` in Settings → Contact us |
+
+Two things worth knowing about the shape of it:
+
+* **Blocks are stored one-way and enforced symmetrically**
+  (`visibility.blocked_pair_ids`). A one-way block leaves the abuser free to
+  keep initiating, which is the behaviour 1.2(c) exists to stop.
+* **The filter is not a profanity filter.** Blocking "shit" annoys every
+  tradesperson on the platform and catches no abuser. The hard-block list is
+  slurs, sexual solicitation and threats; general profanity only raises a
+  report, and only when aimed at a person. The false-positive matrix in
+  `backend/tests/test_content_moderation.py` is the larger half of that file
+  on purpose — "the pipe is screwed" and "kill the power at the breaker" are
+  ordinary messages here.
+
+The admin queue is **in-app** (`Admin → Reported content`), not `web/admin/`,
+for the same reason refund decisions moved: `web/admin/` is not deployed. 1.2
+commits us to acting on reports within 24 hours, and a queue nobody can open is
+the same as no report mechanism.
+
+### Guideline 5.1.1(v) — account deletion was broken at runtime
+
+`DELETE /me` required a password; `SettingsScreen` sent only the confirmation
+phrase. **Every deletion attempt 422'd.** Worse, the re-auth went through
+`sign_in_with_password`, so once Sign in with Apple ships, an Apple-created
+account could never have been deleted — and that is exactly the account a
+reviewer tests with.
+
+The password is now optional in the schema and required *in effect* only where
+the account has a password identity, checked via `GET /me/auth-methods`. The
+check **fails closed**: an unreadable identity list is treated as "has a
+password", so a lookup outage can never downgrade re-authentication.
+
+The sheet's copy was also false — it said "permanently delete your account and
+all data" when bookings, payments and invoices are retained for six years for
+the CRA, exactly as the privacy policy says. Fixed; a reviewer who reads the
+policy and then the dialog will now find them agreeing.
+
+### Guideline 3.1.1 — link-out purchase, in two places
+
+An iOS app may not link out to a purchase flow for digital goods.
+`BusinessProfileScreen` POSTed `/businesses/me/subscribe` and opened a Stripe
+Checkout URL — and so did `AutoBiddingScreen`'s locked state, which is easy to
+miss because it is not on the subscription screen. Gating one and shipping the
+other would have left the violation in place.
+
+Both are now behind `SUBSCRIPTION_PURCHASE` in `mobile/src/config/features.js`,
+which is **build-time, deliberately not server-driven**. A purchase button a
+server can switch on after review is precisely what the rule exists to catch,
+and a network failure should not get to decide whether the app is compliant.
+The false branch renders a plain sentence with no link and no button — a URL
+there would itself be the 3.1.1(a) violation.
+
+Status display stays (reading state is not selling anything) and prices are
+stripped from the tier labels, because a dollar figure beside a hidden purchase
+path is the mixed signal that turns a reviewer's glance into a question.
+
+Flipping the flag to `true` is not a one-line change: it needs either StoreKit
+IAP or a written determination that a platform membership fee falls outside
+3.1.1. See `Roadmap/dominoes/D2.4-business-subscription.md`.
+
+### Also in this pass
+
+* `NSLocationAlwaysUsageDescription` **deleted**. Verified there is no
+  background-location code anywhere in `mobile/` — no
+  `requestBackgroundPermissionsAsync`, no `UIBackgroundModes`, no
+  `TaskManager`, no `startLocationUpdatesAsync`. It bought an Always-location
+  review question for nothing.
+* `android.permissions` deduped — 13 entries for 5 unique permissions, some in
+  bare form and some fully qualified.
+* `"environment"` added to every `eas.json` build profile. **Without it EAS
+  injects no environment variables**, so `GOOGLE_MAPS_API_KEY` never reaches
+  `app.config.js` and every map screen ships blank — a Guideline 2.1 rejection
+  that only shows up in a cloud build.
+
 ## 5. Deliberately not done
 
 - **Apple Pay.** `merchantIdentifier` stays empty. It needs a merchant ID

@@ -131,6 +131,47 @@ ruling, 2026-07-29).
 
 ---
 
+## Moderation — report, block, filter (App Store Guideline 1.2)
+
+Added 2026-07-31. The app carries user-generated content on six surfaces (chat,
+voice notes, reviews, job posts, proof-of-work photos, avatars), which is what
+makes all of this mandatory rather than optional.
+
+Tables: `content_reports`, `user_blocks`, plus a nullable `hidden_at` on
+`messages` / `reviews` / `service_posts` / `booking_photos`
+(migration `20260731090000_ugc_reports_and_blocks.sql`).
+
+Three rules worth knowing before you touch any of it:
+
+- **Blocks are stored one-way, enforced symmetrically.**
+  `user_blocks` has a `blocker_id → blocked_id` direction, but
+  `services/visibility.py::blocked_pair_ids` returns BOTH sides and every
+  enforcement point uses that. A one-way block would let the abuser keep
+  initiating, which is the behaviour Guideline 1.2(c) exists to stop. Enforced
+  in `messages.py` (send → 403, inbox, thread reads), `service_posts.py` (feed),
+  `businesses.py` (all three discovery paths), `interests.py` (quoting).
+  Composes with `hidden_user_ids` — a feed drops the union.
+
+- **`hidden_at` is a soft hide, never a delete.** Read paths filter
+  `hidden_at is null`; the row survives for the admin trail and, on `messages`,
+  for the same CRA-retention posture `me.py` documents. Adding a new read path
+  over any of those four tables means adding the filter.
+
+- **`content_moderation.py` is not a profanity filter, on purpose.** Blocking
+  "shit" annoys every tradesperson and catches no abuser. Hard-block is slurs,
+  sexual solicitation and threats; general profanity only FLAGS (stores +
+  auto-files a report) and only when aimed at a person. Matching happens against
+  a normalised form where character runs are collapsed to one — so a term added
+  to a list must be written in collapsed form, or it will silently never match.
+  See the false-positive matrix in `tests/test_content_moderation.py` before
+  adding anything.
+
+Admin review is **in-app** (`Admin → Reported content` → `ReportQueueScreen`),
+not `web/admin/`, which is not deployed. `services/moderation.py::suspend_user`
+is shared with `api/admin.py` so the two cannot drift.
+
+---
+
 ## Deployment
 
 - Pre-launch site: https://swingbyy.com (Cloudflare Pages project `swingby-prelaunch`)

@@ -520,10 +520,17 @@ def _counterpart_user_id(
             .single()
             .execute()
         )
+        # `.single()` yields a dict, but tolerate a list too: this runs on the
+        # message-read path, and unwrapping is INSIDE the try because a shape
+        # surprise here must degrade to "no Block control" rather than 400 the
+        # whole thread. The metadata is decorative; the thread is not.
+        data = res.data
+        if isinstance(data, list):
+            data = data[0] if data else {}
+        owner_id = (data or {}).get("owner_id")
     except Exception:
         logger.warning("counterpart_lookup_failed", exc_info=True)
         return None
-    owner_id = (res.data or {}).get("owner_id")
     # A business owner viewing their own thread has no counterpart on this path.
     return None if owner_id == viewer_id else owner_id
 
