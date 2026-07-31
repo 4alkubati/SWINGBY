@@ -1467,6 +1467,68 @@ Object.assign(translations.ar, {
   'settings.deleteAccountDone': 'تم حذف حسابك.',
 });
 
+// ── The client's approval is what releases the money — 2026-07-31 ───────────
+// Until now the BUSINESS released its own escrow by marking the job complete,
+// so the client had nothing to approve and none of this copy existed. All three
+// locales, not English-with-fallback: this is the screen where somebody parts
+// with money, and a fallback language at that moment is not acceptable.
+Object.assign(translations.en, {
+  'approval.approveCta': 'Approve & release payment',
+  'approval.approveShort': 'Approve',
+  'approval.confirmTitle': 'Release the payment?',
+  'approval.confirmBody':
+    'This pays the pro for the work. Only do this if the job is finished and you’re happy with it.',
+  'approval.confirmBodyAmount':
+    'This releases %{amount} to the pro. Only do this if the job is finished and you’re happy with it.',
+  'approval.released': 'Payment released',
+  'approval.failed': 'Could not release the payment',
+  // The waiting state, shown to whoever is waiting.
+  'approval.waitingTitle': 'Waiting for you to approve',
+  'approval.waitingBody':
+    'The pro marked this job done. Check the work, then release the payment. If you do nothing it releases automatically in 24 hours.',
+  'approval.businessWaitingTitle': 'Waiting for the client',
+  'approval.businessWaitingBody':
+    'You marked this done. The client has 24 hours to approve — after that the payment releases to you automatically.',
+  'approval.autoReleased': 'Released automatically — the client didn’t respond in 24 hours.',
+});
+Object.assign(translations['fr-CA'], {
+  'approval.approveCta': 'Approuver et libérer le paiement',
+  'approval.approveShort': 'Approuver',
+  'approval.confirmTitle': 'Libérer le paiement?',
+  'approval.confirmBody':
+    'Ceci paie le pro pour son travail. À faire seulement si le travail est terminé et vous convient.',
+  'approval.confirmBodyAmount':
+    'Ceci libère %{amount} au pro. À faire seulement si le travail est terminé et vous convient.',
+  'approval.released': 'Paiement libéré',
+  'approval.failed': 'Impossible de libérer le paiement',
+  'approval.waitingTitle': 'En attente de votre approbation',
+  'approval.waitingBody':
+    'Le pro a marqué ce travail comme terminé. Vérifiez le travail, puis libérez le paiement. Sans action de votre part, il sera libéré automatiquement dans 24 heures.',
+  'approval.businessWaitingTitle': 'En attente du client',
+  'approval.businessWaitingBody':
+    'Vous avez marqué ce travail comme terminé. Le client a 24 heures pour approuver — ensuite le paiement vous est libéré automatiquement.',
+  'approval.autoReleased':
+    'Libéré automatiquement — le client n’a pas répondu en 24 heures.',
+});
+Object.assign(translations.ar, {
+  'approval.approveCta': 'الموافقة وتحرير الدفعة',
+  'approval.approveShort': 'موافقة',
+  'approval.confirmTitle': 'تحرير الدفعة؟',
+  'approval.confirmBody':
+    'سيتم دفع المبلغ للمحترف مقابل عمله. لا تفعل ذلك إلا إذا اكتمل العمل وكنت راضيًا عنه.',
+  'approval.confirmBodyAmount':
+    'سيتم تحرير %{amount} للمحترف. لا تفعل ذلك إلا إذا اكتمل العمل وكنت راضيًا عنه.',
+  'approval.released': 'تم تحرير الدفعة',
+  'approval.failed': 'تعذّر تحرير الدفعة',
+  'approval.waitingTitle': 'بانتظار موافقتك',
+  'approval.waitingBody':
+    'أشار المحترف إلى اكتمال العمل. تحقّق من العمل ثم حرّر الدفعة. إذا لم تقم بأي إجراء، ستُحرَّر تلقائيًا خلال 24 ساعة.',
+  'approval.businessWaitingTitle': 'بانتظار العميل',
+  'approval.businessWaitingBody':
+    'لقد أشرت إلى اكتمال العمل. أمام العميل 24 ساعة للموافقة — بعدها تُحرَّر الدفعة إليك تلقائيًا.',
+  'approval.autoReleased': 'تم التحرير تلقائيًا — لم يستجب العميل خلال 24 ساعة.',
+});
+
 const i18n = new I18n(translations);
 
 // Default fallback

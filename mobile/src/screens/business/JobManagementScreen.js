@@ -279,9 +279,18 @@ function JobDetailScreen({ navigation, route }) {
     setAdvancing(true);
     try {
       if (stage === 'completed') {
-        // /complete owns payment release, so it stays the completion path; it
-        // writes the `completed` event itself.
-        await api.patch(`/bookings/${bookingId}/complete`);
+        // /complete stays the completion path and still writes the `completed`
+        // event itself — but since 2026-07-31 it NO LONGER releases the money.
+        // It opens a 24h window for the client to approve; the client approving
+        // (or that window closing) is what pays the business. Say so, rather
+        // than let the business assume they have just been paid.
+        const res = await api.patch(`/bookings/${bookingId}/complete`);
+        if (res?.approval_deadline_at) {
+          Alert.alert(
+            i18n.t('approval.businessWaitingTitle'),
+            i18n.t('approval.businessWaitingBody'),
+          );
+        }
       } else {
         await api.post(`/bookings/${bookingId}/events`, { event_type: stage });
       }
