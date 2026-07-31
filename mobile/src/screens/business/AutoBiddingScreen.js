@@ -38,6 +38,8 @@ import { api } from '../../services/api';
 import * as haptics from '../../services/haptics';
 import * as toast from '../../services/toast';
 import i18n from '../../i18n';
+// App Store Guideline 3.1.1 — build-time, deliberately not server-driven.
+import { SUBSCRIPTION_PURCHASE } from '../../config/features';
 import { colors, radius } from '../../theme/tokens';
 
 // Local constants — theme/tokens.js belongs to another lane this cycle.
@@ -482,26 +484,43 @@ export default function AutoBiddingScreen({ navigation }) {
               </View>
             )}
 
-            <Pressable
-              onPress={handleSubscribe}
-              disabled={subscribing}
-              style={({ pressed }) => [
-                styles.cta,
-                { marginTop: 4 },
-                subscribing && { opacity: 0.4 },
-                pressed && !subscribing && { opacity: 0.9, transform: [{ scale: 0.98 }] },
-              ]}
-              accessibilityRole="button"
-              accessibilityLabel="Subscribe to unlock auto-bidding"
-            >
-              {subscribing ? (
-                <ActivityIndicator color={colors.textPrimary} />
-              ) : (
-                <Text style={styles.ctaLabel}>
-                  {subStatus === 'past_due' ? 'Update billing' : 'Subscribe to unlock'}
-                </Text>
-              )}
-            </Pressable>
+            {/* App Store Guideline 3.1.1 — the SECOND link-out purchase path.
+                This one is easy to miss: it is not on the subscription screen,
+                it is on a locked feature screen, and it POSTed the same
+                /businesses/me/subscribe and opened the same Stripe Checkout URL
+                as the profile CTA. Gating one and not the other would have left
+                the violation shipping.
+
+                The locked state itself is fine and stays — describing a feature
+                the reader does not have is not selling anything. What cannot
+                ship is the button that takes them out to buy it. */}
+            {SUBSCRIPTION_PURCHASE ? (
+              <Pressable
+                onPress={handleSubscribe}
+                disabled={subscribing}
+                style={({ pressed }) => [
+                  styles.cta,
+                  { marginTop: 4 },
+                  subscribing && { opacity: 0.4 },
+                  pressed && !subscribing && { opacity: 0.9, transform: [{ scale: 0.98 }] },
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel="Subscribe to unlock auto-bidding"
+              >
+                {subscribing ? (
+                  <ActivityIndicator color={colors.textPrimary} />
+                ) : (
+                  <Text style={styles.ctaLabel}>
+                    {subStatus === 'past_due' ? 'Update billing' : 'Subscribe to unlock'}
+                  </Text>
+                )}
+              </Pressable>
+            ) : (
+              <Text style={styles.upgradeBody}>
+                Auto-bidding is part of a SwingBy plan. Plans are managed on
+                swingbyy.com.
+              </Text>
+            )}
           </View>
         )}
 

@@ -22,6 +22,10 @@ import NearbyMapScreen from '../screens/client/NearbyMapScreen';
 import ProfileEditScreen from '../screens/profile/ProfileEditScreen';
 import SettingsScreen from '../screens/shared/SettingsScreen';
 import PrivacyPolicyScreen from '../screens/profile/PrivacyPolicyScreen';
+// Guideline 1.2(c) — Settings -> Safety -> Blocked accounts. Registered in
+// BOTH navigators: the app is dual-role and a business owner needs to unblock
+// someone just as much as a client does.
+import BlockedAccountsScreen from '../screens/profile/BlockedAccountsScreen';
 import TermsOfServiceScreen from '../screens/shared/TermsOfServiceScreen';
 import HelpFAQScreen from '../screens/profile/HelpFAQScreen';
 import ReferralScreen from '../screens/profile/ReferralScreen';
@@ -71,6 +75,7 @@ export default function ClientNavigator() {
       <Stack.Screen name="NearbyMap" component={NearbyMapScreen} />
       <Stack.Screen name="ProfileEdit" component={ProfileEditScreen} />
       <Stack.Screen name="Settings" component={SettingsScreen} />
+      <Stack.Screen name="BlockedAccounts" component={BlockedAccountsScreen} options={{ headerShown: false }} />
       <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} />
       <Stack.Screen name="TermsOfService" component={TermsOfServiceScreen} />
       <Stack.Screen name="HelpFAQ" component={HelpFAQScreen} />

@@ -24,6 +24,7 @@ from app.deps import get_current_user
 from app.limiter import limiter
 from app.supabase_client import supabase
 from app.api.waitlist import get_notion, WAITLIST_DB_ID
+from app.services import moderation
 from app.services.audit import record_audit
 
 logger = structlog.get_logger(__name__)
@@ -96,16 +97,15 @@ def suspend_user(
     user_id: str,
     current_user: dict = Depends(require_admin),
 ):
-    """Sets users.is_suspended = true for the given user."""
+    """Sets users.is_suspended = true for the given user.
+
+    The body lives in services/moderation.py because the Guideline 1.2 report
+    queue suspends through the same path (resolving a report with
+    action_taken='user_suspended'). Two copies would be two places that could
+    disagree about what suspension means.
+    """
     try:
-        res = (
-            supabase.table("users")
-            .update({"is_suspended": True})
-            .eq("id", user_id)
-            .execute()
-        )
-        if not res.data:
-            raise HTTPException(status_code=404, detail="User not found")
+        moderation.suspend_user(user_id)
         logger.info(
             "admin.suspend_user", admin_id=current_user["id"], target_user=user_id
         )
@@ -119,6 +119,10 @@ def suspend_user(
         return {"message": "user_suspended", "user_id": user_id}
     except HTTPException:
         raise
+    except moderation.TargetNotFound:
+        # Kept as a 404 — the pre-extraction handler returned one, and the admin
+        # app distinguishes "no such user" from "could not suspend".
+        raise HTTPException(status_code=404, detail="User not found")
     except Exception:
         logger.exception("admin.suspend_user failed", target_user=user_id)
         raise HTTPException(status_code=400, detail="Could not suspend user")
@@ -131,16 +135,10 @@ def unsuspend_user(
     user_id: str,
     current_user: dict = Depends(require_admin),
 ):
-    """Sets users.is_suspended = false for the given user."""
+    """Sets users.is_suspended = false for the given user. Shares the service
+    function with suspend_user so both directions stay one implementation."""
     try:
-        res = (
-            supabase.table("users")
-            .update({"is_suspended": False})
-            .eq("id", user_id)
-            .execute()
-        )
-        if not res.data:
-            raise HTTPException(status_code=404, detail="User not found")
+        moderation.suspend_user(user_id, suspended=False)
         logger.info(
             "admin.unsuspend_user", admin_id=current_user["id"], target_user=user_id
         )
@@ -154,6 +152,8 @@ def unsuspend_user(
         return {"message": "user_unsuspended", "user_id": user_id}
     except HTTPException:
         raise
+    except moderation.TargetNotFound:
+        raise HTTPException(status_code=404, detail="User not found")
     except Exception:
         logger.exception("admin.unsuspend_user failed", target_user=user_id)
         raise HTTPException(status_code=400, detail="Could not unsuspend user")

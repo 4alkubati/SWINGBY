@@ -37,6 +37,11 @@ import ReviewCard from '../../components/ReviewCard';
 import GoogleReviewsConnect from '../../components/GoogleReviewsConnect';
 import ImportedReviewsSection from '../../components/ImportedReviewsSection';
 import { getImportedReviews } from '../../services/googleReviews';
+// App Store Guideline 3.1.1 — build-time, deliberately not server-driven.
+import { SUBSCRIPTION_PURCHASE, SUBSCRIPTION_STATUS_DISPLAY } from '../../config/features';
+// Guideline 1.2(b) — a public profile and every review on it are reportable.
+import ReportSheet from '../../components/ReportSheet';
+import * as moderation from '../../services/moderation';
 import i18n from '../../i18n';
 
 // Haversine distance in km — same formula as SearchScreen's local helper
@@ -297,6 +302,10 @@ export default function BusinessProfileScreen({ navigation, route }) {
   const [importedReviews, setImportedReviews] = useState([]);
   const [importedSummary, setImportedSummary] = useState(null);
   const [subscription, setSubscription] = useState(null);
+  // Guideline 1.2(b) — { targetType, targetId } while the report sheet is open.
+  // One piece of state serves both "report this review" and "report this
+  // business", which is what lets one sheet serve both.
+  const [reportTarget, setReportTarget] = useState(null);
   const [subActionInFlight, setSubActionInFlight] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -747,47 +756,68 @@ export default function BusinessProfileScreen({ navigation, route }) {
           <Text variant="label" color="secondary" style={styles.ownerSectionLabel}>Reviews</Text>
           <GoogleReviewsConnect compact onImported={() => load()} />
 
-          {/* ── Plan ── */}
-          {subscription ? (
+          {/* ── Plan ──
+              App Store Guideline 3.1.1. Both CTAs here used to link OUT: "Start
+              subscription" POSTed /businesses/me/subscribe and opened a Stripe
+              Checkout URL, and "Manage subscription" opened the billing portal.
+              An iOS app may not link out to a purchase flow for digital goods,
+              and a Stripe Checkout link for a recurring platform fee is exactly
+              that — so behind SUBSCRIPTION_PURCHASE both are gone, replaced by
+              a sentence with no link and no button. A URL in the false branch
+              would itself be the 3.1.1(a) violation, which is why there isn't
+              one.
+
+              The STATUS pill stays: showing what someone already bought is
+              information, not a purchase flow. Prices are stripped from the
+              tier labels for the same reason — a dollar figure sitting next to
+              a hidden purchase path is the mixed signal that turns a glance
+              into a question. */}
+          {subscription && SUBSCRIPTION_STATUS_DISPLAY ? (
             <>
               <Text variant="label" color="secondary" style={styles.ownerSectionLabel}>Plan</Text>
               <View style={styles.ownerBlock}>
                 <ManageRow
                   label={
-                    subscription.tier === 'team' ? 'Team ($80/mo)'
+                    subscription.tier === 'team' ? 'Team'
                       : subscription.tier === 'enterprise' ? 'Enterprise'
-                        : 'Solo ($30/mo)'
+                        : 'Solo'
                   }
                   pill={(subscription.status || 'trialing').toUpperCase()}
                   pillTone={subscription.status === 'active' ? 'success' : 'neutral'}
                   last
                 />
               </View>
-              <View style={styles.ownerCtaWrap}>
-                {subscription.manage_url ? (
-                  <Button
-                    variant="secondary"
-                    label="Manage subscription"
-                    onPress={() => Linking.openURL(subscription.manage_url)}
-                  />
-                ) : (
-                  <Button
-                    label={subActionInFlight ? 'Starting…' : 'Start subscription'}
-                    onPress={async () => {
-                      setSubActionInFlight(true);
-                      try {
-                        const res = await api.post('/businesses/me/subscribe', {});
-                        if (res.checkout_url) await Linking.openURL(res.checkout_url);
-                        else await load();
-                      } catch { /* toast via api */ } finally {
-                        setSubActionInFlight(false);
-                      }
-                    }}
-                    disabled={subActionInFlight}
-                    loading={subActionInFlight}
-                  />
-                )}
-              </View>
+              {SUBSCRIPTION_PURCHASE ? (
+                <View style={styles.ownerCtaWrap}>
+                  {subscription.manage_url ? (
+                    <Button
+                      variant="secondary"
+                      label="Manage subscription"
+                      onPress={() => Linking.openURL(subscription.manage_url)}
+                    />
+                  ) : (
+                    <Button
+                      label={subActionInFlight ? 'Starting…' : 'Start subscription'}
+                      onPress={async () => {
+                        setSubActionInFlight(true);
+                        try {
+                          const res = await api.post('/businesses/me/subscribe', {});
+                          if (res.checkout_url) await Linking.openURL(res.checkout_url);
+                          else await load();
+                        } catch { /* toast via api */ } finally {
+                          setSubActionInFlight(false);
+                        }
+                      }}
+                      disabled={subActionInFlight}
+                      loading={subActionInFlight}
+                    />
+                  )}
+                </View>
+              ) : (
+                <Text variant="caption" color="secondary" style={styles.ownerCtaWrap}>
+                  Plans are managed on swingbyy.com.
+                </Text>
+              )}
             </>
           ) : null}
 
@@ -1146,10 +1176,44 @@ export default function BusinessProfileScreen({ navigation, route }) {
           ) : (
             <Stack spacing="sm" style={styles.hPad}>
               {reviews.map((rev) => (
-                <ReviewCard key={rev.id} review={rev} />
+                <ReviewCard
+                  key={rev.id}
+                  review={rev}
+                  // Guideline 1.2(b). Visitors only: the owner reporting reviews
+                  // left about their own business is not what this is for, and
+                  // an admin hiding one on that basis would be censorship
+                  // dressed as moderation.
+                  onReport={
+                    isOwner
+                      ? undefined
+                      : (r) =>
+                          setReportTarget({
+                            targetType: moderation.REPORT_TARGETS.REVIEW,
+                            targetId: r.id,
+                          })
+                  }
+                />
               ))}
             </Stack>
           )}
+
+          {/* Reporting the BUSINESS itself, as opposed to one review on it —
+              a fake listing or a scam profile is a different complaint from a
+              bad review. Visitor view only, for the same reason. */}
+          {!isOwner && businessId ? (
+            <View style={[styles.hPad, { marginTop: spacing.lg }]}>
+              <Button
+                variant="ghost"
+                label={i18n.t('moderation.reportBusiness')}
+                onPress={() =>
+                  setReportTarget({
+                    targetType: moderation.REPORT_TARGETS.BUSINESS,
+                    targetId: businessId,
+                  })
+                }
+              />
+            </View>
+          ) : null}
 
           {/* ── Imported Google reviews (walkthrough M3) ──
               Its own block, below the native ones, and it renders nothing at
@@ -1192,6 +1256,15 @@ export default function BusinessProfileScreen({ navigation, route }) {
           />
         </View>
       )}
+
+      {/* One sheet for both entry points on this screen — a review, or the
+          business itself. `reportTarget` carries which. */}
+      <ReportSheet
+        visible={!!reportTarget}
+        targetType={reportTarget?.targetType}
+        targetId={reportTarget?.targetId}
+        onClose={() => setReportTarget(null)}
+      />
     </View>
   );
 }

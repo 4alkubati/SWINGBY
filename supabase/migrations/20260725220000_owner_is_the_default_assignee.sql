@@ -1,10 +1,17 @@
 -- =============================================================================
 -- 20260725220000_owner_is_the_default_assignee.sql
 --
--- FILED, PENDING APPLY — no live Supabase credentials were available in this
--- worktree, so this has NOT been run against project ulnxapnsenzyddddldjt.
--- Apply in the Supabase SQL Editor (or `supabase db push` once the CLI is
--- linked). Same convention as 20260720000000_s1_column_lockdown...sql.
+-- APPLIED — verified live against project ulnxapnsenzyddddldjt on 2026-07-31 by
+-- probing PostgREST for the objects this file creates. The header below used to
+-- read "FILED, PENDING APPLY"; that was written when the authoring worktree had
+-- no Supabase credentials and was never updated after the migration was run.
+--
+-- Leaving it stale is not cosmetic: someone reading it re-derives a to-do that
+-- is already done, and on 2026-07-31 that cost a round trip when a hand-written
+-- APPLY-*.sql was drafted for changes that were already live. Migration files
+-- assert things about production, so an assertion that has gone false is a bug
+-- in the file. Re-running it is harmless (every statement is idempotent), but it
+-- is not needed.
 --
 -- WALKTHROUGH M8 — "owner is the default assignee (never 'No active employees
 -- found')".

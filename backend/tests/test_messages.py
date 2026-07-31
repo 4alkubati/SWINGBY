@@ -49,10 +49,26 @@ CLIENT = {
 }
 
 
+OWNER = {
+    "id": "owner-1",
+    "role": "business_owner",
+    "first_name": "Han",
+    "last_name": "Dy",
+    "email": "owner@example.com",
+}
+
+
 @pytest.fixture
 def as_client():
     app.dependency_overrides[get_current_user] = lambda: CLIENT
     yield CLIENT
+    app.dependency_overrides.pop(get_current_user, None)
+
+
+@pytest.fixture
+def as_owner():
+    app.dependency_overrides[get_current_user] = lambda: OWNER
+    yield OWNER
     app.dependency_overrides.pop(get_current_user, None)
 
 
@@ -61,6 +77,83 @@ def _multi_table(stubs: dict, default: SupabaseTableStub):
         return stubs.get(name, default)
 
     return _table
+
+
+class TestCounterpartLookupNeverBreaksTheThread:
+    """The Block control's user id is decorative; the thread is not.
+
+    `_counterpart_user_id` was added so the chat header can offer Block without
+    a second round trip (Guideline 1.2(c)). It does an extra `businesses`
+    lookup, and the first version let a surprise from that lookup escape — every
+    booking-thread read 400'd with "Could not retrieve messages". A moderation
+    convenience must never be able to take a conversation down, so the failure
+    mode is pinned here rather than left to a future walkthrough.
+    """
+
+    BOOKING = {
+        "id": "booking-1",
+        "client_id": "client-1",
+        "business_id": "biz-1",
+        "post_id": None,
+        "status": "confirmed",
+    }
+
+    def _read(self, test_client, businesses_stub):
+        booking_stub = SupabaseTableStub(select_data=dict(self.BOOKING))
+        messages_stub = SupabaseTableStub(select_data=[])
+        with patch("app.api.messages.supabase") as mock_supabase:
+            mock_supabase.table.side_effect = _multi_table(
+                {
+                    "bookings": booking_stub,
+                    "messages": messages_stub,
+                    "businesses": businesses_stub,
+                },
+                messages_stub,
+            )
+            return test_client.get("/messages/55555555-5555-5555-5555-555555555555")
+
+    def test_thread_still_reads_when_the_owner_lookup_raises(
+        self, test_client, as_client
+    ):
+        class _Boom(SupabaseTableStub):
+            def __getattr__(self, name):
+                if name == "execute":
+
+                    def _raise():
+                        raise RuntimeError("businesses is down")
+
+                    return _raise
+                return super().__getattr__(name)
+
+        response = self._read(test_client, _Boom())
+        assert response.status_code == 200, response.text
+        # Degrades to "no Block control", not to a broken thread.
+        assert response.json()["counterpart_user_id"] is None
+
+    def test_thread_still_reads_when_the_owner_lookup_returns_a_list(
+        self, test_client, as_client
+    ):
+        # `.single()` yields a dict in production, but a shape surprise here
+        # used to be an AttributeError that 400'd the whole read.
+        response = self._read(
+            test_client, SupabaseTableStub(select_data=[{"owner_id": "owner-1"}])
+        )
+        assert response.status_code == 200, response.text
+        assert response.json()["counterpart_user_id"] == "owner-1"
+
+    def test_business_owner_reading_their_own_thread_gets_the_client(
+        self, test_client, as_owner
+    ):
+        # One `businesses` stub serves two different lookups on this path — the
+        # access check reads `id`, the counterpart resolution reads `owner_id` —
+        # so it has to carry both.
+        response = self._read(
+            test_client,
+            SupabaseTableStub(select_data={"id": "biz-1", "owner_id": "owner-1"}),
+        )
+        assert response.status_code == 200, response.text
+        # The viewer IS the owner, so the counterpart is the other side.
+        assert response.json()["counterpart_user_id"] == "client-1"
 
 
 class TestBookingThreadCarriesQuoteHistory:

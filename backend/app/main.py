@@ -198,6 +198,10 @@ from app.api.admin import router as admin_router
 
 app.include_router(admin_router, prefix="/admin", tags=["admin"])
 
+from app.api.moderation import router as moderation_router
+
+app.include_router(moderation_router, prefix="/moderation", tags=["moderation"])
+
 from app.api.me import router as me_router
 
 app.include_router(me_router, prefix="/me", tags=["me"])

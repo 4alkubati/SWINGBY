@@ -7,6 +7,7 @@ from app.deps import get_current_user
 from app.privacy import mask_service_post_row
 from app.supabase_client import supabase
 from app.services.push import send_push_to_user
+from app.services.visibility import blocked_pair_ids
 
 logger = logging.getLogger(__name__)
 
@@ -55,12 +56,24 @@ def express_interest(
 
     post_res = (
         supabase.table("service_posts")
-        .select("id, status, target_business_id")
+        .select("id, status, target_business_id, client_id, hidden_at")
         .eq("id", data.post_id)
         .single()
         .execute()
     )
     if not post_res.data:
+        raise HTTPException(status_code=404, detail="Post not found")
+    # Moderation (Guideline 1.2). Both of these mirror the feed filter in
+    # service_posts.py::list_open_posts, because hiding a post from a feed is not
+    # enforcement — a business holding the post id could otherwise still quote on
+    # it, which is the same reasoning the targeted-post gate below is built on.
+    # 404, not 403, so neither case confirms the post exists.
+    if post_res.data.get("hidden_at"):
+        raise HTTPException(status_code=404, detail="Post not found")
+    post_client_id = post_res.data.get("client_id")
+    if post_client_id and post_client_id in blocked_pair_ids(
+        supabase, current_user["id"]
+    ):
         raise HTTPException(status_code=404, detail="Post not found")
     # LANE C — direct "Book now". Feed filtering hides a targeted post from
     # everyone but its target, but hiding is not enforcement: a business that

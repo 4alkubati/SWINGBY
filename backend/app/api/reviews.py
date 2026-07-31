@@ -179,6 +179,11 @@ def get_business_reviews(
             .select("*, users(first_name, last_name)")
             .eq("reviewee_id", business_id)
             .eq("reviewee_type", "business")
+            # Moderation (Guideline 1.2): a review an admin hid stops being
+            # served. Public ratings are the highest-value surface for abuse, so
+            # this filter is what makes "content_hidden" a real consequence
+            # rather than a note in an admin table.
+            .is_("hidden_at", "null")
             .order("created_at", desc=True)
             .execute()
         )
@@ -196,6 +201,7 @@ def get_client_reviews(client_id: str, current_user: dict = Depends(get_current_
             .select("*, businesses(business_name, logo_url)")
             .eq("reviewee_id", client_id)
             .eq("reviewee_type", "client")
+            .is_("hidden_at", "null")
             .order("created_at", desc=True)
             .execute()
         )
@@ -225,6 +231,7 @@ def get_employee_reviews(
             .select("*, users(first_name, last_name)")
             .eq("reviewee_id", employee_user_id)
             .eq("reviewee_type", "employee")
+            .is_("hidden_at", "null")
             .order("created_at", desc=True)
             .execute()
         )

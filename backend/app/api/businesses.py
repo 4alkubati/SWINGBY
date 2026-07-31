@@ -12,7 +12,7 @@ from app.supabase_client import supabase
 from app.limiter import limiter
 from app.services import search_index
 from app.services.geocoding import resolve_coordinates
-from app.services.visibility import hidden_user_ids
+from app.services.visibility import blocked_pair_ids, hidden_user_ids
 
 logger = structlog.get_logger(__name__)
 
@@ -243,10 +243,12 @@ def get_nearby_businesses(
         res = query.execute()
         businesses = res.data or []
 
-        # Hide businesses whose owner is ghosted / suspended / soft-deleted.
+        # Hide businesses whose owner is ghosted / suspended / soft-deleted, plus
+        # anyone on either side of a block with the viewer (Guideline 1.2(c)).
         hidden_owners = hidden_user_ids(
             supabase, [b.get("owner_id") for b in businesses]
         )
+        hidden_owners |= blocked_pair_ids(supabase, current_user["id"])
 
         # Exact Haversine filter — only include businesses whose service radius
         # overlaps the caller's location
@@ -572,6 +574,7 @@ def _search_by_work(
     radius_km: Optional[float],
     limit: int,
     offset: int,
+    viewer_id: Optional[str] = None,
 ) -> dict:
     """
     Rank businesses by how much their COMPLETED WORK resembles `q`.
@@ -638,8 +641,10 @@ def _search_by_work(
             }
         )
 
-    # Hide businesses whose owner is ghosted / suspended / soft-deleted.
+    # Hide businesses whose owner is ghosted / suspended / soft-deleted, plus
+    # anyone on either side of a block with the viewer (Guideline 1.2(c)).
     hidden_owners = hidden_user_ids(supabase, [b.get("owner_id") for b in items])
+    hidden_owners |= blocked_pair_ids(supabase, viewer_id) if viewer_id else set()
     if hidden_owners:
         items = [b for b in items if b.get("owner_id") not in hidden_owners]
 
@@ -693,7 +698,14 @@ def list_businesses(
     try:
         if q and q.strip():
             return _search_by_work(
-                q.strip(), category, lat, lng, radius_km, limit, offset
+                q.strip(),
+                category,
+                lat,
+                lng,
+                radius_km,
+                limit,
+                offset,
+                viewer_id=current_user["id"],
             )
 
         query = supabase.table("businesses").select("*")
@@ -706,8 +718,10 @@ def list_businesses(
         res = query.range(offset, offset + limit - 1).execute()
         items = res.data or []
 
-        # Hide businesses whose owner is ghosted / suspended / soft-deleted.
+        # Hide businesses whose owner is ghosted / suspended / soft-deleted, plus
+        # anyone on either side of a block with the viewer (Guideline 1.2(c)).
         hidden_owners = hidden_user_ids(supabase, [b.get("owner_id") for b in items])
+        hidden_owners |= blocked_pair_ids(supabase, current_user["id"])
         if hidden_owners:
             items = [b for b in items if b.get("owner_id") not in hidden_owners]
 

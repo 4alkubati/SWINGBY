@@ -100,6 +100,24 @@ Build 50 location-category pages (5 categories × 10 neighbourhoods) before paid
 
 ## App Store / Play Store copy
 
+> **Rewritten 2026-07-31 to match the build.** The previous version described a
+> payment model this app has never had. It claimed "pay in stages" and "half
+> releases at booking"; the code has one charge, at the moment you accept a
+> quote — `charge_at_accept_enabled()` returns True by default and
+> `charge_at_post_enabled()` returns False, and `partial_released` is marked in
+> `escrow.py` as a legacy state kept only for back-compat. There is no staged
+> release to describe.
+>
+> This matters beyond honesty: **App Store Guideline 2.3.1 is "no misleading
+> metadata"**, and a payments claim a reviewer can disprove in two taps is the
+> easiest kind to catch. "No monthly fees" was false for the same reason —
+> business subscriptions exist (D2.4). "Vetted" was overstated:
+> `license_status` is a manual flag that most businesses have never had set.
+>
+> If the payment model changes, this block changes with it. Anything here that
+> describes money should be checkable against
+> `backend/app/services/payment_triggers.py` and `escrow.py`.
+
 ### Title (30 chars)
 **SwingBy: Book Local Services**
 
@@ -107,34 +125,34 @@ Build 50 location-category pages (5 categories × 10 neighbourhoods) before paid
 **Cleaners, handymen, & more**
 
 ### Short description (80 chars)
-**Find trusted local services in Calgary. Post a job, get bids, pay in stages.**
+**Find local services in Calgary. Post a job, compare quotes, pay when you book.**
 
 ### Long description (full)
 
 ```
-Find and book trusted local services in your neighbourhood — without the hassle.
+Find and book local services in your neighbourhood — without the hassle.
 
-SwingBy connects you with vetted house cleaners, handymen, dog walkers, personal trainers, lawn care, and more — all in one app. Post a job and get bids from local businesses in minutes, or browse providers on a map.
+SwingBy connects you with house cleaners, handymen, dog walkers, personal trainers, lawn care, and more — all in one app. Post a job and get quotes from local businesses in minutes, or browse providers on a map.
 
 WHY SWINGBY
 
-✓ Vetted businesses — every provider is reviewed by real customers
-✓ Staged payment — half releases at booking, the rest when the job is done
+✓ Real reviews — from people who actually booked and paid through the app
+✓ Your money is held, not handed over — SwingBy holds it until the job is done
 ✓ Local first — see businesses near you, today
-✓ No phone tag — post once, get bids back, pick the one you like
-✓ Honest reviews — both sides review each other
+✓ No phone tag — post once, get quotes back, pick the one you like
+✓ Both sides review each other
 
 HOW IT WORKS
 
 1. Post what you need, or browse the map
 2. Local businesses send you quotes
-3. Pick the one you trust
-4. Pay through SwingBy — half releases at booking, the rest when the job is done
+3. Pick the one you trust — you pay securely when you accept it
+4. SwingBy holds the payment and releases it to the pro once the work is done
 5. Leave a review
 
 FOR BUSINESSES
 
-Join SwingBy free. We only charge 10% when you complete a job — no monthly fees, no lead-buying. Set your radius, list your services, and start getting bookings.
+Join SwingBy free and keep 90% of every job — we take 10% when a job completes, and we never sell you leads. Set your radius, list your services, and start getting bookings. Optional paid plans add extras like auto-quoting.
 
 NOW LIVE IN CALGARY
 ```

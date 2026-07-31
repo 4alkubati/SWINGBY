@@ -20,6 +20,10 @@ import EarningsScreen from '../screens/business/EarningsScreen';
 import BusinessAnalyticsScreen from '../screens/business/BusinessAnalyticsScreen';
 import SettingsScreen from '../screens/shared/SettingsScreen';
 import PrivacyPolicyScreen from '../screens/profile/PrivacyPolicyScreen';
+// Guideline 1.2(c) — Settings -> Safety -> Blocked accounts. Registered in
+// BOTH navigators: the app is dual-role and a business owner needs to unblock
+// someone just as much as a client does.
+import BlockedAccountsScreen from '../screens/profile/BlockedAccountsScreen';
 import TermsOfServiceScreen from '../screens/shared/TermsOfServiceScreen';
 import HelpFAQScreen from '../screens/profile/HelpFAQScreen';
 import NotificationsCenterScreen from '../screens/profile/NotificationsCenterScreen';
@@ -112,6 +116,7 @@ export default function BusinessNavigator() {
       <Stack.Screen name="Earnings" component={EarningsScreen} />
       <Stack.Screen name="BusinessAnalytics" component={BusinessAnalyticsScreen} />
       <Stack.Screen name="Settings" component={SettingsScreen} />
+      <Stack.Screen name="BlockedAccounts" component={BlockedAccountsScreen} options={{ headerShown: false }} />
       <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} />
       <Stack.Screen name="TermsOfService" component={TermsOfServiceScreen} />
       <Stack.Screen name="HelpFAQ" component={HelpFAQScreen} />

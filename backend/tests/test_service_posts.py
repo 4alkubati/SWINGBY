@@ -71,6 +71,16 @@ def _get_ilike_calls(stub):
     return [call for call in stub.calls if call[0] == "ilike"]
 
 
+def _tables_touched(mock_supabase):
+    """The set of table names the endpoint asked for.
+
+    Preferred over `mock_supabase.table.call_count` for "did it look X up?"
+    assertions: every table shares one stub, so a count also moves whenever an
+    unrelated lookup is added to the same request.
+    """
+    return {call.args[0] for call in mock_supabase.table.call_args_list}
+
+
 class TestBusinessOwnerAutoFilter:
     """GET /service-posts/ with no category param, caller is a business_owner."""
 
@@ -213,8 +223,11 @@ class TestClientRoleNoAutoFilter:
 
             assert response.status_code == 200
             assert _get_or_call(posts_stub) is None
-            # Only one table() call expected (service_posts) — no businesses lookup.
-            assert mock_supabase.table.call_count == 1
+            # No businesses lookup. Asserted by TABLE NAME rather than by a raw
+            # table() call count: the feed also reads `user_blocks` now (the
+            # Guideline 1.2(c) block filter), and a bare count would make this
+            # test fail for a reason that has nothing to do with what it checks.
+            assert _tables_touched(mock_supabase) == {"service_posts", "user_blocks"}
 
 
 class TestExplicitCategoryParamPrecedence:
@@ -236,8 +249,9 @@ class TestExplicitCategoryParamPrecedence:
             assert len(ilike_calls) == 1
             assert ilike_calls[0][1] == ("category", "cleaning")
             assert _get_or_call(posts_stub) is None
-            # Param precedence: no businesses lookup at all.
-            assert mock_supabase.table.call_count == 1
+            # Param precedence: no businesses lookup at all. By name, for the
+            # same reason as TestClientRoleNoAutoFilter above.
+            assert _tables_touched(mock_supabase) == {"service_posts", "user_blocks"}
 
 
 class TestCreateServicePostNormalizesCategory:

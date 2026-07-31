@@ -1,10 +1,11 @@
 """
 me.py — User self-service endpoints (GDPR + account lifecycle).
 
-T30  GET   /me/export   — aggregate export of all user data (5/minute)
-T79  DELETE /me          — account deactivation (SOFT delete, 1/hour)
-     POST  /me/ghost     — enter in-app ghost mode (hide from discovery)
-     POST  /me/unghost   — leave ghost mode
+T30  GET   /me/export        — aggregate export of all user data (5/minute)
+T79  DELETE /me               — account deactivation (SOFT delete, 1/hour)
+     GET   /me/auth-methods   — does this account have a password login?
+     POST  /me/ghost          — enter in-app ghost mode (hide from discovery)
+     POST  /me/unghost        — leave ghost mode
 
 All endpoints require a valid Bearer token (Depends(get_current_user)).
 
@@ -13,7 +14,11 @@ scrubbed, but all financial/relational rows (bookings, payments, invoices,
 cancellations, reviews, messages) are retained — CRA requires 6-year
 retention of financial records. Deletion requires the caller to re-enter
 their current password (re-authentication), verified server-side against
-Supabase Auth.
+Supabase Auth — EXCEPT on social-only accounts (Sign in with Apple / Google),
+which have no password identity to re-enter. Those are gated by the bearer token
+plus the confirmation phrase, because App Store Guideline 5.1.1(v) requires
+in-app deletion to work for every account the app can create, and a reviewer
+tests it with a Sign in with Apple account.
 """
 
 import secrets
@@ -45,6 +50,44 @@ _REFERRAL_CODE_ALPHABET = string.ascii_uppercase + string.digits
 _REFERRAL_CODE_LENGTH = 8
 
 
+def _has_password_identity(uid: str) -> bool:
+    """Does this account have an email/password login, as opposed to social-only?
+
+    Supabase stores one `identities` entry per linked provider; an email/password
+    signup carries provider == "email". A Sign in with Apple or Google account
+    has only its social identity and no password to re-enter, which is why
+    account deletion cannot demand one from them (Guideline 5.1.1(v)).
+
+    FAILS CLOSED — an unreadable identity list is treated as "has a password", so
+    a lookup outage can never downgrade the re-authentication gate on an account
+    that really does have one. The cost of the safe direction is that a social
+    user hitting the outage sees "enter your password"; the cost of the other
+    direction is deletion without re-auth, which is not a trade worth making.
+    """
+    try:
+        res = supabase.auth.admin.get_user_by_id(uid)
+    except Exception:
+        logger.warning("me._has_password_identity lookup failed", user_id=uid)
+        return True
+
+    user = getattr(res, "user", None) or res
+    identities = getattr(user, "identities", None) or []
+    providers = set()
+    for ident in identities:
+        provider = (
+            ident.get("provider")
+            if isinstance(ident, dict)
+            else getattr(ident, "provider", None)
+        )
+        if provider:
+            providers.add(provider)
+
+    if not providers:
+        # No identity list at all — same fail-closed reasoning as above.
+        return True
+    return "email" in providers
+
+
 def _generate_referral_code() -> str:
     """
     8-char uppercase alphanumeric code. No idiom for short codes existed
@@ -65,9 +108,15 @@ def _generate_referral_code() -> str:
 
 class DeleteAccountRequest(BaseModel):
     confirm: str = Field(..., max_length=50)
-    # Re-authentication: the caller must re-enter their current password.
-    # True account deletion happens on the website behind this password gate.
-    password: str = Field(..., min_length=1, max_length=128)
+    # Re-authentication: a caller who HAS a password must re-enter it.
+    #
+    # Optional, not required. App Store Guideline 5.1.1(v) obliges an app that
+    # creates accounts to let the user delete one from inside the app, and Apple
+    # tests that with a Sign in with Apple account — which has no password to
+    # re-enter. A required field made the endpoint 422 for exactly the account a
+    # reviewer would use, so social-only accounts are gated by the confirmation
+    # phrase alone. Password accounts are unchanged; see delete_my_account.
+    password: str | None = Field(default=None, max_length=128)
 
 
 # ---------------------------------------------------------------------------
@@ -271,6 +320,20 @@ def get_my_credits(current_user: dict = Depends(get_current_user)):
         raise HTTPException(status_code=400, detail="Could not load credits")
 
 
+@router.get("/auth-methods")
+def my_auth_methods(current_user: dict = Depends(get_current_user)):
+    """How this account signs in.
+
+    The delete-account sheet needs this: it must ask a password account for its
+    password and must NOT ask a Sign in with Apple account for one it does not
+    have. Returning the single boolean the UI branches on keeps that decision in
+    one place — the alternative (the app guessing from whether an avatar came
+    from a provider) is the kind of guess that produces a 422 in front of a
+    reviewer.
+    """
+    return {"has_password": _has_password_identity(current_user["id"])}
+
+
 @router.delete("")
 @limiter.limit("1/hour")
 def delete_my_account(
@@ -304,26 +367,40 @@ def delete_my_account(
 
     uid = current_user["id"]
     email = current_user.get("email")
-    if not email:
-        # No email on file to re-authenticate against — refuse rather than
-        # proceed unauthenticated.
-        raise HTTPException(
-            status_code=400, detail="Account has no email to re-authenticate"
-        )
 
-    # --- Re-authentication: verify the current password server-side. --------
-    # supabase_auth is the dedicated session-creating client (see
-    # supabase_client.py). Verifying the password = a successful sign-in.
-    try:
-        auth_check = supabase_auth.auth.sign_in_with_password(
-            {"email": email, "password": data.password}
-        )
-        password_ok = bool(auth_check and auth_check.session)
-    except Exception:
-        password_ok = False
+    # --- Re-authentication, but only where a password exists ----------------
+    # A Sign in with Apple / Google account has no password identity. Demanding
+    # one made deletion impossible for those users (Guideline 5.1.1(v)), and
+    # they are precisely the accounts App Review creates. The bearer token has
+    # already authenticated the caller; the confirmation phrase is the
+    # deliberate-action gate. For a password account nothing changes — the
+    # password is still required and still verified server-side.
+    if _has_password_identity(uid):
+        if not data.password:
+            raise HTTPException(
+                status_code=401,
+                detail="Enter your password to confirm account deletion",
+            )
+        if not email:
+            # A password identity implies an email to sign in with; if it is
+            # missing we cannot verify, so refuse rather than proceed.
+            raise HTTPException(
+                status_code=400, detail="Account has no email to re-authenticate"
+            )
+        # supabase_auth is the dedicated session-creating client (see
+        # supabase_client.py). Verifying the password = a successful sign-in.
+        try:
+            auth_check = supabase_auth.auth.sign_in_with_password(
+                {"email": email, "password": data.password}
+            )
+            password_ok = bool(auth_check and auth_check.session)
+        except Exception:
+            password_ok = False
 
-    if not password_ok:
-        raise HTTPException(status_code=401, detail="Password re-authentication failed")
+        if not password_ok:
+            raise HTTPException(
+                status_code=401, detail="Password re-authentication failed"
+            )
 
     try:
         # Non-reversible tombstone: contains only the uid (not the original

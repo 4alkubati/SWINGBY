@@ -172,6 +172,101 @@ class TestSoftDelete:
         assert resp.status_code == 400
 
 
+class TestDeleteAccountSocialOnly:
+    """App Store Guideline 5.1.1(v).
+
+    A Sign in with Apple account has no password. Requiring one made DELETE /me
+    a guaranteed 422 for exactly the account App Review creates, so the password
+    gate now applies only where a password identity exists.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _reset_limiter(self):
+        app.state.limiter.reset()
+        yield
+
+    def test_social_only_account_deletes_without_a_password(
+        self, test_client, as_client
+    ):
+        users_stub = SupabaseTableStub(update_data=[{"id": "client-1"}])
+        with patch("app.api.me.supabase") as mock_supabase, patch(
+            "app.api.me.supabase_auth"
+        ) as mock_auth:
+            mock_supabase.table.return_value = users_stub
+            mock_supabase.auth.admin.get_user_by_id.return_value = MagicMock(
+                user=MagicMock(identities=[{"provider": "apple"}])
+            )
+
+            resp = test_client.request(
+                "DELETE", "/me", json={"confirm": "DELETE_MY_ACCOUNT"}
+            )
+
+            assert resp.status_code == 200
+            assert resp.json()["message"] == "account_deactivated"
+            # No password to verify, so no sign-in attempt should be made.
+            assert not mock_auth.auth.sign_in_with_password.called
+            payload = _update_payload(users_stub)
+            assert payload.get("deleted_at")
+
+    def test_password_account_omitting_the_password_is_401_not_422(
+        self, test_client, as_client
+    ):
+        """The field is optional in the schema but still required in effect for
+        an account that has one — otherwise making it optional would have
+        removed the re-authentication gate for everybody."""
+        users_stub = SupabaseTableStub(update_data=[{"id": "client-1"}])
+        with patch("app.api.me.supabase") as mock_supabase, patch(
+            "app.api.me.supabase_auth"
+        ):
+            mock_supabase.table.return_value = users_stub
+            mock_supabase.auth.admin.get_user_by_id.return_value = MagicMock(
+                user=MagicMock(identities=[{"provider": "email"}])
+            )
+
+            resp = test_client.request(
+                "DELETE", "/me", json={"confirm": "DELETE_MY_ACCOUNT"}
+            )
+
+            assert resp.status_code == 401
+            assert users_stub.calls == []
+
+    def test_identity_lookup_failure_fails_closed(self, test_client, as_client):
+        """An unreadable identity list must NOT downgrade the password gate."""
+        users_stub = SupabaseTableStub(update_data=[{"id": "client-1"}])
+        with patch("app.api.me.supabase") as mock_supabase, patch(
+            "app.api.me.supabase_auth"
+        ):
+            mock_supabase.table.return_value = users_stub
+            mock_supabase.auth.admin.get_user_by_id.side_effect = RuntimeError("boom")
+
+            resp = test_client.request(
+                "DELETE", "/me", json={"confirm": "DELETE_MY_ACCOUNT"}
+            )
+
+            assert resp.status_code == 401
+            assert users_stub.calls == []
+
+
+class TestAuthMethods:
+    def test_reports_social_account_has_no_password(self, test_client, as_client):
+        with patch("app.api.me.supabase") as mock_supabase:
+            mock_supabase.auth.admin.get_user_by_id.return_value = MagicMock(
+                user=MagicMock(identities=[{"provider": "google"}])
+            )
+            resp = test_client.get("/me/auth-methods")
+        assert resp.status_code == 200
+        assert resp.json() == {"has_password": False}
+
+    def test_reports_email_account_has_a_password(self, test_client, as_client):
+        with patch("app.api.me.supabase") as mock_supabase:
+            mock_supabase.auth.admin.get_user_by_id.return_value = MagicMock(
+                user=MagicMock(identities=[{"provider": "email"}])
+            )
+            resp = test_client.get("/me/auth-methods")
+        assert resp.status_code == 200
+        assert resp.json() == {"has_password": True}
+
+
 # ---------------------------------------------------------------------------
 # Ghost mode
 # ---------------------------------------------------------------------------
