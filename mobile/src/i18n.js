@@ -1544,11 +1544,15 @@ Object.assign(translations.en, {
     'Signing in with Apple or Google skips the signup form, so we have to ask here.',
   'rolePicker.failed': "Couldn't save that. Try again.",
   // Terms + privacy consent at signup (App Store + PIPEDA).
-  'auth.agreePrefix': 'By creating an account you agree to our',
+  // agreePrefix reads as a checkbox LABEL ("I agree to…") because the box is an
+  // affirmative act we record; agreeNotice is the passive line on the login
+  // screen, where social sign-in can still mint a brand-new account.
+  'auth.agreePrefix': 'I agree to the',
   'auth.agreeTerms': 'Terms of Service',
-  'auth.agreeAnd': 'and',
+  'auth.agreeAnd': 'and the',
   'auth.agreePrivacy': 'Privacy Policy',
   'auth.agreeRequired': 'Please accept the Terms and Privacy Policy to continue.',
+  'auth.agreeNotice': 'By continuing you agree to our',
 });
 Object.assign(translations['fr-CA'], {
   'rolePicker.title': 'Comment allez-vous utiliser SwingBy?',
@@ -1560,12 +1564,13 @@ Object.assign(translations['fr-CA'], {
   'rolePicker.footnote':
     'La connexion avec Apple ou Google saute le formulaire d’inscription; nous devons donc le demander ici.',
   'rolePicker.failed': 'Impossible d’enregistrer. Réessayez.',
-  'auth.agreePrefix': 'En créant un compte, vous acceptez nos',
+  'auth.agreePrefix': 'J’accepte les',
   'auth.agreeTerms': 'Conditions d’utilisation',
   'auth.agreeAnd': 'et la',
   'auth.agreePrivacy': 'Politique de confidentialité',
   'auth.agreeRequired':
     'Veuillez accepter les Conditions et la Politique de confidentialité pour continuer.',
+  'auth.agreeNotice': 'En continuant, vous acceptez nos',
 });
 Object.assign(translations.ar, {
   'rolePicker.title': 'كيف ستستخدم SwingBy؟',
@@ -1577,11 +1582,12 @@ Object.assign(translations.ar, {
   'rolePicker.footnote':
     'تسجيل الدخول عبر Apple أو Google يتخطى نموذج التسجيل، لذا نسأل هنا.',
   'rolePicker.failed': 'تعذّر الحفظ. حاول مرة أخرى.',
-  'auth.agreePrefix': 'بإنشاء حساب فإنك توافق على',
+  'auth.agreePrefix': 'أوافق على',
   'auth.agreeTerms': 'شروط الخدمة',
   'auth.agreeAnd': 'و',
   'auth.agreePrivacy': 'سياسة الخصوصية',
   'auth.agreeRequired': 'يرجى قبول الشروط وسياسة الخصوصية للمتابعة.',
+  'auth.agreeNotice': 'بالمتابعة فإنك توافق على',
 });
 
 const i18n = new I18n(translations);

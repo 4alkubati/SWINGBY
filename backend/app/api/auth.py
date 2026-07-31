@@ -123,6 +123,8 @@ class SignupRequest(BaseModel):
     role: str = Field(..., max_length=500)
     hcaptcha_token: Optional[str] = None
     referral_code: Optional[str] = Field(None, max_length=32)
+    # Recorded, not enforced — see _record_terms_acceptance for why.
+    accepted_terms: bool = False
 
     @field_validator("password")
     @classmethod
@@ -265,6 +267,11 @@ def signup(request: Request, data: SignupRequest):
         if data.phone:
             row["phone"] = data.phone
         supabase.table("users").upsert(row).execute()
+
+        # Consent goes in its own write, not into the upsert above: if the
+        # column is not there yet, only this statement fails.
+        if data.accepted_terms:
+            _record_terms_acceptance(user_id)
 
         # Referral code claim — best-effort, never blocks signup.
         # GAP-AUDIT-2026-07-18 #4: an invalid/unknown code (or a self-refer
@@ -797,11 +804,36 @@ def _provision_social_user(
     return row, is_new
 
 
+def _record_terms_acceptance(user_id: str) -> None:
+    """Stamp `users.terms_accepted_at` — best-effort, never blocks a signup.
+
+    The app gates account creation behind a real checkbox; this is the record
+    that it was ticked. Two deliberate weaknesses, both load-bearing:
+
+    1. BEST-EFFORT. `20260731140000_terms_consent.sql` may not be applied yet
+       when this code deploys. If the column is missing PostgREST errors, and
+       the only acceptable outcome is a log line — locking every new user out of
+       the app over a pending migration would be a far worse bug than a missing
+       consent timestamp.
+    2. NOT ENFORCED SERVER-SIDE. `accepted_terms` defaults to False rather than
+       being required, because TestFlight builds already in the wild do not send
+       it. Requiring it would 400 every signup from an older binary. Flip it to
+       a hard requirement once no such build is in circulation.
+    """
+    try:
+        supabase.table("users").update(
+            {"terms_accepted_at": datetime.now(timezone.utc).isoformat()}
+        ).eq("id", user_id).execute()
+    except Exception:
+        logger.warning("auth.terms_consent record failed", user_id=user_id)
+
+
 def _social_session_response(
     res,
     provider: str,
     requested_role: Optional[str],
     name_hint: Optional[Dict[str, str]] = None,
+    accepted_terms: bool = False,
 ) -> dict:
     """Shared tail for both social flows: provision, then return the SAME
     token envelope /auth/login returns so the mobile client has one code path.
@@ -812,6 +844,12 @@ def _social_session_response(
         raise HTTPException(status_code=401, detail="Social sign-in failed")
 
     row, is_new = _provision_social_user(user, provider, requested_role, name_hint)
+
+    # Only on the way IN. A returning user re-consenting on every sign-in would
+    # overwrite the date they actually agreed, which is the one thing this
+    # column exists to preserve.
+    if is_new and accepted_terms:
+        _record_terms_acceptance(user.id)
 
     return {
         "access_token": session.access_token,
@@ -858,6 +896,7 @@ class SocialExchangeRequest(BaseModel):
     code_verifier: str = Field(..., min_length=1, max_length=256)
     provider: str = Field("google", max_length=16)
     role: Optional[str] = Field(None, max_length=32)
+    accepted_terms: bool = False
 
     @field_validator("provider")
     @classmethod
@@ -880,6 +919,7 @@ class SocialIdTokenRequest(BaseModel):
     first_name: Optional[str] = Field(None, max_length=80)
     last_name: Optional[str] = Field(None, max_length=80)
     role: Optional[str] = Field(None, max_length=32)
+    accepted_terms: bool = False
 
     @field_validator("provider")
     @classmethod
@@ -955,7 +995,9 @@ def social_exchange(request: Request, data: SocialExchangeRequest):
         logger.exception("auth.social exchange failed", provider=data.provider)
         raise HTTPException(status_code=401, detail="Social sign-in failed")
 
-    return _social_session_response(res, data.provider, data.role)
+    return _social_session_response(
+        res, data.provider, data.role, accepted_terms=data.accepted_terms
+    )
 
 
 @router.post("/social/id-token")
@@ -991,7 +1033,13 @@ def social_id_token(request: Request, data: SocialIdTokenRequest):
         logger.exception("auth.social id_token failed", provider=data.provider)
         raise HTTPException(status_code=401, detail="Social sign-in failed")
 
-    return _social_session_response(res, data.provider, data.role, name_hint or None)
+    return _social_session_response(
+        res,
+        data.provider,
+        data.role,
+        name_hint or None,
+        accepted_terms=data.accepted_terms,
+    )
 
 
 @router.post("/social/role")

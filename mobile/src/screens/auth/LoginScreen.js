@@ -16,6 +16,7 @@ import { isAppleAuthAvailable, signInWithApple } from '../../services/appleAuth'
 import { registerForPushAsync } from '../../services/notifications';
 // The role pick a social sign-in never offered — see the component header.
 import RolePickerSheet from '../../components/RolePickerSheet';
+import { TermsNotice } from '../../components/TermsConsent';
 
 export default function LoginScreen({ navigation }) {
   // updateUser establishes the session in app state after a social sign-in:
@@ -213,6 +214,12 @@ export default function LoginScreen({ navigation }) {
                 <Text style={styles.socialBtnText}>Continue with Google</Text>
               )}
             </Pressable>
+
+            {/* A notice, not a checkbox. Apple/Google here can still create a
+                brand-new account in one tap, so the terms have to be visible
+                and reachable — but this screen is mostly returning users, and
+                gating THEM behind a tick box every visit would be nonsense. */}
+            <TermsNotice />
           </Animated.View>
 
           {/* Footer */}
