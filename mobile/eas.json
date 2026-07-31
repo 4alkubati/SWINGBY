@@ -55,14 +55,14 @@
       "ios": {
         "appleId": "REPLACE_WITH_APPLE_ID_EMAIL",
         "ascAppId": "REPLACE_WITH_ASC_APP_ID",
-        "appleTeamId": "REPLACE_WITH_APPLE_TEAM_ID"
+        "appleTeamId": "ZTYJ33HPDX"
       }
     },
     "production": {
       "ios": {
         "appleId": "REPLACE_WITH_APPLE_ID_EMAIL",
         "ascAppId": "REPLACE_WITH_ASC_APP_ID",
-        "appleTeamId": "REPLACE_WITH_APPLE_TEAM_ID"
+        "appleTeamId": "ZTYJ33HPDX"
       }
     }
   }
