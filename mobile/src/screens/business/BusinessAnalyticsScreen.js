@@ -24,6 +24,7 @@ import { SkeletonBox } from '../../components/Skeleton';
 import { RatingStarsDisplay } from '../../components/RatingStars';
 import ReviewCard from '../../components/ReviewCard';
 import { colors } from '../../theme/tokens';
+import { TEXT_END } from '../../services/rtl';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
@@ -544,7 +545,7 @@ const styles = StyleSheet.create({
   },
   catCount: {
     width: 28,
-    textAlign: 'right',
+    textAlign: TEXT_END,
     fontSize: 12,
     fontWeight: '700',
     color: colors.textPrimary,

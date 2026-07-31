@@ -4,6 +4,7 @@ import * as Localization from 'expo-localization';
 // Cross-platform storage wrapper (works on web + native).
 import * as SecureStore from './services/storage';
 import { resolveLocale } from './i18n-locales';
+import { applyDirection, syncDirectionOnBoot } from './services/rtl';
 
 const LOCALE_KEY = 'swingby_locale';
 
@@ -1163,6 +1164,36 @@ for (const key of [
   delete translations.en[key];
 }
 
+// ── The restart prompt when layout direction flips — 2026-07-30 ─────────────
+// Translated into ALL THREE locales rather than English-with-fallback, unlike
+// most of the recent append blocks. This particular dialog is shown at the
+// exact moment somebody switches INTO or OUT OF Arabic, so an English-only
+// string here would greet an Arabic speaker in English at the one moment they
+// have just told us they do not want English. It is four strings; there is no
+// excuse for deferring them.
+Object.assign(translations.en, {
+  'language.restartTitle': 'Restart needed',
+  'language.restartBody':
+    'SwingBy needs to restart to switch the layout for %{language}.',
+  'language.restartNow': 'Restart now',
+  'language.restartManual': 'Please close and reopen SwingBy to finish switching.',
+});
+Object.assign(translations['fr-CA'], {
+  'language.restartTitle': 'Redémarrage nécessaire',
+  'language.restartBody':
+    'SwingBy doit redémarrer pour adapter la mise en page à %{language}.',
+  'language.restartNow': 'Redémarrer maintenant',
+  'language.restartManual':
+    'Veuillez fermer puis rouvrir SwingBy pour terminer le changement.',
+});
+Object.assign(translations.ar, {
+  'language.restartTitle': 'يلزم إعادة التشغيل',
+  'language.restartBody':
+    'يحتاج SwingBy إلى إعادة التشغيل لتغيير اتجاه الواجهة إلى %{language}.',
+  'language.restartNow': 'إعادة التشغيل الآن',
+  'language.restartManual': 'يرجى إغلاق SwingBy وفتحه مرة أخرى لإكمال التغيير.',
+});
+
 const i18n = new I18n(translations);
 
 // Default fallback
@@ -1190,13 +1221,33 @@ i18n.defaultSeparator = String.fromCharCode(0);
   } catch {
     i18n.locale = 'en';
   }
+  // Line the native layout direction up with whatever locale we just settled
+  // on. Sets the flag only — deliberately does NOT restart here; see the note
+  // on syncDirectionOnBoot about boot loops.
+  syncDirectionOnBoot(i18n.locale);
 })();
 
+/**
+ * Switch language, persist it, and report whether the LAYOUT also has to flip.
+ *
+ * Returns `{ needsRestart }`. Callers must act on it: a locale change between
+ * an LTR and an RTL language leaves the running UI in the old direction until
+ * the app reloads, because native reads the direction once at process start.
+ * Ignoring this is what produces a screen with Arabic text in a left-to-right
+ * layout — the exact state this app shipped in before 2026-07-30.
+ */
 export async function setLocale(locale) {
   i18n.locale = locale;
   try {
     await SecureStore.setItemAsync(LOCALE_KEY, locale);
   } catch { /* non-fatal */ }
+
+  let needsRestart = false;
+  try {
+    needsRestart = applyDirection(locale);
+  } catch { /* direction is best-effort; never block a language change */ }
+
+  return { needsRestart };
 }
 
 export default i18n;

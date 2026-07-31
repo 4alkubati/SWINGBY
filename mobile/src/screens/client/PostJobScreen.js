@@ -27,6 +27,7 @@ import { api, uploadFile } from '../../services/api';
 import i18n from '../../i18n';
 import { colors, spacing, radius, motion } from '../../theme/tokens';
 import { CATEGORY_LABELS as CATEGORIES } from '../../constants/categories';
+import { TEXT_END } from '../../services/rtl';
 
 // Lateral step travel. MOTION.md has no "step change" entry; 24px matches the
 // 20px translateY the grammar uses for Slide Up, kept subtle deliberately.
@@ -771,7 +772,7 @@ function StepConfirm({ category, description, address, budget, date, time, photo
                 <Text
                   variant="small"
                   color="primary"
-                  style={{ flex: 1, textAlign: 'right' }}
+                  style={{ flex: 1, textAlign: TEXT_END }}
                   numberOfLines={3}
                 >
                   {value}
