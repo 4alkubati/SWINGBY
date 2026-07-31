@@ -58,6 +58,20 @@ export default function SettingsScreen() {
   const [deletePassword, setDeletePassword] = useState('');
   const [deleteError, setDeleteError] = useState(null);
 
+  // Ghost mode. The endpoints (POST /me/ghost, /me/unghost) and every
+  // enforcement point behind them shipped weeks ago with NO caller — and
+  // PrivacyPolicyScreen §3 promises the feature in writing. A privacy policy
+  // describing a control the app does not expose is the kind of thing App
+  // Review reads the policy to catch.
+  const [ghosted, setGhosted] = useState(!!user?.is_ghosted);
+  const [ghostBusy, setGhostBusy] = useState(false);
+
+  // Credit balance (GET /me/credits — also previously uncalled). Credits are
+  // granted when a BUSINESS cancels late or no-shows, so the person holding one
+  // has already been let down once; not being able to see it is the second
+  // letdown. `null` = not loaded, which is never rendered as $0.
+  const [credit, setCredit] = useState(null);
+
   // CARD-24 — biometric unlock, opt-in and off by default.
   const [bioAvailable, setBioAvailable] = useState(false);
   const [bioEnabled, setBioEnabled] = useState(false);
@@ -126,6 +140,45 @@ export default function SettingsScreen() {
       }
     } catch {
       setNotifEnabled(false);
+    }
+  }
+
+  useEffect(() => {
+    let alive = true;
+    api
+      .get('/me/credits')
+      .then((res) => {
+        if (alive) setCredit(res?.balance_cents ?? res?.data?.balance_cents ?? 0);
+      })
+      .catch(() => { /* a settings screen must open without it */ });
+    return () => { alive = false; };
+  }, []);
+
+  async function handleGhostToggle(next) {
+    if (ghostBusy) return;
+    setGhostBusy(true);
+    try {
+      await api.post(next ? '/me/ghost' : '/me/unghost', {});
+      setGhosted(next);
+      showToast({
+        type: 'success',
+        text1: i18n.t(next ? 'settings.ghostOn' : 'settings.ghostOff'),
+      });
+    } catch (err) {
+      // 409 carries the specific reasons — an active booking, money still in
+      // escrow, an open dispute. Those are the only answers worth giving: a
+      // generic "could not" leaves the person with no idea what to finish
+      // first.
+      const reasons = err?.response?.data?.detail?.reasons;
+      showToast({
+        type: 'error',
+        text1: i18n.t('settings.ghostFailed'),
+        text2: Array.isArray(reasons) && reasons.length
+          ? reasons.join(' · ')
+          : undefined,
+      });
+    } finally {
+      setGhostBusy(false);
     }
   }
 
@@ -345,6 +398,52 @@ export default function SettingsScreen() {
                 onPress={() => navigation.navigate('TermsOfService')}
                 style={styles.listItemFlush}
               />
+              <View style={styles.divider} />
+              <View style={styles.divider} />
+              {/* Ghost mode — the reversible half of "delete my account".
+                  Promised in PrivacyPolicyScreen §3 and, until now, reachable
+                  from nowhere. */}
+              <ListItem
+                left={<Feather name="eye-off" size={24} color={colors.textSecondary} />}
+                title={i18n.t('settings.ghostMode')}
+                subtitle={i18n.t('settings.ghostModeHint')}
+                right={
+                  ghostBusy ? (
+                    <ActivityIndicator size="small" color={colors.accent} />
+                  ) : (
+                    <Switch
+                      value={ghosted}
+                      onValueChange={handleGhostToggle}
+                      trackColor={{ false: colors.border, true: colors.accent }}
+                      accessibilityLabel={i18n.t('settings.ghostMode')}
+                    />
+                  )
+                }
+                showChevron={false}
+                style={styles.listItemFlush}
+              />
+              {credit != null && credit > 0 ? (
+                <>
+                  <View style={styles.divider} />
+                  {/* Granted when a business cancels late or no-shows. Not
+                      spendable in-app yet — credits.CREDIT_REDEMPTION_AT_CHECKOUT_ENABLED
+                      is off until the capture path is verified in Stripe — so
+                      the subtitle says how to use it rather than implying it
+                      comes off the next booking automatically. */}
+                  <ListItem
+                    left={<Feather name="gift" size={24} color={colors.success} />}
+                    title={i18n.t('settings.credit')}
+                    subtitle={i18n.t('settings.creditHint')}
+                    right={
+                      <Text variant="bodyMedium" style={{ color: colors.success }}>
+                        ${(credit / 100).toFixed(2)}
+                      </Text>
+                    }
+                    showChevron={false}
+                    style={styles.listItemFlush}
+                  />
+                </>
+              ) : null}
               <View style={styles.divider} />
               <ListItem
                 left={<Feather name="download" size={24} color={colors.textSecondary} />}

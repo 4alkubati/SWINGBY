@@ -1603,6 +1603,42 @@ Object.assign(translations.en, { 'booking.eventLoggedAt': 'Logged %{time}' });
 Object.assign(translations['fr-CA'], { 'booking.eventLoggedAt': 'Enregistré à %{time}' });
 Object.assign(translations.ar, { 'booking.eventLoggedAt': 'سُجِّل %{time}' });
 
+// ── Ghost mode + credits: two features that existed with no way in ─────────
+// POST /me/ghost, POST /me/unghost and GET /me/credits all shipped weeks ago
+// and were called by nothing. Ghost mode is PROMISED IN WRITING in
+// PrivacyPolicyScreen §3, and a credit is money we owe someone a business let
+// down. Both are in Settings now.
+Object.assign(translations.en, {
+  'settings.ghostMode': 'Ghost mode',
+  'settings.ghostModeHint':
+    'Hide your profile and posts from discovery. Existing bookings and chats keep working, and signing in again turns it off.',
+  'settings.ghostOn': "You're hidden",
+  'settings.ghostOff': "You're visible again",
+  'settings.ghostFailed': "Couldn't change ghost mode",
+  'settings.credit': 'SwingBy credit',
+  'settings.creditHint': 'Contact us when you book and we\u2019ll apply it.',
+});
+Object.assign(translations['fr-CA'], {
+  'settings.ghostMode': 'Mode fant\u00f4me',
+  'settings.ghostModeHint':
+    'Masquez votre profil et vos annonces. Les r\u00e9servations et discussions en cours continuent, et une nouvelle connexion le d\u00e9sactive.',
+  'settings.ghostOn': 'Vous \u00eates masqu\u00e9',
+  'settings.ghostOff': 'Vous \u00eates de nouveau visible',
+  'settings.ghostFailed': 'Impossible de changer le mode fant\u00f4me',
+  'settings.credit': 'Cr\u00e9dit SwingBy',
+  'settings.creditHint': 'Contactez-nous lors de votre r\u00e9servation et nous l\u2019appliquerons.',
+});
+Object.assign(translations.ar, {
+  'settings.ghostMode': '\u0648\u0636\u0639 \u0627\u0644\u0625\u062e\u0641\u0627\u0621',
+  'settings.ghostModeHint':
+    '\u0623\u062e\u0641\u0650 \u0645\u0644\u0641\u0643 \u0648\u0625\u0639\u0644\u0627\u0646\u0627\u062a\u0643 \u0645\u0646 \u0627\u0644\u0628\u062d\u062b. \u0627\u0644\u062d\u062c\u0648\u0632\u0627\u062a \u0648\u0627\u0644\u0645\u062d\u0627\u062f\u062b\u0627\u062a \u0627\u0644\u062d\u0627\u0644\u064a\u0629 \u062a\u0633\u062a\u0645\u0631\u060c \u0648\u062a\u0633\u062c\u064a\u0644 \u0627\u0644\u062f\u062e\u0648\u0644 \u0645\u062c\u062f\u062f\u064b\u0627 \u064a\u0648\u0642\u0641\u0647.',
+  'settings.ghostOn': '\u0623\u0646\u062a \u0645\u062e\u0641\u064a \u0627\u0644\u0622\u0646',
+  'settings.ghostOff': '\u0623\u0635\u0628\u062d\u062a \u0645\u0631\u0626\u064a\u064b\u0627 \u0645\u062c\u062f\u062f\u064b\u0627',
+  'settings.ghostFailed': '\u062a\u0639\u0630\u0651\u0631 \u062a\u063a\u064a\u064a\u0631 \u0648\u0636\u0639 \u0627\u0644\u0625\u062e\u0641\u0627\u0621',
+  'settings.credit': '\u0631\u0635\u064a\u062f SwingBy',
+  'settings.creditHint': '\u062a\u0648\u0627\u0635\u0644 \u0645\u0639\u0646\u0627 \u0639\u0646\u062f \u0627\u0644\u062d\u062c\u0632 \u0648\u0633\u0646\u0637\u0628\u0651\u0642\u0647.',
+});
+
 const i18n = new I18n(translations);
 
 // Default fallback

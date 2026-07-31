@@ -13,6 +13,27 @@ So this sweep is not a nicety attached to the payment model. It is the half of
 it that makes charging up front honest, and it must run whether or not anyone
 remembers to look.
 
+HOW IT ACTUALLY RUNS (2026-07-31)
+--------------------------------
+For weeks it did not. This module was written, reviewed and merged, and then
+called by nothing but its own tests — no cron service, no worker, no scheduler
+anywhere in the deployment. Every guarantee in the docstring above was true of
+code that never executed. Kira named this the recurring SwingBy failure, and it
+is why `Roadmap/STATUS.md` now defines "done" as *reachable by a user*.
+
+It is wired the same way the 24-hour escrow release is (`services/approvals.py`),
+and for the same reason — there is still no scheduler, so anything that must
+happen "eventually" has to settle when someone looks:
+
+* **`sweep_for_client`** runs on `GET /service-posts/my`. The client opening
+  My Jobs is exactly the person owed the refund, and it is their own posts being
+  swept, so the work is bounded and the timing is the best possible.
+* **`POST /admin/sweeps/post-expiry`** sweeps in bulk for anything external that
+  wants to drive it. An optimisation for nobody looking, not the mechanism.
+* The business feed (`GET /service-posts/`) does not sweep — it filters expired
+  posts out on the way past, so a dead post can never be quoted even in the
+  window before anyone has looked.
+
 DESIGN
 ------
 * **Idempotent.** Re-running it is safe and expected. A post that has already
@@ -44,16 +65,28 @@ logger = logging.getLogger(__name__)
 SWEEPABLE_STATUSES = ("open",)
 
 
-def find_expired_unquoted_posts(now: Optional[datetime] = None, limit: int = 200):
-    """Open posts whose expiry has passed. Oldest first, so a backlog drains."""
+def find_expired_unquoted_posts(
+    now: Optional[datetime] = None,
+    limit: int = 200,
+    client_id: Optional[str] = None,
+):
+    """Open posts whose expiry has passed. Oldest first, so a backlog drains.
+
+    `client_id` narrows the sweep to one person's posts — the read-path case,
+    where the client opening My Jobs settles their own.
+    """
     cutoff = (now or datetime.now(timezone.utc)).isoformat()
     try:
-        res = (
+        query = (
             supabase.table("service_posts")
             .select("id, client_id, title, status, expires_at")
             .in_("status", list(SWEEPABLE_STATUSES))
             .lt("expires_at", cutoff)
-            .order("expires_at", desc=False)
+        )
+        if client_id:
+            query = query.eq("client_id", client_id)
+        res = (
+            query.order("expires_at", desc=False)
             .limit(limit)
             .execute()
         )
@@ -63,13 +96,32 @@ def find_expired_unquoted_posts(now: Optional[datetime] = None, limit: int = 200
         return []
 
 
-def sweep_once(now: Optional[datetime] = None, limit: int = 200) -> dict:
+def sweep_for_client(client_id: str, now: Optional[datetime] = None) -> dict:
+    """Settle one client's expired posts. Called from `GET /service-posts/my`.
+
+    Bounded (a client has few posts) and never raises, because it hangs off a
+    read: a sweep problem must not be able to stop someone seeing their jobs.
+    """
+    if not client_id:
+        return {}
+    try:
+        return sweep_once(now=now, limit=50, client_id=client_id)
+    except Exception:
+        logger.exception("expiry sweep: read-path sweep failed for %s", client_id)
+        return {}
+
+
+def sweep_once(
+    now: Optional[datetime] = None,
+    limit: int = 200,
+    client_id: Optional[str] = None,
+) -> dict:
     """Refund every expired, unquoted, pre-paid post. Returns a summary.
 
     Never raises. A sweep that dies halfway leaves money stranded until someone
     notices, which is the exact failure it exists to prevent.
     """
-    posts = find_expired_unquoted_posts(now=now, limit=limit)
+    posts = find_expired_unquoted_posts(now=now, limit=limit, client_id=client_id)
     summary = {
         "examined": len(posts),
         "refunded": 0,
@@ -166,9 +218,9 @@ def _notify_client_of_refund(post: dict, refunded_cents: int) -> None:
     if not client_id:
         return
 
-    # Local import: expiry_sweep is imported by the scheduler at startup, and
-    # push pulls in the Expo SDK. Keeping it lazy means a push-layer import
-    # problem cannot stop the sweep from running at all.
+    # Local import: this module is imported on a REQUEST path now (see "how it
+    # actually runs"), and push pulls in the Expo SDK. Keeping it lazy means a
+    # push-layer import problem cannot stop the sweep — or the request — at all.
     from app.services.push import send_push_to_user
 
     dollars = escrow.to_dollars(refunded_cents)

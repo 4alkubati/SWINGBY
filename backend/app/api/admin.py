@@ -165,6 +165,43 @@ def sweep_approval_releases(
     return summary
 
 
+@router.post("/sweeps/post-expiry")
+@limiter.limit("12/hour")
+def sweep_post_expiry(
+    request: Request,
+    current_user: dict = Depends(require_admin),
+):
+    """Refund and close every expired post that nobody quoted.
+
+    Same shape, and the same reasoning, as the approval-release sweep above:
+    the PRIMARY mechanism is lazy (`GET /service-posts/my` sweeps the client's
+    own posts, and the business feed hides expired ones), because this
+    deployment has no scheduler. This is for the case where the client never
+    opens the app again — which, for someone owed a refund on a job that never
+    happened, is the likeliest case of all.
+
+    Safe to call repeatedly: an already-refunded post has zero escrow and is
+    skipped on the money, not on a flag.
+    """
+    from app.services import expiry_sweep
+
+    summary = expiry_sweep.sweep_once()
+    if summary.get("refunded") or summary.get("failed"):
+        logger.info(
+            "admin.sweep_post_expiry",
+            admin_id=current_user["id"],
+            **summary,
+        )
+        record_audit(
+            actor_id=current_user["id"],
+            action="admin.sweep_post_expiry",
+            resource_type="service_post",
+            metadata=summary,
+            request=request,
+        )
+    return summary
+
+
 @router.post("/unsuspend-user/{user_id}")
 @limiter.limit("30/minute")
 def unsuspend_user(

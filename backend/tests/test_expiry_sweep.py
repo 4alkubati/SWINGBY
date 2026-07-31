@@ -8,6 +8,8 @@ The only party who could notice is the one who cannot see the ledger.
 These tests exist because a silent failure here is invisible by construction.
 """
 
+import inspect
+from types import SimpleNamespace
 from unittest.mock import patch
 
 from app.services import expiry_sweep, refunds
@@ -234,3 +236,98 @@ class TestScope:
         # 'matched' has a booking behind it — that money belongs to the job.
         assert expiry_sweep.SWEEPABLE_STATUSES == ("open",)
         assert "matched" not in expiry_sweep.SWEEPABLE_STATUSES
+
+
+class TestTheSweepIsActuallyReachable:
+    """The whole point of this round of work.
+
+    `sweep_once` was written weeks before 2026-07-31 and called by nothing but
+    the tests above it. There is no scheduler in this deployment — no cron
+    service, no worker, no APScheduler — so every guarantee in the module
+    docstring was true of code that never ran. Expired posts stayed 'open'
+    forever and any escrow against them was never returned.
+
+    These tests pin the wiring, not the refund logic: that a real request path
+    reaches the sweep, and that it cannot take a read down with it.
+    """
+
+    def test_service_posts_my_sweeps_the_caller_first(self):
+        import app.api.service_posts as sp
+
+        source = inspect.getsource(sp.list_my_posts)
+        assert "sweep_for_client" in source, (
+            "GET /service-posts/my must settle the client's expired posts — it "
+            "is the only read whose caller is the person owed the refund."
+        )
+
+    def test_the_business_feed_hides_expired_posts(self):
+        import app.api.service_posts as sp
+
+        source = inspect.getsource(sp.list_open_posts)
+        assert 'gt("expires_at"' in source, (
+            "A post keeps status='open' until something sweeps it, so the feed "
+            "must exclude it by date or businesses can quote dead posts."
+        )
+
+    def test_an_admin_endpoint_can_drive_it_in_bulk(self):
+        import app.api.admin as admin_api
+
+        assert hasattr(admin_api, "sweep_post_expiry")
+        source = inspect.getsource(admin_api.sweep_post_expiry)
+        assert "expiry_sweep.sweep_once()" in source
+
+    def test_sweep_for_client_narrows_to_that_client(self):
+        seen = {}
+
+        def fake_sweep(now=None, limit=200, client_id=None):
+            seen["client_id"] = client_id
+            seen["limit"] = limit
+            return {"examined": 0}
+
+        with patch.object(expiry_sweep, "sweep_once", side_effect=fake_sweep):
+            expiry_sweep.sweep_for_client("client-7")
+
+        assert seen["client_id"] == "client-7"
+        assert seen["limit"] <= 50, "a read path must stay bounded"
+
+    def test_sweep_for_client_never_raises_into_the_read(self):
+        # A failing sweep must not stop someone seeing their own jobs.
+        with patch.object(expiry_sweep, "sweep_once", side_effect=Exception("boom")):
+            assert expiry_sweep.sweep_for_client("client-7") == {}
+
+    def test_sweep_for_client_is_a_no_op_without_an_id(self):
+        with patch.object(expiry_sweep, "sweep_once") as swept:
+            assert expiry_sweep.sweep_for_client("") == {}
+        swept.assert_not_called()
+
+    def test_find_expired_filters_by_client_when_asked(self):
+        calls = []
+
+        class _Q:
+            def select(self, *a, **k):
+                return self
+
+            def in_(self, *a, **k):
+                return self
+
+            def lt(self, *a, **k):
+                return self
+
+            def eq(self, col, val):
+                calls.append((col, val))
+                return self
+
+            def order(self, *a, **k):
+                return self
+
+            def limit(self, *a, **k):
+                return self
+
+            def execute(self):
+                return SimpleNamespace(data=[])
+
+        with patch.object(expiry_sweep, "supabase") as sb:
+            sb.table.return_value = _Q()
+            expiry_sweep.find_expired_unquoted_posts(client_id="client-9")
+
+        assert ("client_id", "client-9") in calls
