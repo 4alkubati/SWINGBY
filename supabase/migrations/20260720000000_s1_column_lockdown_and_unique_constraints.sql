@@ -1,12 +1,25 @@
 -- =============================================================================
 -- 20260720000000_s1_column_lockdown_and_unique_constraints.sql
 --
--- FILED, PENDING APPLY — no live Supabase credentials were available in this
--- worktree (Supabase MCP was not connected), so this has NOT been run against
--- project ulnxapnsenzyddddldjt. Apply by hand in the Supabase SQL Editor (or
--- `supabase db push` once the CLI is linked), then update
--- docs/swingby_database_schema.md to drop the FILED note, same convention as
--- docs/referrals_table.sql / docs/service_posts_preferred_date.sql.
+-- APPLY STATE UNKNOWN — checked 2026-07-31 and deliberately NOT resolved.
+--
+-- The two sibling files that carried this same "FILED, PENDING APPLY" header
+-- (20260725220000, 20260726130000) were both verified LIVE on 2026-07-31 and
+-- corrected, so this header is likely stale too. It is left in place because
+-- this file's effects — column-level SELECT grants for `authenticated`, plus
+-- three UNIQUE constraints — cannot be observed through PostgREST using the
+-- service key, which bypasses RLS and column grants. Guessing would be worse
+-- than saying so.
+--
+-- To settle it, run in the SQL Editor:
+--   select grantee, table_name, column_name from information_schema.column_privileges
+--    where grantee = 'authenticated' and table_name = 'service_posts';
+--   select conname from pg_constraint where conname like '%_unique%';
+-- Then replace this block with APPLIED or re-run the file (it is idempotent).
+--
+-- Original note: no live Supabase credentials were available in the authoring
+-- worktree. Apply by hand in the Supabase SQL Editor (or `supabase db push`
+-- once the CLI is linked), then update docs/swingby_database_schema.md.
 --
 -- This is the first file in `supabase/migrations/` — going forward, new
 -- schema/RLS changes should land here (ordered, timestamped, idempotent)

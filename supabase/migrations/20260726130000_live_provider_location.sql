@@ -1,10 +1,11 @@
 -- =============================================================================
 -- 20260726130000_live_provider_location.sql
 --
--- FILED, PENDING APPLY — this has NOT been run against project
--- ulnxapnsenzyddddldjt. Apply in the Supabase SQL Editor (or `supabase db push`
--- once the CLI is linked). Same convention as
--- 20260725220000_owner_is_the_default_assignee.sql.
+-- APPLIED — verified live against project ulnxapnsenzyddddldjt on 2026-07-31.
+-- `booking_locations` exists with all eight columns this file declares. The
+-- header used to read "FILED, PENDING APPLY" and was never updated after the
+-- migration was run; see the note in
+-- 20260725220000_owner_is_the_default_assignee.sql for why that matters.
 --
 -- backend/app/api/booking_location.py is written to survive this table being
 -- absent: every statement against `booking_locations` is wrapped, and a missing
