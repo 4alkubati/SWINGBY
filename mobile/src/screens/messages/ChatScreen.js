@@ -52,6 +52,10 @@ import SendTermsSheet from './SendTermsSheet';
 import PaySheet from '../../components/PaySheet';
 import { SkeletonBox } from '../../components/Skeleton';
 import BusinessLogo from '../../components/BusinessLogo';
+// Guideline 1.2 — report + block. The sheet is shared with every other
+// reportable surface (reviews, posts, business profiles).
+import ReportSheet from '../../components/ReportSheet';
+import * as moderation from '../../services/moderation';
 import { colors, spacing, radius, shadows, motion } from '../../theme/tokens';
 
 // Newest-first server rows and locally-appended optimistic rows are merged by
@@ -168,7 +172,7 @@ const typingStyles = StyleSheet.create({
 
 // ─── Message bubble ───────────────────────────────────────────────────────────
 
-function MessageBubble({ item, isMine }) {
+function MessageBubble({ item, isMine, onReport }) {
   return (
     <Animated.View
       entering={FadeIn.springify()
@@ -179,7 +183,18 @@ function MessageBubble({ item, isMine }) {
         isMine ? bubbleStyles.wrapMine : bubbleStyles.wrapTheirs,
       ]}
     >
-      <View
+      {/* Long-press to report (Guideline 1.2(b)). Only on messages the reader
+          did NOT send — reporting your own message is a 400 server-side, so
+          the gesture simply isn't offered there. No visual affordance by
+          design: a report button on every bubble would shout at a thread that
+          is almost always fine, and long-press is the platform idiom for
+          "act on this message". */}
+      <TouchableOpacity
+        activeOpacity={isMine ? 1 : 0.85}
+        onLongPress={isMine ? undefined : () => onReport?.(item)}
+        delayLongPress={400}
+        accessibilityRole={isMine ? undefined : 'button'}
+        accessibilityHint={isMine ? undefined : i18n.t('moderation.reportMessage')}
         style={[
           bubbleStyles.bubble,
           isMine ? bubbleStyles.bubbleMine : bubbleStyles.bubbleTheirs,
@@ -200,7 +215,7 @@ function MessageBubble({ item, isMine }) {
         >
           {item._optimistic ? 'sending…' : timeStr(item.sent_at)}
         </Text>
-      </View>
+      </TouchableOpacity>
     </Animated.View>
   );
 }
@@ -365,6 +380,15 @@ export default function ChatScreen({ navigation, route }) {
   const [termsSheetVisible, setTermsSheetVisible] = useState(false);
   const [termsSending, setTermsSending] = useState(false);
   const [termsBusyId, setTermsBusyId] = useState(null);
+  // Guideline 1.2 — report + block. `counterpartId` comes from the thread
+  // payload (messages.py::_counterpart_user_id); without it the Block control
+  // has nobody to block, so it hides rather than guessing.
+  const [counterpartId, setCounterpartId] = useState(null);
+  const [threadBlocked, setThreadBlocked] = useState(false);
+  // { targetType, targetId } while the report sheet is open, else null. Holding
+  // the target here rather than in two booleans is what lets ONE sheet serve
+  // both "report this thread" and "report this message".
+  const [reportTarget, setReportTarget] = useState(null);
 
   const listRef = useRef(null);
   // load() runs on a 5s interval, so it must not close over `messages` — the
@@ -449,6 +473,11 @@ export default function ChatScreen({ navigation, route }) {
       const serverItems = [...items].reverse();
       setMessages((prev) => mergeMessagesById(prev, serverItems));
       if (data?.interest) setThreadInfo(data.interest);
+      // Booking threads carry it at the top level (a direct geo-browse booking
+      // has no `interest` at all); interest threads carry it inside `interest`.
+      const nextCounterpart =
+        data?.counterpart_user_id ?? data?.interest?.counterpart_user_id ?? null;
+      if (nextCounterpart) setCounterpartId(nextCounterpart);
       // Only the first page (and each older page) moves the cursor; a poll
       // re-reads the newest page and must not clobber it.
       if (before || cursor === null) {
@@ -794,6 +823,118 @@ export default function ChatScreen({ navigation, route }) {
     }
   }
 
+  // ── Safety: report + block (App Store Guideline 1.2) ──────────────────────
+  //
+  // Chat is the highest-value placement in the app for both controls — it is
+  // where abuse actually arrives, and it is the first place a reviewer looks
+  // for them. Both hang off one header overflow rather than two header icons,
+  // because the header already carries a back arrow and a tappable
+  // business identity, and a third and fourth control there is clutter.
+
+  // Whether the thread is already blocked decides what the menu offers and
+  // whether the composer is usable. Re-checked whenever the counterpart
+  // resolves; fails open (services/moderation.js::isBlocked), because the send
+  // itself is gated server-side and that is the real enforcement.
+  useEffect(() => {
+    let cancelled = false;
+    if (!counterpartId) return undefined;
+    (async () => {
+      const blocked = await moderation.isBlocked(counterpartId);
+      if (!cancelled) setThreadBlocked(blocked);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [counterpartId]);
+
+  // Native action sheet rather than a custom menu: it is the platform pattern
+  // for "pick one action", it is what Alert.alert already does everywhere else
+  // in this screen, and it needs no new surface to maintain.
+  function openSafetyMenu() {
+    if (!counterpartId) return;
+    const options = [
+      {
+        text: i18n.t('moderation.reportUser'),
+        onPress: () =>
+          setReportTarget({
+            targetType: moderation.REPORT_TARGETS.USER,
+            targetId: counterpartId,
+          }),
+      },
+      threadBlocked
+        ? { text: i18n.t('moderation.unblock'), onPress: confirmUnblock }
+        : {
+            text: i18n.t('moderation.blockUser'),
+            style: 'destructive',
+            onPress: confirmBlock,
+          },
+      { text: i18n.t('common.cancel'), style: 'cancel' },
+    ];
+    Alert.alert(i18n.t('moderation.safety'), null, options, { cancelable: true });
+  }
+
+  function confirmBlock() {
+    if (!counterpartId) return;
+    const name = headerName || otherPartyName || '';
+    Alert.alert(
+      i18n.t('moderation.blockConfirmTitle', { name }),
+      i18n.t('moderation.blockConfirmBody'),
+      [
+        { text: i18n.t('common.cancel'), style: 'cancel' },
+        {
+          text: i18n.t('moderation.block'),
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await moderation.blockUser(counterpartId);
+              setThreadBlocked(true);
+              haptics.buttonTap();
+              showToast({ type: 'success', text1: i18n.t('moderation.blocked') });
+            } catch {
+              showToast({ type: 'error', text1: i18n.t('moderation.blockFailed') });
+            }
+          },
+        },
+      ],
+    );
+  }
+
+  function confirmUnblock() {
+    if (!counterpartId) return;
+    const name = headerName || otherPartyName || '';
+    Alert.alert(
+      i18n.t('moderation.unblockConfirmTitle', { name }),
+      i18n.t('moderation.unblockConfirmBody'),
+      [
+        { text: i18n.t('common.cancel'), style: 'cancel' },
+        {
+          text: i18n.t('moderation.unblock'),
+          onPress: async () => {
+            try {
+              await moderation.unblockUser(counterpartId);
+              setThreadBlocked(false);
+              haptics.buttonTap();
+            } catch {
+              showToast({ type: 'error', text1: i18n.t('moderation.blockFailed') });
+            }
+          },
+        },
+      ],
+    );
+  }
+
+  // Long-press a bubble to report that specific message. The overflow reports
+  // the PERSON; this reports the thing they said, which is what an admin can
+  // actually hide.
+  function reportMessage(message) {
+    if (!message?.id || message.sender_id === user?.id) return;
+    haptics.buttonTap();
+    setReportTarget({
+      targetType: moderation.REPORT_TARGETS.MESSAGE,
+      targetId: message.id,
+    });
+  }
+
   // PAYMENTS.md §S2(c) — "client agrees → client pays THEN".
   //
   // FOUNDER RULING 2026-07-25: accepting charges immediately, in-app. This used
@@ -1001,8 +1142,40 @@ export default function ChatScreen({ navigation, route }) {
             ) : null}
           </View>
         </TouchableOpacity>
-        <View style={{ width: 32 }} />
+        {/* Guideline 1.2 — Report / Block. This slot was a dead 32px spacer
+            holding the title centred; the overflow is the same width, so the
+            header keeps its balance and gains the two controls App Review
+            looks for. Hidden only when there is genuinely nobody on the other
+            side (counterpart unresolved), never merely because it is a quote
+            thread — pre-acceptance chat is exactly where abuse arrives. */}
+        {counterpartId ? (
+          <TouchableOpacity
+            onPress={openSafetyMenu}
+            hitSlop={10}
+            style={{ width: 32, alignItems: 'flex-end' }}
+            accessibilityRole="button"
+            accessibilityLabel={i18n.t('moderation.safety')}
+          >
+            <Feather name="more-vertical" size={20} color={colors.textPrimary} />
+          </TouchableOpacity>
+        ) : (
+          <View style={{ width: 32 }} />
+        )}
       </Surface>
+
+      {/* Blocked threads say so instead of letting the user type into a
+          composer whose send will 403. */}
+      {threadBlocked ? (
+        <View style={styles.blockedBanner}>
+          <Feather name="slash" size={16} color={colors.textSecondary} />
+          <View style={{ flex: 1 }}>
+            <Text variant="smallMedium">{i18n.t('moderation.threadBlockedTitle')}</Text>
+            <Text variant="caption" color="secondary">
+              {i18n.t('moderation.threadBlockedBody')}
+            </Text>
+          </View>
+        </View>
+      ) : null}
 
       {/* ── Pinned booking context ─────────────────────────────────────────
           Owner direction (2026-07-21): once a quote is accepted the thread's
@@ -1129,7 +1302,7 @@ export default function ChatScreen({ navigation, route }) {
             );
           }
 
-          return <MessageBubble item={item} isMine={isMine} />;
+          return <MessageBubble item={item} isMine={isMine} onReport={reportMessage} />;
         }}
         ListFooterComponent={isTyping ? <TypingIndicator /> : null}
       />
@@ -1227,6 +1400,16 @@ export default function ChatScreen({ navigation, route }) {
         onClose={() => setTermsSheetVisible(false)}
         onSend={handleSendTerms}
       />
+
+      {/* One sheet, two entry points: the header overflow (reports the person)
+          and a long-press on a bubble (reports that message). `reportTarget`
+          carries which. */}
+      <ReportSheet
+        visible={!!reportTarget}
+        targetType={reportTarget?.targetType}
+        targetId={reportTarget?.targetId}
+        onClose={() => setReportTarget(null)}
+      />
     </KeyboardAvoidingView>
   );
 }
@@ -1262,6 +1445,22 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+
+  // Guideline 1.2(c) — shown instead of letting someone type into a composer
+  // whose send is going to 403. Neutral, not alarming: a block is a normal
+  // thing to have done, and the banner's job is to explain, not to scold.
+  blockedBanner: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.sm,
+    marginHorizontal: spacing.base,
+    marginTop: spacing.sm,
+    padding: spacing.md,
+    borderRadius: radius.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surfaceAlt,
   },
 
   // Pinned booking context above the thread: summary card → quote bubble →

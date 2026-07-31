@@ -31,6 +31,8 @@ import Stack from '../../components/Stack';
 import Surface from '../../components/Surface';
 import Button from '../../components/Button';
 import ListItem from '../../components/ListItem';
+import Modal from '../../components/Modal';
+import TextField from '../../components/TextField';
 
 const APP_VERSION =
   Constants.expoConfig?.version ??
@@ -48,6 +50,13 @@ export default function SettingsScreen() {
   const [currentLocale, setCurrentLocale] = useState(i18n.locale);
   const [exportLoading, setExportLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  // Delete-account sheet (Guideline 5.1.1(v)). `needsPassword` decides whether
+  // the sheet shows a password field at all — a Sign in with Apple account has
+  // no password to ask for.
+  const [deleteVisible, setDeleteVisible] = useState(false);
+  const [needsPassword, setNeedsPassword] = useState(true);
+  const [deletePassword, setDeletePassword] = useState('');
+  const [deleteError, setDeleteError] = useState(null);
 
   // CARD-24 — biometric unlock, opt-in and off by default.
   const [bioAvailable, setBioAvailable] = useState(false);
@@ -133,28 +142,59 @@ export default function SettingsScreen() {
     }
   }
 
-  function handleDeleteAccount() {
-    Alert.alert(
-      'Delete Account',
-      'This will permanently delete your account and all data. This cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: confirmDeleteAccount,
-        },
-      ]
-    );
+  // ── Delete account (App Store Guideline 5.1.1(v)) ──────────────────────────
+  //
+  // This used to be a bare Alert that POSTed `{ confirm }` and nothing else,
+  // against a backend that REQUIRED a password — so every tap 422'd and the
+  // account was never deleted. Two things fix it: the backend now asks for a
+  // password only when the account has one, and this sheet collects it when it
+  // does.
+  //
+  // The copy also used to say "permanently delete your account and all data",
+  // which was false. It is a soft delete: the profile is scrubbed and the
+  // account is locked out, but bookings, payments and invoices are retained for
+  // six years because the CRA requires it — exactly as PrivacyPolicyScreen §3
+  // says. Telling a user their financial records are gone when they are not is
+  // the kind of thing App Review reads the privacy policy to catch.
+  async function handleDeleteAccount() {
+    setDeletePassword('');
+    setDeleteError(null);
+    // Ask the backend which shape this sheet takes. Defaults to asking for a
+    // password if the call fails — the safe direction, and it matches the
+    // backend's own fail-closed posture in me.py::_has_password_identity.
+    setNeedsPassword(true);
+    setDeleteVisible(true);
+    try {
+      const res = await api.get('/me/auth-methods');
+      setNeedsPassword(res?.data?.has_password !== false);
+    } catch {
+      setNeedsPassword(true);
+    }
   }
 
   async function confirmDeleteAccount() {
+    if (deleteLoading) return;
+    if (needsPassword && !deletePassword) return;
     setDeleteLoading(true);
+    setDeleteError(null);
     try {
-      await api.delete('/me', { data: { confirm: 'DELETE_MY_ACCOUNT' } });
+      await api.delete('/me', {
+        data: {
+          confirm: 'DELETE_MY_ACCOUNT',
+          ...(needsPassword ? { password: deletePassword } : {}),
+        },
+      });
+      setDeleteVisible(false);
+      showToast({ type: 'success', text1: i18n.t('settings.deleteAccountDone') });
       await logout();
     } catch (err) {
-      showToast({ type: 'error', text1: 'Could not delete account', text2: err.message });
+      // 401 is specifically "that password was wrong", and saying so beats a
+      // generic failure the user cannot act on.
+      setDeleteError(
+        err?.response?.status === 401
+          ? i18n.t('settings.deleteAccountWrongPassword')
+          : i18n.t('settings.deleteAccountFailed'),
+      );
     } finally {
       setDeleteLoading(false);
     }
@@ -162,7 +202,10 @@ export default function SettingsScreen() {
 
   function handleContactUs() {
     import('react-native').then(({ Linking }) => {
-      Linking.openURL('mailto:4alkubati@gmail.com');
+      // Guideline 1.2(d) wants published contact information for a UGC app. A
+      // personal Gmail in the shipping binary, next to a different support URL
+      // in App Store Connect, is the kind of mismatch that reads as careless.
+      Linking.openURL('mailto:support@swingbyy.com');
     });
   }
 
@@ -262,6 +305,27 @@ export default function SettingsScreen() {
             </Stack>
           </Surface>
 
+          {/* ── SAFETY ──
+              App Store Guideline 1.2(c) asks for a way to block abusive users.
+              Blocking itself happens in context (a chat header, a profile);
+              this is where you UNDO it, which is the half that has nowhere
+              else to live. A reviewer looking for "how do I manage blocks"
+              looks in Settings, so it is here rather than buried in a profile
+              screen. */}
+          <Surface elevation="subtle" padding={0} style={styles.section}>
+            <Text variant="label" color="secondary" style={styles.sectionLabel}>
+              {i18n.t('moderation.safety').toUpperCase()}
+            </Text>
+            <Stack spacing={0}>
+              <ListItem
+                left={<Feather name="slash" size={24} color={colors.textSecondary} />}
+                title={i18n.t('moderation.blockedAccounts')}
+                onPress={() => navigation.navigate('BlockedAccounts')}
+                style={styles.listItemFlush}
+              />
+            </Stack>
+          </Surface>
+
           {/* ── PRIVACY & LEGAL ── */}
           <Surface elevation="subtle" padding={0} style={styles.section}>
             <Text variant="label" color="secondary" style={styles.sectionLabel}>
@@ -297,7 +361,7 @@ export default function SettingsScreen() {
               <View style={styles.divider} />
               <ListItem
                 left={<Feather name="trash-2" size={24} color={colors.danger} />}
-                title="Delete my account"
+                title={i18n.t('settings.deleteAccount')}
                 onPress={deleteLoading ? undefined : handleDeleteAccount}
                 right={
                   deleteLoading
@@ -356,6 +420,62 @@ export default function SettingsScreen() {
           if (code) setCurrentLocale(code);
         }}
       />
+
+      {/* Delete-account confirmation (Guideline 5.1.1(v)). A modal rather than
+          an Alert because it has to collect a password on some accounts and
+          state the retention rule honestly on all of them — neither fits in an
+          Alert body. */}
+      <Modal
+        visible={deleteVisible}
+        onClose={() => setDeleteVisible(false)}
+        title={i18n.t('settings.deleteAccountTitle')}
+      >
+        <Stack spacing="base">
+          <Text variant="body" color="secondary">
+            {i18n.t('settings.deleteAccountBody')}
+          </Text>
+
+          {needsPassword ? (
+            <TextField
+              label={i18n.t('settings.deleteAccountPasswordLabel')}
+              value={deletePassword}
+              onChangeText={(v) => {
+                setDeletePassword(v);
+                setDeleteError(null);
+              }}
+              secureTextEntry
+              autoCapitalize="none"
+              textContentType="password"
+              placeholder={i18n.t('settings.deleteAccountPasswordHint')}
+              error={deleteError}
+            />
+          ) : null}
+
+          {deleteError && !needsPassword ? (
+            <Text variant="small" style={{ color: colors.danger }}>
+              {deleteError}
+            </Text>
+          ) : null}
+
+          <Button
+            variant="danger"
+            label={
+              deleteLoading
+                ? i18n.t('settings.deleteAccountDeleting')
+                : i18n.t('settings.deleteAccountConfirm')
+            }
+            onPress={confirmDeleteAccount}
+            loading={deleteLoading}
+            disabled={deleteLoading || (needsPassword && !deletePassword)}
+          />
+          <Button
+            variant="secondary"
+            label={i18n.t('settings.deleteAccountCancel')}
+            onPress={() => setDeleteVisible(false)}
+            disabled={deleteLoading}
+          />
+        </Stack>
+      </Modal>
     </View>
   );
 }

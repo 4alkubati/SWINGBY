@@ -1,10 +1,12 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Pressable } from 'react-native';
+import { Feather } from '@expo/vector-icons';
 
 import Text from './Text';
 import Inline from './Inline';
 import Surface from './Surface';
 import { RatingStarsDisplay } from './RatingStars';
+import i18n from '../i18n';
 import { colors, spacing } from '../theme/tokens';
 
 /**
@@ -41,9 +43,16 @@ export default function ReviewCard({
   variant = 'plain',
   dateLabel,
   commentLines,
+  onReport,
 }) {
   const name = reviewerName(review);
   const rating = review?.rating || 0;
+  // Guideline 1.2(b). Only the 'plain' (public profile) variant gets a report
+  // control: 'detailed' is the owner's own analytics view of reviews left FOR
+  // them, and a business reporting its own bad reviews is not what the flag
+  // mechanism is for. Rendered only when a handler is supplied, so no existing
+  // caller changes shape.
+  const canReport = variant === 'plain' && typeof onReport === 'function' && review?.id;
 
   if (variant === 'detailed') {
     return (
@@ -71,7 +80,19 @@ export default function ReviewCard({
     <Surface elevation="subtle" style={styles.plainCard}>
       <Inline justify="space-between" style={{ marginBottom: spacing.sm }}>
         <Text variant="smallMedium">{name}</Text>
-        <RatingStarsDisplay rating={rating} size={12} color={colors.warning} />
+        <Inline spacing="sm" align="center">
+          <RatingStarsDisplay rating={rating} size={12} color={colors.warning} />
+          {canReport ? (
+            <Pressable
+              onPress={() => onReport(review)}
+              hitSlop={10}
+              accessibilityRole="button"
+              accessibilityLabel={i18n.t('moderation.reportReview')}
+            >
+              <Feather name="more-horizontal" size={16} color={colors.textSecondary} />
+            </Pressable>
+          ) : null}
+        </Inline>
       </Inline>
       {review?.comment ? (
         <Text

@@ -1194,6 +1194,279 @@ Object.assign(translations.ar, {
   'language.restartManual': 'يرجى إغلاق SwingBy وفتحه مرة أخرى لإكمال التغيير.',
 });
 
+// ── Report + block (App Store Guideline 1.2) — 2026-07-31 ───────────────────
+// Appended as its own block for the same merge-conflict reason as every block
+// above.
+//
+// Translated into ALL THREE locales rather than English-with-fallback, on the
+// same reasoning as the restart prompt: this is the safety flow. Someone
+// reaching for "report" or "block" is, by definition, having a bad time on the
+// platform, and answering them in a language they did not choose is the worst
+// possible moment to fall back. It is also what Guideline 1.2 is actually
+// about — a reporting mechanism a user cannot read is not a reporting
+// mechanism.
+const moderationEn = {
+  // Entry points
+  'moderation.report': 'Report',
+  'moderation.reportMessage': 'Report this message',
+  'moderation.reportReview': 'Report this review',
+  'moderation.reportPost': 'Report this post',
+  'moderation.reportBusiness': 'Report this business',
+  'moderation.reportUser': 'Report this person',
+
+  // Report sheet
+  'moderation.reportTitle': 'Report',
+  'moderation.reportSubtitle': 'Tell us what’s wrong. We review every report.',
+  'moderation.reasonLabel': 'What’s the problem?',
+  'moderation.reasonHarassment': 'Harassment or bullying',
+  'moderation.reasonHateSpeech': 'Hate speech',
+  'moderation.reasonSexualContent': 'Sexual content',
+  'moderation.reasonViolence': 'Violence or threats',
+  'moderation.reasonScam': 'Scam or fraud',
+  'moderation.reasonOffPlatform': 'Trying to take the job off SwingBy',
+  'moderation.reasonSpam': 'Spam',
+  'moderation.reasonOther': 'Something else',
+  'moderation.detailsLabel': 'Anything else? (optional)',
+  'moderation.detailsPlaceholder': 'Add anything that would help us understand.',
+  'moderation.submitReport': 'Submit report',
+  'moderation.submitting': 'Sending…',
+  'moderation.reportSent': 'Report sent',
+  'moderation.reportSentBody':
+    'Thanks — our team reviews every report, usually within 24 hours.',
+  'moderation.alreadyReported': 'You’ve already reported this',
+  'moderation.alreadyReportedBody': 'It’s in the queue. We’ll take a look.',
+  'moderation.reportFailed': 'Could not send that report. Try again.',
+
+  // Blocking
+  'moderation.block': 'Block',
+  'moderation.unblock': 'Unblock',
+  'moderation.blockUser': 'Block this person',
+  'moderation.blockConfirmTitle': 'Block %{name}?',
+  'moderation.blockConfirmBody':
+    'They won’t be able to message you or see your posts, and you won’t see theirs. You can undo this in Settings → Safety.',
+  'moderation.blocked': 'Blocked',
+  'moderation.blockFailed': 'Could not block that person. Try again.',
+  'moderation.unblockConfirmTitle': 'Unblock %{name}?',
+  'moderation.unblockConfirmBody': 'You’ll be able to see and message each other again.',
+
+  // Settings → Safety
+  'moderation.safety': 'Safety',
+  'moderation.blockedAccounts': 'Blocked accounts',
+  'moderation.blockedAccountsTitle': 'Blocked accounts',
+  'moderation.blockedEmptyTitle': 'No one is blocked',
+  'moderation.blockedEmptyBody':
+    'Block someone from a chat or their profile and they’ll show up here.',
+  'moderation.blockedOn': 'Blocked %{date}',
+
+  // Chat
+  'moderation.threadBlockedTitle': 'You can’t reply here',
+  'moderation.threadBlockedBody':
+    'One of you blocked the other. Unblock in Settings → Safety to start talking again.',
+  'moderation.messageRefused':
+    'That message can’t be sent. SwingBy doesn’t allow hate speech, sexual solicitation, or threats.',
+
+  // Admin review queue
+  'moderation.queueTitle': 'Reports',
+  'moderation.queueEmptyTitle': 'Nothing to review',
+  'moderation.queueEmptyBody': 'New reports land here.',
+  'moderation.queueReportCount': 'Reported %{count} times',
+  'moderation.reviewTitle': 'Review report',
+  'moderation.actionNone': 'Dismiss — nothing wrong',
+  'moderation.actionHide': 'Hide the content',
+  'moderation.actionWarn': 'Warn the user',
+  'moderation.actionSuspend': 'Suspend the account',
+  'moderation.resolutionLabel': 'Notes (optional)',
+  'moderation.resolve': 'Resolve',
+  'moderation.resolved': 'Resolved',
+  'moderation.resolveFailed': 'Could not resolve that report. Try again.',
+};
+Object.assign(translations.en, moderationEn);
+
+Object.assign(translations['fr-CA'], {
+  'moderation.report': 'Signaler',
+  'moderation.reportMessage': 'Signaler ce message',
+  'moderation.reportReview': 'Signaler cet avis',
+  'moderation.reportPost': 'Signaler cette annonce',
+  'moderation.reportBusiness': 'Signaler cette entreprise',
+  'moderation.reportUser': 'Signaler cette personne',
+
+  'moderation.reportTitle': 'Signalement',
+  'moderation.reportSubtitle':
+    'Dites-nous ce qui ne va pas. Nous examinons chaque signalement.',
+  'moderation.reasonLabel': 'Quel est le problème?',
+  'moderation.reasonHarassment': 'Harcèlement ou intimidation',
+  'moderation.reasonHateSpeech': 'Propos haineux',
+  'moderation.reasonSexualContent': 'Contenu sexuel',
+  'moderation.reasonViolence': 'Violence ou menaces',
+  'moderation.reasonScam': 'Arnaque ou fraude',
+  'moderation.reasonOffPlatform': 'Tentative de contourner SwingBy',
+  'moderation.reasonSpam': 'Pourriel',
+  'moderation.reasonOther': 'Autre chose',
+  'moderation.detailsLabel': 'Autre chose? (facultatif)',
+  'moderation.detailsPlaceholder': 'Ajoutez ce qui pourrait nous aider à comprendre.',
+  'moderation.submitReport': 'Envoyer le signalement',
+  'moderation.submitting': 'Envoi…',
+  'moderation.reportSent': 'Signalement envoyé',
+  'moderation.reportSentBody':
+    'Merci — notre équipe examine chaque signalement, généralement en moins de 24 heures.',
+  'moderation.alreadyReported': 'Vous avez déjà signalé ceci',
+  'moderation.alreadyReportedBody': 'C’est dans la file. Nous allons regarder.',
+  'moderation.reportFailed': 'Impossible d’envoyer ce signalement. Réessayez.',
+
+  'moderation.block': 'Bloquer',
+  'moderation.unblock': 'Débloquer',
+  'moderation.blockUser': 'Bloquer cette personne',
+  'moderation.blockConfirmTitle': 'Bloquer %{name}?',
+  'moderation.blockConfirmBody':
+    'Cette personne ne pourra plus vous écrire ni voir vos annonces, et vous ne verrez plus les siennes. Vous pouvez annuler dans Réglages → Sécurité.',
+  'moderation.blocked': 'Bloqué',
+  'moderation.blockFailed': 'Impossible de bloquer cette personne. Réessayez.',
+  'moderation.unblockConfirmTitle': 'Débloquer %{name}?',
+  'moderation.unblockConfirmBody':
+    'Vous pourrez de nouveau vous voir et vous écrire.',
+
+  'moderation.safety': 'Sécurité',
+  'moderation.blockedAccounts': 'Comptes bloqués',
+  'moderation.blockedAccountsTitle': 'Comptes bloqués',
+  'moderation.blockedEmptyTitle': 'Personne n’est bloqué',
+  'moderation.blockedEmptyBody':
+    'Bloquez quelqu’un depuis une conversation ou son profil et il apparaîtra ici.',
+  'moderation.blockedOn': 'Bloqué le %{date}',
+
+  'moderation.threadBlockedTitle': 'Vous ne pouvez pas répondre ici',
+  'moderation.threadBlockedBody':
+    'L’un de vous a bloqué l’autre. Débloquez dans Réglages → Sécurité pour reprendre la conversation.',
+  'moderation.messageRefused':
+    'Ce message ne peut pas être envoyé. SwingBy n’autorise ni les propos haineux, ni la sollicitation sexuelle, ni les menaces.',
+
+  'moderation.queueTitle': 'Signalements',
+  'moderation.queueEmptyTitle': 'Rien à examiner',
+  'moderation.queueEmptyBody': 'Les nouveaux signalements arrivent ici.',
+  'moderation.queueReportCount': 'Signalé %{count} fois',
+  'moderation.reviewTitle': 'Examiner le signalement',
+  'moderation.actionNone': 'Rejeter — rien à signaler',
+  'moderation.actionHide': 'Masquer le contenu',
+  'moderation.actionWarn': 'Avertir l’utilisateur',
+  'moderation.actionSuspend': 'Suspendre le compte',
+  'moderation.resolutionLabel': 'Notes (facultatif)',
+  'moderation.resolve': 'Régler',
+  'moderation.resolved': 'Réglé',
+  'moderation.resolveFailed': 'Impossible de régler ce signalement. Réessayez.',
+});
+
+Object.assign(translations.ar, {
+  'moderation.report': 'إبلاغ',
+  'moderation.reportMessage': 'الإبلاغ عن هذه الرسالة',
+  'moderation.reportReview': 'الإبلاغ عن هذا التقييم',
+  'moderation.reportPost': 'الإبلاغ عن هذا الطلب',
+  'moderation.reportBusiness': 'الإبلاغ عن هذه الشركة',
+  'moderation.reportUser': 'الإبلاغ عن هذا الشخص',
+
+  'moderation.reportTitle': 'إبلاغ',
+  'moderation.reportSubtitle': 'أخبرنا بما حدث. نراجع كل بلاغ.',
+  'moderation.reasonLabel': 'ما المشكلة؟',
+  'moderation.reasonHarassment': 'مضايقة أو تنمّر',
+  'moderation.reasonHateSpeech': 'خطاب كراهية',
+  'moderation.reasonSexualContent': 'محتوى جنسي',
+  'moderation.reasonViolence': 'عنف أو تهديد',
+  'moderation.reasonScam': 'احتيال أو نصب',
+  'moderation.reasonOffPlatform': 'محاولة إتمام العمل خارج SwingBy',
+  'moderation.reasonSpam': 'محتوى مزعج',
+  'moderation.reasonOther': 'شيء آخر',
+  'moderation.detailsLabel': 'أي تفاصيل أخرى؟ (اختياري)',
+  'moderation.detailsPlaceholder': 'أضف ما يساعدنا على فهم ما حدث.',
+  'moderation.submitReport': 'إرسال البلاغ',
+  'moderation.submitting': 'جارٍ الإرسال…',
+  'moderation.reportSent': 'تم إرسال البلاغ',
+  'moderation.reportSentBody': 'شكرًا — يراجع فريقنا كل بلاغ، عادةً خلال 24 ساعة.',
+  'moderation.alreadyReported': 'سبق أن أبلغت عن هذا',
+  'moderation.alreadyReportedBody': 'البلاغ في قائمة المراجعة. سنطّلع عليه.',
+  'moderation.reportFailed': 'تعذّر إرسال البلاغ. حاول مرة أخرى.',
+
+  'moderation.block': 'حظر',
+  'moderation.unblock': 'إلغاء الحظر',
+  'moderation.blockUser': 'حظر هذا الشخص',
+  'moderation.blockConfirmTitle': 'حظر %{name}؟',
+  'moderation.blockConfirmBody':
+    'لن يتمكّن من مراسلتك أو رؤية طلباتك، ولن ترى طلباته. يمكنك التراجع من الإعدادات ← الأمان.',
+  'moderation.blocked': 'محظور',
+  'moderation.blockFailed': 'تعذّر حظر هذا الشخص. حاول مرة أخرى.',
+  'moderation.unblockConfirmTitle': 'إلغاء حظر %{name}؟',
+  'moderation.unblockConfirmBody': 'ستتمكّنان من رؤية ومراسلة بعضكما مرة أخرى.',
+
+  'moderation.safety': 'الأمان',
+  'moderation.blockedAccounts': 'الحسابات المحظورة',
+  'moderation.blockedAccountsTitle': 'الحسابات المحظورة',
+  'moderation.blockedEmptyTitle': 'لا يوجد أحد محظور',
+  'moderation.blockedEmptyBody':
+    'احظر شخصًا من محادثة أو من ملفه الشخصي وسيظهر هنا.',
+  'moderation.blockedOn': 'حُظر في %{date}',
+
+  'moderation.threadBlockedTitle': 'لا يمكنك الرد هنا',
+  'moderation.threadBlockedBody':
+    'أحدكما حظر الآخر. ألغِ الحظر من الإعدادات ← الأمان لمتابعة المحادثة.',
+  'moderation.messageRefused':
+    'تعذّر إرسال هذه الرسالة. لا يسمح SwingBy بخطاب الكراهية أو الطلبات الجنسية أو التهديدات.',
+
+  'moderation.queueTitle': 'البلاغات',
+  'moderation.queueEmptyTitle': 'لا شيء للمراجعة',
+  'moderation.queueEmptyBody': 'تظهر البلاغات الجديدة هنا.',
+  'moderation.queueReportCount': 'تم الإبلاغ %{count} مرات',
+  'moderation.reviewTitle': 'مراجعة البلاغ',
+  'moderation.actionNone': 'رفض — لا توجد مخالفة',
+  'moderation.actionHide': 'إخفاء المحتوى',
+  'moderation.actionWarn': 'تحذير المستخدم',
+  'moderation.actionSuspend': 'تعليق الحساب',
+  'moderation.resolutionLabel': 'ملاحظات (اختياري)',
+  'moderation.resolve': 'إنهاء',
+  'moderation.resolved': 'تم',
+  'moderation.resolveFailed': 'تعذّر إنهاء هذا البلاغ. حاول مرة أخرى.',
+});
+
+// ── Account deletion asks for a password only when there is one — 2026-07-31 ─
+// App Store Guideline 5.1.1(v). A Sign in with Apple account has no password,
+// so the sheet has two shapes and needs copy for both.
+Object.assign(translations.en, {
+  'settings.deleteAccountTitle': 'Delete my account',
+  'settings.deleteAccountBody':
+    'Your profile disappears from SwingBy and you’re signed out. Bookings, payments and invoices are kept for 6 years — Canadian tax law requires it — but they’re no longer linked to your name.',
+  'settings.deleteAccountPasswordLabel': 'Your password',
+  'settings.deleteAccountPasswordHint': 'Enter it to confirm this is you.',
+  'settings.deleteAccountConfirm': 'Delete my account',
+  'settings.deleteAccountCancel': 'Keep my account',
+  'settings.deleteAccountDeleting': 'Deleting…',
+  'settings.deleteAccountWrongPassword': 'That password didn’t match. Try again.',
+  'settings.deleteAccountFailed': 'Could not delete your account. Try again.',
+  'settings.deleteAccountDone': 'Your account has been deleted.',
+});
+Object.assign(translations['fr-CA'], {
+  'settings.deleteAccountTitle': 'Supprimer mon compte',
+  'settings.deleteAccountBody':
+    'Votre profil disparaît de SwingBy et vous êtes déconnecté. Les réservations, paiements et factures sont conservés 6 ans — la loi fiscale canadienne l’exige — mais ils ne sont plus liés à votre nom.',
+  'settings.deleteAccountPasswordLabel': 'Votre mot de passe',
+  'settings.deleteAccountPasswordHint': 'Saisissez-le pour confirmer que c’est bien vous.',
+  'settings.deleteAccountConfirm': 'Supprimer mon compte',
+  'settings.deleteAccountCancel': 'Garder mon compte',
+  'settings.deleteAccountDeleting': 'Suppression…',
+  'settings.deleteAccountWrongPassword':
+    'Ce mot de passe ne correspond pas. Réessayez.',
+  'settings.deleteAccountFailed': 'Impossible de supprimer votre compte. Réessayez.',
+  'settings.deleteAccountDone': 'Votre compte a été supprimé.',
+});
+Object.assign(translations.ar, {
+  'settings.deleteAccountTitle': 'حذف حسابي',
+  'settings.deleteAccountBody':
+    'سيختفي ملفك الشخصي من SwingBy وسيتم تسجيل خروجك. تُحفظ الحجوزات والمدفوعات والفواتير لمدة 6 سنوات — كما يقتضي القانون الضريبي الكندي — لكنها لن تكون مرتبطة باسمك.',
+  'settings.deleteAccountPasswordLabel': 'كلمة المرور',
+  'settings.deleteAccountPasswordHint': 'أدخلها لتأكيد هويتك.',
+  'settings.deleteAccountConfirm': 'حذف حسابي',
+  'settings.deleteAccountCancel': 'الاحتفاظ بحسابي',
+  'settings.deleteAccountDeleting': 'جارٍ الحذف…',
+  'settings.deleteAccountWrongPassword': 'كلمة المرور غير صحيحة. حاول مرة أخرى.',
+  'settings.deleteAccountFailed': 'تعذّر حذف حسابك. حاول مرة أخرى.',
+  'settings.deleteAccountDone': 'تم حذف حسابك.',
+});
+
 const i18n = new I18n(translations);
 
 // Default fallback

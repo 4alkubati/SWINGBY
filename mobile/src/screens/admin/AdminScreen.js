@@ -84,6 +84,26 @@ export default function AdminScreen({ navigation }) {
           </View>
         </Surface>
 
+        {/* Guideline 1.2 commits us to acting on reports within 24 hours, so
+            the queue needs a door on the admin home rather than only a route.
+            No count badge: unlike refunds there is no cheap "how many are
+            waiting" endpoint, and a badge that lies is worse than none. */}
+        <Surface style={styles.card}>
+          <Text style={styles.cardTitle}>Reported content</Text>
+          <Text style={styles.cardBody}>
+            Messages, reviews, posts and people that someone flagged. Hide the content
+            or suspend the account from here — Apple expects reports to be acted on
+            within a day, and this is where that happens.
+          </Text>
+          <View style={styles.cardAction}>
+            <Button
+              label="Open reports"
+              variant="secondary"
+              onPress={() => navigation.navigate('ReportQueue')}
+            />
+          </View>
+        </Surface>
+
         <Surface style={styles.card}>
           <Text style={styles.cardTitle}>Everything else is on the web</Text>
           <Text style={styles.cardBody}>

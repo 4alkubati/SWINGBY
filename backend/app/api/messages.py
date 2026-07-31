@@ -494,6 +494,40 @@ def _quote_context_for_booking(booking: dict) -> Optional[dict]:
         return None
 
 
+def _counterpart_user_id(
+    *, viewer_id: str, client_id: str | None, business_id: str | None
+) -> str | None:
+    """The USER on the other side of a thread.
+
+    Report needs no user id (the backend resolves the owner from the message
+    itself), but BLOCK does — `user_blocks` is user-to-user, and a business id is
+    not a user id. Both message read endpoints return this so the chat header can
+    offer Block without a second round trip to work out who it would be blocking.
+
+    Best-effort: a missing counterpart hides the Block control rather than
+    breaking the thread.
+    """
+    if client_id and viewer_id != client_id:
+        # The viewer is on the business side; the client is the counterpart.
+        return client_id
+    if not business_id:
+        return None
+    try:
+        res = (
+            supabase.table("businesses")
+            .select("owner_id")
+            .eq("id", business_id)
+            .single()
+            .execute()
+        )
+    except Exception:
+        logger.warning("counterpart_lookup_failed", exc_info=True)
+        return None
+    owner_id = (res.data or {}).get("owner_id")
+    # A business owner viewing their own thread has no counterpart on this path.
+    return None if owner_id == viewer_id else owner_id
+
+
 def _has_unread(items: list, uid: str) -> bool:
     """True if any already-fetched message is unread and not sent by the reader.
 
@@ -1326,6 +1360,13 @@ def get_interest_messages(
                 "business_logo": (interest.get("businesses") or {}).get("logo_url"),
                 "post_title": interest["service_posts"].get("title"),
                 "post_status": interest["service_posts"].get("status"),
+                # Guideline 1.2(c): the header's Block control needs a USER id,
+                # and `business_id` is not one.
+                "counterpart_user_id": _counterpart_user_id(
+                    viewer_id=current_user["id"],
+                    client_id=client_id,
+                    business_id=interest.get("business_id"),
+                ),
             },
         }
     except HTTPException:
@@ -1382,6 +1423,14 @@ def get_messages(
             "before": before,
             "next_before": next_before,
             "interest": _quote_context_for_booking(booking_res.data),
+            # Guideline 1.2(c). Lives at the top level rather than inside
+            # `interest`, which is None for a direct geo-browse booking with no
+            # post — and Block has to work on those threads too.
+            "counterpart_user_id": _counterpart_user_id(
+                viewer_id=current_user["id"],
+                client_id=booking_res.data.get("client_id"),
+                business_id=booking_res.data.get("business_id"),
+            ),
         }
     except Exception:
         logger.exception("Could not retrieve messages")
