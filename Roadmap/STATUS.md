@@ -40,8 +40,8 @@ Found by sweeping all 127 backend routes against every mobile source file.
 
 | Thing | Built | Wired? | Consequence |
 |---|---|---|---|
-| `POST /auth/social/role` | ✅ | ❌ **nothing calls it** | **A business signing in with Apple lands as a client with no way to say otherwise.** This endpoint exists precisely to fix that — one-shot, 24h window, client→business_owner only. |
-| `isNewUser` from social sign-in | ✅ returned | ❌ consumed nowhere | The app cannot tell a brand-new account from a returning one, so no onboarding ever runs. |
+| `POST /auth/social/role` | ✅ | ✅ **WIRED 2026-07-31** | **A business signing in with Apple lands as a client with no way to say otherwise.** This endpoint exists precisely to fix that — one-shot, 24h window, client→business_owner only. |
+| `isNewUser` from social sign-in | ✅ returned | ✅ **WIRED 2026-07-31** | The app cannot tell a brand-new account from a returning one, so no onboarding ever runs. |
 | `expiry_sweep.sweep_once` | ✅ | ❌ no scheduler at all | Expired posts never refund. No cron service, no worker, no APScheduler. |
 | `POST /me/ghost` / `/me/unghost` | ✅ | ❌ no UI | Ghost mode was a product ruling (2026-07-21). Unreachable. |
 | `GET /me/credits` | ✅ | ❌ no UI | Credits are issued by the cancellation ladder and cannot be seen. |
@@ -86,9 +86,10 @@ Full detail: `~/brain/inbox/swingby-ios-walkthrough-2026-07-31.md`.
 - **X1 — no terms/privacy consent at signup.** Zero matches for
   agree/consent/terms in `SignupScreen`. Needed for the store and for PIPEDA.
   **OPEN.**
-- **X2 — Sign in with Apple has no setup step.** Straight to the client
-  dashboard, no role choice. Worst on a shared business iPad. The fix is §2's
-  unwired `/auth/social/role`. **OPEN.**
+- **X2 — Sign in with Apple has no setup step.** ✅ **FIXED 2026-07-31.**
+  `RolePickerSheet` now opens for a genuinely new social account and calls the
+  `/auth/social/role` endpoint that had sat there with no caller. A 403 (window
+  closed) lets the person through as a client rather than trapping them.
 - **X3 — maps do not split by platform.** `PROVIDER_GOOGLE` is forced, so iOS
   uses Google Maps and needs the key. iOS should be able to use Apple Maps
   (`PROVIDER_DEFAULT`). **OPEN.**

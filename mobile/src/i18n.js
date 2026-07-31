@@ -1529,6 +1529,61 @@ Object.assign(translations.ar, {
   'approval.autoReleased': 'تم التحرير تلقائيًا — لم يستجب العميل خلال 24 ساعة.',
 });
 
+// ── The role pick a social sign-in never offered — 2026-07-31 ───────────────
+// A trade signing in with Apple on a shared iPad landed in the CLIENT app with
+// no way out. All three locales: this is the first screen a new account sees,
+// and answering it wrong is expensive to undo.
+Object.assign(translations.en, {
+  'rolePicker.title': 'How will you use SwingBy?',
+  'rolePicker.body': 'Pick one — you can only choose this once.',
+  'rolePicker.clientTitle': "I'm hiring",
+  'rolePicker.clientBody': 'Post jobs and book local pros.',
+  'rolePicker.businessTitle': "I'm offering services",
+  'rolePicker.businessBody': 'Send quotes and get booked.',
+  'rolePicker.footnote':
+    'Signing in with Apple or Google skips the signup form, so we have to ask here.',
+  'rolePicker.failed': "Couldn't save that. Try again.",
+  // Terms + privacy consent at signup (App Store + PIPEDA).
+  'auth.agreePrefix': 'By creating an account you agree to our',
+  'auth.agreeTerms': 'Terms of Service',
+  'auth.agreeAnd': 'and',
+  'auth.agreePrivacy': 'Privacy Policy',
+  'auth.agreeRequired': 'Please accept the Terms and Privacy Policy to continue.',
+});
+Object.assign(translations['fr-CA'], {
+  'rolePicker.title': 'Comment allez-vous utiliser SwingBy?',
+  'rolePicker.body': 'Choisissez — ce choix ne se fait qu’une fois.',
+  'rolePicker.clientTitle': 'Je cherche un pro',
+  'rolePicker.clientBody': 'Publiez des travaux et réservez des pros locaux.',
+  'rolePicker.businessTitle': "J'offre des services",
+  'rolePicker.businessBody': 'Envoyez des devis et soyez réservé.',
+  'rolePicker.footnote':
+    'La connexion avec Apple ou Google saute le formulaire d’inscription; nous devons donc le demander ici.',
+  'rolePicker.failed': 'Impossible d’enregistrer. Réessayez.',
+  'auth.agreePrefix': 'En créant un compte, vous acceptez nos',
+  'auth.agreeTerms': 'Conditions d’utilisation',
+  'auth.agreeAnd': 'et la',
+  'auth.agreePrivacy': 'Politique de confidentialité',
+  'auth.agreeRequired':
+    'Veuillez accepter les Conditions et la Politique de confidentialité pour continuer.',
+});
+Object.assign(translations.ar, {
+  'rolePicker.title': 'كيف ستستخدم SwingBy؟',
+  'rolePicker.body': 'اختر — يمكنك الاختيار مرة واحدة فقط.',
+  'rolePicker.clientTitle': 'أبحث عن محترف',
+  'rolePicker.clientBody': 'انشر طلبات العمل واحجز محترفين قريبين.',
+  'rolePicker.businessTitle': 'أقدّم خدمات',
+  'rolePicker.businessBody': 'أرسل عروض أسعار واحصل على حجوزات.',
+  'rolePicker.footnote':
+    'تسجيل الدخول عبر Apple أو Google يتخطى نموذج التسجيل، لذا نسأل هنا.',
+  'rolePicker.failed': 'تعذّر الحفظ. حاول مرة أخرى.',
+  'auth.agreePrefix': 'بإنشاء حساب فإنك توافق على',
+  'auth.agreeTerms': 'شروط الخدمة',
+  'auth.agreeAnd': 'و',
+  'auth.agreePrivacy': 'سياسة الخصوصية',
+  'auth.agreeRequired': 'يرجى قبول الشروط وسياسة الخصوصية للمتابعة.',
+});
+
 const i18n = new I18n(translations);
 
 // Default fallback
