@@ -123,8 +123,15 @@ class TestListBusinesses:
             name, args, _kwargs = ilike_calls[0]
             assert args[0] == "category"
             assert args[1] == "cleaning"
-            eq_calls = [c for c in stub.calls if c[0] == "eq"]
-            assert not eq_calls, "category filter must not use exact .eq() match"
+            # Scoped to the `category` column: the same stub also serves the
+            # `user_blocks` lookup (Guideline 1.2(c) block filter), whose eq()
+            # calls are not what this regression is about.
+            category_eq_calls = [
+                c for c in stub.calls if c[0] == "eq" and c[1] and c[1][0] == "category"
+            ]
+            assert (
+                not category_eq_calls
+            ), "category filter must not use exact .eq() match"
 
 
 class TestBusinessWorkSearch:
@@ -306,8 +313,14 @@ class TestNearbyBusinesses:
             name, args, _kwargs = ilike_calls[0]
             assert args[0] == "category"
             assert args[1] == "landscaping"
-            eq_calls = [c for c in stub.calls if c[0] == "eq"]
-            assert not eq_calls, "category filter must not use exact .eq() match"
+            # Scoped to `category` — see the identical note in
+            # TestListBusinesses above.
+            category_eq_calls = [
+                c for c in stub.calls if c[0] == "eq" and c[1] and c[1][0] == "category"
+            ]
+            assert (
+                not category_eq_calls
+            ), "category filter must not use exact .eq() match"
 
 
 class TestUpdateBusiness:

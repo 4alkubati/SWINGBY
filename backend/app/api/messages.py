@@ -9,6 +9,9 @@ from typing import Literal, Optional
 from app.deps import get_current_user
 from app.privacy import mask_service_post_row, mask_user_public
 from app.services.contact_masking import mask_contact_info
+from app.services import content_moderation
+from app.services import moderation as moderation_service
+from app.services.visibility import blocked_pair_ids
 from app.supabase_client import supabase
 from app.services.push import send_push_to_user
 
@@ -527,7 +530,11 @@ def _accessible_thread_ids(current_user: dict):
         booking_rows = (
             supabase.table("bookings")
             .select(
-                "id, status, business_id, confirmed_date, businesses(business_name, logo_url)"
+                # owner_id is not rendered anywhere — it is here so list_threads
+                # can tell whether the counterpart is a blocked user without a
+                # second round trip per thread.
+                "id, status, business_id, confirmed_date, "
+                "businesses(business_name, logo_url, owner_id)"
             )
             .eq("client_id", uid)
             .execute()
@@ -537,7 +544,7 @@ def _accessible_thread_ids(current_user: dict):
             .select(
                 "id, status, quoted_price, business_id, "
                 "service_posts!inner(id, title, status, client_id), "
-                "businesses(business_name, logo_url)"
+                "businesses(business_name, logo_url, owner_id)"
             )
             .eq("service_posts.client_id", uid)
             .execute()
@@ -601,6 +608,16 @@ def send_message(
     # arc"), so gating it would break the demo. mask_contact_info is
     # false-positive-safe for prices/addresses/dates (tests/test_contact_masking).
     masked_content, was_masked = mask_contact_info(data.content)
+
+    # Objectionable-content filter (App Store Guideline 1.2(a)). Same choke
+    # point, immediately after masking: a BLOCK must be refused before anything
+    # is stored, and screening the MASKED text means a phone number can't be
+    # used as padding to break a term apart. A FLAG stores normally and files a
+    # report for a human — see the "deliberately not a profanity filter" note in
+    # services/content_moderation.py for why the two outcomes differ.
+    screen_outcome, screen_reasons = content_moderation.screen_text(masked_content)
+    if screen_outcome == content_moderation.BLOCK:
+        raise HTTPException(status_code=400, detail=content_moderation.BLOCK_MESSAGE)
 
     if data.booking_id:
         booking_res = (
@@ -679,6 +696,23 @@ def send_message(
             **_attachment_columns(data),
         }
 
+    # Block gate (App Store Guideline 1.2(c)). Placed here, after BOTH branches
+    # have resolved recipient_id, so booking threads and pre-acceptance interest
+    # threads are covered by one check rather than two that can drift.
+    #
+    # Symmetric: `blocked_pair_ids` returns people the sender blocked AND people
+    # who blocked the sender. Either direction refuses the send — a block that
+    # only stops one side still leaves the abuser able to keep initiating, which
+    # is the behaviour 1.2(c) exists to stop.
+    #
+    # 403 rather than 400: this is an authorisation outcome, and the mobile
+    # client keys its "you can't reply in this thread" state off the status.
+    if recipient_id and recipient_id in blocked_pair_ids(supabase, uid):
+        raise HTTPException(
+            status_code=403,
+            detail="You can't message this person because one of you blocked the other.",
+        )
+
     # Retry-safe insert: only retried requests carry X-Send-Retry, so the happy
     # path pays nothing. A retry first looks for an identical message it may
     # have already stored and returns that instead of posting a duplicate.
@@ -747,6 +781,20 @@ def send_message(
         sent_row = res.data[0]
         if sent_row.get("message_type") == "image":
             sent_row["attachment_url"] = _attachment_url(sent_row)
+
+        # A FLAG from the content filter stores normally and raises a report for
+        # a human. Fired AFTER the insert because the report has to point at a
+        # message id that exists. Best-effort by contract — the send has already
+        # succeeded and must not be undone by moderation bookkeeping.
+        if screen_outcome == content_moderation.FLAG:
+            moderation_service.file_automatic_report(
+                target_type="message",
+                target_id=sent_row["id"],
+                author_id=uid,
+                reason=screen_reasons[0],
+                details=f"Auto-flagged by the content filter ({', '.join(screen_reasons)}).",
+            )
+
         return {"message": "Sent", "data": sent_row, "masked": was_masked}
     except HTTPException:
         raise
@@ -1028,6 +1076,11 @@ def list_threads(current_user: dict = Depends(get_current_user)):
     try:
         booking_rows, interest_rows = _accessible_thread_ids(current_user)
 
+        # Guideline 1.2(c): a blocked counterpart's thread leaves the inbox in
+        # both directions. Computed once for the whole page — the set is small
+        # and the alternative is a lookup per thread.
+        blocked = blocked_pair_ids(supabase, uid)
+
         booking_ids = [b["id"] for b in booking_rows]
         interest_ids = [i["id"] for i in interest_rows]
 
@@ -1061,6 +1114,14 @@ def list_threads(current_user: dict = Depends(get_current_user)):
 
         for b in booking_rows:
             if b.get("status") not in ("confirmed", "in_progress", "completed"):
+                continue
+            # The counterpart is the business owner when the viewer is the
+            # client, and the client when the viewer is the business — exactly
+            # the two shapes _accessible_thread_ids returns.
+            b_counterpart = (b.get("businesses") or {}).get("owner_id") or b.get(
+                "client_id"
+            )
+            if b_counterpart and b_counterpart in blocked:
                 continue
             agg = by_booking.get(b["id"], {"last": None, "unread": 0})
             client_user = b.get("users") or {}
@@ -1106,6 +1167,11 @@ def list_threads(current_user: dict = Depends(get_current_user)):
             agg = by_interest.get(i["id"])
             if not agg:
                 continue  # no conversation yet
+            i_counterpart = (i.get("businesses") or {}).get("owner_id") or (
+                i.get("service_posts") or {}
+            ).get("client_id")
+            if i_counterpart and i_counterpart in blocked:
+                continue
             post = i.get("service_posts") or {}
             # Quote threads are pre-acceptance by default — until the client
             # accepts, the business's chat header shows the anonymous "Client"
@@ -1214,6 +1280,8 @@ def get_interest_messages(
             supabase.table("messages")
             .select("*, users(first_name, last_name)")
             .eq("interest_id", interest_id)
+            # See the booking-thread read below — hidden messages never render.
+            .is_("hidden_at", "null")
         )
         if before:
             query = query.lt("sent_at", before)
@@ -1290,6 +1358,11 @@ def get_messages(
             supabase.table("messages")
             .select("*, users(first_name, last_name)")
             .eq("booking_id", booking_id)
+            # Moderation (Guideline 1.2): a message an admin hid stops rendering
+            # for everyone, including the sender. The row is retained — hiding
+            # is a soft-hide so the admin trail and the CRA-retention posture in
+            # me.py both survive it.
+            .is_("hidden_at", "null")
         )
         if before:
             query = query.lt("sent_at", before)

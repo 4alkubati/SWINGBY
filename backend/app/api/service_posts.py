@@ -9,6 +9,7 @@ from app.deps import get_current_user
 from app.privacy import mask_service_post_row
 from app.services.geocoding import resolve_coordinates
 from app.services.push import send_push_to_user
+from app.services.visibility import blocked_pair_ids
 from app.supabase_client import supabase
 
 logger = logging.getLogger(__name__)
@@ -424,6 +425,11 @@ def list_open_posts(
         #     no avatar, no client_id, no budget, no photos, locality only. Feed
         #     posts are pre-acceptance by construction, so there is no "winning
         #     business" exception here — the unmasked view lives on the booking.
+        #  3) Moderation (Guideline 1.2): a post hidden by an admin leaves the
+        #     feed, and so does a post by anyone on either side of a block with
+        #     the viewer. The block set is read once for the whole page.
+        blocked = blocked_pair_ids(supabase, uid)
+
         items = []
         for post in raw_items:
             poster = post.get("users") or {}
@@ -433,6 +439,10 @@ def list_open_posts(
                 or poster.get("deleted_at")
             )
             if hidden:
+                continue
+            if post.get("hidden_at"):
+                continue
+            if post.get("client_id") in blocked:
                 continue
             if post.get("client_id") == uid:
                 # The client's own post — nothing to hide from themselves. The
