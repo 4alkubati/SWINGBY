@@ -86,13 +86,33 @@ When the money + iOS build exist:
 1. **Apple Developer** → enrol ($99/yr).
 2. **Certificates, Identifiers & Profiles**:
    - App ID `com.swingby.app` → enable the **Sign In with Apple** capability.
-   - Create a **Services ID** (e.g. `com.swingby.app.signin`) → enable Sign In
-     with Apple → set Return URL to
-     `https://ulnxapnsenzyddddldjt.supabase.co/auth/v1/callback`.
-   - Create a **Sign In with Apple key** (.p8) → note the **Key ID** and your
-     **Team ID**.
-3. **Supabase → Authentication → Providers → Apple** → Enable → enter the
-   Services ID (client id), Team ID, Key ID, and the .p8 secret contents.
+     This one IS required: the `expo-apple-authentication` plugin writes the
+     `com.apple.developer.applesignin` entitlement at prebuild, and provisioning
+     fails without the capability.
+3. **Supabase → Authentication → Providers → Apple** → Enable → put the **bundle
+   ID** `com.swingby.app` in **Client IDs**. Leave Services ID and Secret Key
+   empty.
+
+   > **You do NOT need a Services ID, a domain registration, a Return URL, or a
+   > .p8 secret key.** Those belong to the Sign in with Apple **web/OAuth** flow.
+   > SwingBy's Apple sign-in is the **native id-token flow**:
+   > `appleAuth.ios.js` calls `AppleAuthentication.signInAsync()` and posts
+   > `credential.identityToken` to `POST /auth/social/id-token`, and in that flow
+   > the token's `client_id` is the **bundle ID**, not a Services ID. Google is
+   > the one that uses the web flow (`POST /auth/social/authorize` → PKCE), which
+   > is why the two providers are configured so differently.
+   >
+   > An earlier revision of this document prescribed the Services ID path as if
+   > it were mandatory. It was written before the native flow was chosen, and on
+   > 2026-07-31 it sent someone into Apple's "Register your email sources" screen
+   > — an unrelated, optional email-relay feature — chasing a domain
+   > verification that nothing in this app needs.
+   >
+   > Only revisit the Services ID if Apple login is ever added to the **web**
+   > app. If you do: "Domains and Subdomains" takes a bare hostname
+   > (`ulnxapnsenzyddddldjt.supabase.co`) with no scheme and no path, and the
+   > callback URL goes in the separate **Return URLs** field. Pasting both into
+   > one field is what produces "One or more domains are invalid.".
 4. Build iOS via EAS. The `expo-apple-authentication` config plugin (already
    registered in `mobile/app.config.js`) adds the
    `com.apple.developer.applesignin` entitlement during prebuild.
