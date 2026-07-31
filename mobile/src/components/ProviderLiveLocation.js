@@ -34,20 +34,12 @@ import Surface from './Surface';
 import PulseDot from './PulseDot';
 import { colors, spacing, radius } from '../theme/tokens';
 
-// react-native-maps — already in package.json (v1.20.1). Same lazy require +
-// null fallback as NearbyMapScreen, so a build without Play Services or a Maps
-// key degrades to the designed canvas instead of crashing the booking screen.
-let MapView, Marker, PROVIDER_GOOGLE;
-try {
-  const maps = require('react-native-maps');
-  MapView = maps.default;
-  Marker = maps.Marker;
-  PROVIDER_GOOGLE = maps.PROVIDER_GOOGLE;
-} catch {
-  MapView = null;
-  Marker = null;
-  PROVIDER_GOOGLE = null;
-}
+// react-native-maps — already in package.json (v1.20.1). The lazy require and
+// the provider choice live in services/maps.js: a build without Play Services
+// or a Maps key still degrades to the designed canvas instead of crashing the
+// booking screen, and iOS draws Apple Maps here for the same reason it does on
+// the nearby screen.
+import { MapView, Marker, MAP_PROVIDER } from '../services/maps';
 
 const MAP_HEIGHT = 190;
 // Roughly a 1.5 km box — close enough to read "which street" without the pin
@@ -127,7 +119,7 @@ export default function ProviderLiveLocation({ bookingId, providerName, destinat
         {MapView ? (
           <MapView
             style={StyleSheet.absoluteFill}
-            provider={PROVIDER_GOOGLE}
+            provider={MAP_PROVIDER}
             pointerEvents="none"
             region={{
               latitude: loc.lat,
