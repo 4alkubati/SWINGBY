@@ -1,3 +1,14 @@
+> ## ⚠️ SUPERSEDED — 2026-07-31
+>
+> This file was last updated **2026-07-22** and its ✅ marks describe branches,
+> not production. The current picture lives in:
+>
+> * **`Roadmap/STATUS.md`** — what is actually live, what is built-but-unwired,
+>   and every open defect from the first iOS walkthrough.
+> * **`Roadmap/HUMAN-TODO.md`** — the account/key/decision items only Kira can do.
+>
+> Kept for history. Do not plan from it.
+
 ---
 type: index
 status: active
