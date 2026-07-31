@@ -74,6 +74,32 @@ for the Supabase side.
 
 ---
 
+### 1.3 Sentry source maps are OFF for production — a debt, not a fix
+
+The `production` build profile had no `SENTRY_DISABLE_AUTO_UPLOAD`, unlike
+`development`, `preview` and `testflight`. `@sentry/react-native` would
+therefore have attempted a source-map upload on the very first production build
+and **failed the build**, with no token to authenticate.
+
+It is now set to `"true"`, so the build succeeds. Be clear about what that
+costs: production crashes arrive in Sentry **unsymbolicated** — minified frames,
+no file or line. That is precisely the condition that made SEN-1 and SEN-2 hard
+to triage, and this session already fixed the *other* half of that problem by
+pinning `ENV=production` so prod events stop being filed as `development`.
+
+**The real fix, once you have a moment in the Sentry dashboard:**
+
+    # Settings -> Account -> API -> Auth Tokens (needs project:releases)
+    eas env:create --name SENTRY_AUTH_TOKEN --value <token> --environment production
+
+Then delete the `env` block from the `production` profile in `mobile/eas.json`.
+Do that before you rely on production Sentry for anything, or the first real
+user crash will be a stack of hex addresses.
+
+Related, lower priority: `mobile/.env.production` has a real Sentry DSN
+committed. Not a store blocker — DSNs are write-only by design — but it belongs
+in EAS env with the rest.
+
 ## 2. What the repo already has
 
 Verified 2026-07-30, not assumed:
