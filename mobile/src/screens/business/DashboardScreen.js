@@ -165,8 +165,14 @@ export default function DashboardScreen({ navigation }) {
       );
       // total_pending = escrow still held, total_released = already cleared
       // to the business — both real fields from GET /payments/mine.
+      // `items` rides along so the hero can be computed from real payments
+      // instead of gross booking value (M5).
       const nextPayments = pay
-        ? { held: pay.total_pending ?? 0, cleared: pay.total_released ?? 0 }
+        ? {
+            held: pay.total_pending ?? 0,
+            cleared: pay.total_released ?? 0,
+            items: Array.isArray(pay) ? pay : (pay.items ?? []),
+          }
         : null;
       setBookings(nextBookings);
       setPosts(nextPosts);
@@ -257,15 +263,22 @@ export default function DashboardScreen({ navigation }) {
   // sort first by construction (byJobDateAsc is a plain date comparator).
   const nextJob = [...todayBookings, ...upcomingBookings].sort(byJobDateAsc)[0] || null;
 
+  // M5 — this used to sum `total_amount` over confirmed/completed BOOKINGS,
+  // which counts money that was never collected. On the walkthrough it read
+  // "THIS WEEK $590" directly above "Cleared $75" / "Held $160", i.e. ~$193 of
+  // unpaid bookings inflating the one number a business owner reads first.
+  //
+  // Same source as EarningsScreen now — `released_to_business` on the payments
+  // themselves — so "this week" means one thing in this app.
   const earningsIn = (minDaysAgo, maxDaysAgo) =>
-    bookings
-      .filter((b) => {
-        if (!b.created_at) return false;
-        const diff = (Date.now() - new Date(b.created_at)) / (1000 * 60 * 60 * 24);
-        return diff >= minDaysAgo && diff < maxDaysAgo
-          && (b.status === 'completed' || b.status === 'confirmed');
+    (payments?.items || [])
+      .filter((p) => {
+        const t = new Date(p.created_at).getTime();
+        if (Number.isNaN(t)) return false;
+        const diff = (Date.now() - t) / (1000 * 60 * 60 * 24);
+        return diff >= minDaysAgo && diff < maxDaysAgo;
       })
-      .reduce((sum, b) => sum + (Number(b.total_amount) || 0), 0);
+      .reduce((sum, p) => sum + (parseFloat(p.released_to_business) || 0), 0);
 
   const weekEarnings = earningsIn(0, 7);
   const prevWeekEarnings = earningsIn(7, 14);
@@ -443,17 +456,20 @@ export default function DashboardScreen({ navigation }) {
         </TouchableOpacity>
 
         {/* Earnings hero */}
+        {/* payments === null means "not loaded". A dash, never $0 — the same
+            rule the money card below already follows. */}
         <EarningsHero
           amount={
-            weekEarnings > 0
+            payments
               ? `$${Math.round(weekEarnings).toLocaleString()}`
-              : '$0'
+              : '—'
           }
-          deltaPct={deltaPct}
+          caption={i18n.t('dashboard.heroCaption')}
+          deltaPct={payments ? deltaPct : null}
           data={hasSparkData ? sparkData : undefined}
           // B18 — "this week $150" was not tappable. It opens analytics.
           onPress={() => navigation.navigate('BusinessAnalytics')}
-          accessibilityLabel={`This week ${weekEarnings > 0 ? `$${Math.round(weekEarnings)}` : '$0'}, open analytics`}
+          accessibilityLabel={`This week ${payments ? `$${Math.round(weekEarnings)}` : 'unavailable'}, ${i18n.t('dashboard.heroCaption')}, open analytics`}
         />
 
         {/* KPI row (Today / Rating) */}

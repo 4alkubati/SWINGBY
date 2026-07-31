@@ -5,6 +5,7 @@ import { Feather } from '@expo/vector-icons';
 import Text from './Text';
 import Stack from './Stack';
 import Inline from './Inline';
+import i18n from '../i18n';
 import { colors, spacing } from '../theme/tokens';
 
 // AUDIT B16 — the two entries below (`dates_proposed`, `date_confirmed`) were
@@ -116,11 +117,16 @@ export default function LiveStatusTimeline({ events = [], status = 'ready' }) {
                 </View>
                 {!last && <View style={styles.connector} />}
               </View>
+              {/* P3 — the note (often the appointment itself) and the time
+                  this update was logged used to share one line, unlabelled.
+                  Same fix as the client timeline in BookingDetailsScreen. */}
               <Stack spacing={2} style={styles.body}>
                 <Text variant="smallMedium">{meta.title}</Text>
+                {ev.note ? (
+                  <Text variant="caption">{humaniseNote(ev.note)}</Text>
+                ) : null}
                 <Text variant="caption" color="secondary">
-                  {formatTime(ev.created_at)}
-                  {ev.note ? ` · ${humaniseNote(ev.note)}` : ''}
+                  {i18n.t('booking.eventLoggedAt', { time: formatTime(ev.created_at) })}
                 </Text>
               </Stack>
             </View>

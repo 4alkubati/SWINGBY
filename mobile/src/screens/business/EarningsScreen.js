@@ -106,9 +106,19 @@ function EarningsChart({ data, range }) {
           />
         ))}
       </View>
-      <Text style={styles.chartEmptyText}>
-        Detailed chart coming soon
-      </Text>
+      {/* P5 — this said "Detailed chart coming soon" while sitting directly
+          under a chart that works. An apology for a feature that shipped. It
+          says what the bars ARE now, which is the thing that was actually
+          missing: a legend and a date range. */}
+      <View style={styles.chartFooter}>
+        <Text style={styles.chartCaption}>Released to you, per payment</Text>
+        {display.length > 1 ? (
+          <Text style={styles.chartCaption}>
+            {formatAxisDate(range, display[0].x)} –{' '}
+            {formatAxisDate(range, display[display.length - 1].x)}
+          </Text>
+        ) : null}
+      </View>
     </View>
   );
 }
@@ -363,6 +373,14 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bg,
   },
   chartEmptyText: { fontSize: 12, color: colors.textSecondary, marginTop: 12 },
+  chartFooter: {
+    marginTop: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: '100%',
+  },
+  chartCaption: { fontSize: 11, color: colors.textSecondary },
 
   // Bar chart stub
   barsRow: {

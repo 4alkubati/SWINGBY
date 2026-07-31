@@ -532,11 +532,11 @@ function JobDetailScreen({ navigation, route }) {
                   array, fetched once by this screen. This tab used to stack
                   two cards both headed "Live status" over two independent
                   fetches, plus a tracker reading `booking.status`. */}
-              <StatusTracker
-                events={events}
-                onAdvance={handleAdvance}
-                disabled={advancing || eventsStatus === 'loading'}
-              />
+              {/* P1 — the tracker SHOWS progress; the button in the card below
+                  is the only thing that changes it. It used to be tappable and
+                  to hint "Tap 'On the way'" right above a CTA that did the same
+                  transition. */}
+              <StatusTracker events={events} />
               {/* ONE "Live status" card: next step on top, timeline beneath. */}
               <View style={styles.cardMargin}>
                 <Surface elevation="subtle" rounded="card" padding="base">

@@ -25,11 +25,14 @@ const CLIENT_ICON_MAP = {
   Profile: { icon: 'user' },
 };
 
+// P4 (2026-07-31) — `Jobs` and `My Business` both drew the same briefcase, so
+// the two most-used business tabs were distinguishable only by their label.
+// Every glyph in a map must be unique; bottom-nav-icons.test.js enforces it.
 const BUSINESS_ICON_MAP = {
   Dashboard: { icon: 'grid' },
   Jobs: { icon: 'briefcase' },
   Messages: { icon: 'message-circle' },
-  'My Business': { icon: 'briefcase' },
+  'My Business': { icon: 'tool' },
   Earnings: { icon: 'trending-up' },
   Team: { icon: 'users' },
 };

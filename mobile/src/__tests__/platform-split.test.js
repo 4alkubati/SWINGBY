@@ -19,50 +19,36 @@ import path from 'path';
 
 const SRC = path.join(__dirname, '..');
 
-jest.mock(
-  'react-native-maps',
-  () => ({
-    __esModule: true,
-    default: 'MapView',
-    Marker: 'Marker',
-    PROVIDER_GOOGLE: 'google',
-    PROVIDER_DEFAULT: 'default',
-  }),
-  { virtual: true },
-);
+import { pickProvider, darkMapProps } from '../services/maps';
 
-function loadMapsFor(os) {
-  let mod;
-  jest.isolateModules(() => {
-    // RN's Platform module is ESM (`export default`), and react-native/index
-    // reaches through `.default` — a bare object here makes Platform undefined.
-    jest.doMock('react-native/Libraries/Utilities/Platform', () => ({
-      __esModule: true,
-      default: { OS: os, select: (o) => o[os] ?? o.default },
-    }));
-    mod = require('../services/maps');
-  });
-  return mod;
-}
+// Stands in for react-native-maps' exported constants.
+const MAPS = { PROVIDER_GOOGLE: 'google', PROVIDER_DEFAULT: 'default' };
 
 describe('map provider follows the platform', () => {
-  afterEach(() => jest.resetModules());
-
   it('draws Apple Maps on iOS', () => {
-    expect(loadMapsFor('ios').MAP_PROVIDER).toBe('default');
+    expect(pickProvider('ios', MAPS)).toBe('default');
   });
 
   it('keeps Google Maps on Android', () => {
-    expect(loadMapsFor('android').MAP_PROVIDER).toBe('google');
+    expect(pickProvider('android', MAPS)).toBe('google');
+  });
+
+  it('stays null when react-native-maps is not in the build', () => {
+    // The MapCanvas fallback path — a Huawei with no Play Services, or any
+    // build without the native module.
+    // null, not undefined: `undefined` would fall through to the default
+    // parameter and pick up the real module.
+    expect(pickProvider('ios', null)).toBeNull();
+    expect(pickProvider('android', null)).toBeNull();
   });
 
   it('expresses the dark map the way each provider understands it', () => {
     // customMapStyle is a Google-only prop; on Apple Maps it is ignored, and
     // the map would have come back light inside a dark app.
-    expect(loadMapsFor('ios').darkMapProps([{ a: 1 }])).toEqual({
+    expect(darkMapProps([{ a: 1 }], 'ios')).toEqual({
       userInterfaceStyle: 'dark',
     });
-    expect(loadMapsFor('android').darkMapProps([{ a: 1 }])).toEqual({
+    expect(darkMapProps([{ a: 1 }], 'android')).toEqual({
       customMapStyle: [{ a: 1 }],
     });
   });

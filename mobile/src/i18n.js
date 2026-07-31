@@ -219,6 +219,8 @@ const translations = {
     'dashboard.moneyInFlightTitle': 'Money in flight',
     'dashboard.moneyHeld': 'Held in escrow',
     'dashboard.moneyCleared': 'Cleared',
+    // M5 — the hero counts money released to you, not gross booking value.
+    'dashboard.heroCaption': 'cleared to you',
     'dashboard.moneyUnavailable': 'Could not load payment totals',
 
     // Biometric app-lock (CARD-24)
@@ -540,6 +542,7 @@ const translations = {
     'dashboard.moneyInFlightTitle': 'Argent en transit',
     'dashboard.moneyHeld': 'Retenu en fiducie',
     'dashboard.moneyCleared': 'Libéré',
+    'dashboard.heroCaption': 'versé à vous',
     'dashboard.moneyUnavailable': 'Impossible de charger les totaux de paiement',
 
     // Biometric app-lock (CARD-24)
@@ -860,6 +863,7 @@ const translations = {
     'dashboard.moneyInFlightTitle': 'الأموال قيد المعالجة',
     'dashboard.moneyHeld': 'محتجزة في الضمان',
     'dashboard.moneyCleared': 'تم تحريرها',
+    'dashboard.heroCaption': 'حُوِّلت إليك',
     'dashboard.moneyUnavailable': 'تعذر تحميل إجماليات الدفع',
 
     // Biometric app-lock (CARD-24)
@@ -1589,6 +1593,15 @@ Object.assign(translations.ar, {
   'auth.agreeRequired': 'يرجى قبول الشروط وسياسة الخصوصية للمتابعة.',
   'auth.agreeNotice': 'بالمتابعة فإنك توافق على',
 });
+
+// ── P3: two timestamps, neither labelled ───────────────────────────────────
+// "Time confirmed · 10:01 PM · Time set at posting: Sat, Jul 25 at 3:54 PM" —
+// one of those is the appointment and one is when the update was logged, and
+// the row said neither. They are on separate lines now, and this labels the
+// one that was easiest to mistake for the appointment.
+Object.assign(translations.en, { 'booking.eventLoggedAt': 'Logged %{time}' });
+Object.assign(translations['fr-CA'], { 'booking.eventLoggedAt': 'Enregistré à %{time}' });
+Object.assign(translations.ar, { 'booking.eventLoggedAt': 'سُجِّل %{time}' });
 
 const i18n = new I18n(translations);
 

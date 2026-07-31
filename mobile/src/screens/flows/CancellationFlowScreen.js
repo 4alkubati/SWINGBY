@@ -138,13 +138,17 @@ export default function CancellationFlowScreen({ route, navigation }) {
       toast.show({
         type: 'info',
         text1: 'Booking cancelled',
+        // P2 — kept short as well as untruncated. A toast is the wrong place
+        // for a sentence that only reads correctly in full.
         text2: isBusiness
           ? finalAmount > 0
-            ? `The client is refunded in full. A $${finalAmount.toFixed(2)} penalty applies to you.`
-            : 'The client is refunded in full. No penalty applies.'
+            ? `Client refunded in full. $${finalAmount.toFixed(2)} penalty to you.`
+            : 'Client refunded in full. No penalty.'
           : finalAmount > 0
             ? `A $${finalAmount.toFixed(2)} fee applies.`
             : 'You will be refunded in full.',
+        // Money outcomes get longer on screen than the 4s default.
+        duration: 6000,
       });
       navigation.popToTop();
     } catch (err) {

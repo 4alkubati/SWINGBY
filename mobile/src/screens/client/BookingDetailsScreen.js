@@ -397,10 +397,16 @@ function LiveStatusCard({ events, status, onRetry }) {
                 />
               </View>
               <Stack spacing={2} style={{ flex: 1 }}>
+                {/* P3 — these two times used to run together on one line:
+                    "Time confirmed · 10:01 PM · Time set at posting: Sat, Jul
+                    25 at 3:54 PM". One is when the update was logged, the
+                    other is the appointment, and nothing said which. */}
                 <Text variant="smallMedium">{eventTitle(ev.event_type)}</Text>
+                {ev.note ? (
+                  <Text variant="caption">{humaniseNote(ev.note)}</Text>
+                ) : null}
                 <Text variant="caption" color="secondary">
-                  {formatTime(ev.created_at)}
-                  {ev.note ? ` · ${humaniseNote(ev.note)}` : ''}
+                  {i18n.t('booking.eventLoggedAt', { time: formatTime(ev.created_at) })}
                 </Text>
               </Stack>
             </Inline>

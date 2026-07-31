@@ -34,18 +34,24 @@ export const Marker = (mod && mod.Marker) || null;
 // PROVIDER_DEFAULT is Apple Maps on iOS and Google Maps on Android — but we
 // name Google explicitly on Android so the intent survives a react-native-maps
 // upgrade that changes what "default" means there.
-export const MAP_PROVIDER = !mod
-  ? null
-  : Platform.OS === 'ios'
-    ? (mod.PROVIDER_DEFAULT ?? null)
-    : (mod.PROVIDER_GOOGLE ?? null);
-
-export const IS_APPLE_MAPS = Platform.OS === 'ios';
+//
+// Takes `os` and the maps module as arguments so the rule can be tested as
+// arithmetic. The first version of this read Platform.OS directly and the test
+// had to mock RN's Platform module inside jest.isolateModules — which passed
+// alone and failed intermittently in a full run. A platform rule that can only
+// be verified flakily is a platform rule nobody will trust.
+export function pickProvider(os, m = mod) {
+  if (!m) return null;
+  return os === 'ios' ? (m.PROVIDER_DEFAULT ?? null) : (m.PROVIDER_GOOGLE ?? null);
+}
 
 // Spread onto <MapView>: the dark look, expressed the way the active provider
 // understands it.
-export function darkMapProps(googleStyle) {
-  return IS_APPLE_MAPS
+export function darkMapProps(googleStyle, os = Platform.OS) {
+  return os === 'ios'
     ? { userInterfaceStyle: 'dark' }
     : { customMapStyle: googleStyle };
 }
+
+export const MAP_PROVIDER = pickProvider(Platform.OS);
+export const IS_APPLE_MAPS = Platform.OS === 'ios';
