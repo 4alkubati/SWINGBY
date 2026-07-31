@@ -6,6 +6,7 @@ from typing import Optional
 from datetime import datetime, timezone
 from app.deps import get_current_user
 from app.supabase_client import supabase
+from app.services import approvals
 from app.services.push import send_push_to_user
 
 logger = logging.getLogger(__name__)
@@ -153,6 +154,23 @@ def _attach_payment_state(bookings: list[dict]) -> list[dict]:
     that the money is in escrow.
     """
     rows = [b for b in bookings if b]
+
+    # Settle any approval window that has closed, BEFORE the ledger is read —
+    # otherwise the caller is told "held" about money that just became theirs.
+    #
+    # This is where the 24-hour auto-release actually happens. It is deliberately
+    # lazy rather than scheduled: there is no scheduler in this deployment (see
+    # services/approvals.py — expiry_sweep.sweep_once has existed for weeks and
+    # is called by nothing but its own tests), so a timer would never fire and
+    # the money would sit held forever. Settling on read means the answer is
+    # correct the moment either party looks, with no infrastructure required.
+    # Each call is a no-op unless a deadline has passed, and it never raises.
+    for _b in rows:
+        try:
+            approvals.settle_if_due(_b)
+        except Exception:  # pragma: no cover — settle_if_due swallows its own
+            logger.warning("settle_if_due raised for %s", _b.get("id"), exc_info=True)
+
     ids = [b["id"] for b in rows if b.get("id")]
     by_booking: dict = {}
     if ids:
@@ -1112,24 +1130,31 @@ def complete_booking(booking_id: str, current_user: dict = Depends(get_current_u
             )
 
     try:
-        # Release remaining escrow FIRST (minus platform cut). If this fails the
-        # booking stays in its current status and the call is safely retryable —
-        # flipping the booking first left completed bookings with stuck escrow.
+        # NO MONEY MOVES HERE — 2026-07-31.
         #
-        # fix F: never mark a non-existent payment released. If the accept-time
-        # payments insert was lost, release_escrow_on_complete raises and we fail
-        # loudly rather than flipping the booking to fully_released with no
-        # payment record behind it.
-        from app.services import escrow
+        # This endpoint used to call escrow.release_escrow_on_complete() itself.
+        # It is gated to business_owner/employee (a client gets 403 above), so
+        # the business marked its own job done and paid itself, with the client
+        # nowhere in the path — while the pay sheet promised them "held in
+        # escrow, released only when you approve the work". Caught on the first
+        # iOS walkthrough: Cleared jumped $75 -> $237 with escrow held flat.
+        #
+        # Now this only says the WORK is done. `status` becomes 'completed'
+        # because that is true; `payment_status` stays 'held' and a 24h approval
+        # window opens. The client releases it by approving, or it releases
+        # itself when the window closes. See services/approvals.py.
+        #
+        # The capture guard still runs first, and still refuses: telling a
+        # business "waiting for the client to approve" about money that was
+        # never collected would be a second lie in place of the first.
+        from app.services import approvals, escrow
 
         try:
-            outcome = escrow.release_escrow_on_complete(booking_id)
+            approvals.assert_releasable(booking_id)
         except escrow.CaptureRequiredError:
             # FINDING C (money audit, 2026-07-23). Completing a job used to pay
             # the business whether or not anyone had ever paid — proven live by
-            # releasing $180 against a booking with no Stripe charge. The guard
-            # lives in escrow.assert_capture_backed() so admin force-complete
-            # inherits it too.
+            # releasing $180 against a booking with no Stripe charge.
             logger.exception(
                 "complete_booking: BLOCKED — booking %s has no captured payment",
                 booking_id,
@@ -1150,36 +1175,12 @@ def complete_booking(booking_id: str, current_user: dict = Depends(get_current_u
                 "Contact support — this booking's payment is missing.",
             )
 
-        # Booking payment_status mirrors the ledger: off-platform bookings are
-        # settled (money changed hands off SwingBy); on-platform releases are
-        # fully_released; there is no in-between now that nothing releases early.
-        supabase.table("bookings").update(
-            {
-                "status": "completed",
-                "payment_status": "fully_released",
-            }
-        ).eq("id", booking_id).execute()
-        _ = outcome  # (kept for readability / future event logging)
-
-        # Close the live-status timeline. This endpoint flipped the booking to
-        # completed but never appended the `completed` event, so the trust
-        # spine in booking_events simply stopped at whatever the provider last
-        # tapped — and any view driven by the timeline (the business
-        # JobManagementScreen tracker) could never reach its final stage.
-        # Best-effort: a booking is completed and the money is released by the
-        # time we get here, and a missing timeline row must not undo that.
-        try:
-            supabase.table("booking_events").insert(
-                {
-                    "booking_id": booking_id,
-                    "actor_id": current_user["id"],
-                    "event_type": "completed",
-                }
-            ).execute()
-        except Exception:
-            logger.warning(
-                "completed booking_event not recorded for %s", booking_id, exc_info=True
-            )
+        # Closes the live-status timeline too: start_approval_window writes the
+        # `completed` booking_event itself, so this endpoint no longer appends a
+        # second one. (It used to write it here; two inserts would now collapse
+        # onto one row via the same-stage guard, but relying on that to hide a
+        # duplicate is not a reason to keep writing it.)
+        deadline = approvals.start_approval_window(booking_id, current_user["id"])
 
         # Email the client a completion notice + review nudge — best-effort
         try:
@@ -1223,14 +1224,91 @@ def complete_booking(booking_id: str, current_user: dict = Depends(get_current_u
             props={"category": booking.get("service_category")},
         )
 
+        # The message is now the truth rather than the old "full payment
+        # released": nothing was released here. `approval_deadline_at` is what
+        # the business's screen should render a countdown from.
+        if deadline:
+            return {
+                "message": "Work marked done. Waiting for the client to approve — "
+                "payment releases automatically after 24 hours.",
+                "approval_deadline_at": deadline,
+                "payment_status": "held",
+            }
         return {
-            "message": "Booking completed — full payment released (minus platform fee)"
+            "message": "Booking completed.",
+            "approval_deadline_at": None,
+            "payment_status": "settled",
         }
     except HTTPException:
         raise
     except Exception:
         logger.exception("Could not complete booking")
         raise HTTPException(status_code=400, detail="Could not complete booking")
+
+
+@router.post("/{booking_id}/approve")
+def approve_completed_work(
+    booking_id: str, current_user: dict = Depends(get_current_user)
+):
+    """The CLIENT approves finished work, which is what releases the money.
+
+    Distinct from `POST /bookings/{id}/proof/approve`, which approves a
+    *proof-of-work submission* (before/after photos + voice note) and requires
+    one to exist. Most jobs never get photos, and those clients still need a way
+    to say "yes, this is done" — without this endpoint the only route to release
+    was the 24-hour timeout, which is a fallback, not a flow.
+
+    Client only. The business marking work done opens the window; only the
+    person who paid can close it early.
+    """
+    booking_res = (
+        supabase.table("bookings")
+        .select("id, client_id, status, payment_status, approval_deadline_at")
+        .eq("id", booking_id)
+        .single()
+        .execute()
+    )
+    if not booking_res.data:
+        raise HTTPException(status_code=404, detail="Booking not found")
+    booking = booking_res.data
+
+    if booking["client_id"] != current_user["id"]:
+        raise HTTPException(
+            status_code=403, detail="Only the client on this booking can approve it"
+        )
+
+    if booking.get("payment_status") == "fully_released":
+        # Idempotent: approving twice is a double-tap, not an error.
+        return {
+            "message": "Already approved — payment released.",
+            "outcome": "already_released",
+        }
+
+    if booking.get("status") != "completed":
+        raise HTTPException(
+            status_code=400,
+            detail="This job isn't marked done yet, so there's nothing to approve.",
+        )
+
+    from app.services import approvals, escrow
+
+    try:
+        outcome = approvals.release(
+            booking_id, actor_id=current_user["id"], reason="client_approved"
+        )
+    except escrow.CaptureRequiredError:
+        raise HTTPException(
+            status_code=409,
+            detail="This booking has no captured payment, so there is nothing to release.",
+        )
+    except escrow.EscrowError as exc:
+        logger.exception("client approval could not release booking %s", booking_id)
+        raise HTTPException(status_code=409, detail=str(exc))
+
+    return {
+        "message": "Approved — payment released to the business.",
+        "outcome": outcome.get("outcome"),
+    }
 
 
 def _has_submitted_proof(booking_id: str) -> bool:

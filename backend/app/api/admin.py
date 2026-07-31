@@ -128,6 +128,43 @@ def suspend_user(
         raise HTTPException(status_code=400, detail="Could not suspend user")
 
 
+@router.post("/sweeps/approval-releases")
+@limiter.limit("12/hour")
+def sweep_approval_releases(
+    request: Request,
+    current_user: dict = Depends(require_admin),
+):
+    """Release every booking whose 24h client-approval window has closed.
+
+    The PRIMARY mechanism is lazy: `approvals.settle_if_due` runs on every
+    booking read, so the answer is right the moment either party looks. This
+    endpoint exists for the case where nobody looks — point a cron at it (the
+    keep-warm crontab already hits this API every 10 minutes) and stale windows
+    settle on their own.
+
+    Deliberately not a public/unauthenticated cron URL: it moves money, so it
+    takes the same admin guard as everything else here. Safe to call repeatedly
+    — a booking with no closed window is skipped, and a release is idempotent.
+    """
+    from app.services import approvals
+
+    summary = approvals.settle_due()
+    if summary.get("released"):
+        logger.info(
+            "admin.sweep_approval_releases",
+            admin_id=current_user["id"],
+            **summary,
+        )
+        record_audit(
+            actor_id=current_user["id"],
+            action="admin.sweep_approval_releases",
+            resource_type="booking",
+            metadata=summary,
+            request=request,
+        )
+    return summary
+
+
 @router.post("/unsuspend-user/{user_id}")
 @limiter.limit("30/minute")
 def unsuspend_user(
