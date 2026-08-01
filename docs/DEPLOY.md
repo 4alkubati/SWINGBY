@@ -108,6 +108,37 @@ See `docs/ROLLBACK.md`.
 
 ## Frontend — Cloudflare Pages
 
+> ### ✅ FIXED IN CI (2026-08-01) — `.github/workflows/web-prelaunch-deploy.yml`
+>
+> The deploy is now a workflow in this repo: it builds `web/pre-launch` on every
+> push to `main` that touches it, publishes to Pages, and then **asserts on the
+> live Terms prose** before going green. It needs one repo secret,
+> `CLOUDFLARE_API_TOKEN` (Cloudflare Pages:Edit) — until that exists the workflow
+> fails loudly at its preflight step rather than pretending to ship.
+>
+> Two corrections to the diagnosis below, both verified 2026-08-01:
+>
+> 1. **The title check is out of date.** Live is now
+>    `<title>SwingBy — Local Services Marketplace</title>`, which matches the
+>    repo. The site is not frozen pre-2026-06-05 — it is frozen somewhere *after*
+>    it, and before PR #84. The stale-build symptom is real; that particular
+>    proof is not.
+> 2. **The custom domain is not the problem.** `swingbyy.com` and
+>    `swingby-prelaunch-1pv.pages.dev` serve the **identical** entry bundle, so
+>    the domain is not pinned to an old deployment — the *project* has not
+>    rebuilt. Do not go looking for a domain misconfiguration.
+>
+> **The Pages project name is still not confirmed from the dashboard.** The
+> workflow uses `swingby-prelaunch-1pv`, derived from the live `pages.dev`
+> hostname (Pages serves each project at `<project-name>.pages.dev`). That is an
+> inference, so the workflow **checks the project exists before deploying** and
+> fails with the real project list if not — otherwise `wrangler pages deploy`
+> would create a second, empty project and report success while swingbyy.com
+> stayed frozen. Override with the repo variable `CF_PAGES_PROJECT`.
+
+<details>
+<summary>Original diagnosis, 2026-07-29 — kept for the reasoning</summary>
+
 > ### ⚠ THE LIVE SITE DOES NOT BUILD FROM THIS REPO (found 2026-07-29)
 >
 > `swingbyy.com` is serving a build that predates **2026-06-05**, and no commit
@@ -141,6 +172,23 @@ See `docs/ROLLBACK.md`.
 >
 > **Nothing on the site can be verified as shipped until this is fixed.** A
 > green CI run means the bundle builds, not that anyone can see it.
+
+</details>
+
+**What shipping the site now looks like:**
+
+1. Add the repo secret `CLOUDFLARE_API_TOKEN` (Cloudflare dashboard → My Profile
+   → API Tokens → Create Token → **Cloudflare Pages:Edit** on the SwingBy
+   account). This is the only manual step, and it is one-time.
+2. Actions → **web-prelaunch Deploy** → *Run workflow*. Subsequent pushes to
+   `main` touching `web/pre-launch/**` deploy on their own.
+3. If the preflight fails with "project does not exist", copy the real name out
+   of the printed list into the repo variable `CF_PAGES_PROJECT`.
+
+The final step re-fetches `swingbyy.com`, follows the entry bundle to the
+code-split `TermsPage-*.js` chunk, and fails if the cancellation ladder is still
+stated backwards. **`curl -I` cannot do this** — the SPA fallback answers 200 for
+any path, so status codes prove nothing about this site. Assert on content.
 
 **Sites:**
 - `web/launch/` → `swingbyy.com` — **built and CI-green, never deployed**

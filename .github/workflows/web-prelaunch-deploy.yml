@@ -1,0 +1,138 @@
+name: web-prelaunch Deploy
+
+# WHY THIS FILE EXISTS
+#
+# swingbyy.com is served by a Cloudflare Pages project that has not rebuilt in
+# months. Every commit to `web/pre-launch/` since then built green in CI and
+# reached nobody — docs/DEPLOY.md says it plainly: "A green CI run means the
+# bundle builds, not that anyone can see it."
+#
+# On 2026-08-01 that cost us a live legal page. swingbyy.com/terms was serving a
+# pre-#84 build stating the cancellation ladder BACKWARDS — a 25% fee for
+# cancelling more than 48h out, which is the one rung that is free
+# (escrow.compute_cancellation_split). The correct text had been sitting in
+# `main` and could not reach anyone, because deploying was an invisible setting
+# in a dashboard rather than a step in the repo.
+#
+# So: the deploy lives here now, in review, next to the code it ships.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'web/pre-launch/**'
+      - '.github/workflows/web-prelaunch-deploy.yml'
+  # Lets a human ship a fix without an empty commit, and lets the FIRST run
+  # happen on demand rather than waiting for the next content change.
+  workflow_dispatch:
+
+defaults:
+  run:
+    working-directory: web/pre-launch
+
+jobs:
+  deploy:
+    name: Build & deploy to Cloudflare Pages
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: web/pre-launch/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      # No `env:` block on purpose. `web/pre-launch/.env.production` is TRACKED
+      # and already supplies VITE_API_URL (the api.swingbyy.com Worker, which is
+      # deliberately not the Render backend). The build was verified locally with
+      # exactly this — no injected variables — and produced a correct bundle.
+      #
+      # Piping `${{ secrets.VITE_SUPABASE_URL }}` in here would be actively
+      # dangerous: an unset secret expands to an EMPTY STRING, and an empty env
+      # var OVERRIDES the .env.production value rather than falling back to it.
+      # This repo currently has no Actions secrets configured at all, so that
+      # would ship a bundle with its config blanked the first time someone adds
+      # those keys to the file. If real values are ever needed, add them to
+      # .env.production where they can be reviewed in a diff.
+      - name: Build
+        run: npm run build
+
+      # ── The guard that matters ──────────────────────────────────────────────
+      # The Pages project name is NOT recorded anywhere trustworthy. CLAUDE.md
+      # calls it `swingby-prelaunch`; the account has no such project. The name
+      # used below is derived from the live hostname
+      # `swingby-prelaunch-1pv.pages.dev` — Cloudflare Pages serves every project
+      # at `<project-name>.pages.dev`, so the subdomain IS the name.
+      #
+      # That is an inference, not a reading, so it gets checked before we push
+      # anything. If it is wrong, this fails with the real list of projects
+      # instead of silently creating a second one and leaving the live site
+      # untouched.
+      - name: Preflight — the target project must already exist
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID || '4877404e65143359d52e1056bfd8099c' }}
+          PROJECT: ${{ vars.CF_PAGES_PROJECT || 'swingby-prelaunch-1pv' }}
+        run: |
+          set -euo pipefail
+          echo "Looking for Pages project: $PROJECT"
+          npx --yes wrangler@3 pages project list > projects.txt 2>&1 || {
+            echo "::error::Could not list Pages projects. Is CLOUDFLARE_API_TOKEN set, with Cloudflare Pages:Edit?"
+            cat projects.txt
+            exit 1
+          }
+          cat projects.txt
+          if ! grep -qE "(^|[[:space:]])${PROJECT}([[:space:]]|$)" projects.txt; then
+            echo "::error::Pages project '${PROJECT}' does not exist on this account."
+            echo "::error::Deploying would CREATE it and leave swingbyy.com frozen."
+            echo "::error::Pick the real name from the list above and set the repo variable CF_PAGES_PROJECT."
+            exit 1
+          fi
+          echo "Found it. Safe to deploy."
+
+      - name: Deploy to Cloudflare Pages
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID || '4877404e65143359d52e1056bfd8099c' }}
+          PROJECT: ${{ vars.CF_PAGES_PROJECT || 'swingby-prelaunch-1pv' }}
+        run: |
+          npx --yes wrangler@3 pages deploy dist \
+            --project-name="$PROJECT" \
+            --branch=main \
+            --commit-dirty=true
+
+      # ── Prove it, don't assume it ───────────────────────────────────────────
+      # The whole reason this file exists is that "it built" was mistaken for
+      # "it shipped" for months. `curl -I` cannot tell the difference here: the
+      # SPA fallback answers 200 for ANY path, including ones that do not exist.
+      # So assert on CONTENT, and specifically on the sentence that was wrong.
+      - name: Verify the live Terms page is actually correct
+        run: |
+          set -euo pipefail
+          echo "Waiting for the edge to pick up the new deployment..."
+          sleep 20
+          ENTRY=$(curl -sf https://swingbyy.com/ | grep -oE 'assets/index-[A-Za-z0-9_-]+\.js' | head -1)
+          echo "entry chunk: $ENTRY"
+          # Pages code-splits every route, so the Terms prose is NOT in the entry
+          # bundle. Find its chunk from the entry file first — grepping the entry
+          # for policy text returns zero and looks like a broken deploy.
+          TERMS=$(curl -sf "https://swingbyy.com/$ENTRY" | grep -oE 'assets/TermsPage-[A-Za-z0-9_-]+\.js' | head -1)
+          echo "terms chunk: $TERMS"
+          BODY=$(curl -sf "https://swingbyy.com/$TERMS")
+
+          if grep -q "25% of the job amount if cancelled more than 48" <<<"$BODY"; then
+            echo "::error::The live Terms page STILL states the cancellation ladder backwards."
+            echo "::error::It charges 25% for cancelling >48h out. That rung is free."
+            exit 1
+          fi
+          if ! grep -q "refunded in full, with no fee" <<<"$BODY"; then
+            echo "::error::The corrected cancellation wording is not on the live Terms page."
+            exit 1
+          fi
+          echo "Live Terms page is correct."
