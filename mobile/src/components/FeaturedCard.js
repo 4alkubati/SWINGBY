@@ -13,7 +13,7 @@ export default function FeaturedCard({
   initials,
   logoUrl,
   rating,
-  jobs,
+  reviews,
   distance,
   category,
   verified,
@@ -23,7 +23,7 @@ export default function FeaturedCard({
     name,
     verified ? 'Verified provider' : null,
     `Rated ${rating} stars`,
-    `${jobs} jobs`,
+    `${reviews} reviews`,
     distance ? `${distance} away` : null,
     category,
   ]
@@ -80,7 +80,7 @@ export default function FeaturedCard({
             ·
           </Text>
           <Text style={styles.metaText} maxFontSizeMultiplier={1.3}>
-            {jobs} jobs
+            {reviews} reviews
           </Text>
           {distance ? (
             <>

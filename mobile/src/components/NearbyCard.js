@@ -11,7 +11,7 @@ import { colors, spacing, radius } from '../theme/tokens';
 // `logoUrl` is optional and `initials` is still honoured, so the callers that
 // have not been given a business object with a logo on it render exactly as
 // before.
-export default function NearbyCard({ name, initials, logoUrl, rating, jobs, distance, onPress }) {
+export default function NearbyCard({ name, initials, logoUrl, rating, reviews, distance, onPress }) {
   return (
     <TouchableOpacity
       style={styles.container}
@@ -20,8 +20,8 @@ export default function NearbyCard({ name, initials, logoUrl, rating, jobs, dist
       accessibilityRole="button"
       accessibilityLabel={
         distance
-          ? `${name}, rated ${rating} stars, ${jobs} jobs, ${distance} away`
-          : `${name}, rated ${rating} stars, ${jobs} jobs`
+          ? `${name}, rated ${rating} stars, ${reviews} reviews, ${distance} away`
+          : `${name}, rated ${rating} stars, ${reviews} reviews`
       }
       accessibilityHint="Opens business profile"
     >
@@ -43,7 +43,7 @@ export default function NearbyCard({ name, initials, logoUrl, rating, jobs, dist
           </Text>
           <Text style={styles.dotSep} maxFontSizeMultiplier={1.3}>·</Text>
           <Text style={styles.meta} maxFontSizeMultiplier={1.3}>
-            {jobs} jobs
+            {reviews} reviews
           </Text>
         </View>
       </View>

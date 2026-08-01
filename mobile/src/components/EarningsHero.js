@@ -19,8 +19,12 @@ import { colors, spacing } from '../theme/tokens';
 // on the dashboard and the only thing you could not touch. `onPress` turns the
 // whole card into a target (with a pressed state and an a11y label); without
 // it the card renders exactly as before.
+// `caption` (M5, 2026-07-31): "THIS WEEK $590" sat above a card reading
+// "Cleared $75" with no word explaining why the two disagreed. The number is
+// honest now; the caption says which number it is.
 export default function EarningsHero({
   amount,
+  caption = null,
   deltaPct = null,
   data,
   height = 172,
@@ -66,6 +70,11 @@ export default function EarningsHero({
             <Text style={styles.amount} maxFontSizeMultiplier={1.2}>
               {amount}
             </Text>
+            {caption ? (
+              <Text style={styles.caption} maxFontSizeMultiplier={1.3}>
+                {caption}
+              </Text>
+            ) : null}
             {hasDelta && (
               <View style={styles.deltaRow}>
                 <Feather
@@ -146,6 +155,12 @@ const styles = StyleSheet.create({
     letterSpacing: -1.5,
     color: colors.textPrimary,
     marginTop: 6,
+  },
+  caption: {
+    fontSize: 12,
+    fontFamily: 'Inter_400Regular',
+    color: colors.accentSoft,
+    marginTop: 4,
   },
   deltaRow: {
     flexDirection: 'row',

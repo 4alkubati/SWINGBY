@@ -8,6 +8,7 @@ import {
   ScrollView,
   Pressable,
   Platform,
+  Alert,
 } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -396,10 +397,16 @@ function LiveStatusCard({ events, status, onRetry }) {
                 />
               </View>
               <Stack spacing={2} style={{ flex: 1 }}>
+                {/* P3 — these two times used to run together on one line:
+                    "Time confirmed · 10:01 PM · Time set at posting: Sat, Jul
+                    25 at 3:54 PM". One is when the update was logged, the
+                    other is the appointment, and nothing said which. */}
                 <Text variant="smallMedium">{eventTitle(ev.event_type)}</Text>
+                {ev.note ? (
+                  <Text variant="caption">{humaniseNote(ev.note)}</Text>
+                ) : null}
                 <Text variant="caption" color="secondary">
-                  {formatTime(ev.created_at)}
-                  {ev.note ? ` · ${humaniseNote(ev.note)}` : ''}
+                  {i18n.t('booking.eventLoggedAt', { time: formatTime(ev.created_at) })}
                 </Text>
               </Stack>
             </Inline>
@@ -625,6 +632,44 @@ export default function BookingDetailsScreen({ route, navigation }) {
     navigation.navigate('MessageThread', { bookingId });
   };
 
+  // Releasing the money is irreversible and it is someone else's payday, so it
+  // confirms first — and the confirm names the amount, because "approve" on its
+  // own does not tell the client what they are agreeing to part with.
+  const [approving, setApproving] = useState(false);
+  const handleApproveWork = () => {
+    const held = booking?.payment_state?.amount_held;
+    Alert.alert(
+      i18n.t('approval.confirmTitle'),
+      held
+        ? i18n.t('approval.confirmBodyAmount', { amount: `$${Number(held).toFixed(2)}` })
+        : i18n.t('approval.confirmBody'),
+      [
+        { text: i18n.t('common.cancel'), style: 'cancel' },
+        {
+          text: i18n.t('approval.approveShort'),
+          onPress: async () => {
+            if (approving) return;
+            setApproving(true);
+            try {
+              await api.post(`/bookings/${bookingId}/approve`);
+              haptics.buttonTap?.();
+              toast.show({ type: 'success', text1: i18n.t('approval.released') });
+              fetchBooking();
+            } catch (err) {
+              toast.show({
+                type: 'error',
+                text1: i18n.t('approval.failed'),
+                text2: err?.response?.data?.detail || '',
+              });
+            } finally {
+              setApproving(false);
+            }
+          },
+        },
+      ],
+    );
+  };
+
   const handleCancel = () => {
     navigation.navigate('CancellationFlow', {
       bookingId,
@@ -779,13 +824,30 @@ export default function BookingDetailsScreen({ route, navigation }) {
     user?.role === 'client' && isAwaitingPayment(payment) && booking?.status !== 'cancelled';
   const isCompleted = booking?.status === 'completed';
 
+  // The pro says the job is done and the client's money is still held: their
+  // approval is what releases it (services/approvals.py). Until 2026-07-31 the
+  // business released the money itself, so there was nothing for the client to
+  // do here — now there is, it has a 24-hour deadline, and it is the single
+  // most important thing on this screen.
+  const awaitingApproval =
+    user?.role === 'client' &&
+    isCompleted &&
+    booking?.payment_state?.state === 'held' &&
+    !!booking?.approval_deadline_at;
+
   // D5 — ONE primary CTA. Everything else moves behind the overflow. The old
   // stacked column (Pay with card / Message / Cancel booking / Report a
   // problem) took roughly a quarter of the viewport and covered the content it
   // was about.
   const primaryAction = owesMoney
     ? { label: i18n.t('booking.payNow'), icon: 'credit-card', onPress: () => setPayVisible(true) }
-    : { label: i18n.t('booking.message'), icon: 'message-circle', onPress: handleMessage };
+    : awaitingApproval
+      ? {
+          label: i18n.t('approval.approveCta'),
+          icon: 'check-circle',
+          onPress: handleApproveWork,
+        }
+      : { label: i18n.t('booking.message'), icon: 'message-circle', onPress: handleMessage };
 
   const overflowActions = [
     owesMoney && { key: 'message', label: i18n.t('booking.message'), icon: 'message-circle', onPress: handleMessage },

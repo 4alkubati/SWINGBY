@@ -118,21 +118,51 @@ class TestStageEventTypes:
 
 
 class TestCompleteWritesItsEvent:
-    def test_complete_booking_appends_a_completed_event(self):
-        # Read the source rather than standing up the whole payment path: the
-        # point is that the insert EXISTS on this endpoint, and it is wrapped
-        # so a failed timeline row cannot undo a completed, paid-out booking.
+    """The `completed` timeline row still gets written — from the service now.
+
+    It used to be inserted inline in `complete_booking`. Since 2026-07-31 that
+    endpoint no longer releases money (client approval does), and the event moved
+    into `approvals.start_approval_window` alongside the state change it
+    describes. Asserting on the endpoint's source would now pass only by
+    accident, so this checks the function that actually does it.
+    """
+
+    def test_starting_the_approval_window_appends_a_completed_event(self):
+        import inspect
+
+        from app.services import approvals
+
+        src = inspect.getsource(approvals.start_approval_window)
+        assert '"completed"' in src
+        assert "_event(" in src
+
+        # Best-effort: the insert lives in `_event`, wrapped so a lost timeline
+        # row can never undo a completed booking or a released payment.
+        helper = inspect.getsource(approvals._event)
+        before, after = helper.split('supabase.table("booking_events")', 1)
+        assert before.rstrip().endswith("try:")
+        assert "except Exception:" in after
+        assert "logger.warning" in after.split("except Exception:", 1)[1][:200]
+
+    def test_complete_booking_no_longer_releases_money(self):
+        """The regression this whole change exists to prevent.
+
+        `complete_booking` is callable only by the business or its employee. If
+        it ever calls the release path directly again, the business is paying
+        itself with the client cut out — which is exactly what shipped, and what
+        the pay sheet's "released only when you approve the work" denied.
+        """
         import inspect
 
         from app.api import bookings
 
         src = inspect.getsource(bookings.complete_booking)
-        assert '"booking_events"' in src
-        assert '"event_type": "completed"' in src
-        # Best-effort: the insert is preceded by its own `try:` and followed by
-        # an `except` that only logs, so a lost timeline row cannot roll back a
-        # completed, paid-out booking.
-        before, after = src.split('supabase.table("booking_events")', 1)
-        assert before.rstrip().endswith("try:")
-        assert "except Exception:" in after
-        assert "logger.warning" in after.split("except Exception:", 1)[1][:200]
+        # Strip comments before asserting. The endpoint's comments deliberately
+        # NAME the call they no longer make ("this used to call
+        # release_escrow_on_complete") — that history is worth keeping, and a
+        # test that cannot tell prose from code would force it out.
+        code = "\n".join(
+            line for line in src.splitlines() if not line.lstrip().startswith("#")
+        )
+        assert "release_escrow_on_complete" not in code
+        assert "start_approval_window" in code

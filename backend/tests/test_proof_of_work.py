@@ -212,6 +212,11 @@ class TestApprove:
 
     def test_happy_path_releases_then_marks_approved(self, as_client):
         supa = MagicMock()
+        # Since 2026-07-31 the release goes through `approvals.release` rather
+        # than calling escrow directly, so that this path also clears
+        # `approval_deadline_at`. That service holds its own supabase handle, so
+        # it needs its own double — without it the booking UPDATE inside
+        # approvals.release reaches for the network and the test dies on DNS.
         with patch.object(
             pow_api, "_load_proof", return_value={"status": "submitted"}
         ), patch.object(
@@ -225,12 +230,44 @@ class TestApprove:
             pow_api, "_upsert_proof", return_value={"status": "approved"}
         ) as upsert, patch.object(
             pow_api, "supabase", supa
+        ), patch.object(
+            pow_api.approvals, "supabase", MagicMock()
         ):
             out = pow_api.approve_proof("bk-1", current_user=CLIENT)
 
         release.assert_called_once_with("bk-1")
         assert upsert.call_args[0][1]["status"] == "approved"
         assert out["outcome"] == "released"
+
+    def test_approving_a_proof_also_closes_the_24h_window(self, as_client):
+        """Otherwise the money is released but the booking still looks pending,
+        and the sweep keeps re-examining a booking that is already settled."""
+        approvals_supa = MagicMock()
+        with patch.object(
+            pow_api, "_load_proof", return_value={"status": "submitted"}
+        ), patch.object(
+            pow_api.escrow,
+            "release_escrow_on_complete",
+            return_value={"outcome": "released", "payment": {}},
+        ), patch.object(
+            pow_api, "_upsert_proof", return_value={"status": "approved"}
+        ), patch.object(
+            pow_api, "supabase", MagicMock()
+        ), patch.object(
+            pow_api.approvals, "supabase", approvals_supa
+        ):
+            pow_api.approve_proof("bk-1", current_user=CLIENT)
+
+        updates = [
+            c.args[0]
+            for c in approvals_supa.table.return_value.update.call_args_list
+            if c.args
+        ]
+        assert any(
+            u.get("approval_deadline_at") is None
+            and u.get("payment_status") == "fully_released"
+            for u in updates
+        ), updates
 
 
 class TestDecline:

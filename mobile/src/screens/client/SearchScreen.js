@@ -363,7 +363,7 @@ export default function SearchScreen({ navigation, route }) {
             initials={toInitials(item.business_name)}
             logoUrl={item.logo_url}
             rating={item.avg_rating?.toFixed(1) ?? '—'}
-            jobs={item.review_count ?? 0}
+            reviews={item.review_count ?? 0}
             distance={item._distance}
             avatarStyle={index % 2 === 0 ? 'green' : 'blue'}
             onPress={() =>

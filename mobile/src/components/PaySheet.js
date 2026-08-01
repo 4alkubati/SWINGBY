@@ -132,7 +132,10 @@ function normaliseQuote(res, fallbackSummary, mode) {
         .filter((l) => l && l.value != null)
         .map((l, i) => ({
           key: l.key || `line-${i}`,
-          label: l.label || '',
+          // The server sends a translation KEY, not display text — it does not
+          // know the reader's locale. `label` is honoured if a future response
+          // ever sends literal text.
+          label: l.label || (l.label_key ? i18n.t(l.label_key) : ''),
           value: l.value,
         }))
     : [];

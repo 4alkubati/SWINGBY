@@ -42,7 +42,7 @@ from pydantic import BaseModel, Field
 
 from app.api.uploads import sign_audio_path
 from app.deps import get_current_user
-from app.services import escrow
+from app.services import approvals, escrow
 from app.supabase_client import supabase
 
 logger = logging.getLogger(__name__)
@@ -461,7 +461,13 @@ def approve_proof(booking_id: str, current_user: dict = Depends(get_current_user
         )
 
     try:
-        outcome = escrow.release_escrow_on_complete(booking_id)
+        # Routed through approvals.release rather than escrow directly, so this
+        # path also clears `approval_deadline_at`. Otherwise approving a proof
+        # would release the money but leave the 24h window open, and the sweep
+        # would keep re-examining a booking that is already settled.
+        outcome = approvals.release(
+            booking_id, actor_id=current_user["id"], reason="client_approved"
+        )
     except escrow.CaptureRequiredError as exc:
         logger.error("approve blocked, money was never captured: %s", exc)
         raise HTTPException(

@@ -22,7 +22,7 @@
 
 **Hook:** Finding a reliable cleaner in Calgary shouldn't take 3 hours on Kijiji.
 
-**Body:** It did for us. So we built something better. Post what you need, get quotes from vetted local businesses, pay in two stages instead of all up front. No chasing. No ghosting.
+**Body:** It did for us. So we built something better. Post what you need, get quotes from local businesses, pay when you accept one. Your money stays held until you say the job is done. No chasing. No ghosting.
 
 **CTA:** SwingBy. Local services, trusted and simple. Link in bio.
 

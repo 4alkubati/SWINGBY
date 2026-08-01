@@ -1,5 +1,6 @@
 import logging
 import re
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, HTTPException, Depends, Query
 from pydantic import BaseModel, Field, field_validator, model_validator
@@ -7,6 +8,7 @@ from typing import Optional, Literal, List
 from app.categories import allowed_categories_for, resolve_create_category
 from app.deps import get_current_user
 from app.privacy import mask_service_post_row
+from app.services import expiry_sweep
 from app.services.geocoding import resolve_coordinates
 from app.services.push import send_push_to_user
 from app.services.visibility import blocked_pair_ids
@@ -271,6 +273,19 @@ def list_my_posts(
         raise HTTPException(
             status_code=403, detail="Only clients can view their own posts"
         )
+
+    # Settle this client's expired posts before listing them.
+    #
+    # `expiry_sweep` existed for weeks with no caller (there is no scheduler in
+    # this deployment — see services/approvals.py), so an expired post kept
+    # saying "open" forever and any escrow against it was never returned. This
+    # is the same self-healing-on-read shape the 24h escrow release uses, and
+    # this is the right read to hang it on: the person opening My Jobs is the
+    # person owed the refund, and only their own posts are examined.
+    #
+    # Best-effort by construction — sweep_for_client never raises.
+    expiry_sweep.sweep_for_client(current_user["id"])
+
     try:
         query = (
             supabase.table("service_posts")
@@ -330,6 +345,15 @@ def list_open_posts(
             query = query.eq("status", status)
         else:
             query = query.eq("status", "open")
+            # …and genuinely open, not merely still labelled that way.
+            #
+            # A post stays status='open' until something sweeps it, and until
+            # today nothing did (see services/expiry_sweep.py). Businesses were
+            # therefore shown week-old dead posts and could quote them. This
+            # feed does not sweep — a business must not pay the cost of another
+            # user's refunds on a browse — it just refuses to show a post whose
+            # expiry has passed. The client's own read settles the money.
+            query = query.gt("expires_at", datetime.now(timezone.utc).isoformat())
 
         # LANE C — targeted "Book now" posts (target_business_id set) belong to
         # exactly ONE business's feed. Every branch below except the target-

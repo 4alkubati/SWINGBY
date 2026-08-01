@@ -20,7 +20,7 @@ Here's how it works:
 → Client posts a job with a budget
 → Local businesses send quotes
 → Client picks who they trust
-→ Payment releases in two stages — half at booking, half on completion
+→ Payment is held on the platform and released when the client approves the work
 → No payout until the work is done — for real
 
 I've been building this for [X months]. Full-stack, by myself, in Calgary.

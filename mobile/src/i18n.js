@@ -219,6 +219,8 @@ const translations = {
     'dashboard.moneyInFlightTitle': 'Money in flight',
     'dashboard.moneyHeld': 'Held in escrow',
     'dashboard.moneyCleared': 'Cleared',
+    // M5 — the hero counts money released to you, not gross booking value.
+    'dashboard.heroCaption': 'cleared to you',
     'dashboard.moneyUnavailable': 'Could not load payment totals',
 
     // Biometric app-lock (CARD-24)
@@ -540,6 +542,7 @@ const translations = {
     'dashboard.moneyInFlightTitle': 'Argent en transit',
     'dashboard.moneyHeld': 'Retenu en fiducie',
     'dashboard.moneyCleared': 'Libéré',
+    'dashboard.heroCaption': 'versé à vous',
     'dashboard.moneyUnavailable': 'Impossible de charger les totaux de paiement',
 
     // Biometric app-lock (CARD-24)
@@ -860,6 +863,7 @@ const translations = {
     'dashboard.moneyInFlightTitle': 'الأموال قيد المعالجة',
     'dashboard.moneyHeld': 'محتجزة في الضمان',
     'dashboard.moneyCleared': 'تم تحريرها',
+    'dashboard.heroCaption': 'حُوِّلت إليك',
     'dashboard.moneyUnavailable': 'تعذر تحميل إجماليات الدفع',
 
     // Biometric app-lock (CARD-24)
@@ -1001,7 +1005,7 @@ const lane3 = {
   'pay.addMethod': 'Add a payment method',
   'pay.noMethodHint': 'Add a card to continue. Nothing is charged until you confirm.',
   'pay.escrow':
-    'Held in escrow — released only when you approve the work. Cancel free up to 24 h before.',
+    'Held in escrow — released only when you approve the work. Cancel free up to 48 h before.',
   'pay.declined': 'That card was declined. Try another one.',
   'pay.amountChanged': 'This quote changed — check the new total before you confirm.',
   'pay.quoteError': 'Could not price this job. Try again.',
@@ -1465,6 +1469,422 @@ Object.assign(translations.ar, {
   'settings.deleteAccountWrongPassword': 'كلمة المرور غير صحيحة. حاول مرة أخرى.',
   'settings.deleteAccountFailed': 'تعذّر حذف حسابك. حاول مرة أخرى.',
   'settings.deleteAccountDone': 'تم حذف حسابك.',
+});
+
+// ── The client's approval is what releases the money — 2026-07-31 ───────────
+// Until now the BUSINESS released its own escrow by marking the job complete,
+// so the client had nothing to approve and none of this copy existed. All three
+// locales, not English-with-fallback: this is the screen where somebody parts
+// with money, and a fallback language at that moment is not acceptable.
+Object.assign(translations.en, {
+  'approval.approveCta': 'Approve & release payment',
+  'approval.approveShort': 'Approve',
+  'approval.confirmTitle': 'Release the payment?',
+  'approval.confirmBody':
+    'This pays the pro for the work. Only do this if the job is finished and you’re happy with it.',
+  'approval.confirmBodyAmount':
+    'This releases %{amount} to the pro. Only do this if the job is finished and you’re happy with it.',
+  'approval.released': 'Payment released',
+  'approval.failed': 'Could not release the payment',
+  // The waiting state, shown to whoever is waiting.
+  'approval.waitingTitle': 'Waiting for you to approve',
+  'approval.waitingBody':
+    'The pro marked this job done. Check the work, then release the payment. If you do nothing it releases automatically in 24 hours.',
+  'approval.businessWaitingTitle': 'Waiting for the client',
+  'approval.businessWaitingBody':
+    'You marked this done. The client has 24 hours to approve — after that the payment releases to you automatically.',
+  'approval.autoReleased': 'Released automatically — the client didn’t respond in 24 hours.',
+});
+Object.assign(translations['fr-CA'], {
+  'approval.approveCta': 'Approuver et libérer le paiement',
+  'approval.approveShort': 'Approuver',
+  'approval.confirmTitle': 'Libérer le paiement?',
+  'approval.confirmBody':
+    'Ceci paie le pro pour son travail. À faire seulement si le travail est terminé et vous convient.',
+  'approval.confirmBodyAmount':
+    'Ceci libère %{amount} au pro. À faire seulement si le travail est terminé et vous convient.',
+  'approval.released': 'Paiement libéré',
+  'approval.failed': 'Impossible de libérer le paiement',
+  'approval.waitingTitle': 'En attente de votre approbation',
+  'approval.waitingBody':
+    'Le pro a marqué ce travail comme terminé. Vérifiez le travail, puis libérez le paiement. Sans action de votre part, il sera libéré automatiquement dans 24 heures.',
+  'approval.businessWaitingTitle': 'En attente du client',
+  'approval.businessWaitingBody':
+    'Vous avez marqué ce travail comme terminé. Le client a 24 heures pour approuver — ensuite le paiement vous est libéré automatiquement.',
+  'approval.autoReleased':
+    'Libéré automatiquement — le client n’a pas répondu en 24 heures.',
+});
+Object.assign(translations.ar, {
+  'approval.approveCta': 'الموافقة وتحرير الدفعة',
+  'approval.approveShort': 'موافقة',
+  'approval.confirmTitle': 'تحرير الدفعة؟',
+  'approval.confirmBody':
+    'سيتم دفع المبلغ للمحترف مقابل عمله. لا تفعل ذلك إلا إذا اكتمل العمل وكنت راضيًا عنه.',
+  'approval.confirmBodyAmount':
+    'سيتم تحرير %{amount} للمحترف. لا تفعل ذلك إلا إذا اكتمل العمل وكنت راضيًا عنه.',
+  'approval.released': 'تم تحرير الدفعة',
+  'approval.failed': 'تعذّر تحرير الدفعة',
+  'approval.waitingTitle': 'بانتظار موافقتك',
+  'approval.waitingBody':
+    'أشار المحترف إلى اكتمال العمل. تحقّق من العمل ثم حرّر الدفعة. إذا لم تقم بأي إجراء، ستُحرَّر تلقائيًا خلال 24 ساعة.',
+  'approval.businessWaitingTitle': 'بانتظار العميل',
+  'approval.businessWaitingBody':
+    'لقد أشرت إلى اكتمال العمل. أمام العميل 24 ساعة للموافقة — بعدها تُحرَّر الدفعة إليك تلقائيًا.',
+  'approval.autoReleased': 'تم التحرير تلقائيًا — لم يستجب العميل خلال 24 ساعة.',
+});
+
+// ── The role pick a social sign-in never offered — 2026-07-31 ───────────────
+// A trade signing in with Apple on a shared iPad landed in the CLIENT app with
+// no way out. All three locales: this is the first screen a new account sees,
+// and answering it wrong is expensive to undo.
+Object.assign(translations.en, {
+  'rolePicker.title': 'How will you use SwingBy?',
+  'rolePicker.body': 'Pick one — you can only choose this once.',
+  'rolePicker.clientTitle': "I'm hiring",
+  'rolePicker.clientBody': 'Post jobs and book local pros.',
+  'rolePicker.businessTitle': "I'm offering services",
+  'rolePicker.businessBody': 'Send quotes and get booked.',
+  'rolePicker.footnote':
+    'Signing in with Apple or Google skips the signup form, so we have to ask here.',
+  'rolePicker.failed': "Couldn't save that. Try again.",
+  // Terms + privacy consent at signup (App Store + PIPEDA).
+  // agreePrefix reads as a checkbox LABEL ("I agree to…") because the box is an
+  // affirmative act we record; agreeNotice is the passive line on the login
+  // screen, where social sign-in can still mint a brand-new account.
+  'auth.agreePrefix': 'I agree to the',
+  'auth.agreeTerms': 'Terms of Service',
+  'auth.agreeAnd': 'and the',
+  'auth.agreePrivacy': 'Privacy Policy',
+  'auth.agreeRequired': 'Please accept the Terms and Privacy Policy to continue.',
+  'auth.agreeNotice': 'By continuing you agree to our',
+});
+Object.assign(translations['fr-CA'], {
+  'rolePicker.title': 'Comment allez-vous utiliser SwingBy?',
+  'rolePicker.body': 'Choisissez — ce choix ne se fait qu’une fois.',
+  'rolePicker.clientTitle': 'Je cherche un pro',
+  'rolePicker.clientBody': 'Publiez des travaux et réservez des pros locaux.',
+  'rolePicker.businessTitle': "J'offre des services",
+  'rolePicker.businessBody': 'Envoyez des devis et soyez réservé.',
+  'rolePicker.footnote':
+    'La connexion avec Apple ou Google saute le formulaire d’inscription; nous devons donc le demander ici.',
+  'rolePicker.failed': 'Impossible d’enregistrer. Réessayez.',
+  'auth.agreePrefix': 'J’accepte les',
+  'auth.agreeTerms': 'Conditions d’utilisation',
+  'auth.agreeAnd': 'et la',
+  'auth.agreePrivacy': 'Politique de confidentialité',
+  'auth.agreeRequired':
+    'Veuillez accepter les Conditions et la Politique de confidentialité pour continuer.',
+  'auth.agreeNotice': 'En continuant, vous acceptez nos',
+});
+Object.assign(translations.ar, {
+  'rolePicker.title': 'كيف ستستخدم SwingBy؟',
+  'rolePicker.body': 'اختر — يمكنك الاختيار مرة واحدة فقط.',
+  'rolePicker.clientTitle': 'أبحث عن محترف',
+  'rolePicker.clientBody': 'انشر طلبات العمل واحجز محترفين قريبين.',
+  'rolePicker.businessTitle': 'أقدّم خدمات',
+  'rolePicker.businessBody': 'أرسل عروض أسعار واحصل على حجوزات.',
+  'rolePicker.footnote':
+    'تسجيل الدخول عبر Apple أو Google يتخطى نموذج التسجيل، لذا نسأل هنا.',
+  'rolePicker.failed': 'تعذّر الحفظ. حاول مرة أخرى.',
+  'auth.agreePrefix': 'أوافق على',
+  'auth.agreeTerms': 'شروط الخدمة',
+  'auth.agreeAnd': 'و',
+  'auth.agreePrivacy': 'سياسة الخصوصية',
+  'auth.agreeRequired': 'يرجى قبول الشروط وسياسة الخصوصية للمتابعة.',
+  'auth.agreeNotice': 'بالمتابعة فإنك توافق على',
+});
+
+// ── P3: two timestamps, neither labelled ───────────────────────────────────
+// "Time confirmed · 10:01 PM · Time set at posting: Sat, Jul 25 at 3:54 PM" —
+// one of those is the appointment and one is when the update was logged, and
+// the row said neither. They are on separate lines now, and this labels the
+// one that was easiest to mistake for the appointment.
+Object.assign(translations.en, { 'booking.eventLoggedAt': 'Logged %{time}' });
+Object.assign(translations['fr-CA'], { 'booking.eventLoggedAt': 'Enregistré à %{time}' });
+Object.assign(translations.ar, { 'booking.eventLoggedAt': 'سُجِّل %{time}' });
+
+// ── Ghost mode + credits: two features that existed with no way in ─────────
+// POST /me/ghost, POST /me/unghost and GET /me/credits all shipped weeks ago
+// and were called by nothing. Ghost mode is PROMISED IN WRITING in
+// PrivacyPolicyScreen §3, and a credit is money we owe someone a business let
+// down. Both are in Settings now.
+Object.assign(translations.en, {
+  'settings.ghostMode': 'Ghost mode',
+  'settings.ghostModeHint':
+    'Hide your profile and posts from discovery. Existing bookings and chats keep working, and signing in again turns it off.',
+  'settings.ghostOn': "You're hidden",
+  'settings.ghostOff': "You're visible again",
+  'settings.ghostFailed': "Couldn't change ghost mode",
+  'settings.credit': 'SwingBy credit',
+  'settings.creditHint': 'Contact us when you book and we\u2019ll apply it.',
+});
+Object.assign(translations['fr-CA'], {
+  'settings.ghostMode': 'Mode fant\u00f4me',
+  'settings.ghostModeHint':
+    'Masquez votre profil et vos annonces. Les r\u00e9servations et discussions en cours continuent, et une nouvelle connexion le d\u00e9sactive.',
+  'settings.ghostOn': 'Vous \u00eates masqu\u00e9',
+  'settings.ghostOff': 'Vous \u00eates de nouveau visible',
+  'settings.ghostFailed': 'Impossible de changer le mode fant\u00f4me',
+  'settings.credit': 'Cr\u00e9dit SwingBy',
+  'settings.creditHint': 'Contactez-nous lors de votre r\u00e9servation et nous l\u2019appliquerons.',
+});
+Object.assign(translations.ar, {
+  'settings.ghostMode': '\u0648\u0636\u0639 \u0627\u0644\u0625\u062e\u0641\u0627\u0621',
+  'settings.ghostModeHint':
+    '\u0623\u062e\u0641\u0650 \u0645\u0644\u0641\u0643 \u0648\u0625\u0639\u0644\u0627\u0646\u0627\u062a\u0643 \u0645\u0646 \u0627\u0644\u0628\u062d\u062b. \u0627\u0644\u062d\u062c\u0648\u0632\u0627\u062a \u0648\u0627\u0644\u0645\u062d\u0627\u062f\u062b\u0627\u062a \u0627\u0644\u062d\u0627\u0644\u064a\u0629 \u062a\u0633\u062a\u0645\u0631\u060c \u0648\u062a\u0633\u062c\u064a\u0644 \u0627\u0644\u062f\u062e\u0648\u0644 \u0645\u062c\u062f\u062f\u064b\u0627 \u064a\u0648\u0642\u0641\u0647.',
+  'settings.ghostOn': '\u0623\u0646\u062a \u0645\u062e\u0641\u064a \u0627\u0644\u0622\u0646',
+  'settings.ghostOff': '\u0623\u0635\u0628\u062d\u062a \u0645\u0631\u0626\u064a\u064b\u0627 \u0645\u062c\u062f\u062f\u064b\u0627',
+  'settings.ghostFailed': '\u062a\u0639\u0630\u0651\u0631 \u062a\u063a\u064a\u064a\u0631 \u0648\u0636\u0639 \u0627\u0644\u0625\u062e\u0641\u0627\u0621',
+  'settings.credit': '\u0631\u0635\u064a\u062f SwingBy',
+  'settings.creditHint': '\u062a\u0648\u0627\u0635\u0644 \u0645\u0639\u0646\u0627 \u0639\u0646\u062f \u0627\u0644\u062d\u062c\u0632 \u0648\u0633\u0646\u0637\u0628\u0651\u0642\u0647.',
+});
+
+// ── lane3 payment/booking copy, finally translated — 2026-08-01 ────────────
+// These 98 keys shipped English-only. Fallback meant a French or Arabic user
+// got English mid-sentence on the PAY SHEET and the post-a-job flow — the two
+// screens where money is explained. The picker offered a language the product
+// did not actually speak at the moment it mattered most.
+//
+// `pay.escrow` also said "cancel free up to 24 h" while the real ladder is 48 h
+// (escrow.classify_cancellation_timing, mirrored in CancellationFlowScreen and
+// the Terms). A client cancelling 25 h out, trusting that line, was charged a
+// 25% fee they had been told did not apply. Fixed in the English above before
+// being translated, so the mistake was not copied into two more languages.
+//
+// Interpolations (%{business}, %{when}, %{count}, %{date}, %{time}) are kept
+// verbatim — i18n-js matches them literally and a translated placeholder
+// renders as raw text.
+Object.assign(translations['fr-CA'], {
+  'pay.titleHold': 'Confirmez votre demande',
+  'pay.titlePay': 'Payer le devis',
+  'pay.ctaHold': 'Publier la demande',
+  'pay.ctaPay': 'Confirmer et payer',
+  'pay.holding': 'Publication…',
+  'pay.paying': 'Paiement en cours…',
+  'pay.jobTotal': 'Total du travail',
+  'pay.quote': 'Devis',
+  'pay.serviceFee': 'Frais de service',
+  'pay.onHoldToday': 'Votre budget',
+  'pay.total': 'Total',
+  'pay.payWith': 'Payer avec',
+  'pay.change': 'Modifier',
+  'pay.expires': 'Expire le %{date}',
+  'pay.savedCard': 'Carte enregistrée',
+  'pay.methodCard': 'Carte',
+  'pay.methodCardSub':
+    'Ouvre une page Stripe sécurisée — SwingBy n’enregistre jamais votre carte.',
+  'pay.methodCardSubNative':
+    'Saisie de façon sécurisée dans l’application — SwingBy ne l’enregistre pas.',
+  'pay.addMethod': 'Ajouter un moyen de paiement',
+  'pay.noMethodHint':
+    'Ajoutez une carte pour continuer. Rien n’est débité avant votre confirmation.',
+  'pay.escrow':
+    'Retenu en fiducie — libéré seulement quand vous approuvez le travail. Annulation gratuite jusqu’à 48 h avant.',
+  'pay.declined': 'Carte refusée. Essayez-en une autre.',
+  'pay.amountChanged':
+    'Ce devis a changé — vérifiez le nouveau total avant de confirmer.',
+  'pay.quoteError': 'Impossible de calculer le prix. Réessayez.',
+  'pay.noAmount': 'Aucun montant à facturer pour ce travail.',
+  'pay.escrowHold':
+    'Rien n’est débité maintenant. Vous payez en acceptant un devis, et le budget inutilisé n’est jamais prélevé.',
+  'postJob.reviewTitle': 'Vérifier la demande',
+  'postJob.rowService': 'Service',
+  'postJob.rowWhen': 'Quand',
+  'postJob.rowWhere': 'Où',
+  'postJob.rowBudget': 'Votre budget',
+  'postJob.rowBusiness': 'Entreprise',
+  'postJob.escrowExplainer':
+    'Votre budget indique aux pros ce dont vous disposez. Vous payez seulement en acceptant un devis, et vous voyez le prix exact d’abord.',
+  'postJob.escrowExplainerLead': 'Rien n’est débité maintenant.',
+  'postJob.ctaSendRequest': 'Envoyer la demande',
+  'postJob.ctaPost': 'Publier la demande',
+  'postJob.hintOpen':
+    'Les pros à proximité voient votre demande et envoient des devis. Rien n’est débité avant que vous en acceptiez un.',
+  'postJob.hintTargeted':
+    '%{business} répond avec un prix et une heure. Rien n’est débité avant votre acceptation.',
+  'postJob.addressLabel': 'Adresse (où se déroule le travail?)',
+  'postJob.addressHint':
+    'Nous l’utilisons pour montrer le travail aux pros à proximité. Elle reste cachée jusqu’à ce que vous acceptiez un devis.',
+  'postJob.addressRequired':
+    'Ajoutez l’adresse pour que les pros à proximité trouvent le travail.',
+  'postJob.postedTitle': 'Demande publiée',
+  'postJob.postedBodyHeld':
+    'a été débité et retenu en fiducie. Tout montant inutilisé est remboursé quand vous acceptez un devis.',
+  'postJob.postedBodyNoHold': 'Les pros à proximité sont avisés maintenant.',
+  'postJob.postedRowHold': 'Paiement débité',
+  'postJob.postedRowHoldSub':
+    'Le budget inutilisé est remboursé quand vous acceptez un devis',
+  'postJob.postedRowQuotes': 'Devis attendus d’ici',
+  'postJob.postedRowQuotesValue': '~2 h',
+  'postJob.viewJob': 'Voir la demande',
+  'quotes.acceptAndPay': 'Accepter et payer',
+  'quotes.payFirstNote':
+    'Vous verrez le total avant de confirmer. Rien n’est débité avant.',
+  'quotes.accepted': 'Devis accepté',
+  'quotes.paidAndBooked': 'Payé — c’est réservé',
+  'quotes.finishInBrowser':
+    'Terminez le paiement dans votre navigateur pour le confirmer.',
+  'quotes.notPaidYet': 'Pas encore payé',
+  'quotes.notPaidYetBody':
+    'Votre réservation est retenue mais non payée. Payez pour la confirmer — le pro n’est pas planifié avant.',
+  'quotes.payFailed':
+    'Impossible de prendre le paiement. Votre réservation est retenue mais non payée.',
+  'quotes.noQuote': 'Aucun devis sélectionné.',
+  'quotes.noBooking':
+    'Ce devis n’a pas pu être converti en réservation. Rien n’a été débité.',
+  'requestSent.title': 'Demande envoyée',
+  'requestSent.subReply':
+    '%{business} répond habituellement en environ %{time}.',
+  'requestSent.subFallback':
+    '%{business} répond habituellement en quelques heures.',
+  'requestSent.subFallbackGeneric':
+    'Les pros à proximité répondent habituellement en quelques heures.',
+  'requestSent.step1Title': 'Ils envoient un devis',
+  'requestSent.step1Body': 'Il apparaît derrière la bulle Devis dans Messages.',
+  'requestSent.step2Title': 'Vous discutez et vous vous entendez',
+  'requestSent.step2Body': 'Posez vos questions avant de vous engager.',
+  'requestSent.step3Title': 'Accepter et payer',
+  'requestSent.step3Body': 'C’est seulement là que c’est réservé.',
+  'requestSent.noPaymentLead': 'Aucun paiement pour l’instant.',
+  'requestSent.noPaymentBody': 'Rien n’est débité avant votre acceptation.',
+  'requestSent.openConversation': 'Ouvrir la conversation',
+  'requestSent.trackRequest': 'Suivre cette demande',
+  'requestSent.morePros': 'Demander à d’autres pros',
+  'booking.liveStatus': 'Statut en direct',
+  'booking.liveStatusEmpty':
+    'Les mises à jour apparaissent ici pendant le travail du pro.',
+  'booking.liveStatusError': 'Impossible de charger le statut en direct.',
+  'booking.eventDatesProposed': 'Horaires proposés',
+  'booking.eventDateConfirmed': 'Date confirmée',
+  'booking.eventEnRoute': 'En route',
+  'booking.eventArrived': 'Le pro est arrivé',
+  'booking.eventStarted': 'Travail commencé',
+  'booking.eventPaused': 'Travail en pause',
+  'booking.eventResumed': 'Travail repris',
+  'booking.eventCompleted': 'Travail terminé',
+  'booking.eventCancelled': 'Annulé',
+  'booking.eventGeneric': 'Réservation mise à jour',
+  'booking.timeSetAtPosting': 'Heure fixée à la publication : %{when}',
+  'booking.moreActions': 'Plus',
+  'booking.moreActionsA11y': 'Plus d’actions de réservation',
+  'booking.reportProblem': 'Signaler un problème',
+  'booking.cancelBooking': 'Annuler la réservation',
+  'booking.viewReceipt': 'Voir le reçu',
+  'booking.reviewRelease': 'Vérifier le travail et libérer le paiement',
+  'booking.markPaidOffPlatform': 'Marquer comme payé (comptant / virement)',
+  'booking.payNow': 'Payer maintenant',
+  'booking.message': 'Message',
+  'businessProfile.jobsDone': '%{count} travaux réalisés',
+});
+Object.assign(translations.ar, {
+  'pay.titleHold': 'أكّد طلبك',
+  'pay.titlePay': 'دفع العرض',
+  'pay.ctaHold': 'انشر الطلب',
+  'pay.ctaPay': 'تأكيد ودفع',
+  'pay.holding': 'جارٍ النشر…',
+  'pay.paying': 'جارٍ تنفيذ الدفع…',
+  'pay.jobTotal': 'إجمالي العمل',
+  'pay.quote': 'عرض السعر',
+  'pay.serviceFee': 'رسوم الخدمة',
+  'pay.onHoldToday': 'ميزانيتك',
+  'pay.total': 'الإجمالي',
+  'pay.payWith': 'الدفع بواسطة',
+  'pay.change': 'تغيير',
+  'pay.expires': 'ينتهي في %{date}',
+  'pay.savedCard': 'بطاقة محفوظة',
+  'pay.methodCard': 'بطاقة',
+  'pay.methodCardSub': 'يفتح صفحة Stripe آمنة — لا تحفظ SwingBy بطاقتك أبدًا.',
+  'pay.methodCardSubNative': 'تُدخَل بأمان داخل التطبيق — ولا تحفظها SwingBy.',
+  'pay.addMethod': 'أضف طريقة دفع',
+  'pay.noMethodHint': 'أضف بطاقة للمتابعة. لن يُخصم أي مبلغ حتى تؤكّد.',
+  'pay.escrow':
+    'محتجز في الضمان — يُحرَّر فقط عند موافقتك على العمل. إلغاء مجاني حتى 48 ساعة قبل الموعد.',
+  'pay.declined': 'تم رفض هذه البطاقة. جرّب بطاقة أخرى.',
+  'pay.amountChanged': 'تغيّر هذا العرض — راجع الإجمالي الجديد قبل التأكيد.',
+  'pay.quoteError': 'تعذّر تسعير هذا العمل. حاول مرة أخرى.',
+  'pay.noAmount': 'لا يوجد مبلغ لتحصيله لهذا العمل.',
+  'pay.escrowHold':
+    'لن يُخصم أي مبلغ الآن. تدفع عند قبولك عرضًا، ولا يُؤخذ المبلغ غير المستخدم أبدًا.',
+  'postJob.reviewTitle': 'مراجعة الطلب',
+  'postJob.rowService': 'الخدمة',
+  'postJob.rowWhen': 'الموعد',
+  'postJob.rowWhere': 'المكان',
+  'postJob.rowBudget': 'ميزانيتك',
+  'postJob.rowBusiness': 'المحترف',
+  'postJob.escrowExplainer':
+    'ميزانيتك تُعلم المحترفين بالمبلغ المتاح لديك. تدفع فقط عند قبولك عرضًا، وترى السعر الدقيق أولًا.',
+  'postJob.escrowExplainerLead': 'لن يُخصم أي مبلغ الآن.',
+  'postJob.ctaSendRequest': 'أرسل الطلب',
+  'postJob.ctaPost': 'انشر الطلب',
+  'postJob.hintOpen':
+    'يرى المحترفون القريبون طلبك ويرسلون عروض أسعار. لا يُخصم منك شيء حتى تقبل أحدها.',
+  'postJob.hintTargeted':
+    'سيردّ %{business} بالسعر والموعد. لن يُخصم أي مبلغ حتى تقبل.',
+  'postJob.addressLabel': 'العنوان (أين العمل؟)',
+  'postJob.addressHint':
+    'نستخدمه لعرض العمل على المحترفين القريبين. يبقى مخفيًا حتى تقبل عرضًا.',
+  'postJob.addressRequired':
+    'أضف العنوان ليتمكن المحترفون القريبون من العثور على العمل.',
+  'postJob.postedTitle': 'تم نشر الطلب',
+  'postJob.postedBodyHeld':
+    'تم خصمه واحتجازه في الضمان. يُعاد أي مبلغ غير مستخدم عند قبولك عرضًا.',
+  'postJob.postedBodyNoHold': 'يجري الآن إشعار المحترفين القريبين.',
+  'postJob.postedRowHold': 'تم تحصيل الدفعة',
+  'postJob.postedRowHoldSub': 'يُعاد المبلغ غير المستخدم عند قبولك عرضًا',
+  'postJob.postedRowQuotes': 'توقّع العروض خلال',
+  'postJob.postedRowQuotesValue': '~ساعتان',
+  'postJob.viewJob': 'عرض الطلب',
+  'quotes.acceptAndPay': 'اقبل وادفع',
+  'quotes.payFirstNote': 'سترى الإجمالي قبل التأكيد. لن يُخصم شيء قبل ذلك.',
+  'quotes.accepted': 'تم قبول العرض',
+  'quotes.paidAndBooked': 'تم الدفع — الحجز مؤكد',
+  'quotes.finishInBrowser': 'أكمل الدفع في المتصفح لتأكيده.',
+  'quotes.notPaidYet': 'لم يُدفع بعد',
+  'quotes.notPaidYetBody':
+    'حجزك محفوظ لكنه غير مدفوع. ادفع لتأكيده — لن يُجدوَل المحترف قبل ذلك.',
+  'quotes.payFailed': 'تعذّر تنفيذ الدفع. حجزك محفوظ لكنه غير مدفوع.',
+  'quotes.noQuote': 'لم يتم اختيار أي عرض.',
+  'quotes.noBooking': 'تعذّر تحويل هذا العرض إلى حجز. لم يُخصم أي مبلغ.',
+  'requestSent.title': 'تم إرسال الطلب',
+  'requestSent.subReply': 'عادةً ما يردّ %{business} خلال %{time} تقريبًا.',
+  'requestSent.subFallback': 'عادةً ما يردّ %{business} خلال بضع ساعات.',
+  'requestSent.subFallbackGeneric':
+    'عادةً ما يردّ المحترفون القريبون خلال بضع ساعات.',
+  'requestSent.step1Title': 'يرسلون عرض سعر',
+  'requestSent.step1Body': 'يصل خلف فقاعة العروض في الرسائل.',
+  'requestSent.step2Title': 'تتحدثان وتتفقان',
+  'requestSent.step2Body': 'اسأل عن أي شيء قبل الالتزام.',
+  'requestSent.step3Title': 'اقبل وادفع',
+  'requestSent.step3Body': 'عندها فقط يصبح الحجز مؤكدًا.',
+  'requestSent.noPaymentLead': 'لا دفع حتى الآن.',
+  'requestSent.noPaymentBody': 'لن يُخصم أي مبلغ حتى تقبل.',
+  'requestSent.openConversation': 'افتح المحادثة',
+  'requestSent.trackRequest': 'تتبّع هذا الطلب',
+  'requestSent.morePros': 'اطلب من محترفين آخرين',
+  'booking.liveStatus': 'الحالة المباشرة',
+  'booking.liveStatusEmpty': 'تظهر التحديثات هنا أثناء عمل المحترف.',
+  'booking.liveStatusError': 'تعذّر تحميل الحالة المباشرة.',
+  'booking.eventDatesProposed': 'تم اقتراح مواعيد',
+  'booking.eventDateConfirmed': 'تم تأكيد الموعد',
+  'booking.eventEnRoute': 'في الطريق',
+  'booking.eventArrived': 'وصل المحترف',
+  'booking.eventStarted': 'بدأ العمل',
+  'booking.eventPaused': 'تم إيقاف العمل مؤقتًا',
+  'booking.eventResumed': 'استؤنف العمل',
+  'booking.eventCompleted': 'اكتمل العمل',
+  'booking.eventCancelled': 'أُلغي',
+  'booking.eventGeneric': 'تم تحديث الحجز',
+  'booking.timeSetAtPosting': 'الموعد المحدد عند النشر: %{when}',
+  'booking.moreActions': 'المزيد',
+  'booking.moreActionsA11y': 'المزيد من إجراءات الحجز',
+  'booking.reportProblem': 'الإبلاغ عن مشكلة',
+  'booking.cancelBooking': 'إلغاء الحجز',
+  'booking.viewReceipt': 'عرض الإيصال',
+  'booking.reviewRelease': 'راجع العمل وحرّر الدفعة',
+  'booking.markPaidOffPlatform': 'وضع علامة مدفوع (نقدًا / تحويل إلكتروني)',
+  'booking.payNow': 'ادفع الآن',
+  'booking.message': 'مراسلة',
+  'businessProfile.jobsDone': '%{count} عمل منجز',
 });
 
 const i18n = new I18n(translations);

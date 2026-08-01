@@ -279,9 +279,18 @@ function JobDetailScreen({ navigation, route }) {
     setAdvancing(true);
     try {
       if (stage === 'completed') {
-        // /complete owns payment release, so it stays the completion path; it
-        // writes the `completed` event itself.
-        await api.patch(`/bookings/${bookingId}/complete`);
+        // /complete stays the completion path and still writes the `completed`
+        // event itself — but since 2026-07-31 it NO LONGER releases the money.
+        // It opens a 24h window for the client to approve; the client approving
+        // (or that window closing) is what pays the business. Say so, rather
+        // than let the business assume they have just been paid.
+        const res = await api.patch(`/bookings/${bookingId}/complete`);
+        if (res?.approval_deadline_at) {
+          Alert.alert(
+            i18n.t('approval.businessWaitingTitle'),
+            i18n.t('approval.businessWaitingBody'),
+          );
+        }
       } else {
         await api.post(`/bookings/${bookingId}/events`, { event_type: stage });
       }
@@ -523,11 +532,11 @@ function JobDetailScreen({ navigation, route }) {
                   array, fetched once by this screen. This tab used to stack
                   two cards both headed "Live status" over two independent
                   fetches, plus a tracker reading `booking.status`. */}
-              <StatusTracker
-                events={events}
-                onAdvance={handleAdvance}
-                disabled={advancing || eventsStatus === 'loading'}
-              />
+              {/* P1 — the tracker SHOWS progress; the button in the card below
+                  is the only thing that changes it. It used to be tappable and
+                  to hint "Tap 'On the way'" right above a CTA that did the same
+                  transition. */}
+              <StatusTracker events={events} />
               {/* ONE "Live status" card: next step on top, timeline beneath. */}
               <View style={styles.cardMargin}>
                 <Surface elevation="subtle" rounded="card" padding="base">

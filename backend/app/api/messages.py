@@ -561,6 +561,27 @@ def _mark_read(thread_field: str, thread_id: str, uid: str):
         pass  # read receipts are best-effort
 
 
+# The statuses on which a booking still has a REACHABLE message thread.
+#
+# One constant, three readers, on purpose. This rule was previously written out
+# by hand in `list_threads` and in `send_message`, and NOT applied in
+# `unread_count` — so a cancelled booking vanished from the inbox while its
+# unread messages kept feeding the tab-bar badge. The badge counted a thread
+# with nowhere left to open it, and nothing ever clears `read_at` on cancel, so
+# the number was permanent. Meanwhile the Dashboard's own unread pill, built
+# from the filtered thread list, showed a different number for the same account
+# at the same moment.
+#
+# Sentinel, 2026-08-01. Any new reader of "which bookings have threads" uses
+# this rather than retyping the tuple.
+THREADED_BOOKING_STATUSES = ("confirmed", "in_progress", "completed")
+
+
+def _thread_visible(booking: dict) -> bool:
+    """True if this booking's thread is reachable in the app."""
+    return (booking or {}).get("status") in THREADED_BOOKING_STATUSES
+
+
 def _accessible_thread_ids(current_user: dict):
     """(booking_ids, interest_ids, context) the user participates in."""
     uid = current_user["id"]
@@ -676,7 +697,7 @@ def send_message(
         # threads (see list_threads below), so a completed booking must stay
         # sendable here too — a listed thread that 400s on send is the bug.
         # Product ruling: keep it sendable, not read-only.
-        if booking["status"] not in ("confirmed", "in_progress", "completed"):
+        if not _thread_visible(booking):
             raise HTTPException(
                 status_code=400,
                 detail="Messages are only available on confirmed, in-progress, or completed bookings",
@@ -1105,13 +1126,22 @@ def withdraw_terms(terms_id: str, current_user: dict = Depends(get_current_user)
 
 
 @router.get("/threads")
-def list_threads(current_user: dict = Depends(get_current_user)):
+def list_threads(
+    limit: int = Query(50, ge=1, le=200, description="Max threads to return"),
+    current_user: dict = Depends(get_current_user),
+):
     """
     Unified inbox: one row per booking thread and per quote (interest) thread.
 
     Booking threads appear for confirmed / in-progress / completed bookings even
     with no messages yet. Interest threads appear once they carry at least one
     message (quoting without a note doesn't clutter the inbox).
+
+    M19 — capped. This was unbounded: every booking thread plus every quote
+    thread the user has ever had, assembled in Python on a screen every user
+    opens. Fine at ten bookings, and the first query to degrade as volume grows.
+    The cap is applied AFTER the newest-first sort so it drops the oldest
+    threads rather than an arbitrary slice.
     """
     uid = current_user["id"]
     try:
@@ -1154,7 +1184,7 @@ def list_threads(current_user: dict = Depends(get_current_user)):
         threads = []
 
         for b in booking_rows:
-            if b.get("status") not in ("confirmed", "in_progress", "completed"):
+            if not _thread_visible(b):
                 continue
             # The counterpart is the business owner when the viewer is the
             # client, and the client when the viewer is the business — exactly
@@ -1259,7 +1289,10 @@ def list_threads(current_user: dict = Depends(get_current_user)):
             )
 
         threads.sort(key=lambda t: t.get("last_at") or "", reverse=True)
-        return {"items": threads}
+        total = len(threads)
+        # `total` is reported so a client can tell "these are all of them" from
+        # "these are the newest 50", which a bare truncated list cannot express.
+        return {"items": threads[:limit], "total": total, "limit": limit}
     except Exception:
         logger.exception("Could not list threads")
         raise HTTPException(status_code=400, detail="Could not list threads")
@@ -1271,7 +1304,12 @@ def unread_count(current_user: dict = Depends(get_current_user)):
     uid = current_user["id"]
     try:
         booking_rows, interest_rows = _accessible_thread_ids(current_user)
-        booking_ids = [b["id"] for b in booking_rows]
+        # Only bookings whose thread can still be OPENED. Counting a cancelled
+        # booking's unread messages gave the tab-bar badge a number the user
+        # could never clear — the thread is gone from the inbox, nothing clears
+        # read_at on cancel, and the badge sat there forever disagreeing with
+        # the Dashboard's own pill.
+        booking_ids = [b["id"] for b in booking_rows if _thread_visible(b)]
         interest_ids = [i["id"] for i in interest_rows]
         if not booking_ids and not interest_ids:
             return {"total": 0, "by_booking": {}}

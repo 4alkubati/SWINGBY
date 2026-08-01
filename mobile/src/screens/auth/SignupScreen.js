@@ -15,7 +15,9 @@ import Text from '../../components/Text';
 import TextField from '../../components/TextField';
 import Button from '../../components/Button';
 import Tabs from '../../components/Tabs';
+import TermsConsent from '../../components/TermsConsent';
 import HeaderGlow from '../../components/HeaderGlow';
+import i18n from '../../i18n';
 import { useAuth } from '../../context/AuthContext';
 import { signInWithGoogle } from '../../services/socialAuth';
 import { isAppleAuthAvailable, signInWithApple } from '../../services/appleAuth';
@@ -102,15 +104,30 @@ export default function SignupScreen({ navigation }) {
   const [lastNameError, setLastNameError] = useState('');
   const [generalError, setGeneralError] = useState('');
 
+  // Terms + privacy consent. It lives on STEP 0 on purpose: Apple and Google
+  // sign-up sit on step 0 and create an account in one tap, so a checkbox
+  // parked next to "Create Account" on step 2 would gate the slowest path and
+  // none of the fast ones.
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [consentError, setConsentError] = useState('');
+
   const [loading, setLoading] = useState(false);
   const [showEmailConfirm, setShowEmailConfirm] = useState(false);
   const [emailForConfirm, setEmailForConfirm] = useState('');
   const scrollRef = useRef(null);
 
+  // One gate, checked by every path that can end in a new account.
+  function consentBlocks() {
+    if (acceptedTerms) return false;
+    setConsentError(i18n.t('auth.agreeRequired'));
+    return true;
+  }
+
   function handleContinue() {
     setEmailError('');
     if (!email.trim()) { setEmailError('Email is required.'); return; }
     if (!isValidEmail(email)) { setEmailError('Please enter a valid email address.'); return; }
+    if (consentBlocks()) return;
     setStep(1);
     setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 120);
   }
@@ -136,6 +153,7 @@ export default function SignupScreen({ navigation }) {
 
   async function handleSocial(provider) {
     if (socialBusy) return;
+    if (consentBlocks()) return;
     setSocialBusy(provider);
     setSocialError('');
     try {
@@ -144,7 +162,7 @@ export default function SignupScreen({ navigation }) {
       // takes the currently-selected role (defaults to 'client' on step 0),
       // and the backend still lets a fresh account switch to business later.
       const role = roleIndex === 0 ? 'client' : 'business_owner';
-      const { profile } = await fn({ role });
+      const { profile } = await fn({ role, acceptedTerms });
       updateUser(profile);
       try { await registerForPushAsync(); } catch { /* non-fatal */ }
     } catch (err) {
@@ -158,6 +176,10 @@ export default function SignupScreen({ navigation }) {
 
   async function handleSignup() {
     setGeneralError('');
+    // Belt and braces: the box is on step 0 and cannot be un-ticked from here,
+    // but the account is created HERE, so this is the last honest place to
+    // check before one exists.
+    if (consentBlocks()) { setStep(0); return; }
     setLoading(true);
     try {
       const role = roleIndex === 0 ? 'client' : 'business_owner';
@@ -168,6 +190,7 @@ export default function SignupScreen({ navigation }) {
         password,
         role,
         phone: null,
+        accepted_terms: true,
       });
       if (result?.requiresConfirmation) {
         setEmailForConfirm(email.trim().toLowerCase());
@@ -258,6 +281,19 @@ export default function SignupScreen({ navigation }) {
 
             {step === 0 && (
               <View style={styles.stepAction}>
+                {/* Above every button on this step, because all three of them
+                    (Continue, Apple, Google) end in a new account. */}
+                <TermsConsent
+                  checked={acceptedTerms}
+                  onChange={(next) => {
+                    setAcceptedTerms(next);
+                    if (next) setConsentError('');
+                  }}
+                  error={consentError}
+                />
+
+                <View style={{ height: spacing.base }} />
+
                 <Button label="Continue" onPress={handleContinue} />
 
                 <View style={styles.dividerRow}>

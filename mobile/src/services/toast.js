@@ -15,13 +15,18 @@ import Toast from 'react-native-toast-message';
 import { colors, radius, spacing } from '../theme/tokens';
 
 // ─── Custom toast inner component ─────────────────────────────────────────────
+// P2 (2026-07-31): the body was capped at TWO lines, which cut the cancellation
+// result off mid-word — "The client is refunded in full; a penalt…" — on the
+// one action where the consequence IS the message. Four lines is enough for
+// every money sentence we send and still short enough that an unexpected error
+// string cannot take over the screen.
 function SwingByToast({ text1, text2, accentColor }) {
   return (
     <View style={[styles.container, { borderLeftColor: accentColor }]}>
       <View style={[styles.accentBar, { backgroundColor: accentColor }]} />
       <View style={styles.textBlock}>
-        {!!text1 && <Text style={styles.title} numberOfLines={1}>{text1}</Text>}
-        {!!text2 && <Text style={styles.body} numberOfLines={2}>{text2}</Text>}
+        {!!text1 && <Text style={styles.title} numberOfLines={2}>{text1}</Text>}
+        {!!text2 && <Text style={styles.body} numberOfLines={4}>{text2}</Text>}
       </View>
     </View>
   );

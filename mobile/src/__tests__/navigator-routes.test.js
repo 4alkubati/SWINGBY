@@ -69,6 +69,28 @@ describe('ClientNavigator route registry', () => {
   });
 });
 
+describe('AuthNavigator route registry', () => {
+  // The consent checkbox on Signup (and the notice on Login) link to the Terms
+  // and the Privacy Policy. Both screens were registered ONLY in the two
+  // logged-in navigators, so from the auth stack both links threw — for the one
+  // audience that is being asked to agree to them, and for the App Store
+  // reviewer who taps them first.
+  const routes = registeredRoutes('AuthNavigator.js');
+
+  it.each([['TermsOfService'], ['PrivacyPolicy']])(
+    'registers %s so the consent links resolve while logged out',
+    (route) => {
+      expect([...routes]).toContain(route);
+    },
+  );
+
+  it('still registers the screens it had before', () => {
+    for (const route of ['Onboarding', 'Login', 'Signup', 'ForgotPassword']) {
+      expect([...routes]).toContain(route);
+    }
+  });
+});
+
 describe('shared screens do not strand business users', () => {
   it('SettingsScreen "Edit profile" resolves in BOTH navigators', () => {
     const settings = fs.readFileSync(

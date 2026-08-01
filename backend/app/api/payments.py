@@ -1,4 +1,8 @@
+from typing import Literal, Optional
+
 from fastapi import APIRouter, HTTPException, Depends
+from pydantic import BaseModel, Field
+
 from app.deps import get_current_user
 from app.supabase_client import supabase
 from app.services import escrow
@@ -168,3 +172,115 @@ def get_payment(booking_id: str, current_user: dict = Depends(get_current_user))
         return payment_res.data
     except Exception:
         raise HTTPException(status_code=404, detail="Payment record not found")
+
+
+class QuoteRequest(BaseModel):
+    """What the pay sheet is about to charge for."""
+
+    mode: Literal["hold", "pay"]
+    amount: Optional[float] = Field(None, ge=0, le=1_000_000)
+    booking_id: Optional[str] = Field(None, max_length=64)
+    interest_id: Optional[str] = Field(None, max_length=64)
+
+
+@router.post("/quote")
+def quote_payment(
+    data: QuoteRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    """Price a payment BEFORE it is taken — the itemised total for the pay sheet.
+
+    M10. `PaySheet.fetchPayQuote` has called this since it was written; the
+    endpoint did not exist. The client caught the 404 and fell back to computing
+    the sheet on the device: one un-itemised line, flagged `provisional`.
+
+    That fallback is not wrong today — the number it shows equals what the
+    server charges — but it is only accidentally right. The device does not know
+    about credits (`credits.redeem_credit_for_booking` is written and gated off
+    behind CREDIT_REDEMPTION_AT_CHECKOUT_ENABLED), and the first time anything
+    server-side changes the amount, the sheet would confidently show a price we
+    do not charge. The number a client sees before paying should come from the
+    thing that does the charging.
+
+    THE AMOUNT IS NOT TAKEN FROM THE CLIENT. `amount` in the body is only a
+    fallback for a sheet opened before anything is persisted; whenever a booking
+    or interest id is given, the price is re-read from that row. A pay sheet
+    that quoted whatever the device asked for would be a discount API.
+    """
+    amount = None
+
+    if data.booking_id:
+        res = (
+            supabase.table("bookings")
+            .select("id, client_id, business_id, total_amount, total_amount_cents")
+            .eq("id", data.booking_id)
+            .limit(1)
+            .execute()
+        )
+        rows = res.data or []
+        if not rows:
+            raise HTTPException(status_code=404, detail="Booking not found")
+        booking = rows[0]
+        if not _can_view_payment(booking, current_user):
+            raise HTTPException(status_code=403, detail="Not your booking")
+        cents = booking.get("total_amount_cents")
+        amount = (
+            escrow.to_dollars(int(cents))
+            if cents is not None
+            else float(booking.get("total_amount") or 0)
+        )
+
+    elif data.interest_id:
+        res = (
+            supabase.table("interests")
+            .select("id, quoted_price, service_posts(client_id)")
+            .eq("id", data.interest_id)
+            .limit(1)
+            .execute()
+        )
+        rows = res.data or []
+        if not rows:
+            raise HTTPException(status_code=404, detail="Quote not found")
+        interest = rows[0]
+        post = interest.get("service_posts") or {}
+        if post.get("client_id") != current_user["id"]:
+            raise HTTPException(status_code=403, detail="Not your quote")
+        amount = float(interest.get("quoted_price") or 0)
+
+    elif data.amount is not None:
+        # No persisted row yet — a job being posted. Nothing is charged on this
+        # path (see the charge-at-post note in api/service_posts.py), so there
+        # is nothing to authorise against.
+        amount = float(data.amount)
+
+    if amount is None or amount <= 0:
+        raise HTTPException(status_code=400, detail="No amount to price")
+
+    total_c = escrow.to_cents(amount)
+
+    # ONE line, deliberately. SwingBy's 10% comes out of the BUSINESS's side —
+    # the client pays the quoted price and not a cent more (escrow.PLATFORM_RATE
+    # and the cut applied in release_escrow_on_complete). Itemising a "service
+    # fee" here would invent a charge the client does not pay.
+    # `label_key` not `label`: the server owns the NUMBERS, the device owns the
+    # LANGUAGE. Sending display text from here would hand a French or Arabic
+    # user an English pay sheet, which is the bug just fixed everywhere else.
+    lines = [
+        {
+            "key": "subtotal",
+            "label_key": "pay.jobTotal" if data.mode == "hold" else "pay.quote",
+            "value": escrow.to_dollars(total_c),
+        }
+    ]
+
+    return {
+        "mode": data.mode,
+        "lines": lines,
+        "total": escrow.to_dollars(total_c),
+        "total_cents": total_c,
+        "currency": "CAD",
+        # False is the honest answer while redemption is gated off. When it is
+        # turned on, this is where the applied credit shows up as its own line.
+        "credit_applied_cents": 0,
+        "provisional": False,
+    }

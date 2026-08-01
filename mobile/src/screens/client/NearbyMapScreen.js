@@ -28,18 +28,10 @@ import Inline from '../../components/Inline';
 import { Feather } from '@expo/vector-icons';
 import { colors, spacing, radius, shadows, motion } from '../../theme/tokens';
 
-// react-native-maps — already in package.json (v1.20.1)
-let MapView, Marker, PROVIDER_GOOGLE;
-try {
-  const maps = require('react-native-maps');
-  MapView = maps.default;
-  Marker = maps.Marker;
-  PROVIDER_GOOGLE = maps.PROVIDER_GOOGLE;
-} catch {
-  MapView = null;
-  Marker = null;
-  PROVIDER_GOOGLE = null;
-}
+// react-native-maps — already in package.json (v1.20.1). Which provider draws
+// (Apple on iOS, Google on Android) and the null-safe lazy require both live in
+// services/maps.js so this screen and ProviderLiveLocation cannot disagree.
+import { MapView, Marker, MAP_PROVIDER, darkMapProps } from '../../services/maps';
 
 const CALGARY_FALLBACK = { lat: 51.0447, lng: -114.0719 };
 
@@ -194,7 +186,7 @@ const pinStyles = StyleSheet.create({
 function ResultSheet({ business, count, onViewProfile, onClose, selected }) {
   const rating = business?.avg_rating != null ? Number(business.avg_rating).toFixed(1) : null;
   const meta = [
-    business?.review_count != null ? `${business.review_count} jobs` : null,
+    business?.review_count != null ? `${business.review_count} reviews` : null,
     business?.distanceLabel || null,
   ].filter(Boolean).join(' · ');
 
@@ -578,8 +570,8 @@ export default function NearbyMapScreen({ navigation }) {
         <MapView
           ref={mapRef}
           style={StyleSheet.absoluteFill}
-          provider={PROVIDER_GOOGLE}
-          customMapStyle={DARK_MAP_STYLE}
+          provider={MAP_PROVIDER}
+          {...darkMapProps(DARK_MAP_STYLE)}
           initialRegion={{
             latitude: coords.lat,
             longitude: coords.lng,

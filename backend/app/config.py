@@ -13,10 +13,60 @@ import re
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
+# Supabase key names — BOTH generations, on purpose
+# ---------------------------------------------------------------------------
+#
+# Supabase replaced the legacy JWT keys (`anon` / `service_role`, read from
+# SUPABASE_KEY / SUPABASE_SERVICE_KEY) with `sb_publishable_…` / `sb_secret_…`,
+# published as SUPABASE_PUBLISHABLE_KEY / SUPABASE_SECRET_KEY. This code knew
+# only the old names, and `_REQUIRED` below raises at IMPORT time — so the day
+# the legacy keys are switched off, the process does not degrade, it refuses to
+# boot. Render would restart into the same crash forever.
+#
+# That was not hypothetical: on 2026-07-31 `backend/.env` on the dev box already
+# held the new keys with all four legacy values present but EMPTY, and the
+# backend could not start from a fresh clone.
+#
+# Verified the same day: mapping SUPABASE_SECRET_KEY onto the old name booted
+# the app and `POST /auth/login` returned 200 against the live project. The new
+# secret key is a drop-in for PostgREST and GoTrue — only the NAME differed. So
+# the fix is an alias, not a migration.
+#
+# Order matters: an explicitly-set legacy value wins, so nothing changes for an
+# environment that is already working (Render today).
+_KEY_ALIASES = {
+    "SUPABASE_SERVICE_KEY": ("SUPABASE_SERVICE_KEY", "SUPABASE_SECRET_KEY"),
+    "SUPABASE_KEY": ("SUPABASE_KEY", "SUPABASE_PUBLISHABLE_KEY"),
+}
+
+
+def _resolve_key(canonical: str) -> str:
+    """First non-empty value among a name and its modern equivalent."""
+    for name in _KEY_ALIASES.get(canonical, (canonical,)):
+        value = os.getenv(name)
+        if value:
+            return value
+    return ""
+
+
+# Normalise into the canonical names ONCE, at import, so every later reader —
+# including supabase_client.py and anything doing a bare os.getenv — sees a
+# populated variable regardless of which generation the operator configured.
+for _canonical in _KEY_ALIASES:
+    _resolved = _resolve_key(_canonical)
+    if _resolved and not os.getenv(_canonical):
+        os.environ[_canonical] = _resolved
+
+# ---------------------------------------------------------------------------
 # Required vars — the app cannot function without these
 # ---------------------------------------------------------------------------
+#
+# DATABASE_URL is NOT here. Nothing in this application queries Postgres
+# directly: every read and write goes through PostgREST with the Supabase key.
+# The single consumer of the SQLAlchemy engine is the /health probe, which now
+# reports on Supabase instead (see main.py). Requiring a connection string the
+# app never opens meant a correctly-configured deployment could refuse to start.
 _REQUIRED = [
-    "DATABASE_URL",
     "SUPABASE_URL",
     "SUPABASE_SERVICE_KEY",
     "SECRET_KEY",
@@ -24,9 +74,16 @@ _REQUIRED = [
 
 _missing = [name for name in _REQUIRED if not os.getenv(name)]
 if _missing:
+    _hint = ""
+    if "SUPABASE_SERVICE_KEY" in _missing:
+        _hint = (
+            " (SUPABASE_SECRET_KEY, the current Supabase name for the same key, "
+            "is also accepted)"
+        )
     raise RuntimeError(
         "Missing required environment variables: "
         + ", ".join(_missing)
+        + _hint
         + ". Add them to backend/.env and restart."
     )
 

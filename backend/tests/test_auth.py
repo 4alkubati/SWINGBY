@@ -1143,3 +1143,147 @@ class TestEmailPasswordFlowNotRegressed:
         assert data["access_token"] == "acc"
         assert data["refresh_token"] == "ref"
         assert data["expires_in"] == 3600
+
+
+class TestTermsConsentIsRecorded:
+    """The signup form never mentioned the Terms or the Privacy Policy.
+
+    The app half is a checkbox that gates account creation; this is the half
+    that keeps the answer, so "did this account agree, and when" is a fact we
+    hold rather than a thing we believe.
+
+    Two properties matter more than the happy path and are pinned below:
+
+    * A FAILED consent write must not fail the signup. The column ships in
+      `20260731140000_terms_consent.sql`, and code deploys before SQL gets run
+      by hand. If a pending migration could 500 every signup, the fix would be
+      worse than the defect.
+    * A RETURNING social user must not be re-stamped. The column records when
+      they agreed; overwriting it on every sign-in would destroy the only thing
+      it is for.
+    """
+
+    def _signup(self, test_client, users, payload_extra):
+        app.state.limiter.reset()
+        with patch("app.api.auth.supabase") as mock_supabase, patch(
+            "app.api.auth.supabase_auth"
+        ) as mock_auth, patch("app.services.analytics.httpx.post"):
+            mock_supabase.table.return_value = users
+            user = MagicMock()
+            user.id = "new-user-id"
+            res = MagicMock()
+            res.user = user
+            res.session = _social_session("acc", "ref", 3600)
+            mock_auth.auth.sign_up.return_value = res
+
+            return test_client.post(
+                "/auth/signup",
+                json={
+                    "email": "consent@example.com",
+                    "password": "SecurePass123",
+                    "first_name": "Ada",
+                    "last_name": "Lovelace",
+                    "role": "client",
+                    **payload_extra,
+                },
+            )
+
+    def test_ticked_box_stamps_the_account(self, test_client):
+        users = _FakeTable([])
+        response = self._signup(test_client, users, {"accepted_terms": True})
+
+        assert response.status_code == 200
+        assert "terms_accepted_at" in users.written
+        # A real timestamp, not a bare True.
+        datetime.fromisoformat(users.written["terms_accepted_at"])
+
+    def test_no_consent_flag_writes_no_timestamp(self, test_client):
+        """An older binary that does not send the field yet must not be
+        recorded as having agreed. NULL is the honest value."""
+        users = _FakeTable([])
+        response = self._signup(test_client, users, {})
+
+        assert response.status_code == 200
+        assert "terms_accepted_at" not in users.written
+
+    def test_signup_survives_a_missing_column(self, test_client):
+        """i.e. the migration has not been applied yet."""
+
+        class _RejectsConsent(_FakeTable):
+            def execute(self):
+                if self._mode == "update" and "terms_accepted_at" in (
+                    self._pending_update or {}
+                ):
+                    raise Exception(
+                        'column "terms_accepted_at" of relation "users" does not exist'
+                    )
+                return super().execute()
+
+        users = _RejectsConsent([])
+        response = self._signup(test_client, users, {"accepted_terms": True})
+
+        assert response.status_code == 200
+        assert response.json()["user_id"] == "new-user-id"
+
+    def test_new_social_account_is_stamped(self, test_client):
+        app.state.limiter.reset()
+        users = _FakeTable([])  # no row yet -> is_new
+        with patch("app.api.auth.supabase") as mock_supabase, patch(
+            "app.api.auth.supabase_auth"
+        ) as mock_auth:
+            mock_supabase.table.return_value = users
+            mock_auth.auth.exchange_code_for_session.return_value = _social_auth_res(
+                metadata={"given_name": "Ada", "family_name": "Lovelace"}
+            )
+            response = test_client.post(
+                "/auth/social/exchange",
+                json={
+                    "code": "auth-code",
+                    "code_verifier": "verifier",
+                    "provider": "google",
+                    "accepted_terms": True,
+                },
+            )
+
+        assert response.status_code == 200
+        assert response.json()["is_new_user"] is True
+        assert "terms_accepted_at" in users.written
+
+    def test_returning_social_user_keeps_their_original_consent_date(
+        self, test_client
+    ):
+        app.state.limiter.reset()
+        users = _FakeTable(
+            [
+                {
+                    "id": "social-user-id",
+                    "first_name": "Ada",
+                    "last_name": "Lovelace",
+                    "email": "ada@gmail.com",
+                    "role": "business_owner",
+                    "avatar_url": None,
+                    "is_suspended": False,
+                    "deleted_at": None,
+                }
+            ]
+        )
+        with patch("app.api.auth.supabase") as mock_supabase, patch(
+            "app.api.auth.supabase_auth"
+        ) as mock_auth:
+            mock_supabase.table.return_value = users
+            mock_auth.auth.exchange_code_for_session.return_value = _social_auth_res(
+                metadata={"given_name": "Ada", "family_name": "Lovelace"}
+            )
+            response = test_client.post(
+                "/auth/social/exchange",
+                json={
+                    "code": "auth-code",
+                    "code_verifier": "verifier",
+                    "provider": "google",
+                    "accepted_terms": True,
+                },
+            )
+
+        assert response.status_code == 200
+        assert response.json()["is_new_user"] is False
+        assert "terms_accepted_at" not in users.written

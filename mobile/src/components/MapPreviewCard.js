@@ -149,7 +149,9 @@ export function MapRoute({ points }) {
 // Complete Home "map preview" card with default decoration + bottom overlay.
 export default function MapPreviewCard({
   height = 170,
-  countLabel = '12 pros near you',
+  // Neutral by default. This was '12 pros near you' — a hardcoded number
+  // that shipped as real data whenever a caller had none.
+  countLabel = 'Explore the map',
   areaLabel = 'Kensington · Calgary',
   actionLabel = 'Open map',
   onPress,
