@@ -112,3 +112,54 @@ class TestAdminEndpointsTheWebAppAlwaysCalled:
 
         source = inspect.getsource(admin_api.read_audit_log)
         assert 'table("audit_log")' in source
+
+
+class TestPaymentQuoteEndpoint:
+    """M10 — the pay sheet called POST /payments/quote; it did not exist.
+
+    The client caught the 404 and priced the sheet on the DEVICE. That was only
+    accidentally right: the device knows nothing about credits (written, gated
+    off), so the first time anything server-side changed the amount, the sheet
+    would confidently show a price we do not charge.
+    """
+
+    def test_route_exists(self):
+        assert "post" in app.openapi()["paths"].get("/payments/quote", {})
+
+    def test_requires_auth(self, test_client):
+        res = test_client.post("/payments/quote", json={"mode": "pay", "amount": 100})
+        assert res.status_code in (401, 403)
+
+    def test_price_comes_from_the_booking_not_the_request_body(self):
+        # A sheet that quoted whatever the device asked for would be a discount
+        # API. The body's `amount` must be ignored when a booking id is given.
+        import app.api.payments as payments
+
+        source = inspect.getsource(payments.quote_payment)
+        booking_branch = source.split("if data.booking_id:")[1].split("elif")[0]
+        assert "total_amount_cents" in booking_branch
+        assert "data.amount" not in booking_branch
+
+    def test_ownership_is_checked_on_both_id_paths(self):
+        import app.api.payments as payments
+
+        source = inspect.getsource(payments.quote_payment)
+        assert "_can_view_payment" in source
+        assert 'status_code=403' in source
+
+    def test_lines_carry_a_translation_key_not_english(self):
+        # The server owns the numbers; the device owns the language. Sending
+        # display text would hand a French user an English pay sheet.
+        import app.api.payments as payments
+
+        source = inspect.getsource(payments.quote_payment)
+        assert "label_key" in source
+        assert '"label":' not in source
+
+    def test_no_invented_service_fee_line(self):
+        # SwingBy's 10% comes out of the BUSINESS's side. A "service fee" line
+        # here would invent a charge the client does not pay.
+        import app.api.payments as payments
+
+        source = inspect.getsource(payments.quote_payment)
+        assert "serviceFee" not in source

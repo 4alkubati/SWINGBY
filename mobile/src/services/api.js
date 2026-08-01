@@ -81,7 +81,20 @@ api.interceptors.request.use((config) => {
   _reqCounter += 1;
   config.headers['X-Request-ID'] = `mob-${Date.now()}-${_reqCounter}`;
 
-  if (config.url?.startsWith('/auth/')) {
+  // M18 — writes get the long timeout, because they are the requests that
+  // cannot be retried.
+  //
+  // A GET that times out is retried three times with backoff (interceptor
+  // below), so the 10s default is really "10s per attempt, ~43s of budget" and
+  // a cold backend is survivable. A POST/PATCH/PUT/DELETE is NOT retried —
+  // replaying a write that may already have committed is how you double-post a
+  // job — so its 10s was the whole budget. Someone reopening the app after
+  // hours, whose first action is posting a job, hit that ceiling while the
+  // server was still waking.
+  //
+  // 30s matches what /auth/* already used for exactly this reason.
+  const method = config.method?.toUpperCase();
+  if (config.url?.startsWith('/auth/') || (method && method !== 'GET')) {
     config.timeout = 30000;
   }
   return config;

@@ -90,16 +90,19 @@ walkthrough came from — the user leaves the app and does not come back.
 
 ### M5 — dashboard "THIS WEEK" counted unpaid bookings · S3 · ✅ FIXED (PR #82)
 
-### M10 — the pay sheet computes money on the device · S2 · **OPEN**
-`PaySheet.fetchPayQuote` calls `POST /payments/quote`. **That endpoint does not
-exist** (confirmed by sweeping all 129 backend routes). The code knows, and
-falls back to a single un-itemised line marked `provisional`.
+### M10 — the pay sheet computed money on the device · S2 · ✅ FIXED
+`PaySheet.fetchPayQuote` had always called `POST /payments/quote`; the endpoint
+did not exist, so the client caught the 404 and priced the sheet **on the
+device**.
 
-Today the number it shows equals what the server charges, so nothing is *wrong*
-— but the client sees no fee breakdown before paying, and the moment anything
-server-side changes the amount (credit redemption is already written and gated
-off by `CREDIT_REDEMPTION_AT_CHECKOUT_ENABLED`) the sheet will confidently show
-a price we do not charge. Build the endpoint or delete the call.
+That was only accidentally right — the device knows nothing about credits
+(`redeem_credit_for_booking` is written and gated off), so the first
+server-side change to the amount would have had the sheet confidently showing a
+price we do not charge. The endpoint is built. Two things it deliberately does:
+the price is re-read from the booking/interest row rather than trusted from the
+request body (otherwise it is a discount API), and lines carry a **translation
+key** rather than English text, because the server owns the numbers and the
+device owns the language.
 
 ### M11 — credits can be granted and seen, but not spent · S3 · **OPEN — D6**
 `CREDIT_REDEMPTION_AT_CHECKOUT_ENABLED = False`. A client owed $25 after a
@@ -114,9 +117,16 @@ per credit.
 ### M12 — `expiry_sweep` never ran · S1 · ✅ FIXED (PR #82)
 ### M13 — ghost mode unreachable while promised in the privacy policy · S2 · ✅ FIXED (PR #82)
 ### M14 — `POST /auth/social/role` had no caller · S2 · ✅ FIXED (PR #82)
-### M15 — `GET /reviews/client/{id}` · S3 · **OPEN**
-The last unreferenced route. A business cannot see a client's history before
-quoting. Wire it or delete it — it must not sit in the tree looking finished.
+### M15 — `GET /reviews/client/{id}` · S3 · ✅ SECURED (UI deliberately not added)
+The last unreferenced route — and reviewing it turned up something worse than
+being unused: **no authorisation at all.** Any logged-in account could read any
+client's review history by id.
+
+It now allows only the client themselves, an admin, or a business that has
+actually been booked by that client. No screen calls it, on purpose: every
+pre-acceptance surface a business sees is deliberately anonymised
+(`privacy.mask_service_post_row`), so shipping a UI here would undo that masking
+from a different direction. Guarded API, no leak.
 
 > **There is still no scheduler in this deployment.** No cron service, no
 > worker, no APScheduler. Anything time-based must settle lazily on read. Do not
@@ -129,23 +139,31 @@ quoting. Wire it or delete it — it must not sit in the tree looking finished.
 ### M16 — the walkthrough's screen defects (P1–P5) · S3 · ✅ FIXED (PR #82)
 ### M17 — consent, maps and Apple-sign-in platform split (X1/X3/X4) · S2 · ✅ FIXED (PR #82)
 
-### M18 — non-auth writes have a 10s timeout and no retry · S3 · **OPEN**
-`api.js` retries GETs three times on network errors and gives `/auth/*` a 30s
-timeout, so a cold start is mostly survivable. A **write** is neither: a POST on
-a sleeping or slow backend fails at 10s with no retry. The likeliest victim is
-someone reopening the app after hours whose first action is posting a job.
-Cheap fix: raise the base timeout and let explicitly-idempotent writes retry
-(the `X-Send-Retry` header already exists for exactly this).
+### M18 — non-auth writes had a 10s timeout and no retry · S3 · ✅ FIXED
+`api.js` retries GETs three times with backoff, so a read had ~43s of budget
+and a cold start was survivable. A write is never retried — replaying a POST
+that may already have committed is how you double-post a job — so its 10s was
+the entire budget. Writes now get the same 30s `/auth/*` already used, for
+exactly the same reason: they are the requests that cannot be retried.
 
-### M19 — `GET /messages/threads` is unbounded · S3 · **OPEN**
-`list_threads` takes no `limit`. Fine at ten bookings; it is the query that
-degrades first as volume grows, and it is on the inbox every user opens.
+### M19 — `GET /messages/threads` was unbounded · S3 · ✅ FIXED
+`list_threads` assembled every booking thread plus every quote thread the user
+had ever had, in Python, on the screen every user opens. Capped at 50 (max 200),
+applied **after** the newest-first sort so it drops the oldest rather than an
+arbitrary slice, and it returns `total` so a client can tell "all of them" from
+"the newest 50".
 
-### M20 — Arabic is 21% untranslated · S3 · **OPEN**
-`i18n-coverage` reports `ar: 363/461 keys — 98 missing`. Fallback is English, so
-nothing crashes, but the language picker offers Arabic and then shows English
-mid-screen. Either finish the keys or drop Arabic from the picker before launch;
-offering a language we have not finished is worse than not offering it.
+### M20 — Arabic was 21% untranslated · S3 · ✅ FIXED
+Both `ar` and `fr-CA` were 98 keys behind — the **entire** payment/booking
+block, so the pay sheet and the whole post-a-job flow fell back to English at
+the exact moment money is explained. Both are **468/468** now, and the coverage
+test is an equality assertion rather than a 30% ratchet, so the gap cannot creep
+back one key at a time.
+
+Fixing it surfaced a separate defect: `pay.escrow`, shown before every charge,
+promised *"cancel free up to 24 h before"* when the real ladder is **48 h**. A
+client cancelling 25 h out, trusting that line, was charged a 25% fee they had
+been told did not apply. Corrected in English first, then translated.
 
 ---
 
@@ -168,6 +186,31 @@ Worth recording so nobody re-audits them:
 
 ---
 
+## Sentinel sweep — 2026-08-01
+
+Seven findings, swept at `80ffb75` (main), which predates PR #82.
+
+| Finding | Status |
+|---|---|
+| Tab-bar badge vs Dashboard pill disagree on cancelled threads | ✅ fixed — one status constant, three readers |
+| Home bell shows a permanent "new activity" dot | ✅ removed (nothing truthful to gate it on) |
+| "This week" hero counts gross, not-yet-earned money | ✅ **already fixed in PR #82** — pinned by a test |
+| Discovery screens label `review_count` as "jobs" | ✅ relabelled to "reviews" on all four |
+| Admin Businesses page calls routes that don't exist | ✅ `GET /admin/businesses` + verify built |
+| Admin "Force complete" posts to the wrong path | ✅ path fixed, error surfaced |
+| Admin Audit Log shows fabricated rows as real | ✅ `PLACEHOLDER_ROWS` deleted, `GET /admin/audit-log` built |
+
+Also fixed while translating: the pay sheet promised **"cancel free up to 24 h"**
+against a real **48 h** policy — a client cancelling 25 h out was charged a 25%
+fee they had been told did not apply.
+
+`web/admin/` is **not deployed** (docs/DEPLOY.md), so the three admin findings
+were not on fire. They are fixed because that page is the only UI for the manual
+licence verification CLAUDE.md documents, and a compliance screen that invents
+its own contents is worse the day someone deploys it.
+
+---
+
 ## The honest summary
 
 Nothing in the **core booking journey** is broken — it passes end to end. The
@@ -175,5 +218,15 @@ launch risks are at the edges: **configuration that fails silently** (M6, M8),
 **monitoring that reports on the wrong thing** (M7), and **payment convenience
 that does not exist yet** (M2, M3, M4).
 
-M6, M7 and M8 are fixed on this branch. M2/M3 need decisions from Kira before
-any code is worth writing.
+**Everything that does not need a decision is now closed.** M6, M7, M8, M10,
+M15, M18, M19 and M20 are fixed on this branch, along with all seven Sentinel
+findings.
+
+**Four remain, and three of them are Kira's call, not a coding task:**
+- **M2** card-on-file — decision **D4**
+- **M3** Apple Pay / Google Pay — decision **D3**, plus a merchant id
+- **M11** credit redemption — decision **D6** (the switch exists; turning it on
+  needs the capture path verified in Stripe, and it has a known hole where an
+  abandoned checkout keeps the credit spent)
+- **M4** browser checkout fallback — largely disappears once M2/M3 land, since
+  the fallback exists precisely because the native sheet may be unavailable

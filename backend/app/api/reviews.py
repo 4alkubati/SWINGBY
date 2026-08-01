@@ -195,6 +195,59 @@ def get_business_reviews(
 
 @router.get("/client/{client_id}")
 def get_client_reviews(client_id: str, current_user: dict = Depends(get_current_user)):
+    """Reviews left ABOUT a client, for a business deciding whether to work
+    with them again.
+
+    M15 — this was the last route in the app with no caller, and reviewing it
+    turned up something worse than being unused: it had NO authorisation. Any
+    logged-in account could read any client's reputation by guessing or
+    harvesting a user id, and client reviews are exactly the kind of thing a
+    person expects only their counterparties to see.
+
+    Access is now the same rule the rest of the app uses for client identity:
+    you may read it about YOURSELF, or if you are a business that has actually
+    been booked by that client. A business browsing the open feed cannot — the
+    feed masks the client's name and address until a quote is accepted
+    (privacy.mask_service_post_row), and handing over their review history
+    would undo that masking from a different direction.
+
+    NOT wired into a screen on purpose: every pre-acceptance surface a business
+    sees is deliberately anonymised, so the only honest place for this is a
+    booking that already exists. Left as a guarded API rather than shipping a
+    UI that reintroduces the leak it was just closed against.
+    """
+    uid = current_user["id"]
+    if client_id != uid:
+        if current_user.get("role") not in ("business_owner", "employee", "admin"):
+            raise HTTPException(status_code=403, detail="Not permitted")
+        if current_user.get("role") != "admin":
+            try:
+                biz = (
+                    supabase.table("businesses")
+                    .select("id")
+                    .eq("owner_id", uid)
+                    .limit(1)
+                    .execute()
+                )
+                biz_rows = biz.data or []
+                shared = []
+                if biz_rows:
+                    shared = (
+                        supabase.table("bookings")
+                        .select("id")
+                        .eq("business_id", biz_rows[0]["id"])
+                        .eq("client_id", client_id)
+                        .limit(1)
+                        .execute()
+                    ).data or []
+                if not shared:
+                    raise HTTPException(status_code=403, detail="Not permitted")
+            except HTTPException:
+                raise
+            except Exception:
+                # Fail CLOSED. An unreadable relationship is not permission.
+                logger.exception("Could not verify client-review access")
+                raise HTTPException(status_code=403, detail="Not permitted")
     try:
         res = (
             supabase.table("reviews")

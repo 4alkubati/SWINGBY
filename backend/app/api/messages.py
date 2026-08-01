@@ -1126,13 +1126,22 @@ def withdraw_terms(terms_id: str, current_user: dict = Depends(get_current_user)
 
 
 @router.get("/threads")
-def list_threads(current_user: dict = Depends(get_current_user)):
+def list_threads(
+    limit: int = Query(50, ge=1, le=200, description="Max threads to return"),
+    current_user: dict = Depends(get_current_user),
+):
     """
     Unified inbox: one row per booking thread and per quote (interest) thread.
 
     Booking threads appear for confirmed / in-progress / completed bookings even
     with no messages yet. Interest threads appear once they carry at least one
     message (quoting without a note doesn't clutter the inbox).
+
+    M19 — capped. This was unbounded: every booking thread plus every quote
+    thread the user has ever had, assembled in Python on a screen every user
+    opens. Fine at ten bookings, and the first query to degrade as volume grows.
+    The cap is applied AFTER the newest-first sort so it drops the oldest
+    threads rather than an arbitrary slice.
     """
     uid = current_user["id"]
     try:
@@ -1280,7 +1289,10 @@ def list_threads(current_user: dict = Depends(get_current_user)):
             )
 
         threads.sort(key=lambda t: t.get("last_at") or "", reverse=True)
-        return {"items": threads}
+        total = len(threads)
+        # `total` is reported so a client can tell "these are all of them" from
+        # "these are the newest 50", which a bare truncated list cannot express.
+        return {"items": threads[:limit], "total": total, "limit": limit}
     except Exception:
         logger.exception("Could not list threads")
         raise HTTPException(status_code=400, detail="Could not list threads")
