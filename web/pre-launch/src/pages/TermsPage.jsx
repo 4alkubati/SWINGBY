@@ -19,11 +19,11 @@ SwingBy reserves the right to suspend or terminate accounts that violate these t
   {
     id: 'payments-escrow-refunds',
     title: '2. Payments, Escrow & Refunds',
-    body: `All payments on SwingBy are processed through our payment partner. When a client accepts a quote, the job amount is committed to SwingBy and split in two: 50% is released to the service provider on booking confirmation so they can schedule the work, and the remaining balance — less the SwingBy platform fee — is released when the job is marked complete.
+    body: `All payments on SwingBy are processed through our payment partner. When a client accepts a quote, the job amount is charged and held by SwingBy. It is released to the service provider — less the SwingBy platform fee — when the client approves the completed work, or automatically 24 hours after the provider marks the job complete.
 
 In cases of dispute, SwingBy may hold any portion of the payment not yet released pending investigation. Disputes are reviewed and resolved by the SwingBy team.
 
-Refunds: cancellations are subject to a cancellation fee based on timing — 25% of the job amount if cancelled more than 48 hours before the scheduled date, and 50% if cancelled within 48 hours. If a dispute arises after work has started, SwingBy will review submitted evidence (photos, messages) and make a final determination, including any refund amount.
+Refunds: cancellation fees depend on timing. A client who cancels more than 48 hours before the scheduled date is refunded in full, with no fee. Within 48 hours of the scheduled date, 75% is refunded and the provider keeps 25%. After the scheduled time has passed, the refund is 50%. If the provider cancels, at any time, the client is refunded in full. If a dispute arises after work has started, SwingBy will review submitted evidence (photos, messages) and make a final determination, including any refund amount.
 
 SwingBy charges a platform fee on each completed transaction. This fee is disclosed at the time of booking.`,
   },

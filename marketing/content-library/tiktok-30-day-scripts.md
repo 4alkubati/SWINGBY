@@ -84,7 +84,7 @@
 
 **Duration:** 20s
 
-**Hook (0–3s):** "Your money moves in two steps — and you control the second one."
+**Hook (0–3s):** "Your money does not move until you say the job is done."
 
 **Beat 1 (3–10s):** "When you book on SwingBy, half your payment goes to the business so they can start. The rest is held until you confirm the job is complete."
 
@@ -96,7 +96,7 @@
 
 **On-screen captions:**
 - [0–3s] "Your money = protected 🔒"
-- [3–10s] "Half at booking · half when it's done"
+- [3–10s] "Held until you approve the work"
 - [10–17s] "No cash. No stress."
 - [17–20s] "swingbyy.com"
 
@@ -558,8 +558,8 @@
 
 **On-screen captions:**
 - [0–3s] "How businesses get paid on SwingBy 💰"
-- [3–12s] "50% on booking confirmation"
-- [12–20s] "50% on job complete (minus 10% fee)"
+- [3–12s] "Held the moment you accept"
+- [12–20s] "Released when you approve (minus 10% fee)"
 - [20–25s] "Automatic. No invoicing."
 
 **Hashtags:** #BusinessOwner #SwingBy #HowItWorks #ServiceBusiness #Calgary #YYC #GetPaid #Marketplace

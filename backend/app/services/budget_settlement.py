@@ -7,9 +7,16 @@ Kira's ruling (2026-07-26, handwritten, `~/brain/inbox/IMG_1479.HEIC`):
     50$ get released and 50$ in escrow and 50$ get refunded.
 
 Posting charges the client's whole budget. Accepting a quote below budget
-returns the difference. What remains is the job, split half on date-confirm and
-half on completion, with the platform's 10% taken out of the BUSINESS's payout
-(spec S1.4) — confirmed by Kira 2026-07-26: "the 100 is the total our cut is 10$".
+returns the difference. What remains is the job, and the platform's 10% comes
+out of the BUSINESS's payout (spec S1.4) — confirmed by Kira 2026-07-26: "the
+100 is the total our cut is 10$".
+
+WHAT THIS MODULE DOES **NOT** DECIDE (corrected 2026-08-01): when the money is
+released. It used to say "split half on date-confirm and half on completion",
+and shipped two functions implementing exactly that — which nothing ever
+called. The real rule is in services/approvals.py: released when the CLIENT
+approves, or automatically 24h after the business marks the work done. Only
+`settle_on_accept` and `settle_on_expiry` below are wired to anything.
 
 WHY THIS IS ITS OWN MODULE
 --------------------------
@@ -128,36 +135,27 @@ def settle_on_accept(budget_cents: int, accepted_cents: int) -> dict:
     }
 
 
-def settle_on_date_confirmed(ledger: dict) -> dict:
-    """Release the first half of the business's net on the date handshake.
-
-    Half of what is escrowed for the job -- which is the ACCEPTED AMOUNT, the
-    client's money. Kira's "50 released and 50 in escrow" on a $100 job is
-    literal: 5000c and 5000c. The platform's $10 comes out of the business's
-    payout when the money actually moves, not out of this split.
-
-    The remainder is carried exactly so the second tranche cannot lose a cent
-    to a second rounding.
-    """
-    escrow_c = int(ledger["escrow_held_cents"])
-    released_c = int(ledger["released_to_business_cents"])
-    business_net_c = escrow_c + released_c
-
-    first_release_c = business_net_c // 2  # floor; the remainder rides along
-    out = dict(ledger)
-    out["released_to_business_cents"] = released_c + first_release_c
-    out["escrow_held_cents"] = escrow_c - first_release_c
-    return out
-
-
-def settle_on_complete(ledger: dict) -> dict:
-    """Release everything still held. Escrow ends at exactly zero."""
-    out = dict(ledger)
-    out["released_to_business_cents"] = int(ledger["released_to_business_cents"]) + int(
-        ledger["escrow_held_cents"]
-    )
-    out["escrow_held_cents"] = 0
-    return out
+# settle_on_date_confirmed() and settle_on_complete() were HERE, and they are
+# gone deliberately.
+#
+# They implemented the 50/50 release described at the top of this file — half
+# the business's net on the date handshake, the rest on completion — and they
+# had NO CALLERS. `grep -rn "settle_on_date_confirmed\|settle_on_complete"
+# backend/app` returned nothing but their own definitions and their unit tests.
+# `confirm_date` never called them, so `release_escrow_on_complete` always saw
+# released_to_business = 0 and moved the whole balance in one go.
+#
+# So the model this module documented was not the model the app ran, and the
+# only thing keeping the 50/50 alive was correct, tested, unreachable code that
+# read like a specification. Deleting it is the fix: the next person wiring
+# money cannot mistake it for the intended design, and the SIX places that
+# repeated "50% on confirmation" to users — the live pre-launch site, the
+# knowledge base, the marketing plan, two mobile screens — no longer have
+# anything in the codebase that appears to back them up.
+#
+# THE ACTUAL RULE lives in services/approvals.py: money is released when the
+# CLIENT approves the finished work, or automatically 24h after the business
+# marks it done (Kira's ruling, 2026-07-31).
 
 
 def settle_on_expiry(ledger: dict) -> dict:

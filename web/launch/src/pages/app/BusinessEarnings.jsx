@@ -140,7 +140,7 @@ export default function BusinessEarnings() {
 
       {/* Escrow explainer */}
       <div style={{ background: 'rgba(110,86,247,0.08)', border: '1px solid rgba(110,86,247,0.2)', borderRadius: 'var(--radius-md)', padding: 'var(--space-md) var(--space-lg)', marginBottom: 'var(--space-xl)', fontSize: '13px', color: 'var(--color-text-secondary)' }}>
-        <strong style={{ color: 'var(--color-text-primary)' }}>Payout schedule:</strong> 50% released when a booking is confirmed. Remaining 50% (minus 10% platform fee) released when the job is marked complete. Founder pricing: first 100 businesses pay 5% instead of 10%.
+        <strong style={{ color: 'var(--color-text-primary)' }}>Payout schedule:</strong> Held while the job runs, then released in full (minus the 10% platform fee) when the client approves the work — or automatically 24 hours after you mark it done. Founder pricing: first 100 businesses pay 5% instead of 10%.
       </div>
 
       {/* Transaction ledger */}

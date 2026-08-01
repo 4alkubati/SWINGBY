@@ -6,7 +6,7 @@
 
 ## Executive Summary
 
-SwingBy is a two-sided service marketplace for Calgary, connecting homeowners and renters with local service businesses — cleaning, handyman, dog walking, moving, and more. Clients post a job for free and receive bids from nearby businesses. SwingBy splits payment — half released on booking confirmation, the balance on completion. Businesses pay a 10% fee on completion — not on leads, not on bids, only on revenue they actually earn.
+SwingBy is a two-sided service marketplace for Calgary, connecting homeowners and renters with local service businesses — cleaning, handyman, dog walking, moving, and more. Clients post a job for free and receive bids from nearby businesses. SwingBy holds the payment from the moment a quote is accepted until the client approves the finished work. Businesses pay a 10% fee on completion — not on leads, not on bids, only on revenue they actually earn.
 
 The backend API, database, authentication, booking flow, staged payment split, and messaging are built and running. Stripe is wired in sandbox only — no live card charges yet. The mobile app is in development. The web presence is launching.
 
@@ -43,7 +43,7 @@ SwingBy is a two-sided marketplace with two discovery flows:
 
 **Geo-browse:** A client browses businesses on a map, filtered by category and distance. They contact a business directly or book through their profile.
 
-The booking flow continues: employee assigned → date confirmed → job done → payment released. Businesses receive 50% on booking confirmation and 50% (minus 10% platform fee) on completion. Messaging opens on the quote thread once a business has quoted a job, and carries over onto the booking — a business can never cold-contact a client it hasn't quoted, so there's no spam and no cold pitching.
+The booking flow continues: employee assigned → date confirmed → job done → payment released. Businesses are paid (minus the 10% platform fee) once the client approves the work — or automatically 24 hours after the business marks it done. Messaging opens on the quote thread once a business has quoted a job, and carries over onto the booking — a business can never cold-contact a client it hasn't quoted, so there's no spam and no cold pitching.
 
 The platform's core trust mechanism is staged payment. Half of the client's money releases to the business on booking confirmation so they can schedule the work, and the balance only on completion. If something goes wrong, the client opens a dispute and the SwingBy team reviews it and decides the refund. This is the feature that kills the "Kijiji risk" and makes clients willing to try an unfamiliar business.
 

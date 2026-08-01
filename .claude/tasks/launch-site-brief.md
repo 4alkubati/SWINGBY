@@ -194,7 +194,7 @@ This is the big one — make it good enough that a business owner uses it daily.
 - [ ] C1.10 — Cohort retention table: month-over-month client retention.
 
 ### C2. Earnings & spending (`/app/business/earnings`)
-- [ ] C2.1 — Payout schedule explanation (50% on confirm, 40% on complete after 10% platform cut).
+- [ ] C2.1 — Payout explanation (held on accept, released on client approval or 24h after the business marks it done, less the 10% platform cut).
 - [ ] C2.2 — Pending escrow balance, next payout date, last payout amount.
 - [ ] C2.3 — Transaction ledger: per-booking row with gross, platform fee, Stripe fee, net.
 - [ ] C2.4 — Year-to-date totals: gross revenue, fees paid to SwingBy, net earnings, refunds, disputes.

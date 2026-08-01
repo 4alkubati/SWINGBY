@@ -139,7 +139,7 @@ Without supply, paid demand just churns. With supply, paid demand compounds.
 > "Post your job. Get bids. Pick the best. SwingBy handles payment — you get your money back if the job isn't done right. Free to use. Calgary only (for now)."
 
 **Copy variant B:**
-> "Finding a cleaner in Calgary shouldn't take 3 hours of Googling. SwingBy connects you with vetted local businesses in minutes. No hidden fees. Payment held and released in stages."
+> "Finding a cleaner in Calgary shouldn't take 3 hours of Googling. SwingBy connects you with vetted local businesses in minutes. No hidden fees. Payment held until you approve the work."
 
 **Landing page:** swingbyy.com home with client CTA prominent.
 

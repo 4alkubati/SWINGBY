@@ -40,7 +40,7 @@ const STEPS = [
   {
     n: 5,
     title: 'Job done → release + review',
-    desc: 'When the work is complete, you confirm in the app. The remaining 50% is released to the business minus our 10% fee. You leave a public review that future clients can see.',
+    desc: 'When the work is complete, you approve it in the app and the payment is released to the business, minus our 10% fee. If you do not respond, it releases automatically after 24 hours. You leave a public review that future clients can see.',
     mockupLabel: 'Complete + review screen',
     mockupSrc: '/app-screens/receipt.png',
     callout: <><strong>If something goes wrong:</strong> open a dispute through the app. SwingBy support reviews within 72 hours and can withhold payment until it\'s resolved.</>,

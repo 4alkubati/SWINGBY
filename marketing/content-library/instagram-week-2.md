@@ -43,7 +43,7 @@
 
 ## Day 11 — Escrow education
 
-**Hook:** Your money moves in two steps, not one.
+**Hook:** Your money does not move until you say the job is done.
 
 **Body:** SwingBy holds your payment in escrow. When the job is confirmed, we release 50% to the business so they can schedule your work. The rest releases when you mark it complete. Simple. Safe. Fair.
 

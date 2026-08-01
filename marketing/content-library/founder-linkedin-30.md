@@ -173,7 +173,7 @@ I'm still figuring it out. What I know: show up consistently, be honest about wh
 
 One of the design decisions I'm most proud of: the escrow split.
 
-When a booking is confirmed: 50% released to the business immediately. This gives them operating capital and signals the client is serious.
+When the client approves the finished work, the payment is released to the business — automatically after 24 hours if the client goes quiet, so nobody waits on a silent client.
 
 When the job is completed: the remaining 50%, minus the 10% platform fee, released to the business.
 

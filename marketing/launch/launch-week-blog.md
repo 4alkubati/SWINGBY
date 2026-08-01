@@ -72,7 +72,7 @@ SwingBy has two sides.
 
 **For clients:** You post a job. You describe what you need, set a budget, and the system shows it to local businesses that match your location and service category. Businesses that are interested send you a quote. You review who's reached out, check their profile and reviews, and choose who you want. Once you accept a quote, a booking is created, payment is confirmed in escrow, and you're connected through the app for the logistics.
 
-**For businesses:** You set up your profile — what you do, where you serve, what your average job looks like. You browse open jobs near you. You send quotes to the ones that fit. When a client accepts your quote, you get 50% upfront (from escrow) and the rest when you complete the job. You never have to cold-call or wonder where your next customer is coming from.
+**For businesses:** You set up your profile — what you do, where you serve, what your average job looks like. You browse open jobs near you. You send quotes to the ones that fit. When a client accepts your quote the money is held by SwingBy, and it is released to you once they approve the finished work — automatically 24 hours after you mark it done if they do not respond. You never have to cold-call or wonder where your next customer is coming from.
 
 There's no monthly fee. No subscription. SwingBy takes a 10% platform cut from completed jobs — so we only make money when you do.
 

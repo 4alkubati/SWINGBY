@@ -260,9 +260,13 @@ export function hasBeenCharged(payment) {
 
 // ─── Escrow milestones (read-only) ─────────────────────────────────────────────
 // GAP-AUDIT #10 — payments.escrow_held / released_to_business are tracked by
-// the backend (interests.py accept → 50% released; bookings.py complete_booking
-// → remaining released) but no screen ever surfaced them. Pure display, zero
-// writes to any payment endpoint.
+// the backend but no screen ever surfaced them. Pure display, zero writes to
+// any payment endpoint.
+//
+// This comment used to say "interests.py accept → 50% released; complete_booking
+// → remaining released". Accept releases NOTHING — it charges and holds. The
+// release happens when the CLIENT approves, or 24h after the business marks the
+// work done (services/approvals.py).
 function EscrowMilestones({ payment }) {
   if (!payment) return null;
 

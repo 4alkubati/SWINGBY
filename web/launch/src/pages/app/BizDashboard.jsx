@@ -65,7 +65,7 @@ function EscrowTracker({ bookings }) {
         <span className={bizStyles.escrowValue}>${held.toFixed(2)}</span>
       </div>
       <p className={bizStyles.escrowHint}>
-        50% released on booking confirmation · 50% on completion · 10% platform fee deducted on final release.
+        Held until the client approves the work — or 24 h after you mark it done · 10% platform fee deducted on release.
       </p>
     </div>
   )
