@@ -132,14 +132,25 @@ What is left, highest first:
 
 ---
 
-## 5. Also this weekend — social
+## 5. Social — ✅ built, blocked on accounts
 
-1. One post, published across all platforms as a single action.
-2. The automation that sends it — n8n, or a plain Python/JS script.
+1. **Two posts written and fact-checked:**
+   `marketing/content-library/launch-post-2026-08.md`. Every claim was checked
+   against the code, not against older copy — which mattered: five marketing
+   files still promised *"payment in two stages — half at booking, half on
+   completion"*, the exact claim that had to be pulled from the store listing
+   on 2026-07-29. All five are corrected.
+2. **One command publishes to all of them:** `tools/social_post.py`.
+   Dry run by default, `--publish` to send, `--check` lists the credentials
+   still missing. An unconfigured platform is skipped, not failed, so the first
+   account that exists can post without waiting for the rest. 10 tests in CI.
+3. **n8n was not chosen** — see H16. It is designed (43 nodes) and has never
+   run; it needs Notion, OpenAI, Slack and Buffer before one post goes out.
+   n8n can drive this script later from one node if the visible version is
+   wanted.
 
-Handles are already registered and recorded: see
-`marketing/` and the social-handle notes. `@swingbyapp` is taken by three other
-companies; **`swingbyyc`** is the free handle across IG/FB/X/YT.
+**Blocked only on H15:** the accounts do not exist yet. `@swingbyapp` is taken
+by three other companies; **`swingbyyc`** is free across IG/FB/X/YT.
 
 ---
 

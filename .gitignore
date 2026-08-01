@@ -5,6 +5,8 @@ __pycache__/
 *.pyd
 .venv/
 .env
+# Social publishing credentials (tools/social_post.py reads this).
+.env.social
 *.sqlite3
 *.db
 
