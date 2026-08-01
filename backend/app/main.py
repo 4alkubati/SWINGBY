@@ -58,8 +58,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
+# Reported by /health as `direct_sql`, and used for nothing else — see
+# app/database.py. `text` went with the old SQL probe.
 from app.database import engine
-from sqlalchemy import text
 
 # T12 — Request-ID middleware
 from app.middleware.request_id import RequestIDMiddleware
@@ -247,16 +248,35 @@ def health_check():
     # means the next person can see the mislabelling without reading main.py.
     env_name = os.getenv("ENV", "development")
 
+    # Probe the database the application ACTUALLY uses.
+    #
+    # This used to be `engine.connect()` over DATABASE_URL — a SQLAlchemy
+    # connection with exactly one consumer in the codebase: this line. Every
+    # real query goes through PostgREST with the Supabase key, so the probe was
+    # answering a question nobody asked: green while PostgREST was down, and red
+    # (as on the dev box, whose DATABASE_URL is empty) while the app was
+    # perfectly healthy. A launch-day dashboard built on it would lie in both
+    # directions.
+    #
+    # One cheap indexed read through the same client the endpoints use. `limit(1)`
+    # on a column that always exists, so it stays O(1) as the table grows.
     try:
-        with engine.connect() as conn:
-            conn.execute(text("SELECT 1"))
+        from app.supabase_client import supabase
+
+        supabase.table("users").select("id").limit(1).execute()
         body = {"status": "ok", "database": "connected", "stripe": stripe_state}
     except Exception:
+        _log.exception("health: supabase probe failed")
         body = {
             "status": "error",
             "detail": "Database unavailable",
             "stripe": stripe_state,
         }
+
+    # Reported separately because it is NOT what the app runs on. Absent is the
+    # normal, healthy state; it is only interesting to whoever is about to run a
+    # migration or a raw-SQL script.
+    body["direct_sql"] = "configured" if engine is not None else "not_configured"
 
     body["stripe_publishable"] = pub_state
     body["environment"] = env_name

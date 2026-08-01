@@ -10,6 +10,35 @@
 // NOT prefixed EXPO_PUBLIC_ so it never gets inlined into the JS bundle.
 const mapsKey = process.env.GOOGLE_MAPS_API_KEY || '';
 
+// ── The app must know where its backend is, and it must know at BUILD time ──
+//
+// EXPO_PUBLIC_API_URL is inlined into the bundle when the build runs. eas.json
+// sets SENTRY_DISABLE_AUTO_UPLOAD in all four profiles and this variable in
+// none of them, so it comes from the EAS environment — or not at all. Miss it
+// and services/api.js used to quietly fall back to http://127.0.0.1:8000: a
+// shipped app pointing at the phone's own loopback, every screen showing
+// "Network Error", and nothing anywhere saying why. It looks like a broken
+// phone, not a broken build.
+//
+// Failing the BUILD is the only fix that cannot be ignored. A warning in a
+// release bundle is written to a console nobody is attached to.
+//
+// Scoped to release profiles on purpose: `expo start` and any dev-client build
+// still work with no variable set, because a developer running the backend on
+// localhost is exactly who that fallback is for.
+const releaseProfiles = ['preview', 'testflight', 'production'];
+const profile = process.env.EAS_BUILD_PROFILE;
+if (releaseProfiles.includes(profile) && !process.env.EXPO_PUBLIC_API_URL) {
+  throw new Error(
+    `EXPO_PUBLIC_API_URL is not set for the "${profile}" build.\n` +
+      'The app would ship pointing at http://127.0.0.1:8000 and every request ' +
+      'would fail on the device.\n' +
+      'Fix: eas env:create --environment ' +
+      (profile === 'production' ? 'production' : 'preview') +
+      ' --name EXPO_PUBLIC_API_URL --value https://<your-api-host>',
+  );
+}
+
 // NB: CommonJS `module.exports`, not `export default`. mobile/package.json has
 // no "type": "module", so Node parses this file as CommonJS and an ESM export
 // is a hard SyntaxError — which made `expo config --json` exit 1 and took down

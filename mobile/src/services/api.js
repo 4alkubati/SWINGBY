@@ -1,7 +1,36 @@
 import axios from 'axios';
 import { show as showToast } from './toast';
 
-const BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://127.0.0.1:8000';
+// Where the app talks to. The fallback is for a developer running the backend
+// on their own machine — and it used to apply to EVERY build, silently.
+//
+// EXPO_PUBLIC_API_URL is inlined at BUILD time. `mobile/eas.json` sets
+// SENTRY_DISABLE_AUTO_UPLOAD in all four profiles and this variable in NONE of
+// them, so a cloud build gets it from the EAS environment or not at all. Miss
+// it — or misspell it for one environment — and the shipped app points every
+// request at the phone's own loopback address. Nothing failed at build time,
+// nothing warned at startup, and the user saw "Network Error" on every screen
+// forever, which reads as a broken phone rather than a broken build.
+//
+// So: keep the convenience in development, and make its absence LOUD anywhere
+// else. __DEV__ is false in every release build regardless of profile.
+const CONFIGURED_URL = process.env.EXPO_PUBLIC_API_URL;
+const LOCAL_FALLBACK = 'http://127.0.0.1:8000';
+
+export const API_URL_MISSING = !CONFIGURED_URL && !__DEV__;
+
+if (!CONFIGURED_URL) {
+  const message =
+    'EXPO_PUBLIC_API_URL is not set. ' +
+    (__DEV__
+      ? `Falling back to ${LOCAL_FALLBACK} — fine for a local backend.`
+      : 'This RELEASE build has no API server and every request will fail. ' +
+        'Set it in the EAS environment for this build profile and rebuild.');
+  // eslint-disable-next-line no-console
+  console[__DEV__ ? 'warn' : 'error'](`[swingby] ${message}`);
+}
+
+const BASE_URL = CONFIGURED_URL || LOCAL_FALLBACK;
 
 export { BASE_URL };
 
