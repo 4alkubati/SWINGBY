@@ -30,7 +30,7 @@ const CENSUS_ORDER = [
 describe('the locale registry', () => {
   it('offers every ready locale, and only ready ones', () => {
     const ready = READY_LOCALES.map((l) => l.code).sort();
-    expect(ready).toEqual(['ar', 'en', 'fr-CA']);
+    expect(ready).toEqual(['ar', 'en', 'fr-CA', 'uk']);
   });
 
   it('offers Arabic, which was translated but unreachable', () => {
@@ -65,7 +65,9 @@ describe('the locale registry', () => {
     // Ukrainian: the census predates the 2022 arrivals, and Alberta took the
     // most per capita. Hindi: "Indian" is not a language — Punjabi leads in
     // Calgary and is already in the census block above, Hindi backs it up.
-    expect(planned).toEqual([...CENSUS_ORDER.filter((c) => c !== 'ar'), 'uk', 'hi']);
+    // 'uk' left this list on 2026-08-01 — it ships now, so it is READY, not
+    // planned. The census block below it is unchanged.
+    expect(planned).toEqual([...CENSUS_ORDER.filter((c) => c !== 'ar'), 'hi']);
   });
 
   it('covers every language the founder named on 2026-07-30', () => {
@@ -134,7 +136,7 @@ describe('catalogue coverage', () => {
   // ratchet: the gap cannot creep back one key at a time, and adding an
   // English string without its translations fails here rather than at a
   // French-speaking user.
-  it.each(['fr-CA', 'ar'])('%s translates every English key', (code) => {
+  it.each(['fr-CA', 'ar', 'uk'])('%s translates every English key', (code) => {
     const keys = Object.keys(i18n.translations[code] || {});
     const missing = Object.keys(en).filter((k) => !keys.includes(k));
 
@@ -158,7 +160,7 @@ describe('catalogue coverage', () => {
       'quotes.payFirstNote',
     ];
 
-    for (const code of ['fr-CA', 'ar']) {
+    for (const code of ['fr-CA', 'ar', 'uk']) {
       const have = Object.keys(i18n.translations[code] || {});
       const untranslated = moneyKeys.filter((k) => !have.includes(k));
       expect({ code, untranslated }).toEqual({ code, untranslated: [] });
@@ -173,7 +175,7 @@ describe('catalogue coverage', () => {
     //
     // Checked in all three locales because the fix landed in English first and
     // the wrong number must not be translated onwards.
-    for (const code of ['en', 'fr-CA', 'ar']) {
+    for (const code of ['en', 'fr-CA', 'ar', 'uk']) {
       const escrow = i18n.translations[code]['pay.escrow'];
       expect(escrow).toBeTruthy();
       expect(escrow).not.toMatch(/24\s*h|24\s*ساعة|24\s*heures/);
