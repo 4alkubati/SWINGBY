@@ -42,12 +42,12 @@ const STEPS = [
     desc: 'Do the work. When the client confirms it\'s done, the remaining 50% releases — minus the 10% SwingBy fee. You keep 90% of the total. No subscription, no per-quote fee, no setup cost.',
     mockupLabel: 'Earnings + payout screen',
     mockupSrc: '/app-screens/earnings.png',
-    callout: <><strong>If a client cancels:</strong> 25% penalty if they cancel more than 48 hours out, 50% within 48 hours. Credited to your account.</>,
+    callout: <><strong>If a client cancels:</strong> more than 48 hours out, they are refunded in full and you keep nothing. Within 48 hours you keep 25%; if they cancel after the scheduled time, you keep 50%.</>,
   },
 ]
 
 const FAQ = [
-  { q: 'How much does it cost to start?', a: 'Zero. No signup fee, no monthly subscription, no fee for browsing or quoting. We only charge 10% on jobs you actually complete.' },
+  { q: 'How much does it cost to start?', a: 'Nothing to start. No signup fee, and no charge for browsing or quoting — we take 10% on jobs you actually complete. A paid plan for larger teams exists separately; you are never enrolled in it by signing up.' },
   { q: 'How fast do you verify?', a: 'In the Calgary beta, a SwingBy team member reviews each business manually — usually within 24–48 hours. We\'ll move to automated checks once we know what edge cases to catch.' },
   { q: 'Can I bring my own clients onto SwingBy?', a: 'Yes. Send them your profile link; they post, you quote, the booking flows through the app so escrow + reviews still work. Same 10% applies.' },
   { q: 'What payout method do you use?', a: 'Stripe Connect (sandbox during beta, live at general launch). We do not handle bank details directly — Stripe holds and disburses.' },

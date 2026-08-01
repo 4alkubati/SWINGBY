@@ -522,9 +522,25 @@ export default function MyJobsScreen({ navigation }) {
         onViewQuotes={() =>
           navigation.navigate('QuoteComparison', { postId: post.id, postTitle: post.title })
         }
+        // The SAME guard handleBookingPress got, applied to the second call
+        // site. A matched post never stops being "matched" — nothing in the
+        // backend writes service_posts.status on completion or cancellation —
+        // so this row stays in Open Posts forever, and it sent every tap to the
+        // live-tracking screen, including for jobs that finished weeks ago.
+        // ActiveBooking has no invoice, no review and no rebook, so the tap
+        // landed somewhere with less than the row you tapped and a progress
+        // view that had nothing left to track.
         onViewBooking={
           matchedBooking
-            ? () => navigation.navigate('ActiveBooking', { bookingId: matchedBooking.id })
+            ? () => {
+                const finished =
+                  matchedBooking.status === 'completed' ||
+                  matchedBooking.status === 'cancelled';
+                navigation.navigate(
+                  finished ? 'BookingDetails' : 'ActiveBooking',
+                  { bookingId: matchedBooking.id },
+                );
+              }
             : undefined
         }
         onEdit={post.status === 'open' ? handleEditPost : undefined}

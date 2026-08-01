@@ -51,10 +51,20 @@ const DAY_MS = 86400000;
 // then drop off. Nothing is ever deleted by hand.
 const RESOLVED_TTL_MS = 30 * DAY_MS;
 // A quote with no expiry of its own inherits the post's 7-day window.
-const DEFAULT_QUOTE_WINDOW_MS = 7 * DAY_MS;
+
 // Client quotes list: /interests/post/{id} is per-post, so the list is an N+1.
 // Cap the fan-out — the newest posts are the ones with live quotes.
 const MAX_QUOTE_POSTS = 10;
+
+// These four moved to utils/quoteStatus.js so ChatScreen computes the SAME
+// answer — it had its own copy that skipped the expiry clock entirely.
+import {
+  hoursLeft,
+  quoteExpiry,
+  resolveQuoteStatus,
+  isResolved,
+  DEFAULT_QUOTE_WINDOW_MS,
+} from '../../utils/quoteStatus';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -83,36 +93,12 @@ function timeAgo(dateStr) {
   return d.toLocaleDateString('en-CA', { month: 'short', day: 'numeric' });
 }
 
-function hoursLeft(expiresAt) {
-  if (!expiresAt) return null;
-  const ms = new Date(expiresAt).getTime() - Date.now();
-  if (Number.isNaN(ms)) return null;
-  return ms / 3600000;
-}
+
 
 // Quotes carry no expires_at column of their own — they inherit the post's
 // window, and fall back to created_at + 7d when the post payload omits it
 // (/interests/mine does not select expires_at).
-function quoteExpiry(interest, post) {
-  if (post?.expires_at) return post.expires_at;
-  const created = interest?.created_at ? new Date(interest.created_at).getTime() : null;
-  if (!created || Number.isNaN(created)) return null;
-  return new Date(created + DEFAULT_QUOTE_WINDOW_MS).toISOString();
-}
 
-function resolveQuoteStatus(interest, post, expiresAt) {
-  if (interest.status === 'accepted') return 'accepted';
-  if (interest.status === 'rejected') return 'declined';
-  const postStatus = post?.status;
-  if (postStatus && postStatus !== 'open' && postStatus !== 'matched') return 'expired';
-  const left = hoursLeft(expiresAt);
-  if (left != null && left <= 0) return 'expired';
-  return 'pending';
-}
-
-function isResolved(status) {
-  return status === 'declined' || status === 'expired';
-}
 
 // Booked-thread meta line: "Today · 9:00 AM" / "Upcoming · Jul 19" /
 // "Completed · Jul 2". Never a raw enum or ISO string (walkthrough B16).

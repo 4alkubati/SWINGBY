@@ -114,7 +114,7 @@ Contact support@swingbyy.com with details. We investigate reviews that violate o
 Do not mark the job complete. Contact support@swingbyy.com within 24 hours of the scheduled completion date. We'll open a dispute and work through our dispute playbook to reach a fair resolution.
 
 **Q28: What is the cancellation policy?**  
-- Cancel more than 48 hours before scheduled date: 25% of the job value is retained as a cancellation fee.  
+- Cancel more than 48 hours before the scheduled date: full refund, no fee.  
 - Cancel within 48 hours: 50% retention fee.  
 - No-show (business): client receives full refund, no fee.  
 - No-show (client): business retains 25%.

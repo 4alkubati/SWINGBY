@@ -50,6 +50,24 @@ CLAIMS = [
     re.compile(r"released\s+in\s+(?:two\s+)?stages", re.I),
     re.compile(r"pay\s+in\s+two\s+stages", re.I),
     re.compile(r"splits?\s+payment\s*[—-]\s*half", re.I),
+    # Missed on the first pass: "half the payment RELEASES" has no "is", and
+    # "money moves in two steps" never says 50 at all. Both shipped.
+    re.compile(r"half\s+(?:of\s+)?the\s+payment\s+release", re.I),
+    re.compile(r"(?:money|payment)\s+moves?\s+in\s+two\s+(?:steps|stages)", re.I),
+    re.compile(r"the\s+(?:other|final|remaining)\s+half\s+of\s+the\s+payment", re.I),
+]
+
+# The cancellation ladder, which was ALSO stated backwards in two places — the
+# live Terms page and an Instagram draft both charged 25% for cancelling EARLY,
+# which is the free rung. escrow.compute_cancellation_split is the authority:
+#   client, >48h before the date        -> 100% refund, no fee
+#   client, <=48h                       -> 75% refund, business keeps 25%
+#   client, after the scheduled time    -> 50/50
+#   business, any time                  -> 100% refund
+LADDER_LIES = [
+    re.compile(r"25%\s*(?:of the job amount\s*)?(?:fee\s*)?(?:applies\s*)?(?:if\s+)?(?:cancelled\s+)?more than 48", re.I),
+    re.compile(r"more than 48 hours[^.]{0,40}(?:25|50)\s*%", re.I),
+    re.compile(r"25%\s+more than 48", re.I),
 ]
 
 
@@ -96,6 +114,38 @@ def test_nothing_claims_a_staged_5050_release():
         f"{len(hits)} place(s). It does not exist in the code — money is held "
         "on accept and released on the client's approval (or 24h after the "
         "business marks the work done).\n\n" + "\n".join(hits)
+    )
+
+
+def test_no_copy_states_the_cancellation_ladder_backwards():
+    """Cancelling EARLY is free. Two places said it costs 25%.
+
+    The live pre-launch Terms page and an Instagram draft both charged a fee
+    for the one cancellation that has none — in the Terms' case, as terms of
+    service.
+    """
+    hits = []
+    for path in _files():
+        try:
+            text = path.read_text(encoding="utf-8")
+        except (UnicodeDecodeError, OSError):
+            continue
+        is_code = path.suffix in {".py", ".js", ".jsx", ".ts", ".tsx"}
+        for line_no, line in enumerate(text.splitlines(), 1):
+            stripped = line.strip()
+            if is_code and (
+                stripped.startswith("//")
+                or stripped.startswith("#")
+                or stripped.startswith("*")
+            ):
+                continue
+            for pattern in LADDER_LIES:
+                if pattern.search(line):
+                    hits.append(f"{path.relative_to(REPO)}:{line_no}: {line.strip()[:110]}")
+
+    assert hits == [], (
+        "Copy charges a fee for cancelling MORE than 48h ahead. That rung is "
+        "free (escrow.compute_cancellation_split).\n\n" + "\n".join(hits)
     )
 
 

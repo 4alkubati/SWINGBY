@@ -20,7 +20,7 @@ and nothing else. In particular a business does NOT get, before acceptance:
     * the client's user id / client_id (made the profile tappable — L2)
     * the exact street address         (locality only, and fail-closed — L4)
     * exact lat/lng                    (coarsened to a ~1 km grid)
-    * the job photos themselves        (count only — L3)
+    * the job photos                   (SHOWN since 2026-08-01 — see L3 below)
     * the client's budget              (ruling S1 — businesses bid their own
                                         rate, the client compares)
 
@@ -41,10 +41,11 @@ WHY THE PHOTOS ARE COUNT-ONLY RATHER THAN WITHHELD ENTIRELY
       (b) return the COUNT only ("3 photos"), and unlock the images on
           acceptance.
 
-    (b) is the least-bad: the business learns that visual detail exists and
-    can quote conditionally, the client keeps control, and a fake business
-    account harvests nothing but an integer. This is the shipped behaviour —
-    ``image_urls`` is emptied and ``photo_count`` is added.
+    (b) shipped first, and (a)'s stated failure mode is exactly what happened
+    in practice: businesses were being asked to price jobs they could not look
+    at. REVERSED 2026-08-01 by the product owner — the photos are returned.
+    The client's name, exact address, coordinates and budget stay masked, so a
+    business sees the WORK without seeing the PERSON.
 
 WHY ONE MODULE
     So the rule can't drift between endpoints. Every read path that returns
@@ -145,7 +146,8 @@ def mask_service_post_row(post: dict) -> dict:
                       (:func:`mask_user_public`)
       client_id     → removed (L2: this is what made the client profile tappable)
       budget        → removed (ruling S1: businesses bid their own rate)
-      image_urls    → emptied, replaced by ``photo_count`` (L3)
+      image_urls    → KEPT, with ``photo_count`` alongside (L3, reversed
+                      2026-08-01 — a business cannot price what it cannot see)
     """
     if not post:
         return post
@@ -175,10 +177,31 @@ def mask_service_post_row(post: dict) -> dict:
     masked.pop("budget_min", None)
     masked.pop("budget_max", None)
 
-    # L3 — photos are the payload. Count only, until acceptance.
+    # L3 — REVERSED 2026-08-01 by the product owner: the photos are shown.
+    #
+    # The original ruling returned a COUNT only, to stop a fake business account
+    # harvesting interior photos against a first name and a neighbourhood. The
+    # trade-off it accepted is written a few lines up in this module's own
+    # docstring: a business quoting blind on "clean my garage" cannot price the
+    # job, "so it quotes high or not at all; the marketplace stops working."
+    #
+    # That is what shipped, and it is what Kira hit: a business is asked for a
+    # price on a job it is not allowed to look at. A photo of a broken tap or a
+    # cluttered garage IS the specification — withholding it does not protect
+    # the client, it just guarantees a worse quote.
+    #
+    # What still masks, and why this is not a rollback of L1/L2: the client's
+    # NAME, their exact address, their coordinates and their budget all remain
+    # hidden until they accept. What a business gains is a view of the work,
+    # not of the person.
+    #
+    # `photo_count` stays in the response — callers already read it, and it
+    # stays correct.
     if "image_urls" in masked:
         urls = masked.get("image_urls") or []
-        masked["photo_count"] = len(urls) if isinstance(urls, (list, tuple)) else 0
-        masked["image_urls"] = []
+        if not isinstance(urls, (list, tuple)):
+            urls = []
+        masked["photo_count"] = len(urls)
+        masked["image_urls"] = list(urls)
 
     return masked
