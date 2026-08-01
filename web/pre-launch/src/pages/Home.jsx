@@ -37,7 +37,7 @@ const FAQ_ITEMS = [
   { question: 'Is SwingBy free for clients?', answer: 'Yes, posting jobs and receiving quotes is completely free. You only pay when you book a service.' },
   { question: 'How are businesses verified?', answer: 'Every business goes through a verification process including license checks, identity verification, and ongoing review monitoring.' },
   { question: 'What cities is SwingBy available in?', answer: 'We are currently launching in Calgary, Alberta with plans to expand across Canada.' },
-  { question: 'How does payment work?', answer: 'Payments are held in escrow when you book. 50% is released to the business on confirmation, and the remaining 50% on job completion.' },
+  { question: 'How does payment work?', answer: 'Payments are held in escrow when you accept a quote. The money is released to the business when you approve the finished work — or automatically 24 hours after they mark it done. SwingBy keeps 10%.' },
 ]
 
 const fadeUp = {

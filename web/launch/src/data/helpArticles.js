@@ -26,7 +26,7 @@ export const HELP_ARTICLES = [
     title: 'How escrow payments work',
     category: 'payments',
     popular: true,
-    content: `## How escrow payments work\n\nWhen you accept a quote and confirm a booking, your payment is held securely. 50% is released to the business on booking confirmation. The remaining 50% is released when you mark the job complete.\n\n### Disputes\nIf you're unhappy with the work, open a dispute before marking complete. SwingBy support will review and can hold funds until resolved.`,
+    content: `## How escrow payments work\n\nWhen you accept a quote and confirm a booking, your payment is held securely. The money stays held until you confirm the job is complete — or 24 hours after the business marks it done, if you do not respond.\n\n### Disputes\nIf you're unhappy with the work, open a dispute before marking complete. SwingBy support will review and can hold funds until resolved.`,
   },
   {
     slug: 'business-verification',

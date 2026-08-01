@@ -35,35 +35,36 @@ class TestKirasWorkedExample:
         assert led["business_net_cents"] == 9000
         assert led["platform_cut_cents"] == 1000
 
-    def test_released_and_escrow_are_fifty_fifty_after_the_date_handshake(self):
-        # "50$ get released and 50$ in escrow" -- literally, in cents, on his
-        # $100 job. These columns track the CLIENT's money. The platform's $10
-        # comes out of the business's payout when it moves, so it is not a
-        # slice of this split (spec S1.4).
-        led = bs.settle_on_date_confirmed(bs.settle_on_accept(BUDGET, ACCEPTED))
-        assert led["released_to_business_cents"] == 5000
-        assert led["escrow_held_cents"] == 5000
+    def test_there_is_no_staged_release_to_test(self):
+        # This class used to assert the 50/50: "50$ released and 50$ in escrow"
+        # after the date handshake. The functions behind it
+        # (settle_on_date_confirmed / settle_on_complete) had no callers — the
+        # app never released anything on date-confirm — so the test passed for
+        # years while describing something that did not happen.
+        #
+        # Both are deleted. Release timing belongs to services/approvals.py:
+        # the client approves, or 24h passes. Asserting their ABSENCE here is
+        # what stops them coming back as "the design".
+        assert not hasattr(bs, "settle_on_date_confirmed")
+        assert not hasattr(bs, "settle_on_complete")
 
     def test_the_whole_thing_balances_at_every_step(self):
         steps = {}
         steps["posted"] = bs.settle_at_post(BUDGET)
         steps["accepted"] = bs.settle_on_accept(BUDGET, ACCEPTED)
-        steps["date_confirmed"] = bs.settle_on_date_confirmed(steps["accepted"])
-        steps["completed"] = bs.settle_on_complete(steps["date_confirmed"])
         for name, led in steps.items():
             assert bs.ledger_balances(led), f"{name} does not balance: {led}"
             assert led["total_charged_cents"] == BUDGET
 
-    def test_the_end_state_matches_the_drawing(self):
-        led = bs.settle_on_complete(
-            bs.settle_on_date_confirmed(bs.settle_on_accept(BUDGET, ACCEPTED))
-        )
-        assert led["escrow_held_cents"] == 0
-        assert led["released_to_business_cents"] == 10000  # the job was $100
-        assert led["refunded_cents"] == 5000  # client got 50 back
-        # 100 + 50 == 150. Exactly the drawing.
-        assert 10000 + 5000 == BUDGET
-        # And OUR cut, taken from the business's $100, leaving them $90.
+    def test_the_accept_state_matches_the_drawing(self):
+        # The drawing's "$50 refunded, $100 the job, our cut $10" is settled at
+        # ACCEPT. What used to follow it here — walking the ledger through a
+        # staged release — tested code the app never ran.
+        led = bs.settle_on_accept(BUDGET, ACCEPTED)
+        assert led["escrow_held_cents"] == 10000  # the job, still held
+        assert led["refunded_cents"] == 5000      # client got 50 back
+        assert 10000 + 5000 == BUDGET             # exactly the drawing
+        # OUR cut, taken from the business's $100, leaving them $90.
         assert led["platform_cut_cents"] == 1000
         assert led["business_net_cents"] == 9000
 
@@ -100,22 +101,18 @@ class TestRoundingCannotLoseACent:
     @pytest.mark.parametrize("accepted", [1, 3, 7, 99, 101, 10555, 33333, 99999])
     def test_odd_totals_still_balance(self, accepted):
         budget = max(accepted, 100000)
-        led = bs.settle_on_complete(
-            bs.settle_on_date_confirmed(bs.settle_on_accept(budget, accepted))
-        )
+        led = bs.settle_on_accept(budget, accepted)
         assert bs.ledger_balances(led)
 
     @pytest.mark.parametrize("accepted", [1, 3, 7, 99, 101, 10555, 33333])
-    def test_the_two_tranches_sum_to_the_accepted_amount_exactly(self, accepted):
-        # "Never round twice" — the second tranche is the remainder of the
-        # first, so it cannot drift by a cent on an odd total.
-        #
-        # The tranches sum to the ACCEPTED amount, not the business net: these
-        # columns move the client's money. The platform's cut is subtracted from
-        # the payout when it leaves, and is not a slice of this split.
+    def test_escrow_holds_the_accepted_amount_exactly(self, accepted):
+        # Was "the two tranches sum to the accepted amount" — there are no
+        # tranches. What must hold on an odd total is that accept escrows the
+        # accepted amount to the cent, with the rest refunded and nothing lost
+        # to rounding.
         acc = bs.settle_on_accept(max(accepted, 100000), accepted)
-        done = bs.settle_on_complete(bs.settle_on_date_confirmed(acc))
-        assert done["released_to_business_cents"] == accepted
+        assert acc["escrow_held_cents"] == accepted
+        assert bs.ledger_balances(acc)
 
     def test_the_cut_is_never_under_ten_percent_from_float_error(self):
         # round(105.55 * 0.10, 2) took 9.9953% instead of 10%, always in the

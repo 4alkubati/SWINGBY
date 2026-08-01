@@ -103,7 +103,7 @@ A question we get a lot: "How does payment work on SwingBy?"
 
 Here's exactly how:
 
-When you book a job, your payment goes into escrow — it's held by SwingBy, not the business. When the job is confirmed and scheduled, 50% is released to the business so they can prepare. The remaining 50% is only released when you mark the job complete.
+When you book a job, your payment goes into escrow — it's held by SwingBy, not the business. It stays held while the job runs, and is only released when you approve the finished work — or automatically 24 hours after the business marks it done.
 
 If something goes wrong, you have a window to raise a dispute before the final payment releases.
 

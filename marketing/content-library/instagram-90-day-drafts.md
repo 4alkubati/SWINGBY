@@ -59,7 +59,7 @@
 
 ### Post 5 — Escrow explainer
 
-**Hook:** Your money moves in two steps — and you control the second one.
+**Hook:** Your money does not move until you say so.
 
 **Body:** Here's how SwingBy protects you. When you book, half the payment releases to the business so they can schedule and start the work — the rest is held until you confirm the job is complete. If something goes wrong, you open a dispute and our team reviews it. If you cancel, a timing-based fee applies: 25% more than 48 hours out, 50% inside 48 hours. No awkward cash handoffs. No chasing invoices.
 
@@ -85,7 +85,7 @@
 
 **Hook:** We hold your money. Here's why that matters.
 
-**Body:** Traditional marketplaces let buyers and sellers figure out payment themselves. That's how you end up with a handyman who takes half the money and disappears. SwingBy handles the full payment. 50% released when booking is confirmed. 50% when you mark the job complete. We keep 10%. The business earns fair pay for fair work. That's the deal.
+**Body:** Traditional marketplaces let buyers and sellers figure out payment themselves. That's how you end up with a handyman who takes half the money and disappears. SwingBy holds the full payment until you approve the finished work — or 24 hours after the business marks it done. We keep 10%. The business earns fair pay for fair work. That's the deal.
 
 **CTA:** Get started. Link in bio.
 

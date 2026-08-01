@@ -59,7 +59,7 @@ Try widening your service radius or adjusting your budget. Some categories have 
 ## Payments & Escrow
 
 **Q15: How does payment work?**  
-When you accept a quote, the job amount is committed to SwingBy and split. The business receives 50% on booking confirmation so they can schedule the work. The remaining 50%, less our 10% platform fee, is released when you mark the job complete in the app.
+When you accept a quote, the job amount is charged and held by SwingBy. It is released to the business, less our 10% platform fee, when you approve the finished work in the app — or automatically 24 hours after the business marks it done, so a job cannot stall on an unanswered message.
 
 **Q16: Is my payment information stored securely?**  
 Yes. Payments are processed through Stripe. SwingBy never stores your card details directly — they're held by Stripe under PCI-DSS compliance.
@@ -94,7 +94,7 @@ Upload your license/certification documents in your profile settings. The SwingB
 Your dashboard shows open jobs near you that match your service category. Tap any job to see details, and tap "Express interest" to send a quote.
 
 **Q24: When do I get paid?**  
-50% is released to you when a client accepts your quote. The remaining 50% (minus 10% platform cut) is released when the client marks the job complete. Payouts arrive within 2–3 business days via Stripe.
+The full amount, less the 10% platform cut, is released to you when the client approves the completed work — or automatically 24 hours after you mark it done. Payouts arrive within 2–3 business days via Stripe.
 
 ---
 

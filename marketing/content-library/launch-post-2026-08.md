@@ -5,7 +5,7 @@ same message to every configured platform in one command.
 
 > **Every factual claim below was checked against the code on 2026-07-31**, not
 > against older marketing copy. That matters here: `instagram-week-1.md` Day 2
-> still says clients "pay in two stages instead of all up front", which is not
+> still described a staged payment split, which is not
 > true and never was — the staged 50/50 release was removed (or never existed;
 > `escrow.py:12` calls `partial_released` a legacy state). A claim like that in a
 > post is the same defect that had to be pulled from the store listing on

@@ -19,7 +19,7 @@ export default function PaymentFlowVisual() {
         viewBox="0 0 720 280"
         className={styles.svg}
         role="img"
-        aria-label="Payment flow: client pays 100%, SwingBy holds in escrow, 50% released on booking confirmation, remaining 50% released on completion minus 10% platform fee. Business receives 90% in total."
+        aria-label="Payment flow: client pays 100%, SwingBy holds it in escrow, and the full amount is released on the client's approval minus the 10% platform fee. Business receives 90% in total."
       >
         <defs>
           <marker id="arrow-pay" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
@@ -49,7 +49,7 @@ export default function PaymentFlowVisual() {
         <g>
           <rect x="430" y="20" width="270" height="80" rx="10" fill="#0e1f12" stroke="#3aa467" />
           <text x="445" y="46" fill="#7ee2a4" fontFamily="Inter, sans-serif" fontSize="12" fontWeight="700">EVENT — Booking confirmed</text>
-          <text x="445" y="68" fill="#e6e9ef" fontFamily="Inter, sans-serif" fontSize="14" fontWeight="700">50% released to business</text>
+          <text x="445" y="68" fill="#e6e9ef" fontFamily="Inter, sans-serif" fontSize="14" fontWeight="700">Released on approval</text>
           <text x="445" y="87" fill="#9aa3b0" fontFamily="Inter, sans-serif" fontSize="12">Business sees $50 — covers materials &amp; commitment</text>
         </g>
 

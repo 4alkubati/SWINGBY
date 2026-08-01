@@ -2,8 +2,13 @@
 test_payments.py — Tests for payment escrow math.
 
 Coverage:
-- Escrow split logic: 50% on confirm, 50% minus 10% on complete
-- Cancellation penalties: 25% if > 24h before, 50% if < 24h
+- Escrow: charged and HELD on accept; released in full (less the 10% platform
+  cut) when the client approves, or 24h after the business marks the work done.
+  There is no staged 50/50 release — this docstring claimed one until
+  2026-08-01, and the functions that implemented it had no callers.
+- Cancellation ladder (escrow.compute_cancellation_split): client >48h before
+  the date = 100% refund; ≤48h = 75/25; after the date = 50/50; business
+  cancels at any time = 100% refund.
 - Payment transaction tracking
 """
 

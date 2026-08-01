@@ -11,7 +11,7 @@
       "livePill": "Now live in Calgary",
       "headlineLead": "Local services, quoted in",
       "headlineAccent": "minutes.",
-      "sub": "Post a job. Verified Calgary businesses quote it. Book with escrow-protected payments — released in two stages, half on confirmation and half when the work is done.",
+      "sub": "Post a job. Verified Calgary businesses quote it. Book with escrow-protected payments — released when you approve the finished work.",
       "ctaPrimary": "Post a job — it's free",
       "ctaSecondary": "Get more jobs",
       "trust": {
@@ -115,7 +115,7 @@
       "items": {
         "free":    { "q": "Is SwingBy free for clients?",              "a": "Yes. Posting jobs and receiving quotes is free. You pay the agreed price to the business — nothing more. The 10% commission comes out of the business's payout, not on top of your bill." },
         "verify":  { "q": "How are businesses verified?",              "a": "A SwingBy team member reviews each license and identity manually during the Calgary beta. Automated checks come post-beta once we know the edge cases to catch." },
-        "payment": { "q": "How does payment work?",                    "a": "Payment is held in escrow when you book. 50% is released on booking confirmation. The remaining 50% releases when you confirm the job is done — minus our 10% fee." },
+        "payment": { "q": "How does payment work?",                    "a": "Payment is held in escrow when you accept a quote. It is released to the business when you confirm the job is done — or automatically 24 hours after they mark it done — minus our 10% fee." },
         "unhappy": { "q": "What if I'm not happy with the work?",       "a": "Open a dispute through the app. SwingBy support reviews within 72 hours and can withhold any balance not yet released until it's resolved." },
         "cities":  { "q": "Which cities are supported?",               "a": "Live in Calgary today. Other cities open once we have enough verified businesses to quote there — no fake city pages." }
       }

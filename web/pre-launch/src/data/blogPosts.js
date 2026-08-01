@@ -27,7 +27,7 @@ Finding reliable local service providers has always been a frustrating experienc
 
 - **Verified businesses** — every provider goes through our verification process
 - **Transparent pricing** — no hidden fees, no surprises
-- **Secure payments** — funds are released in stages: half at booking, half on completion
+- **Secure payments** — funds are held until you approve the finished work
 - **Real reviews** — only clients who booked can leave reviews
 
 ### Launch categories
@@ -239,7 +239,7 @@ After every job, ask your client to leave a review. Consistent 5-star reviews pu
   {
     slug: 'introducing-escrow-payments',
     title: 'Introducing escrow payments: How we protect your money',
-    excerpt: 'Payments on SwingBy are released in two stages — half at booking, half on completion. Learn how this system works and why it matters.',
+    excerpt: 'Payments on SwingBy are held from the moment you accept a quote until you approve the finished work. Learn how this system works and why it matters.',
     category: 'Product Updates',
     author: { name: 'Amr Basem', role: 'Founder & CEO' },
     publishedAt: '2026-01-05',
@@ -254,7 +254,7 @@ One of the most common concerns when hiring someone online is: "What if they tak
 
 1. **You book a service** — the full job amount is committed to SwingBy
 2. **50% releases on confirmation** — paid to the business when the booking is confirmed, so they can schedule the work
-3. **50% on completion** — the balance, less our 10% platform fee, releases when the job is marked done
+3. **Released on approval** — the full amount, less our 10% platform fee, goes to the business when you approve the work (or 24 hours after they mark it done)
 4. **Dispute protection** — if there is an issue, the unreleased balance is held while we investigate
 
 ### Why escrow matters

@@ -162,7 +162,7 @@ Two workarounds worth calling out because they're free *and* better than the pai
 - **Don't build the content machine before the product takes a payment.** See the gate below.
 - **Don't chase follower count.** 250 businesses and a working marketplace is the goal.
 - **Don't publish `amr@swingbyy.com`.** It's a login. Public contact is `hello@` / `support@` ([13](13-accounts-and-identity.md)).
-- **Don't promise features that don't ship yet.** The staged-payment model is 50/50 today, not hold-until-completion. Marketing the future product is how you generate refund requests.
+- **Don't promise features that don't ship yet.** The payment model is hold-until-approval — there is NO staged 50/50 release and there never was in the code. This bullet itself claimed the opposite until 2026-08-01, which is how the wrong number reached the live site, the knowledge base and two app screens. Marketing the future product is how you generate refund requests.
 
 ---
 

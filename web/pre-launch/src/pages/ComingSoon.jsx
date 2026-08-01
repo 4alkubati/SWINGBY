@@ -104,7 +104,7 @@ const FAQ_ITEMS = [
   {
     question: 'How does SwingBy work?',
     answer:
-      'SwingBy connects you with local service businesses in minutes. Post a job describing what you need — plumbing fix, house cleaning, lawn care, etc. — and set your preferred date. Nearby businesses will send you quotes. You review them side-by-side and accept the best one. Payment is handled securely through the app: half is released to the business when you accept the quote so they can schedule the work, and the rest when the job is marked complete.',
+      'SwingBy connects you with local service businesses in minutes. Post a job describing what you need — plumbing fix, house cleaning, lawn care, etc. — and set your preferred date. Nearby businesses will send you quotes. You review them side-by-side and accept the best one. Payment is handled securely through the app: it is taken when you accept a quote and held by SwingBy, then released to the business once you approve the finished work — or automatically 24 hours after they mark it done.',
   },
   {
     question: 'How do quotes get accepted?',
