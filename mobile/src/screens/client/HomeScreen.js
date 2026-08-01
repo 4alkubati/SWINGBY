@@ -340,7 +340,19 @@ export default function HomeScreen({ navigation }) {
           onPress={() => navigation.navigate('Notifications')}
         >
           <Feather name="bell" size={17} color={colors.textPrimary} strokeWidth={1.8} />
-          <View style={styles.notifDot} accessible={false} />
+          {/* The accent dot that used to live here was rendered
+              UNCONDITIONALLY — it said "you have something new" on every launch
+              forever, with no unread state anywhere in this screen behind it
+              and no way for a user to clear it.
+
+              It is not gated instead of removed because there is nothing
+              truthful to gate it on: NotificationsScreen builds its list from
+              bookings and posts and has no read/unread concept at all, and the
+              one real unread count in the app (useUnread → /messages/unread-count)
+              is about MESSAGES, which already has its own tab-bar badge.
+              Borrowing that number here would double-signal one thing in two
+              places and still not clear when the bell is tapped.
+              Restore a dot when notifications have real read state. */}
         </TouchableOpacity>
       </View>
 
@@ -438,10 +450,16 @@ export default function HomeScreen({ navigation }) {
           {/* Map preview */}
           <View style={styles.mapWrap}>
             <MapPreviewCard
+              // '12 pros near you' used to be the fallback here (and is
+              // MapPreviewCard's default prop). It rendered whenever the list
+              // was empty — including before the fetch resolved, since this
+              // card is not gated on loadingBusinesses — so the map card
+              // advertised 12 pros directly above a "No businesses nearby"
+              // empty state on the same screen. Never invent a count.
               countLabel={
                 filteredBusinesses.length
-                  ? `${filteredBusinesses.length} pros near you`
-                  : '12 pros near you'
+                  ? `${filteredBusinesses.length} ${filteredBusinesses.length === 1 ? 'pro' : 'pros'} near you`
+                  : 'Explore the map'
               }
               areaLabel={`Kensington · ${cityLabel.split(',')[0] || 'Calgary'}`}
               onPress={() => navigation.navigate('NearbyMap')}
@@ -491,7 +509,7 @@ export default function HomeScreen({ navigation }) {
                 initials={toInitials(topRated.business_name)}
                 logoUrl={topRated.logo_url}
                 rating={topRated.avg_rating?.toFixed(1) ?? '—'}
-                jobs={topRated.review_count ?? 0}
+                reviews={topRated.review_count ?? 0}
                 distance={topRated._distance}
                 category={topRated.category}
                 verified={topRated.license_status === 'verified'}
@@ -539,7 +557,7 @@ export default function HomeScreen({ navigation }) {
                   initials={toInitials(b.business_name)}
                   logoUrl={b.logo_url}
                   rating={b.avg_rating?.toFixed(1) ?? '—'}
-                  jobs={b.review_count ?? 0}
+                  reviews={b.review_count ?? 0}
                   distance={b._distance}
                   onPress={() =>
                     navigation.navigate('BusinessProfile', { businessId: b.id })
@@ -580,17 +598,6 @@ const styles = StyleSheet.create({
     borderRadius: 19,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  notifDot: {
-    position: 'absolute',
-    top: 8,
-    right: 9,
-    width: 7,
-    height: 7,
-    backgroundColor: colors.accent,
-    borderRadius: 4,
-    borderWidth: 1.5,
-    borderColor: colors.navBg,
   },
 
   greetingSection: {

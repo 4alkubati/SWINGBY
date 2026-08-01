@@ -17,8 +17,11 @@ NOTE: `users.is_suspended boolean default false` column must exist in the DB.
       Wave 6 migration should add it if not already present.
 """
 
+from typing import Optional
+
 import structlog
 from fastapi import APIRouter, Depends, HTTPException, Request
+from pydantic import BaseModel
 
 from app.deps import get_current_user
 from app.limiter import limiter
@@ -371,3 +374,144 @@ def monitoring_probe(
     raise RuntimeError(
         "CARD-07 monitoring probe — deliberate test error, safe to ignore"
     )
+
+
+# ── Endpoints the admin web app has always called, and that never existed ────
+#
+# Sentinel sweep, 2026-08-01: `web/admin/` calls `GET /admin/businesses`,
+# `POST /admin/businesses/{id}/verify` and `GET /admin/audit-log`. None were
+# defined, so the Businesses page could never load and license verification —
+# which CLAUDE.md documents as "pending → manual verify by SwingBy team" — had
+# no working control anywhere, and the Audit Log page fell back to five
+# hardcoded fake rows presented as real data.
+#
+# `web/admin/` is NOT deployed today (docs/DEPLOY.md), so nothing is on fire.
+# These are added anyway because the page is the only UI for a documented
+# manual process, and because a compliance screen that invents its own contents
+# is worse the day someone does deploy it.
+
+
+@router.get("/businesses")
+@limiter.limit("60/minute")
+def list_businesses_for_admin(
+    request: Request,
+    license_status: Optional[str] = None,
+    limit: int = 100,
+    offset: int = 0,
+    current_user: dict = Depends(require_admin),
+):
+    """Every business, newest first, for the admin review queue.
+
+    `license_status` narrows to the queue that matters ('pending'), which is
+    the reason this endpoint exists.
+    """
+    limit = max(1, min(int(limit or 100), 200))
+    offset = max(0, int(offset or 0))
+    try:
+        query = supabase.table("businesses").select(
+            "id, business_name, category, license_status, owner_id, "
+            "avg_rating, review_count, city, created_at, "
+            "users(first_name, last_name, email)"
+        )
+        if license_status:
+            query = query.eq("license_status", license_status)
+        res = (
+            query.order("created_at", desc=True)
+            .range(offset, offset + limit - 1)
+            .execute()
+        )
+        return {"items": res.data or [], "limit": limit, "offset": offset}
+    except Exception:
+        logger.exception("admin.list_businesses failed")
+        raise HTTPException(status_code=400, detail="Could not list businesses")
+
+
+class LicenseVerifyRequest(BaseModel):
+    verified: bool
+
+
+@router.post("/businesses/{business_id}/verify")
+@limiter.limit("30/minute")
+def set_business_license(
+    request: Request,
+    business_id: str,
+    body: LicenseVerifyRequest,
+    current_user: dict = Depends(require_admin),
+):
+    """Manually verify (or revoke) a business's license.
+
+    The whole of SwingBy's licence checking is this call — a human looks at the
+    paperwork and flips the flag. Audited, because "who verified this business
+    and when" is the only answer we would have if one turned out not to be
+    licensed.
+    """
+    new_status = "verified" if body.verified else "pending"
+    try:
+        res = (
+            supabase.table("businesses")
+            .update({"license_status": new_status})
+            .eq("id", business_id)
+            .execute()
+        )
+        if not (res.data or []):
+            raise HTTPException(status_code=404, detail="Business not found")
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception("admin.set_business_license failed", business_id=business_id)
+        raise HTTPException(status_code=400, detail="Could not update license status")
+
+    logger.info(
+        "admin.set_business_license",
+        admin_id=current_user["id"],
+        business_id=business_id,
+        license_status=new_status,
+    )
+    record_audit(
+        actor_id=current_user["id"],
+        action="admin.set_business_license",
+        resource_type="business",
+        resource_id=business_id,
+        metadata={"license_status": new_status},
+        request=request,
+    )
+    return {"id": business_id, "license_status": new_status}
+
+
+@router.get("/audit-log")
+@limiter.limit("60/minute")
+def read_audit_log(
+    request: Request,
+    action: Optional[str] = None,
+    since: Optional[str] = None,
+    limit: int = 100,
+    offset: int = 0,
+    current_user: dict = Depends(require_admin),
+):
+    """The real `audit_log` table — written by services/audit.record_audit.
+
+    The page that reads this used to fall back to five fabricated rows
+    (`PLACEHOLDER_ROWS`) whenever the call failed, with working filters
+    operating on the fake data. Real audit rows have existed the whole time;
+    nothing exposed them.
+    """
+    limit = max(1, min(int(limit or 100), 500))
+    offset = max(0, int(offset or 0))
+    try:
+        query = supabase.table("audit_log").select(
+            "id, actor_id, action, resource_type, resource_id, metadata, "
+            "ip, created_at, users!audit_log_actor_id_fkey(email)"
+        )
+        if action:
+            query = query.eq("action", action)
+        if since:
+            query = query.gte("created_at", since)
+        res = (
+            query.order("created_at", desc=True)
+            .range(offset, offset + limit - 1)
+            .execute()
+        )
+        return {"items": res.data or [], "limit": limit, "offset": offset}
+    except Exception:
+        logger.exception("admin.read_audit_log failed")
+        raise HTTPException(status_code=400, detail="Could not read the audit log")

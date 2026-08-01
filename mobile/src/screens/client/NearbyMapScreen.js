@@ -186,7 +186,7 @@ const pinStyles = StyleSheet.create({
 function ResultSheet({ business, count, onViewProfile, onClose, selected }) {
   const rating = business?.avg_rating != null ? Number(business.avg_rating).toFixed(1) : null;
   const meta = [
-    business?.review_count != null ? `${business.review_count} jobs` : null,
+    business?.review_count != null ? `${business.review_count} reviews` : null,
     business?.distanceLabel || null,
   ].filter(Boolean).join(' · ');
 

@@ -124,38 +124,60 @@ describe('catalogue coverage', () => {
     expect(Object.keys(en).length).toBeGreaterThan(300);
   });
 
-  // Not `toEqual([])`. The gap is real and pre-existing; failing here would
-  // just get the test deleted. It is reported instead, and capped so it
-  // cannot get WORSE without someone deciding to let it.
-  it.each(['fr-CA', 'ar'])('reports how far behind %s is', (code) => {
+  // Was a ratchet capped at 30% while fr-CA and ar each sat 98 keys behind —
+  // the entire lane3 payment/booking block, so the pay sheet and the whole
+  // post-a-job flow fell back to English at the exact moment money is
+  // explained. Offering a language in the picker and then not speaking it
+  // where it matters most is worse than not offering it.
+  //
+  // Closed to ZERO on 2026-08-01. It is an equality assertion now, not a
+  // ratchet: the gap cannot creep back one key at a time, and adding an
+  // English string without its translations fails here rather than at a
+  // French-speaking user.
+  it.each(['fr-CA', 'ar'])('%s translates every English key', (code) => {
     const keys = Object.keys(i18n.translations[code] || {});
     const missing = Object.keys(en).filter((k) => !keys.includes(k));
-    const pct = Math.round((missing.length / Object.keys(en).length) * 100);
 
-    // eslint-disable-next-line no-console
-    console.log(
-      `[i18n] ${code}: ${keys.length}/${Object.keys(en).length} keys — ` +
-      `${missing.length} missing (${pct}%)`,
-    );
-
-    // Ratchet. Lower it as translations land; never raise it.
-    expect(pct).toBeLessThanOrEqual(30);
+    expect({ locale: code, missing }).toEqual({ locale: code, missing: [] });
   });
 
   it('payment copy specifically must not be English-only', () => {
     // These are the strings that state what happens to someone's money. An
     // English fallback here is the language barrier at its most expensive.
-    // Currently ENGLISH-ONLY — this documents the debt precisely.
+    //
+    // This test used to assert the debt — `expect(untranslated).toEqual(
+    // moneyKeys)` — because all four WERE English-only. They were translated on
+    // 2026-08-01, so the assertion is inverted: none of them may be missing
+    // from any locale we offer.
     const moneyKeys = [
       'postJob.escrowExplainerLead',
       'postJob.hintOpen',
       'pay.escrowHold',
       'pay.titleHold',
+      'pay.escrow',
+      'quotes.payFirstNote',
     ];
-    const untranslated = moneyKeys.filter(
-      (k) => !Object.keys(i18n.translations['fr-CA'] || {}).includes(k),
-    );
-    // Known debt, asserted exactly so it shrinks visibly rather than silently.
-    expect(untranslated).toEqual(moneyKeys);
+
+    for (const code of ['fr-CA', 'ar']) {
+      const have = Object.keys(i18n.translations[code] || {});
+      const untranslated = moneyKeys.filter((k) => !have.includes(k));
+      expect({ code, untranslated }).toEqual({ code, untranslated: [] });
+    }
+  });
+
+  it('states the real 48h cancellation window, in every language', () => {
+    // The pay sheet said "cancel free up to 24 h before" while the actual
+    // ladder (escrow.classify_cancellation_timing, the Terms screen, and
+    // CancellationFlowScreen) uses 48h. A client cancelling 25h out, trusting
+    // that line, was charged a 25% fee they had been told did not apply.
+    //
+    // Checked in all three locales because the fix landed in English first and
+    // the wrong number must not be translated onwards.
+    for (const code of ['en', 'fr-CA', 'ar']) {
+      const escrow = i18n.translations[code]['pay.escrow'];
+      expect(escrow).toBeTruthy();
+      expect(escrow).not.toMatch(/24\s*h|24\s*ساعة|24\s*heures/);
+      expect(escrow).toMatch(/48/);
+    }
   });
 });

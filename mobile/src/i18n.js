@@ -1005,7 +1005,7 @@ const lane3 = {
   'pay.addMethod': 'Add a payment method',
   'pay.noMethodHint': 'Add a card to continue. Nothing is charged until you confirm.',
   'pay.escrow':
-    'Held in escrow — released only when you approve the work. Cancel free up to 24 h before.',
+    'Held in escrow — released only when you approve the work. Cancel free up to 48 h before.',
   'pay.declined': 'That card was declined. Try another one.',
   'pay.amountChanged': 'This quote changed — check the new total before you confirm.',
   'pay.quoteError': 'Could not price this job. Try again.',
@@ -1637,6 +1637,254 @@ Object.assign(translations.ar, {
   'settings.ghostFailed': '\u062a\u0639\u0630\u0651\u0631 \u062a\u063a\u064a\u064a\u0631 \u0648\u0636\u0639 \u0627\u0644\u0625\u062e\u0641\u0627\u0621',
   'settings.credit': '\u0631\u0635\u064a\u062f SwingBy',
   'settings.creditHint': '\u062a\u0648\u0627\u0635\u0644 \u0645\u0639\u0646\u0627 \u0639\u0646\u062f \u0627\u0644\u062d\u062c\u0632 \u0648\u0633\u0646\u0637\u0628\u0651\u0642\u0647.',
+});
+
+// ── lane3 payment/booking copy, finally translated — 2026-08-01 ────────────
+// These 98 keys shipped English-only. Fallback meant a French or Arabic user
+// got English mid-sentence on the PAY SHEET and the post-a-job flow — the two
+// screens where money is explained. The picker offered a language the product
+// did not actually speak at the moment it mattered most.
+//
+// `pay.escrow` also said "cancel free up to 24 h" while the real ladder is 48 h
+// (escrow.classify_cancellation_timing, mirrored in CancellationFlowScreen and
+// the Terms). A client cancelling 25 h out, trusting that line, was charged a
+// 25% fee they had been told did not apply. Fixed in the English above before
+// being translated, so the mistake was not copied into two more languages.
+//
+// Interpolations (%{business}, %{when}, %{count}, %{date}, %{time}) are kept
+// verbatim — i18n-js matches them literally and a translated placeholder
+// renders as raw text.
+Object.assign(translations['fr-CA'], {
+  'pay.titleHold': 'Confirmez votre demande',
+  'pay.titlePay': 'Payer le devis',
+  'pay.ctaHold': 'Publier la demande',
+  'pay.ctaPay': 'Confirmer et payer',
+  'pay.holding': 'Publication…',
+  'pay.paying': 'Paiement en cours…',
+  'pay.jobTotal': 'Total du travail',
+  'pay.quote': 'Devis',
+  'pay.serviceFee': 'Frais de service',
+  'pay.onHoldToday': 'Votre budget',
+  'pay.total': 'Total',
+  'pay.payWith': 'Payer avec',
+  'pay.change': 'Modifier',
+  'pay.expires': 'Expire le %{date}',
+  'pay.savedCard': 'Carte enregistrée',
+  'pay.methodCard': 'Carte',
+  'pay.methodCardSub':
+    'Ouvre une page Stripe sécurisée — SwingBy n’enregistre jamais votre carte.',
+  'pay.methodCardSubNative':
+    'Saisie de façon sécurisée dans l’application — SwingBy ne l’enregistre pas.',
+  'pay.addMethod': 'Ajouter un moyen de paiement',
+  'pay.noMethodHint':
+    'Ajoutez une carte pour continuer. Rien n’est débité avant votre confirmation.',
+  'pay.escrow':
+    'Retenu en fiducie — libéré seulement quand vous approuvez le travail. Annulation gratuite jusqu’à 48 h avant.',
+  'pay.declined': 'Carte refusée. Essayez-en une autre.',
+  'pay.amountChanged':
+    'Ce devis a changé — vérifiez le nouveau total avant de confirmer.',
+  'pay.quoteError': 'Impossible de calculer le prix. Réessayez.',
+  'pay.noAmount': 'Aucun montant à facturer pour ce travail.',
+  'pay.escrowHold':
+    'Rien n’est débité maintenant. Vous payez en acceptant un devis, et le budget inutilisé n’est jamais prélevé.',
+  'postJob.reviewTitle': 'Vérifier la demande',
+  'postJob.rowService': 'Service',
+  'postJob.rowWhen': 'Quand',
+  'postJob.rowWhere': 'Où',
+  'postJob.rowBudget': 'Votre budget',
+  'postJob.rowBusiness': 'Entreprise',
+  'postJob.escrowExplainer':
+    'Votre budget indique aux pros ce dont vous disposez. Vous payez seulement en acceptant un devis, et vous voyez le prix exact d’abord.',
+  'postJob.escrowExplainerLead': 'Rien n’est débité maintenant.',
+  'postJob.ctaSendRequest': 'Envoyer la demande',
+  'postJob.ctaPost': 'Publier la demande',
+  'postJob.hintOpen':
+    'Les pros à proximité voient votre demande et envoient des devis. Rien n’est débité avant que vous en acceptiez un.',
+  'postJob.hintTargeted':
+    '%{business} répond avec un prix et une heure. Rien n’est débité avant votre acceptation.',
+  'postJob.addressLabel': 'Adresse (où se déroule le travail?)',
+  'postJob.addressHint':
+    'Nous l’utilisons pour montrer le travail aux pros à proximité. Elle reste cachée jusqu’à ce que vous acceptiez un devis.',
+  'postJob.addressRequired':
+    'Ajoutez l’adresse pour que les pros à proximité trouvent le travail.',
+  'postJob.postedTitle': 'Demande publiée',
+  'postJob.postedBodyHeld':
+    'a été débité et retenu en fiducie. Tout montant inutilisé est remboursé quand vous acceptez un devis.',
+  'postJob.postedBodyNoHold': 'Les pros à proximité sont avisés maintenant.',
+  'postJob.postedRowHold': 'Paiement débité',
+  'postJob.postedRowHoldSub':
+    'Le budget inutilisé est remboursé quand vous acceptez un devis',
+  'postJob.postedRowQuotes': 'Devis attendus d’ici',
+  'postJob.postedRowQuotesValue': '~2 h',
+  'postJob.viewJob': 'Voir la demande',
+  'quotes.acceptAndPay': 'Accepter et payer',
+  'quotes.payFirstNote':
+    'Vous verrez le total avant de confirmer. Rien n’est débité avant.',
+  'quotes.accepted': 'Devis accepté',
+  'quotes.paidAndBooked': 'Payé — c’est réservé',
+  'quotes.finishInBrowser':
+    'Terminez le paiement dans votre navigateur pour le confirmer.',
+  'quotes.notPaidYet': 'Pas encore payé',
+  'quotes.notPaidYetBody':
+    'Votre réservation est retenue mais non payée. Payez pour la confirmer — le pro n’est pas planifié avant.',
+  'quotes.payFailed':
+    'Impossible de prendre le paiement. Votre réservation est retenue mais non payée.',
+  'quotes.noQuote': 'Aucun devis sélectionné.',
+  'quotes.noBooking':
+    'Ce devis n’a pas pu être converti en réservation. Rien n’a été débité.',
+  'requestSent.title': 'Demande envoyée',
+  'requestSent.subReply':
+    '%{business} répond habituellement en environ %{time}.',
+  'requestSent.subFallback':
+    '%{business} répond habituellement en quelques heures.',
+  'requestSent.subFallbackGeneric':
+    'Les pros à proximité répondent habituellement en quelques heures.',
+  'requestSent.step1Title': 'Ils envoient un devis',
+  'requestSent.step1Body': 'Il apparaît derrière la bulle Devis dans Messages.',
+  'requestSent.step2Title': 'Vous discutez et vous vous entendez',
+  'requestSent.step2Body': 'Posez vos questions avant de vous engager.',
+  'requestSent.step3Title': 'Accepter et payer',
+  'requestSent.step3Body': 'C’est seulement là que c’est réservé.',
+  'requestSent.noPaymentLead': 'Aucun paiement pour l’instant.',
+  'requestSent.noPaymentBody': 'Rien n’est débité avant votre acceptation.',
+  'requestSent.openConversation': 'Ouvrir la conversation',
+  'requestSent.trackRequest': 'Suivre cette demande',
+  'requestSent.morePros': 'Demander à d’autres pros',
+  'booking.liveStatus': 'Statut en direct',
+  'booking.liveStatusEmpty':
+    'Les mises à jour apparaissent ici pendant le travail du pro.',
+  'booking.liveStatusError': 'Impossible de charger le statut en direct.',
+  'booking.eventDatesProposed': 'Horaires proposés',
+  'booking.eventDateConfirmed': 'Date confirmée',
+  'booking.eventEnRoute': 'En route',
+  'booking.eventArrived': 'Le pro est arrivé',
+  'booking.eventStarted': 'Travail commencé',
+  'booking.eventPaused': 'Travail en pause',
+  'booking.eventResumed': 'Travail repris',
+  'booking.eventCompleted': 'Travail terminé',
+  'booking.eventCancelled': 'Annulé',
+  'booking.eventGeneric': 'Réservation mise à jour',
+  'booking.timeSetAtPosting': 'Heure fixée à la publication : %{when}',
+  'booking.moreActions': 'Plus',
+  'booking.moreActionsA11y': 'Plus d’actions de réservation',
+  'booking.reportProblem': 'Signaler un problème',
+  'booking.cancelBooking': 'Annuler la réservation',
+  'booking.viewReceipt': 'Voir le reçu',
+  'booking.reviewRelease': 'Vérifier le travail et libérer le paiement',
+  'booking.markPaidOffPlatform': 'Marquer comme payé (comptant / virement)',
+  'booking.payNow': 'Payer maintenant',
+  'booking.message': 'Message',
+  'businessProfile.jobsDone': '%{count} travaux réalisés',
+});
+Object.assign(translations.ar, {
+  'pay.titleHold': 'أكّد طلبك',
+  'pay.titlePay': 'دفع العرض',
+  'pay.ctaHold': 'انشر الطلب',
+  'pay.ctaPay': 'تأكيد ودفع',
+  'pay.holding': 'جارٍ النشر…',
+  'pay.paying': 'جارٍ تنفيذ الدفع…',
+  'pay.jobTotal': 'إجمالي العمل',
+  'pay.quote': 'عرض السعر',
+  'pay.serviceFee': 'رسوم الخدمة',
+  'pay.onHoldToday': 'ميزانيتك',
+  'pay.total': 'الإجمالي',
+  'pay.payWith': 'الدفع بواسطة',
+  'pay.change': 'تغيير',
+  'pay.expires': 'ينتهي في %{date}',
+  'pay.savedCard': 'بطاقة محفوظة',
+  'pay.methodCard': 'بطاقة',
+  'pay.methodCardSub': 'يفتح صفحة Stripe آمنة — لا تحفظ SwingBy بطاقتك أبدًا.',
+  'pay.methodCardSubNative': 'تُدخَل بأمان داخل التطبيق — ولا تحفظها SwingBy.',
+  'pay.addMethod': 'أضف طريقة دفع',
+  'pay.noMethodHint': 'أضف بطاقة للمتابعة. لن يُخصم أي مبلغ حتى تؤكّد.',
+  'pay.escrow':
+    'محتجز في الضمان — يُحرَّر فقط عند موافقتك على العمل. إلغاء مجاني حتى 48 ساعة قبل الموعد.',
+  'pay.declined': 'تم رفض هذه البطاقة. جرّب بطاقة أخرى.',
+  'pay.amountChanged': 'تغيّر هذا العرض — راجع الإجمالي الجديد قبل التأكيد.',
+  'pay.quoteError': 'تعذّر تسعير هذا العمل. حاول مرة أخرى.',
+  'pay.noAmount': 'لا يوجد مبلغ لتحصيله لهذا العمل.',
+  'pay.escrowHold':
+    'لن يُخصم أي مبلغ الآن. تدفع عند قبولك عرضًا، ولا يُؤخذ المبلغ غير المستخدم أبدًا.',
+  'postJob.reviewTitle': 'مراجعة الطلب',
+  'postJob.rowService': 'الخدمة',
+  'postJob.rowWhen': 'الموعد',
+  'postJob.rowWhere': 'المكان',
+  'postJob.rowBudget': 'ميزانيتك',
+  'postJob.rowBusiness': 'المحترف',
+  'postJob.escrowExplainer':
+    'ميزانيتك تُعلم المحترفين بالمبلغ المتاح لديك. تدفع فقط عند قبولك عرضًا، وترى السعر الدقيق أولًا.',
+  'postJob.escrowExplainerLead': 'لن يُخصم أي مبلغ الآن.',
+  'postJob.ctaSendRequest': 'أرسل الطلب',
+  'postJob.ctaPost': 'انشر الطلب',
+  'postJob.hintOpen':
+    'يرى المحترفون القريبون طلبك ويرسلون عروض أسعار. لا يُخصم منك شيء حتى تقبل أحدها.',
+  'postJob.hintTargeted':
+    'سيردّ %{business} بالسعر والموعد. لن يُخصم أي مبلغ حتى تقبل.',
+  'postJob.addressLabel': 'العنوان (أين العمل؟)',
+  'postJob.addressHint':
+    'نستخدمه لعرض العمل على المحترفين القريبين. يبقى مخفيًا حتى تقبل عرضًا.',
+  'postJob.addressRequired':
+    'أضف العنوان ليتمكن المحترفون القريبون من العثور على العمل.',
+  'postJob.postedTitle': 'تم نشر الطلب',
+  'postJob.postedBodyHeld':
+    'تم خصمه واحتجازه في الضمان. يُعاد أي مبلغ غير مستخدم عند قبولك عرضًا.',
+  'postJob.postedBodyNoHold': 'يجري الآن إشعار المحترفين القريبين.',
+  'postJob.postedRowHold': 'تم تحصيل الدفعة',
+  'postJob.postedRowHoldSub': 'يُعاد المبلغ غير المستخدم عند قبولك عرضًا',
+  'postJob.postedRowQuotes': 'توقّع العروض خلال',
+  'postJob.postedRowQuotesValue': '~ساعتان',
+  'postJob.viewJob': 'عرض الطلب',
+  'quotes.acceptAndPay': 'اقبل وادفع',
+  'quotes.payFirstNote': 'سترى الإجمالي قبل التأكيد. لن يُخصم شيء قبل ذلك.',
+  'quotes.accepted': 'تم قبول العرض',
+  'quotes.paidAndBooked': 'تم الدفع — الحجز مؤكد',
+  'quotes.finishInBrowser': 'أكمل الدفع في المتصفح لتأكيده.',
+  'quotes.notPaidYet': 'لم يُدفع بعد',
+  'quotes.notPaidYetBody':
+    'حجزك محفوظ لكنه غير مدفوع. ادفع لتأكيده — لن يُجدوَل المحترف قبل ذلك.',
+  'quotes.payFailed': 'تعذّر تنفيذ الدفع. حجزك محفوظ لكنه غير مدفوع.',
+  'quotes.noQuote': 'لم يتم اختيار أي عرض.',
+  'quotes.noBooking': 'تعذّر تحويل هذا العرض إلى حجز. لم يُخصم أي مبلغ.',
+  'requestSent.title': 'تم إرسال الطلب',
+  'requestSent.subReply': 'عادةً ما يردّ %{business} خلال %{time} تقريبًا.',
+  'requestSent.subFallback': 'عادةً ما يردّ %{business} خلال بضع ساعات.',
+  'requestSent.subFallbackGeneric':
+    'عادةً ما يردّ المحترفون القريبون خلال بضع ساعات.',
+  'requestSent.step1Title': 'يرسلون عرض سعر',
+  'requestSent.step1Body': 'يصل خلف فقاعة العروض في الرسائل.',
+  'requestSent.step2Title': 'تتحدثان وتتفقان',
+  'requestSent.step2Body': 'اسأل عن أي شيء قبل الالتزام.',
+  'requestSent.step3Title': 'اقبل وادفع',
+  'requestSent.step3Body': 'عندها فقط يصبح الحجز مؤكدًا.',
+  'requestSent.noPaymentLead': 'لا دفع حتى الآن.',
+  'requestSent.noPaymentBody': 'لن يُخصم أي مبلغ حتى تقبل.',
+  'requestSent.openConversation': 'افتح المحادثة',
+  'requestSent.trackRequest': 'تتبّع هذا الطلب',
+  'requestSent.morePros': 'اطلب من محترفين آخرين',
+  'booking.liveStatus': 'الحالة المباشرة',
+  'booking.liveStatusEmpty': 'تظهر التحديثات هنا أثناء عمل المحترف.',
+  'booking.liveStatusError': 'تعذّر تحميل الحالة المباشرة.',
+  'booking.eventDatesProposed': 'تم اقتراح مواعيد',
+  'booking.eventDateConfirmed': 'تم تأكيد الموعد',
+  'booking.eventEnRoute': 'في الطريق',
+  'booking.eventArrived': 'وصل المحترف',
+  'booking.eventStarted': 'بدأ العمل',
+  'booking.eventPaused': 'تم إيقاف العمل مؤقتًا',
+  'booking.eventResumed': 'استؤنف العمل',
+  'booking.eventCompleted': 'اكتمل العمل',
+  'booking.eventCancelled': 'أُلغي',
+  'booking.eventGeneric': 'تم تحديث الحجز',
+  'booking.timeSetAtPosting': 'الموعد المحدد عند النشر: %{when}',
+  'booking.moreActions': 'المزيد',
+  'booking.moreActionsA11y': 'المزيد من إجراءات الحجز',
+  'booking.reportProblem': 'الإبلاغ عن مشكلة',
+  'booking.cancelBooking': 'إلغاء الحجز',
+  'booking.viewReceipt': 'عرض الإيصال',
+  'booking.reviewRelease': 'راجع العمل وحرّر الدفعة',
+  'booking.markPaidOffPlatform': 'وضع علامة مدفوع (نقدًا / تحويل إلكتروني)',
+  'booking.payNow': 'ادفع الآن',
+  'booking.message': 'مراسلة',
+  'businessProfile.jobsDone': '%{count} عمل منجز',
 });
 
 const i18n = new I18n(translations);

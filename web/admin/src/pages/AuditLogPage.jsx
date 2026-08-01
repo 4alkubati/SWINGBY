@@ -5,13 +5,15 @@ import styles from './AuditLogPage.module.css'
 
 /* ── Constants ────────────────────────────────────────────────────────────── */
 
-const PLACEHOLDER_ROWS = [
-  { id: 1, timestamp: '2026-05-27T09:14:00Z', actor: 'admin@swingbyy.com', action: 'suspend_user',      resource_type: 'user',    resource_id: 'usr_001' },
-  { id: 2, timestamp: '2026-05-27T08:55:00Z', actor: 'admin@swingbyy.com', action: 'verify_license',    resource_type: 'business', resource_id: 'biz_012' },
-  { id: 3, timestamp: '2026-05-26T17:40:00Z', actor: 'system',            action: 'booking_completed', resource_type: 'booking',  resource_id: 'bkg_089' },
-  { id: 4, timestamp: '2026-05-26T15:22:00Z', actor: 'admin@swingbyy.com', action: 'unsuspend_user',    resource_type: 'user',    resource_id: 'usr_047' },
-  { id: 5, timestamp: '2026-05-26T12:01:00Z', actor: 'system',            action: 'payment_released',  resource_type: 'booking',  resource_id: 'bkg_074' },
-]
+/* PLACEHOLDER_ROWS used to live here: five hand-written entries dated
+ * 2026-05-27 with invented actors (admin@swingbyy.com) and invented
+ * resource ids (usr_001, biz_012). They were swapped in whenever
+ * GET /admin/audit-log failed — which was always, because the endpoint did
+ * not exist — and the time-range and action filters then operated on them
+ * convincingly. An audit log is the one screen that must never show
+ * invented data: it is what you consult when you need to know what really
+ * happened. The endpoint exists now (backend/app/api/admin.py); a failure
+ * shows an error, and an empty log shows that it is empty. */
 
 const TIME_RANGE_OPTIONS = [
   { value: 'all',  label: 'All Time'    },
@@ -248,7 +250,7 @@ const COLUMNS = [
 export default function AuditLogPage() {
   const [entries, setEntries]           = useState([])
   const [loading, setLoading]           = useState(true)
-  const [isPlaceholder, setIsPlaceholder] = useState(false)
+  const [loadError, setLoadError]       = useState('')
   const [timeRange, setTimeRange]       = useState('all')
   const [actionFilter, setActionFilter] = useState('all')
   const [selectedEntry, setSelectedEntry] = useState(null)
@@ -256,13 +258,16 @@ export default function AuditLogPage() {
   useEffect(() => {
     api.get('/admin/audit-log')
       .then((res) => {
-        const data = Array.isArray(res.data) ? res.data : res.data?.logs ?? []
+        const body = res.data
+        const data = Array.isArray(body) ? body : body?.items ?? body?.logs ?? []
         setEntries(data)
-        setIsPlaceholder(false)
+        setLoadError('')
       })
-      .catch(() => {
-        setEntries(PLACEHOLDER_ROWS)
-        setIsPlaceholder(true)
+      .catch((err) => {
+        setEntries([])
+        setLoadError(
+          err?.response?.data?.detail || 'Could not load the audit log.'
+        )
       })
       .finally(() => setLoading(false))
   }, [])
@@ -289,8 +294,8 @@ export default function AuditLogPage() {
         <h1>Audit Log</h1>
         <p className={styles.pageHeaderSubtitle}>
           Admin actions and system events.
-          {isPlaceholder && (
-            <span className={styles.placeholderTag}>placeholder data</span>
+          {loadError && (
+            <span className={styles.placeholderTag}>{loadError}</span>
           )}
         </p>
       </div>

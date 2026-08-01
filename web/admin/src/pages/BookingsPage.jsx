@@ -243,7 +243,11 @@ export default function BookingsPage() {
   async function handleForceComplete(id) {
     setCompleting(id)
     try {
-      await api.post(`/admin/bookings/${id}/force-complete`)
+      // The route is /admin/force-complete-booking/{id} and always was —
+      // this posted to /admin/bookings/{id}/force-complete, so every click
+      // 404'd and the catch below only console.error'd it. The admin saw the
+      // spinner clear and nothing happen.
+      await api.post(`/admin/force-complete-booking/${id}`)
       // Optimistic update
       const now = new Date().toISOString()
       setBookings((prev) =>
@@ -256,8 +260,13 @@ export default function BookingsPage() {
         setSelected((prev) => ({ ...prev, status: 'completed', completed_at: now }))
       }
     } catch (err) {
-      // Surface error without clobbering the page
+      // Surface it. A silent console.error is how a dead button stays dead:
+      // the spinner clears and the admin assumes it worked.
       console.error('Force-complete failed:', err)
+      setError(
+        err?.response?.data?.detail ||
+          'Could not force-complete that booking. Nothing was changed.'
+      )
     } finally {
       setCompleting(null)
     }
