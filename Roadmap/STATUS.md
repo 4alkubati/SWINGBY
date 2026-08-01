@@ -193,10 +193,17 @@ by three other companies; **`swingbyyc`** is free across IG/FB/X/YT.
 
 Probed 2026-08-01 against production, not inferred.
 
-`swingbyy.com` serves **`web/launch`**, not `web/pre-launch` (the deployed
-bundle contains `About`, `BlogIndex`, `AccountSettings`, `Bookings` chunks). It
-has not rebuilt from this repo in a long time, so it is serving copy this repo
-has since corrected. Two consequences, both user-facing:
+`swingbyy.com` serves **`web/pre-launch`**, from a build made after 2026-06-05
+and before PR #84. It has not rebuilt since, so it is serving copy this repo has
+already corrected.
+
+> Corrected later the same day: an earlier pass of this section said the live
+> site was `web/launch`, on the strength of `About` / `BlogIndex` /
+> `AccountSettings` / `Bookings` chunks in the bundle. **Those pages exist in
+> both apps**, so they prove nothing. What settles it is the Terms prose and the
+> `<title>`, which match `web/pre-launch` exactly.
+
+Two consequences, both user-facing:
 
 1. **The live Terms of Service states the cancellation ladder backwards.**
    Verbatim from `assets/TermsPage-*.js` today:
@@ -211,10 +218,18 @@ has since corrected. Two consequences, both user-facing:
 2. **The live marketing pages still promise the 50/50 staged release.**
    Same cause. Fixed in the repo now; still live until someone deploys.
 
-**Neither is a code change. Both need the Cloudflare Pages production branch
-pointed at `main` and a build run** (H13, which was filed as "not a store
-blocker" — true for the *privacy* URL, but the Terms page is a different
-document and it is currently wrong about money).
+**Neither is a code change — both just need the site to deploy.** That is now
+wired: `.github/workflows/web-prelaunch-deploy.yml` builds and publishes
+`web/pre-launch` on every push to `main` that touches it, then **asserts on the
+live Terms prose** before going green. Dry-run against production today, that
+assertion correctly fails — so it is checking something real.
+
+**One human step remains:** add the repo secret `CLOUDFLARE_API_TOKEN`
+(Cloudflare Pages:Edit), then run the workflow once. Until it exists the
+workflow fails at preflight rather than pretending to ship.
+
+Filed as H13 as "not a store blocker" — true for the *privacy* URL, but the
+Terms page is a different document and it is currently wrong about money.
 
 **The privacy policy itself is fine** — `assets/PrivacyPage-*.js` serves the
 full PIPA policy with `privacy@swingbyy.com`. Safe for App Store Connect.
