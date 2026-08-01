@@ -33,6 +33,7 @@ import {
 import { show as showToast } from '../../services/toast';
 import * as haptics from '../../services/haptics';
 import i18n from '../../i18n';
+import { resolveQuoteStatus } from '../../utils/quoteStatus';
 import Text from '../../components/Text';
 import Surface from '../../components/Surface';
 import Inline from '../../components/Inline';
@@ -794,14 +795,17 @@ export default function ChatScreen({ navigation, route }) {
 
   // pending | accepted | expired | declined — derived from the interest row the
   // messages endpoint hands back alongside the thread.
-  const quoteStatus = (() => {
-    if (!threadInfo) return null;
-    if (threadInfo.status === 'accepted') return 'accepted';
-    if (threadInfo.status === 'rejected') return 'declined';
-    const postStatus = threadInfo.post_status;
-    if (postStatus && postStatus !== 'open' && postStatus !== 'matched') return 'expired';
-    return 'pending';
-  })();
+  // The SAME function the inbox uses (utils/quoteStatus.js). This used to be a
+  // local copy that checked `post_status` and never compared a clock, so a
+  // quote whose own window had elapsed showed as "Expired" in the inbox and
+  // fully live in here — Accept & pay and Decline both offered on a dead quote.
+  const quoteStatus = resolveQuoteStatus(
+    threadInfo && { status: threadInfo.status, created_at: threadInfo.created_at },
+    threadInfo && {
+      status: threadInfo.post_status,
+      expires_at: threadInfo.post_expires_at || threadInfo.expires_at,
+    },
+  );
 
   const quotePending = !bookingId && quoteStatus === 'pending';
 
