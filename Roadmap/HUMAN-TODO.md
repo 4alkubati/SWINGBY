@@ -11,7 +11,7 @@ Status values: **TODO** · **DONE** · **BLOCKED** · **DECIDE**
 
 | # | Status | Task |
 |---|---|---|
-| H1 | **TODO** | **Apply** `supabase/migrations/20260731120000_approval_gated_escrow_release.sql` in the Supabase SQL editor. One nullable column + one index, additive. |
+| H1 | **TODO** | **Apply TWO migrations** in the Supabase SQL editor, in this order. Both additive, both safe to re-run: <br>1. `20260731120000_approval_gated_escrow_release.sql` — nullable column + index. <br>2. `20260731140000_terms_consent.sql` — one nullable column, `users.terms_accepted_at`. <br>The app works without #2 (the consent checkbox still gates signup; only the timestamp is skipped, with a log line) — but until it is applied we cannot show *when* an account agreed. |
 | H2 | **TODO** | **Merge PR #81** (`gh pr merge 81 --squash`). **After H1** — Render deploys `main` and the new code reads that column. |
 | H3 | **TODO** | Reveal `STRIPE_SECRET_KEY` in Render → Environment and read the first 8 chars. `sk_test_` = fine. `sk_live_` = **swap to test before submitting**, or the Apple reviewer's booking charges a real card. |
 
@@ -36,6 +36,7 @@ Status values: **TODO** · **DONE** · **BLOCKED** · **DECIDE**
 | D3 | **DECIDE** | **Apple Pay** — worth registering a merchant ID and enabling it in Stripe? Needed before `merchantIdentifier` can be non-empty. Not a store blocker; is a conversion one. |
 | D4 | **DECIDE** | **Card-on-file (M2)** — build SetupIntent + a manage-cards screen this cycle, or ship beta without saved cards? Currently a card is only retained as a side effect of paying once, and there is no UI to see or remove it. |
 | D5 | **DECIDE** | **Payouts.** Nothing can actually pay a business today. Not an App Review blocker (nothing in the reviewed flow pays out) but it is a launch blocker. |
+| D6 | **DECIDE** | **Credit redemption.** `credits.CREDIT_REDEMPTION_AT_CHECKOUT_ENABLED` is **off**, so a $25 goodwill credit can be granted, and now *seen* in Settings, but not spent. Turning it on needs the charge path verified in Stripe test mode end-to-end, and has a known hole (an abandoned checkout keeps the credit spent). Until then the app tells the holder to contact you. |
 
 ## Infrastructure
 

@@ -42,10 +42,10 @@ Found by sweeping all 127 backend routes against every mobile source file.
 |---|---|---|---|
 | `POST /auth/social/role` | ✅ | ✅ **WIRED 2026-07-31** | **A business signing in with Apple lands as a client with no way to say otherwise.** This endpoint exists precisely to fix that — one-shot, 24h window, client→business_owner only. |
 | `isNewUser` from social sign-in | ✅ returned | ✅ **WIRED 2026-07-31** | The app cannot tell a brand-new account from a returning one, so no onboarding ever runs. |
-| `expiry_sweep.sweep_once` | ✅ | ❌ no scheduler at all | Expired posts never refund. No cron service, no worker, no APScheduler. |
-| `POST /me/ghost` / `/me/unghost` | ✅ | ❌ no UI | Ghost mode was a product ruling (2026-07-21). Unreachable. |
-| `GET /me/credits` | ✅ | ❌ no UI | Credits are issued by the cancellation ladder and cannot be seen. |
-| `GET /reviews/client/{id}` | ✅ | ❌ unused | Businesses cannot see a client's history. |
+| `expiry_sweep.sweep_once` | ✅ | ✅ **WIRED 2026-07-31** | Expired posts never refunded. Now settles on `GET /service-posts/my` (the client's own read), the business feed hides expired posts outright, and `POST /admin/sweeps/post-expiry` drives it in bulk. **There is still no scheduler** — that is why it settles on read. |
+| `POST /me/ghost` / `/me/unghost` | ✅ | ✅ **WIRED 2026-07-31** | Ghost mode is promised in `PrivacyPolicyScreen` §3 and was reachable from nowhere. Now a Settings toggle; a 409 repeats the actual blocker. |
+| `GET /me/credits` | ✅ | ✅ **WIRED 2026-07-31** | Credits are granted when a business cancels late and could not be seen. Shown in Settings when non-zero. **Still not spendable** — redemption is gated off (D6). |
+| `GET /reviews/client/{id}` | ✅ | ❌ unused | Businesses cannot see a client's history. The last one, and the least harmful: an absent feature, not a broken promise. |
 
 **Expected/benign** (listed so nobody re-flags them): `/admin/*` (web admin, not
 deployed — refund + report queues moved in-app), `/payments/stripe/webhook`
@@ -71,49 +71,64 @@ Full detail: `~/brain/inbox/swingby-ios-walkthrough-2026-07-31.md`.
   **OPEN.**
 - **M4 — accept falls back to a browser** when the native sheet is unavailable.
   Legal under 3.1.3(e); it is where the unpaid bookings came from. **OPEN.**
-- **M5 — dashboard "THIS WEEK" counts unpaid bookings**, everything else counts
-  money that moved. Same label, two meanings ($590 vs $75). **OPEN.**
+- **M5 — dashboard "THIS WEEK" counted unpaid bookings.** ✅ **FIXED
+  2026-07-31.** It reads `released_to_business` off the payments now — the same
+  source EarningsScreen uses — and carries a caption saying which number it is.
+  Shows an em dash, never $0, when payments fail to load.
 
-### Screens
-- **P1** — `JOB STATUS` stepper and `Live status` card are two controls for one
-  action. **OPEN.**
-- **P2** — cancel copy truncated mid-word: *"a penalt…"*. **OPEN.**
-- **P3** — two timestamps, neither labelled as *the appointment*. **OPEN.**
-- **P4** — `Jobs` and `My Business` share one briefcase icon. **OPEN.**
-- **P5** — "Detailed chart coming soon" shipped to users. **OPEN.**
+### Screens — all ✅ FIXED 2026-07-31
+- **P1** — the stepper is a progress indicator now; the Live status button is
+  the only control. That also retires the double-post class of bug.
+- **P2** — the toast body was capped at two lines. Four now, shorter copy, and
+  money outcomes stay up 6s.
+- **P3** — the two timestamps are on separate lines and the logged-at one says
+  "Logged".
+- **P4** — `My Business` has its own glyph; a guard test fails on any duplicate.
+- **P5** — replaced with a legend and a date range, which is what was missing.
 
 ### Platform + consent — raised 2026-07-31
-- **X1 — no terms/privacy consent at signup.** Zero matches for
-  agree/consent/terms in `SignupScreen`. Needed for the store and for PIPEDA.
-  **OPEN.**
+- **X1 — no terms/privacy consent at signup.** ✅ **FIXED 2026-07-31.** A real
+  checkbox on **step 0**, in front of Continue *and* both social buttons —
+  step 0 is where Apple/Google sign-up lives, so a box next to "Create Account"
+  on step 2 would have gated the slowest path and none of the fast ones.
+  `TermsOfService`/`PrivacyPolicy` are registered in `AuthNavigator` too, so
+  the links resolve while logged out (they previously threw). Consent is
+  recorded in `users.terms_accepted_at` — best-effort, so a pending migration
+  can never lock anyone out of signing up.
 - **X2 — Sign in with Apple has no setup step.** ✅ **FIXED 2026-07-31.**
   `RolePickerSheet` now opens for a genuinely new social account and calls the
   `/auth/social/role` endpoint that had sat there with no caller. A 403 (window
   closed) lets the person through as a client rather than trapping them.
-- **X3 — maps do not split by platform.** `PROVIDER_GOOGLE` is forced, so iOS
-  uses Google Maps and needs the key. iOS should be able to use Apple Maps
-  (`PROVIDER_DEFAULT`). **OPEN.**
-- **X4 — Android is offered Sign in with Apple.** It should not be; Apple only
-  requires it where another social login exists on *their* platform, and the
-  native module is iOS-only anyway. **OPEN.**
+- **X3 — maps do not split by platform.** ✅ **FIXED 2026-07-31.** iOS draws
+  Apple Maps (`PROVIDER_DEFAULT`), Android keeps Google. The choice lives in
+  `services/maps.js` so the two map surfaces cannot drift. Trap closed with it:
+  `customMapStyle` is Google-only, so iOS would have come back with a LIGHT map
+  inside a dark app — `darkMapProps()` sends `userInterfaceStyle` instead.
+- **X4 — Android is offered Sign in with Apple.** ✅ **Already correct**, and
+  now pinned. Metro resolves `./appleAuth` to the inert `appleAuth.js` off iOS,
+  so the button never renders and the iOS-only native module never enters the
+  Android bundle. Nothing had tested it.
 
 ---
 
 ## 4. Weekend plan — build is SUNDAY
 
-Two days. Priority order, highest first:
+**Saturday is done.** X1, X2, X3, X4, M1, M5, P1–P5, `expiry_sweep`, ghost mode
+and the credit balance all landed, with tests: **445 mobile / 919 backend
+green.**
 
-1. **X2 + §2 wiring** — role picker after social sign-in. Endpoint already
-   exists; this is app-side only.
-2. **X1** — consent checkbox at signup.
-3. **M5** — relabel/reconcile the dashboard headline. Cheap, high perceived
-   impact.
-4. **P1–P5** — screen defects. Mostly copy and one icon.
-5. **X3/X4** — platform split for maps and Apple sign-in.
-6. **M2** — card-on-file. Biggest remaining piece; may not fit the weekend.
+What is left, highest first:
 
-`expiry_sweep` should be given the same lazy/endpoint treatment M1 got, or
-deleted. It must not stay in the tree pretending to work.
+1. **H1** — apply the two migrations. Blocks nothing in the app, but until then
+   we cannot say when an account consented (see HUMAN-TODO).
+2. **M2** — card-on-file (SetupIntent + a manage-cards screen). The biggest
+   remaining piece and a **decision** first (D4): build it this cycle, or ship
+   beta with a card retained only as a side effect of paying once.
+3. **Social** — §5.
+4. **M3/M4** — Apple Pay / Google Pay (needs D3 and a merchant id) and the
+   browser-checkout fallback.
+5. `GET /reviews/client/{id}` — the last unwired route. An absent feature, not
+   a broken promise; wire it or delete it.
 
 ---
 
