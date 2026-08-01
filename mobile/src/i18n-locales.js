@@ -143,7 +143,10 @@ export const LOCALES = [
     label: 'Ukrainian',
     native: 'Українська',
     rtl: false,
-    status: 'planned',
+    // Shipped 2026-08-01 — all 468 keys, complete on arrival. `ready` is not a
+    // plan, it is a claim that the app speaks this language everywhere, and
+    // i18n-coverage fails the build if that stops being true.
+    status: 'ready',
   },
   {
     code: 'hi',
