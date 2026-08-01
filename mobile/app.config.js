@@ -85,17 +85,24 @@ module.exports = ({ config }) => ({
     // entitlement, which fails iOS provisioning until a merchant ID is actually
     // registered with Apple.
     //
-    // NOTE (2026-07-30): an Apple Developer account now exists, so this is no
-    // longer blocked on that — but it IS still blocked on registering a merchant
-    // ID in the Apple Developer portal AND enabling Apple Pay in Stripe. Leave it
-    // empty until both are done; card payments need none of it, and a premature
-    // value breaks the build rather than degrading gracefully.
-    // Then set STRIPE_MERCHANT_IDENTIFIER (e.g. merchant.com.swingby.app).
+    // NOTE (2026-08-01): everything on the CODE side of Apple Pay is wired. The
+    // only thing still missing is the merchant ID itself, which comes from the
+    // Apple Developer portal (and Apple Pay being switched on in Stripe).
+    //
+    // So this stays driven by the env var, and stays EMPTY until that id
+    // exists: a non-empty value writes the com.apple.developer.in-app-payments
+    // entitlement, which fails iOS provisioning against a merchant ID Apple has
+    // never heard of. Empty is not "unbuilt" — it is the off position of a
+    // finished switch. Set STRIPE_MERCHANT_IDENTIFIER (merchant.com.swingby.app)
+    // and rebuild; nothing else changes.
+    //
+    // GOOGLE PAY is on. It needs no merchant registration — Stripe's own
+    // merchant id covers it — so there was never a reason for it to wait.
     [
       '@stripe/stripe-react-native',
       {
         merchantIdentifier: process.env.STRIPE_MERCHANT_IDENTIFIER || '',
-        enableGooglePay: false,
+        enableGooglePay: true,
       },
     ],
   ],

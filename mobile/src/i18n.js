@@ -148,7 +148,7 @@ const translations = {
     // Escrow milestones — read-only (GAP-AUDIT #10)
     'escrow.title': 'Payment protection',
     'escrow.fundsHeld': 'Funds held in escrow',
-    'escrow.halfReleased': '50% released on confirm',
+    'escrow.halfReleased': 'Released when you approve',
     'escrow.fullReleased': 'Released on completion',
 
     // Profile photo upload (GAP-AUDIT #11)
@@ -471,7 +471,7 @@ const translations = {
     // Escrow milestones — read-only (GAP-AUDIT #10)
     'escrow.title': 'Protection du paiement',
     'escrow.fundsHeld': 'Fonds détenus en entiercement',
-    'escrow.halfReleased': '50 % libéré à la confirmation',
+    'escrow.halfReleased': 'Libéré quand vous approuvez',
     'escrow.fullReleased': 'Libéré à la fin du travail',
 
     // Profile photo upload (GAP-AUDIT #11)
@@ -792,7 +792,7 @@ const translations = {
     // Escrow milestones — read-only (GAP-AUDIT #10)
     'escrow.title': 'حماية الدفع',
     'escrow.fundsHeld': 'الأموال محتجزة كضمان',
-    'escrow.halfReleased': 'تم تحرير 50% عند التأكيد',
+    'escrow.halfReleased': 'يُحرَّر عند موافقتك',
     'escrow.fullReleased': 'تم التحرير عند الاكتمال',
 
     // Profile photo upload (GAP-AUDIT #11)

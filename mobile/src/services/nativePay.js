@@ -195,11 +195,14 @@ export async function payForBookingNatively({ bookingId, email } = {}) {
   //     <StripeProvider> at the app root so the publishable key comes from the
   //     server at pay time: rotating it needs no app rebuild, and the key is
   //     never baked into the shipped bundle.
-  // No `merchantIdentifier` — that is Apple Pay only, and Apple Pay is off
-  // (no Apple Developer account yet, and app.config.js leaves the merchant id
-  // empty so no in-app-payments entitlement is written). Cards only.
+  // `merchantIdentifier` is Apple Pay's, and it comes from the SERVER response
+  // so the wallet turns on without an app rebuild the moment the merchant id
+  // exists in Stripe. app.config.js still gates the iOS ENTITLEMENT on the
+  // build-time env var, because that part genuinely cannot be decided at
+  // runtime — but everything else here is finished and waiting.
   await stripe.initStripe({
     publishableKey: sheet.publishable_key,
+    merchantIdentifier: sheet.apple_merchant_id || undefined,
     // Lets Stripe auto-dismiss a 3DS web view back into the app.
     urlScheme: 'swingby',
   });
@@ -214,6 +217,25 @@ export async function payForBookingNatively({ bookingId, email } = {}) {
     // Delayed methods (ACH, SEPA, Boleto) settle days later and would let a job
     // go live against money that has not landed — precisely FINDING C. Off.
     allowsDelayedPaymentMethods: false,
+    // ── Wallets ──────────────────────────────────────────────────────────
+    // Google Pay needs no merchant registration (Stripe's own merchant id
+    // covers it), so it is simply on. `testEnv` follows the key actually in
+    // use: a live key with testEnv:true silently refuses to charge.
+    googlePay: {
+      merchantCountryCode: 'CA',
+      currencyCode: 'CAD',
+      testEnv: !String(sheet.publishable_key || '').startsWith('pk_live'),
+    },
+    // Apple Pay is only offered when the server names a merchant id. Passing
+    // an applePay block WITHOUT one makes the sheet render an Apple Pay button
+    // that fails when tapped — worse than not offering it.
+    ...(sheet.apple_merchant_id
+      ? {
+          applePay: {
+            merchantCountryCode: 'CA',
+          },
+        }
+      : {}),
     style: 'alwaysDark',
     appearance: swingbyAppearance(),
     defaultBillingDetails: email ? { email } : undefined,

@@ -67,6 +67,11 @@ class PaymentSheetResponse(BaseModel):
     amount_cents: int
     currency: str
     merchant_display_name: str
+    # Apple Pay's merchant id, or None while it is unset. It MUST be declared
+    # here: response_model drops any field the model does not name, so a value
+    # the service returns but the schema omits never reaches the device — the
+    # wallet would look wired and be dead.
+    apple_merchant_id: Optional[str] = None
 
 
 # ---------------------------------------------------------------------------
@@ -770,3 +775,96 @@ def _mark_payment_paid(
                 )
     except Exception:
         logger.warning("payment receipt email failed for booking %s", booking_id)
+
+
+# ── Card on file (M2) ────────────────────────────────────────────────────────
+
+
+class SetupIntentResponse(BaseModel):
+    setup_intent_client_secret: str
+    ephemeral_key: str
+    customer_id: str
+    publishable_key: str
+    merchant_display_name: str
+    apple_merchant_id: Optional[str] = None
+
+
+@router.post("/setup-intent", response_model=SetupIntentResponse)
+def create_setup_intent(current_user: dict = Depends(get_current_user)):
+    """Save a card WITHOUT charging it.
+
+    Before this, a card was kept only as a side effect of paying once: the
+    PaymentIntent carried setup_future_usage='off_session'. That produced a
+    saved card the client could not see, choose or remove, and no card at all
+    until their first successful payment.
+
+    Same `native_sheet_unavailable:` refusal as the payment sheet — without a
+    publishable key the device cannot confirm anything, and minting a
+    SetupIntent would strand a real Stripe object.
+    """
+    from app.services import stripe_payment_sheet
+
+    if not stripe_payment_sheet.publishable_key():
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                "native_sheet_unavailable: STRIPE_PUBLISHABLE_KEY is not set, so "
+                "a card cannot be added on this environment."
+            ),
+        )
+
+    first = current_user.get("first_name") or ""
+    last = current_user.get("last_name") or ""
+    try:
+        return stripe_payment_sheet.create_setup_intent(
+            user_id=current_user["id"],
+            email=current_user.get("email"),
+            name=(f"{first} {last}".strip() or None),
+        )
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception("stripe.setup_intent failed", user_id=current_user["id"])
+        raise HTTPException(status_code=400, detail="Could not start card setup")
+
+
+@router.get("/payment-methods")
+def list_payment_methods(current_user: dict = Depends(get_current_user)):
+    """The caller's saved cards. Brand, last 4, expiry — nothing else exists."""
+    from app.services import stripe_payment_sheet
+
+    try:
+        return {"items": stripe_payment_sheet.list_payment_methods(
+            user_id=current_user["id"]
+        )}
+    except Exception:
+        # An empty list is the safe answer: the screen renders "no cards yet"
+        # rather than an error the user cannot act on, and paying still works
+        # through the sheet.
+        logger.exception("stripe.list_payment_methods failed")
+        return {"items": []}
+
+
+@router.delete("/payment-methods/{payment_method_id}")
+def delete_payment_method(
+    payment_method_id: str,
+    current_user: dict = Depends(get_current_user),
+):
+    """Remove a saved card.
+
+    Ownership is verified against STRIPE — the id comes from the client, and
+    detach would otherwise happily remove a card belonging to another account.
+    """
+    from app.services import stripe_payment_sheet
+
+    try:
+        stripe_payment_sheet.detach_payment_method(
+            user_id=current_user["id"],
+            payment_method_id=payment_method_id,
+        )
+    except PermissionError as exc:
+        raise HTTPException(status_code=403, detail=str(exc))
+    except Exception:
+        logger.exception("stripe.detach_payment_method failed")
+        raise HTTPException(status_code=400, detail="Could not remove that card")
+    return {"removed": payment_method_id}

@@ -20,17 +20,34 @@
 // that they "never have to hold a card on file", while the backend was about
 // to start doing precisely that. If card retention is ever turned off, the
 // "Your card is saved for next time" step goes with it.
-import React from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   View,
   TouchableOpacity,
   StyleSheet,
   ScrollView,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { colors, spacing, radius } from '../../theme/tokens';
 import Text from '../../components/Text';
+import Button from '../../components/Button';
+import { useAuth } from '../../context/AuthContext';
+import { show as showToast } from '../../services/toast';
+import {
+  listCards,
+  addCard,
+  removeCard,
+  describeCard,
+  isExpired,
+} from '../../services/cards';
+import {
+  isNativePaySupported,
+  PaymentCancelledError,
+  NativePayUnavailableError,
+} from '../../services/nativePay';
 
 const STEPS = [
   {
@@ -41,12 +58,17 @@ const STEPS = [
   {
     icon: 'credit-card',
     title: 'Your card is saved for next time',
-    body: 'The card you pay with is stored securely by Stripe, so booking again takes one tap instead of retyping it. SwingBy never sees your card number. You can remove it any time by contacting support.',
+    body: 'The card you pay with is stored securely by Stripe, so booking again takes one tap instead of retyping it. SwingBy never sees your card number. Add or remove cards below, any time.',
   },
   {
     icon: 'check-circle',
     title: 'Released when the job is done',
-    body: 'Half is released once the booking is confirmed and the rest on completion. SwingBy keeps a 10% platform fee.',
+    // This said "half is released once the booking is confirmed and the rest on
+    // completion" — the staged 50/50 split that does not exist in the code and
+    // had already been pulled from the store listing and five marketing files.
+    // escrow.py is the authority: the money is released when the client
+    // approves, or automatically 24h after the business marks the work done.
+    body: 'The money is released when you approve the finished work — or automatically 24 hours after the business marks it done. SwingBy keeps a 10% platform fee.',
   },
   {
     icon: 'shield',
@@ -57,6 +79,75 @@ const STEPS = [
 
 export default function PaymentMethodScreen({ navigation }) {
   const insets = useSafeAreaInsets();
+  const { user } = useAuth();
+
+  // `null` = not loaded. Never rendered as "no cards", which would tell someone
+  // their saved card is gone when the list simply has not arrived.
+  const [cards, setCards] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [removing, setRemoving] = useState(null);
+
+  const load = useCallback(async () => {
+    try {
+      setCards(await listCards());
+    } catch {
+      setCards([]);
+    }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  async function handleAdd() {
+    if (busy) return;
+    setBusy(true);
+    try {
+      await addCard({ email: user?.email });
+      showToast({ type: 'success', text1: 'Card saved' });
+      await load();
+    } catch (err) {
+      // Dismissing the sheet is an answer, not a failure.
+      if (err instanceof PaymentCancelledError) return;
+      showToast({
+        type: 'error',
+        text1: 'Could not save that card',
+        text2:
+          err instanceof NativePayUnavailableError
+            ? 'Card management needs the full app build.'
+            : err?.message,
+      });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function handleRemove(card) {
+    Alert.alert(
+      'Remove card?',
+      `${describeCard(card)} will be removed. Any booking already paid for is unaffected.`,
+      [
+        { text: 'Keep', style: 'cancel' },
+        {
+          text: 'Remove',
+          style: 'destructive',
+          onPress: async () => {
+            setRemoving(card.id);
+            try {
+              await removeCard(card.id);
+              await load();
+            } catch (err) {
+              showToast({
+                type: 'error',
+                text1: 'Could not remove that card',
+                text2: err?.message,
+              });
+            } finally {
+              setRemoving(null);
+            }
+          },
+        },
+      ],
+    );
+  }
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -99,6 +190,79 @@ export default function PaymentMethodScreen({ navigation }) {
             </View>
           ))}
         </View>
+
+        {/* ── Saved cards ──────────────────────────────────────────────
+            This section is the whole of M2. Before it, the card Stripe kept
+            after a payment was invisible: no list, no add, no delete — the
+            copy above told people to contact support to remove one. */}
+        <Text style={styles.sectionLabel}>YOUR CARDS</Text>
+        <View style={styles.card}>
+          {cards === null ? (
+            <View style={styles.cardsLoading}>
+              <ActivityIndicator size="small" color={colors.accent} />
+            </View>
+          ) : cards.length === 0 ? (
+            <Text style={styles.emptyCards}>
+              No saved cards. You can add one now, or just pay with a card when
+              you accept a quote — it is saved either way.
+            </Text>
+          ) : (
+            cards.map((c, i) => (
+              <View
+                key={c.id}
+                style={[styles.stepRow, i > 0 && styles.stepRowDivider]}
+              >
+                <View style={styles.stepIcon}>
+                  <Feather name="credit-card" size={18} color={colors.accentText} />
+                </View>
+                <View style={styles.stepText}>
+                  <Text style={styles.stepTitle}>{describeCard(c)}</Text>
+                  <Text
+                    style={[
+                      styles.stepBody,
+                      isExpired(c) && { color: colors.danger },
+                    ]}
+                  >
+                    {isExpired(c)
+                      ? `Expired ${c.exp_month}/${c.exp_year}`
+                      : `Expires ${c.exp_month}/${c.exp_year}`}
+                    {c.is_default ? ' · used by default' : ''}
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  onPress={() => handleRemove(c)}
+                  disabled={removing === c.id}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Remove ${describeCard(c)}`}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                >
+                  {removing === c.id ? (
+                    <ActivityIndicator size="small" color={colors.danger} />
+                  ) : (
+                    <Feather name="trash-2" size={18} color={colors.danger} />
+                  )}
+                </TouchableOpacity>
+              </View>
+            ))
+          )}
+        </View>
+
+        {isNativePaySupported() ? (
+          <Button
+            label="Add a card"
+            variant="secondary"
+            onPress={handleAdd}
+            loading={busy}
+            disabled={busy}
+          />
+        ) : (
+          // Expo Go and any build without the Stripe native module. Saying so
+          // beats a button that throws when tapped.
+          <Text style={styles.footer}>
+            Adding a card needs the full app build. You can still pay when you
+            accept a quote.
+          </Text>
+        )}
 
         <Text style={styles.footer}>
           Agreed a job in cash or by e-transfer? Mark it as paid on the booking
@@ -180,6 +344,22 @@ const styles = StyleSheet.create({
     lineHeight: 19,
   },
 
+  sectionLabel: {
+    fontSize: 11,
+    fontFamily: 'Inter_600SemiBold',
+    letterSpacing: 1.2,
+    color: colors.textSecondary,
+    marginTop: spacing.lg,
+    marginBottom: spacing.sm,
+  },
+  cardsLoading: { padding: spacing.lg, alignItems: 'center' },
+  emptyCards: {
+    padding: spacing.base,
+    fontSize: 13,
+    fontFamily: 'Inter_400Regular',
+    color: colors.textSecondary,
+    lineHeight: 19,
+  },
   footer: {
     fontSize: 12,
     fontFamily: 'Inter_400Regular',

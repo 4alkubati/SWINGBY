@@ -44,6 +44,18 @@ logger = logging.getLogger(__name__)
 # "some Stripe page".
 MERCHANT_DISPLAY_NAME = "SwingBy"
 
+# Apple Pay's merchant id, served to the device rather than baked into the app.
+#
+# The iOS ENTITLEMENT still has to be decided at build time (app.config.js reads
+# STRIPE_MERCHANT_IDENTIFIER), because an entitlement naming a merchant id Apple
+# has never heard of fails provisioning. But whether the sheet OFFERS the wallet
+# is a runtime question, and answering it from the server means Apple Pay turns
+# on for every already-installed build the moment this variable is set — no
+# rebuild, no resubmission.
+#
+# Empty is the off position of a finished switch, not an unbuilt feature.
+APPLE_MERCHANT_ID = os.getenv("STRIPE_MERCHANT_IDENTIFIER", "").strip()
+
 CURRENCY = "cad"
 
 
@@ -213,6 +225,7 @@ def create_payment_sheet(
         "amount_cents": amount_cents,
         "currency": CURRENCY,
         "merchant_display_name": MERCHANT_DISPLAY_NAME,
+        "apple_merchant_id": APPLE_MERCHANT_ID or None,
     }
 
 
@@ -279,3 +292,146 @@ def remember_payment_method(*, user_id: str, payment_method_id: Optional[str]) -
             user_id,
             exc_info=True,
         )
+
+
+# ── Card on file (M2) ────────────────────────────────────────────────────────
+#
+# Until now a card was retained only as a SIDE EFFECT of paying once: the
+# PaymentIntent carried setup_future_usage='off_session', so Stripe kept the
+# card on the Customer, and `remember_payment_method` recorded which one. That
+# gave us a saved card nobody could see, choose, or delete — the client had to
+# re-enter a card whenever the sheet did not offer it back, and there was no
+# answer at all to "what card do you have of mine, and take it off".
+#
+# A SetupIntent is the same flow with no charge attached: the client adds a card
+# deliberately, before there is anything to pay for.
+
+
+def create_setup_intent(
+    *, user_id: str, email: Optional[str], name: Optional[str]
+) -> dict[str, Any]:
+    """Everything the native sheet needs to SAVE a card without charging it.
+
+    Same envelope shape as `create_payment_sheet` so the mobile side can reuse
+    its initPaymentSheet plumbing verbatim.
+    """
+    stripe = _stripe()
+    customer_id = ensure_customer(user_id=user_id, email=email, name=name)
+
+    ephemeral = stripe.EphemeralKey.create(
+        customer=customer_id,
+        stripe_version="2024-06-20",
+    )
+    intent = stripe.SetupIntent.create(
+        customer=customer_id,
+        usage="off_session",
+        automatic_payment_methods={"enabled": True},
+        metadata={"swingby_user_id": str(user_id)},
+    )
+    return {
+        "setup_intent_client_secret": intent["client_secret"],
+        "ephemeral_key": ephemeral["secret"],
+        "customer_id": customer_id,
+        "publishable_key": publishable_key(),
+        "merchant_display_name": MERCHANT_DISPLAY_NAME,
+        "apple_merchant_id": APPLE_MERCHANT_ID or None,
+    }
+
+
+def list_payment_methods(*, user_id: str) -> list[dict[str, Any]]:
+    """The client's saved cards, in the shape the app renders.
+
+    Only the four fields a human needs to recognise a card. Never the full PAN
+    — Stripe does not return it and we would not store it if it did.
+    """
+    customer_id = _existing_customer_id(user_id)
+    if not customer_id:
+        return []
+
+    stripe = _stripe()
+    methods = stripe.PaymentMethod.list(customer=customer_id, type="card")
+    default_id = _default_payment_method_id(user_id)
+
+    out = []
+    for m in methods.get("data", []) or []:
+        card = m.get("card") or {}
+        out.append(
+            {
+                "id": m.get("id"),
+                "brand": card.get("brand"),
+                "last4": card.get("last4"),
+                "exp_month": card.get("exp_month"),
+                "exp_year": card.get("exp_year"),
+                "is_default": m.get("id") == default_id,
+            }
+        )
+    return out
+
+
+def detach_payment_method(*, user_id: str, payment_method_id: str) -> None:
+    """Remove a saved card.
+
+    OWNERSHIP IS CHECKED AGAINST STRIPE, not against our own table. The id comes
+    from the client, and `PaymentMethod.detach` would happily detach a card
+    belonging to somebody else's Customer if we simply passed it through.
+    """
+    customer_id = _existing_customer_id(user_id)
+    if not customer_id:
+        raise PermissionError("No saved cards for this account")
+
+    stripe = _stripe()
+    method = stripe.PaymentMethod.retrieve(payment_method_id)
+    if (method or {}).get("customer") != customer_id:
+        raise PermissionError("That payment method belongs to another account")
+
+    stripe.PaymentMethod.detach(payment_method_id)
+
+    # Drop it as the default too, or the next off-session charge names a card
+    # Stripe no longer has.
+    if _default_payment_method_id(user_id) == payment_method_id:
+        try:
+            supabase.table("users").update({"default_payment_method_id": None}).eq(
+                "id", user_id
+            ).execute()
+        except Exception:
+            logger.warning(
+                "Detached %s but could not clear default_payment_method_id",
+                payment_method_id,
+                exc_info=True,
+            )
+
+
+def _existing_customer_id(user_id: str) -> Optional[str]:
+    """The user's Stripe customer, WITHOUT creating one.
+
+    `ensure_customer` would mint a Customer just to list zero cards, leaving
+    empty Customers in Stripe for every user who opened the payments screen.
+    """
+    try:
+        res = (
+            supabase.table("users")
+            .select("stripe_customer_id")
+            .eq("id", user_id)
+            .limit(1)
+            .execute()
+        )
+        rows = res.data or []
+        return (rows[0].get("stripe_customer_id") if rows else None) or None
+    except Exception:
+        logger.warning("Could not read stripe_customer_id", exc_info=True)
+        return None
+
+
+def _default_payment_method_id(user_id: str) -> Optional[str]:
+    try:
+        res = (
+            supabase.table("users")
+            .select("default_payment_method_id")
+            .eq("id", user_id)
+            .limit(1)
+            .execute()
+        )
+        rows = res.data or []
+        return (rows[0].get("default_payment_method_id") if rows else None) or None
+    except Exception:
+        return None
