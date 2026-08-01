@@ -11,7 +11,7 @@
       "livePill": "En ligne à Calgary",
       "headlineLead": "Services locaux, devis en",
       "headlineAccent": "quelques minutes.",
-      "sub": "Publiez une tâche. Des entreprises de Calgary vérifiées la chiffrent. Réservez avec un paiement sous séquestre — versé en deux temps : la moitié à la confirmation, la moitié quand le travail est fait.",
+      "sub": "Publiez une tâche. Des entreprises de Calgary vérifiées la chiffrent. Réservez avec un paiement sous séquestre — retenu en entier jusqu'à ce que vous approuviez le travail terminé.",
       "ctaPrimary": "Publier une tâche — c'est gratuit",
       "ctaSecondary": "Obtenir plus de contrats",
       "trust": {
@@ -53,8 +53,8 @@
       "client": {
         "1": { "title": "Publiez une tâche", "desc": "Catégorie, adresse, budget, photos. Deux minutes." },
         "2": { "title": "Recevez des devis", "desc": "Des entreprises vérifiées à Calgary manifestent leur intérêt avec un prix." },
-        "3": { "title": "Réservez en toute sécurité", "desc": "Payez via le séquestre. 50 % à la confirmation." },
-        "4": { "title": "Terminé → paiement + avis", "desc": "Confirmez la fin. Les 50 % restants sont libérés. Laissez un avis." }
+        "3": { "title": "Réservez en toute sécurité", "desc": "Payez à l'acceptation. La totalité est retenue sous séquestre." },
+        "4": { "title": "Terminé → paiement + avis", "desc": "Approuvez le travail et le paiement est versé. Laissez un avis." }
       },
       "business": {
         "1": { "title": "Inscrivez-vous + vérifiez", "desc": "Vérification manuelle en 24 à 48 heures pendant la bêta." },
@@ -65,15 +65,15 @@
     },
     "escrow": {
       "eyebrow": "Protection séquestre",
-      "title": "Votre argent se libère en deux temps, pas en un seul.",
-      "body": "SwingBy divise chaque paiement — la moitié est versée à l'entreprise à la confirmation de la réservation, la moitié à l'approbation des travaux. En cas de problème, nous pouvons retenir le solde non versé.",
+      "title": "Votre argent ne bouge pas tant que vous n'avez pas dit que le travail est fait.",
+      "body": "SwingBy retient la totalité du paiement dès que vous acceptez un devis. Rien n'est versé à l'entreprise avant que vous approuviez le travail terminé — ou 24 heures après qu'elle l'a marqué comme terminé, si vous ne répondez pas. En cas de problème, nous pouvons retenir le solde jusqu'au règlement du litige.",
       "ledgerTitle": "Flux d'une réservation de 180 $",
-      "row1Title": "Vous réservez",
-      "row1Sub": "Fonds sous séquestre",
-      "row2Title": "Contrat confirmé",
-      "row2Sub": "50 % libérés à l'entreprise",
+      "row1Title": "Vous acceptez un devis",
+      "row1Sub": "180 $ débités et retenus sous séquestre",
+      "row2Title": "Le travail se fait",
+      "row2Sub": "Toujours retenu — l'entreprise n'a encore rien reçu",
       "row3Title": "Vous approuvez le travail",
-      "row3Sub": "50 % finaux libérés, moins 10 % de frais"
+      "row3Sub": "162 $ versés, après les 10 % de frais"
     },
     "trust": {
       "eyebrow": "Fondé sur la confiance",

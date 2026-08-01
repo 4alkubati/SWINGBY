@@ -158,8 +158,8 @@ Tap **Book Now** to confirm. The business will be notified immediately.
 ### After booking
 - You'll receive a confirmation email
 - You can message the business directly
-- 50% of the payment is held in escrow
-- The remaining 50% is charged on job completion
+- The full payment is charged when you accept the quote, and held in escrow
+- It is released to the business when you approve the finished work
 
 ---
 

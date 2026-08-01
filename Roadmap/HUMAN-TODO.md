@@ -11,9 +11,9 @@ Status values: **TODO** · **DONE** · **BLOCKED** · **DECIDE**
 
 | # | Status | Task |
 |---|---|---|
-| H1 | **DONE** | ~~Apply TWO migrations in the Supabase SQL editor.~~ **Both verified applied 2026-08-03** by probing PostgREST directly (never the migration headers — they lie): `bookings.approval_deadline_at` → 200, `users.terms_accepted_at` → 200. Every other filed migration was probed at the same time (`content_reports`, `user_blocks`, `messages.hidden_at`, `payments.post_id`) — all live. |
-| H2 | **DONE** | ~~Merge PR #81.~~ Merged 2026-07-31. |
-| H3 | **TODO** | Reveal `STRIPE_SECRET_KEY` in Render → Environment and read the first 8 chars. `sk_test_` = fine. `sk_live_` = **swap to test before submitting**, or the Apple reviewer's booking charges a real card. |
+| H1 | **DONE** | ~~Apply TWO migrations in the Supabase SQL editor.~~ **Verified twice, independently:** `information_schema.columns` on 2026-08-01, and a direct PostgREST probe on 2026-08-03 — `bookings.approval_deadline_at` → 200, `users.terms_accepted_at` → 200. Every other filed migration was probed at the same time (`content_reports`, `user_blocks`, `messages.hidden_at`, `payments.post_id`) — all live. Probed, never read from a migration header; those have lied three times. |
+| H2 | **DONE** | ~~Merge PR #81.~~ Merged 2026-07-31, along with #82–#85. Render reports `environment: production` and `/health` is green. |
+| H3 | **DONE** | ~~Check `STRIPE_SECRET_KEY` in Render.~~ **Kira verified 2026-08-03: it is a test key.** Note for anyone re-checking: `/health` reporting `stripe: ok` proves the key *parses*, not which mode it is in — the only proof is reading the prefix. Payments stay in sandbox for the whole beta. |
 
 ## Apple console — blocks TestFlight, not the dev build
 
@@ -33,8 +33,8 @@ Status values: **TODO** · **DONE** · **BLOCKED** · **DECIDE**
 |---|---|---|
 | D1 | **DONE** | *Client goes quiet after work is done?* → **auto-release after 24 hours.** Implemented in PR #81. |
 | D2 | **DECIDE** | **Legal entity name + registered address** for the privacy policy. This address becomes **public** — a registered/virtual Calgary address may beat your home one. Blocks publishing the canonical policy. |
-| D3 | **DECIDE** | **Apple Pay** — worth registering a merchant ID and enabling it in Stripe? Needed before `merchantIdentifier` can be non-empty. Not a store blocker; is a conversion one. |
-| D4 | **DECIDE** | **Card-on-file (M2)** — build SetupIntent + a manage-cards screen this cycle, or ship beta without saved cards? Currently a card is only retained as a side effect of paying once, and there is no UI to see or remove it. |
+| D3 | **PARTLY ANSWERED** | **Apple Pay.** Google Pay is **built, on, and needs nothing from you** (`enableGooglePay: true`; Stripe's own merchant id covers it). Apple Pay is **code-complete and waiting on one account-side value**: the app reads the merchant id from the *server* response, so the wallet turns on with no app rebuild — but the iOS entitlement is gated on the build-time `STRIPE_MERCHANT_IDENTIFIER`. **Decision left: register an Apple merchant ID and set that env var, or ship beta with Google Pay + card only.** |
+| D4 | **ANSWERED — BUILT** | ~~Card-on-file (M2).~~ Shipped in PR #83 and **genuinely wired**: SetupIntent endpoints, `services/cards.js`, and `PaymentMethodScreen` registered in **both** navigators and reachable from Profile, Business profile, QuoteComparison, BookingDetails and PostJob. This one did not repeat the built-but-never-wired pattern. |
 | D5 | **DECIDE** | **Payouts.** Nothing can actually pay a business today. Not an App Review blocker (nothing in the reviewed flow pays out) but it is a launch blocker. |
 | D6 | **DECIDE** | **Credit redemption.** `credits.CREDIT_REDEMPTION_AT_CHECKOUT_ENABLED` is **off**, so a $25 goodwill credit can be granted, and now *seen* in Settings, but not spent. Turning it on needs the charge path verified in Stripe test mode end-to-end, and has a known hole (an abandoned checkout keeps the credit spent). Until then the app tells the holder to contact you. |
 

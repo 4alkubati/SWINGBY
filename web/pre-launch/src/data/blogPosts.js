@@ -252,8 +252,8 @@ One of the most common concerns when hiring someone online is: "What if they tak
 
 ### How it works
 
-1. **You book a service** — the full job amount is committed to SwingBy
-2. **50% releases on confirmation** — paid to the business when the booking is confirmed, so they can schedule the work
+1. **You accept a quote** — the full job amount is charged and held by SwingBy
+2. **The work happens** — none of it has reached the business yet; it is still held
 3. **Released on approval** — the full amount, less our 10% platform fee, goes to the business when you approve the work (or 24 hours after they mark it done)
 4. **Dispute protection** — if there is an issue, the unreleased balance is held while we investigate
 

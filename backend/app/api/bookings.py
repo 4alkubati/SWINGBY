@@ -1084,8 +1084,10 @@ def complete_booking(booking_id: str, current_user: dict = Depends(get_current_u
 
     Payment logic:
       - Booking: status → completed, payment_status → fully_released
-      - Payment: release remaining 50 % escrow minus 10 % platform cut.
-        e.g. $100 total: $50 already released, now release $40, SwingBy keeps $10.
+      - Payment: release the whole held escrow minus the 10 % platform cut.
+        e.g. $100 total: nothing released before this point, now release $90,
+        SwingBy keeps $10. There is no staged/partial release — see
+        tests/test_no_staged_release_claim.py.
     """
     if current_user["role"] not in ("business_owner", "employee"):
         raise HTTPException(

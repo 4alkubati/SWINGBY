@@ -7,7 +7,7 @@ const CLIENT_STEPS = [
   { n: '01', title: 'Post your job', desc: 'Describe what you need, set a budget, and pick your neighbourhood. No account required to browse — sign up to post.' },
   { n: '02', title: 'Receive quotes', desc: 'Verified businesses express interest and send their quoted price. You see their profile, ratings, and past reviews.' },
   { n: '03', title: 'Pick your pro', desc: 'Compare quotes and accept the one that fits your budget and timeline. The business confirms details.' },
-  { n: '04', title: 'Pay safely', desc: 'Your payment is held in escrow. 50% releases when you confirm the booking, 50% on job completion.' },
+  { n: '04', title: 'Pay safely', desc: 'Your payment is held in escrow in full. It releases when you approve the finished work — or 24 hours after the business marks it done.' },
   { n: '05', title: 'Leave a review', desc: 'Your honest review helps the next person make a great choice.' },
 ]
 

@@ -175,9 +175,9 @@ One of the design decisions I'm most proud of: the escrow split.
 
 When the client approves the finished work, the payment is released to the business — automatically after 24 hours if the client goes quiet, so nobody waits on a silent client.
 
-When the job is completed: the remaining 50%, minus the 10% platform fee, released to the business.
+When the job is approved: the whole held amount, minus the 10% platform fee, goes to the business.
 
-If cancelled more than 48h before the job: full refund minus 25% penalty.
+If cancelled more than 48h before the job: full refund, no penalty.
 If cancelled within 48h: 50% penalty.
 
 Every number is a policy decision with consequences for both sides. I've thought about each one.

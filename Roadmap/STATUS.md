@@ -23,10 +23,24 @@ database, or production HTTP — not inferred from other docs.
 | First iOS build | ✅ built + installed | iOS 18 device, ad-hoc |
 | **Sign in with Apple** | ✅ **works on device** | signs in end to end |
 
-### Pending merge — PR #81
-Apple Team ID `ZTYJ33HPDX`, installable iOS `preview` profile, the Services-ID
-doc correction, **and the M1 escrow fix**. Needs
-`20260731120000_approval_gated_escrow_release.sql` applied first.
+### Re-verified 2026-08-01 — everything above is still true, and more has landed
+PRs #81–#85 are all **merged**; `main` is at `38c1166`. **Both migrations are
+applied** — confirmed by querying `information_schema.columns` on the live
+project, not by reading a file header (`bookings.approval_deadline_at`,
+`users.terms_accepted_at`). Suites on `main`: **960 backend / 480 mobile green.**
+
+**M2 (card-on-file) is DONE and wired** — PR #83. **Google Pay is on.** Apple
+Pay is code-complete, gated only on a merchant id. See HUMAN-TODO D3/D4.
+
+> ⚠ **The one thing that got worse, not better.** PR #84 was titled *"kill the
+> 50/50 release claim everywhere, and make it unable to return."* It did
+> neither. A sweep on 2026-08-01 found the claim alive in **20 files across three
+> languages**, including five lines in `web/launch/src/locales/en.json` that the
+> PR itself edited, and the `fr.json`/`ar.json` locales it never opened. The
+> guard test passed the whole time because every one of its patterns matched the
+> past participle *"released"* while the surviving copy said *"releases"*.
+> Fixed, and the guard now covers the present tense and the two non-English
+> locales — see §7.
 
 ---
 
@@ -167,3 +181,40 @@ by three other companies; **`swingbyyc`** is free across IG/FB/X/YT.
   id-token flow, so Supabase only needs the bundle id in Client IDs.
 - **`curl -I` proves nothing about swingbyy.com** — the SPA fallback answers 200
   for any path. Grep the deployed bundle.
+- **Grep the RIGHT bundle.** `assets/index-*.js` is only the entry chunk; every
+  page is code-split. `Personal Information Protection Act` returns **zero** hits
+  there and is very much live — it sits in `assets/PrivacyPage-*.js`. Enumerate
+  the chunk names out of the entry file first, or you will re-file the privacy
+  policy as a blocker for the third time.
+
+---
+
+## 7. The live site is a stale build, and it is saying false things
+
+Probed 2026-08-01 against production, not inferred.
+
+`swingbyy.com` serves **`web/launch`**, not `web/pre-launch` (the deployed
+bundle contains `About`, `BlogIndex`, `AccountSettings`, `Bookings` chunks). It
+has not rebuilt from this repo in a long time, so it is serving copy this repo
+has since corrected. Two consequences, both user-facing:
+
+1. **The live Terms of Service states the cancellation ladder backwards.**
+   Verbatim from `assets/TermsPage-*.js` today:
+   > *"25% of the job amount if cancelled more than 48 hours before the
+   > scheduled date, and 50% if cancelled within 48 hours."*
+
+   The real ladder (`escrow.compute_cancellation_split`) is **free** more than
+   48h out and **25%** within 48h. The live page charges a fee for the one rung
+   that has none, **as terms of service**. `web/pre-launch/src/pages/TermsPage.jsx`
+   in this repo is already correct — this is purely undeployed.
+
+2. **The live marketing pages still promise the 50/50 staged release.**
+   Same cause. Fixed in the repo now; still live until someone deploys.
+
+**Neither is a code change. Both need the Cloudflare Pages production branch
+pointed at `main` and a build run** (H13, which was filed as "not a store
+blocker" — true for the *privacy* URL, but the Terms page is a different
+document and it is currently wrong about money).
+
+**The privacy policy itself is fine** — `assets/PrivacyPage-*.js` serves the
+full PIPA policy with `privacy@swingbyy.com`. Safe for App Store Connect.

@@ -114,7 +114,7 @@ const FAQ_ITEMS = [
   {
     question: 'When does payment happen?',
     answer:
-      'When you accept a quote, SwingBy records the payment for the job and releases 50% to the business so they can schedule and start the work. The remaining 50%, minus our 10% platform fee, is released when the job is marked complete. If something goes wrong, you can report a problem and our team will review the case.',
+      'When you accept a quote, SwingBy charges the full job amount and holds it in escrow. None of it reaches the business until you approve the finished work — or 24 hours after they mark it done, if you go quiet. At that point it is released, minus our 10% platform fee. If something goes wrong, you can report a problem and our team will review the case.',
   },
   {
     question: 'What if a job goes wrong?',

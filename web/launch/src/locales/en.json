@@ -53,8 +53,8 @@
       "client": {
         "1": { "title": "Post a job", "desc": "Category, address, budget, photos. Two minutes." },
         "2": { "title": "Get quotes", "desc": "Verified Calgary businesses tap Express interest with a price." },
-        "3": { "title": "Book + pay safely", "desc": "Pay through escrow. First 50% releases on confirmation." },
-        "4": { "title": "Done → release + review", "desc": "Confirm complete. Remaining 50% releases. Leave a review." }
+        "3": { "title": "Book + pay safely", "desc": "Pay when you accept. The full amount is held in escrow." },
+        "4": { "title": "Done → release + review", "desc": "Approve the work and the payment is released. Leave a review." }
       },
       "business": {
         "1": { "title": "Sign up + verify", "desc": "Manual verification in 24–48 hours during the Calgary beta." },
@@ -66,14 +66,14 @@
     "escrow": {
       "eyebrow": "Escrow protection",
       "title": "Your money does not move until you say the job is done.",
-      "body": "SwingBy splits every payment — half releases to the business when you confirm the booking so they can schedule the work, half when you approve the finish. If something goes wrong, we can withhold the unreleased balance until the dispute is resolved.",
+      "body": "SwingBy holds the whole payment from the moment you accept a quote. Nothing reaches the business until you approve the finished work — or 24 hours after they mark it done, if you go quiet. If something goes wrong, we can withhold the balance until the dispute is resolved.",
       "ledgerTitle": "How a $180 booking flows",
-      "row1Title": "You book",
-      "row1Sub": "Held in escrow",
-      "row2Title": "Job confirmed",
-      "row2Sub": "50% releases to the business",
+      "row1Title": "You accept a quote",
+      "row1Sub": "$180 charged and held in escrow",
+      "row2Title": "The work happens",
+      "row2Sub": "Still held — the business has none of it yet",
       "row3Title": "You approve the work",
-      "row3Sub": "Final 50% releases, minus 10% fee"
+      "row3Sub": "$162 released, after the 10% fee"
     },
     "trust": {
       "eyebrow": "Built on trust",
