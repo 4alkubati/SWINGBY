@@ -29,15 +29,15 @@ export default function JobOpportunityCard({
     .filter(Boolean)
     .join(' · ');
 
-  // Pre-acceptance, the backend empties `image_urls` and sends `photo_count`
-  // instead (privacy.py mask_service_post_row, L3) — the business is told a job
-  // HAS photos without being shown the client's home before they are hired.
-  // This card only ever read `image_urls`, so the count was zero on every open
-  // post and the badge below never rendered: a client could attach photos and
-  // the business saw no sign of them at all.
+  // Since 2026-08-01 the backend RETURNS the photos pre-acceptance (privacy.py
+  // L3, reversed by the product owner): a business cannot price a job it is not
+  // allowed to look at. The client's name, exact address, coordinates and
+  // budget are still masked — the business sees the work, not the person.
   //
-  // `photos` stays the real URLs — thumbnails must never be faked from a count.
-  // `photoCount` is what we KNOW exists, masked or not.
+  // Both paths are kept anyway. `photo_count` still rides along, and if a
+  // future rule masks the URLs again this card degrades to the count badge
+  // instead of silently showing nothing. Thumbnails are never faked from a
+  // count — `photos` is only ever real URLs.
   const photos = Array.isArray(post.image_urls) ? post.image_urls.filter(Boolean) : [];
   const photoCount = photos.length || Number(post.photo_count) || 0;
   const [viewerIndex, setViewerIndex] = useState(null);

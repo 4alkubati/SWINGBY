@@ -70,7 +70,7 @@ export default function PaymentFlowVisual() {
       </div>
 
       <p className={styles.footnote}>
-        Cancellations: 25% penalty if cancelled more than 48 hours before the booking, 50% within 48 hours. The penalty stays with the side that didn't cancel.
+        Cancellations: a client who cancels more than 48 hours ahead is refunded in full. Within 48 hours the business keeps 25%; after the scheduled time, 50%. If the business cancels, the client is refunded in full at any notice.
       </p>
     </figure>
   )

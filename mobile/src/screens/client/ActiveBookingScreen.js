@@ -174,16 +174,29 @@ const STATUS_EYEBROW = {
   cancelled: 'CANCELLED',
 };
 
-function buildTitle(booking) {
-  const status = booking?.status;
-  if (status === 'on_the_way') {
-    const mins = booking?.eta_minutes ?? 12;
-    return `Arriving in ${mins} min`;
+// The hero reads the SAME stage the timeline below it does.
+//
+// It used to branch on `booking.status === 'on_the_way'` — a value the backend
+// never writes. `bookings.status` only ever holds confirmed | in_progress |
+// completed | cancelled, so the "ON THE WAY" eyebrow and the "Arriving in X
+// min" title were unreachable, and the moment a provider was genuinely en
+// route the hero said "Service in progress" while the timeline three lines
+// below it highlighted "On the way".
+//
+// `stageFromEvents` is the B15 helper: it derives the stage from the immutable
+// booking_events the provider actually taps, which is the only honest source.
+function buildTitle(stage, booking) {
+  if (stage === 'on_the_way') {
+    const mins = booking?.eta_minutes;
+    // No invented ETA. `eta_minutes` is not a column any endpoint returns, so
+    // the old `?? 12` default meant every en-route booking claimed "Arriving in
+    // 12 min" — a number with nothing behind it.
+    return mins ? `Arriving in ${mins} min` : 'On the way';
   }
-  if (status === 'confirmed') return 'Waiting to start';
-  if (status === 'in_progress') return 'Service in progress';
-  if (status === 'completed') return 'Service completed';
-  if (status === 'cancelled') return 'Booking cancelled';
+  if (stage === 'confirmed') return 'Waiting to start';
+  if (stage === 'in_progress') return 'Service in progress';
+  if (stage === 'completed') return 'Service completed';
+  if (stage === 'cancelled') return 'Booking cancelled';
   return 'Checking status…';
 }
 
@@ -413,8 +426,10 @@ export default function ActiveBookingScreen({ navigation, route }) {
     haptics.buttonTap?.();
     setCallVisible(true);
   }
-  const eyebrow = STATUS_EYEBROW[booking?.status] || 'STATUS';
-  const heroTitle = buildTitle(booking);
+  // One stage, three consumers: the eyebrow, the title and the timeline.
+  const heroStage = stageFromEvents(events, booking?.status);
+  const eyebrow = STATUS_EYEBROW[heroStage] || 'STATUS';
+  const heroTitle = buildTitle(heroStage, booking);
 
   // Job details live on the linked service post; the date on confirmed_date
   const postTitle = booking?.service_posts?.title;
@@ -579,7 +594,7 @@ export default function ActiveBookingScreen({ navigation, route }) {
 
                   {/* Segmented progress */}
                   <BookingStatusTimeline
-                    currentStatus={stageFromEvents(events, booking.status)}
+                    currentStatus={heroStage}
                     timestamps={{
                       confirmed: booking.created_at
                         ? formatTime(booking.created_at)

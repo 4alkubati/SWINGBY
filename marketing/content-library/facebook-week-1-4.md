@@ -41,7 +41,7 @@ Attention Calgary service businesses:
 
 Are you a cleaner, handyman, landscaper, dog walker, personal trainer, or other local service provider? SwingBy is now connecting Calgary clients with local vetted businesses like yours.
 
-You get matched with clients actively looking for what you do, in your service area. No monthly subscription. You pay a small percentage only when a job completes — Founder pricing (5%) for the first 100 businesses.
+You get matched with clients actively looking for what you do, in your service area. Nothing to start, and no charge for quoting. You pay 10% only when a job completes.
 
 Sign up in 5 minutes at the link below.
 
@@ -115,7 +115,7 @@ It's designed so both sides have skin in the game. The business knows you're ser
 
 Q: How much does it cost to be on SwingBy as a business?
 
-A: Nothing upfront. No monthly subscription. You create your profile, list your services, and start responding to jobs — all free.
+A: Nothing upfront. You create your profile, list your services, and start responding to jobs — all free. We take 10% only on jobs you complete.
 
 SwingBy takes 10% when a job completes. For the first 100 businesses who join, we're offering Founder pricing: 5%.
 

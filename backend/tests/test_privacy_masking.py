@@ -176,8 +176,16 @@ class TestFeedMasksPreAcceptance:
         assert "budget" not in item
         assert "150" not in response.text
 
-    def test_job_photos_are_count_only(self, test_client, as_owner):
-        """L3 — photos of the inside of a home never ride the pre-acceptance feed."""
+    def test_job_photos_are_shown_so_a_business_can_price_the_job(
+        self, test_client, as_owner
+    ):
+        """L3, REVERSED 2026-08-01 — the photos ride the feed.
+
+        This was "photos never ride the pre-acceptance feed", which meant a
+        business was asked to price work it was not allowed to look at. What
+        must not ride the feed is the client's IDENTITY — asserted below and in
+        every other test in this class.
+        """
         posts_stub = SupabaseTableStub(select_data=[_feed_post()])
         businesses_stub = SupabaseTableStub(select_data=[])
 
@@ -190,9 +198,21 @@ class TestFeedMasksPreAcceptance:
             )
 
         item = response.json()["items"][0]
-        assert item["image_urls"] == []
+        # L3 reversed 2026-08-01: the photos ARE returned pre-acceptance. A
+        # business cannot price a job it is not allowed to look at — the
+        # module docstring predicted exactly that failure and it happened.
+        # The count rides along because callers already read it.
+        assert item["image_urls"] == [
+            "https://cdn/1.jpg",
+            "https://cdn/2.jpg",
+            "https://cdn/3.jpg",
+        ]
         assert item["photo_count"] == 3
-        assert "cdn" not in response.text
+        # The identity guarantees are unchanged: the photos are visible, the
+        # person is not.
+        assert item["users"]["first_name"] is None
+        assert "client_id" not in item
+        assert "budget" not in item
 
     def test_feed_query_never_asks_for_name_or_avatar(self, test_client, as_owner):
         """Don't fetch what must not be returned (L1).
@@ -290,7 +310,11 @@ class TestSinglePostMasksPreAcceptance:
         assert body["users"]["first_name"] is None
         assert "client_id" not in body
         assert "budget" not in body
-        assert body["image_urls"] == []
+        assert body["image_urls"] == [
+            "https://cdn/1.jpg",
+            "https://cdn/2.jpg",
+            "https://cdn/3.jpg",
+        ]
         assert body["photo_count"] == 3
 
     def test_single_post_query_never_joins_users(self, test_client, as_other_client):

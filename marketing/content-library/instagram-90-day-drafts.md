@@ -61,7 +61,7 @@
 
 **Hook:** Your money does not move until you say so.
 
-**Body:** Here's how SwingBy protects you. When you book, half the payment releases to the business so they can schedule and start the work — the rest is held until you confirm the job is complete. If something goes wrong, you open a dispute and our team reviews it. If you cancel, a timing-based fee applies: 25% more than 48 hours out, 50% inside 48 hours. No awkward cash handoffs. No chasing invoices.
+**Body:** Here's how SwingBy protects you. When you accept a quote the payment is held by SwingBy — not sent to the business — and it is released when you confirm the job is complete, or automatically 24 hours after they mark it done. If something goes wrong, you open a dispute and our team reviews it. If you cancel more than 48 hours before the date it is free and fully refunded; inside 48 hours 75% comes back; after the scheduled time, 50%. No awkward cash handoffs. No chasing invoices.
 
 **CTA:** Book your next job with confidence. Link in bio.
 

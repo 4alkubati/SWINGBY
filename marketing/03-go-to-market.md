@@ -55,7 +55,13 @@ Recommended launch categories:
 ### Actions
 
 **Outbound (founder does this personally):**
-1. List 50 businesses in launch categories from Google Maps + Instagram in Beltline/Mission. Cold email + Instagram DM each. Pitch: "Founder of SwingBy — Calgary-based marketplace launching in 2 weeks, free + 5% lifetime cap if you join now. 5-minute call?"
+1. List 50 businesses in launch categories from Google Maps + Instagram in Beltline/Mission. Cold email + Instagram DM each. Pitch: "Founder of SwingBy — Calgary-based marketplace launching in 2 weeks, free to join and 10% only on completed jobs. 5-minute call?"
+
+   > ⚠️ This pitch promised "free + 5% lifetime cap". **No founder rate exists in
+   > the code** — `escrow.PLATFORM_RATE` is a flat `Decimal("0.10")` with no
+   > per-business override, so a 5% promise cannot be honoured by the platform
+   > that would have to charge it. Corrected to the rate we actually take. If
+   > founder pricing is wanted, it needs a per-business rate first.
 2. Target 10 commits. 20% close rate is realistic. If lower, the pitch is broken — fix it before scaling.
 
 **Inbound:**

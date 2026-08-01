@@ -51,7 +51,7 @@ const FAQ = [
   { q: 'Is it really free for me?', a: 'Yes. Posting a job and receiving quotes is free. You pay the price you agreed on — nothing more. The 10% commission comes out of the business\'s payout, not on top of your bill.' },
   { q: 'What if I don\'t like any of the quotes?', a: 'Don\'t pick one. There\'s no obligation to book. Posts expire after 7 days automatically.' },
   { q: 'How fast will I get quotes?', a: 'Most posts in Calgary attract their first quote within minutes. Our target is your first quote in under 5 minutes; we\'ll publish real averages once the beta cohort is live.' },
-  { q: 'What happens if the business cancels?', a: 'If they cancel more than 48 hours before the booking, they pay a 25% penalty. Within 48 hours, the penalty is 50%. The penalty is credited back to you.' },
+  { q: 'What happens if the business cancels?', a: 'You are refunded in full, at any notice — a business cancelling never keeps any of your money. If they cancel late or do not show up, we also apply a $25 credit to your account for the inconvenience.' },
 ]
 
 export default function HowItWorksClients() {

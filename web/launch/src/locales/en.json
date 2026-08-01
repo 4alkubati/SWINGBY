@@ -65,7 +65,7 @@
     },
     "escrow": {
       "eyebrow": "Escrow protection",
-      "title": "Your money moves in two steps, not one.",
+      "title": "Your money does not move until you say the job is done.",
       "body": "SwingBy splits every payment — half releases to the business when you confirm the booking so they can schedule the work, half when you approve the finish. If something goes wrong, we can withhold the unreleased balance until the dispute is resolved.",
       "ledgerTitle": "How a $180 booking flows",
       "row1Title": "You book",
