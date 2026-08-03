@@ -74,14 +74,30 @@ while the app is perfectly healthy, and a genuine PostgREST outage reports
 Business "Complete" moved the money while the pay sheet promised otherwise.
 Client approves, or 24h auto-release.
 
-### M2 — no card on file · S2 · **OPEN — needs decision D4**
-No SetupIntent, no payment-method endpoints, `users.default_payment_method_id`
-never written. A card is retained only as a side effect of paying once, and
-there is no way to see or remove it. Every repeat booking re-enters a card.
+### M2 — no card on file · S2 · ✅ **FIXED (PR #83)**
+~~No SetupIntent, no payment-method endpoints, `users.default_payment_method_id`
+never written.~~ Closed by #83. Verified on `origin/main` @ `38c1166`:
+`POST /payments/setup-intent` (`payments_stripe.py:792`),
+`GET /payment-methods` (`:831`), `DELETE /payment-methods/{id}` (`:848`), and
+`default_payment_method_id` is written (`auth.py`, `services/stripe_payment_sheet.py`,
+covered by `tests/test_card_retention.py`). Decision **D4 is no longer blocking** —
+it was answered by building it.
 
-### M3 — no Apple Pay, no Google Pay · S2 · **OPEN — needs decision D3**
-`merchantIdentifier` empty, `enableGooglePay: false`. On iOS this is the
-payment method most users expect to see.
+### M3 — no Apple Pay, no Google Pay · S2 · 🟡 **Google Pay LIVE; Apple Pay code-complete, deliberately OFF**
+~~`merchantIdentifier` empty, `enableGooglePay: false`.~~ Half closed by #83.
+Verified on `origin/main` @ `38c1166` in `mobile/app.config.js`:
+
+- **Google Pay: `enableGooglePay: true`** (line 105) — live.
+- **Apple Pay: code-complete but intentionally disabled.**
+  `merchantIdentifier: process.env.STRIPE_MERCHANT_IDENTIFIER || ''` (line 104)
+  resolves empty on purpose. This is **not** an oversight and must not be
+  "fixed" by hardcoding a value: a non-empty merchant id that Apple has not
+  issued makes **iOS provisioning fail**. The wiring is done; it switches on the
+  moment a real id exists.
+
+**The remaining work is an Apple account action, not code:** register
+`merchant.com.swingby.app` with Apple, then set `STRIPE_MERCHANT_IDENTIFIER`.
+Tracked in `Roadmap/HUMAN-TODO.md`.
 
 ### M4 — payment falls out to a browser · S2 · **OPEN**
 When the native sheet is unavailable, `acceptAndPay.js` opens hosted Checkout in
@@ -222,9 +238,29 @@ that does not exist yet** (M2, M3, M4).
 M15, M18, M19 and M20 are fixed on this branch, along with all seven Sentinel
 findings.
 
-**Four remain, and three of them are Kira's call, not a coding task:**
-- **M2** card-on-file — decision **D4**
-- **M3** Apple Pay / Google Pay — decision **D3**, plus a merchant id
+> ### 🔄 Recount 2026-08-02 — **18 of 20 closed, not 16**
+> This section said four remained. Two of them had already been built and this
+> file had not caught up. Re-verified against `origin/main` @ `38c1166`:
+>
+> - **M2 is CLOSED** (#83) — SetupIntent + payment-method endpoints exist and
+>   `default_payment_method_id` is written. **Decision D4 is moot; it was
+>   answered by building it.**
+> - **M3 is half closed** (#83) — **Google Pay is live** (`enableGooglePay: true`).
+>   **Apple Pay is code-complete and deliberately OFF** until Apple issues a real
+>   merchant id; an invented one breaks iOS provisioning. Not a coding task.
+>
+> **Genuinely left: two.**
+> - **M4** browser checkout fallback — and per the note below it largely
+>   disappears now that M2/M3 have landed, so it should be re-tested before any
+>   further work is spent on it.
+> - **M11** credit redemption — decision **D6**.
+>
+> **Plus one account action, not code:** register `merchant.com.swingby.app`
+> with Apple, then set `STRIPE_MERCHANT_IDENTIFIER`.
+
+**Historical list (superseded by the recount above):**
+- ~~**M2** card-on-file — decision **D4**~~ → closed by #83
+- ~~**M3** Apple Pay / Google Pay — decision **D3**, plus a merchant id~~ → Google Pay live; Apple Pay awaits the merchant id only
 - **M11** credit redemption — decision **D6** (the switch exists; turning it on
   needs the capture path verified in Stripe, and it has a known hole where an
   abandoned checkout keeps the credit spent)

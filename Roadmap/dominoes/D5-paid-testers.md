@@ -92,6 +92,20 @@ If 3+ testers completed the flow + critical bug rate is < 1/tester → ready for
 - What broke:
 - What you decided:
 
+
+### 2026-08-02 — reality sync: still deferred, but the gate has partly lifted
+
+**No change to status — remains `deferred`.** The domino has not started.
+
+What has changed is the money gate it waits on:
+- The **Apple Developer account is paid** (2026-07-30) and the Team ID
+  `ZTYJ33HPDX` is recorded on main (PR #81).
+- `prep/ios-testflight` exists and an installable `preview` profile is on main.
+
+So "Phase 2 — money cleared" is now **partly** true: the Apple side is paid, the
+monthly rail (~$7/mo Render) is not. Noted so this is re-read as a decision that
+is now available, rather than one still blocked on a payment.
+
 ## 🎓 Learning
 
 - _to fill as you go_

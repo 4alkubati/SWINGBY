@@ -1,7 +1,7 @@
 ---
 type: domino
 id: D3
-status: pending
+status: in-progress
 phase: 1 — BETA
 started:
 done:
@@ -80,6 +80,30 @@ Repeat steps 1–4 until your full Run A + Run B pass back-to-back with zero blo
 - What you did:
 - What broke:
 - What you decided:
+
+
+### 2026-08-02 — reality sync: partly run, and the premise has moved
+
+An iOS walkthrough **did happen on 2026-07-31** — but not the one this file
+describes, so this is recorded as progress, not completion.
+
+**What actually happened:** a first iOS build was installed on a real iOS 18
+device **ad-hoc**, not through Expo Go, and Sign in with Apple was exercised end
+to end (`Roadmap/STATUS.md` §1). The walkthrough produced the M-series defect
+list in `Roadmap/LAUNCH-BLOCKERS.md`.
+
+**Why this is not done:** the done-rule wants Run A and Run B back-to-back with
+**no blocker bugs**. M2 (no card on file), M3 (no Apple/Google Pay) and M4
+(payment falls out to a browser) were open at the time of that run. #83 has
+since landed card-on-file and wallet wiring — so a re-run is the next step, not
+a fresh start.
+
+**Status corrected `pending` → `in-progress`.**
+
+⚠️ **The Expo Go framing is now misleading.** Expo Go cannot exercise the
+native Stripe sheet, wallets, or Sign in with Apple — the exact surfaces this
+domino needs to prove. Whoever picks this up should run it on the ad-hoc/preview
+build and treat "Expo Go" in the title as historical.
 
 ## 🎓 Learning
 
