@@ -1,0 +1,104 @@
+# Deploy web/launch to Cloudflare Pages.
+#
+# WHY THIS EXISTS: until now there was no deploy workflow anywhere in the repo —
+# only web-launch-ci.yml, which builds and tests but never publishes. That is why
+# swingbyy.com has served a build frozen since before 2026-06-05 while seven
+# commits landed behind it.
+#
+# MANUAL TRIGGER ONLY, ON PURPOSE. This does not run on push. Deploying replaces
+# what the public sees, so it stays a decision someone makes, not a side effect of
+# merging. Flip to `on: push: branches: [main]` once a deploy has been watched
+# end to end and the result is trusted.
+#
+# REQUIRED SECRETS (repo → Settings → Secrets and variables → Actions):
+#   CLOUDFLARE_API_TOKEN   — token with the "Cloudflare Pages:Edit" permission
+#   CLOUDFLARE_ACCOUNT_ID  — the account id from the Cloudflare dashboard URL
+# Without both, this workflow fails fast with a clear message rather than
+# half-deploying.
+
+name: web-launch deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      project_name:
+        description: "Cloudflare Pages project to deploy into"
+        required: true
+        default: swingbyy-launch
+      branch:
+        description: "Pages branch — use 'main' for production, anything else for a preview URL"
+        required: true
+        default: preview
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fail fast if the credentials are missing
+        env:
+          TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          missing=""
+          [ -z "$TOKEN" ] && missing="$missing CLOUDFLARE_API_TOKEN"
+          [ -z "$ACCOUNT" ] && missing="$missing CLOUDFLARE_ACCOUNT_ID"
+          if [ -n "$missing" ]; then
+            echo "::error::Missing repo secret(s):$missing — add them in Settings → Secrets and variables → Actions."
+            exit 1
+          fi
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: web/launch/package-lock.json
+
+      - name: Install
+        working-directory: web/launch
+        run: npm ci
+
+      - name: Build
+        working-directory: web/launch
+        run: npm run build
+
+      # The SPA fallback. Without this file every deep link — /privacy, /terms,
+      # /cookies — returns 404 on a hard navigation. Apple requires a privacy URL
+      # that actually resolves, so this is a release blocker, not a nicety.
+      - name: Verify the SPA fallback shipped
+        working-directory: web/launch
+        run: |
+          test -f dist/_redirects || { echo "::error::dist/_redirects missing — deep links would 404."; exit 1; }
+          echo "_redirects: $(cat dist/_redirects)"
+
+      # Guards the claim that had to be pulled from the store listing once already.
+      # The real model is one release at completion, gated on client approval.
+      - name: Refuse to publish the 50/50 payment claim
+        working-directory: web/launch
+        run: |
+          if grep -rliE "half at booking|half on completion|50% is (charged|released)|payment in two stages" dist/; then
+            echo "::error::The staged 50/50 release claim is back in the build. It is false — see backend/app/services/escrow.py."
+            exit 1
+          fi
+          echo "No 50/50 claim in the build."
+
+      - name: Verify the legal pages are in the bundle
+        working-directory: web/launch
+        run: |
+          ls dist/assets/ | grep -qiE "^PrivacyPage.*\.js$" || { echo "::error::PrivacyPage chunk missing from the build."; exit 1; }
+          ls dist/assets/ | grep -qiE "^TermsPage.*\.js$"   || { echo "::error::TermsPage chunk missing from the build."; exit 1; }
+          echo "Privacy and Terms chunks present."
+
+      - name: Publish to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: >-
+            pages deploy web/launch/dist
+            --project-name=${{ inputs.project_name }}
+            --branch=${{ inputs.branch }}

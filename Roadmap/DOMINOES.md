@@ -143,7 +143,7 @@ Built 2026-07-19 on branches; **none of it was live until the 2026-07-20 collaps
 - [x] **D9.6** client-PII leak fixed (P0) — on main and **verified live in prod 2026-07-20**: feed returns `address='Calgary'`, `last_name=None`. ⚠️ Was reverted by stale WIP commit `0e005c6` and re-wired in `c926eec` — see the done-rule above.
 
 ### D10 — Launch surface 🟡
-- [ ] **D10.1** — deploy `web/launch` so swingbyy.com serves privacy/terms/cookies *(legal exposure until done)*
+- [ ] **D10.1** — deploy `web/launch` to replace the frozen `web/pre-launch` build on swingbyy.com *(**not** legal exposure — see the 2026-08-03 correction below; the live risk is stale copy, including the false 50/50 payment claim)*
 - [ ] **D10.2** — DMARC → quarantine. *Record drafted and ready; DNS is Kira's step.*
 - [ ] **D10.3** — waitlist count into the morning brief *(blocked: no `NOTION_TOKEN` on the box)*
 - [x] **D10.4** — analytics funnel — `services/analytics.py` on main as of 2026-07-20 *(was on a branch only; the earlier "verified live" referred to Plausible on the website, not this funnel)*
@@ -263,9 +263,45 @@ against another doc:
    longer exists.** The instruction would have sent someone hunting for it.
 
 **Still true and still unfixed:** there is **no `D9` and no `D10` file** — both rungs
-exist only as sections here. D10.1 (deploy `web/launch`) remains open, and it is live
-legal exposure: every route on swingbyy.com returns the same SPA shell, so no privacy
-policy, terms or cookie policy is actually served.
+exist only as sections here. D10.1 (deploy `web/launch`) remains open.
+
+### 2026-08-03 — the "no privacy policy is served" finding was WRONG
+That claim appeared here, in the 2026-08-02 state audit, and in the server handoff
+brief. **It is false, and it was false because of how it was measured.**
+
+The test compared the HTML of `/`, `/privacy` and a deliberately bogus URL, found them
+byte-identical, and grepped that HTML for "PIPEDA" and "personal information" — zero
+hits. But swingbyy.com is a **react-router SPA that lazy-loads its routes**, so *every*
+URL returns the same shell and the policy text lives in a separate chunk. A correctly
+deployed SPA produces exactly the same result. The method could not tell the two apart.
+
+`docs/DEPLOY.md` and `STATUS.md` §6 both already said it: *"`curl -I` proves nothing
+about swingbyy.com — grep the deployed bundle."* The audit did not.
+
+Re-tested 2026-08-03 by fetching the chunks the live page actually loads:
+
+| URL | Result |
+|---|---|
+| `/assets/PrivacyPage-BxcYSXpf.js` | **200**, 4,344 B — "PIPEDA" ×1, "personal information" ×4, "we collect" ×4, sections *1. Information We Collect · 2. How We Use Your Information · 3. Your Rights & Data Retention* |
+| `/assets/TermsPage-a5jjFbyw.js` | **200**, 4,801 B — *"By creating an account on SwingBy, you agree…"*, *2. Payments, Escrow & Refunds*, *3. Disclaimers & Limitation of Liability* |
+| `/assets/CookiesPage-BAovAQCB.js` | **200**, 3,739 B — a real cookie policy |
+
+**All three legal documents are live on swingbyy.com today.** `HUMAN-TODO.md` H13 was
+right — "a real privacy policy is already served" — and was wrongly flagged as a false
+claim. There is no legal emergency and no deploy needs to be rushed for one.
+
+**What the same test DID find, and this one is real:** the deployed build is frozen from
+before 2026-06-05, so it still publishes the **false 50/50 payment claim** that had to be
+pulled from the App Store listing on 2026-07-29 — live right now in three chunks:
+
+- `Home-qRKHrEIJ.js` — *"50% is released to the business on confirmation"*
+- `helpArticles-CdspdKrK.js` — *"50% is charged on job completion"*
+- `blogPosts-D6K3PNK2.js` — *"half at booking"*
+
+The real model is a single release at completion, gated on client approval
+(`backend/app/services/escrow.py`). PR #84 killed this claim in the source; the fix
+cannot reach the public until something deploys. **That** is why D10.1 matters — wrong
+statements about money, not missing legal pages.
 
 ### 2026-07-22 — M1 gate closed + week reconciled
 - **D6.3 done** — Kira ran the walkthrough on device. M1 gate CLOSED. D6 flips 🔴→🟢.
