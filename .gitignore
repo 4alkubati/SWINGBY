@@ -73,3 +73,40 @@ AGENTS
 backend/.agents/
 backend/.claude/
 backend/skills-lock.json
+
+# ── Cloudflare Wrangler local state ──────────────────────────────────────────
+# Cache files carrying the Cloudflare account ID and the account-name email.
+# Four of these were tracked before this rule existed; they are untracked in the
+# same commit that adds it. This repo is PUBLIC — none of it should be readable.
+.wrangler/
+**/.wrangler/
+
+# ── Env variants beyond the bare `.env` rule above ───────────────────────────
+# `.env` alone does not match these, and a `.env.local` with real values is the
+# easiest possible accident.
+.env.local
+.env.*.local
+.env.development
+.env.test
+
+# ── Signing material — NEVER commit ──────────────────────────────────────────
+# Preventive, and deliberately added BEFORE it is needed: the Apple Developer
+# account is paid and TestFlight is next, so an App Store Connect .p8 and an
+# Android keystore are about to land on this disk. GitHub push protection does
+# not reliably catch raw private keys, so the ignore rule is the real guard.
+*.p8
+*.p12
+*.pem
+*.key
+*.keystore
+*.jks
+*.mobileprovision
+*.cer
+service-account*.json
+google-services.json
+GoogleService-Info.plist
+
+# ── Tool caches ──────────────────────────────────────────────────────────────
+# These were only ignored by self-written nested .gitignore files — fragile.
+.pytest_cache/
+.ruff_cache/

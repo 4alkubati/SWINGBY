@@ -1249,9 +1249,7 @@ class TestTermsConsentIsRecorded:
         assert response.json()["is_new_user"] is True
         assert "terms_accepted_at" in users.written
 
-    def test_returning_social_user_keeps_their_original_consent_date(
-        self, test_client
-    ):
+    def test_returning_social_user_keeps_their_original_consent_date(self, test_client):
         app.state.limiter.reset()
         users = _FakeTable(
             [

@@ -834,9 +834,11 @@ def list_payment_methods(current_user: dict = Depends(get_current_user)):
     from app.services import stripe_payment_sheet
 
     try:
-        return {"items": stripe_payment_sheet.list_payment_methods(
-            user_id=current_user["id"]
-        )}
+        return {
+            "items": stripe_payment_sheet.list_payment_methods(
+                user_id=current_user["id"]
+            )
+        }
     except Exception:
         # An empty list is the safe answer: the screen renders "no cards yet"
         # rather than an error the user cannot act on, and paying still works
