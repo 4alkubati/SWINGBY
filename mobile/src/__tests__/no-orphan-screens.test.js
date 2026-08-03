@@ -64,6 +64,28 @@ function registeredScreens() {
   return found;
 }
 
+/**
+ * Screen names reachable through the deep-link map in services/linking.js.
+ *
+ * A screen whose only door is a deep link (`swingby://invite?code=…`) has a real
+ * route into it — the door is just outside the app. Before this, such a screen was
+ * reported as an orphan, and the tempting fix is to add it to
+ * REACHABLE_WITHOUT_NAVIGATE, which is how a genuine orphan gets waved through
+ * later under the same excuse. Reading the linking config keeps the check honest:
+ * delete the route and the screen becomes an orphan again, correctly.
+ */
+function deepLinkedNames() {
+  const names = new Set();
+  const file = path.join(SRC, 'services', 'linking.js');
+  if (!fs.existsSync(file)) return names;
+  const src = fs.readFileSync(file, 'utf8');
+  const block = src.slice(src.indexOf('screens:'));
+  for (const m of block.matchAll(/^\s*([A-Za-z0-9_]+)\s*:\s*['"`]/gm)) {
+    names.add(m[1]);
+  }
+  return names;
+}
+
 /** Screen names that something, somewhere, navigates to. */
 function navigatedNames() {
   const names = new Set();
@@ -91,9 +113,12 @@ function navigatedNames() {
 describe('navigation wiring', () => {
   it('every registered screen has at least one route into it', () => {
     const registered = registeredScreens();
-    const reached = navigatedNames();
+    const reached = new Set([...navigatedNames(), ...deepLinkedNames()]);
 
     expect(registered.size).toBeGreaterThan(10); // the scraper still works
+    // The deep-link scraper must also still work, or it silently exempts nothing
+    // and this whole addition becomes dead weight that hides the next orphan.
+    expect(deepLinkedNames().size).toBeGreaterThan(3);
 
     const orphans = [...registered.entries()]
       .filter(([name]) => !REACHABLE_WITHOUT_NAVIGATE.has(name) && !reached.has(name))

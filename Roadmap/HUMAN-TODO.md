@@ -13,9 +13,15 @@ Status values: **TODO** · **DONE** · **BLOCKED** · **DECIDE**
 |---|---|---|
 | H1 | **DONE** | ~~Apply TWO migrations in the Supabase SQL editor.~~ **Both verified applied 2026-08-03** by probing PostgREST directly (never the migration headers — they lie): `bookings.approval_deadline_at` → 200, `users.terms_accepted_at` → 200. Every other filed migration was probed at the same time (`content_reports`, `user_blocks`, `messages.hidden_at`, `payments.post_id`) — all live. |
 | H2 | **DONE** | ~~Merge PR #81.~~ Merged 2026-07-31. |
-| H3 | **TODO** | Reveal `STRIPE_SECRET_KEY` in Render → Environment and read the first 8 chars. `sk_test_` = fine. `sk_live_` = **swap to test before submitting**, or the Apple reviewer's booking charges a real card. |
+| H3 | **DONE** | ~~Check `STRIPE_SECRET_KEY` in Render.~~ **Kira verified 2026-08-03: it is a test key.** Payments stay in sandbox for the whole beta, so this stays true until someone deliberately changes it. |
 
 ## Apple console — blocks TestFlight, not the dev build
+
+> **DEFERRED by Kira, 2026-08-03** — the App Store Connect record and the Apple IDs
+> wait until everything else is verified; the current loop runs on the installable
+> **preview** build, not TestFlight. H7–H10 below stay open but are **not** this
+> week's work. *(Read back from a short instruction — correct me if the intent was
+> different.)*
 
 | # | Status | Task |
 |---|---|---|
@@ -32,10 +38,10 @@ Status values: **TODO** · **DONE** · **BLOCKED** · **DECIDE**
 | # | Status | Question |
 |---|---|---|
 | D1 | **DONE** | *Client goes quiet after work is done?* → **auto-release after 24 hours.** Implemented in PR #81. |
-| D2 | **DECIDE** | **Legal entity name + registered address** for the privacy policy. This address becomes **public** — a registered/virtual Calgary address may beat your home one. Blocks publishing the canonical policy. |
+| D2 | **PART-ANSWERED** | **Legal entity = `4alkubati`** (Kira, 2026-08-03). **Address still open** — he is working on it. This address becomes **public**, so a registered/virtual Calgary address likely beats the home one. The canonical policy cannot be published until the address exists; the *deployed* policy is unaffected and already live. |
 | D3 | **DECIDE** | **Apple Pay** — worth registering a merchant ID and enabling it in Stripe? Needed before `merchantIdentifier` can be non-empty. Not a store blocker; is a conversion one. |
-| D4 | **DECIDE** | **Card-on-file (M2)** — build SetupIntent + a manage-cards screen this cycle, or ship beta without saved cards? Currently a card is only retained as a side effect of paying once, and there is no UI to see or remove it. |
-| D5 | **DECIDE** | **Payouts.** Nothing can actually pay a business today. Not an App Review blocker (nothing in the reviewed flow pays out) but it is a launch blocker. |
+| D4 | **ANSWERED — BUILD** | **Card on file must be there** (Kira, 2026-08-03). The endpoints already exist on `main` (`POST /payments/setup-intent`, `GET`/`DELETE /payments/payment-methods`, `default_payment_method_id` written) — what is missing is the **manage-cards UI** and wiring the saved card into the pay sheet so a repeat booking does not re-enter a card. |
+| D5 | **ANSWERED — INSTANT** | **A business must be able to take its money out instantly** (Kira, 2026-08-03). That means **Stripe Connect** (Express accounts) + **instant payouts** to a debit card, not manual transfers. Nothing pays out today; the ledger records `released_to_business` and stops there. This is the largest unbuilt piece of money work and needs onboarding/KYC, a payout endpoint and a Wallet screen. Still not an App Review blocker — nothing in the reviewed flow pays out. |
 | D6 | **DECIDE** | **Credit redemption.** `credits.CREDIT_REDEMPTION_AT_CHECKOUT_ENABLED` is **off**, so a $25 goodwill credit can be granted, and now *seen* in Settings, but not spent. Turning it on needs the charge path verified in Stripe test mode end-to-end, and has a known hole (an abandoned checkout keeps the credit spent). Until then the app tells the holder to contact you. |
 
 ## Infrastructure

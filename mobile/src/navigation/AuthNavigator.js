@@ -10,6 +10,9 @@ import ForgotPasswordScreen from '../screens/auth/ForgotPasswordScreen';
 // audience that has to read them before agreeing.
 import PrivacyPolicyScreen from '../screens/profile/PrivacyPolicyScreen';
 import TermsOfServiceScreen from '../screens/shared/TermsOfServiceScreen';
+// The beta invite deep link (swingby://invite?code=…) lands a LOGGED-OUT stranger,
+// so the screen has to exist out here or the link dead-ends at Onboarding.
+import BetaInviteCardScreen from '../screens/onboarding/BetaInviteCardScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -18,6 +21,7 @@ export default function AuthNavigator() {
     <ErrorBoundary>
     <Stack.Navigator screenOptions={{ headerShown: false, animation: 'fade' }}>
       <Stack.Screen name="Onboarding" component={OnboardingScreen} />
+      <Stack.Screen name="BetaInvite" component={BetaInviteCardScreen} />
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="Signup" component={SignupScreen} />
       <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />

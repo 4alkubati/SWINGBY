@@ -1280,12 +1280,12 @@ const styles = StyleSheet.create({
   },
   ownerTitle: {
     fontSize: 24, fontFamily: 'SpaceGrotesk_700Bold',
-    color: colors.textPrimary, letterSpacing: -0.8,
+    color: colors.textPrimary, letterSpacing: -0.5,
   },
   previewBtn: {
     borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface,
-    borderRadius: 10, paddingHorizontal: spacing.base, paddingVertical: spacing.sm,
-    minHeight: 36, justifyContent: 'center',
+    borderRadius: radius.button, paddingHorizontal: spacing.base, paddingVertical: spacing.sm,
+    minHeight: 44, justifyContent: 'center',
   },
   previewBtnText: { fontSize: 13, fontFamily: 'Inter_600SemiBold', color: colors.accentText },
   previewBanner: {
@@ -1306,6 +1306,9 @@ const styles = StyleSheet.create({
   },
   ownerLogoBusy: {
     position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+    // 18 is NOT a stray near-miss radius: it must equal BusinessLogo's computed
+    // tileRadius — min(18, size * 0.3) — and this logo is size 60, so 18. Changing
+    // it to radius.card leaves a visible sliver of logo outside the busy scrim.
     borderRadius: 18, backgroundColor: 'rgba(0,0,0,0.45)',
     alignItems: 'center', justifyContent: 'center',
   },
@@ -1325,7 +1328,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.base,
     flexDirection: 'row', alignItems: 'center', gap: spacing.md,
     backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border,
-    borderRadius: 16, paddingHorizontal: spacing.base, paddingVertical: 14,
+    borderRadius: radius.card, paddingHorizontal: spacing.base, paddingVertical: 14,
   },
   completeTrack: {
     width: 110, height: 6, borderRadius: radius.pill,
@@ -1346,7 +1349,7 @@ const styles = StyleSheet.create({
   ownerLogout: {
     marginTop: spacing.lg,
     borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface,
-    borderRadius: 14, paddingVertical: 14, minHeight: 48,
+    borderRadius: radius.button, paddingVertical: 14, minHeight: 48,
     alignItems: 'center', justifyContent: 'center',
   },
   ownerLogoutText: { fontSize: 14, fontFamily: 'Inter_600SemiBold', color: colors.danger },
@@ -1418,25 +1421,6 @@ const styles = StyleSheet.create({
     paddingTop: spacing.lg,
     paddingBottom: spacing.sm,
   },
-  acctMenu: {
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.card,
-    marginHorizontal: spacing.lg,
-    overflow: 'hidden',
-  },
-  acctRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    paddingHorizontal: spacing.base,
-    paddingVertical: spacing.md + 2,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  acctRowLast: { borderBottomWidth: 0 },
-  acctLabel: { flex: 1 },
 
   // Chips
   chipsRow:     { paddingHorizontal: spacing.lg, gap: spacing.sm, paddingBottom: spacing.sm },
@@ -1485,7 +1469,6 @@ const styles = StyleSheet.create({
   emptyBody:    { marginTop: spacing.sm, textAlign: 'center', maxWidth: 280 },
 
   // Logout
-  logoutBtn:    { borderColor: colors.danger + '4D' },
 
   // Sticky book bar
   bookBar:      {
@@ -1497,15 +1480,4 @@ const styles = StyleSheet.create({
   bookBtn:      {},
 
   // D2.4 subscription pill — tint bg + full-color text per POLISH-TIPS §2
-  subPill: {
-    paddingHorizontal: spacing.sm, paddingVertical: 2,
-    borderRadius: radius.pill,
-  },
-  subActive:   { backgroundColor: 'rgba(46,189,133,0.14)' },
-  subTrialing: { backgroundColor: colors.accentMuted },
-  subPastDue:  { backgroundColor: 'rgba(255,92,92,0.14)' },
-  subPillText: { fontWeight: '700', letterSpacing: 0.8 },
-  subActiveText:   { color: colors.success },
-  subTrialingText: { color: colors.accentText },
-  subPastDueText:  { color: colors.danger },
 });
