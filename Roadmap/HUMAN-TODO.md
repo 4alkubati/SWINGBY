@@ -11,8 +11,8 @@ Status values: **TODO** · **DONE** · **BLOCKED** · **DECIDE**
 
 | # | Status | Task |
 |---|---|---|
-| H1 | **TODO** | **Apply TWO migrations** in the Supabase SQL editor, in this order. Both additive, both safe to re-run: <br>1. `20260731120000_approval_gated_escrow_release.sql` — nullable column + index. <br>2. `20260731140000_terms_consent.sql` — one nullable column, `users.terms_accepted_at`. <br>The app works without #2 (the consent checkbox still gates signup; only the timestamp is skipped, with a log line) — but until it is applied we cannot show *when* an account agreed. |
-| H2 | **TODO** | **Merge PR #81** (`gh pr merge 81 --squash`). **After H1** — Render deploys `main` and the new code reads that column. |
+| H1 | **DONE** | ~~Apply TWO migrations in the Supabase SQL editor.~~ **Both verified applied 2026-08-03** by probing PostgREST directly (never the migration headers — they lie): `bookings.approval_deadline_at` → 200, `users.terms_accepted_at` → 200. Every other filed migration was probed at the same time (`content_reports`, `user_blocks`, `messages.hidden_at`, `payments.post_id`) — all live. |
+| H2 | **DONE** | ~~Merge PR #81.~~ Merged 2026-07-31. |
 | H3 | **TODO** | Reveal `STRIPE_SECRET_KEY` in Render → Environment and read the first 8 chars. `sk_test_` = fine. `sk_live_` = **swap to test before submitting**, or the Apple reviewer's booking charges a real card. |
 
 ## Apple console — blocks TestFlight, not the dev build
