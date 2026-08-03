@@ -79,6 +79,24 @@ Old secrets are dead, advisors read zero, and both a test error and a test analy
 - CARD-06 worked in an isolated worktree and cleared 2 advisors live, verified before and after via `get_advisors`.
 - CARD-07 reported Sentry as unprovable rather than assuming it. Correct: the card's own rule was "if you lack access, do not guess."
 
+
+### 2026-08-02 — reality sync: partial, and honestly so
+
+**No change to status — remains `active`.** A 2026-08-02 markup described D7 as
+"deferred to before launch, not partial-now". The second half is not accurate:
+work has already been done on two of the three sub-items.
+
+- **D7.1** secret rotation — open. Kira's standing ruling is that rotation waits
+  for the pre-beta API sweep; that is a deliberate deferral, not an oversight.
+- **D7.2** Supabase advisors — **2 of 3 cleared live.** The outstanding one is
+  the HaveIBeenPwned leaked-password toggle, which is dashboard-only and
+  Pro-gated. Accepted risk, recorded.
+- **D7.3** monitoring — analytics **verified live** (Plausible 202). Sentry
+  remains unprovable from this box: no dashboard credentials here.
+
+So D7 is genuinely part-done. Leaving it `active` rather than flipping it to
+`deferred` keeps that visible instead of hiding it behind a future date.
+
 ## 🎓 Learning
 
 - **"Rotated" and "deleted" are not the same word.** A secret removed from HEAD but present in history is still live until revoked at the source.

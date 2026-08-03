@@ -1,13 +1,21 @@
-> ## ⚠️ SUPERSEDED — 2026-07-31
+> ## 🔄 RECONCILED — 2026-08-02
 >
-> This file was last updated **2026-07-22** and its ✅ marks describe branches,
-> not production. The current picture lives in:
+> **This is the ordered PLAN. It is not the live state.** Know which question you
+> are asking:
 >
-> * **`Roadmap/STATUS.md`** — what is actually live, what is built-but-unwired,
->   and every open defect from the first iOS walkthrough.
-> * **`Roadmap/HUMAN-TODO.md`** — the account/key/decision items only Kira can do.
+> * **"What is the next thing to do?"** → this file. Reconciled 2026-08-02 against
+>   `origin/main` and live production probes; every ✅ below now names its evidence.
+> * **"What is actually live right now?"** → **`Roadmap/STATUS.md`** — verified
+>   against live code, the live database and prod HTTP.
+> * **"What is blocking launch?"** → **`Roadmap/LAUNCH-BLOCKERS.md`** (M1–M20).
+> * **"What can only Kira do?"** → **`Roadmap/HUMAN-TODO.md`**.
 >
-> Kept for history. Do not plan from it.
+> *Why this banner changed:* on 2026-07-31 it read **SUPERSEDED — do not plan from
+> it**, because the file had sat since 2026-07-22 with ✅ marks that described
+> branches rather than production. That staleness is what the 2026-08-02 pass fixed
+> (see the Log). The split it was pointing at is real and stands — plan here, live
+> state in `STATUS.md` — so it is stated as a division of labour instead of a
+> retirement notice.
 
 ---
 type: index
@@ -24,8 +32,13 @@ tags: [roadmap, dominoes, beta, plan]
 
 **North star:** [[README|Roadmap/README]] — by Aug 31, SwingBy is live and real people are transacting.
 **Vision slice each agent reads:** `~/brain/10-swingby/agents/claude/PRODUCT-VISION.md`.
-**Live state of the build:** `~/brain/10-swingby/agents/claude/memory/STATUS.md`.
-**What only a human can do:** `~/brain/10-swingby/agents/claude/memory/HUMAN-TODO.md`.
+
+**Live state / blockers / human-only:** see the banner at the top of this file.
+
+> ⚠️ **Cite the `Roadmap/` copies, not the brain ones.** These three used to be listed
+> here as `~/brain/10-swingby/agents/claude/memory/*`. The brain has **no git remote**,
+> so those copies cannot reach the laptop, and by 2026-08-02 they had drifted ~11 days
+> behind. The `Roadmap/` versions travel with the repo and are authoritative.
 
 ---
 
@@ -50,16 +63,16 @@ Every domino file follows the same shape, top to bottom:
 
 - [x] **D1 — Email sends** ✅ committed `08715e3`, 5 lifecycle emails wired, branded magic link delivers from `team@swingbyy.com`.
 - [x] **D2 — Kill mock data** ✅ zero mock/dummy/fake/hardcoded strings in `mobile/src/screens/`. Mobile `.env` already points at Render. **Verification walk-through still owed → [[dominoes/D2.0-live-walkthrough|D2.0]].**
-- [ ] **D2 expanded — pages we still need before beta is real:**
-  - [[dominoes/D2.0-live-walkthrough|D2.0 — Live walk-through audit]]
-  - [[dominoes/D2.1-employee-trust-card|D2.1 — Employee trust card to BusinessProfile parity]]
-  - [[dominoes/D2.2-invoices|D2.2 — Invoices (in-app receipt + PDF)]]
-  - [[dominoes/D2.3-offplatform-pay|D2.3 — Off-platform "mark as paid"]]
-  - [[dominoes/D2.4-business-subscription|D2.4 — Business subscription (off-platform monetization)]]
-  - [[dominoes/D2.5-status-cleanup|D2.5 — STATUS.md + roadmap files cleanup]]
-- [ ] **D3** [[dominoes/D3-expo-go-walkthrough|— Personal Expo Go iOS full walk-through]]
-- [ ] **D4** [[dominoes/D4-friend-tester|— Friend/known-trade end-to-end run]]
-- [ ] **D5** [[dominoes/D5-paid-testers|— Hire real dev testers (Phase 2 — money cleared)]] — paid path: Apple Dev, Play, EAS.
+- [x] **D2 expanded — pages we still need before beta is real:** ✅ **all six closed, reconciled 2026-08-02**
+  - [x] [[dominoes/D2.0-live-walkthrough|D2.0 — Live walk-through audit]] — done 2026-07-11
+  - [x] [[dominoes/D2.1-employee-trust-card|D2.1 — Employee trust card to BusinessProfile parity]] — endpoint live + gated; screen on main
+  - [x] [[dominoes/D2.2-invoices|D2.2 — Invoices (in-app receipt + PDF)]] — both endpoints live; prod break fixed in #33
+  - [x] [[dominoes/D2.3-offplatform-pay|D2.3 — Off-platform "mark as paid"]] — endpoint live + gated; wired in BookingDetails
+  - [x] [[dominoes/D2.4-business-subscription|D2.4 — Business subscription]] — live under the **`/businesses`** prefix (not `/subscriptions`)
+  - [x] [[dominoes/D2.5-status-cleanup|D2.5 — STATUS.md + roadmap files cleanup]] — closed by the `Roadmap/` status set (#82)
+- [ ] **D3** [[dominoes/D3-expo-go-walkthrough|— Personal iOS full walk-through]] 🔄 **in-progress** — a first iOS walkthrough ran 2026-07-31 on an **ad-hoc build, not Expo Go**, and found M2/M3/M4. Needs a clean re-run now #83 has landed. *The "Expo Go" framing is historical — Expo Go cannot exercise the native pay sheet, wallets, or Sign in with Apple.*
+- [ ] **D4** [[dominoes/D4-friend-tester|— Friend/known-trade end-to-end run]] 🔴 **the real remaining gate** — no other human has completed a booking on live SwingBy. Cannot be closed by an agent.
+- [ ] **D5** [[dominoes/D5-paid-testers|— Hire real dev testers (Phase 2 — money cleared)]] — still deferred, but the gate has **partly lifted**: Apple Developer is paid (2026-07-30), Team ID `ZTYJ33HPDX` on main.
 
 Meta: [[dominoes/_LEARNING-LOG|_LEARNING-LOG]] — the book that grows across dominoes.
 
@@ -109,9 +122,14 @@ The app survives Kira's own 15-min walkthrough on a fresh pull of `main`. Tester
 - [ ] **D7.2** — Supabase advisors → zero. *2 of 3 cleared live; HIBP toggle is dashboard-only, outstanding.*
 - [ ] **D7.3** — monitoring proven. *Analytics verified live (Plausible 202). Sentry unprovable — no dashboard creds on this box.*
 
-### [[dominoes/D8-money-uber|D8 — Money, the Uber way]] 🔴 **architecture rework**
+### [[dominoes/D8-money-uber|D8 — Money, the Uber way]] 🟡 **danger closed, mechanism outstanding**
 **Client pays at confirmation** (Kira 2026-07-19) → ledger accrues → **batched** payout. Replaces the per-booking-transfer model.
-- [ ] **D8.1** — capture timing stays as built; ledger accrues per business instead of per-booking transfer. ⛔ **PARKED on branch `card-21-money` — do NOT merge yet.** It writes `payment_status='pending'`, but the live `bookings_payment_status_check` allows only held / partial_released / fully_released / refunded, so merging it 500s **every quote acceptance** in prod. Unblock in this order: apply `docs/bookings_payment_status_add_pending.sql` **and** `docs/payment_ledger_table.sql` (both filed on that branch) → then merge → then verify. This is the one branch deliberately left out of the 2026-07-20 collapse.
+
+> Re-read 2026-08-02. This was 🔴 on the strength of a danger that has since been fixed — by a *different* design than the one below. The unsafe payout is gone; the ledger and the payout rail are not built. **The open question is D8.2, and it is a founder decision, not a build task.**
+- [ ] **D8.1** — capture timing stays as built; ledger accrues per business instead of per-booking transfer.
+  - ✅ **The danger this domino exists to stop is CLOSED.** The 50%-at-accept release is gone: `backend/app/api/interests.py:563` writes `released_to_business=0`, and release is approval-gated via `backend/app/services/approvals.py` (M1 fix, #81). Copy scrubbed in #84/#86.
+  - ❌ **The ledger itself was never built.** No `payment_ledger`; both filed migrations (`docs/payment_ledger_table.sql`, `docs/bookings_payment_status_add_pending.sql`) are **absent from `origin/main`**.
+  - ⚠️ **The old instruction here is void.** It said "PARKED on branch `card-21-money` — do NOT merge yet". **That branch no longer exists** (not in `git branch -r`, not local). Anyone following the old text will look for a branch that is gone. What shipped instead is charge-before-service + approval-gated escrow — a different design that solved the same danger.
 - [ ] **D8.2** — payout rail decision: manual for beta vs Stripe Connect
 - [ ] **D8.3** — execute every refund/penalty path in sandbox, actual vs designed
 
@@ -203,6 +221,51 @@ Revenue model: customer-side 10% platform cut on in-app card + business-side fla
 ---
 
 ## 📖 Log (append-only)
+
+### 2026-08-02 — reality sync: the tracker had stopped tracking
+
+Full evidence: `agents/claude/deliverables/state-audit-2026-08-02.md`.
+
+**The problem.** A status markup was checked against this tree and 8 of 15 claims
+came back refuted — but almost all of that gap was **bookkeeping, not lost work**.
+The individual domino files had not been touched in **6–11 weeks** (six still carried
+2026-06-27 frontmatter) while the code moved on underneath them. The files said
+`pending`; production said the endpoints were live.
+
+**Corrected this pass** — each against `origin/main` or a live prod probe, never
+against another doc:
+
+| Domino | Was | Now | Proof |
+|---|---|---|---|
+| D2.1 | `in-progress` | **done** | `/employees/{id}/profile` → `401` in prod; screen on main; 0 placeholders |
+| D2.2 | `pending` | **done** | both invoice endpoints `401`; #33 fixed the prod break |
+| D2.3 | `pending` | **done** | `mark-paid-offplatform` → `401`; wired in BookingDetails |
+| D2.4 | `pending` | **done** | live under **`/businesses`**, not `/subscriptions` |
+| D2.5 | `pending` | **done** | closed by the `Roadmap/` status set (#82) |
+| D3 | `pending` | **in-progress** | iOS walkthrough ran 2026-07-31 — ad-hoc build, not Expo Go |
+| D6 | `active` | **done (2026-07-22)** | the file was 11 days behind its own index |
+| D8 | `pending` | **in-progress** | danger closed (#81/#84/#86); ledger + payout rail still absent |
+
+**Deliberately NOT changed:**
+- **D4 stays `pending`.** No other human has completed a booking on live SwingBy. It
+  is the most honest remaining gate and no agent can close it.
+- **D7 stays `active`.** It was described as "deferred, not partial-now" — but 2 of 3
+  Supabase advisors are cleared and analytics is verified live. It is part-done, and
+  leaving it `active` keeps that visible.
+- **Device-only done-rule boxes stay unticked** across D2.1–D2.4 — screens exist and
+  are wired, but nothing here proves they *render*. Those ride with D6.4.
+
+**Two traps removed from this file:**
+1. It cited `agents/claude/memory/STATUS.md` as live state. The brain has **no git
+   remote**, so that copy cannot reach the laptop and had drifted. Now points at
+   `Roadmap/STATUS.md`.
+2. D8.1 said "PARKED on branch `card-21-money` — do NOT merge yet". **That branch no
+   longer exists.** The instruction would have sent someone hunting for it.
+
+**Still true and still unfixed:** there is **no `D9` and no `D10` file** — both rungs
+exist only as sections here. D10.1 (deploy `web/launch`) remains open, and it is live
+legal exposure: every route on swingbyy.com returns the same SPA shell, so no privacy
+policy, terms or cookie policy is actually served.
 
 ### 2026-07-22 — M1 gate closed + week reconciled
 - **D6.3 done** — Kira ran the walkthrough on device. M1 gate CLOSED. D6 flips 🔴→🟢.

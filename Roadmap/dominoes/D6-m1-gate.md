@@ -1,10 +1,10 @@
 ---
 type: domino
 id: D6
-status: active
+status: done
 phase: 1 — BETA
 started: 2026-07-19
-done:
+done: 2026-07-22
 links: [[../DOMINOES]]
 prev: [[D5-paid-testers]]
 next: [[D7-security]]
@@ -96,6 +96,25 @@ Fresh pull of `main`, your Android, 15 minutes, the full journey.
 - Absorbed CARD-01/02 (D6.1), CARD-03/04 (D6.2), CARD-11 (D6.3). Cards retired as a system.
 - Migration count corrected 3 → 4: overnight work added `reviews_reviewee_type_extend_employee.sql`.
 - Recorded that this box cannot verify mobile at all — no `node`, `npx`, `adb`, or emulator. Five agents that night all reported "code-complete, unverified on device." That is honest, not underperformance, and it is exactly why D6.3 exists.
+
+
+### 2026-08-02 — reality sync: the file was 11 days behind its own index
+
+**Status corrected `active` → `done`, done: 2026-07-22.**
+
+`Roadmap/DOMINOES.md` has recorded this gate as **🟢 CLOSED 2026-07-22** since
+the 2026-07-22 reconciliation, including D6.3 — *"Kira's own phone run,
+2026-07-22. Walkthrough done on device."* This file was last touched
+2026-07-19 and still said `active`, so the index and the file disagreed for
+eleven days.
+
+- D6.1 ✅ migrations applied + branches collapsed (PR #16)
+- D6.2 ✅ prod e2e smoke ALL PASS
+- D6.3 ✅ own-phone run, 2026-07-22 — **the gate that was blocking everything**
+
+The successor gate is **D6.4 — the pre-spend verification sweep** (every
+user-facing surface proven to render and function on a fresh build before
+further spend). D6.4 lives in `DOMINOES.md` and has no file of its own.
 
 ## 🎓 Learning
 

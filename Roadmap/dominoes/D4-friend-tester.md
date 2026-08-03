@@ -97,6 +97,19 @@ If not → fix, find another friend, repeat.
 - What broke:
 - What you decided:
 
+
+### 2026-08-02 — reality sync: still genuinely not started
+
+Checked, not assumed. **No change to status — this remains `pending`.**
+
+The first done-rule line is *"One real other human completed one real booking on
+live SwingBy."* There is no evidence anywhere on `origin/main` that this has
+happened: no BETA-LIVE declaration, no filled bug-capture sheet, no tester log.
+
+Recording it explicitly because a 2026-08-02 status markup claimed D4 was done.
+It is not, and it cannot be closed by an agent — it needs another human and a
+real booking. It is the most honest remaining gate in the chain.
+
 ## 🎓 Learning
 
 - _to fill as you go_

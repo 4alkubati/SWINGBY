@@ -1,7 +1,7 @@
 ---
 type: domino
 id: D8
-status: pending
+status: in-progress
 phase: 1 — BETA
 started:
 done:
@@ -104,6 +104,34 @@ A sandbox booking runs authorize → capture-at-completion → ledger accrual �
 - **What this buys:** funds are guaranteed before a business spends a day on the job. No mid-job card decline, no chasing payment after work is done — the failure mode that drives tradespeople off-platform.
 - **What it costs:** every cancellation is a real refund rather than a released hold, so refund volume touches real money and shows on statements. Client-side trust bar is higher — they're paying a new platform before receiving anything, which makes the refund path a **product** surface, not just an engineering one. Cancellation UX should say plainly when and how money comes back.
 - **Unchanged and non-negotiable:** nothing reaches the business before completion. Capturing early funds the platform balance only.
+
+
+### 2026-08-02 — reality sync: the danger is closed, the mechanism is not
+
+This is the most-misread domino in the chain, so the split is recorded precisely.
+
+**The thing D8 exists to prevent is fixed.** The goal line above cites
+`interests.py:293` paying the business 50% the instant a quote is accepted —
+*"the single most dangerous thing in the codebase."* That behaviour is **gone**:
+`backend/app/api/interests.py:563` now writes `released_to_business=0`, and
+release is approval-gated through `backend/app/services/approvals.py` (the M1
+fix, PR #81). PRs #84 and #86 removed the 50/50 claim from the copy as well.
+
+**But it was fixed by a different design than D8 specifies.** What shipped is
+charge-before-service plus approval-gated escrow. What D8 asks for — an internal
+**ledger** that accrues per business with **batched** payouts — is *not* built:
+
+- `card-21-money`, the branch D8.1 was parked on, **no longer exists** (absent
+  from `git branch -r` and from local).
+- Both migrations it was blocked on are **absent from `origin/main`**:
+  `docs/payment_ledger_table.sql`, `docs/bookings_payment_status_add_pending.sql`.
+- **D8.2 — the payout rail decision (manual vs Stripe Connect) is still unmade.**
+  This is the real open question, and it is a founder decision, not a build task.
+- **D8.3** — refund/penalty paths executed in sandbox: still owed.
+
+**Status corrected `pending` → `in-progress`.** "Pending" implied none of it had
+happened, which understated a large body of merged work (#29/#30/#31, #62–#64,
+#81, #83, #84). "Done" would overstate it — there is no ledger and no payout rail.
 
 ## 🎓 Learning
 
