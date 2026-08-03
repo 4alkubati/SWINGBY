@@ -65,7 +65,10 @@ CLAIMS = [
 #   client, after the scheduled time    -> 50/50
 #   business, any time                  -> 100% refund
 LADDER_LIES = [
-    re.compile(r"25%\s*(?:of the job amount\s*)?(?:fee\s*)?(?:applies\s*)?(?:if\s+)?(?:cancelled\s+)?more than 48", re.I),
+    re.compile(
+        r"25%\s*(?:of the job amount\s*)?(?:fee\s*)?(?:applies\s*)?(?:if\s+)?(?:cancelled\s+)?more than 48",
+        re.I,
+    ),
     re.compile(r"more than 48 hours[^.]{0,40}(?:25|50)\s*%", re.I),
     re.compile(r"25%\s+more than 48", re.I),
 ]
@@ -107,7 +110,9 @@ def test_nothing_claims_a_staged_5050_release():
                 continue
             for pattern in CLAIMS:
                 if pattern.search(line):
-                    hits.append(f"{path.relative_to(REPO)}:{line_no}: {line.strip()[:110]}")
+                    hits.append(
+                        f"{path.relative_to(REPO)}:{line_no}: {line.strip()[:110]}"
+                    )
 
     assert hits == [], (
         "A staged 50/50 release is claimed in "
@@ -141,7 +146,9 @@ def test_no_copy_states_the_cancellation_ladder_backwards():
                 continue
             for pattern in LADDER_LIES:
                 if pattern.search(line):
-                    hits.append(f"{path.relative_to(REPO)}:{line_no}: {line.strip()[:110]}")
+                    hits.append(
+                        f"{path.relative_to(REPO)}:{line_no}: {line.strip()[:110]}"
+                    )
 
     assert hits == [], (
         "Copy charges a fee for cancelling MORE than 48h ahead. That rung is "

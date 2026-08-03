@@ -139,7 +139,9 @@ class TestHealthWatchesTheRightDatabase:
 
     def test_ok_when_supabase_answers(self, test_client):
         with patch("app.supabase_client.supabase") as sb:
-            sb.table.return_value.select.return_value.limit.return_value.execute.return_value = None
+            sb.table.return_value.select.return_value.limit.return_value.execute.return_value = (
+                None
+            )
             res = test_client.get("/health")
         assert res.status_code == 200
         assert res.json()["database"] == "connected"
@@ -155,7 +157,9 @@ class TestHealthWatchesTheRightDatabase:
     def test_direct_sql_is_reported_separately(self, test_client):
         # Absent is the normal, healthy state — it must not read as a fault.
         with patch("app.supabase_client.supabase") as sb:
-            sb.table.return_value.select.return_value.limit.return_value.execute.return_value = None
+            sb.table.return_value.select.return_value.limit.return_value.execute.return_value = (
+                None
+            )
             body = test_client.get("/health").json()
         assert body["direct_sql"] in ("configured", "not_configured")
         assert body["status"] == "ok"
