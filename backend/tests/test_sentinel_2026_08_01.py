@@ -3,10 +3,7 @@
 Three findings, each one a number or a control that disagreed with reality.
 """
 
-import importlib
 import inspect
-from types import SimpleNamespace
-from unittest.mock import MagicMock, patch
 
 from app.main import app
 
@@ -145,7 +142,7 @@ class TestPaymentQuoteEndpoint:
 
         source = inspect.getsource(payments.quote_payment)
         assert "_can_view_payment" in source
-        assert 'status_code=403' in source
+        assert "status_code=403" in source
 
     def test_lines_carry_a_translation_key_not_english(self):
         # The server owns the numbers; the device owns the language. Sending

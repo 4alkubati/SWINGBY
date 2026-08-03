@@ -44,9 +44,9 @@ class TestThePostFileIsTheSourceOfTruth:
     def test_x_gets_the_short_form_and_it_fits(self, posts):
         for post in posts.values():
             text = post.text_for("x")
-            assert len(text) <= social_post.LIMITS["x"], (
-                f"{post.post_id} is {len(text)} chars — X will reject it"
-            )
+            assert (
+                len(text) <= social_post.LIMITS["x"]
+            ), f"{post.post_id} is {len(text)} chars — X will reject it"
 
     def test_instagram_gets_hashtags_and_x_does_not(self, posts):
         post = posts["launch-2026-08-01"]

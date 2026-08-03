@@ -62,8 +62,8 @@ class TestKirasWorkedExample:
         # staged release — tested code the app never ran.
         led = bs.settle_on_accept(BUDGET, ACCEPTED)
         assert led["escrow_held_cents"] == 10000  # the job, still held
-        assert led["refunded_cents"] == 5000      # client got 50 back
-        assert 10000 + 5000 == BUDGET             # exactly the drawing
+        assert led["refunded_cents"] == 5000  # client got 50 back
+        assert 10000 + 5000 == BUDGET  # exactly the drawing
         # OUR cut, taken from the business's $100, leaving them $90.
         assert led["platform_cut_cents"] == 1000
         assert led["business_net_cents"] == 9000

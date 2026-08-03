@@ -85,11 +85,7 @@ def find_expired_unquoted_posts(
         )
         if client_id:
             query = query.eq("client_id", client_id)
-        res = (
-            query.order("expires_at", desc=False)
-            .limit(limit)
-            .execute()
-        )
+        res = query.order("expires_at", desc=False).limit(limit).execute()
         return res.data or []
     except Exception:
         logger.exception("expiry sweep: could not list expired posts")
