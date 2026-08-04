@@ -215,8 +215,7 @@ def test_the_guard_catches_the_strings_that_escaped_it():
         "يُطلق 50٪ للشركة",
     ]
     unmatched = [
-        s for s in escaped
-        if not any(p.search(s) for p in CLAIMS + TRANSLATED_CLAIMS)
+        s for s in escaped if not any(p.search(s) for p in CLAIMS + TRANSLATED_CLAIMS)
     ]
     assert unmatched == [], (
         "These staged-release claims shipped to production and the guard still "
@@ -239,8 +238,7 @@ def test_the_guard_does_not_flag_the_real_cancellation_ladder():
         "$162 released, after the 10% fee",
     ]
     flagged = [
-        s for s in legitimate
-        if any(p.search(s) for p in CLAIMS + TRANSLATED_CLAIMS)
+        s for s in legitimate if any(p.search(s) for p in CLAIMS + TRANSLATED_CLAIMS)
     ]
     assert flagged == [], (
         "The guard is over-broad — it flags true statements about the real "
