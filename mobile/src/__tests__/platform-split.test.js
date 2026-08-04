@@ -1,18 +1,22 @@
 // iOS and Android should not be handed each other's platform features.
 //
-// Two asks from the 2026-07-31 walkthrough:
-//   "if its ios then it gets apple maps with google maps"
-//   "for android they dont need sign in with apple id and they dont have apple
-//    maps because they dont need it"
+// MAPS — settled 2026-08-04, and this reverses the 2026-07-31 rule.
 //
-// The maps half was a real defect: both map surfaces hard-coded
-// PROVIDER_GOOGLE, so the iOS build dragged in the Google Maps SDK and needed a
-// Google API key to draw tiles Apple Maps draws natively for free.
+// The earlier ask ("if its ios then it gets apple maps with google maps") was
+// read as "iOS gets Apple Maps", and iOS was given PROVIDER_DEFAULT. The
+// founder clarified: "we can still use google maps in ios too". So it is
+// GOOGLE ON BOTH, and what these tests pin is that neither platform silently
+// falls back to PROVIDER_DEFAULT — on iOS that would quietly swap Google tiles
+// for Apple ones and look like a styling bug rather than a provider change.
 //
-// The Apple sign-in half was ALREADY correct — Metro resolves ./appleAuth to
-// appleAuth.js off iOS and that module is inert — but nothing pinned it, so a
-// well-meaning "just import the real one" would have shipped an iOS-only native
-// module into the Android bundle. Now it is pinned.
+// The consequence to remember: the iOS build now NEEDS
+// ios.config.googleMapsApiKey. An empty key renders a blank map, not a
+// fallback. See the header of services/maps.js.
+//
+// The Apple sign-in half is unchanged and was ALREADY correct — Metro resolves
+// ./appleAuth to appleAuth.js off iOS and that module is inert — but nothing
+// pinned it, so a well-meaning "just import the real one" would have shipped an
+// iOS-only native module into the Android bundle. Now it is pinned.
 
 import fs from 'fs';
 import path from 'path';
@@ -24,9 +28,11 @@ import { pickProvider, darkMapProps } from '../services/maps';
 // Stands in for react-native-maps' exported constants.
 const MAPS = { PROVIDER_GOOGLE: 'google', PROVIDER_DEFAULT: 'default' };
 
-describe('map provider follows the platform', () => {
-  it('draws Apple Maps on iOS', () => {
-    expect(pickProvider('ios', MAPS)).toBe('default');
+describe('map provider is Google on every platform', () => {
+  it('draws Google Maps on iOS', () => {
+    // Not 'default' — PROVIDER_DEFAULT is Apple Maps on iOS, which is the
+    // regression this pins against.
+    expect(pickProvider('ios', MAPS)).toBe('google');
   });
 
   it('keeps Google Maps on Android', () => {
@@ -42,11 +48,12 @@ describe('map provider follows the platform', () => {
     expect(pickProvider('android', null)).toBeNull();
   });
 
-  it('expresses the dark map the way each provider understands it', () => {
-    // customMapStyle is a Google-only prop; on Apple Maps it is ignored, and
-    // the map would have come back light inside a dark app.
+  it('uses the Google dark style on both platforms', () => {
+    // customMapStyle is a Google prop, and Google now renders both platforms,
+    // so the same dark style applies to each. `userInterfaceStyle` was the
+    // Apple Maps workaround and would be a no-op on a Google-rendered map.
     expect(darkMapProps([{ a: 1 }], 'ios')).toEqual({
-      userInterfaceStyle: 'dark',
+      customMapStyle: [{ a: 1 }],
     });
     expect(darkMapProps([{ a: 1 }], 'android')).toEqual({
       customMapStyle: [{ a: 1 }],
