@@ -31,7 +31,7 @@ const STEPS = [
   {
     n: 4,
     title: 'Quote + win the job',
-    desc: 'Tap a post, add your quote and a short pitch. The client sees who you are, your rating, your sample work. If they accept, the booking is created and the first 50% releases to you immediately.',
+    desc: 'Tap a post, add your quote and a short pitch. The client sees who you are, your rating, your sample work. If they accept, they are charged and the booking is created — the money is held in escrow until the work is approved.',
     mockupLabel: 'Quote + interest screen',
     mockupSrc: '/app-screens/chat.png',
     callout: <><strong>Spam shield works both ways:</strong> you can\'t cold-contact a client — a conversation only opens once you\'ve quoted on their job, and it stays on that job thread.</>,
@@ -39,7 +39,7 @@ const STEPS = [
   {
     n: 5,
     title: 'Complete + get paid',
-    desc: 'Do the work. When the client confirms it\'s done, the remaining 50% releases — minus the 10% SwingBy fee. You keep 90% of the total. No subscription, no per-quote fee, no setup cost.',
+    desc: 'Do the work. When the client approves it — or automatically 24 hours after you mark it done — the payment releases, minus the 10% SwingBy fee. You keep 90% of the total. No subscription, no per-quote fee, no setup cost.',
     mockupLabel: 'Earnings + payout screen',
     mockupSrc: '/app-screens/earnings.png',
     callout: <><strong>If a client cancels:</strong> more than 48 hours out, they are refunded in full and you keep nothing. Within 48 hours you keep 25%; if they cancel after the scheduled time, you keep 50%.</>,

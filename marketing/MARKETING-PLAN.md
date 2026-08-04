@@ -39,7 +39,7 @@ No platform in Calgary offers: staged, platform-held payments + verified reviews
 
 SwingBy is a two-sided marketplace with two discovery flows:
 
-**Post and match:** A client posts a job with a budget and description. Businesses in the area express interest with a quoted price. The client reviews profiles and accepts the one they want. SwingBy creates the booking and splits the payment into a 50% release on confirmation and a 50% balance held for completion.
+**Post and match:** A client posts a job with a budget and description. Businesses in the area express interest with a quoted price. The client reviews profiles and accepts the one they want. SwingBy charges the client at that moment, creates the booking, and holds the entire amount in escrow until the client approves the finished work (or 24 hours after the business marks it done).
 
 **Geo-browse:** A client browses businesses on a map, filtered by category and distance. They contact a business directly or book through their profile.
 

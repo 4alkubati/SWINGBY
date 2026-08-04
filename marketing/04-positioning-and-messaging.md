@@ -14,7 +14,7 @@ Use this anywhere you have ~15 words. Headline, app store description first line
 
 ## Three sentence pitch
 
-> SwingBy connects you with vetted, top-rated local service providers — from house cleaners to handymen to dog walkers — in your neighbourhood. Post a job and get bids in minutes, or browse businesses on a map. Payment runs through SwingBy — half releases when you confirm the booking, the rest only when the job is done.
+> SwingBy connects you with vetted, top-rated local service providers — from house cleaners to handymen to dog walkers — in your neighbourhood. Post a job and get bids in minutes, or browse businesses on a map. Payment runs through SwingBy — held in full from the moment you accept a quote, and released only when the job is done.
 
 Use this on the homepage hero, app store description, and intro emails.
 

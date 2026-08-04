@@ -103,8 +103,8 @@ Your first SwingBy booking has been marked complete. Here's how your payout work
 - Your payout: {{net_payout}}
 
 **When you get paid:**
-- 50% was released when the booking was confirmed
-- The remaining 50% (minus platform fee) was released when the client marked the job complete
+- The client was charged in full when they accepted your quote, and it was held in escrow
+- The whole amount (minus platform fee) was released when the client approved the finished work — or automatically 24 hours after you marked it done
 
 Payouts are processed within 3–5 business days depending on your payment method.
 
