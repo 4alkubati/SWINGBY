@@ -2367,6 +2367,118 @@ Object.assign(translations.uk, {
   'settings.creditHint': 'Напишіть нам під час бронювання — і ми його зарахуємо.',
 });
 
+// ── Beta invite card (2026-08-03) ────────────────────────────────────────────
+// The screen a recruited tester lands on from swingby://invite?code=<CODE>.
+//
+// TWO STRINGS FROM THE 2026-06-17 SPEC ARE DELIBERATELY NOT HERE:
+//   * "Invite expires in 7 days" — no invite expiry exists anywhere in the
+//     backend (grep: no invite/referral expiry column, job or check). Printing a
+//     deadline we do not enforce is the same class of error as the 50/50 payment
+//     claim that had to be pulled from the store listing.
+//   * "SwingBy Inc." — there is no such company. The legal entity is `4alkubati`
+//     (Kira, 2026-08-03). A copyright line naming a non-existent corporation is a
+//     false legal statement on the first screen a stranger sees.
+const inviteEn = {
+  'invite.badge': 'BETA',
+  'invite.hero': 'You’re invited to shape SwingBy',
+  'invite.inviter': 'The SwingBy Team',
+  'invite.inviterRole': 'invited you to join the beta',
+  'invite.subhead': 'Be among the first to experience Calgary’s new service marketplace.',
+  'invite.body1':
+    'SwingBy connects people who need services with skilled local businesses — from home repairs to personal training, all in one place.',
+  'invite.body2':
+    'As a beta tester, your feedback directly shapes the app. Share what works, what doesn’t, and what you wish existed.',
+  'invite.codeLabel': 'Your invite code',
+  'invite.copy': 'Copy code',
+  'invite.copied': 'Code copied',
+  'invite.copyFailed': 'Could not copy the code',
+  'invite.cta': 'Join the beta',
+  'invite.haveAccount': 'Already have an account?',
+  'invite.signIn': 'Sign in',
+  'invite.finePrint': 'This invite is personal to you. Please don’t share it.',
+  'invite.copyright': '© 2026 SwingBy',
+  'invite.noCodeTitle': 'This invite link is incomplete',
+  'invite.noCodeBody':
+    'The link didn’t carry an invite code. Open the original link again, or sign up without one — you can add a code later.',
+  'invite.continueAnyway': 'Continue without a code',
+};
+Object.assign(translations.en, inviteEn);
+
+Object.assign(translations['fr-CA'], {
+  'invite.badge': 'BÊTA',
+  'invite.hero': 'Vous êtes invité à façonner SwingBy',
+  'invite.inviter': 'L’équipe SwingBy',
+  'invite.inviterRole': 'vous a invité à rejoindre la bêta',
+  'invite.subhead': 'Soyez parmi les premiers à découvrir le nouveau marché de services de Calgary.',
+  'invite.body1':
+    'SwingBy met en relation les personnes qui cherchent un service avec des entreprises locales qualifiées — des réparations à domicile à l’entraînement personnel, au même endroit.',
+  'invite.body2':
+    'En tant que testeur bêta, vos commentaires façonnent directement l’application. Dites-nous ce qui fonctionne, ce qui ne fonctionne pas et ce que vous aimeriez y trouver.',
+  'invite.codeLabel': 'Votre code d’invitation',
+  'invite.copy': 'Copier le code',
+  'invite.copied': 'Code copié',
+  'invite.copyFailed': 'Impossible de copier le code',
+  'invite.cta': 'Rejoindre la bêta',
+  'invite.haveAccount': 'Vous avez déjà un compte?',
+  'invite.signIn': 'Se connecter',
+  'invite.finePrint': 'Cette invitation vous est personnelle. Merci de ne pas la partager.',
+  'invite.copyright': '© 2026 SwingBy',
+  'invite.noCodeTitle': 'Ce lien d’invitation est incomplet',
+  'invite.noCodeBody':
+    'Le lien ne contenait pas de code d’invitation. Ouvrez de nouveau le lien d’origine, ou inscrivez-vous sans code — vous pourrez en ajouter un plus tard.',
+  'invite.continueAnyway': 'Continuer sans code',
+});
+
+Object.assign(translations.ar, {
+  'invite.badge': 'نسخة تجريبية',
+  'invite.hero': 'أنت مدعو للمساهمة في تشكيل SwingBy',
+  'invite.inviter': 'فريق SwingBy',
+  'invite.inviterRole': 'دعاك للانضمام إلى النسخة التجريبية',
+  'invite.subhead': 'كن من أوائل من يجرب سوق الخدمات الجديد في كالغاري.',
+  'invite.body1':
+    'يربط SwingBy الأشخاص الذين يحتاجون إلى خدمات بأنشطة تجارية محلية ماهرة — من إصلاحات المنزل إلى التدريب الشخصي، في مكان واحد.',
+  'invite.body2':
+    'بصفتك مختبرًا للنسخة التجريبية، تسهم ملاحظاتك مباشرة في تطوير التطبيق. أخبرنا بما ينجح، وما لا ينجح، وما تتمنى وجوده.',
+  'invite.codeLabel': 'رمز الدعوة الخاص بك',
+  'invite.copy': 'نسخ الرمز',
+  'invite.copied': 'تم نسخ الرمز',
+  'invite.copyFailed': 'تعذّر نسخ الرمز',
+  'invite.cta': 'انضم إلى النسخة التجريبية',
+  'invite.haveAccount': 'هل لديك حساب بالفعل؟',
+  'invite.signIn': 'تسجيل الدخول',
+  'invite.finePrint': 'هذه الدعوة شخصية لك. نرجو عدم مشاركتها.',
+  'invite.copyright': '© 2026 SwingBy',
+  'invite.noCodeTitle': 'رابط الدعوة غير مكتمل',
+  'invite.noCodeBody':
+    'لم يتضمن الرابط رمز دعوة. افتح الرابط الأصلي مرة أخرى، أو سجّل بدون رمز — يمكنك إضافته لاحقًا.',
+  'invite.continueAnyway': 'المتابعة بدون رمز',
+});
+
+Object.assign(translations.uk, {
+  'invite.badge': 'БЕТА',
+  'invite.hero': 'Вас запрошено формувати SwingBy',
+  'invite.inviter': 'Команда SwingBy',
+  'invite.inviterRole': 'запросила вас до бета-версії',
+  'invite.subhead': 'Станьте одним із перших, хто скористається новим сервісним маркетплейсом Калгарі.',
+  'invite.body1':
+    'SwingBy поєднує людей, яким потрібні послуги, з кваліфікованими місцевими підприємствами — від ремонту вдома до персональних тренувань, усе в одному місці.',
+  'invite.body2':
+    'Як бета-тестувальник ви безпосередньо впливаєте на застосунок. Розкажіть, що працює, що ні та чого вам бракує.',
+  'invite.codeLabel': 'Ваш код запрошення',
+  'invite.copy': 'Копіювати код',
+  'invite.copied': 'Код скопійовано',
+  'invite.copyFailed': 'Не вдалося скопіювати код',
+  'invite.cta': 'Приєднатися до бети',
+  'invite.haveAccount': 'Уже маєте обліковий запис?',
+  'invite.signIn': 'Увійти',
+  'invite.finePrint': 'Це запрошення персональне. Будь ласка, не діліться ним.',
+  'invite.copyright': '© 2026 SwingBy',
+  'invite.noCodeTitle': 'Це посилання-запрошення неповне',
+  'invite.noCodeBody':
+    'Посилання не містило коду запрошення. Відкрийте початкове посилання ще раз або зареєструйтеся без коду — додати його можна пізніше.',
+  'invite.continueAnyway': 'Продовжити без коду',
+});
+
 const i18n = new I18n(translations);
 
 // Default fallback
