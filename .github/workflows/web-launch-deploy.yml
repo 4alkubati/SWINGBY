@@ -93,6 +93,29 @@ jobs:
           ls dist/assets/ | grep -qiE "^TermsPage.*\.js$"   || { echo "::error::TermsPage chunk missing from the build."; exit 1; }
           echo "Privacy and Terms chunks present."
 
+      # Learned the hard way on 2026-08-04: the project name is NOT recorded
+      # anywhere trustworthy. The live hostname is swingby-prelaunch-1pv.pages.dev
+      # but the PROJECT is `swingby-prelaunch` — the -1pv is a deployment suffix.
+      # Deploying to a name that does not exist CREATES it, hands back a fresh
+      # pages.dev URL, and leaves swingbyy.com untouched while reporting success.
+      - name: Preflight — the target project must already exist
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          PROJECT: ${{ inputs.project_name }}
+        run: |
+          set -uo pipefail
+          echo "Looking for Pages project: $PROJECT"
+          npx --yes wrangler@3 pages project list > projects.txt 2>&1 || true
+          cat projects.txt
+          if ! grep -qE "(^|[[:space:]])${PROJECT}([[:space:]]|$)" projects.txt; then
+            echo "::error::Pages project '${PROJECT}' does not exist on this account."
+            echo "::error::Deploying would CREATE it and leave the real site untouched."
+            echo "::error::Pick the real name from the list above and re-run with it."
+            exit 1
+          fi
+          echo "Found it. Safe to deploy."
+
       - name: Publish to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
         with:
