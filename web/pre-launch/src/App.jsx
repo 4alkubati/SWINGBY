@@ -1,4 +1,6 @@
 import { lazy, Suspense } from 'react'
+import { Navigate } from 'react-router-dom'
+import ComingSoon from './pages/ComingSoon'
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import { AnimatePresence } from 'framer-motion'
 import { Toaster } from 'react-hot-toast'
@@ -79,8 +81,57 @@ const Maintenance = lazy(() => import('./pages/Maintenance'))
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'))
 const ServerError = lazy(() => import('./pages/ServerError'))
 
-function AnimatedRoutes() {
+
+// ── The pre-launch gate ──────────────────────────────────────────────────────
+// Public launch is October. Until then swingbyy.com is a WAITLIST, not a product
+// site.
+//
+// This folder is called `pre-launch`, which is how it went unnoticed that it
+// actually serves 37 routes — /bookings, /dashboard, /messages, /login — with a
+// full marketing Home at `/`. Meanwhile ComingSoon.jsx, a finished 479-line
+// waitlist page with a working form, was imported by NOTHING and had never been
+// reachable at any URL.
+//
+// Flip VITE_PRELAUNCH_GATE to 'false' at launch and every route below comes back
+// exactly as it was. Nothing is deleted.
+const GATE = import.meta.env.VITE_PRELAUNCH_GATE !== 'false'
+
+// Reachable even while gated, and this list is not cosmetic:
+//   * /privacy — Apple REQUIRES a privacy URL that resolves. Gating it breaks the
+//     App Store submission, which is the whole reason the site matters right now.
+//   * /terms, /cookies — the documents the consent checkbox links to.
+//   * /contact — the only way to reach a human if the form fails.
+// Everything else redirects to the waitlist rather than 404ing, so an old link
+// from a shared post still lands somewhere useful.
+
+function GatedRoutes() {
   const location = useLocation()
+  return (
+    <Layout>
+      <AnimatePresence mode="wait">
+        <Suspense fallback={<PageSkeleton />}>
+          <Routes location={location} key={location.pathname}>
+            <Route path="/" element={<PageTransition><ComingSoon /></PageTransition>} />
+            <Route path="/privacy" element={<PageTransition><PrivacyPage /></PageTransition>} />
+            <Route path="/terms" element={<PageTransition><TermsPage /></PageTransition>} />
+            <Route path="/cookies" element={<PageTransition><CookiesPage /></PageTransition>} />
+            <Route path="/contact" element={<PageTransition><Contact /></PageTransition>} />
+            {/* Redirect, not 404: an old link from a shared post still lands
+                somewhere useful instead of on an error page. */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </Suspense>
+      </AnimatePresence>
+    </Layout>
+  )
+}
+
+function AnimatedRoutes() {
+  // useLocation() first: an early return above a hook breaks the rules of hooks,
+  // even though GATE is a build-time constant and the order could never actually
+  // change at runtime.
+  const location = useLocation()
+  if (GATE) return <GatedRoutes />
   return (
     <Layout>
       <AnimatePresence mode="wait">
