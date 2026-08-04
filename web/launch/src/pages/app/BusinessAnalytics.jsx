@@ -36,10 +36,19 @@ export default function BusinessAnalytics() {
   const [rangeIdx, setRangeIdx] = useState(1)
   const range = RANGES[rangeIdx]
 
-  // Use existing bookings endpoint — analytics endpoint is TODO (HUMAN): add GET /businesses/me/analytics
   const { data: bookings = [], isLoading: bLoading, isError: bError } = useQuery({
     queryKey: ['bookings'],
     queryFn: () => api.get('/bookings/').then(r => r.data),
+  })
+
+  // GET /businesses/me/analytics is implemented (businesses.py::get_my_analytics)
+  // — the comment that used to sit here called it a TODO long after it shipped.
+  // Earnings must come from it: it sums released_to_business over CAPTURE-BACKED
+  // payment rows only. Deriving earnings from bookings.total_amount instead
+  // counts money no card was ever charged for.
+  const { data: analytics } = useQuery({
+    queryKey: ['bizAnalytics'],
+    queryFn: () => api.get('/businesses/me/analytics').then(r => r.data),
   })
 
   const { data: biz } = useQuery({
@@ -68,10 +77,15 @@ export default function BusinessAnalytics() {
 
   const completed = inRange.filter(b => b.status === 'completed')
   const prevCompleted = prevRange.filter(b => b.status === 'completed')
+  // Booked, not banked: what clients were quoted on completed jobs in range.
+  // Honest as a volume figure, which is why it keeps the range delta.
   const gross = completed.reduce((s, b) => s + (b.total_amount || 0), 0)
   const prevGross = prevCompleted.reduce((s, b) => s + (b.total_amount || 0), 0)
-  const net = gross * 0.9
-  const prevNet = prevGross * 0.9
+  // Earnings are NOT `gross * 0.9`. They are what the ledger actually released
+  // on capture-backed rows. The endpoint reports all-time, so this card carries
+  // no range delta rather than implying one it cannot compute.
+  const releasedEarnings = analytics?.total_earnings ?? null
+  const unverifiedEarnings = analytics?.unverified_earnings ?? 0
 
   function delta(curr, prev) {
     if (!prev) return null
@@ -165,11 +179,17 @@ export default function BusinessAnalytics() {
 
       {/* KPI strip */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 'var(--space-md)', marginBottom: 'var(--space-xl)' }}>
-        <StatCard label="Gross revenue" value={gross} format="currency" icon={CurrencyDollar} delta={statDelta} />
-        <StatCard label="Net earnings (90%)" value={net} format="currency" icon={CurrencyDollar} delta={delta(net, prevNet)} />
+        <StatCard label="Booked revenue" value={gross} format="currency" icon={CurrencyDollar} delta={statDelta} deltaLabel="quoted, in range" />
+        <StatCard label="Released earnings" value={releasedEarnings} format="currency" icon={CurrencyDollar} deltaLabel="all time, after 10% fee" />
         <StatCard label="Completed bookings" value={completed.length} icon={CalendarCheck} delta={delta(completed.length, prevCompleted.length)} />
         <StatCard label="Avg rating" value={biz?.avg_rating || null} format="rating" icon={Star} />
       </div>
+
+      {unverifiedEarnings > 0 && (
+        <div style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)', borderRadius: 'var(--radius-md)', padding: 'var(--space-md) var(--space-lg)', marginBottom: 'var(--space-lg)', fontSize: '13px', color: 'var(--color-text-secondary)' }}>
+          <strong style={{ color: 'var(--color-text-primary)' }}>Not counted above:</strong> ${unverifiedEarnings.toFixed(2)} sits on older payment rows marked released with no confirmed card charge behind them. It is excluded from Released earnings rather than shown as money you were paid.
+        </div>
+      )}
 
       {/* Revenue area chart */}
       <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', padding: 'var(--space-lg)', marginBottom: 'var(--space-lg)' }}>

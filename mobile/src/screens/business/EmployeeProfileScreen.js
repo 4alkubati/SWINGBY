@@ -299,8 +299,12 @@ export default function EmployeeProfileScreen({ navigation, route }) {
             <View style={styles.divider} />
 
             <View style={styles.statsRow}>
+              {/* reviews.reviewee_type only allows ('client','business'), so an
+                  employee review cannot exist yet and avg_rating is always
+                  null (employees.py:349). '0.0' read as "rated, and badly";
+                  '—' reads as "not rated yet", which is the truth. */}
               <StatItem
-                value={ratingValue !== null ? ratingValue.toFixed(1) : '0.0'}
+                value={ratingValue !== null ? ratingValue.toFixed(1) : '—'}
                 label="Rating"
                 isFirst={true}
               />

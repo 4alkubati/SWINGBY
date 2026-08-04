@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { motion } from 'framer-motion'
-import { UsersThree, Plus } from '@phosphor-icons/react'
+import { UsersThree } from '@phosphor-icons/react'
 import SEO from '../components/SEO'
 import DashboardLayout from '../components/DashboardLayout'
 import Button from '../components/Button'
@@ -22,7 +22,7 @@ export default function BusinessEmployees() {
       <motion.div {...fadeUp}>
         <div className={d.header}>
           <h1 className={d.title}>Team Members</h1>
-          <Button variant="primary" size="sm"><Plus size={16} /> Add Member</Button>
+          <Button variant="primary" size="sm" disabled title="Not available yet">Coming soon</Button>
         </div>
 
         <div className={d.emptyState}>
@@ -31,7 +31,7 @@ export default function BusinessEmployees() {
           <p className={d.emptyDesc}>
             Add your employees and assign them to jobs. Manage roles, availability, and track their performance.
           </p>
-          <Button variant="primary"><Plus size={16} /> Add First Member</Button>
+          <Button variant="primary" disabled title="Not available yet">Coming soon</Button>
         </div>
       </motion.div>
     </DashboardLayout>

@@ -76,7 +76,7 @@ describe('chat safety controls', () => {
   it('tells the user why they cannot reply when the thread is blocked', async () => {
     api.get.mockImplementation((url) => {
       if (String(url).includes('/moderation/blocks/check/')) {
-        return Promise.resolve({ data: { blocked: true } });
+        return Promise.resolve({ blocked: true });
       }
       return Promise.resolve({
         items: [],

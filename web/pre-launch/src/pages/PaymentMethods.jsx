@@ -22,7 +22,7 @@ export default function PaymentMethods() {
       <motion.div {...fadeUp}>
         <div className={d.header}>
           <h1 className={d.title}>Payment Methods</h1>
-          <Button variant="primary" size="sm">Add Payment Method</Button>
+          <Button variant="primary" size="sm" disabled title="Not available yet">Coming soon</Button>
         </div>
 
         <div className={d.emptyState}>

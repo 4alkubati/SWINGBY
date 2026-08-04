@@ -104,6 +104,13 @@ export default function BusinessExports() {
     queryFn: () => api.get('/bookings/').then(r => r.data),
   })
 
+  // Ledger-backed earnings. Summing bookings.total_amount answers "what was
+  // quoted", never "what was paid" — see the note in BizDashboard.jsx.
+  const { data: analytics } = useQuery({
+    queryKey: ['bizAnalytics'],
+    queryFn: () => api.get('/businesses/me/analytics').then(r => r.data),
+  })
+
   const { data: biz } = useQuery({
     queryKey: ['myBusiness'],
     queryFn: () => api.get('/businesses/me').then(r => r.data),
@@ -181,9 +188,13 @@ export default function BusinessExports() {
           <dd style={{ color: 'var(--color-text-primary)', fontWeight: 600 }}>{bookings.length}</dd>
           <dt style={{ color: 'var(--color-text-secondary)' }}>Completed bookings</dt>
           <dd style={{ color: 'var(--color-text-primary)', fontWeight: 600 }}>{bookings.filter(b => b.status === 'completed').length}</dd>
-          <dt style={{ color: 'var(--color-text-secondary)' }}>Gross revenue</dt>
+          <dt style={{ color: 'var(--color-text-secondary)' }}>Booked revenue</dt>
           <dd style={{ color: 'var(--color-text-primary)', fontWeight: 600 }}>
             ${bookings.filter(b => b.status === 'completed').reduce((s, b) => s + (b.total_amount || 0), 0).toFixed(2)}
+          </dd>
+          <dt style={{ color: 'var(--color-text-secondary)' }}>Released earnings</dt>
+          <dd style={{ color: 'var(--color-text-primary)', fontWeight: 600 }}>
+            {analytics ? `$${Number(analytics.total_earnings || 0).toFixed(2)}` : '—'}
           </dd>
         </dl>
       </div>

@@ -49,9 +49,9 @@ function renderScreen() {
 async function openDeleteSheet(utils, hasPassword) {
   api.get.mockImplementation((url) => {
     if (url === '/me/auth-methods') {
-      return Promise.resolve({ data: { has_password: hasPassword } });
+      return Promise.resolve({ has_password: hasPassword });
     }
-    return Promise.resolve({ data: {} });
+    return Promise.resolve({});
   });
   await act(async () => {
     fireEvent.press(utils.getByText(i18n.t('settings.deleteAccount')));
@@ -61,8 +61,8 @@ async function openDeleteSheet(utils, hasPassword) {
 
 beforeEach(() => {
   jest.clearAllMocks();
-  api.get.mockResolvedValue({ data: {} });
-  api.delete.mockResolvedValue({ data: { message: 'account_deactivated' } });
+  api.get.mockResolvedValue({});
+  api.delete.mockResolvedValue({ message: 'account_deactivated' });
 });
 
 describe('delete account', () => {

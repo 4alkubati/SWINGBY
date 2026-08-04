@@ -13,8 +13,15 @@ import Alert from '../../components/Alert'
 import Badge from '../../components/Badge'
 import styles from './Dashboard.module.css'
 
+// Mirrors backend/app/api/employees.py::EmployeeCreate. first_name, last_name
+// and password are REQUIRED there with no defaults — the form used to collect
+// only email + role_title, so every submission was rejected by FastAPI
+// validation before add_employee ever ran and no owner could add anyone on web.
 const schema = z.object({
+  first_name: z.string().min(1, 'First name required').max(80),
+  last_name: z.string().min(1, 'Last name required').max(80),
   email: z.string().email('Valid email required'),
+  password: z.string().min(8, 'At least 8 characters').max(128),
   role_title: z.string().min(1, 'Role title required').max(60),
 })
 
@@ -29,11 +36,19 @@ export default function BusinessEmployees() {
 
   const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm({
     resolver: zodResolver(schema),
-    defaultValues: { email: '', role_title: '' },
+    defaultValues: { first_name: '', last_name: '', email: '', password: '', role_title: '' },
   })
 
   const invite = useMutation({
-    mutationFn: (data) => api.post('/employees/', data),
+    // Normalised the same way the mobile Add Employee sheet does, so the same
+    // person typed on either client lands as one account.
+    mutationFn: (data) => api.post('/employees/', {
+      email: data.email.trim().toLowerCase(),
+      password: data.password,
+      first_name: data.first_name.trim(),
+      last_name: data.last_name.trim(),
+      ...(data.role_title.trim() ? { role_title: data.role_title.trim() } : {}),
+    }),
     onSuccess: () => {
       qc.invalidateQueries(['employees'])
       toast.success('Employee added.')
@@ -74,7 +89,10 @@ export default function BusinessEmployees() {
         <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', padding: 'var(--space-lg)', marginBottom: 'var(--space-xl)', maxWidth: '480px' }}>
           <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '16px', color: 'var(--color-text-primary)', marginBottom: 'var(--space-md)' }}>Add a team member</h2>
           <form onSubmit={handleSubmit(d => invite.mutate(d))} noValidate style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
+            <Input label="First name" placeholder="Jane" error={errors.first_name?.message} {...register('first_name')} />
+            <Input label="Last name" placeholder="Doe" error={errors.last_name?.message} {...register('last_name')} />
             <Input label="Email address" type="email" placeholder="employee@example.com" error={errors.email?.message} {...register('email')} />
+            <Input label="Temporary password" type="password" placeholder="At least 8 characters" error={errors.password?.message} {...register('password')} />
             <Input label="Role title" placeholder="e.g. Senior Cleaner" error={errors.role_title?.message} {...register('role_title')} />
             <Button type="submit" loading={invite.isPending || isSubmitting}>Add employee</Button>
           </form>

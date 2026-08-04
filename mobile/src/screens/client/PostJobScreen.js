@@ -894,16 +894,25 @@ function PostedSuccess({ total, onViewJob, onDone }) {
       </View>
 
       <Surface elevation="subtle" rounded="card" padding="base" style={styles.successCard}>
-        <Inline spacing="md" align="flex-start">
-          <Feather name="lock" size={16} color={colors.success} strokeWidth={1.8} />
-          <Stack spacing="xs" style={{ flex: 1 }}>
-            <Text variant="smallMedium">{i18n.t('postJob.postedRowHold')}</Text>
-            <Text variant="caption" color="secondary">
-              {i18n.t('postJob.postedRowHoldSub')}
-            </Text>
-          </Stack>
-        </Inline>
-        <View style={styles.successDivider} />
+        {/* Gated on the same condition as the hero above. Charge-at-post is
+            switched off (api/service_posts.py), so `payment_started` is always
+            false and `total` is always null — this card was telling every
+            client "Payment charged" directly under a hero that correctly said
+            nothing had been. Nothing is charged until a quote is accepted. */}
+        {total != null ? (
+          <>
+            <Inline spacing="md" align="flex-start">
+              <Feather name="lock" size={16} color={colors.success} strokeWidth={1.8} />
+              <Stack spacing="xs" style={{ flex: 1 }}>
+                <Text variant="smallMedium">{i18n.t('postJob.postedRowHold')}</Text>
+                <Text variant="caption" color="secondary">
+                  {i18n.t('postJob.postedRowHoldSub')}
+                </Text>
+              </Stack>
+            </Inline>
+            <View style={styles.successDivider} />
+          </>
+        ) : null}
         <Inline justify="space-between" align="center">
           <Text variant="small" color="secondary">{i18n.t('postJob.postedRowQuotes')}</Text>
           <Text variant="smallMedium">{i18n.t('postJob.postedRowQuotesValue')}</Text>

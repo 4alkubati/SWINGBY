@@ -15,6 +15,13 @@
 //
 // Nothing here throws for the caller to translate — every function returns a
 // plain value or lets the axios error through, matching googleReviews.js.
+//
+// `api` UNWRAPS the axios response to its JSON body (api.js — the response
+// interceptor returns `response.data`). Every function here originally read
+// `res.data.items`, which is `undefined.items` on an already-unwrapped body —
+// so listBlockedUsers, listMyReports and listReportQueue silently returned []
+// forever and isBlocked() always answered false. That made the Guideline 1.2
+// block/report surfaces look shipped while doing nothing. Read `res` directly.
 
 import { api } from './api';
 
@@ -65,7 +72,7 @@ export async function reportContent({ targetType, targetId, reason, details }) {
       reason,
       details: details || null,
     });
-    return { ok: true, report: res.data };
+    return { ok: true, report: res };
   } catch (err) {
     if (err?.response?.status === 409) {
       return { ok: false, alreadyReported: true };
@@ -77,7 +84,7 @@ export async function reportContent({ targetType, targetId, reason, details }) {
 /** Reports the signed-in user filed. Auto-filed rows are excluded server-side. */
 export async function listMyReports() {
   const res = await api.get('/moderation/reports/mine');
-  return res.data?.items || [];
+  return res?.items || [];
 }
 
 /** Block a user. Idempotent — blocking twice is a success, not a 409. */
@@ -86,19 +93,19 @@ export async function blockUser(userId, reason) {
     blocked_id: userId,
     reason: reason || null,
   });
-  return res.data;
+  return res;
 }
 
 /** Unblock. Idempotent — unblocking someone who is not blocked is a success. */
 export async function unblockUser(userId) {
   const res = await api.delete(`/moderation/blocks/${userId}`);
-  return res.data;
+  return res;
 }
 
 /** Accounts the signed-in user has blocked — backs Settings → Safety. */
 export async function listBlockedUsers() {
   const res = await api.get('/moderation/blocks');
-  return res.data?.items || [];
+  return res?.items || [];
 }
 
 /**
@@ -113,7 +120,7 @@ export async function isBlocked(userId) {
   if (!userId) return false;
   try {
     const res = await api.get(`/moderation/blocks/check/${userId}`);
-    return Boolean(res.data?.blocked);
+    return Boolean(res?.blocked);
   } catch {
     return false;
   }
@@ -125,7 +132,7 @@ export async function isBlocked(userId) {
 
 export async function listReportQueue() {
   const res = await api.get('/moderation/reports/admin/queue');
-  return res.data?.items || [];
+  return res?.items || [];
 }
 
 /**
@@ -140,5 +147,5 @@ export async function resolveReport(reportId, action, resolution) {
     action_taken: action,
     resolution: resolution || null,
   });
-  return res.data;
+  return res;
 }

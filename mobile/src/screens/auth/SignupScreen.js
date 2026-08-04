@@ -70,11 +70,17 @@ function StepDots({ step }) {
   );
 }
 
-export default function SignupScreen({ navigation }) {
+export default function SignupScreen({ navigation, route }) {
   // updateUser flips app state into the logged-in stack after a social
   // sign-in (see the matching note in LoginScreen). signup() stays the
   // email/password path.
   const { signup, updateUser } = useAuth();
+
+  // BetaInviteCardScreen navigates here with { inviteCode } so the referral can
+  // be attributed ("the code rides along" — its own comment). This screen never
+  // read it, so every beta-invite signup was attributed to nobody. Optional by
+  // design: a missing code must never block account creation.
+  const inviteCode = route?.params?.inviteCode;
 
   const [step, setStep] = useState(0);
 
@@ -191,6 +197,7 @@ export default function SignupScreen({ navigation }) {
         role,
         phone: null,
         accepted_terms: true,
+        ...(inviteCode ? { referral_code: inviteCode } : {}),
       });
       if (result?.requiresConfirmation) {
         setEmailForConfirm(email.trim().toLowerCase());

@@ -16,7 +16,6 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
-import * as Clipboard from 'expo-clipboard';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { api } from '../../services/api';
@@ -223,10 +222,8 @@ function AddEmployeeModal({ visible, bizId, onClose, onAdded }) {
   const [password, setPassword] = useState('');
   const [roleTitle, setRoleTitle] = useState('');
   const [saving, setSaving] = useState(false);
-  const [showInviteLink, setShowInviteLink] = useState(false);
   const slideAnim = useRef(new Animated.Value(500)).current;
 
-  const inviteUrl = `swingby://invite/${bizId || 'demo'}`;
 
   useEffect(() => {
     if (visible) {
@@ -248,7 +245,6 @@ function AddEmployeeModal({ visible, bizId, onClose, onAdded }) {
       setEmail('');
       setPassword('');
       setRoleTitle('');
-      setShowInviteLink(false);
     }
   }, [visible, slideAnim]);
 
@@ -272,11 +268,6 @@ function AddEmployeeModal({ visible, bizId, onClose, onAdded }) {
     } finally {
       setSaving(false);
     }
-  }
-
-  function handleCopyInvite() {
-    Clipboard.setStringAsync(inviteUrl);
-    Alert.alert('Copied!', 'Invite link copied to clipboard.');
   }
 
   return (
@@ -374,31 +365,6 @@ function AddEmployeeModal({ visible, bizId, onClose, onAdded }) {
             }
           </TouchableOpacity>
 
-          {/* Divider + Share invite link */}
-          <TouchableOpacity
-            style={styles.addModalInviteToggle}
-            onPress={() => setShowInviteLink((v) => !v)}
-            activeOpacity={0.7}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <Text style={styles.addModalInviteToggleText}>
-              {showInviteLink ? 'Hide invite link ▲' : 'Share invite link instead ▼'}
-            </Text>
-          </TouchableOpacity>
-
-          {showInviteLink && (
-            <View>
-              <Text style={styles.inviteSubtitle}>
-                Share this link with your teammate. They'll join your team after signing up.
-              </Text>
-              <View style={styles.inviteLinkBox}>
-                <Text style={styles.inviteLinkText} numberOfLines={1}>{inviteUrl}</Text>
-              </View>
-              <TouchableOpacity style={[styles.saveBtn, { marginTop: 4 }]} onPress={handleCopyInvite} activeOpacity={0.85}>
-                <Text style={styles.saveBtnText}>Copy Invite Link</Text>
-              </TouchableOpacity>
-            </View>
-          )}
 
           {/* Cancel */}
           <TouchableOpacity
@@ -410,38 +376,6 @@ function AddEmployeeModal({ visible, bizId, onClose, onAdded }) {
           </TouchableOpacity>
         </Animated.View>
       </KeyboardAvoidingView>
-    </Modal>
-  );
-}
-
-// ─── InviteModal ──────────────────────────────────────────────────────────────
-function InviteModal({ visible, bizId, onClose }) {
-  const inviteUrl = `swingby://invite/${bizId || 'demo'}`;
-
-  function handleCopy() {
-    Clipboard.setStringAsync(inviteUrl);
-    Alert.alert('Copied!', 'Invite link copied to clipboard.');
-    onClose();
-  }
-
-  return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <View style={styles.modalOverlay}>
-        <TouchableOpacity style={styles.modalBackdrop} onPress={onClose} activeOpacity={1} />
-        <View style={styles.inviteSheet}>
-          <View style={styles.sheetHandle} />
-          <Text style={styles.sheetTitle}>Invite Teammate</Text>
-          <Text style={styles.inviteSubtitle}>
-            Share this link with your teammate. They'll join your team after signing up.
-          </Text>
-          <View style={styles.inviteLinkBox}>
-            <Text style={styles.inviteLinkText} numberOfLines={1}>{inviteUrl}</Text>
-          </View>
-          <TouchableOpacity style={styles.saveBtn} onPress={handleCopy} activeOpacity={0.85}>
-            <Text style={styles.saveBtnText}>Copy Invite Link</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
     </Modal>
   );
 }
@@ -471,7 +405,6 @@ export default function EmployeeManagementScreen({ navigation, route }) {
   const [toggling, setToggling] = useState(null); // employee id being toggled
   const [editTarget, setEditTarget] = useState(null);
   const [showEdit, setShowEdit] = useState(false);
-  const [showInvite, setShowInvite] = useState(false);
   const [showAddEmployee, setShowAddEmployee] = useState(false);
 
   const load = useCallback(async () => {
@@ -615,12 +548,6 @@ export default function EmployeeManagementScreen({ navigation, route }) {
         onSaved={handleSaved}
       />
 
-      {/* Invite modal (legacy deeplink — still accessible via Add modal) */}
-      <InviteModal
-        visible={showInvite}
-        bizId={bizId}
-        onClose={() => setShowInvite(false)}
-      />
     </View>
   );
 }
@@ -786,38 +713,7 @@ const styles = StyleSheet.create({
   sheetToggleLabel: { fontSize: 15, fontWeight: '600', color: colors.textPrimary },
   sheetToggleSub: { fontSize: 12, color: colors.textSecondary, marginTop: 2 },
 
-  // Invite sheet (same base as sheet but standalone)
-  inviteSheet: {
-    backgroundColor: colors.surface,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    borderTopWidth: 1,
-    borderColor: colors.border,
-    padding: 24,
-    paddingBottom: 40,
-    gap: 14,
-  },
-  inviteSubtitle: { fontSize: 14, color: colors.textSecondary, lineHeight: 20 },
-  inviteLinkBox: {
-    backgroundColor: colors.surfaceAlt,
-    borderWidth: 1,
-    borderColor: colors.borderAccent,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 13,
-  },
-  inviteLinkText: { fontSize: 13, color: colors.accentText, fontWeight: '500' },
-
   // Add employee modal extras
-  addModalInviteToggle: {
-    alignItems: 'center',
-    paddingVertical: 6,
-  },
-  addModalInviteToggleText: {
-    fontSize: 13,
-    color: colors.accentText,
-    fontWeight: '600',
-  },
   addModalCancel: {
     alignItems: 'center',
     paddingVertical: 10,
