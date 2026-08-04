@@ -16,11 +16,9 @@ import { api, uploadFile } from '../../services/api';
 import i18n from '../../i18n';
 import { show as showToast } from '../../services/toast';
 import { buttonTap } from '../../services/haptics';
-import { RatingStarsDisplay } from '../../components/RatingStars';
 
 import Text from '../../components/Text';
 import Stack from '../../components/Stack';
-import Inline from '../../components/Inline';
 import Avatar from '../../components/Avatar';
 import Button from '../../components/Button';
 import TextField from '../../components/TextField';
@@ -256,15 +254,13 @@ export default function ProfileEditScreen() {
               {uploadingPhoto ? i18n.t('profile.photoUploading') : 'Change photo'}
             </Text>
 
-            {/* Rating row (if available) */}
-            {user?.avg_rating != null && (
-              <Inline spacing="sm">
-                <RatingStarsDisplay rating={user.avg_rating} size={16} />
-                <Text variant="small" color="secondary">
-                  {user.avg_rating.toFixed(1)} avg rating
-                </Text>
-              </Inline>
-            )}
+            {/* No rating row here on purpose. `avg_rating` is a column on
+                `businesses`, never on `users`, and neither GET /auth/me nor
+                PATCH /auth/me (whose safe_fields allowlist is id, first_name,
+                last_name, email, phone, role, avatar_url, created_at) attaches
+                it — so the old `user?.avg_rating != null` gate was dead code
+                that could never render for anyone. A business owner's rating
+                belongs on the business profile, sourced from GET /businesses/me. */}
           </Stack>
 
           {/* ── Editable fields ── */}

@@ -50,14 +50,14 @@ beforeEach(() => {
 
 describe('BlockedAccounts', () => {
   it('lists who you blocked', async () => {
-    api.get.mockResolvedValue({ data: { items: [ROW] } });
+    api.get.mockResolvedValue({ items: [ROW] });
     const utils = renderScreen();
     await waitFor(() => expect(utils.getByText('Dana Reed')).toBeTruthy());
     expect(api.get).toHaveBeenCalledWith('/moderation/blocks');
   });
 
   it('says so plainly when nobody is blocked', async () => {
-    api.get.mockResolvedValue({ data: { items: [] } });
+    api.get.mockResolvedValue({ items: [] });
     const utils = renderScreen();
     await waitFor(() =>
       expect(utils.getByText(i18n.t('moderation.blockedEmptyTitle'))).toBeTruthy(),
@@ -65,8 +65,8 @@ describe('BlockedAccounts', () => {
   });
 
   it('unblocks after confirming, and drops the row', async () => {
-    api.get.mockResolvedValue({ data: { items: [ROW] } });
-    api.delete.mockResolvedValue({ data: { message: 'unblocked' } });
+    api.get.mockResolvedValue({ items: [ROW] });
+    api.delete.mockResolvedValue({ message: 'unblocked' });
     const spy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
 
     const utils = renderScreen();

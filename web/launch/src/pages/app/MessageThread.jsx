@@ -7,24 +7,46 @@ import { useUser } from '../../hooks/useUser'
 import Spinner from '../../components/Spinner'
 import styles from './Dashboard.module.css'
 
+// Serves BOTH thread kinds, because messaging spans the quote → booking arc:
+//
+//   /app/messages/:bookingId       booking thread  → GET /messages/{booking_id}
+//   /app/messages/quote/:interestId quote thread   → GET /messages/interest/{id}
+//
+// Sends key off the matching field — POST /messages/ takes exactly one of
+// booking_id or interest_id (MessageSend in backend/app/api/messages.py). This
+// component previously knew only about bookingId, so a quote-stage thread had
+// no way to be read or answered on web at all.
 export default function MessageThread() {
-  const { bookingId } = useParams()
+  const { bookingId, interestId } = useParams()
+  const isQuote = Boolean(interestId)
+  const threadId = isQuote ? interestId : bookingId
   const { data: user } = useUser()
   const qc = useQueryClient()
   const [text, setText] = useState('')
   const bottomRef = useRef(null)
 
-  const { data: messages, isLoading } = useQuery({
-    queryKey: ['messages', bookingId],
-    queryFn: () => api.get(`/messages/${bookingId}`).then(r => r.data),
+  const path = isQuote ? `/messages/interest/${interestId}` : `/messages/${bookingId}`
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['messages', isQuote ? 'interest' : 'booking', threadId],
+    queryFn: () => api.get(path).then(r => r.data),
     refetchInterval: 5000,
   })
+
+  // Booking threads return a bare array; the interest endpoint paginates.
+  const messages = Array.isArray(data) ? data : data?.items ?? data?.messages ?? []
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages])
 
   const send = useMutation({
-    mutationFn: (content) => api.post('/messages/', { booking_id: bookingId, content }),
-    onSuccess: () => { qc.invalidateQueries(['messages', bookingId]); setText('') },
+    mutationFn: (content) => api.post('/messages/', (
+      isQuote ? { interest_id: interestId, content } : { booking_id: bookingId, content }
+    )),
+    onSuccess: () => {
+      qc.invalidateQueries(['messages', isQuote ? 'interest' : 'booking', threadId])
+      qc.invalidateQueries(['messageThreads'])
+      setText('')
+    },
   })
 
   function handleSend(e) {
@@ -35,9 +57,11 @@ export default function MessageThread() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 100px)' }}>
-      <h1 className={styles.pageTitle} style={{ marginBottom: 'var(--space-md)' }}>Messages</h1>
+      <h1 className={styles.pageTitle} style={{ marginBottom: 'var(--space-md)' }}>
+        {isQuote ? 'Quote conversation' : 'Messages'}
+      </h1>
       <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px', padding: 'var(--space-md)' }}>
-        {isLoading ? <Spinner /> : messages?.map(m => {
+        {isLoading ? <Spinner /> : messages.map(m => {
           const isMe = m.sender_id === user?.id
           return (
             <div key={m.id} style={{ display: 'flex', justifyContent: isMe ? 'flex-end' : 'flex-start' }}>

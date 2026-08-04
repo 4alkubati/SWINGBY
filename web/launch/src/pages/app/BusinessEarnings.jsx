@@ -32,6 +32,11 @@ export default function BusinessEarnings() {
     queryFn: () => api.get('/bookings/').then(r => r.data),
   })
 
+  const { data: payments } = useQuery({
+    queryKey: ['paymentsMine'],
+    queryFn: () => api.get('/payments/mine').then(r => r.data),
+  })
+
   const cutoff = useMemo(() => range.days > 9000 ? new Date(0) : startOfDay(subDays(new Date(), range.days)), [range.days])
 
   const inRange = useMemo(() => bookings.filter(b => {
@@ -42,12 +47,21 @@ export default function BusinessEarnings() {
   const completed = inRange.filter(b => b.status === 'completed')
   const inProgress = inRange.filter(b => b.status === 'in_progress' || b.status === 'confirmed')
 
+  // Booked volume — what clients were quoted on completed jobs in range. This
+  // is a legitimate volume figure and stays range-filtered.
   const grossRevenue = completed.reduce((s, b) => s + (b.total_amount || 0), 0)
   const platformFee = grossRevenue * 0.10
-  const netEarnings = grossRevenue * 0.90
 
-  // Escrow: 50% of active booking amounts held
-  const escrowHeld = inProgress.reduce((s, b) => s + (b.total_amount || 0) * 0.5, 0)
+  // Earnings and escrow come from the LEDGER, never from bookings:
+  //   * `total_released` counts only capture-backed payment rows, so the
+  //     phantom 'fully_released' rows with no Stripe charge behind them (the
+  //     2026-07-23 audit found 24 of 29) are not paid out on paper here.
+  //   * escrow held is the FULL remaining balance, not half. There is no
+  //     staged 50/50 release — services/approvals.py holds everything until the
+  //     client approves (or 24h after the business marks the work done).
+  const netEarnings = payments?.total_released ?? 0
+  const escrowHeld = payments?.total_pending ?? 0
+  const unverifiedHeld = payments?.unverified_pending ?? 0
 
   // Build ledger rows from bookings
   const ledger = useMemo(() => {
@@ -68,8 +82,8 @@ export default function BusinessEarnings() {
         rows.push({
           id: b.id,
           type: 'escrow',
-          description: `Booking #${b.id.slice(0, 8)} — 50% held in escrow`,
-          amount: b.total_amount * 0.5,
+          description: `Booking #${b.id.slice(0, 8)} — held in escrow`,
+          amount: b.total_amount,
           gross: b.total_amount,
           fee: null,
           date: b.created_at,
@@ -122,9 +136,9 @@ export default function BusinessEarnings() {
       {/* Summary cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 'var(--space-md)', marginBottom: 'var(--space-xl)' }}>
         {[
-          { label: 'Gross revenue', value: grossRevenue, icon: CurrencyDollar, sub: `${completed.length} completed bookings` },
-          { label: 'Platform fee (10%)', value: platformFee, icon: ArrowUp, sub: 'SwingBy service fee', danger: true },
-          { label: 'Net earnings', value: netEarnings, icon: ArrowDown, sub: 'After SwingBy fee', success: true },
+          { label: 'Booked revenue', value: grossRevenue, icon: CurrencyDollar, sub: `${completed.length} completed bookings in range` },
+          { label: 'Platform fee (10%)', value: platformFee, icon: ArrowUp, sub: 'On booked revenue', danger: true },
+          { label: 'Released earnings', value: netEarnings, icon: ArrowDown, sub: 'All time, after SwingBy fee', success: true },
           { label: 'In escrow', value: escrowHeld, icon: Clock, sub: `${inProgress.length} active bookings` },
         ].map(({ label, value, icon: Icon, sub, danger, success }) => (
           <div key={label} style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', padding: 'var(--space-lg)' }}>
@@ -140,8 +154,14 @@ export default function BusinessEarnings() {
 
       {/* Escrow explainer */}
       <div style={{ background: 'rgba(110,86,247,0.08)', border: '1px solid rgba(110,86,247,0.2)', borderRadius: 'var(--radius-md)', padding: 'var(--space-md) var(--space-lg)', marginBottom: 'var(--space-xl)', fontSize: '13px', color: 'var(--color-text-secondary)' }}>
-        <strong style={{ color: 'var(--color-text-primary)' }}>Payout schedule:</strong> Held while the job runs, then released in full (minus the 10% platform fee) when the client approves the work — or automatically 24 hours after you mark it done. Founder pricing: first 100 businesses pay 5% instead of 10%.
+        <strong style={{ color: 'var(--color-text-primary)' }}>Payout schedule:</strong> Held in full while the job runs, then released (minus the 10% platform fee) when the client approves the work — or automatically 24 hours after you mark it done.
       </div>
+
+      {unverifiedHeld > 0 && (
+        <div style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)', borderRadius: 'var(--radius-md)', padding: 'var(--space-md) var(--space-lg)', marginBottom: 'var(--space-xl)', fontSize: '13px', color: 'var(--color-text-secondary)' }}>
+          <strong style={{ color: 'var(--color-text-primary)' }}>Not counted above:</strong> {fmt(unverifiedHeld)} sits on payment rows with no confirmed card charge behind them. It is excluded from your escrow total rather than shown as money you are owed.
+        </div>
+      )}
 
       {/* Transaction ledger */}
       <h2 className={styles.sectionTitle}>Transaction history</h2>

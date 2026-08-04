@@ -15,10 +15,21 @@ import Inline from '../../components/Inline';
 import Avatar from '../../components/Avatar';
 import { SkeletonCard } from '../../components/Skeleton';
 
-const PAYMENT_BADGES = {
-  fully_released:   { label: 'Paid',     color: colors.success },
-  partial_released: { label: 'Partial',  color: colors.accentText },
-  refunded:         { label: 'Refunded', color: colors.danger },
+// GET /bookings/ attaches `payment_state` — the backend's own honest money
+// block (bookings.py::_payment_state). It is the only thing here allowed to
+// decide what a business was PAID: it reads the payments ledger, refuses to
+// count a 'fully_released' row with no Stripe capture behind it, and reports
+// released/held/total separately.
+//
+// This screen used to render `booking.total_amount` — the client's GROSS charge
+// — in green next to a "Paid" badge. A $150 booking nets the business $135, so
+// every row overstated the payout by the platform's own 10% cut.
+const STATE_BADGES = {
+  released:          { label: 'Paid',       color: colors.success },
+  held:              { label: 'In escrow',  color: colors.accentText },
+  paid_off_platform: { label: 'Paid direct', color: colors.success },
+  refunded:          { label: 'Refunded',   color: colors.danger },
+  unpaid:            { label: 'Unpaid',     color: colors.textSecondary },
 };
 
 function invoiceDate(b) {
@@ -33,7 +44,13 @@ function clientName(b) {
 }
 
 function InvoiceRow({ booking, onPress }) {
-  const badge = PAYMENT_BADGES[booking.payment_status] || { label: 'Completed', color: colors.textSecondary };
+  const ps = booking.payment_state || {};
+  const badge = STATE_BADGES[ps.state] || { label: 'Unpaid', color: colors.textSecondary };
+  // What the business actually received. Falls back to held-in-escrow so a job
+  // mid-flight shows the real pending figure instead of a confident $0.
+  const released = Number(ps.amount_released || 0);
+  const held = Number(ps.amount_held || 0);
+  const shown = released > 0 ? released : held;
   return (
     <TouchableOpacity activeOpacity={0.7} onPress={onPress}>
       <Surface elevation="subtle" style={styles.row}>
@@ -46,9 +63,14 @@ function InvoiceRow({ booking, onPress }) {
             </Text>
           </Stack>
           <Stack spacing={2} style={{ alignItems: 'flex-end' }}>
-            <Text variant="bodyMedium" style={{ color: colors.success, fontFamily: 'SpaceGrotesk_700Bold', fontVariant: ['tabular-nums'] }}>
-              ${Number(booking.total_amount || 0).toLocaleString()}
+            <Text variant="bodyMedium" style={{ color: badge.color, fontFamily: 'SpaceGrotesk_700Bold', fontVariant: ['tabular-nums'] }}>
+              ${shown.toLocaleString()}
             </Text>
+            {Number(ps.amount_total || 0) > shown ? (
+              <Text variant="caption" color="secondary">
+                of ${Number(ps.amount_total).toLocaleString()} charged
+              </Text>
+            ) : null}
             <View style={[styles.pill, { backgroundColor: badge.color + '22' }]}>
               <Text variant="caption" style={{ color: badge.color }}>{badge.label}</Text>
             </View>

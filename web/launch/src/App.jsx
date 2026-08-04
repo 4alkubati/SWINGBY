@@ -133,6 +133,9 @@ function AppRoutes() {
         <Route path="bookings" element={<Bookings />} />
         <Route path="bookings/:id" element={<BookingDetail />} />
         <Route path="messages" element={<Messages />} />
+        {/* Quote-stage thread. Declared BEFORE the :bookingId route so the
+            literal "quote" segment is not swallowed as a booking id. */}
+        <Route path="messages/quote/:interestId" element={<MessageThread />} />
         <Route path="messages/:bookingId" element={<MessageThread />} />
         <Route path="profile" element={<Profile />} />
         <Route path="settings/account" element={<AccountSettings />} />

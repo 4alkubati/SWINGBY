@@ -93,7 +93,10 @@ export default function RolePickerSheet({ visible, onDone }) {
     setError(null);
     try {
       const res = await api.post('/auth/social/role', { role });
-      onDone?.(res?.data?.role || role);
+      // api unwraps to the JSON body, so the role is on `res` itself. The old
+      // `res.data.role` was always undefined and fell through to the local
+      // `role` — harmless only because the two agree today.
+      onDone?.(res?.role || role);
     } catch (err) {
       // 403 means the window closed or the account is already something else.
       // Not worth trapping anyone over — let them through as a client, which is

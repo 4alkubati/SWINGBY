@@ -219,7 +219,11 @@ export default function SettingsScreen() {
     setDeleteVisible(true);
     try {
       const res = await api.get('/me/auth-methods');
-      setNeedsPassword(res?.data?.has_password !== false);
+      // api.js unwraps the axios response to its JSON body, so `res` IS
+      // {has_password}. Reading res.data.has_password was always undefined,
+      // and `undefined !== false` is true — so a Sign in with Apple account
+      // could never clear the password gate and could never be deleted.
+      setNeedsPassword(res?.has_password !== false);
     } catch {
       setNeedsPassword(true);
     }

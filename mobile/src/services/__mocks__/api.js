@@ -7,6 +7,22 @@
 // Every method resolves empty by default so a screen mounts without hitting
 // the network and without a dangling promise. `extractMessage` keeps its real
 // shape because components render its output directly.
+//
+// MOCK THE UNWRAPPED BODY, NOT THE AXIOS RESPONSE.
+//
+// The real client installs a response interceptor that returns `response.data`
+// (services/api.js), so `await api.get('/x')` resolves to the JSON body itself.
+// A mock returning `{ data: { items: [] } }` is the PRE-interceptor shape and
+// does not exist at any call site.
+//
+// This mattered on 2026-08-04: services/moderation.js read `res.data.items`
+// throughout, so listBlockedUsers / listMyReports / listReportQueue silently
+// returned [] forever and isBlocked() always answered false — the Guideline 1.2
+// block/report surfaces looked shipped and did nothing. Three test files mocked
+// the same wrong shape, so the suite was green the entire time. Right:
+//
+//   api.get.mockResolvedValue({ items: [ROW] })          // ✅ what api returns
+//   api.get.mockResolvedValue({ data: { items: [ROW] } })// ❌ hides the bug
 const resolve = () => Promise.resolve({});
 
 const api = {

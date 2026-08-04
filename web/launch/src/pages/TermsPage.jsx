@@ -19,7 +19,7 @@ export default function TermsPage() {
           <h2>User obligations</h2>
           <p>You must provide accurate information, be 18 or older, and use the platform for legitimate service bookings only. Businesses must comply with all applicable laws and maintain valid licenses.</p>
           <h2>Payments and fees</h2>
-          <p>SwingBy is pay-upfront: the client is charged the full booking amount when the booking is created (at posting for a priced job, or at acceptance for a direct booking) and the funds are held in escrow. On completion, the business receives the booking amount less SwingBy's 10% platform fee. Nothing is released to the business before completion. Cancellation refunds and penalties follow the cancellation ladder in the full terms.</p>
+          <p>SwingBy is pay-upfront: the client is charged the full booking amount when a quote is accepted, and the funds are held in escrow. Posting a job costs nothing and charges nothing. On completion, the business receives the booking amount less SwingBy's 10% platform fee, released when the client approves the finished work or automatically 24 hours after the business marks it done. Nothing is released to the business before completion. Cancellation refunds and penalties follow the cancellation ladder in the full terms.</p>
           <h2>Disputes</h2>
           <p>Either party can open a dispute in the app. SwingBy reviews the evidence and its determination is final for the funds SwingBy holds. This is not arbitration and does not remove your other legal remedies.</p>
           <h2>Limitation of liability</h2>

@@ -68,7 +68,16 @@ export default function PrivacySettings() {
                 <div className={d.settingsLabel}>Download your data</div>
                 <div className={d.settingsDesc}>Get a copy of all data associated with your account</div>
               </div>
-              <Button variant="ghost" size="sm">Request</Button>
+              {/* No export job exists. PrivacyPage publishes privacy@swingbyy.com
+                  as the way to exercise access/export under PIPEDA and Alberta
+                  PIPA, so the button goes there instead of doing nothing. */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => { window.location.href = 'mailto:privacy@swingbyy.com?subject=Data%20export%20request' }}
+              >
+                Request
+              </Button>
             </div>
           </div>
         </div>

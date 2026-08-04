@@ -13,8 +13,23 @@ import Button from '../../components/Button'
 import styles from './Dashboard.module.css'
 import bizStyles from './BizDashboard.module.css'
 
-// > TODO (HUMAN): add GET /businesses/me/analytics backend endpoint for server-side
-// > aggregation when booking volume grows. For now everything is client-side.
+// MONEY ON THIS PAGE COMES FROM THE LEDGER, NOT FROM BOOKINGS.
+//
+// This dashboard used to compute earnings as `total_amount * 0.9` over
+// completed bookings and escrow as `total_amount * 0.5` over active ones. Both
+// were wrong, and wrong in the direction that overstates a business's money:
+//
+//   * `bookings.total_amount` is what the CLIENT was quoted. It says nothing
+//     about whether a card was ever charged. The 2026-07-23 money audit found
+//     24 of 29 production payment rows reading 'fully_released' with no Stripe
+//     charge behind them — $4,675.50 of payouts nobody ever paid. Summing
+//     bookings re-imports every one of those phantom dollars.
+//   * There is no staged 50/50 release (services/approvals.py). The full net
+//     is held until the client approves, so half is simply not the held figure.
+//
+// GET /businesses/me/analytics and GET /payments/mine already do this properly
+// — they read the `payments` ledger and split capture-backed money from
+// unverified rows. Render their fields; do not re-derive money here.
 
 function statusBadge(status) {
   const map = {
@@ -35,17 +50,9 @@ function statusBadge(status) {
   )
 }
 
-function EscrowTracker({ bookings }) {
-  const all = bookings ?? []
-  const totalAmount = all.reduce((s, b) => s + (b.total_amount || 0), 0)
-  const released = all
-    .filter(b => b.payment_status === 'released' || b.status === 'completed')
-    .reduce((s, b) => s + (b.total_amount || 0) * 0.9, 0)
-  const held = all
-    .filter(b => ['confirmed', 'in_progress'].includes(b.status))
-    .reduce((s, b) => s + (b.total_amount || 0) * 0.5, 0)
-
-  const releasedPct = totalAmount > 0 ? Math.round((released / (totalAmount * 0.9 || 1)) * 100) : 0
+function EscrowTracker({ released, held, unverifiedHeld }) {
+  const lifetime = released + held
+  const releasedPct = lifetime > 0 ? Math.round((released / lifetime) * 100) : 0
 
   return (
     <div className={bizStyles.escrowCard}>
@@ -64,6 +71,13 @@ function EscrowTracker({ bookings }) {
         <span className={bizStyles.escrowLabel}>In escrow (held)</span>
         <span className={bizStyles.escrowValue}>${held.toFixed(2)}</span>
       </div>
+      {unverifiedHeld > 0 && (
+        <p className={bizStyles.escrowHint}>
+          ${unverifiedHeld.toFixed(2)} sits on older rows with no confirmed card
+          charge behind them. It is excluded from the figures above rather than
+          shown as money you are owed.
+        </p>
+      )}
       <p className={bizStyles.escrowHint}>
         Held until the client approves the work — or 24 h after you mark it done · 10% platform fee deducted on release.
       </p>
@@ -126,15 +140,28 @@ export default function BizDashboard() {
     queryFn: () => api.get('/employees/').then(r => r.data),
   })
 
+  // The two ledger-backed sources. See the note at the top of this file.
+  const { data: analytics } = useQuery({
+    queryKey: ['bizAnalytics'],
+    queryFn: () => api.get('/businesses/me/analytics').then(r => r.data),
+  })
+
+  const { data: payments } = useQuery({
+    queryKey: ['paymentsMine'],
+    queryFn: () => api.get('/payments/mine').then(r => r.data),
+  })
+
   const bookings = Array.isArray(bookingsData)
     ? bookingsData
     : bookingsData?.items ?? []
 
   const completed = bookings.filter(b => b.status === 'completed')
-  const active = bookings.filter(b => !['completed', 'cancelled'].includes(b.status))
-  const grossRevenue = completed.reduce((sum, b) => sum + (b.total_amount || 0), 0)
-  const netEarnings = grossRevenue * 0.9
-  const inEscrow = active.reduce((sum, b) => sum + ((b.total_amount || 0) * 0.5), 0)
+
+  // Earnings actually released, counting only capture-backed payment rows.
+  const netEarnings = analytics?.total_earnings ?? 0
+  // Money genuinely held in escrow right now (verified captures only).
+  const inEscrow = payments?.total_pending ?? 0
+  const unverifiedHeld = payments?.unverified_pending ?? 0
 
   const recentJobs = [...bookings]
     .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
@@ -216,7 +243,7 @@ export default function BizDashboard() {
 
         {/* Right: escrow tracker + team on duty + quick links */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-lg)' }}>
-          <EscrowTracker bookings={bookings} />
+          <EscrowTracker released={netEarnings} held={inEscrow} unverifiedHeld={unverifiedHeld} />
           <TeamOnDuty employees={employees} bookings={bookings} />
 
           <div>

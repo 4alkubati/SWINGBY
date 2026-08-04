@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { motion } from 'framer-motion'
-import { Briefcase, Plus } from '@phosphor-icons/react'
+import { Briefcase } from '@phosphor-icons/react'
 import SEO from '../components/SEO'
 import DashboardLayout from '../components/DashboardLayout'
 import Button from '../components/Button'
@@ -22,7 +22,7 @@ export default function BusinessServices() {
       <motion.div {...fadeUp}>
         <div className={d.header}>
           <h1 className={d.title}>Services</h1>
-          <Button variant="primary" size="sm"><Plus size={16} /> Add Service</Button>
+          <Button variant="primary" size="sm" disabled title="Not available yet">Coming soon</Button>
         </div>
 
         <div className={d.emptyState}>
@@ -31,7 +31,7 @@ export default function BusinessServices() {
           <p className={d.emptyDesc}>
             Add the services your business offers. Include descriptions, pricing, and estimated duration to help clients choose you.
           </p>
-          <Button variant="primary"><Plus size={16} /> Add First Service</Button>
+          <Button variant="primary" disabled title="Not available yet">Coming soon</Button>
         </div>
       </motion.div>
     </DashboardLayout>

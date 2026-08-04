@@ -24,6 +24,10 @@ const ISSUE_LABELS = {
   damage: 'Damage to property',
   overcharge: 'Overcharge',
   safety: 'Safety concern',
+  // cancel_booking auto-opens exactly this type against whoever cancelled, so
+  // it is the one most likely to appear in a client's own list. Without it the
+  // raw enum rendered. Same copy as RefundQueueScreen.js.
+  cancellation_refund: 'Refund request',
   other: 'Other',
 };
 

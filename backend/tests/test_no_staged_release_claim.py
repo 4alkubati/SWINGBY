@@ -69,6 +69,41 @@ CLAIMS = [
     re.compile(r"(?:first|remaining|final|other|last)\s+50\s*%", re.I),
     re.compile(r"splits?\s+(?:every\s+)?payment\s*[—-]\s*half", re.I),
     re.compile(r"50\s*%\s*(?:is\s+)?charged\s+on\s+(?:job\s+)?completion", re.I),
+    # ── Missed on the THIRD pass (2026-08-04) ────────────────────────────────
+    # Every "splits payment" pattern above requires an em-dash or hyphen. The
+    # twelve neighbourhood SEO landing pages in web/launch/src/data/seo-content.js
+    # used a COLON — "SwingBy splits your payment: half on booking confirmation,
+    # the balance when the job is done" — and sailed through, in a directory
+    # this test was already scanning. Punctuation is not the claim.
+    re.compile(r"half\s+on\s+booking\s+confirm", re.I),
+    re.compile(r"payments?\s+is\s+split\s*[:,]\s*half", re.I),
+    re.compile(r"splits?\s+your\s+payment\s*[:,]\s*half", re.I),
+    re.compile(
+        r"the\s+balance\s+when\s+(?:the|your)\b[^.]{0,40}\b(?:done|complete)", re.I
+    ),
+    # Not copy this time — REAL MATH. BusinessEarnings.jsx computed the held
+    # figure as `total_amount * 0.5` and labelled the ledger row with this.
+    # "you keep 50%" (the genuine no-show rung) carries no "held".
+    re.compile(r"50\s*%\s*held", re.I),
+]
+
+# Charging at POST time does not happen either. TRIGGER 1 is wired but gated
+# OFF in api/service_posts.py (no card on file, no agreed price, no bookings row
+# for the NOT NULL payments.booking_id), so `payment_started` is always false.
+# This shipped in the launch site's Terms of Service — as terms of service.
+#
+# Kept deliberately claim-shaped: match the assertion, not the word. A bare
+# /charged at post/ also fires on PostJobScreen.js's own comment explaining
+# this fix ("...which was false: nothing is charged at post on EITHER path").
+# `_prose_lines` now skips block comments, so that particular case is covered
+# twice over — but a guard that flags a fix for describing itself is a guard
+# people learn to route around.
+CHARGE_AT_POST_LIES = [
+    re.compile(r"at\s+posting\s+for\s+a\s+priced\s+job", re.I),
+    re.compile(
+        r"charged\s+(?:the\s+\w+\s+)*when\s+(?:you|the\s+client)\s+posts?\b", re.I
+    ),
+    re.compile(r"we\s+charge\s+your\s+budget\s+when\s+you\s+post", re.I),
 ]
 
 # The site ships in EN, FR and AR. Every pattern above is English-only, so the
@@ -117,6 +152,52 @@ def _files():
             yield path
 
 
+def _prose_lines(path, text):
+    """Yield (line_no, line) for lines a USER could read.
+
+    In code, a COMMENT naming the wrong claim is how a fix explains itself —
+    this file does exactly that, and so do the fixes in PostJobScreen.js and
+    BusinessEarnings.jsx. What must never appear is the claim in a STRING.
+    Markdown is scanned whole, because there the prose IS the product.
+
+    The original version only recognised //, # and * at the START of a line,
+    which meant a wrapped `{/* … */}` JSX block — the house comment style in
+    mobile/ — was scanned as if it were live copy. Two fixes that quoted the
+    string they had just removed were flagged as reintroducing it. Track block
+    comments properly instead of narrowing the patterns, which would have let
+    the real claim back in.
+    """
+    is_code = path.suffix in {".py", ".js", ".jsx", ".ts", ".tsx"}
+    in_block = False
+    for line_no, line in enumerate(text.splitlines(), 1):
+        if not is_code:
+            yield line_no, line
+            continue
+
+        stripped = line.strip()
+
+        if in_block:
+            if "*/" in line:
+                in_block = False
+            continue
+
+        # Opens a /* … */ or {/* … */} block that does not close on this line.
+        if ("/*" in line) and ("*/" not in line.split("/*", 1)[1]):
+            in_block = True
+            continue
+
+        if (
+            stripped.startswith("//")
+            or stripped.startswith("#")
+            or stripped.startswith("*")
+            or stripped.startswith("/*")
+            or stripped.startswith("{/*")
+        ):
+            continue
+
+        yield line_no, line
+
+
 def test_nothing_claims_a_staged_5050_release():
     hits = []
     for path in _files():
@@ -124,19 +205,7 @@ def test_nothing_claims_a_staged_5050_release():
             text = path.read_text(encoding="utf-8")
         except (UnicodeDecodeError, OSError):
             continue
-        is_code = path.suffix in {".py", ".js", ".jsx", ".ts", ".tsx"}
-        for line_no, line in enumerate(text.splitlines(), 1):
-            stripped = line.strip()
-            # In code, a COMMENT naming the old claim is how the fix explains
-            # itself — this file does the same. What must never appear is the
-            # claim in a STRING a user can read. Markdown is scanned whole,
-            # because there the prose IS the product.
-            if is_code and (
-                stripped.startswith("//")
-                or stripped.startswith("#")
-                or stripped.startswith("*")
-            ):
-                continue
+        for line_no, line in _prose_lines(path, text):
             for pattern in CLAIMS + TRANSLATED_CLAIMS:
                 if pattern.search(line):
                     hits.append(
@@ -164,15 +233,7 @@ def test_no_copy_states_the_cancellation_ladder_backwards():
             text = path.read_text(encoding="utf-8")
         except (UnicodeDecodeError, OSError):
             continue
-        is_code = path.suffix in {".py", ".js", ".jsx", ".ts", ".tsx"}
-        for line_no, line in enumerate(text.splitlines(), 1):
-            stripped = line.strip()
-            if is_code and (
-                stripped.startswith("//")
-                or stripped.startswith("#")
-                or stripped.startswith("*")
-            ):
-                continue
+        for line_no, line in _prose_lines(path, text):
             for pattern in LADDER_LIES:
                 if pattern.search(line):
                     hits.append(
@@ -182,6 +243,34 @@ def test_no_copy_states_the_cancellation_ladder_backwards():
     assert hits == [], (
         "Copy charges a fee for cancelling MORE than 48h ahead. That rung is "
         "free (escrow.compute_cancellation_split).\n\n" + "\n".join(hits)
+    )
+
+
+def test_no_copy_claims_the_client_is_charged_at_posting():
+    """Posting a job charges nothing. The Terms of Service said it did.
+
+    CLAUDE.md is explicit: TRIGGER 1 is gated OFF in api/service_posts.py and
+    `payment_started` on the create response is always false. Money is collected
+    at accept, via mobile/src/services/acceptAndPay.js. The claim was pulled
+    once on 2026-07-29 and came back on the launch site's TermsPage.jsx.
+    """
+    hits = []
+    for path in _files():
+        try:
+            text = path.read_text(encoding="utf-8")
+        except (UnicodeDecodeError, OSError):
+            continue
+        for line_no, line in _prose_lines(path, text):
+            for pattern in CHARGE_AT_POST_LIES:
+                if pattern.search(line):
+                    hits.append(
+                        f"{path.relative_to(REPO)}:{line_no}: {line.strip()[:110]}"
+                    )
+
+    assert hits == [], (
+        "Copy claims the client is charged when a job is POSTED. Charge-at-post "
+        "is gated off (api/service_posts.py) — money is collected when a quote "
+        "is accepted.\n\n" + "\n".join(hits)
     )
 
 
@@ -213,6 +302,13 @@ def test_the_guard_catches_the_strings_that_escaped_it():
         "50 % libérés à l'entreprise",
         "يُصرف على مرحلتين: نصفه عند التأكيد",
         "يُطلق 50٪ للشركة",
+        # web/launch/src/data/seo-content.js — twelve SEO landing pages, colon
+        # instead of an em-dash, in a directory already being scanned.
+        "SwingBy splits your payment: half on booking confirmation, the balance when the job is done.",
+        "Payment is split: half on booking confirmation, the balance when the walk is confirmed done.",
+        "book with confidence knowing payment is split — half on booking confirmation, the balance when the work is done",
+        # web/launch/src/pages/app/BusinessEarnings.jsx — real math, not just copy
+        "Booking #abc12345 — 50% held in escrow",
     ]
     unmatched = [
         s for s in escaped if not any(p.search(s) for p in CLAIMS + TRANSLATED_CLAIMS)
