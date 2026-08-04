@@ -107,22 +107,31 @@ const GATE = import.meta.env.VITE_PRELAUNCH_GATE !== 'false'
 function GatedRoutes() {
   const location = useLocation()
   return (
-    <Layout>
-      <AnimatePresence mode="wait">
-        <Suspense fallback={<PageSkeleton />}>
-          <Routes location={location} key={location.pathname}>
-            <Route path="/" element={<PageTransition><ComingSoon /></PageTransition>} />
-            <Route path="/privacy" element={<PageTransition><PrivacyPage /></PageTransition>} />
-            <Route path="/terms" element={<PageTransition><TermsPage /></PageTransition>} />
-            <Route path="/cookies" element={<PageTransition><CookiesPage /></PageTransition>} />
-            <Route path="/contact" element={<PageTransition><Contact /></PageTransition>} />
-            {/* Redirect, not 404: an old link from a shared post still lands
-                somewhere useful instead of on an error page. */}
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </Suspense>
-      </AnimatePresence>
-    </Layout>
+    <AnimatePresence mode="wait">
+      <Suspense fallback={<PageSkeleton />}>
+        <Routes location={location} key={location.pathname}>
+          {/* ComingSoon is NOT wrapped in <Layout>. It ships its own <nav> and its
+              own <Footer/>, so Layout gives it a second header and a second footer
+              — and that header links to /how-it-works, /pricing and the rest, which
+              are gated and bounce straight back to /. A waitlist whose nav is a
+              ring of dead ends is worse than no nav.
+              It is also not wrapped in <PageTransition>: that starts at opacity 0,
+              and the landing page must not depend on an animation completing in
+              order to be visible. */}
+          <Route path="/" element={<ComingSoon />} />
+          {/* The legal pages DO keep Layout — they are documents and want the
+              site chrome. Apple requires /privacy to resolve, so these four stay
+              reachable while everything else is gated. */}
+          <Route path="/privacy" element={<Layout><PrivacyPage /></Layout>} />
+          <Route path="/terms" element={<Layout><TermsPage /></Layout>} />
+          <Route path="/cookies" element={<Layout><CookiesPage /></Layout>} />
+          <Route path="/contact" element={<Layout><Contact /></Layout>} />
+          {/* Redirect, not 404: an old link from a shared post still lands
+              somewhere useful instead of on an error page. */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Suspense>
+    </AnimatePresence>
   )
 }
 

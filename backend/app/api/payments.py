@@ -119,10 +119,18 @@ def list_my_payments(current_user: dict = Depends(get_current_user)):
     # counts only capture-backed rows; the difference is surfaced explicitly so
     # a caller (or an Earnings screen) can show the honest figure instead of
     # silently adding phantom dollars into a headline number.
+    #
+    # 2026-08-03 (D5): this used `is_capture_backed`, which deliberately
+    # excludes 'fully_released' because nothing is HELD once escrow is released.
+    # Every legitimately completed and released booking is 'fully_released', so
+    # the "verified" figure was **always zero** and the entire history was
+    # reported as unverified — the exact inversion of what this field is for.
+    # `was_ever_captured` is the historical question ("did money ever arrive"),
+    # and it still rejects a released row with no PaymentIntent behind it.
     verified_released_c = sum(
         escrow.money_cents(p, "released_to_business")
         for p in items
-        if escrow.is_capture_backed(p)
+        if escrow.was_ever_captured(p)
     )
     unverified_released_c = total_released_c - verified_released_c
 

@@ -73,6 +73,7 @@ const SCREENS = [
   ['business/EmployeeManagementScreen', () => require('../screens/business/EmployeeManagementScreen')],
   ['business/EmployeeProfileScreen', () => require('../screens/business/EmployeeProfileScreen')],
   ['business/JobManagementScreen', () => require('../screens/business/JobManagementScreen')],
+  ['business/WalletScreen', () => require('../screens/business/WalletScreen')],
   ['client/ActiveBookingScreen', () => require('../screens/client/ActiveBookingScreen')],
   ['client/BookingDetailsScreen', () => require('../screens/client/BookingDetailsScreen')],
   ['client/FavoritesScreen', () => require('../screens/client/FavoritesScreen')],

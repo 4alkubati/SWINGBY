@@ -105,6 +105,8 @@ _OPTIONAL = [
     "STRIPE_WEBHOOK_SECRET",  # whsec_… — used to verify Stripe webhook signature
     "STRIPE_SUCCESS_URL",  # browser landing after Checkout success (defaults to web)
     "STRIPE_CANCEL_URL",  # browser landing after Checkout cancel  (defaults to web)
+    "STRIPE_CONNECT_RETURN_URL",  # D5 — where Express onboarding returns to
+    "STRIPE_CONNECT_REFRESH_URL",  # D5 — where an EXPIRED onboarding link lands
 ]
 
 
@@ -356,6 +358,31 @@ class _Settings:
     @property
     def STRIPE_CANCEL_URL(self) -> str:
         return os.getenv("STRIPE_CANCEL_URL", "https://swingbyy.com/payment-cancelled")
+
+    # ── Stripe Connect (D5, payouts) ────────────────────────────────────────
+    #
+    # Where Stripe's hosted Express onboarding sends the person when they
+    # finish (RETURN) or when the single-use link has already expired
+    # (REFRESH). Stripe requires http/https here and rejects a custom scheme,
+    # so `swingby://` is not an option and these must be web URLs.
+    #
+    # The mobile app does NOT depend on either page working: it opens
+    # onboarding in a browser tab and re-reads the account status when the tab
+    # is dismissed, whichever way it was dismissed. The URLs still matter for
+    # anyone who completes onboarding on a desktop, and the refresh page in
+    # particular is where a stale link lands — today both resolve to the
+    # swingbyy.com SPA fallback rather than a real page. See the PR body.
+    @property
+    def STRIPE_CONNECT_RETURN_URL(self) -> str:
+        return os.getenv(
+            "STRIPE_CONNECT_RETURN_URL", "https://swingbyy.com/payouts/connected"
+        )
+
+    @property
+    def STRIPE_CONNECT_REFRESH_URL(self) -> str:
+        return os.getenv(
+            "STRIPE_CONNECT_REFRESH_URL", "https://swingbyy.com/payouts/continue"
+        )
 
     # Convenience typed accessors (mirrors the property names for legacy callers)
     def get_database_url(self) -> str:

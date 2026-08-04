@@ -569,9 +569,11 @@ export default function BusinessProfileScreen({ navigation, route }) {
   //     endpoint, so the block renders its empty state rather than an
   //     "Add service" row that could not save.
   //   · working hours        — no column, no endpoint. Omitted entirely.
-  //   · payout account       — there is no Stripe Connect onboarding in this
-  //     build. The two real money surfaces (how escrow pays out, and the
-  //     invoice list) are linked instead.
+  //   · payout account       — BUILT 2026-08-03 (D5). This entry was accurate
+  //     when written: there was no Stripe Connect onboarding anywhere in the
+  //     codebase, so the row would have led nowhere. There is now, and the
+  //     `Wallet` row below opens it. Only per-service pricing and working hours
+  //     remain fieldless, and they are still not faked.
   if (isOwner && !editMode && !loading && !error) {
     const { pct, tip } = computeProfileCompleteness(business || {});
     const services = Array.isArray(business?.services) ? business.services : [];
@@ -736,6 +738,13 @@ export default function BusinessProfileScreen({ navigation, route }) {
               label="Service area"
               value={business?.service_radius_km ? `${Math.round(business.service_radius_km)} km` : undefined}
               onPress={() => setEditMode(true)}
+            />
+            {/* D5 — the payout account. This is the row the comment at the top
+                of the owner view used to say could not exist. It is the only
+                door to Stripe Connect onboarding besides the Earnings header. */}
+            <ManageRow
+              label={i18n.t('wallet.title')}
+              onPress={() => navigation.navigate('Wallet')}
             />
             <ManageRow
               label="How you get paid"

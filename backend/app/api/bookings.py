@@ -92,13 +92,14 @@ def _payment_state(booking: dict, payment: Optional[dict]) -> dict:
     )
     # escrow.is_capture_backed() answers "is escrow real *right now*", so it
     # deliberately excludes 'fully_released' (escrow is gone, it was paid out).
-    # For a display state we also need "was this ever really paid", hence the
-    # explicit PaymentIntent check on the released branch. A 'fully_released'
-    # row with NO intent is FINDING C's phantom payout — 24 such rows and
-    # $4,675.50 exist in production — and must not be shown as money that moved.
-    captured = escrow.is_capture_backed(payment) or (
-        status == "fully_released" and bool(payment.get("stripe_payment_intent_id"))
-    )
+    # For a display state we also need "was this ever really paid" — that is
+    # escrow.was_ever_captured(), which is this same branch, extracted so the
+    # three readers of it (here, payments.list_my_payments, and D5's payout
+    # balance) cannot drift. payments.py had already drifted: it summed
+    # is_capture_backed alone and reported zero verified released money.
+    # A 'fully_released' row with NO intent is still FINDING C's phantom payout
+    # — 24 such rows and $4,675.50 exist in production — and still fails here.
+    captured = escrow.was_ever_captured(payment)
 
     held_c = 0
     released_c = 0

@@ -173,6 +173,14 @@ from app.api.auto_bidding import router as auto_bidding_router
 
 app.include_router(auto_bidding_router, prefix="/businesses", tags=["auto-bidding"])
 
+# D5 — payouts. Stripe Connect Express onboarding + the cash-out itself. Owner
+# only, gated per route. Registered unconditionally like every other Stripe
+# surface: the routes answer 503 when no key is configured rather than
+# disappearing, so a misconfigured deployment reports a cause instead of a 404.
+from app.api.payouts import router as payouts_router
+
+app.include_router(payouts_router, prefix="/businesses", tags=["payouts"])
+
 from app.api.disputes import router as disputes_router
 
 app.include_router(disputes_router, prefix="/disputes", tags=["disputes"])

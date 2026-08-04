@@ -17,6 +17,9 @@ import ChatScreen from '../screens/messages/ChatScreen';
 import EmployeeManagementScreen from '../screens/business/EmployeeManagementScreen';
 import EmployeeProfileScreen from '../screens/business/EmployeeProfileScreen';
 import EarningsScreen from '../screens/business/EarningsScreen';
+// D5 — the wallet. Earnings shows what was EARNED; this is where it leaves.
+// Reached from the Earnings header and from My Business -> Wallet.
+import WalletScreen from '../screens/business/WalletScreen';
 import BusinessAnalyticsScreen from '../screens/business/BusinessAnalyticsScreen';
 import SettingsScreen from '../screens/shared/SettingsScreen';
 import PrivacyPolicyScreen from '../screens/profile/PrivacyPolicyScreen';
@@ -114,6 +117,10 @@ export default function BusinessNavigator() {
       <Stack.Screen name="EmployeeManagement" component={EmployeeManagementScreen} />
       <Stack.Screen name="EmployeeProfile" component={EmployeeProfileScreen} />
       <Stack.Screen name="Earnings" component={EarningsScreen} />
+      {/* D5 — payouts. Business-only: this is the one screen that moves the
+          company's money out, and the backend enforces the same (owner role,
+          403 for employees). */}
+      <Stack.Screen name="Wallet" component={WalletScreen} />
       <Stack.Screen name="BusinessAnalytics" component={BusinessAnalyticsScreen} />
       <Stack.Screen name="Settings" component={SettingsScreen} />
       <Stack.Screen name="BlockedAccounts" component={BlockedAccountsScreen} options={{ headerShown: false }} />
