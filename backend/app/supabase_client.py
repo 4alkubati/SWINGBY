@@ -24,13 +24,7 @@ if not _service_key:
         "NEVER put this key in any frontend code or commit it to git."
     )
 
-# This client uses the service_role key → bypasses RLS.
-# It is ONLY used server-side inside FastAPI. It never leaves the backend.
-# CRITICAL: never call session-creating auth methods (sign_up / sign_in /
-# refresh_session) on THIS client. supabase-py listens for SIGNED_IN events and
-# swaps the PostgREST auth header to the user's JWT — from that moment every
-# .table() query in the entire backend runs as that user under RLS instead of
-# service_role. Use `supabase_auth` below for those calls.
+
 def _use_http1(client):
     """Force this Supabase client's PostgREST and GoTrue sessions onto HTTP/1.1.
 
@@ -91,6 +85,13 @@ def _use_http1(client):
     return client
 
 
+# This client uses the service_role key → bypasses RLS.
+# It is ONLY used server-side inside FastAPI. It never leaves the backend.
+# CRITICAL: never call session-creating auth methods (sign_up / sign_in /
+# refresh_session) on THIS client. supabase-py listens for SIGNED_IN events and
+# swaps the PostgREST auth header to the user's JWT — from that moment every
+# .table() query in the entire backend runs as that user under RLS instead of
+# service_role. Use `supabase_auth` below for those calls.
 supabase = _use_http1(create_client(_url, _service_key))
 
 # Session-creating auth operations go through this separate client so the
