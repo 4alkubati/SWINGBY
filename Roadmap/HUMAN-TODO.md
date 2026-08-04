@@ -7,13 +7,18 @@ Status values: **TODO** · **DONE** · **BLOCKED** · **DECIDE**
 
 ---
 
-## Right now — blocks the Sunday build
+## Right now — the live blockers (updated 2026-08-04)
 
 | # | Status | Task |
 |---|---|---|
 | H1 | **DONE** | ~~Apply TWO migrations in the Supabase SQL editor.~~ **Verified twice, independently:** `information_schema.columns` on 2026-08-01, and a direct PostgREST probe on 2026-08-03 — `bookings.approval_deadline_at` → 200, `users.terms_accepted_at` → 200. Every other filed migration was probed at the same time (`content_reports`, `user_blocks`, `messages.hidden_at`, `payments.post_id`) — all live. Probed, never read from a migration header; those have lied three times. |
 | H2 | **DONE** | ~~Merge PR #81.~~ Merged 2026-07-31, along with #82–#85. Render reports `environment: production` and `/health` is green. |
 | H3 | **DONE** | ~~Check `STRIPE_SECRET_KEY` in Render.~~ **Kira verified 2026-08-03: it is a test key.** Note for anyone re-checking: `/health` reporting `stripe: ok` proves the key *parses*, not which mode it is in — the only proof is reading the prefix. Payments stay in sandbox for the whole beta. |
+
+| H18 | **TODO** | **Stripe → enable Connect** (Dashboard → Connect → Get started). Free, stays in test mode. **This is the only thing blocking D5 payouts.** Verified live 2026-08-03: `POST /v1/accounts type=express` returns *"You can only create new accounts if you've signed up for Connect."* Until it is on, no Connect call in PR #97 has ever round-tripped — the code is written and tested, but unproven against the real API. **Not** blocked on incorporation: Stripe test mode accepts synthetic identity and will flip an Express account to `payouts_enabled` without a real company. |
+| H19 | **TODO** | **Cloudflare → add the email routing rule for `amr@swingbyy.com`.** It is the login for the X / Instagram / TikTok accounts and currently routes **nowhere** — a password reset would vanish and the account would be unrecoverable. The domain's MX and SPF are already live (verified by dig), so this is one rule, not a setup. |
+| H20 | **TODO** | **Claim LinkedIn `/company/swingbyy`.** Probed 404 on 2026-08-04, so it is free. The last unclaimed handle: X, Instagram (`@swingbyy`) and TikTok (`@swingbyyy`, three y's) are all done. |
+| H21 | **TODO** | **Apply the D5 migration** `supabase/migrations/20260803120000_*` in the Supabase SQL editor — connect columns + the `payouts` table. Additive and `if not exists` throughout. Only needed when PR #97 merges; filed, not applied. |
 
 ## Apple console — blocks TestFlight, not the dev build
 
