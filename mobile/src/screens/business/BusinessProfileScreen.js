@@ -223,7 +223,12 @@ function EmployeeCard({ emp, editMode, onToggle, onPress }) {
     transform: [{ scale: scale.value }],
   }));
 
-  const empName = [emp.user?.first_name, emp.user?.last_name].filter(Boolean).join(' ') || 'Employee';
+  // `users`, not `user`: GET /employees/business/{id} embeds the person as a
+  // PostgREST `users(...)` object. Reading `emp.user` silently missed every
+  // time, so the whole team card rendered as "Employee / Staff" (fixed
+  // 2026-08-04). Every other screen in the app already reads `.users?.`.
+  const empUser = emp.users || {};
+  const empName = [empUser.first_name, empUser.last_name].filter(Boolean).join(' ') || 'Employee';
 
   return (
     <Animated.View style={[styles.empCard, animStyle]}>
@@ -238,9 +243,15 @@ function EmployeeCard({ emp, editMode, onToggle, onPress }) {
       >
         <Surface elevation="subtle" style={styles.empCardInner}>
           <Stack spacing="sm" align="center">
-            <Avatar name={empName} size="md" showStatus online={emp.is_active} />
+            <Avatar
+              name={empName}
+              size="md"
+              showStatus
+              online={emp.is_active}
+              source={emp.avatar_url || empUser.avatar_url}
+            />
             <Stack spacing={2} align="center">
-              <Text variant="smallMedium" numberOfLines={1}>{emp.user?.first_name || 'Employee'}</Text>
+              <Text variant="smallMedium" numberOfLines={1}>{empUser.first_name || 'Employee'}</Text>
               <Text variant="caption" color="secondary" numberOfLines={1}>{emp.role_title || 'Staff'}</Text>
             </Stack>
             {editMode ? (

@@ -32,6 +32,7 @@ from urllib.parse import urlencode
 import httpx
 import structlog
 from fastapi import APIRouter, HTTPException, Depends, Request
+from supabase import AuthApiError
 from pydantic import BaseModel, Field, field_validator, EmailStr
 from typing import Optional
 
@@ -471,7 +472,19 @@ def refresh_token(request: Request, data: RefreshRequest):
         }
     except HTTPException:
         raise
+    except AuthApiError as exc:
+        # A refresh token that is expired, revoked or already-used is the NORMAL
+        # end of a session, not a server fault: Supabase rotates the token on
+        # every use, so an app resumed from the background, a reinstall, or a
+        # second device all land here routinely. Logging it with
+        # logger.exception raised an ERROR-level Sentry event every time and
+        # buried the real bugs under "Invalid Refresh Token: Already Used"
+        # (cleaned up 2026-08-04). The client's job is unchanged — a 401 here
+        # means log in again — so only the log level moves.
+        logger.info("auth.refresh rejected", reason=str(exc))
+        raise HTTPException(status_code=401, detail="Could not refresh session")
     except Exception:
+        # Anything that is NOT an auth rejection is still a real fault.
         logger.exception("auth.refresh failed")
         raise HTTPException(status_code=401, detail="Could not refresh session")
 

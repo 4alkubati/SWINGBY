@@ -249,16 +249,30 @@ def get_client_reviews(client_id: str, current_user: dict = Depends(get_current_
                 logger.exception("Could not verify client-review access")
                 raise HTTPException(status_code=403, detail="Not permitted")
     try:
+        # `reviews` has NO business_id and no FK to `businesses` — its only FKs
+        # are booking_id→bookings and reviewer_id→users. The old
+        # `businesses(business_name, logo_url)` embed therefore had nothing to
+        # resolve against and PostgREST 400'd every call with "Could not find a
+        # relationship between 'reviews' and 'businesses' in the schema cache"
+        # (fixed 2026-08-04). The business that left the review is reachable
+        # only the long way round, through the booking it was left against.
         res = (
             supabase.table("reviews")
-            .select("*, businesses(business_name, logo_url)")
+            .select("*, bookings(businesses(business_name, logo_url))")
             .eq("reviewee_id", client_id)
             .eq("reviewee_type", "client")
             .is_("hidden_at", "null")
             .order("created_at", desc=True)
             .execute()
         )
-        return res.data
+        # Flatten back to the documented shape: callers get a top-level
+        # `businesses` object, not a bookings wrapper they have to dig through.
+        rows = []
+        for row in res.data or []:
+            booking = row.pop("bookings", None) or {}
+            row["businesses"] = booking.get("businesses")
+            rows.append(row)
+        return rows
     except Exception:
         logger.exception("Could not retrieve client reviews")
         raise HTTPException(status_code=400, detail="Could not retrieve reviews")
