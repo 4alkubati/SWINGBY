@@ -3,7 +3,10 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
-.venv/
+# No trailing slash: a bare `.venv/` matches directories only, which is how a
+# broken self-referential `backend/.venv` symlink got committed (removed
+# 2026-08-04). Without the slash this covers the symlink case too.
+.venv
 .env
 # Social publishing credentials (tools/social_post.py reads this).
 .env.social
