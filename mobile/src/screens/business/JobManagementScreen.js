@@ -407,9 +407,14 @@ function JobDetailScreen({ navigation, route }) {
       </View>
 
       {/* ── Tab toggle ─────────────────────────────────────────────────────── */}
+      {/* "Status" was the wrong word twice over: this tab renders a
+          StatusTracker of how far the JOB has got, and the header directly
+          above already carries a StatusChip showing booking.status. One screen,
+          two different meanings of "status". "Progress" says what the tab
+          actually shows and stops it colliding with the chip. */}
       <View style={styles.tabsRow}>
         <Tabs
-          tabs={['Details', 'Status']}
+          tabs={['Details', 'Progress']}
           activeIndex={activeTab}
           onChange={handleTabChange}
           style={{ flex: 1 }}

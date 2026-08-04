@@ -34,7 +34,11 @@ export default function Tabs({ tabs, activeIndex = 0, onChange, style }) {
     const activeTab = tabWidths[activeIndex];
     return {
       transform: [{ translateX: indicatorX.value }],
-      width: activeTab?.width || 0,
+      // `|| 0` collapsed the pill to nothing until onLayout had measured every
+      // tab, so the selected state was missing on first paint. Falling back to
+      // an even share keeps a pill on screen from the first frame; the measured
+      // width takes over as soon as layout lands.
+      width: activeTab?.width ?? `${100 / Math.max(tabs.length, 1)}%`,
     };
   });
 
@@ -50,10 +54,17 @@ export default function Tabs({ tabs, activeIndex = 0, onChange, style }) {
 
   return (
     <View
+      accessibilityRole="tablist"
       style={[
         {
           flexDirection: 'row',
-          backgroundColor: colors.surface,
+          // A control on `bg` has to announce itself. `surface` here measured
+          // 1.06:1 against the page — the track was invisible, so the whole
+          // switch read as empty space and got scrolled past. Lifted fill plus
+          // a `borderStrong` outline (3.03:1) is what makes it a control.
+          backgroundColor: colors.surfaceAlt,
+          borderWidth: 1,
+          borderColor: colors.borderStrong,
           borderRadius: radius.input,
           padding: spacing.xs,
           position: 'relative',
@@ -67,7 +78,10 @@ export default function Tabs({ tabs, activeIndex = 0, onChange, style }) {
             position: 'absolute',
             top: spacing.xs,
             bottom: spacing.xs,
-            backgroundColor: colors.accent,
+            // `accent` put the active label at 4.48:1 — just under AA. This is
+            // the token that exists for exactly this case: a purple fill that
+            // carries a `textPrimary` label (4.53:1).
+            backgroundColor: colors.accentBtn,
             borderRadius: radius.chip,
           },
           indicatorStyle,
