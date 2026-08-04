@@ -31,6 +31,19 @@ Installed 2026-07-24 from Kira's handoff. This file is the index; the system liv
 - Buttons square-ish (12px radius), 44–52px tall — **never pills**.
 - Cards `#0F1115` + 1px `#1F232B` + 20px radius.
 - Empty, loading and error states get restyled too, not just the happy path.
+- **A control sitting directly on `bg` must have a boundary that clears 3:1** (WCAG 1.4.11) — use `colors.borderStrong` (`#565D6B`). Card fills do **not** qualify: measured on `bg` (`#07080a`), `surface` is 1.06:1, `surfaceAlt` 1.15:1, `border` 1.27:1. See the segmented-control rule below.
+
+## Segmented controls / tabs (added 2026-08-02)
+
+`mobile/src/components/Tabs.js` is the only tab implementation. Do not hand-roll another.
+
+- **Track:** `surfaceAlt` fill + **1px `borderStrong`** outline + `radius.input`. The outline is what makes it discoverable and is not optional.
+- **Selected pill:** `accentBtn` (**not** `accent` — `accent` puts a `textPrimary` label at 4.48:1, just under AA).
+- **Labels:** selected `textPrimary`, unselected `textSecondary`. Both stay legible; the pill carries the selection, not a disappearing label.
+- **Always render a pill**, including the first frame before `onLayout` has measured. A zero-width indicator reads as "no selection".
+- **Name the tab after what it shows**, and never reuse a word already on screen as a status chip.
+
+> **Why this is a rule.** Shipped `Tabs` drew its track in `surface` — **1.06:1** against the page. The Details/Progress switch on the business job screen was invisible; the owner found it only by accidentally tapping it and called it "an easter egg". Same component also backs the **signup role picker** (Find Services / Offer Services), so the same invisibility sat on the onboarding fork.
 
 ## Also in this folder
 - `tokens.md` — token scale source of truth (radii/spacing/type).

@@ -32,7 +32,7 @@ const STEPS = [
   {
     n: 4,
     title: 'Book + pay safely',
-    desc: 'Pay through the app. SwingBy holds the full amount in escrow. When the booking is confirmed, the business gets the first 50% — enough to cover materials and commit to the date.',
+    desc: 'Pay through the app when you accept a quote. SwingBy holds the full amount in escrow — the business gets none of it until you approve the finished work.',
     mockupLabel: 'Booking + escrow screen',
     mockupSrc: '/app-screens/booking.png',
     callout: <><strong>Escrow protection:</strong> SwingBy never spends your money. It sits between you and the business until the job is done.</>,
@@ -67,7 +67,7 @@ export default function HowItWorksClients() {
           <span className={styles.eyebrow}>For clients</span>
           <h1 className={styles.heroTitle}>Local services, quoted in minutes</h1>
           <p className={styles.heroSub}>
-            Post once. Compare verified Calgary businesses. Pay through SwingBy — half releases at booking, the rest only when the job is done.
+            Post once. Compare verified Calgary businesses. Pay through SwingBy — the whole amount stays held until you say the job is done.
           </p>
         </div>
       </section>

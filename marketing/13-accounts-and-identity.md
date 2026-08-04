@@ -94,9 +94,11 @@ Better than expected — inbound and outbound are both already wired. Two gaps r
 
 ## Social account registry
 
-None of these are confirmed created — treat the whole table as a to-do list. **Claim the handles today even if we don't post for a month**; handle squatting on a launching brand is real and unrecoverable.
+> ⚠️ **Superseded by [17-social-media-registry.md](17-social-media-registry.md) (probed 2026-07-30).** The table below assumed nothing had been claimed and that `@swingbyapp` was available. Neither holds: `@swingbyapp` is taken on Facebook (a Markham ON food business), X (SwingBy UG, a German company) and LinkedIn (a rideshare platform), and the Instagram account under that handle exists with 1,836 followers but **unconfirmed ownership**. Use doc 17 for handles and status; this table is kept for the priority ranking and the hygiene rules.
 
-Handle preference order: `swingby` → `swingbyapp` → `getswingby` → `swingbyyc` (yyc = Calgary airport code, and locally legible).
+**Claim the handles today even if we don't post for a month**; handle squatting on a launching brand is real and unrecoverable.
+
+Handle preference order (revised): **`swingbyyc`** → `getswingby` → `swingbycalgary`. All three are free across Instagram, Facebook, X and YouTube. `swingby` and `swingbyapp` are both gone.
 
 | Platform | Handle | Signup email | Priority | Why |
 |---|---|---|---|---|

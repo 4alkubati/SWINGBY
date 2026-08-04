@@ -1,11 +1,16 @@
 import styles from './DataVisual.module.css'
 
 /**
- * Escrow payment flow:
- *   Client pays 100% → SwingBy holds → 50% released at confirmation
- *   → on completion, remaining 50% released minus 10% platform fee
- *   → business gets 90% total.
- *   Cancellation penalties: 25% if >48h before, 50% if ≤48h.
+ * Escrow payment flow, as `services/escrow.py` and `services/approvals.py`
+ * actually implement it:
+ *   Client pays 100% on ACCEPT → SwingBy holds ALL of it → nothing moves while
+ *   the work happens → the client's approval (or 24h after the business marks
+ *   it done) releases the whole balance minus the 10% platform cut.
+ *   Business receives 90%. There is no staged release.
+ *
+ * This diagram used to draw a 50/50 staged release that the code has never
+ * done. See backend/tests/test_no_staged_release_claim.py — that test exists
+ * because this claim kept coming back, and it now covers this file.
  */
 export default function PaymentFlowVisual() {
   return (
@@ -40,33 +45,33 @@ export default function PaymentFlowVisual() {
           <rect x="205" y="80" width="150" height="110" rx="12" fill="#0c1014" stroke="#3d6cff" strokeWidth="2" />
           <text x="280" y="108" textAnchor="middle" fill="#e6e9ef" fontFamily="Inter, sans-serif" fontSize="14" fontWeight="700">SwingBy escrow</text>
           <text x="280" y="130" textAnchor="middle" fill="#3d6cff" fontFamily="Inter, sans-serif" fontSize="18" fontWeight="700">Holds 100%</text>
-          <text x="280" y="155" textAnchor="middle" fill="#9aa3b0" fontFamily="Inter, sans-serif" fontSize="11">until next event</text>
+          <text x="280" y="155" textAnchor="middle" fill="#9aa3b0" fontFamily="Inter, sans-serif" fontSize="11">until you approve</text>
           <text x="280" y="173" textAnchor="middle" fill="#9aa3b0" fontFamily="Inter, sans-serif" fontSize="11">Bank-held, not on platform</text>
         </g>
 
-        {/* Confirmation event */}
+        {/* While the work happens — nothing moves. This box is the whole point. */}
         <line x1="355" y1="110" x2="430" y2="60" stroke="#7a8492" strokeWidth="2" markerEnd="url(#arrow-pay)" />
         <g>
-          <rect x="430" y="20" width="270" height="80" rx="10" fill="#0e1f12" stroke="#3aa467" />
-          <text x="445" y="46" fill="#7ee2a4" fontFamily="Inter, sans-serif" fontSize="12" fontWeight="700">EVENT — Booking confirmed</text>
-          <text x="445" y="68" fill="#e6e9ef" fontFamily="Inter, sans-serif" fontSize="14" fontWeight="700">Released on approval</text>
-          <text x="445" y="87" fill="#9aa3b0" fontFamily="Inter, sans-serif" fontSize="12">Business sees $50 — covers materials &amp; commitment</text>
+          <rect x="430" y="20" width="270" height="80" rx="10" fill="#1a1f25" stroke="#2a323d" />
+          <text x="445" y="46" fill="#9aa3b0" fontFamily="Inter, sans-serif" fontSize="12" fontWeight="700">WHILE THE WORK HAPPENS</text>
+          <text x="445" y="68" fill="#e6e9ef" fontFamily="Inter, sans-serif" fontSize="14" fontWeight="700">Still held — $0 released</text>
+          <text x="445" y="87" fill="#9aa3b0" fontFamily="Inter, sans-serif" fontSize="12">The business has none of it yet</text>
         </g>
 
-        {/* Completion event */}
+        {/* Approval — the ONLY release event */}
         <line x1="355" y1="160" x2="430" y2="210" stroke="#7a8492" strokeWidth="2" markerEnd="url(#arrow-pay)" />
         <g>
           <rect x="430" y="170" width="270" height="90" rx="10" fill="#0e1f12" stroke="#3aa467" />
-          <text x="445" y="196" fill="#7ee2a4" fontFamily="Inter, sans-serif" fontSize="12" fontWeight="700">EVENT — Job complete</text>
-          <text x="445" y="218" fill="#e6e9ef" fontFamily="Inter, sans-serif" fontSize="14" fontWeight="700">Remaining $50 released – 10% fee</text>
-          <text x="445" y="237" fill="#9aa3b0" fontFamily="Inter, sans-serif" fontSize="12">Business gets $45 now → $95 total</text>
-          <text x="445" y="253" fill="#9aa3b0" fontFamily="Inter, sans-serif" fontSize="12">SwingBy keeps $5 (the 10% fee)</text>
+          <text x="445" y="196" fill="#7ee2a4" fontFamily="Inter, sans-serif" fontSize="12" fontWeight="700">EVENT — You approve the work</text>
+          <text x="445" y="218" fill="#e6e9ef" fontFamily="Inter, sans-serif" fontSize="14" fontWeight="700">$100 released – 10% fee</text>
+          <text x="445" y="237" fill="#9aa3b0" fontFamily="Inter, sans-serif" fontSize="12">Business gets $90 · SwingBy keeps $10</text>
+          <text x="445" y="253" fill="#9aa3b0" fontFamily="Inter, sans-serif" fontSize="12">Auto-releases 24h after they mark it done</text>
         </g>
       </svg>
 
       <div className={styles.legend}>
         <div className={styles.legendItem}><span className={styles.swatch} style={{ background: '#3d6cff' }} /><span><strong>Escrow</strong> — SwingBy never spends your money. It sits between you and the business.</span></div>
-        <div className={styles.legendItem}><span className={styles.swatch} style={{ background: '#3aa467' }} /><span><strong>Release events</strong> — confirmation releases half, completion releases the rest minus the 10% fee.</span></div>
+        <div className={styles.legendItem}><span className={styles.swatch} style={{ background: '#3aa467' }} /><span><strong>Release event</strong> — there is only one. Your approval releases the whole amount, minus the 10% fee.</span></div>
       </div>
 
       <p className={styles.footnote}>

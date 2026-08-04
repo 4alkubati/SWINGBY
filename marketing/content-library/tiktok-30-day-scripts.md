@@ -550,7 +550,7 @@
 
 **Beat 1 (3–12s):** "Client posts a job. You quote. Client accepts. Booking confirmed — 50% of the payment is released to you right away."
 
-**Beat 2 (12–20s):** "You do the job. Client marks it complete. The remaining 50% (minus our 10% platform fee) releases to your account."
+**Beat 2 (12–20s):** "You do the job. The client approves it — or 24 hours pass — and the whole amount (minus our 10% platform fee) releases to your account."
 
 **Beat 3 (20–25s):** "No invoicing. No chasing. Automatic."
 

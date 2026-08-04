@@ -13,7 +13,7 @@ export default function Safety() {
         <div className={styles.section}>
           <div className={styles.grid2}>
             {[
-              { title: 'Escrow-protected payments', desc: 'Your payment is held securely when you book. 50% releases to the business on confirmation, the rest on completion. The business never has your money until the job is done.' },
+              { title: 'Escrow-protected payments', desc: 'Your payment is held securely and in full when you accept a quote. It releases to the business only when you approve the finished work — or 24 hours after they mark it done. The business never has your money until the job is done.' },
               { title: 'Vetted business listings', desc: 'Every business goes through identity and license verification before listing. Ongoing review monitoring flags issues automatically.' },
               { title: 'Dispute resolution', desc: 'If something goes wrong, open a dispute in the app. SwingBy support reviews and resolves within 72 hours. Funds can be held until resolved.' },
               { title: 'No contact before booking', desc: 'Businesses express interest without seeing your contact details. You choose who to accept. No cold messages, no pressure.' },

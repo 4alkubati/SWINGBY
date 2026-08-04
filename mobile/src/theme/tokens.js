@@ -31,6 +31,18 @@ export const colors = {
   // List dividers sitting directly on `bg` are darker than dividers inside a
   // card (POLISH-TIPS §3 — this distinction is deliberate).
   borderSubtle: '#14171D',
+  // The boundary for an INTERACTIVE control sitting directly on `bg`.
+  //
+  // WCAG 1.4.11 wants 3:1 for the visual information that identifies a control.
+  // Measured against `bg` (#07080a): surface 1.06:1, surfaceAlt 1.15:1,
+  // border 1.27:1, accentMuted 1.35:1 — every fill token fails, which is why a
+  // segmented control drawn with `surface` reads as empty page and gets missed
+  // entirely. #565D6B is the most subtle slate in this ramp that clears the bar
+  // (3.03:1); anything darker drops under 3:1.
+  //
+  // Use for the outline of a control the user must SEE to know it exists.
+  // For decorative dividers use `border` / `borderSubtle` instead.
+  borderStrong: '#565D6B',
   // Skeleton fill + shimmer target (POLISH-TIPS §8: fill surface, shimmer to
   // surfaceAlt). Aliased so skeletons can never drift to near-miss hexes.
   skeletonBase: '#0F1115',

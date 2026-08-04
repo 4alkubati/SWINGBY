@@ -27,6 +27,8 @@ It is owned by the founder (Amr) and is updated at the end of every marketing/bu
 | [13-accounts-and-identity.md](13-accounts-and-identity.md) | **Domain, mailbox, and social account registry.** Which domains we own, every `@swingbyy.com` address, which email signs up for what |
 | [14-automation-stack.md](14-automation-stack.md) | **What's actually running** (n8n, Telegram), the reply-bot design, funnel + image pipeline, costs, build order |
 | [15-tips-and-workarounds.md](15-tips-and-workarounds.md) | **The full operating list** — growth tips translated to a local marketplace, free-path workarounds, what not to do |
+| [16-funnel-map.md](16-funnel-map.md) | How social feeds the product, drawn as **two** funnels — supply and demand — instead of one |
+| [17-social-media-registry.md](17-social-media-registry.md) | **Every social account in one table** — what exists, what's taken by other companies, handle availability, owner emails, and the real subscription bill |
 | `assets/` | Logos, screenshots, demo videos, press kit (folder created when assets exist) |
 | `campaigns/` | One subfolder per launched campaign with brief + results |
 

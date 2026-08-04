@@ -11,17 +11,31 @@ Status values: **TODO** · **DONE** · **BLOCKED** · **DECIDE**
 
 | # | Status | Task |
 |---|---|---|
-| H1 | **DONE** | ~~Apply TWO migrations in the Supabase SQL editor.~~ **Both verified applied 2026-08-03** by probing PostgREST directly (never the migration headers — they lie): `bookings.approval_deadline_at` → 200, `users.terms_accepted_at` → 200. Every other filed migration was probed at the same time (`content_reports`, `user_blocks`, `messages.hidden_at`, `payments.post_id`) — all live. |
-| H2 | **DONE** | ~~Merge PR #81.~~ Merged 2026-07-31. |
-| H3 | **DONE** | ~~Check `STRIPE_SECRET_KEY` in Render.~~ **Kira verified 2026-08-03: it is a test key.** Payments stay in sandbox for the whole beta, so this stays true until someone deliberately changes it. |
+| H1 | **DONE** | ~~Apply TWO migrations in the Supabase SQL editor.~~ **Verified twice, independently:** `information_schema.columns` on 2026-08-01, and a direct PostgREST probe on 2026-08-03 — `bookings.approval_deadline_at` → 200, `users.terms_accepted_at` → 200. Every other filed migration was probed at the same time (`content_reports`, `user_blocks`, `messages.hidden_at`, `payments.post_id`) — all live. Probed, never read from a migration header; those have lied three times. |
+| H2 | **DONE** | ~~Merge PR #81.~~ Merged 2026-07-31, along with #82–#85. Render reports `environment: production` and `/health` is green. |
+| H3 | **DONE** | ~~Check `STRIPE_SECRET_KEY` in Render.~~ **Kira verified 2026-08-03: it is a test key.** Note for anyone re-checking: `/health` reporting `stripe: ok` proves the key *parses*, not which mode it is in — the only proof is reading the prefix. Payments stay in sandbox for the whole beta. |
 
 ## Apple console — blocks TestFlight, not the dev build
 
-> **DEFERRED by Kira, 2026-08-03** — the App Store Connect record and the Apple IDs
-> wait until everything else is verified; the current loop runs on the installable
-> **preview** build, not TestFlight. H7–H10 below stay open but are **not** this
-> week's work. *(Read back from a short instruction — correct me if the intent was
-> different.)*
+> **DEFERRED 2026-08-03, re-scoped 2026-08-04.** The current loop runs on the
+> installable **preview** build, not TestFlight, so none of this is this week's work.
+>
+> **⚠️ The order now matters, because Kira is incorporating in August** and wants a
+> company to own SwingBy. **H7 creates the App Store Connect record under whichever
+> Apple account exists at that moment**, and that account's name becomes the public
+> *seller* on the store listing. Creating it personally and moving it to the company
+> later is the expensive path: an App Store app transfer has conditions, and
+> re-enrolling as an organization issues a **new Team ID**, invalidating
+> `appleTeamId` in `mobile/eas.json` (two places) and the signing that H5 already
+> proved works on device.
+>
+> **Order: incorporate → D-U-N-S number → enrol the Apple Developer Program as the
+> organization → then H7–H10.** The D-U-N-S lookup is free through Apple but is not
+> instant, so start it the day the company exists.
+>
+> ⚠️ **H4 is DONE against Team ID `ZTYJ33HPDX`, but whether that enrolment is
+> Individual or Organization is recorded NOWHERE.** That single fact decides whether
+> any of the above applies. Confirm it before planning around it.
 
 | # | Status | Task |
 |---|---|---|
@@ -38,10 +52,10 @@ Status values: **TODO** · **DONE** · **BLOCKED** · **DECIDE**
 | # | Status | Question |
 |---|---|---|
 | D1 | **DONE** | *Client goes quiet after work is done?* → **auto-release after 24 hours.** Implemented in PR #81. |
-| D2 | **PART-ANSWERED** | **Legal entity = `4alkubati`** (Kira, 2026-08-03). **Address still open** — he is working on it. This address becomes **public**, so a registered/virtual Calgary address likely beats the home one. The canonical policy cannot be published until the address exists; the *deployed* policy is unaffected and already live. |
-| D3 | **DECIDE** | **Apple Pay** — worth registering a merchant ID and enabling it in Stripe? Needed before `merchantIdentifier` can be non-empty. Not a store blocker; is a conversion one. |
-| D4 | **ANSWERED — BUILD** | **Card on file must be there** (Kira, 2026-08-03). The endpoints already exist on `main` (`POST /payments/setup-intent`, `GET`/`DELETE /payments/payment-methods`, `default_payment_method_id` written) — what is missing is the **manage-cards UI** and wiring the saved card into the pay sheet so a repeat booking does not re-enter a card. |
-| D5 | **ANSWERED — INSTANT** | **A business must be able to take its money out instantly** (Kira, 2026-08-03). That means **Stripe Connect** (Express accounts) + **instant payouts** to a debit card, not manual transfers. Nothing pays out today; the ledger records `released_to_business` and stops there. This is the largest unbuilt piece of money work and needs onboarding/KYC, a payout endpoint and a Wallet screen. Still not an App Review blocker — nothing in the reviewed flow pays out. |
+| D2 | **PART-ANSWERED** | **Kira is incorporating in August**, and is considering a **holding company that owns SwingBy** so later projects sit under one entity. So the privacy-policy entity is *the company* — not `4alkubati` personally — and the registered address arrives with it. Both still open; the address becomes **public**, so a registered/virtual Calgary address likely beats the home one. The **deployed** policy is unaffected and already live. |
+| D3 | **PARTLY ANSWERED** | **Apple Pay.** Google Pay is **built, on, and needs nothing from you** (`enableGooglePay: true`; Stripe's own merchant id covers it). Apple Pay is **code-complete and waiting on one account-side value**: the app reads the merchant id from the *server* response, so the wallet turns on with no app rebuild — but the iOS entitlement is gated on the build-time `STRIPE_MERCHANT_IDENTIFIER`. **Deferred with the rest of the Apple work (2026-08-04)** — the merchant ID should be registered by the *company*, not personally, for the same reason as H7. |
+| D4 | **ANSWERED — ALREADY BUILT** | Kira, 2026-08-04: *"card on file needs to be there."* **It is.** Shipped in PR #83 and genuinely wired: SetupIntent endpoints, `services/cards.js`, and `PaymentMethodScreen` registered in **both** navigators and reachable from Profile, Business profile, QuoteComparison, BookingDetails and PostJob. Nothing to build — this one did not repeat the built-but-never-wired pattern. |
+| D5 | **ANSWERED — INSTANT** | **A business must be able to take its money out instantly** (Kira, 2026-08-04). That means **Stripe Connect** (Express accounts) + **instant payouts** to a debit card, not manual transfers. Nothing pays out today; the ledger records `released_to_business` and stops there. The largest unbuilt piece of money work: onboarding/KYC, a payout endpoint, a Wallet screen. Still not an App Review blocker — nothing in the reviewed flow pays out. **Note:** Connect KYC is tied to the legal entity, so it wants the company from D2 to exist first, or it gets redone. |
 | D6 | **DECIDE** | **Credit redemption.** `credits.CREDIT_REDEMPTION_AT_CHECKOUT_ENABLED` is **off**, so a $25 goodwill credit can be granted, and now *seen* in Settings, but not spent. Turning it on needs the charge path verified in Stripe test mode end-to-end, and has a known hole (an abandoned checkout keeps the credit spent). Until then the app tells the holder to contact you. |
 
 ## Infrastructure
