@@ -6,6 +6,8 @@ tags: [market, ops, social]
 ---
 # 17 — Social Media Registry
 
+> **Handle decision, 2026-08-04 (Kira):** the name is **`swingbyy`** everywhere — `@swingbyy` on X and Instagram, `/swingbyy` on LinkedIn — with the single exception of **TikTok, which is `@swingbyyy`** (three y's) because that is what was claimed. The earlier `swingbyyc` recommendation is dead; every reference in this repo was updated.
+
 > Everything social in one table: what exists, what doesn't, which email owns it, what it costs. Probed against the live platforms on **2026-07-30**. This page supersedes the social account table in [13-accounts-and-identity.md](13-accounts-and-identity.md), which assumed nothing had been claimed.
 
 Related: [12-social-media-playbook.md](12-social-media-playbook.md) · [13-accounts-and-identity.md](13-accounts-and-identity.md) · [14-automation-stack.md](14-automation-stack.md)
@@ -18,15 +20,15 @@ Every social-related thing SwingBy has or needs, in one place. Legend: ✅ live 
 
 | # | Item | Type | What we have today | What we need | Handle / address | Login email | Cost | Priority |
 |---|---|---|---|---|---|---|---|---|
-| 1 | **Instagram** | Channel | ⚠️ `@swingbyapp` exists — 1,836 followers, 3,058 following, 159 posts — **ownership unconfirmed** | Confirm we can log in. If not ours, claim `@swingbyyc` and start from zero | `@swingbyapp` or `@swingbyyc` | `amr@swingbyy.com` | **Free** | **P0** |
-| 2 | **Facebook Page** | Channel | 🚫 `/SwingByApp` is *SwingBy, Markham ON* — a food-deals business, 17 likes | Create a new Page at `/swingbyyc` | `/swingbyyc` | `amr@swingbyy.com` | **Free** | **P0** |
+| 1 | **Instagram** | Channel | ✅ **CLAIMED** — `@swingbyy` (Kira, 2026-08-04). Probed 200. `@swingbyapp` belongs to someone else and is abandoned. | Confirm which email the account is registered to, then bio + link | `@swingbyy` | ⚠️ **confirm** | **Free** | ✅ claimed |
+| 2 | **Facebook Page** | Channel | 🚫 `/SwingByApp` is *SwingBy, Markham ON* — a food-deals business, 17 likes | Create a new Page at `/swingbyy` | `/swingbyy` | `amr@swingbyy.com` | **Free** | **P0** |
 | 3 | **Meta Business Suite** | Platform | ❌ Nothing | Create it, link IG + FB, add a 2nd admin | — | `amr@swingbyy.com` | **Free** | **P0** |
 | 4 | **Google Business Profile** | Channel | ❌ Nothing | Create + verify (postcard takes ~1 week — start early) | SwingBy Calgary | `amr@swingbyy.com` | **Free** | **P0** |
-| 5 | **TikTok** | Channel | ⚠️ Unverifiable — TikTok blocks server-side probes | Check `swingbyyc` inside the app, then claim | `@swingbyyc` | `amr@swingbyy.com` | **Free** | P1 |
-| 6 | **LinkedIn Page** | Channel | 🚫 `/company/swingbyapp` is a rideshare/errand platform | Create a Page at `/swingbyyc` | `/swingbyyc` | `amr@swingbyy.com` | **Free** | P1 |
-| 7 | **X / Twitter** | Channel | 🚫 `@SwingByApp` is *SwingBy UG*, a German company, dormant since 2018 | Claim `@swingbyyc` (confirmed free) | `@swingbyyc` | `amr@swingbyy.com` | **Free** | P2 |
-| 8 | **YouTube** | Channel | ❌ Nothing — every candidate handle is free | Claim `@swingbyyc` | `@swingbyyc` | `amr@swingbyy.com` | **Free** | P2 |
-| 9 | **Reddit** | Channel | ❌ Nothing | Claim `u/swingbyyc`; read r/Calgary for 30 days before posting | `u/swingbyyc` | `amr@swingbyy.com` | **Free** | P2 |
+| 5 | **TikTok** | Channel | ✅ **CLAIMED** — `@swingbyyy`, three y's (Kira, 2026-08-04). Probed 200. | Confirm the registered email, then bio + link | `@swingbyyy` | ⚠️ **confirm** | **Free** | ✅ claimed |
+| 6 | **LinkedIn Page** | Channel | ❌ **Nothing yet** — `/company/swingbyy` probed **404**, so it is free. `/company/swingbyapp` is a different rideshare/errand company. | **Create the Page at `/swingbyy`** — the only handle still outstanding | `/swingbyy` | `amr@swingbyy.com` | **Free** | **P0** |
+| 7 | **X / Twitter** | Channel | ✅ **CLAIMED** — `@swingbyy` (Kira, 2026-08-04). Probed 200. `@SwingByApp` is *SwingBy UG*, German, dormant since 2018. | Confirm the registered email, then bio + link | `@swingbyy` | ⚠️ **confirm** | **Free** | ✅ claimed |
+| 8 | **YouTube** | Channel | ❌ Nothing — every candidate handle is free | Claim `@swingbyy` | `@swingbyy` | `amr@swingbyy.com` | **Free** | P2 |
+| 9 | **Reddit** | Channel | ❌ Nothing | Claim `u/swingbyy`; read r/Calgary for 30 days before posting | `u/swingbyy` | `amr@swingbyy.com` | **Free** | P2 |
 | 10 | **Telegram bot** | Ops | ✅ **Live** — `@L3thallbot`, responds to `getMe` | Nothing | existing | — | **Free** | ✅ done |
 | 11 | **Discord** | Ops | ❌ Nothing on the box | Server + `#inbox` `#approvals` `#alerts`, wired via the n8n Discord node | SwingBy Ops | `amr@swingbyy.com` | **Free** | P1 |
 | 12 | **n8n** | Tool | ✅ **Self-hosted** — container `swingby-n8n`, port 5678, up 24h, 1 workflow | Build the social + DM workflows | — | — | **$0** | P1 |
@@ -84,17 +86,17 @@ Legend: ✅ live · ⚠️ exists but unverified/blocked · ❌ nothing · 🚫 
 
 | Platform | Status today | Handle to use | Owner email | Subscription | Priority | What it's for |
 |---|---|---|---|---|---|---|
-| **Instagram** | ⚠️ `@swingbyapp` exists, ownership unconfirmed | `@swingbyapp` if ours, else `@swingbyyc` | `amr@swingbyy.com` | **Free** | **P0** | Primary channel. Before/after content is the whole pitch. |
-| **Facebook Page** | 🚫 `/SwingByApp` = Markham food business | `/swingbyyc` (free) | `amr@swingbyy.com` | **Free** | **P0** | Required for Meta Business + the Instagram API. Calgary neighbourhood groups are where clients are. |
+| **Instagram** | ⚠️ `@swingbyapp` exists, ownership unconfirmed | `@swingbyapp` if ours, else `@swingbyy` | `amr@swingbyy.com` | **Free** | **P0** | Primary channel. Before/after content is the whole pitch. |
+| **Facebook Page** | 🚫 `/SwingByApp` = Markham food business | `/swingbyy` (free) | `amr@swingbyy.com` | **Free** | **P0** | Required for Meta Business + the Instagram API. Calgary neighbourhood groups are where clients are. |
 | **Meta Business Suite** | ❌ Not created | — | `amr@swingbyy.com` | **Free** | **P0** | Container for IG + FB + ads + the Graph API tokens n8n needs. |
 | **Google Business Profile** | ❌ Not created | SwingBy | `amr@swingbyy.com` | **Free** | **P0** | Highest-intent local surface there is, and it's free. Feeds hyperlocal SEO. |
-| **TikTok** | ⚠️ Unverifiable — TikTok blocks server-side probes | `@swingbyyc` (check in-app) | `amr@swingbyy.com` | **Free** | P1 | 30-day scripts already written in `content-library/tiktok-30-day-scripts.md`. |
-| **LinkedIn Page** | 🚫 `/swingbyapp` = rideshare company | `/swingby-yyc` or `/swingbyyc` | `amr@swingbyy.com` | **Free** | P1 | Supply side — recruiting businesses, not clients. |
-| **X/Twitter** | 🚫 `@SwingByApp` = SwingBy UG (dormant) | `@swingbyyc` (free) | `amr@swingbyy.com` | **Free** | P2 | Low ROI for local services. Claim it, post rarely. |
-| **YouTube** | ❌ `@swingbyapp` free, all candidates free | `@swingbyyc` | `amr@swingbyy.com` | **Free** | P2 | Long-form home; feeds Shorts/Reels/TikTok. |
+| **TikTok** | ⚠️ Unverifiable — TikTok blocks server-side probes | `@swingbyyy` (check in-app) | `amr@swingbyy.com` | **Free** | P1 | 30-day scripts already written in `content-library/tiktok-30-day-scripts.md`. |
+| **LinkedIn Page** | 🚫 `/swingbyapp` = rideshare company | `/swingby-yyc` or `/swingbyy` | `amr@swingbyy.com` | **Free** | P1 | Supply side — recruiting businesses, not clients. |
+| **X/Twitter** | 🚫 `@SwingByApp` = SwingBy UG (dormant) | `@swingbyy` (free) | `amr@swingbyy.com` | **Free** | P2 | Low ROI for local services. Claim it, post rarely. |
+| **YouTube** | ❌ `@swingbyapp` free, all candidates free | `@swingbyyy` | `amr@swingbyy.com` | **Free** | P2 | Long-form home; feeds Shorts/Reels/TikTok. |
 | **Telegram bot** | ✅ **Live** — `@L3thallbot`, responds to `getMe` | existing | — | **Free** | ✅ done | Push channel: morning brief, alerts, tap-to-copy commands. |
 | **Discord** | ❌ Nothing on the box | SwingBy Ops | `amr@swingbyy.com` | **Free** | P1 | Private ops console (`#inbox`/`#approvals`/`#alerts`), not a community. |
-| **Reddit** | ❌ Not created | `u/swingbyyc` | `amr@swingbyy.com` | **Free** | P2 | r/Calgary is strict — read-only for 30 days before ever posting. |
+| **Reddit** | ❌ Not created | `u/swingbyy` | `amr@swingbyy.com` | **Free** | P2 | r/Calgary is strict — read-only for 30 days before ever posting. |
 
 **Every social platform on this list is free.** There is no social subscription to buy at any point in this plan.
 
@@ -109,14 +111,14 @@ Verified by fetching each public profile URL and reading the page title. A gener
 | `swingby` | 🚫 taken | — | — | — | — | Gone |
 | `swingbyapp` | 🚫 taken | 🚫 Markham | 🚫 SwingBy UG | ✅ free | 🚫 rideshare | Dead as a cross-platform identity |
 | `swingbyhq` | 🚫 taken | — | — | — | — | Gone |
-| **`swingbyyc`** | ✅ **free** | ✅ **free** | ✅ **free** | ✅ **free** | ✅ free | ⭐ **Clean sweep — take it** |
+| **`swingbyy`** | ✅ **free** | ✅ **free** | ✅ **free** | ✅ **free** | ✅ free | ⭐ **Clean sweep — take it** |
 | `getswingby` | ✅ free | ✅ free | ✅ free | ✅ free | — | Clean sweep, second choice |
 | `swingbycalgary` | ✅ free | ✅ free | ✅ free | ✅ free | — | Clean sweep, but long |
 | `useswingby` | ✅ free | — | — | — | — | Backup |
 | `tryswingby` | ✅ free | — | — | — | — | Backup |
 | `swingby_yyc` | ✅ free | — | — | — | — | Backup (underscores read as spam) |
 
-**Recommendation: `swingbyyc` on every platform.** It's free everywhere tested, it's the shortest of the clean options, and `yyc` is Calgary's airport code — locally legible, and it distinguishes us from the Markham, German, and rideshare SwingBys without inventing a new word. Claim all five today even if nothing gets posted for a month; a handle lost to a squatter on a launching brand is unrecoverable.
+**Recommendation: `swingbyy` on every platform.** It's free everywhere tested, it's the shortest of the clean options, and `yyc` is Calgary's airport code — locally legible, and it distinguishes us from the Markham, German, and rideshare SwingBys without inventing a new word. Claim all five today even if nothing gets posted for a month; a handle lost to a squatter on a launching brand is unrecoverable.
 
 *Caveat: TikTok blocks unauthenticated profile requests — every handle returned an identical 1,462-byte shell. Check TikTok handles inside the app.*
 
@@ -191,8 +193,8 @@ Nobody but Amr can do these — they need logins, a phone, or a credit card.
 1. **Log into Instagram and settle whether `@swingbyapp` is ours.** Everything below branches on the answer.
 2. Cloudflare → Email → add the routing rule for **`amr@swingbyy.com`** (it's the login address for every step after this and it doesn't exist yet).
 3. Cloudflare → DNS → add `CNAME www → swingbyy.com`, proxied. **Still dead as of today** — and Meta App Review will need it.
-4. Claim **`swingbyyc`** on Instagram (if step 1 says we need it), Facebook, X, and YouTube — all four confirmed free.
-5. Check `swingbyyc` on TikTok **in the app** (server-side probing is blocked).
+4. Claim **`swingbyy`** on Instagram (if step 1 says we need it), Facebook, X, and YouTube — all four confirmed free.
+5. Check `swingbyyy` on TikTok **in the app** (server-side probing is blocked).
 6. Create the **Facebook Page** → convert IG to a Business account → link them in **Meta Business Suite**.
 7. Create the **Google Business Profile** and verify it (postcard or phone — this takes a week, so start it early).
 8. Turn on **app-based 2FA** everywhere — not SMS. SIM-swap is the standard attack on a founder with a payment processor.
