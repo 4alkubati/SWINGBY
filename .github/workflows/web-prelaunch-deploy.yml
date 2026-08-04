@@ -114,17 +114,46 @@ jobs:
       # So assert on CONTENT, and specifically on the sentence that was wrong.
       - name: Verify the live Terms page is actually correct
         run: |
-          set -euo pipefail
-          echo "Waiting for the edge to pick up the new deployment..."
-          sleep 20
-          ENTRY=$(curl -sf https://swingbyy.com/ | grep -oE 'assets/index-[A-Za-z0-9_-]+\.js' | head -1)
-          echo "entry chunk: $ENTRY"
-          # Pages code-splits every route, so the Terms prose is NOT in the entry
-          # bundle. Find its chunk from the entry file first — grepping the entry
-          # for policy text returns zero and looks like a broken deploy.
-          TERMS=$(curl -sf "https://swingbyy.com/$ENTRY" | grep -oE 'assets/TermsPage-[A-Za-z0-9_-]+\.js' | head -1)
-          echo "terms chunk: $TERMS"
-          BODY=$(curl -sf "https://swingbyy.com/$TERMS")
+          set -uo pipefail
+          # WHY THIS RETRIES (2026-08-04). The first real run of this workflow
+          # deployed correctly and then reported FAILURE with no error message.
+          # Cause: a single `sleep 20` then `curl -sf`. While the edge is still
+          # picking up the deployment, the HTML can name a chunk that is not
+          # served yet, `curl -f` exits 22, and `set -e` killed the step before a
+          # single grep ran. A deploy that cries wolf is worse than no check —
+          # it is how a real failure gets waved through next time.
+          #
+          # So: re-resolve the chunk names on every attempt (they are content
+          # hashed and change per deploy), and only judge the CONTENT once a
+          # fetch actually succeeds.
+          for attempt in $(seq 1 12); do
+            ENTRY=$(curl -s --max-time 20 https://swingbyy.com/ | grep -oE 'assets/index-[A-Za-z0-9_-]+\.js' | head -1 || true)
+            if [ -z "$ENTRY" ]; then
+              echo "attempt $attempt: no entry chunk yet; waiting"; sleep 10; continue
+            fi
+            # Pages code-splits every route, so the Terms prose is NOT in the
+            # entry bundle. Grepping the entry (or the HTML) for policy text
+            # returns zero on a perfectly good deploy — that exact mistake put a
+            # false "swingbyy.com serves no privacy policy" finding into three
+            # documents. Resolve the route chunk first, then read THAT.
+            TERMS=$(curl -s --max-time 20 "https://swingbyy.com/$ENTRY" | grep -oE 'assets/TermsPage-[A-Za-z0-9_-]+\.js' | head -1 || true)
+            if [ -z "$TERMS" ]; then
+              echo "attempt $attempt: entry $ENTRY has no TermsPage chunk yet; waiting"; sleep 10; continue
+            fi
+            BODY=$(curl -s --max-time 20 --fail "https://swingbyy.com/$TERMS" || true)
+            if [ -z "$BODY" ]; then
+              echo "attempt $attempt: $TERMS not served yet; waiting"; sleep 10; continue
+            fi
+            echo "resolved entry=$ENTRY terms=$TERMS on attempt $attempt"
+            break
+          done
+
+          if [ -z "${BODY:-}" ]; then
+            echo "::error::Could not fetch the Terms chunk after 12 attempts."
+            echo "::error::This is a REACHABILITY failure, not a copy failure — the"
+            echo "::error::deployment itself may still be fine. Check the Pages dashboard."
+            exit 1
+          fi
 
           if grep -q "25% of the job amount if cancelled more than 48" <<<"$BODY"; then
             echo "::error::The live Terms page STILL states the cancellation ladder backwards."
