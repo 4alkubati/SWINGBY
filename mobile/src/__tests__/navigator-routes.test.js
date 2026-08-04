@@ -45,6 +45,10 @@ describe('BusinessNavigator route registry', () => {
       'PrivacyPolicy', 'TermsOfService', 'HelpFAQ', 'NotificationsCenter',
       'BookingDetails', 'MessageThread', 'PaymentMethod', 'DisputeFlow',
       'Invoice', 'BusinessInvoices',
+      // D5 — the payout screen. Registered in BusinessNavigator only: it is
+      // the one screen that moves the company's money out, and the backend
+      // 403s any role but business_owner.
+      'Wallet',
     ]) {
       expect([...routes]).toContain(route);
     }

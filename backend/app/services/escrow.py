@@ -224,6 +224,47 @@ def is_capture_backed(payment: dict) -> bool:
     return bool(payment.get("stripe_payment_intent_id"))
 
 
+def was_ever_captured(payment: dict) -> bool:
+    """True if real money was ever collected for this booking — including after
+    escrow has already been released.
+
+    :func:`is_capture_backed` answers a narrower question: *is there real money
+    sitting in escrow RIGHT NOW*. It deliberately excludes ``fully_released``,
+    because once escrow is released there is nothing held any more. That is
+    correct for the guard it protects (you cannot release money twice) and
+    WRONG for every historical reader, which wants "did this booking ever get
+    paid for".
+
+    The distinction is not academic. ``bookings._payment_state`` had to bolt the
+    missing branch on inline::
+
+        captured = escrow.is_capture_backed(payment) or (
+            status == "fully_released" and bool(payment.get("stripe_payment_intent_id"))
+        )
+
+    and ``payments.list_my_payments`` did **not** — so its ``verified_released``
+    figure summed ``is_capture_backed`` alone and therefore reported **zero**
+    for every legitimately completed, released, genuinely-paid booking, while
+    classifying all of it as ``unverified_released``. Nothing read that field
+    yet (verified 2026-08-03: no consumer in mobile, web or tests), so it was
+    latent rather than user-visible — but D5's payout balance is the first
+    thing that spends this number, and spending the wrong one means paying a
+    business nothing, or paying it FINDING C's phantom $4,675.50.
+
+    So the branch lives here once, named, and the three readers share it.
+
+    A ``fully_released`` row with no ``stripe_payment_intent_id`` is still
+    FINDING C's phantom payout and still returns False.
+    """
+    if not payment:
+        return False
+    if is_capture_backed(payment):
+        return True
+    return payment.get("status") == "fully_released" and bool(
+        payment.get("stripe_payment_intent_id")
+    )
+
+
 def assert_capture_backed(payment: dict, *, action: str = "release") -> None:
     """Raise :class:`CaptureRequiredError` unless real money is in hand.
 

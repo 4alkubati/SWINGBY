@@ -2479,6 +2479,281 @@ Object.assign(translations.uk, {
   'invite.continueAnyway': 'Продовжити без коду',
 });
 
+// ─── D5 — Wallet / payouts ───────────────────────────────────────────────────
+//
+// COPY RULES ENFORCED HERE, because this block states what happens to somebody's
+// money and the repo has already had to pull two false money claims from
+// production (the 50/50 staged release, and "cancel free up to 24h" against a
+// real 48h ladder):
+//
+//   · The 10% figure is `escrow.PLATFORM_RATE`. It is the only percentage in
+//     this block and it is not repeated anywhere it could drift.
+//   · "Instant" appears ONLY on strings the app shows when Stripe has confirmed
+//     an instant-capable debit card, and on the result string chosen by the
+//     server's own `method` field. Every other path says bank transfer.
+//   · Arrival times are characterised, not promised: Stripe publishes ~30
+//     minutes for instant payouts, and a standard payout depends on the
+//     receiving bank. Neither is a SwingBy SLA and neither is written as one.
+const walletEn = {
+  'wallet.title': 'Wallet',
+  'wallet.availableLabel': 'Available to cash out',
+  'wallet.availableCaption':
+    'Money released to you from finished jobs, after SwingBy’s 10% fee, minus anything you’ve already cashed out.',
+  'wallet.lifetimeEarned': 'Earned all time',
+  'wallet.alreadyPaidOut': 'Already cashed out',
+
+  'wallet.cashOutCta': 'Cash out',
+  'wallet.nothingToCashOut': 'Nothing to cash out yet.',
+  'wallet.cashOutConfirmTitle': 'Cash out?',
+  'wallet.cashOutConfirmInstant':
+    '%{amount} will be sent to your debit card. Instant payouts usually arrive within about 30 minutes.',
+  'wallet.cashOutConfirmStandard':
+    '%{amount} will be sent to your bank account. Standard transfers usually take a few business days.',
+  'wallet.cashOutDoneTitle': 'On its way',
+  'wallet.cashOutDoneInstant': '%{amount} was sent to your debit card.',
+  'wallet.cashOutDoneStandard': '%{amount} was sent to your bank account.',
+  'wallet.cashOutFailedTitle': 'Could not cash out',
+
+  'wallet.accountReadyTitle': 'Payouts are set up',
+  'wallet.railInstant': 'Instant — straight to your debit card.',
+  'wallet.railInstantCard': 'Instant — to your debit card ending %{last4}.',
+  'wallet.railStandard': 'Standard bank transfer — usually a few business days.',
+  'wallet.managePayoutMethod': 'Manage payout method',
+  'wallet.manageFailedTitle': 'Could not open payout settings',
+
+  // Title and CTA must not be the same string. Beyond reading as a stutter, a
+  // card whose heading and button are identical is ambiguous to a screen reader
+  // (and to getByText).
+  'wallet.setupTitle': 'Get paid for your work',
+  'wallet.setupBody':
+    'Add your details and a debit card or bank account so your earnings can reach you. Stripe handles this and SwingBy never sees your card number.',
+  'wallet.setupCta': 'Set up payouts',
+  'wallet.setupFailedTitle': 'Could not start setup',
+
+  'wallet.incompleteTitle': 'Finish setting up payouts',
+  'wallet.incompleteBody':
+    'You started setting up payouts but didn’t finish. Your earnings are safe — they just can’t be sent yet.',
+  'wallet.incompleteCta': 'Finish setup',
+
+  'wallet.pendingTitle': 'Stripe is reviewing your details',
+  'wallet.pendingBody':
+    'You’ve sent everything in. Stripe is checking it — this usually doesn’t take long. You can cash out once it’s approved.',
+  'wallet.pendingCta': 'Check or update details',
+
+  'wallet.restrictedTitle': 'Payouts are paused',
+  'wallet.restrictedBody':
+    'Stripe has paused payouts on your account until something is sorted out. Your earnings are still yours.',
+  'wallet.restrictedCta': 'Fix this with Stripe',
+  'wallet.stripeReason': 'Stripe says: %{reason}',
+
+  'wallet.historyTitle': 'Cash-outs',
+  'wallet.emptyTitle': 'No cash-outs yet',
+  'wallet.emptyBody': 'When you take money out, it will show up here.',
+  'wallet.errorTitle': 'Could not load your wallet',
+
+  'wallet.status.pending': 'Preparing',
+  'wallet.status.in_transit': 'On the way',
+  'wallet.status.paid': 'Paid',
+  'wallet.status.failed': 'Failed',
+  'wallet.status.canceled': 'Cancelled',
+
+  'wallet.method.instant': 'Instant',
+  'wallet.method.standard': 'Bank transfer',
+};
+Object.assign(translations.en, walletEn);
+
+Object.assign(translations['fr-CA'], {
+  'wallet.title': 'Portefeuille',
+  'wallet.availableLabel': 'Disponible pour retrait',
+  'wallet.availableCaption':
+    'L’argent qui vous a été versé pour des travaux terminés, après les frais de 10 % de SwingBy, moins ce que vous avez déjà retiré.',
+  'wallet.lifetimeEarned': 'Gagné depuis le début',
+  'wallet.alreadyPaidOut': 'Déjà retiré',
+
+  'wallet.cashOutCta': 'Retirer',
+  'wallet.nothingToCashOut': 'Rien à retirer pour l’instant.',
+  'wallet.cashOutConfirmTitle': 'Retirer?',
+  'wallet.cashOutConfirmInstant':
+    '%{amount} sera envoyé à votre carte de débit. Les virements instantanés arrivent habituellement en 30 minutes environ.',
+  'wallet.cashOutConfirmStandard':
+    '%{amount} sera envoyé à votre compte bancaire. Les virements standards prennent habituellement quelques jours ouvrables.',
+  'wallet.cashOutDoneTitle': 'En route',
+  'wallet.cashOutDoneInstant': '%{amount} a été envoyé à votre carte de débit.',
+  'wallet.cashOutDoneStandard': '%{amount} a été envoyé à votre compte bancaire.',
+  'wallet.cashOutFailedTitle': 'Retrait impossible',
+
+  'wallet.accountReadyTitle': 'Les versements sont configurés',
+  'wallet.railInstant': 'Instantané — directement sur votre carte de débit.',
+  'wallet.railInstantCard': 'Instantané — sur votre carte de débit se terminant par %{last4}.',
+  'wallet.railStandard': 'Virement bancaire standard — habituellement quelques jours ouvrables.',
+  'wallet.managePayoutMethod': 'Gérer le mode de versement',
+  'wallet.manageFailedTitle': 'Impossible d’ouvrir les réglages de versement',
+
+  'wallet.setupTitle': 'Faites-vous payer pour votre travail',
+  'wallet.setupBody':
+    'Ajoutez vos renseignements et une carte de débit ou un compte bancaire pour recevoir vos gains. Stripe s’en occupe et SwingBy ne voit jamais votre numéro de carte.',
+  'wallet.setupCta': 'Configurer les versements',
+  'wallet.setupFailedTitle': 'Impossible de lancer la configuration',
+
+  'wallet.incompleteTitle': 'Terminez la configuration des versements',
+  'wallet.incompleteBody':
+    'Vous avez commencé la configuration sans la terminer. Vos gains sont en sécurité — ils ne peuvent simplement pas encore être envoyés.',
+  'wallet.incompleteCta': 'Terminer la configuration',
+
+  'wallet.pendingTitle': 'Stripe vérifie vos renseignements',
+  'wallet.pendingBody':
+    'Vous avez tout envoyé. Stripe fait ses vérifications — c’est habituellement rapide. Vous pourrez retirer une fois approuvé.',
+  'wallet.pendingCta': 'Vérifier ou mettre à jour',
+
+  'wallet.restrictedTitle': 'Les versements sont suspendus',
+  'wallet.restrictedBody':
+    'Stripe a suspendu les versements sur votre compte le temps de régler quelque chose. Vos gains restent les vôtres.',
+  'wallet.restrictedCta': 'Régler cela avec Stripe',
+  'wallet.stripeReason': 'Stripe indique : %{reason}',
+
+  'wallet.historyTitle': 'Retraits',
+  'wallet.emptyTitle': 'Aucun retrait pour l’instant',
+  'wallet.emptyBody': 'Lorsque vous retirerez de l’argent, cela apparaîtra ici.',
+  'wallet.errorTitle': 'Impossible de charger votre portefeuille',
+
+  'wallet.status.pending': 'En préparation',
+  'wallet.status.in_transit': 'En route',
+  'wallet.status.paid': 'Versé',
+  'wallet.status.failed': 'Échec',
+  'wallet.status.canceled': 'Annulé',
+
+  'wallet.method.instant': 'Instantané',
+  'wallet.method.standard': 'Virement bancaire',
+});
+
+Object.assign(translations.ar, {
+  'wallet.title': 'المحفظة',
+  'wallet.availableLabel': 'المتاح للسحب',
+  'wallet.availableCaption':
+    'الأموال التي حُوّلت إليك من الأعمال المنتهية، بعد رسوم SwingBy البالغة 10%، ناقص ما سحبته سابقًا.',
+  'wallet.lifetimeEarned': 'إجمالي الأرباح',
+  'wallet.alreadyPaidOut': 'تم سحبه سابقًا',
+
+  'wallet.cashOutCta': 'سحب',
+  'wallet.nothingToCashOut': 'لا يوجد رصيد للسحب حاليًا.',
+  'wallet.cashOutConfirmTitle': 'هل تريد السحب؟',
+  'wallet.cashOutConfirmInstant':
+    'سيتم إرسال %{amount} إلى بطاقة الخصم الخاصة بك. التحويلات الفورية تصل عادةً خلال 30 دقيقة تقريبًا.',
+  'wallet.cashOutConfirmStandard':
+    'سيتم إرسال %{amount} إلى حسابك المصرفي. التحويلات العادية تستغرق عادةً بضعة أيام عمل.',
+  'wallet.cashOutDoneTitle': 'في الطريق',
+  'wallet.cashOutDoneInstant': 'تم إرسال %{amount} إلى بطاقة الخصم الخاصة بك.',
+  'wallet.cashOutDoneStandard': 'تم إرسال %{amount} إلى حسابك المصرفي.',
+  'wallet.cashOutFailedTitle': 'تعذّر السحب',
+
+  'wallet.accountReadyTitle': 'تم إعداد التحويلات',
+  'wallet.railInstant': 'فوري — مباشرةً إلى بطاقة الخصم الخاصة بك.',
+  'wallet.railInstantCard': 'فوري — إلى بطاقة الخصم المنتهية بـ %{last4}.',
+  'wallet.railStandard': 'تحويل مصرفي عادي — عادةً بضعة أيام عمل.',
+  'wallet.managePayoutMethod': 'إدارة طريقة التحويل',
+  'wallet.manageFailedTitle': 'تعذّر فتح إعدادات التحويل',
+
+  'wallet.setupTitle': 'احصل على أجر عملك',
+  'wallet.setupBody':
+    'أضف بياناتك وبطاقة خصم أو حسابًا مصرفيًا حتى تصلك أرباحك. تتولى Stripe ذلك، ولا يرى SwingBy رقم بطاقتك أبدًا.',
+  'wallet.setupCta': 'إعداد التحويلات',
+  'wallet.setupFailedTitle': 'تعذّر بدء الإعداد',
+
+  'wallet.incompleteTitle': 'أكمل إعداد التحويلات',
+  'wallet.incompleteBody':
+    'بدأت الإعداد ولم تكمله. أرباحك محفوظة — لكن لا يمكن إرسالها بعد.',
+  'wallet.incompleteCta': 'إكمال الإعداد',
+
+  'wallet.pendingTitle': 'تراجع Stripe بياناتك',
+  'wallet.pendingBody':
+    'لقد أرسلت كل شيء. تقوم Stripe بالتحقق — وهذا لا يستغرق وقتًا طويلًا عادةً. يمكنك السحب بعد الموافقة.',
+  'wallet.pendingCta': 'مراجعة البيانات أو تحديثها',
+
+  'wallet.restrictedTitle': 'التحويلات متوقفة مؤقتًا',
+  'wallet.restrictedBody':
+    'أوقفت Stripe التحويلات على حسابك مؤقتًا حتى تتم معالجة أمر ما. أرباحك تظل ملكك.',
+  'wallet.restrictedCta': 'معالجة الأمر مع Stripe',
+  'wallet.stripeReason': 'تقول Stripe: %{reason}',
+
+  'wallet.historyTitle': 'عمليات السحب',
+  'wallet.emptyTitle': 'لا توجد عمليات سحب بعد',
+  'wallet.emptyBody': 'عندما تسحب أموالك، ستظهر هنا.',
+  'wallet.errorTitle': 'تعذّر تحميل محفظتك',
+
+  'wallet.status.pending': 'قيد التجهيز',
+  'wallet.status.in_transit': 'في الطريق',
+  'wallet.status.paid': 'تم الدفع',
+  'wallet.status.failed': 'فشل',
+  'wallet.status.canceled': 'أُلغي',
+
+  'wallet.method.instant': 'فوري',
+  'wallet.method.standard': 'تحويل مصرفي',
+});
+
+Object.assign(translations.uk, {
+  'wallet.title': 'Гаманець',
+  'wallet.availableLabel': 'Доступно до виведення',
+  'wallet.availableCaption':
+    'Кошти, перераховані вам за завершені роботи, після комісії SwingBy 10%, мінус те, що ви вже вивели.',
+  'wallet.lifetimeEarned': 'Зароблено за весь час',
+  'wallet.alreadyPaidOut': 'Уже виведено',
+
+  'wallet.cashOutCta': 'Вивести',
+  'wallet.nothingToCashOut': 'Поки немає чого виводити.',
+  'wallet.cashOutConfirmTitle': 'Вивести кошти?',
+  'wallet.cashOutConfirmInstant':
+    '%{amount} буде надіслано на вашу дебетову картку. Миттєві виплати зазвичай надходять приблизно за 30 хвилин.',
+  'wallet.cashOutConfirmStandard':
+    '%{amount} буде надіслано на ваш банківський рахунок. Звичайні перекази зазвичай тривають кілька робочих днів.',
+  'wallet.cashOutDoneTitle': 'У дорозі',
+  'wallet.cashOutDoneInstant': '%{amount} надіслано на вашу дебетову картку.',
+  'wallet.cashOutDoneStandard': '%{amount} надіслано на ваш банківський рахунок.',
+  'wallet.cashOutFailedTitle': 'Не вдалося вивести кошти',
+
+  'wallet.accountReadyTitle': 'Виплати налаштовано',
+  'wallet.railInstant': 'Миттєво — просто на вашу дебетову картку.',
+  'wallet.railInstantCard': 'Миттєво — на вашу дебетову картку, що закінчується на %{last4}.',
+  'wallet.railStandard': 'Звичайний банківський переказ — зазвичай кілька робочих днів.',
+  'wallet.managePayoutMethod': 'Керувати способом виплати',
+  'wallet.manageFailedTitle': 'Не вдалося відкрити налаштування виплат',
+
+  'wallet.setupTitle': 'Отримуйте гроші за свою роботу',
+  'wallet.setupBody':
+    'Додайте свої дані та дебетову картку або банківський рахунок, щоб отримувати зароблене. Цим займається Stripe, і SwingBy ніколи не бачить номер вашої картки.',
+  'wallet.setupCta': 'Налаштувати виплати',
+  'wallet.setupFailedTitle': 'Не вдалося розпочати налаштування',
+
+  'wallet.incompleteTitle': 'Завершіть налаштування виплат',
+  'wallet.incompleteBody':
+    'Ви почали налаштування, але не завершили його. Ваші кошти в безпеці — їх просто поки не можна надіслати.',
+  'wallet.incompleteCta': 'Завершити налаштування',
+
+  'wallet.pendingTitle': 'Stripe перевіряє ваші дані',
+  'wallet.pendingBody':
+    'Ви надіслали все потрібне. Stripe перевіряє — зазвичай це недовго. Вивести кошти можна буде після схвалення.',
+  'wallet.pendingCta': 'Переглянути або оновити дані',
+
+  'wallet.restrictedTitle': 'Виплати призупинено',
+  'wallet.restrictedBody':
+    'Stripe призупинив виплати на вашому рахунку, доки щось не буде врегульовано. Ваші кошти залишаються вашими.',
+  'wallet.restrictedCta': 'Врегулювати зі Stripe',
+  'wallet.stripeReason': 'Stripe повідомляє: %{reason}',
+
+  'wallet.historyTitle': 'Виведення коштів',
+  'wallet.emptyTitle': 'Виведень поки немає',
+  'wallet.emptyBody': 'Коли ви виведете кошти, вони з’являться тут.',
+  'wallet.errorTitle': 'Не вдалося завантажити гаманець',
+
+  'wallet.status.pending': 'Готується',
+  'wallet.status.in_transit': 'У дорозі',
+  'wallet.status.paid': 'Виплачено',
+  'wallet.status.failed': 'Помилка',
+  'wallet.status.canceled': 'Скасовано',
+
+  'wallet.method.instant': 'Миттєво',
+  'wallet.method.standard': 'Банківський переказ',
+});
+
 const i18n = new I18n(translations);
 
 // Default fallback

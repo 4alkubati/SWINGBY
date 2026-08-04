@@ -7,7 +7,6 @@ import {
   ScrollView,
   TouchableOpacity,
   StyleSheet,
-  Alert,
   Dimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -19,6 +18,7 @@ import { Feather } from '@expo/vector-icons';
 import { api } from '../../services/api';
 import { SkeletonBox } from '../../components/Skeleton';
 import { colors } from '../../theme/tokens';
+import i18n from '../../i18n';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
@@ -196,12 +196,22 @@ export default function EarningsScreen({ navigation }) {
           <Feather name="arrow-left" size={20} color={colors.textSecondary} strokeWidth={1.8} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Earnings</Text>
+        {/* D5 — this header slot held an "Export CSV" button whose entire
+            behaviour was an alert saying the feature did not exist. This screen
+            answers "what have I earned"; the obvious next question is "how do I
+            get it", and until now nothing on it led anywhere. The slot now
+            opens the Wallet, which is a real destination. CSV export was never
+            built and is not lost by removing a button that only apologised for
+            it. */}
         <TouchableOpacity
           style={styles.exportBtn}
-          onPress={() => Alert.alert('Coming soon', 'CSV export will be available soon.')}
+          onPress={() => navigation.navigate('Wallet')}
+          accessibilityRole="button"
+          accessibilityLabel={i18n.t('wallet.title')}
           activeOpacity={0.8}
         >
-          <Text style={styles.exportText}>Export CSV</Text>
+          <Feather name="credit-card" size={14} color={colors.textSecondary} strokeWidth={1.8} />
+          <Text style={styles.exportText}>{i18n.t('wallet.title')}</Text>
         </TouchableOpacity>
       </View>
 
@@ -298,6 +308,8 @@ const styles = StyleSheet.create({
   backBtn: { fontSize: 24, color: colors.textSecondary, width: 40 },
   headerTitle: { fontSize: 20, fontWeight: '700', color: colors.textPrimary, letterSpacing: -0.5 },
   exportBtn: {
+    flexDirection: 'row',
+    gap: 6,
     backgroundColor: colors.surfaceAlt,
     borderWidth: 1,
     borderColor: colors.border,
