@@ -98,7 +98,7 @@ Better than expected — inbound and outbound are both already wired. Two gaps r
 
 **Claim the handles today even if we don't post for a month**; handle squatting on a launching brand is real and unrecoverable.
 
-Handle preference order (revised): **`swingbyyc`** → `getswingby` → `swingbycalgary`. All three are free across Instagram, Facebook, X and YouTube. `swingby` and `swingbyapp` are both gone.
+Handle preference order (revised): **`swingbyy`** → `getswingby` → `swingbycalgary`. All three are free across Instagram, Facebook, X and YouTube. `swingby` and `swingbyapp` are both gone.
 
 | Platform | Handle | Signup email | Priority | Why |
 |---|---|---|---|---|

@@ -94,7 +94,7 @@ through the app when the client signs off. SwingBy takes 10%.
 
 ## Before either goes out
 
-1. The handles must exist — **`swingbyyc`** (`@swingbyapp` is taken by three
+1. The handles must exist — **`swingbyy`** (`@swingbyapp` is taken by three
    other companies). HUMAN-TODO H14/H15.
 2. "Link in bio" needs a link that works. `swingbyy.com` is still the frozen
    pre-launch site; the app is not on the App Store yet. Until one of those is

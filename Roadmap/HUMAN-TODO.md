@@ -50,7 +50,7 @@ Status values: **TODO** · **DONE** · **BLOCKED** · **DECIDE**
 
 | # | Status | Task |
 |---|---|---|
-| H14 | **TODO** | Confirm the handle to claim: **`swingbyyc`** (free on IG/FB/X/YT). `@swingbyapp` is taken by three other companies. |
+| H14 | **TODO** | Confirm the handle to claim: **`swingbyy`** (free on IG/FB/X/YT). `@swingbyapp` is taken by three other companies. |
 | H15 | **TODO** | Create the accounts and put the tokens in `backend/../.env.social` (gitignored). `python tools/social_post.py --check` prints exactly which variables are still missing. **This is the only thing standing between us and the two posts being live** — the copy and the publisher are done. |
 | H16 | **ANSWERED** | **Plain script.** `tools/social_post.py` — one command, all platforms, dry-run by default, 10 tests in CI. n8n was *designed* (43 nodes across 3 workflows, `marketing/11-n8n-social-workflow.md`) and its own first paragraph says it uses placeholder credentials and has never run: it needs Notion, OpenAI, Slack and Buffer wired before one post goes out. Two posts do not need an approval gate and a GPT caption writer. If you want the visible version later, n8n can call this script from one Execute Command node — nothing here blocks that. |
 | H17 | **TODO** | **"Link in bio" needs a working link.** `swingbyy.com` is still the frozen pre-launch site and the app is not on the App Store. Until one is true the posts say "join the waitlist", not "download the app". Decide which. |

@@ -164,7 +164,7 @@ What is left, highest first:
    wanted.
 
 **Blocked only on H15:** the accounts do not exist yet. `@swingbyapp` is taken
-by three other companies; **`swingbyyc`** is free across IG/FB/X/YT.
+by three other companies; **`swingbyy`** is free across IG/FB/X/YT.
 
 ---
 
