@@ -10,6 +10,6 @@ notion-client
 httpx
 structlog>=24.0
 sentry-sdk[fastapi]>=2.0
-slowapi>=0.1.9
+slowapi>=0.1.10
 stripe>=10.0,<12
 reportlab>=4.0
