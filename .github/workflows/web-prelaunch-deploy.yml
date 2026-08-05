@@ -126,6 +126,22 @@ jobs:
           # So: re-resolve the chunk names on every attempt (they are content
           # hashed and change per deploy), and only judge the CONTENT once a
           # fetch actually succeeds.
+          #
+          # KNOWN FALSE FAILURE (2026-08-05). A workflow_dispatch run on c0daf41
+          # deployed fine and then failed here with all 12 attempts stuck on
+          # "no entry chunk yet" — it never even resolved assets/index-*.js.
+          # The same curl from outside CI succeeded immediately, and the live
+          # Terms copy passed BOTH assertions by hand (the wrong 25%/48h string
+          # absent, "refunded in full, with no fee" present). So swingbyy.com
+          # serves something other than the site to GitHub runner IPs — almost
+          # certainly a Cloudflare bot challenge.
+          #
+          # Do NOT "fix" this by deleting the check or dropping the assertions:
+          # it exists because a wrong cancellation ladder went live once. The
+          # real fix is to let CI through — a Cloudflare WAF skip rule for the
+          # GitHub Actions IP ranges, or verify against the Pages deployment
+          # preview URL instead of the apex. Until then a red run here means
+          # "verify by hand", not "the copy is wrong".
           for attempt in $(seq 1 12); do
             ENTRY=$(curl -s --max-time 20 https://swingbyy.com/ | grep -oE 'assets/index-[A-Za-z0-9_-]+\.js' | head -1 || true)
             if [ -z "$ENTRY" ]; then
