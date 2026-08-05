@@ -11,5 +11,5 @@ httpx
 structlog>=24.0
 sentry-sdk[fastapi]>=2.66.1
 slowapi>=0.1.10
-stripe>=10.0,<12
+stripe>=15.4.0,<16
 reportlab>=4.0
