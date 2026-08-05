@@ -20,14 +20,14 @@ Every social-related thing SwingBy has or needs, in one place. Legend: ✅ live 
 
 | # | Item | Type | What we have today | What we need | Handle / address | Login email | Cost | Priority |
 |---|---|---|---|---|---|---|---|---|
-| 1 | **Instagram** | Channel | ✅ **CLAIMED** — `@swingbyy` (Kira, 2026-08-04). Probed 200. `@swingbyapp` belongs to someone else and is abandoned. | Confirm which email the account is registered to, then bio + link | `@swingbyy` | ⚠️ **confirm** | **Free** | ✅ claimed |
-| 2 | **Facebook Page** | Channel | 🚫 `/SwingByApp` is *SwingBy, Markham ON* — a food-deals business, 17 likes | Create a new Page at `/swingbyy` | `/swingbyy` | `amr@swingbyy.com` | **Free** | **P0** |
+| 1 | **Instagram** | Channel | ✅ **CLAIMED** — `@swingbyy`. Profile read 2026-08-04: **display name is "AMR"**, 1 follower, **0 posts**. `@swingbyapp` belongs to someone else. | ⚠️ **Rename to `SwingBy Calgary`** (it currently says "AMR"), add the bio, **convert to a Business account** — required for the Graph API | `@swingbyy` | ⚠️ **confirm** | **Free** | ✅ claimed |
+| 2 | **Facebook Page** | Channel | ❌ Nothing — `/swingbyy` probed **free** 2026-08-04. `/SwingByApp` is *SwingBy, Markham ON*, a food-deals business, 17 likes | Create the Page at `/swingbyy`. **Blocks all Instagram automation** — the Graph API needs a linked Page | `/swingbyy` | `amr@swingbyy.com` | **Free** | **P0** |
 | 3 | **Meta Business Suite** | Platform | ❌ Nothing | Create it, link IG + FB, add a 2nd admin | — | `amr@swingbyy.com` | **Free** | **P0** |
 | 4 | **Google Business Profile** | Channel | ❌ Nothing | Create + verify (postcard takes ~1 week — start early) | SwingBy Calgary | `amr@swingbyy.com` | **Free** | **P0** |
-| 5 | **TikTok** | Channel | ✅ **CLAIMED** — `@swingbyyy`, three y's (Kira, 2026-08-04). Probed 200. | Confirm the registered email, then bio + link | `@swingbyyy` | ⚠️ **confirm** | **Free** | ✅ claimed |
+| 5 | **TikTok** | Channel | ✅ **CLAIMED** — `@swingbyyy`, three y's. ⚠️ Not independently verifiable: TikTok blocks unauthenticated probes, returning an identical 1,462-byte shell for every handle including ones that don't exist | Confirm the registered email, then bio + link. **Re-check in the app whether `swingbyy` is genuinely taken** — one platform spelled differently breaks cross-promotion | `@swingbyyy` | ⚠️ **confirm** | **Free** | ✅ claimed |
 | 6 | **LinkedIn Page** | Channel | ❌ **Nothing yet** — `/company/swingbyy` probed **404**, so it is free. `/company/swingbyapp` is a different rideshare/errand company. | **Create the Page at `/swingbyy`** — the only handle still outstanding | `/swingbyy` | `amr@swingbyy.com` | **Free** | **P0** |
-| 7 | **X / Twitter** | Channel | ✅ **CLAIMED** — `@swingbyy` (Kira, 2026-08-04). Probed 200. `@SwingByApp` is *SwingBy UG*, German, dormant since 2018. | Confirm the registered email, then bio + link | `@swingbyy` | ⚠️ **confirm** | **Free** | ✅ claimed |
-| 8 | **YouTube** | Channel | ❌ Nothing — every candidate handle is free | Claim `@swingbyy` | `@swingbyy` | `amr@swingbyy.com` | **Free** | P2 |
+| 7 | **X / Twitter** | Channel | ✅ **CLAIMED** — `@swingbyy`. Profile read 2026-08-04: **display name is "Swing"**, 1 follower, 53 following, joined Jun 2026. `@SwingByApp` is *SwingBy UG*, German, dormant since 2018. | ⚠️ **Rename to `SwingBy Calgary`** (it currently says "Swing"), add the bio | `@swingbyy` | ⚠️ **confirm** | **Free** | ✅ claimed |
+| 8 | **YouTube** | Channel | ❌ Nothing — `@swingbyy` probed **404**, confirmed free 2026-08-04 | Claim `@swingbyy` | `@swingbyy` | `amr@swingbyy.com` | **Free** | P2 |
 | 9 | **Reddit** | Channel | ❌ Nothing | Claim `u/swingbyy`; read r/Calgary for 30 days before posting | `u/swingbyy` | `amr@swingbyy.com` | **Free** | P2 |
 | 10 | **Telegram bot** | Ops | ✅ **Live** — `@L3thallbot`, responds to `getMe` | Nothing | existing | — | **Free** | ✅ done |
 | 11 | **Discord** | Ops | ❌ Nothing on the box | Server + `#inbox` `#approvals` `#alerts`, wired via the n8n Discord node | SwingBy Ops | `amr@swingbyy.com` | **Free** | P1 |
@@ -188,18 +188,21 @@ The vault's older docs quote a tool stack costing **$67/month**. Most of it is r
 
 ## Human-only steps, in order
 
-Nobody but Amr can do these — they need logins, a phone, or a credit card.
+Nobody but Amr can do these — they need logins, a phone, or a credit card. ✅ = already done.
 
-1. **Log into Instagram and settle whether `@swingbyapp` is ours.** Everything below branches on the answer.
-2. Cloudflare → Email → add the routing rule for **`amr@swingbyy.com`** (it's the login address for every step after this and it doesn't exist yet).
-3. Cloudflare → DNS → add `CNAME www → swingbyy.com`, proxied. **Still dead as of today** — and Meta App Review will need it.
-4. Claim **`swingbyy`** on Instagram (if step 1 says we need it), Facebook, X, and YouTube — all four confirmed free.
-5. Check `swingbyyy` on TikTok **in the app** (server-side probing is blocked).
-6. Create the **Facebook Page** → convert IG to a Business account → link them in **Meta Business Suite**.
-7. Create the **Google Business Profile** and verify it (postcard or phone — this takes a week, so start it early).
-8. Turn on **app-based 2FA** everywhere — not SMS. SIM-swap is the standard attack on a founder with a payment processor.
-9. **Add a second admin to the Meta Business account.** A Page with one admin is one account-lock away from gone.
-10. Put the recovery codes in a password manager.
+1. ✅ **Claim `@swingbyy` on Instagram and X, `@swingbyyy` on TikTok.** Done 2026-08-04.
+2. ✅ **Settle whether `@swingbyapp` is ours.** It isn't — ours is `@swingbyy`. Never link to `@swingbyapp`.
+3. **Fix the display names.** Instagram currently reads **"AMR"**, X reads **"Swing"**. Both should be `SwingBy Calgary`, with the bio below. Highest-value five minutes on this list: the accounts are live and neither says what the company is.
+4. **Convert Instagram to a Business account.** Prerequisite for the Graph API — every automation plan is blocked until this is done.
+5. Cloudflare → Email → add the routing rule for **`amr@swingbyy.com`** (the login address for every account, and it still doesn't exist).
+6. Cloudflare → DNS → add `CNAME www → swingbyy.com`, proxied. **Still dead** — and Meta App Review needs a reachable privacy-policy URL.
+7. Claim **`swingbyy`** on **Facebook, YouTube and LinkedIn** — all three probed free on 2026-08-04. Squatting is unrecoverable; claim now, post later.
+8. Re-check `swingbyy` on **TikTok in the app** — server-side probing can't tell claimed from unclaimed. If it's free, switch off the triple-y.
+9. Create the **Facebook Page** → link it to Instagram in **Meta Business Suite**.
+10. Create the **Google Business Profile** and verify it (postcard takes ~a week — start it early).
+11. Turn on **app-based 2FA** everywhere — not SMS. SIM-swap is the standard attack on a founder with a payment processor.
+12. **Add a second admin to the Meta Business account.** A Page with one admin is one account-lock away from gone.
+13. Put the recovery codes in a password manager.
 
 ---
 
@@ -213,4 +216,31 @@ swingbyy.com
 
 Link target: `https://swingbyy.com`. Not a Linktree.
 
-Given three other companies use this name, add **Calgary** to every display name (`SwingBy Calgary`) so search and tagging disambiguate us from the Markham food page and the German UG.
+Given three other companies use this name, add **Calgary** to every display name (`SwingBy Calgary`) so search and tagging disambiguate us from the Markham food page and the German UG. **Neither live account does this yet** — Instagram says "AMR", X says "Swing".
+
+---
+
+## Intake — what has actually happened
+
+Everything above is what we *should* do. This table is what has *been done*. Update it from evidence, not from the plan — a row is not done because a page says it should be.
+
+**No passwords, tokens, or recovery codes in this file, ever.** Those live in a password manager.
+
+| Item | Handle / value | Login email on file | Status | Date |
+|---|---|---|---|---|
+| Instagram | **`@swingbyy`** | ⚠️ unconfirmed | ✅ claimed — display name "AMR", 0 posts, not yet a Business account | 2026-08-04 |
+| X / Twitter | **`@swingbyy`** | ⚠️ unconfirmed | ✅ claimed — display name "Swing" | 2026-08-04 |
+| TikTok | **`@swingbyyy`** | ⚠️ unconfirmed | ✅ claimed — re-check if `swingbyy` is free there | 2026-08-04 |
+| Is `@swingbyapp` ours? | **No** | — | ✅ answered — belongs to another company | 2026-08-04 |
+| Facebook Page | `/swingbyy` — probed free | | ❌ | |
+| YouTube | `@swingbyy` — probed free | | ❌ | |
+| LinkedIn Page | `/company/swingbyy` — probed free | | ❌ | |
+| Meta Business Suite | — | | ❌ | |
+| Google Business Profile | | | ❌ | |
+| Reddit | `u/swingbyy` | | ❌ | |
+| Discord — SwingBy Ops | — | | ❌ | |
+| `amr@swingbyy.com` routing rule | — | → `4alkubati@gmail.com` | ❌ | |
+| Other aliases routed | `support@ privacy@ legal@ security@ press@ partnerships@ billing@` | → `4alkubati@gmail.com` | ❌ | |
+| `www` CNAME | `www → swingbyy.com`, proxied | — | ❌ **still dead** | |
+
+The three ⚠️ rows matter: nobody has confirmed which email address those accounts were registered under. If they went in on a personal Gmail, they should move to `amr@swingbyy.com` before the account list grows — see the `amr@` rule in [13-accounts-and-identity.md](13-accounts-and-identity.md).
