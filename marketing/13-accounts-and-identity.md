@@ -94,22 +94,22 @@ Better than expected — inbound and outbound are both already wired. Two gaps r
 
 ## Social account registry
 
-> ⚠️ **Superseded by [17-social-media-registry.md](17-social-media-registry.md) (probed 2026-07-30).** The table below assumed nothing had been claimed and that `@swingbyapp` was available. Neither holds: `@swingbyapp` is taken on Facebook (a Markham ON food business), X (SwingBy UG, a German company) and LinkedIn (a rideshare platform), and the Instagram account under that handle exists with 1,836 followers but **unconfirmed ownership**. Use doc 17 for handles and status; this table is kept for the priority ranking and the hygiene rules.
+> ⚠️ **Superseded by [17-social-media-registry.md](17-social-media-registry.md) (probed 2026-07-30).** The table below assumed nothing had been claimed and that `@swingbyapp` was available. Neither holds: `@swingbyapp` is taken on Facebook (a Markham ON food business), X (SwingBy UG, a German company) and LinkedIn (a rideshare platform), and the Instagram account under that handle — 1,836 followers, 159 posts — is **confirmed not ours** (ours is `@swingbyy`). Use doc 17 for handles and status; this table is kept for the priority ranking and the hygiene rules.
 
 **Claim the handles today even if we don't post for a month**; handle squatting on a launching brand is real and unrecoverable.
 
-Handle preference order (revised): **`swingbyy`** → `getswingby` → `swingbycalgary`. All three are free across Instagram, Facebook, X and YouTube. `swingby` and `swingbyapp` are both gone.
+**The handle is `swingbyy`** — matching the domain character-for-character. `swingby`, `swingbyapp` and `swingbyhq` are all gone; **`@swingbyapp` belongs to three other companies** and must never appear in our copy.
 
 | Platform | Handle | Signup email | Priority | Why |
 |---|---|---|---|---|
-| Instagram | `@swingbyapp` | `amr@swingbyy.com` | **P0** | Primary channel per [12-social-media-playbook.md](12-social-media-playbook.md); before/after content is the whole business |
-| Facebook Page | `SwingBy` | `amr@swingbyy.com` | **P0** | Required for Meta Business + Instagram API access; Calgary neighbourhood groups are where clients actually are |
+| Instagram | ✅ `@swingbyy` **claimed** | ⚠️ confirm | **P0** | Primary channel per [12-social-media-playbook.md](12-social-media-playbook.md); before/after content is the whole business |
+| Facebook Page | `/swingbyy` — free | `amr@swingbyy.com` | **P0** | Required for Meta Business + Instagram API access; Calgary neighbourhood groups are where clients actually are |
 | Meta Business Suite | — | `amr@swingbyy.com` | **P0** | The container for IG + FB + ads + the Graph API tokens the n8n workflows need |
-| TikTok | `@swingbyapp` | `amr@swingbyy.com` | P1 | 30-day scripts already written in `content-library/tiktok-30-day-scripts.md` |
-| Google Business Profile | SwingBy | `amr@swingbyy.com` | **P0** | Free, and the single highest-intent local surface. Also feeds the hyperlocal SEO campaign. |
-| LinkedIn Page | SwingBy | `amr@swingbyy.com` | P1 | Supply side — recruiting businesses, not clients |
-| X/Twitter | `@swingbyapp` | `amr@swingbyy.com` | P2 | Low ROI for local services; claim the handle, post rarely |
-| YouTube | `@swingbyapp` | `amr@swingbyy.com` | P2 | Long-form home; feeds Shorts/Reels/TikTok |
+| TikTok | ✅ `@swingbyyy` **claimed** (three y's) | ⚠️ confirm | P1 | 30-day scripts already written in `content-library/tiktok-30-day-scripts.md` |
+| Google Business Profile | SwingBy Calgary | `amr@swingbyy.com` | **P0** | Free, and the single highest-intent local surface. Also feeds the hyperlocal SEO campaign. |
+| LinkedIn Page | `/company/swingbyy` — free | `amr@swingbyy.com` | P1 | Supply side — recruiting businesses, not clients |
+| X/Twitter | ✅ `@swingbyy` **claimed** | ⚠️ confirm | P2 | Low ROI for local services; claim the handle, post rarely |
+| YouTube | `@swingbyy` — free | `amr@swingbyy.com` | P2 | Long-form home; feeds Shorts/Reels/TikTok |
 | Telegram bot | existing | — | ✅ **live** | Token already in the n8n container env |
 | Discord server | SwingBy Ops | `amr@swingbyy.com` | P1 | Private ops console, not a community. See [14-automation-stack.md](14-automation-stack.md). |
 
