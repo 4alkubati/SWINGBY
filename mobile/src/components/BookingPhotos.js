@@ -12,6 +12,7 @@ import Inline from './Inline';
 import Surface from './Surface';
 import Button from './Button';
 import ImageViewer from './ImageViewer';
+import PhotoAnnotator from './PhotoAnnotator';
 import { colors, spacing, radius } from '../theme/tokens';
 
 const PHASES = ['before', 'after'];
@@ -34,6 +35,8 @@ export default function BookingPhotos({ bookingId, canAttach = false, phase }) {
   // flattened in the same order the thumbnails render so swiping in the viewer
   // walks Before → After exactly as the eye does.
   const [viewerIndex, setViewerIndex] = useState(null);
+  // The photo currently being marked up, or null. Provider-side only.
+  const [annotating, setAnnotating] = useState(null);
   const mounted = useRef(true);
 
   const load = useCallback(async () => {
@@ -78,18 +81,26 @@ export default function BookingPhotos({ bookingId, canAttach = false, phase }) {
     const ext = (asset.uri.split('.').pop() || 'jpg').toLowerCase();
     const mimeType = asset.mimeType || `image/${ext === 'jpg' ? 'jpeg' : ext}`;
 
+    await attachFile({
+      uri: asset.uri,
+      mimeType,
+      name: asset.fileName || `photo_${Date.now()}.${ext}`,
+      targetPhase,
+    });
+  }
+
+  // Shared by the picker and by saved markup, so both paths upload and attach
+  // through exactly one code path.
+  async function attachFile({ uri, mimeType, name, targetPhase, caption }) {
     setUploading(true);
     try {
-      const up = await uploadFile('/uploads/image', {
-        uri: asset.uri,
-        type: mimeType,
-        name: asset.fileName || `photo_${Date.now()}.${ext}`,
-      });
+      const up = await uploadFile('/uploads/image', { uri, type: mimeType, name });
 
       await api.post(`/bookings/${bookingId}/photos`, {
         phase: targetPhase,
         url: up.url,
         path: up.path,
+        ...(caption ? { caption } : {}),
       });
 
       await load();
@@ -174,18 +185,34 @@ export default function BookingPhotos({ bookingId, canAttach = false, phase }) {
                 <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                   <View style={styles.thumbRow}>
                     {phasePhotos.map((ph) => (
-                      <Pressable
-                        key={ph.id}
-                        onPress={() => setViewerIndex(indexOfPhoto.get(ph.id) ?? 0)}
-                        accessibilityRole="imagebutton"
-                        accessibilityLabel={`${PHASE_LABEL[p]} photo, tap to view full screen`}
-                        style={({ pressed }) => [pressed && styles.thumbPressed]}
-                      >
-                        <Image
-                          source={{ uri: ph.url }}
-                          style={styles.thumb}
-                        />
-                      </Pressable>
+                      <View key={ph.id}>
+                        <Pressable
+                          onPress={() => setViewerIndex(indexOfPhoto.get(ph.id) ?? 0)}
+                          accessibilityRole="imagebutton"
+                          accessibilityLabel={`${PHASE_LABEL[p]} photo, tap to view full screen`}
+                          style={({ pressed }) => [pressed && styles.thumbPressed]}
+                        >
+                          <Image
+                            source={{ uri: ph.url }}
+                            style={styles.thumb}
+                          />
+                        </Pressable>
+
+                        {/* Markup is a separate target from viewing, so tapping
+                            a photo never surprises anyone into an editor. */}
+                        {canAttach && (
+                          <TouchableOpacity
+                            onPress={() => setAnnotating({ url: ph.url, phase: p })}
+                            disabled={uploading}
+                            accessibilityRole="button"
+                            accessibilityLabel={`Mark up this ${PHASE_LABEL[p].toLowerCase()} photo`}
+                            hitSlop={8}
+                            style={styles.markupBadge}
+                          >
+                            <Feather name="edit-2" size={12} color={colors.textPrimary} />
+                          </TouchableOpacity>
+                        )}
+                      </View>
                     ))}
                   </View>
                 </ScrollView>
@@ -208,6 +235,26 @@ export default function BookingPhotos({ bookingId, canAttach = false, phase }) {
         initialIndex={viewerIndex ?? 0}
         onClose={() => setViewerIndex(null)}
       />
+
+      <PhotoAnnotator
+        visible={annotating !== null}
+        uri={annotating?.url}
+        onCancel={() => setAnnotating(null)}
+        onSave={async (markedUri) => {
+          const target = annotating;
+          setAnnotating(null);
+          if (!target) return;
+          // Uploaded as a NEW photo in the same phase — the original is never
+          // replaced, so the unedited evidence survives alongside the markup.
+          await attachFile({
+            uri: markedUri,
+            mimeType: 'image/jpeg',
+            name: `markup_${Date.now()}.jpg`,
+            targetPhase: target.phase,
+            caption: 'Marked up',
+          });
+        }}
+      />
     </Surface>
   );
 }
@@ -219,6 +266,21 @@ const styles = StyleSheet.create({
   },
   thumbPressed: {
     opacity: 0.8,
+  },
+  markupBadge: {
+    position: 'absolute',
+    right: 4,
+    bottom: 4,
+    width: 24,
+    height: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: radius.chip,
+    backgroundColor: colors.surface,
+    // Sits on top of arbitrary photo content, so it needs its own boundary to
+    // stay findable on a light image (WCAG 1.4.11).
+    borderWidth: 1,
+    borderColor: colors.borderStrong,
   },
   thumb: {
     width: 92,
