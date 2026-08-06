@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  View, Image, ScrollView, ActivityIndicator, Alert, TouchableOpacity, StyleSheet,
+  View, Image, ScrollView, ActivityIndicator, Alert, TouchableOpacity, Pressable, StyleSheet,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Feather } from '@expo/vector-icons';
@@ -11,6 +11,7 @@ import Stack from './Stack';
 import Inline from './Inline';
 import Surface from './Surface';
 import Button from './Button';
+import ImageViewer from './ImageViewer';
 import { colors, spacing, radius } from '../theme/tokens';
 
 const PHASES = ['before', 'after'];
@@ -29,6 +30,10 @@ export default function BookingPhotos({ bookingId, canAttach = false, phase }) {
   const [items, setItems] = useState([]);
   const [status, setStatus] = useState('loading');
   const [uploading, setUploading] = useState(false);
+  // null = viewer closed. Otherwise the index into `orderedUrls` below, which is
+  // flattened in the same order the thumbnails render so swiping in the viewer
+  // walks Before → After exactly as the eye does.
+  const [viewerIndex, setViewerIndex] = useState(null);
   const mounted = useRef(true);
 
   const load = useCallback(async () => {
@@ -122,6 +127,18 @@ export default function BookingPhotos({ bookingId, canAttach = false, phase }) {
 
   const totalCount = items.length;
 
+  // One flat, ordered list of URLs for the lightbox, plus the index each
+  // thumbnail maps to. Built from `byPhase` rather than `items` so it cannot
+  // drift from render order if the API returns the phases interleaved.
+  const orderedUrls = [];
+  const indexOfPhoto = new Map();
+  for (const p of visiblePhases) {
+    for (const ph of byPhase[p]) {
+      indexOfPhoto.set(ph.id, orderedUrls.length);
+      orderedUrls.push(ph.url);
+    }
+  }
+
   return (
     <Surface elevation="subtle" rounded="card" padding="base">
       <Stack spacing="sm">
@@ -157,12 +174,18 @@ export default function BookingPhotos({ bookingId, canAttach = false, phase }) {
                 <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                   <View style={styles.thumbRow}>
                     {phasePhotos.map((ph) => (
-                      <Image
+                      <Pressable
                         key={ph.id}
-                        source={{ uri: ph.url }}
-                        style={styles.thumb}
-                        accessibilityLabel={`${PHASE_LABEL[p]} photo`}
-                      />
+                        onPress={() => setViewerIndex(indexOfPhoto.get(ph.id) ?? 0)}
+                        accessibilityRole="imagebutton"
+                        accessibilityLabel={`${PHASE_LABEL[p]} photo, tap to view full screen`}
+                        style={({ pressed }) => [pressed && styles.thumbPressed]}
+                      >
+                        <Image
+                          source={{ uri: ph.url }}
+                          style={styles.thumb}
+                        />
+                      </Pressable>
                     ))}
                   </View>
                 </ScrollView>
@@ -178,6 +201,13 @@ export default function BookingPhotos({ bookingId, canAttach = false, phase }) {
           </Inline>
         )}
       </Stack>
+
+      <ImageViewer
+        visible={viewerIndex !== null}
+        images={orderedUrls}
+        initialIndex={viewerIndex ?? 0}
+        onClose={() => setViewerIndex(null)}
+      />
     </Surface>
   );
 }
@@ -186,6 +216,9 @@ const styles = StyleSheet.create({
   thumbRow: {
     flexDirection: 'row',
     gap: spacing.sm,
+  },
+  thumbPressed: {
+    opacity: 0.8,
   },
   thumb: {
     width: 92,
