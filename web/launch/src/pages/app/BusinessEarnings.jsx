@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { format, parseISO, subDays, isWithinInterval, startOfDay } from 'date-fns'
 import { CurrencyDollar, ArrowDown, ArrowUp, Clock } from '@phosphor-icons/react'
-import api from '../../lib/api'
+import api, { pageItems } from '../../lib/api'
 import Skeleton from '../../components/Skeleton'
 import Alert from '../../components/Alert'
 import Badge from '../../components/Badge'
@@ -29,7 +29,7 @@ export default function BusinessEarnings() {
 
   const { data: bookings = [], isLoading: bLoading, isError: bError } = useQuery({
     queryKey: ['bookings'],
-    queryFn: () => api.get('/bookings/').then(r => r.data),
+    queryFn: () => api.get('/bookings/').then(pageItems),
   })
 
   const { data: payments } = useQuery({

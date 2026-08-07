@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { CalendarCheck } from '@phosphor-icons/react'
-import api from '../../lib/api'
+import api, { pageItems } from '../../lib/api'
 import Skeleton from '../../components/Skeleton'
 import EmptyState from '../../components/EmptyState'
 import Badge from '../../components/Badge'
@@ -12,7 +12,7 @@ const STATUS_VARIANT = { confirmed: 'accent', in_progress: 'warning', completed:
 export default function Bookings() {
   const { data: bookings, isLoading } = useQuery({
     queryKey: ['bookings'],
-    queryFn: () => api.get('/bookings/').then(r => r.data),
+    queryFn: () => api.get('/bookings/').then(pageItems),
   })
 
   return (

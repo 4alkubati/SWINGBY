@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { Wrench, ArrowRight } from '@phosphor-icons/react'
 import { Link } from 'react-router-dom'
-import api from '../../lib/api'
+import api, { pageItems } from '../../lib/api'
 import Spinner from '../../components/Spinner'
 import Alert from '../../components/Alert'
 import styles from './Dashboard.module.css'
@@ -20,7 +20,7 @@ export default function BusinessServices() {
 
   const { data: bookings } = useQuery({
     queryKey: ['bookings'],
-    queryFn: () => api.get('/bookings/').then(r => r.data),
+    queryFn: () => api.get('/bookings/').then(pageItems),
     enabled: !!biz,
   })
 
