@@ -1003,7 +1003,6 @@ def build(now: datetime | None = None) -> dict:
         escrow_c = 0 if released else total_c
         to_biz_c = (total_c - fee_c) if released else 0
         cut_c = fee_c if released else 0
-        fee = round(fee_c / 100, 2)
         payments.append(
             {
                 "id": did("payment", slug),
