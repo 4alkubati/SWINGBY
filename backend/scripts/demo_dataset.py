@@ -989,16 +989,33 @@ def build(now: datetime | None = None) -> dict:
                 "created_at": _iso(created),
             }
         )
-        fee = round(amount * 0.10, 2)
+        # Cents are the ledger of record (escrow.py:26). Writing only the float
+        # mirrors leaves every *_cents column at 0, which is what the business
+        # earnings screen actually reads — so a fully seeded demo showed $0.00
+        # released against "3 completed jobs". Set both, from one integer source.
+        total_c = int(round(amount * 100))
+        fee_c = int(round(total_c * 0.10))          # escrow.platform_cut_cents
         released = status == "completed"
+        # Held escrow is the WHOLE charge, not charge-minus-fee: the platform cut
+        # is taken at release, not at capture (escrow.compute_hold_cents —
+        # held = max(total - already_released, 0)). Subtracting it here understated
+        # every held booking by 10%.
+        escrow_c = 0 if released else total_c
+        to_biz_c = (total_c - fee_c) if released else 0
+        cut_c = fee_c if released else 0
+        fee = round(fee_c / 100, 2)
         payments.append(
             {
                 "id": did("payment", slug),
                 "booking_id": bid,
                 "total_charged": amount,
-                "escrow_held": 0.0 if released else round(amount - fee, 2),
-                "released_to_business": round(amount - fee, 2) if released else 0.0,
-                "platform_cut": fee,
+                "total_charged_cents": total_c,
+                "escrow_held": round(escrow_c / 100, 2),
+                "escrow_held_cents": escrow_c,
+                "released_to_business": round(to_biz_c / 100, 2),
+                "released_to_business_cents": to_biz_c,
+                "platform_cut": round(cut_c / 100, 2),
+                "platform_cut_cents": cut_c,
                 "stripe_payment_intent_id": None,
                 "status": "fully_released" if released else "held",
                 "released_at": (
