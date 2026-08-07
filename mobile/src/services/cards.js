@@ -65,7 +65,7 @@ export async function addCard({ email } = {}) {
   });
 
   const init = await stripe.initPaymentSheet({
-    merchantDisplayName: sheet.merchant_display_name || 'SwingBy',
+    merchantDisplayName: sheet.merchant_display_name || 'Swingbyy',
     // A SetupIntent, not a PaymentIntent — this is what makes the sheet say
     // "Save" instead of naming an amount.
     setupIntentClientSecret: sheet.setup_intent_client_secret,

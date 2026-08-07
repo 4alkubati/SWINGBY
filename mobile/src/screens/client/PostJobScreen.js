@@ -251,7 +251,7 @@ function PhotoPicker({ photos, setPhotos, uploading, setUploading }) {
     if (status !== 'granted') {
       Alert.alert(
         'Photos permission required',
-        'Allow SwingBy to access your photos so you can attach images to your job post.',
+        'Allow Swingbyy to access your photos so you can attach images to your job post.',
         [{ text: 'OK' }],
       );
       return;

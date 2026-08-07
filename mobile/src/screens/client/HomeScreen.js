@@ -325,11 +325,11 @@ export default function HomeScreen({ navigation }) {
           variant="h1"
           style={styles.logo}
           accessibilityRole="header"
-          accessibilityLabel="SwingBy"
+          accessibilityLabel="Swingbyy"
         >
           Swing
           <Text variant="h1" style={{ color: colors.accentText }}>
-            By
+            byy
           </Text>
         </Text>
 

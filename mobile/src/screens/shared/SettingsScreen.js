@@ -187,7 +187,7 @@ export default function SettingsScreen() {
     try {
       const result = await api.get('/me/export');
       const content = typeof result === 'object' ? JSON.stringify(result, null, 2) : String(result);
-      await Share.share({ message: content, title: 'My SwingBy Data' });
+      await Share.share({ message: content, title: 'My Swingbyy Data' });
     } catch (err) {
       showToast({ type: 'error', text1: 'Export failed', text2: err.message });
     } finally {
@@ -510,7 +510,7 @@ export default function SettingsScreen() {
 
           {/* Version footer */}
           <Text variant="caption" color="secondary" style={styles.versionText}>
-            SwingBy v{APP_VERSION}
+            Swingbyy v{APP_VERSION}
           </Text>
         </Stack>
       </ScrollView>

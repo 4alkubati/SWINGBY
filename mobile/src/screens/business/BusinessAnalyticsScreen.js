@@ -151,7 +151,7 @@ async function exportAnalytics(format) {
     format === 'json' ? JSON.stringify(JSON.parse(resp), null, 2) : resp;
   const stamp = new Date().toISOString().slice(0, 10);
   await Share.share({
-    title: `SwingBy analytics — ${stamp}`,
+    title: `Swingbyy analytics — ${stamp}`,
     message: content,
   });
 }

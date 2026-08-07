@@ -569,7 +569,7 @@ export default function ChatScreen({ navigation, route }) {
         showToast({
           type: 'info',
           text1: 'Contact info hidden',
-          text2: 'Keep phone numbers and emails in SwingBy — payments and support are only covered here.',
+          text2: 'Keep phone numbers and emails in Swingbyy — payments and support are only covered here.',
         });
       }
     } catch {
@@ -1314,7 +1314,7 @@ export default function ChatScreen({ navigation, route }) {
       {/* Off-platform-leakage notice (item 31) — always visible above the
           composer so hidden phone/email content never reads as a bug. */}
       <Text variant="caption" color="secondary" style={styles.leakageNote}>
-        Keep it on SwingBy — shared phone numbers and emails are hidden.
+        Keep it on Swingbyy — shared phone numbers and emails are hidden.
       </Text>
 
       {/* ── Input bar ──────────────────────────────────────────────────────── */}

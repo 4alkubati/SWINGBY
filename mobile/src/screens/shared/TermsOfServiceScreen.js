@@ -15,25 +15,25 @@ const LAST_UPDATED = 'June 2026';
 const SECTIONS = [
   {
     title: '1. Use of the Platform',
-    body: `By creating an account on SwingBy, you agree to use the platform only for lawful purposes. You must be at least 18 years old to create an account.\n\n` +
+    body: `By creating an account on Swingbyy, you agree to use the platform only for lawful purposes. You must be at least 18 years old to create an account.\n\n` +
       `Clients ("users") may post service requests and accept quotes from service providers. Service providers ("businesses") may submit quotes and complete booked jobs through the platform.\n\n` +
       `You agree not to: misrepresent your identity or credentials, post fraudulent job listings or quotes, attempt to circumvent the platform's payment system, or engage in harassment or abusive behaviour toward other users.\n\n` +
-      `SwingBy reserves the right to suspend or terminate accounts that violate these terms.`,
+      `Swingbyy reserves the right to suspend or terminate accounts that violate these terms.`,
   },
   {
     title: '2. Payments, Escrow & Refunds',
-    body: `All payments on SwingBy are processed through our payment partner. When a client accepts a quote, payment is held in escrow until the job is marked complete by the service provider and photo proof is submitted.\n\n` +
-      `Payment is automatically released to the service provider upon job completion. In cases of dispute, SwingBy may hold payment pending investigation.\n\n` +
+    body: `All payments on Swingbyy are processed through our payment partner. When a client accepts a quote, payment is held in escrow until the job is marked complete by the service provider and photo proof is submitted.\n\n` +
+      `Payment is automatically released to the service provider upon job completion. In cases of dispute, Swingbyy may hold payment pending investigation.\n\n` +
       `Cancellations by the client are subject to a ladder measured against the confirmed date: more than 48 hours before, you are refunded in full; within 48 hours, 75% is refunded and 25% goes to the business; if the confirmed time has already passed, 50% is refunded. If no date has been confirmed yet, you are refunded in full.\n\n` +
       `If the business cancels, you are refunded in full regardless of timing, and a goodwill credit is applied to your account for late or no-show cancellations.\n\n` +
-      `If a dispute arises after work has started, SwingBy will review submitted evidence (photos, messages) and make a final determination.\n\n` +
-      `SwingBy charges a platform fee on each completed transaction. This fee is disclosed at the time of booking.`,
+      `If a dispute arises after work has started, Swingbyy will review submitted evidence (photos, messages) and make a final determination.\n\n` +
+      `Swingbyy charges a platform fee on each completed transaction. This fee is disclosed at the time of booking.`,
   },
   {
     title: '3. Disclaimers & Limitation of Liability',
-    body: `SwingBy is a marketplace that connects clients with independent service providers. We do not employ service providers, and we are not responsible for the quality, safety, legality, or completion of services performed.\n\n` +
+    body: `Swingbyy is a marketplace that connects clients with independent service providers. We do not employ service providers, and we are not responsible for the quality, safety, legality, or completion of services performed.\n\n` +
       `We verify business licenses where indicated by a "Verified" badge, but verification does not constitute an endorsement or guarantee of service quality.\n\n` +
-      `To the maximum extent permitted by law, SwingBy's liability for any claim arising from your use of the platform is limited to the amount you paid for the relevant transaction.\n\n` +
+      `To the maximum extent permitted by law, Swingbyy's liability for any claim arising from your use of the platform is limited to the amount you paid for the relevant transaction.\n\n` +
       `These terms are governed by the laws of Alberta, Canada. For questions, contact legal@swingbyy.com`,
   },
 ];
@@ -84,7 +84,7 @@ export default function TermsOfServiceScreen() {
         </Stack>
 
         <Text variant="body" color="secondary">
-          Please read these Terms of Service carefully before using SwingBy. By accessing or using our platform, you agree to be bound by these terms.
+          Please read these Terms of Service carefully before using Swingbyy. By accessing or using our platform, you agree to be bound by these terms.
         </Text>
 
         {SECTIONS.map((section, i) => (

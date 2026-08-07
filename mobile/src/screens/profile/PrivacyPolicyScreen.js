@@ -15,14 +15,14 @@ const LAST_UPDATED = 'July 2026';
 const SECTIONS = [
   {
     title: '1. Information We Collect',
-    body: `When you use SwingBy, we collect information you provide directly to us, such as when you create an account, post a job, send a message, or contact support.\n\n` +
+    body: `When you use Swingbyy, we collect information you provide directly to us, such as when you create an account, post a job, send a message, or contact support.\n\n` +
       `This includes: name, email address, phone number, location data (for matching you with nearby service providers), payment information (processed securely via our payment partner), and photos you upload as part of a job post or proof of work.\n\n` +
       `We also automatically collect certain usage data, including device identifiers, app interaction logs, and IP address.`,
   },
   {
     title: '2. How We Use Your Information',
     body: `We use the information we collect to:\n\n` +
-      `• Operate and improve the SwingBy platform\n` +
+      `• Operate and improve the Swingbyy platform\n` +
       `• Match clients with service providers in their area\n` +
       `• Process payments and protect both parties through escrow\n` +
       `• Send you booking confirmations, status updates, and service notifications\n` +
@@ -33,7 +33,7 @@ const SECTIONS = [
   {
     title: '3. Your Rights & Data Retention',
     body: `You have the right to access, correct, export, or delete your personal data. You can export your data directly from Settings → Export my data.\n\n` +
-      `Deleting your account scrubs your personal identifiers (name, email, phone, photo). Because SwingBy handles payments, financial records (bookings, payments, invoices) are kept in de-identified form for 6 years from the end of the tax year they relate to, as Canadian tax law requires — so deletion means we anonymize your account, not that we erase records we are legally required to keep. The app also offers a reversible "ghost mode" that hides your profile without deleting your account.\n\n` +
+      `Deleting your account scrubs your personal identifiers (name, email, phone, photo). Because Swingbyy handles payments, financial records (bookings, payments, invoices) are kept in de-identified form for 6 years from the end of the tax year they relate to, as Canadian tax law requires — so deletion means we anonymize your account, not that we erase records we are legally required to keep. The app also offers a reversible "ghost mode" that hides your profile without deleting your account.\n\n` +
       `For privacy questions or requests, contact us at: privacy@swingbyy.com\n\n` +
       `This policy may be updated periodically. We will notify you of material changes through the app. Our full privacy policy is governed by Canada's PIPEDA and Alberta's PIPA.`,
   },
@@ -85,7 +85,7 @@ export default function PrivacyPolicyScreen() {
         </Stack>
 
         <Text variant="body" color="secondary">
-          SwingBy ("we", "us", "our") is committed to protecting your privacy. This policy explains how we collect, use, and protect your personal information when you use our app.
+          Swingbyy ("we", "us", "our") is committed to protecting your privacy. This policy explains how we collect, use, and protect your personal information when you use our app.
         </Text>
 
         {SECTIONS.map((section, i) => (
