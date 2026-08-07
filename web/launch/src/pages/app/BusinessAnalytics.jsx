@@ -6,7 +6,7 @@ import {
 } from 'recharts'
 import { format, subDays, parseISO, startOfDay, isWithinInterval } from 'date-fns'
 import { CurrencyDollar, CalendarCheck, Star } from '@phosphor-icons/react'
-import api from '../../lib/api'
+import api, { pageItems } from '../../lib/api'
 import Skeleton from '../../components/Skeleton'
 import Alert from '../../components/Alert'
 import StatCard from '../../components/StatCard'
@@ -38,7 +38,7 @@ export default function BusinessAnalytics() {
 
   const { data: bookings = [], isLoading: bLoading, isError: bError } = useQuery({
     queryKey: ['bookings'],
-    queryFn: () => api.get('/bookings/').then(r => r.data),
+    queryFn: () => api.get('/bookings/').then(pageItems),
   })
 
   // GET /businesses/me/analytics is implemented (businesses.py::get_my_analytics)

@@ -4,7 +4,7 @@ import {
   ChartBar, CurrencyDollar, CalendarCheck, Users, ArrowRight, Star,
   LockSimple, ArrowSquareOut,
 } from '@phosphor-icons/react'
-import api from '../../lib/api'
+import api, { pageItems } from '../../lib/api'
 import { useUser } from '../../hooks/useUser'
 import StatCard from '../../components/StatCard'
 import Spinner from '../../components/Spinner'
@@ -127,7 +127,7 @@ export default function BizDashboard() {
 
   const { data: bookingsData, isLoading: bookingsLoading } = useQuery({
     queryKey: ['bookings'],
-    queryFn: () => api.get('/bookings/').then(r => r.data),
+    queryFn: () => api.get('/bookings/').then(pageItems),
   })
 
   const { data: bizData } = useQuery({

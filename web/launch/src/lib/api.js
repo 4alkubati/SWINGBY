@@ -28,4 +28,21 @@ api.interceptors.response.use(
   }
 )
 
+/**
+ * Unwrap a paginated list endpoint.
+ *
+ * `GET /bookings/` returns `{items, limit, offset, next_offset}` — never a bare
+ * array. Six pages independently wrote `.then(r => r.data)` and then treated the
+ * result as a list. The envelope object is truthy, so a `= []` useQuery default
+ * never fires, and the page either crashes on `.map` or silently renders "none".
+ *
+ * Anything reading a list endpoint should go through this rather than reaching
+ * for `.data` and hoping.
+ */
+export const pageItems = (res) => {
+  const body = res?.data
+  if (Array.isArray(body)) return body        // tolerate a bare array
+  return Array.isArray(body?.items) ? body.items : []
+}
+
 export default api
