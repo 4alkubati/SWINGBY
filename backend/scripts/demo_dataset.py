@@ -552,7 +552,7 @@ BOOKINGS = [
         None,
         "Cleaning",
         190.0,
-        "confirmed",
+        "in_progress",
         "held",
         1,
         3,
@@ -984,37 +984,30 @@ def build(now: datetime | None = None) -> dict:
                 "proposed_date_1": _iso(confirmed),
                 "proposed_date_2": _iso(confirmed + timedelta(days=1)),
                 "proposed_date_3": _iso(confirmed + timedelta(days=2)),
-                "confirmed_date": _iso(confirmed),
+                # ONLY in_progress/completed may carry a confirmed_date. The API
+                # writes the date and flips the status to in_progress in the SAME
+                # update (bookings.py confirm-date), so `confirmed` + a date is a
+                # state production cannot reach — and the business app treats it
+                # as impossible: bookingBuckets.js buckets every `confirmed` row
+                # to needsAction, so a dated one never appears under Today or
+                # Upcoming. The client screen reads confirmed_date directly and
+                # DID show it, which is how one booking looked confirmed to the
+                # client and non-existent to the business.
+                "confirmed_date": None if status == "confirmed" else _iso(confirmed),
                 "date_proposed_by": owner_id,
                 "created_at": _iso(created),
             }
         )
-        # Cents are the ledger of record (escrow.py:26). Writing only the float
-        # mirrors leaves every *_cents column at 0, which is what the business
-        # earnings screen actually reads — so a fully seeded demo showed $0.00
-        # released against "3 completed jobs". Set both, from one integer source.
-        total_c = int(round(amount * 100))
-        fee_c = int(round(total_c * 0.10))          # escrow.platform_cut_cents
+        fee = round(amount * 0.10, 2)
         released = status == "completed"
-        # Held escrow is the WHOLE charge, not charge-minus-fee: the platform cut
-        # is taken at release, not at capture (escrow.compute_hold_cents —
-        # held = max(total - already_released, 0)). Subtracting it here understated
-        # every held booking by 10%.
-        escrow_c = 0 if released else total_c
-        to_biz_c = (total_c - fee_c) if released else 0
-        cut_c = fee_c if released else 0
         payments.append(
             {
                 "id": did("payment", slug),
                 "booking_id": bid,
                 "total_charged": amount,
-                "total_charged_cents": total_c,
-                "escrow_held": round(escrow_c / 100, 2),
-                "escrow_held_cents": escrow_c,
-                "released_to_business": round(to_biz_c / 100, 2),
-                "released_to_business_cents": to_biz_c,
-                "platform_cut": round(cut_c / 100, 2),
-                "platform_cut_cents": cut_c,
+                "escrow_held": 0.0 if released else round(amount - fee, 2),
+                "released_to_business": round(amount - fee, 2) if released else 0.0,
+                "platform_cut": fee,
                 "stripe_payment_intent_id": None,
                 "status": "fully_released" if released else "held",
                 "released_at": (

@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { format, parseISO } from 'date-fns'
 import { DownloadSimple, FileCsv, FileXls, CheckCircle } from '@phosphor-icons/react'
 import ExcelJS from 'exceljs'
-import api from '../../lib/api'
+import api, { pageItems } from '../../lib/api'
 import Button from '../../components/Button'
 import Spinner from '../../components/Spinner'
 import Alert from '../../components/Alert'
@@ -101,7 +101,7 @@ export default function BusinessExports() {
 
   const { data: bookings = [], isLoading, isError } = useQuery({
     queryKey: ['bookings'],
-    queryFn: () => api.get('/bookings/').then(r => r.data),
+    queryFn: () => api.get('/bookings/').then(pageItems),
   })
 
   // Ledger-backed earnings. Summing bookings.total_amount answers "what was
