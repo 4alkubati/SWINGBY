@@ -1000,8 +1000,8 @@ const lane3 = {
   // Two different promises, deliberately. 'native' = Stripe's Payment Sheet
   // opens right here (M9). 'Sub' (hosted Checkout fallback) has to warn that a
   // browser is about to open, or the client thinks the app broke.
-  'pay.methodCardSub': 'Opens a secure Stripe page — Swingbyy never stores your card.',
-  'pay.methodCardSubNative': 'Entered securely in the app — Swingbyy never stores it.',
+  'pay.methodCardSub': 'Opens a secure Stripe page. Saved for next time — Swingbyy never sees your card number.',
+  'pay.methodCardSubNative': 'Entered securely via Stripe and saved for next time — Swingbyy never sees your card number.',
   'pay.addMethod': 'Add a payment method',
   'pay.noMethodHint': 'Add a card to continue. Nothing is charged until you confirm.',
   'pay.escrow':
@@ -1672,9 +1672,9 @@ Object.assign(translations['fr-CA'], {
   'pay.savedCard': 'Carte enregistrée',
   'pay.methodCard': 'Carte',
   'pay.methodCardSub':
-    'Ouvre une page Stripe sécurisée — Swingbyy n’enregistre jamais votre carte.',
+    'Ouvre une page Stripe sécurisée. Carte conservée pour la prochaine fois — Swingbyy ne voit jamais son numéro.',
   'pay.methodCardSubNative':
-    'Saisie de façon sécurisée dans l’application — Swingbyy ne l’enregistre pas.',
+    'Saisie de façon sécurisée via Stripe et conservée pour la prochaine fois — Swingbyy ne voit jamais son numéro.',
   'pay.addMethod': 'Ajouter un moyen de paiement',
   'pay.noMethodHint':
     'Ajoutez une carte pour continuer. Rien n’est débité avant votre confirmation.',
@@ -1793,8 +1793,8 @@ Object.assign(translations.ar, {
   'pay.expires': 'ينتهي في %{date}',
   'pay.savedCard': 'بطاقة محفوظة',
   'pay.methodCard': 'بطاقة',
-  'pay.methodCardSub': 'يفتح صفحة Stripe آمنة — لا تحفظ Swingbyy بطاقتك أبدًا.',
-  'pay.methodCardSubNative': 'تُدخَل بأمان داخل التطبيق — ولا تحفظها Swingbyy.',
+  'pay.methodCardSub': 'يفتح صفحة Stripe آمنة. تُحفظ بطاقتك للمرة القادمة — ولا ترى Swingbyy رقم بطاقتك أبدًا.',
+  'pay.methodCardSubNative': 'تُدخَل بأمان عبر Stripe وتُحفظ للمرة القادمة — ولا ترى Swingbyy رقم بطاقتك أبدًا.',
   'pay.addMethod': 'أضف طريقة دفع',
   'pay.noMethodHint': 'أضف بطاقة للمتابعة. لن يُخصم أي مبلغ حتى تؤكّد.',
   'pay.escrow':
@@ -2178,8 +2178,8 @@ Object.assign(translations.uk, {
   'pay.expires': 'Спливає %{date}',
   'pay.savedCard': 'Збережена картка',
   'pay.methodCard': 'Картка',
-  'pay.methodCardSub': 'Відкриє захищену сторінку Stripe — Swingbyy ніколи не зберігає вашу картку.',
-  'pay.methodCardSubNative': 'Вводиться безпечно в застосунку — Swingbyy її не зберігає.',
+  'pay.methodCardSub': 'Відкриє захищену сторінку Stripe. Картку збережено на наступний раз — Swingbyy ніколи не бачить її номер.',
+  'pay.methodCardSubNative': 'Вводиться безпечно через Stripe і зберігається на наступний раз — Swingbyy ніколи не бачить її номер.',
   'pay.addMethod': 'Додати спосіб оплати',
   'pay.noMethodHint': 'Додайте картку, щоб продовжити. Нічого не спишеться, доки ви не підтвердите.',
   'pay.escrow': 'На депонуванні — переказується лише після того, як ви схвалите роботу. Безкоштовне скасування за 48 год.',
