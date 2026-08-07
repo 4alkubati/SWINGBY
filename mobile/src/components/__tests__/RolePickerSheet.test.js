@@ -10,6 +10,13 @@
 // them behind a sheet they cannot dismiss.
 import React from 'react';
 import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+
+// gesture-handler v3 makes GestureDetector THROW when it is not under a
+// GestureHandlerRootView; v2 only warned. App.js has always wrapped the real
+// tree (App.js:176), so tests rendering a sheet in isolation were the only
+// thing relying on the old leniency. Wrapping here mirrors production rather
+// than mocking the requirement away.
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { ThemeProvider } from '../../theme/ThemeProvider';
@@ -21,6 +28,7 @@ import { api } from '../../services/api';
 
 function renderSheet(props = {}) {
   return render(
+    <GestureHandlerRootView>
     <SafeAreaProvider
       initialMetrics={{
         frame: { x: 0, y: 0, width: 390, height: 844 },
@@ -30,7 +38,8 @@ function renderSheet(props = {}) {
       <ThemeProvider>
         <RolePickerSheet visible onDone={jest.fn()} {...props} />
       </ThemeProvider>
-    </SafeAreaProvider>,
+    </SafeAreaProvider>
+    </GestureHandlerRootView>,
   );
 }
 
