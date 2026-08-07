@@ -100,7 +100,7 @@ export default function ImportedReviewsSection({ reviews, summary, style }) {
         </Inline>
         <Text variant="caption" color={colors.textTertiary} style={styles.caption}>
           Imported from this business&apos;s own Google Business Profile. These are
-          not SwingBy jobs and are not counted in its SwingBy rating.
+          not Swingbyy jobs and are not counted in its Swingbyy rating.
         </Text>
       </View>
 

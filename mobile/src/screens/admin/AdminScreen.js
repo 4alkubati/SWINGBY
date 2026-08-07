@@ -55,7 +55,7 @@ export default function AdminScreen({ navigation }) {
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <Animated.View entering={FadeInDown.duration(400).delay(80)}>
-          <Text style={styles.eyebrow}>SwingBy</Text>
+          <Text style={styles.eyebrow}>Swingbyy</Text>
           <Text style={styles.title}>Admin</Text>
           <Text style={styles.subtitle}>
             Signed in as {user?.first_name || 'admin'} ({user?.email})

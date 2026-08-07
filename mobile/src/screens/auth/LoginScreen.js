@@ -118,7 +118,7 @@ export default function LoginScreen({ navigation }) {
               Welcome back
             </Text>
             <Text style={styles.subtitle}>
-              Log in to your SwingBy account
+              Log in to your Swingbyy account
             </Text>
           </Animated.View>
 

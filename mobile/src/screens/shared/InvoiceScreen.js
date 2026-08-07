@@ -186,7 +186,7 @@ export default function InvoiceScreen({ navigation, route }) {
         <Stack spacing="lg">
           <Surface elevation="subtle" padding="base" rounded="card">
             <Stack spacing="xs">
-              <Text variant="display3">SwingBy</Text>
+              <Text variant="display3">Swingbyy</Text>
               <Text variant="caption" color="secondary">Invoice {invoice_number}</Text>
               <Text variant="caption" color="secondary">Issued {fmtDate(issued_at)}</Text>
             </Stack>

@@ -175,7 +175,7 @@ export default function LiveLocationSharing({ bookingId, bookingStatus }) {
           </Inline>
           <Text variant="caption" color="secondary">
             The client can see your status updates but not your position on the
-            map. Turn location on for SwingBy to show them where you are.
+            map. Turn location on for Swingbyy to show them where you are.
           </Text>
           <Button
             variant="secondary"
@@ -203,7 +203,7 @@ export default function LiveLocationSharing({ bookingId, bookingStatus }) {
         <Text variant="caption" color="secondary">
           Only this client, only while you're on the way. It stops by itself the
           moment you tap “I have arrived”, and whenever you close the app —
-          SwingBy never tracks you in the background.
+          Swingbyy never tracks you in the background.
         </Text>
 
         {problem === 'network' && (

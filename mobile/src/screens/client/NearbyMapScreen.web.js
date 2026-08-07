@@ -11,7 +11,7 @@ export default function NearbyMapScreen() {
       <View style={styles.card}>
         <Text style={styles.title}>Nearby map</Text>
         <Text style={styles.body}>
-          Open the SwingBy app on your phone to browse nearby businesses on the map.
+          Open the Swingbyy app on your phone to browse nearby businesses on the map.
         </Text>
       </View>
     </View>

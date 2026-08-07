@@ -22,9 +22,9 @@ import Surface from '../../components/Surface';
 const FAQS = [
   {
     id: '1',
-    question: 'How does SwingBy work?',
+    question: 'How does Swingbyy work?',
     answer:
-      'SwingBy connects you with local service businesses in minutes. Post a job describing what you need — plumbing fix, house cleaning, lawn care, etc. — and set your preferred date. Nearby businesses will send you quotes. You review them side-by-side and accept the best one. Payment is handled securely through the app, and released to the business only after the job is completed.',
+      'Swingbyy connects you with local service businesses in minutes. Post a job describing what you need — plumbing fix, house cleaning, lawn care, etc. — and set your preferred date. Nearby businesses will send you quotes. You review them side-by-side and accept the best one. Payment is handled securely through the app, and released to the business only after the job is completed.',
   },
   {
     id: '2',
@@ -46,7 +46,7 @@ const FAQS = [
   },
   {
     id: '5',
-    question: 'How do I become a business on SwingBy?',
+    question: 'How do I become a business on Swingbyy?',
     answer:
       'Sign up and select "I offer services" on the onboarding screen. You\'ll be asked for your business name, category, and service area. Once your profile is set up, you can start responding to job posts from clients in your area. For verified status (the green badge), submit your business license — our team reviews it manually within 1–2 business days.',
   },

@@ -1192,7 +1192,7 @@ export default function BookingDetailsScreen({ route, navigation }) {
         </Pressable>
       )}
 
-      {/* M9 — SwingBy-branded pay sheet in front of the existing mechanism */}
+      {/* M9 — Swingbyy-branded pay sheet in front of the existing mechanism */}
       <PaySheet
         visible={payVisible}
         mode="pay"
@@ -1227,7 +1227,7 @@ export default function BookingDetailsScreen({ route, navigation }) {
           >
             <Text variant="h1">How was it paid?</Text>
             <Text variant="body" color="secondary">
-              Recording only — SwingBy doesn't touch the money.
+              Recording only — Swingbyy doesn't touch the money.
             </Text>
             <Button
               label="Cash"

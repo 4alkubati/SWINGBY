@@ -23,7 +23,7 @@ const SHEET = {
   publishable_key: 'pk_test_1',
   amount_cents: 20000,
   currency: 'cad',
-  merchant_display_name: 'SwingBy',
+  merchant_display_name: 'Swingbyy',
 };
 
 // NOT jest.isolateModules: nativePay requires the native module LAZILY, at pay
@@ -142,7 +142,7 @@ describe('the fallback rule', () => {
 });
 
 describe('the happy path', () => {
-  it('presents a SwingBy-branded sheet and settles server-side', async () => {
+  it('presents a Swingbyy-branded sheet and settles server-side', async () => {
     const stripe = workingStripe();
     const mod = loadModuleWithStripe(stripe);
     api.post
@@ -166,7 +166,7 @@ describe('the happy path', () => {
     expect(init.customerId).toBe('cus_1');
     expect(init.customerEphemeralKeySecret).toBe('ek_1');
     // Branding: the sheet must say SwingBy.
-    expect(init.merchantDisplayName).toBe('SwingBy');
+    expect(init.merchantDisplayName).toBe('Swingbyy');
     // Escrow depends on the money having actually arrived before work is
     // scheduled. Delayed methods settle days later — FINDING C by another name.
     expect(init.allowsDelayedPaymentMethods).toBe(false);

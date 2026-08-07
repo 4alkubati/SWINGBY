@@ -53,12 +53,12 @@ const STEPS = [
   {
     icon: 'lock',
     title: 'Payment is taken up front',
-    body: 'When you accept a quote, the full amount is charged and held by SwingBy — not sent to the business yet.',
+    body: 'When you accept a quote, the full amount is charged and held by Swingbyy — not sent to the business yet.',
   },
   {
     icon: 'credit-card',
     title: 'Your card is saved for next time',
-    body: 'The card you pay with is stored securely by Stripe, so booking again takes one tap instead of retyping it. SwingBy never sees your card number. Add or remove cards below, any time.',
+    body: 'The card you pay with is stored securely by Stripe, so booking again takes one tap instead of retyping it. Swingbyy never sees your card number. Add or remove cards below, any time.',
   },
   {
     icon: 'check-circle',
@@ -68,7 +68,7 @@ const STEPS = [
     // had already been pulled from the store listing and five marketing files.
     // escrow.py is the authority: the money is released when the client
     // approves, or automatically 24h after the business marks the work done.
-    body: 'The money is released when you approve the finished work — or automatically 24 hours after the business marks it done. SwingBy keeps a 10% platform fee.',
+    body: 'The money is released when you approve the finished work — or automatically 24 hours after the business marks it done. Swingbyy keeps a 10% platform fee.',
   },
   {
     icon: 'shield',
@@ -170,7 +170,7 @@ export default function PaymentMethodScreen({ navigation }) {
         showsVerticalScrollIndicator={false}
       >
         <Text style={styles.intro}>
-          SwingBy handles the money for every booking made in the app, so you
+          Swingbyy handles the money for every booking made in the app, so you
           never have to chase a payment or settle up on the doorstep.
         </Text>
 
@@ -266,7 +266,7 @@ export default function PaymentMethodScreen({ navigation }) {
 
         <Text style={styles.footer}>
           Agreed a job in cash or by e-transfer? Mark it as paid on the booking
-          and SwingBy records it — no fee is taken on off-platform payments.
+          and Swingbyy records it — no fee is taken on off-platform payments.
         </Text>
       </ScrollView>
     </View>

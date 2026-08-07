@@ -78,15 +78,15 @@ const translations = {
     'onboarding.slide3Sub': 'Photo proof on job complete. Escrow protects your payment.',
 
     // Referral
-    'referral.title': 'Share SwingBy, get $10 credit',
+    'referral.title': 'Share Swingbyy, get $10 credit',
     'referral.body': 'When your friend completes their first booking, you both get $10 off your next job.',
-    'referral.shareText': 'Join me on SwingBy! Code: %{code} — https://swingbyy.com',
+    'referral.shareText': 'Join me on Swingbyy! Code: %{code} — https://swingbyy.com',
     'referral.shareCTA': 'Share my code',
     'referral.stats': '%{friends} friends joined • $%{earned} earned',
 
     // FAQ
     'faq.title': 'Help & FAQ',
-    'faq.q1': 'How does SwingBy work?',
+    'faq.q1': 'How does Swingbyy work?',
     'faq.q2': 'How do quotes get accepted?',
     'faq.q3': 'When does payment happen?',
     'faq.q4': 'What if a job goes wrong?',
@@ -155,12 +155,12 @@ const translations = {
     'profile.photoUploading': 'Uploading photo…',
     'profile.photoUpdated': 'Photo updated',
     'profile.photoUploadError': 'Could not upload photo',
-    'profile.photoPermission': 'Allow SwingBy to access your photos to set a profile picture.',
+    'profile.photoPermission': 'Allow Swingbyy to access your photos to set a profile picture.',
 
     // Dispute photo upload (GAP-AUDIT #12)
     'dispute.photoUploading': 'Uploading…',
     'dispute.photoUploadError': 'Could not upload photo',
-    'dispute.photoPermission': 'Allow SwingBy to access your photos to attach evidence.',
+    'dispute.photoPermission': 'Allow Swingbyy to access your photos to attach evidence.',
     'dispute.addPhoto': 'Add photo',
     'dispute.photosOptional': 'Optional — add up to 3 photos as evidence.',
 
@@ -224,12 +224,12 @@ const translations = {
     'dashboard.moneyUnavailable': 'Could not load payment totals',
 
     // Biometric app-lock (CARD-24)
-    'biometric.lockedTitle': 'Unlock SwingBy',
+    'biometric.lockedTitle': 'Unlock Swingbyy',
     'biometric.lockedBody': 'Use Face ID, Touch ID, or your fingerprint to continue.',
     'biometric.unlockCta': 'Unlock',
     'biometric.declinedHint': "Didn't work? Try again or sign in differently.",
     'biometric.useDifferentAccount': 'Sign in differently',
-    'biometric.prompt': 'Unlock SwingBy',
+    'biometric.prompt': 'Unlock Swingbyy',
 
     // Settings — biometric toggle (CARD-24)
     'settings.biometricUnlock': 'Face ID / Fingerprint Unlock',
@@ -401,15 +401,15 @@ const translations = {
     'onboarding.slide3Sub': "Preuve photo à la fin du travail. L'entiercement protège votre paiement.",
 
     // Referral
-    'referral.title': 'Partagez SwingBy, obtenez 10$ de crédit',
+    'referral.title': 'Partagez Swingbyy, obtenez 10$ de crédit',
     'referral.body': 'Quand votre ami complète sa première réservation, vous recevez tous les deux 10$ de rabais.',
-    'referral.shareText': 'Rejoignez-moi sur SwingBy! Code: %{code} — https://swingbyy.com',
+    'referral.shareText': 'Rejoignez-moi sur Swingbyy! Code: %{code} — https://swingbyy.com',
     'referral.shareCTA': 'Partager mon code',
     'referral.stats': '%{friends} amis inscrits • %{earned}$ gagnés',
 
     // FAQ
     'faq.title': 'Aide et FAQ',
-    'faq.q1': 'Comment fonctionne SwingBy?',
+    'faq.q1': 'Comment fonctionne Swingbyy?',
     'faq.q2': 'Comment les devis sont-ils acceptés?',
     'faq.q3': "Quand le paiement a-t-il lieu?",
     'faq.q4': "Que se passe-t-il si un travail tourne mal?",
@@ -478,12 +478,12 @@ const translations = {
     'profile.photoUploading': 'Téléchargement de la photo…',
     'profile.photoUpdated': 'Photo mise à jour',
     'profile.photoUploadError': 'Impossible de télécharger la photo',
-    'profile.photoPermission': 'Autorisez SwingBy à accéder à vos photos pour définir une photo de profil.',
+    'profile.photoPermission': 'Autorisez Swingbyy à accéder à vos photos pour définir une photo de profil.',
 
     // Dispute photo upload (GAP-AUDIT #12)
     'dispute.photoUploading': 'Téléchargement…',
     'dispute.photoUploadError': 'Impossible de télécharger la photo',
-    'dispute.photoPermission': 'Autorisez SwingBy à accéder à vos photos pour joindre des preuves.',
+    'dispute.photoPermission': 'Autorisez Swingbyy à accéder à vos photos pour joindre des preuves.',
     'dispute.addPhoto': 'Ajouter une photo',
     'dispute.photosOptional': 'Facultatif — ajoutez jusqu\'à 3 photos comme preuve.',
 
@@ -546,12 +546,12 @@ const translations = {
     'dashboard.moneyUnavailable': 'Impossible de charger les totaux de paiement',
 
     // Biometric app-lock (CARD-24)
-    'biometric.lockedTitle': 'Déverrouiller SwingBy',
+    'biometric.lockedTitle': 'Déverrouiller Swingbyy',
     'biometric.lockedBody': 'Utilisez Face ID, Touch ID ou votre empreinte digitale pour continuer.',
     'biometric.unlockCta': 'Déverrouiller',
     'biometric.declinedHint': "Ça n'a pas fonctionné? Réessayez ou connectez-vous autrement.",
     'biometric.useDifferentAccount': 'Se connecter autrement',
-    'biometric.prompt': 'Déverrouiller SwingBy',
+    'biometric.prompt': 'Déverrouiller Swingbyy',
 
     // Settings — biometric toggle (CARD-24)
     'settings.biometricUnlock': 'Déverrouillage par Face ID / empreinte',
@@ -722,15 +722,15 @@ const translations = {
     'onboarding.slide3Sub': 'دليل صوري عند اكتمال العمل. الضمان يحمي دفعتك.',
 
     // Referral
-    'referral.title': 'شارك SwingBy واحصل على 10 دولار رصيد',
+    'referral.title': 'شارك Swingbyy واحصل على 10 دولار رصيد',
     'referral.body': 'عندما يُكمل صديقك حجزه الأول، تحصلان معاً على 10 دولار خصماً.',
-    'referral.shareText': 'انضم إليّ على SwingBy! الكود: %{code} — https://swingbyy.com',
+    'referral.shareText': 'انضم إليّ على Swingbyy! الكود: %{code} — https://swingbyy.com',
     'referral.shareCTA': 'شارك كودي',
     'referral.stats': '%{friends} أصدقاء انضموا • %{earned}$ مكسبة',
 
     // FAQ
     'faq.title': 'المساعدة والأسئلة الشائعة',
-    'faq.q1': 'كيف يعمل SwingBy؟',
+    'faq.q1': 'كيف يعمل Swingbyy؟',
     'faq.q2': 'كيف تُقبَل العروض؟',
     'faq.q3': 'متى يتم الدفع؟',
     'faq.q4': 'ماذا يحدث إذا ساءت الأمور؟',
@@ -799,12 +799,12 @@ const translations = {
     'profile.photoUploading': 'جارٍ رفع الصورة…',
     'profile.photoUpdated': 'تم تحديث الصورة',
     'profile.photoUploadError': 'تعذر رفع الصورة',
-    'profile.photoPermission': 'اسمح لـ SwingBy بالوصول إلى صورك لتعيين صورة الملف الشخصي.',
+    'profile.photoPermission': 'اسمح لـ Swingbyy بالوصول إلى صورك لتعيين صورة الملف الشخصي.',
 
     // Dispute photo upload (GAP-AUDIT #12)
     'dispute.photoUploading': 'جارٍ الرفع…',
     'dispute.photoUploadError': 'تعذر رفع الصورة',
-    'dispute.photoPermission': 'اسمح لـ SwingBy بالوصول إلى صورك لإرفاق الأدلة.',
+    'dispute.photoPermission': 'اسمح لـ Swingbyy بالوصول إلى صورك لإرفاق الأدلة.',
     'dispute.addPhoto': 'إضافة صورة',
     'dispute.photosOptional': 'اختياري — أضف حتى 3 صور كدليل.',
 
@@ -867,12 +867,12 @@ const translations = {
     'dashboard.moneyUnavailable': 'تعذر تحميل إجماليات الدفع',
 
     // Biometric app-lock (CARD-24)
-    'biometric.lockedTitle': 'افتح قفل SwingBy',
+    'biometric.lockedTitle': 'افتح قفل Swingbyy',
     'biometric.lockedBody': 'استخدم بصمة الوجه أو بصمة الإصبع لمتابعة الدخول.',
     'biometric.unlockCta': 'فتح القفل',
     'biometric.declinedHint': 'لم ينجح؟ حاول مرة أخرى أو سجّل الدخول بطريقة مختلفة.',
     'biometric.useDifferentAccount': 'تسجيل الدخول بطريقة مختلفة',
-    'biometric.prompt': 'افتح قفل SwingBy',
+    'biometric.prompt': 'افتح قفل Swingbyy',
 
     // Settings — biometric toggle (CARD-24)
     'settings.biometricUnlock': 'فتح القفل ببصمة الوجه / الإصبع',
@@ -1000,8 +1000,8 @@ const lane3 = {
   // Two different promises, deliberately. 'native' = Stripe's Payment Sheet
   // opens right here (M9). 'Sub' (hosted Checkout fallback) has to warn that a
   // browser is about to open, or the client thinks the app broke.
-  'pay.methodCardSub': 'Opens a secure Stripe page — SwingBy never stores your card.',
-  'pay.methodCardSubNative': 'Entered securely in the app — SwingBy never stores it.',
+  'pay.methodCardSub': 'Opens a secure Stripe page — Swingbyy never stores your card.',
+  'pay.methodCardSubNative': 'Entered securely in the app — Swingbyy never stores it.',
   'pay.addMethod': 'Add a payment method',
   'pay.noMethodHint': 'Add a card to continue. Nothing is charged until you confirm.',
   'pay.escrow':
@@ -1178,24 +1178,24 @@ for (const key of [
 Object.assign(translations.en, {
   'language.restartTitle': 'Restart needed',
   'language.restartBody':
-    'SwingBy needs to restart to switch the layout for %{language}.',
+    'Swingbyy needs to restart to switch the layout for %{language}.',
   'language.restartNow': 'Restart now',
-  'language.restartManual': 'Please close and reopen SwingBy to finish switching.',
+  'language.restartManual': 'Please close and reopen Swingbyy to finish switching.',
 });
 Object.assign(translations['fr-CA'], {
   'language.restartTitle': 'Redémarrage nécessaire',
   'language.restartBody':
-    'SwingBy doit redémarrer pour adapter la mise en page à %{language}.',
+    'Swingbyy doit redémarrer pour adapter la mise en page à %{language}.',
   'language.restartNow': 'Redémarrer maintenant',
   'language.restartManual':
-    'Veuillez fermer puis rouvrir SwingBy pour terminer le changement.',
+    'Veuillez fermer puis rouvrir Swingbyy pour terminer le changement.',
 });
 Object.assign(translations.ar, {
   'language.restartTitle': 'يلزم إعادة التشغيل',
   'language.restartBody':
-    'يحتاج SwingBy إلى إعادة التشغيل لتغيير اتجاه الواجهة إلى %{language}.',
+    'يحتاج Swingbyy إلى إعادة التشغيل لتغيير اتجاه الواجهة إلى %{language}.',
   'language.restartNow': 'إعادة التشغيل الآن',
-  'language.restartManual': 'يرجى إغلاق SwingBy وفتحه مرة أخرى لإكمال التغيير.',
+  'language.restartManual': 'يرجى إغلاق Swingbyy وفتحه مرة أخرى لإكمال التغيير.',
 });
 
 // ── Report + block (App Store Guideline 1.2) — 2026-07-31 ───────────────────
@@ -1227,7 +1227,7 @@ const moderationEn = {
   'moderation.reasonSexualContent': 'Sexual content',
   'moderation.reasonViolence': 'Violence or threats',
   'moderation.reasonScam': 'Scam or fraud',
-  'moderation.reasonOffPlatform': 'Trying to take the job off SwingBy',
+  'moderation.reasonOffPlatform': 'Trying to take the job off Swingbyy',
   'moderation.reasonSpam': 'Spam',
   'moderation.reasonOther': 'Something else',
   'moderation.detailsLabel': 'Anything else? (optional)',
@@ -1267,7 +1267,7 @@ const moderationEn = {
   'moderation.threadBlockedBody':
     'One of you blocked the other. Unblock in Settings → Safety to start talking again.',
   'moderation.messageRefused':
-    'That message can’t be sent. SwingBy doesn’t allow hate speech, sexual solicitation, or threats.',
+    'That message can’t be sent. Swingbyy doesn’t allow hate speech, sexual solicitation, or threats.',
 
   // Admin review queue
   'moderation.queueTitle': 'Reports',
@@ -1303,7 +1303,7 @@ Object.assign(translations['fr-CA'], {
   'moderation.reasonSexualContent': 'Contenu sexuel',
   'moderation.reasonViolence': 'Violence ou menaces',
   'moderation.reasonScam': 'Arnaque ou fraude',
-  'moderation.reasonOffPlatform': 'Tentative de contourner SwingBy',
+  'moderation.reasonOffPlatform': 'Tentative de contourner Swingbyy',
   'moderation.reasonSpam': 'Pourriel',
   'moderation.reasonOther': 'Autre chose',
   'moderation.detailsLabel': 'Autre chose? (facultatif)',
@@ -1341,7 +1341,7 @@ Object.assign(translations['fr-CA'], {
   'moderation.threadBlockedBody':
     'L’un de vous a bloqué l’autre. Débloquez dans Réglages → Sécurité pour reprendre la conversation.',
   'moderation.messageRefused':
-    'Ce message ne peut pas être envoyé. SwingBy n’autorise ni les propos haineux, ni la sollicitation sexuelle, ni les menaces.',
+    'Ce message ne peut pas être envoyé. Swingbyy n’autorise ni les propos haineux, ni la sollicitation sexuelle, ni les menaces.',
 
   'moderation.queueTitle': 'Signalements',
   'moderation.queueEmptyTitle': 'Rien à examiner',
@@ -1374,7 +1374,7 @@ Object.assign(translations.ar, {
   'moderation.reasonSexualContent': 'محتوى جنسي',
   'moderation.reasonViolence': 'عنف أو تهديد',
   'moderation.reasonScam': 'احتيال أو نصب',
-  'moderation.reasonOffPlatform': 'محاولة إتمام العمل خارج SwingBy',
+  'moderation.reasonOffPlatform': 'محاولة إتمام العمل خارج Swingbyy',
   'moderation.reasonSpam': 'محتوى مزعج',
   'moderation.reasonOther': 'شيء آخر',
   'moderation.detailsLabel': 'أي تفاصيل أخرى؟ (اختياري)',
@@ -1410,7 +1410,7 @@ Object.assign(translations.ar, {
   'moderation.threadBlockedBody':
     'أحدكما حظر الآخر. ألغِ الحظر من الإعدادات ← الأمان لمتابعة المحادثة.',
   'moderation.messageRefused':
-    'تعذّر إرسال هذه الرسالة. لا يسمح SwingBy بخطاب الكراهية أو الطلبات الجنسية أو التهديدات.',
+    'تعذّر إرسال هذه الرسالة. لا يسمح Swingbyy بخطاب الكراهية أو الطلبات الجنسية أو التهديدات.',
 
   'moderation.queueTitle': 'البلاغات',
   'moderation.queueEmptyTitle': 'لا شيء للمراجعة',
@@ -1433,7 +1433,7 @@ Object.assign(translations.ar, {
 Object.assign(translations.en, {
   'settings.deleteAccountTitle': 'Delete my account',
   'settings.deleteAccountBody':
-    'Your profile disappears from SwingBy and you’re signed out. Bookings, payments and invoices are kept for 6 years — Canadian tax law requires it — but they’re no longer linked to your name.',
+    'Your profile disappears from Swingbyy and you’re signed out. Bookings, payments and invoices are kept for 6 years — Canadian tax law requires it — but they’re no longer linked to your name.',
   'settings.deleteAccountPasswordLabel': 'Your password',
   'settings.deleteAccountPasswordHint': 'Enter it to confirm this is you.',
   'settings.deleteAccountConfirm': 'Delete account',
@@ -1446,7 +1446,7 @@ Object.assign(translations.en, {
 Object.assign(translations['fr-CA'], {
   'settings.deleteAccountTitle': 'Supprimer mon compte',
   'settings.deleteAccountBody':
-    'Votre profil disparaît de SwingBy et vous êtes déconnecté. Les réservations, paiements et factures sont conservés 6 ans — la loi fiscale canadienne l’exige — mais ils ne sont plus liés à votre nom.',
+    'Votre profil disparaît de Swingbyy et vous êtes déconnecté. Les réservations, paiements et factures sont conservés 6 ans — la loi fiscale canadienne l’exige — mais ils ne sont plus liés à votre nom.',
   'settings.deleteAccountPasswordLabel': 'Votre mot de passe',
   'settings.deleteAccountPasswordHint': 'Saisissez-le pour confirmer que c’est bien vous.',
   'settings.deleteAccountConfirm': 'Supprimer le compte',
@@ -1460,7 +1460,7 @@ Object.assign(translations['fr-CA'], {
 Object.assign(translations.ar, {
   'settings.deleteAccountTitle': 'حذف حسابي',
   'settings.deleteAccountBody':
-    'سيختفي ملفك الشخصي من SwingBy وسيتم تسجيل خروجك. تُحفظ الحجوزات والمدفوعات والفواتير لمدة 6 سنوات — كما يقتضي القانون الضريبي الكندي — لكنها لن تكون مرتبطة باسمك.',
+    'سيختفي ملفك الشخصي من Swingbyy وسيتم تسجيل خروجك. تُحفظ الحجوزات والمدفوعات والفواتير لمدة 6 سنوات — كما يقتضي القانون الضريبي الكندي — لكنها لن تكون مرتبطة باسمك.',
   'settings.deleteAccountPasswordLabel': 'كلمة المرور',
   'settings.deleteAccountPasswordHint': 'أدخلها لتأكيد هويتك.',
   'settings.deleteAccountConfirm': 'حذف الحساب',
@@ -1538,7 +1538,7 @@ Object.assign(translations.ar, {
 // no way out. All three locales: this is the first screen a new account sees,
 // and answering it wrong is expensive to undo.
 Object.assign(translations.en, {
-  'rolePicker.title': 'How will you use SwingBy?',
+  'rolePicker.title': 'How will you use Swingbyy?',
   'rolePicker.body': 'Pick one — you can only choose this once.',
   'rolePicker.clientTitle': "I'm hiring",
   'rolePicker.clientBody': 'Post jobs and book local pros.',
@@ -1559,7 +1559,7 @@ Object.assign(translations.en, {
   'auth.agreeNotice': 'By continuing you agree to our',
 });
 Object.assign(translations['fr-CA'], {
-  'rolePicker.title': 'Comment allez-vous utiliser SwingBy?',
+  'rolePicker.title': 'Comment allez-vous utiliser Swingbyy?',
   'rolePicker.body': 'Choisissez — ce choix ne se fait qu’une fois.',
   'rolePicker.clientTitle': 'Je cherche un pro',
   'rolePicker.clientBody': 'Publiez des travaux et réservez des pros locaux.',
@@ -1577,7 +1577,7 @@ Object.assign(translations['fr-CA'], {
   'auth.agreeNotice': 'En continuant, vous acceptez nos',
 });
 Object.assign(translations.ar, {
-  'rolePicker.title': 'كيف ستستخدم SwingBy؟',
+  'rolePicker.title': 'كيف ستستخدم Swingbyy؟',
   'rolePicker.body': 'اختر — يمكنك الاختيار مرة واحدة فقط.',
   'rolePicker.clientTitle': 'أبحث عن محترف',
   'rolePicker.clientBody': 'انشر طلبات العمل واحجز محترفين قريبين.',
@@ -1615,7 +1615,7 @@ Object.assign(translations.en, {
   'settings.ghostOn': "You're hidden",
   'settings.ghostOff': "You're visible again",
   'settings.ghostFailed': "Couldn't change ghost mode",
-  'settings.credit': 'SwingBy credit',
+  'settings.credit': 'Swingbyy credit',
   'settings.creditHint': 'Contact us when you book and we\u2019ll apply it.',
 });
 Object.assign(translations['fr-CA'], {
@@ -1625,7 +1625,7 @@ Object.assign(translations['fr-CA'], {
   'settings.ghostOn': 'Vous \u00eates masqu\u00e9',
   'settings.ghostOff': 'Vous \u00eates de nouveau visible',
   'settings.ghostFailed': 'Impossible de changer le mode fant\u00f4me',
-  'settings.credit': 'Cr\u00e9dit SwingBy',
+  'settings.credit': 'Cr\u00e9dit Swingbyy',
   'settings.creditHint': 'Contactez-nous lors de votre r\u00e9servation et nous l\u2019appliquerons.',
 });
 Object.assign(translations.ar, {
@@ -1635,7 +1635,7 @@ Object.assign(translations.ar, {
   'settings.ghostOn': '\u0623\u0646\u062a \u0645\u062e\u0641\u064a \u0627\u0644\u0622\u0646',
   'settings.ghostOff': '\u0623\u0635\u0628\u062d\u062a \u0645\u0631\u0626\u064a\u064b\u0627 \u0645\u062c\u062f\u062f\u064b\u0627',
   'settings.ghostFailed': '\u062a\u0639\u0630\u0651\u0631 \u062a\u063a\u064a\u064a\u0631 \u0648\u0636\u0639 \u0627\u0644\u0625\u062e\u0641\u0627\u0621',
-  'settings.credit': '\u0631\u0635\u064a\u062f SwingBy',
+  'settings.credit': '\u0631\u0635\u064a\u062f Swingbyy',
   'settings.creditHint': '\u062a\u0648\u0627\u0635\u0644 \u0645\u0639\u0646\u0627 \u0639\u0646\u062f \u0627\u0644\u062d\u062c\u0632 \u0648\u0633\u0646\u0637\u0628\u0651\u0642\u0647.',
 });
 
@@ -1672,9 +1672,9 @@ Object.assign(translations['fr-CA'], {
   'pay.savedCard': 'Carte enregistrée',
   'pay.methodCard': 'Carte',
   'pay.methodCardSub':
-    'Ouvre une page Stripe sécurisée — SwingBy n’enregistre jamais votre carte.',
+    'Ouvre une page Stripe sécurisée — Swingbyy n’enregistre jamais votre carte.',
   'pay.methodCardSubNative':
-    'Saisie de façon sécurisée dans l’application — SwingBy ne l’enregistre pas.',
+    'Saisie de façon sécurisée dans l’application — Swingbyy ne l’enregistre pas.',
   'pay.addMethod': 'Ajouter un moyen de paiement',
   'pay.noMethodHint':
     'Ajoutez une carte pour continuer. Rien n’est débité avant votre confirmation.',
@@ -1793,8 +1793,8 @@ Object.assign(translations.ar, {
   'pay.expires': 'ينتهي في %{date}',
   'pay.savedCard': 'بطاقة محفوظة',
   'pay.methodCard': 'بطاقة',
-  'pay.methodCardSub': 'يفتح صفحة Stripe آمنة — لا تحفظ SwingBy بطاقتك أبدًا.',
-  'pay.methodCardSubNative': 'تُدخَل بأمان داخل التطبيق — ولا تحفظها SwingBy.',
+  'pay.methodCardSub': 'يفتح صفحة Stripe آمنة — لا تحفظ Swingbyy بطاقتك أبدًا.',
+  'pay.methodCardSubNative': 'تُدخَل بأمان داخل التطبيق — ولا تحفظها Swingbyy.',
   'pay.addMethod': 'أضف طريقة دفع',
   'pay.noMethodHint': 'أضف بطاقة للمتابعة. لن يُخصم أي مبلغ حتى تؤكّد.',
   'pay.escrow':
@@ -1954,13 +1954,13 @@ Object.assign(translations.uk, {
   'onboarding.slide2Sub': 'Опублікуйте один раз. Порівняйте пропозиції. Оберіть найкращу.',
   'onboarding.slide3Title': 'Перевірені виконавці щоразу',
   'onboarding.slide3Sub': 'Фотопідтвердження після завершення. Депонування захищає ваш платіж.',
-  'referral.title': 'Поділіться SwingBy — отримайте $10',
+  'referral.title': 'Поділіться Swingbyy — отримайте $10',
   'referral.body': 'Коли ваш друг завершить перше бронювання, ви обидва отримаєте $10 знижки на наступну роботу.',
-  'referral.shareText': 'Приєднуйтесь до мене у SwingBy! Код: %{code} — https://swingbyy.com',
+  'referral.shareText': 'Приєднуйтесь до мене у Swingbyy! Код: %{code} — https://swingbyy.com',
   'referral.shareCTA': 'Поділитися кодом',
   'referral.stats': '%{friends} друзів приєдналося • $%{earned} зароблено',
   'faq.title': 'Довідка та FAQ',
-  'faq.q1': 'Як працює SwingBy?',
+  'faq.q1': 'Як працює Swingbyy?',
   'faq.q2': 'Як приймають пропозиції?',
   'faq.q3': 'Коли відбувається оплата?',
   'faq.q4': 'Що робити, якщо щось пішло не так?',
@@ -2013,10 +2013,10 @@ Object.assign(translations.uk, {
   'profile.photoUploading': 'Завантаження фото…',
   'profile.photoUpdated': 'Фото оновлено',
   'profile.photoUploadError': 'Не вдалося завантажити фото',
-  'profile.photoPermission': 'Дозвольте SwingBy доступ до фото, щоб встановити зображення профілю.',
+  'profile.photoPermission': 'Дозвольте Swingbyy доступ до фото, щоб встановити зображення профілю.',
   'dispute.photoUploading': 'Завантаження…',
   'dispute.photoUploadError': 'Не вдалося завантажити фото',
-  'dispute.photoPermission': 'Дозвольте SwingBy доступ до фото, щоб додати докази.',
+  'dispute.photoPermission': 'Дозвольте Swingbyy доступ до фото, щоб додати докази.',
   'dispute.addPhoto': 'Додати фото',
   'dispute.photosOptional': 'Необов’язково — до 3 фото як доказ.',
   'businessProfile.distanceAway': '%{km} км від вас',
@@ -2067,12 +2067,12 @@ Object.assign(translations.uk, {
   'dashboard.moneyCleared': 'Переказано',
   'dashboard.heroCaption': 'переказано вам',
   'dashboard.moneyUnavailable': 'Не вдалося завантажити суми платежів',
-  'biometric.lockedTitle': 'Розблокувати SwingBy',
+  'biometric.lockedTitle': 'Розблокувати Swingbyy',
   'biometric.lockedBody': 'Скористайтеся Face ID, Touch ID або відбитком, щоб продовжити.',
   'biometric.unlockCta': 'Розблокувати',
   'biometric.declinedHint': 'Не спрацювало? Спробуйте ще раз або увійдіть інакше.',
   'biometric.useDifferentAccount': 'Увійти інакше',
-  'biometric.prompt': 'Розблокувати SwingBy',
+  'biometric.prompt': 'Розблокувати Swingbyy',
   'settings.biometricUnlock': 'Розблокування Face ID / відбитком',
   'settings.biometricUnavailableHint': 'Не налаштовано на цьому пристрої',
   'settings.biometricUnavailableTitle': 'Недоступно',
@@ -2178,8 +2178,8 @@ Object.assign(translations.uk, {
   'pay.expires': 'Спливає %{date}',
   'pay.savedCard': 'Збережена картка',
   'pay.methodCard': 'Картка',
-  'pay.methodCardSub': 'Відкриє захищену сторінку Stripe — SwingBy ніколи не зберігає вашу картку.',
-  'pay.methodCardSubNative': 'Вводиться безпечно в застосунку — SwingBy її не зберігає.',
+  'pay.methodCardSub': 'Відкриє захищену сторінку Stripe — Swingbyy ніколи не зберігає вашу картку.',
+  'pay.methodCardSubNative': 'Вводиться безпечно в застосунку — Swingbyy її не зберігає.',
   'pay.addMethod': 'Додати спосіб оплати',
   'pay.noMethodHint': 'Додайте картку, щоб продовжити. Нічого не спишеться, доки ви не підтвердите.',
   'pay.escrow': 'На депонуванні — переказується лише після того, як ви схвалите роботу. Безкоштовне скасування за 48 год.',
@@ -2261,9 +2261,9 @@ Object.assign(translations.uk, {
   'pay.escrowHold': 'Зараз нічого не списується. Ви платите, коли приймаєте пропозицію, а невикористаний бюджет ніколи не стягується.',
   'businessProfile.jobsDone': '%{count} виконаних робіт',
   'language.restartTitle': 'Потрібен перезапуск',
-  'language.restartBody': 'SwingBy потрібно перезапустити, щоб змінити напрям інтерфейсу для мови %{language}.',
+  'language.restartBody': 'Swingbyy потрібно перезапустити, щоб змінити напрям інтерфейсу для мови %{language}.',
   'language.restartNow': 'Перезапустити зараз',
-  'language.restartManual': 'Закрийте та відкрийте SwingBy, щоб завершити перемикання.',
+  'language.restartManual': 'Закрийте та відкрийте Swingbyy, щоб завершити перемикання.',
   'moderation.report': 'Поскаржитись',
   'moderation.reportMessage': 'Поскаржитись на це повідомлення',
   'moderation.reportReview': 'Поскаржитись на цей відгук',
@@ -2278,7 +2278,7 @@ Object.assign(translations.uk, {
   'moderation.reasonSexualContent': 'Сексуальний вміст',
   'moderation.reasonViolence': 'Насильство або погрози',
   'moderation.reasonScam': 'Шахрайство або обман',
-  'moderation.reasonOffPlatform': 'Спроба вивести роботу за межі SwingBy',
+  'moderation.reasonOffPlatform': 'Спроба вивести роботу за межі Swingbyy',
   'moderation.reasonSpam': 'Спам',
   'moderation.reasonOther': 'Щось інше',
   'moderation.detailsLabel': 'Щось іще? (необов’язково)',
@@ -2307,7 +2307,7 @@ Object.assign(translations.uk, {
   'moderation.blockedOn': 'Заблоковано %{date}',
   'moderation.threadBlockedTitle': 'Тут не можна відповідати',
   'moderation.threadBlockedBody': 'Хтось із вас заблокував іншого. Розблокуйте в Налаштування → Безпека, щоб продовжити спілкування.',
-  'moderation.messageRefused': 'Це повідомлення не можна надіслати. SwingBy не допускає мови ворожнечі, сексуальних домагань і погроз.',
+  'moderation.messageRefused': 'Це повідомлення не можна надіслати. Swingbyy не допускає мови ворожнечі, сексуальних домагань і погроз.',
   'moderation.queueTitle': 'Скарги',
   'moderation.queueEmptyTitle': 'Немає що розглядати',
   'moderation.queueEmptyBody': 'Нові скарги з’являтимуться тут.',
@@ -2322,7 +2322,7 @@ Object.assign(translations.uk, {
   'moderation.resolved': 'Вирішено',
   'moderation.resolveFailed': 'Не вдалося вирішити цю скаргу. Спробуйте ще раз.',
   'settings.deleteAccountTitle': 'Видалити акаунт',
-  'settings.deleteAccountBody': 'Ваш профіль зникне зі SwingBy, і вас буде виведено з системи. Бронювання, платежі та рахунки зберігаються 6 років — цього вимагає податкове законодавство Канади — але вони більше не пов’язані з вашим іменем.',
+  'settings.deleteAccountBody': 'Ваш профіль зникне зі Swingbyy, і вас буде виведено з системи. Бронювання, платежі та рахунки зберігаються 6 років — цього вимагає податкове законодавство Канади — але вони більше не пов’язані з вашим іменем.',
   'settings.deleteAccountPasswordLabel': 'Ваш пароль',
   'settings.deleteAccountPasswordHint': 'Введіть його, щоб підтвердити, що це ви.',
   'settings.deleteAccountConfirm': 'Видалити акаунт',
@@ -2343,7 +2343,7 @@ Object.assign(translations.uk, {
   'approval.businessWaitingTitle': 'Очікує клієнта',
   'approval.businessWaitingBody': 'Ви позначили роботу завершеною. У клієнта є 24 години на схвалення — після цього оплата переказується вам автоматично.',
   'approval.autoReleased': 'Переказано автоматично — клієнт не відповів протягом 24 годин.',
-  'rolePicker.title': 'Як ви користуватиметеся SwingBy?',
+  'rolePicker.title': 'Як ви користуватиметеся Swingbyy?',
   'rolePicker.body': 'Оберіть одне — вибір робиться лише раз.',
   'rolePicker.clientTitle': 'Я шукаю майстра',
   'rolePicker.clientBody': 'Публікуйте заявки та бронюйте місцевих майстрів.',
@@ -2363,7 +2363,7 @@ Object.assign(translations.uk, {
   'settings.ghostOn': 'Вас приховано',
   'settings.ghostOff': 'Вас знову видно',
   'settings.ghostFailed': 'Не вдалося змінити режим невидимості',
-  'settings.credit': 'Кредит SwingBy',
+  'settings.credit': 'Кредит Swingbyy',
   'settings.creditHint': 'Напишіть нам під час бронювання — і ми його зарахуємо.',
 });
 
@@ -2380,12 +2380,12 @@ Object.assign(translations.uk, {
 //     false legal statement on the first screen a stranger sees.
 const inviteEn = {
   'invite.badge': 'BETA',
-  'invite.hero': 'You’re invited to shape SwingBy',
-  'invite.inviter': 'The SwingBy Team',
+  'invite.hero': 'You’re invited to shape Swingbyy',
+  'invite.inviter': 'The Swingbyy Team',
   'invite.inviterRole': 'invited you to join the beta',
   'invite.subhead': 'Be among the first to experience Calgary’s new service marketplace.',
   'invite.body1':
-    'SwingBy connects people who need services with skilled local businesses — from home repairs to personal training, all in one place.',
+    'Swingbyy connects people who need services with skilled local businesses — from home repairs to personal training, all in one place.',
   'invite.body2':
     'As a beta tester, your feedback directly shapes the app. Share what works, what doesn’t, and what you wish existed.',
   'invite.codeLabel': 'Your invite code',
@@ -2396,7 +2396,7 @@ const inviteEn = {
   'invite.haveAccount': 'Already have an account?',
   'invite.signIn': 'Sign in',
   'invite.finePrint': 'This invite is personal to you. Please don’t share it.',
-  'invite.copyright': '© 2026 SwingBy',
+  'invite.copyright': '© 2026 Swingbyy',
   'invite.noCodeTitle': 'This invite link is incomplete',
   'invite.noCodeBody':
     'The link didn’t carry an invite code. Open the original link again, or sign up without one — you can add a code later.',
@@ -2406,12 +2406,12 @@ Object.assign(translations.en, inviteEn);
 
 Object.assign(translations['fr-CA'], {
   'invite.badge': 'BÊTA',
-  'invite.hero': 'Vous êtes invité à façonner SwingBy',
-  'invite.inviter': 'L’équipe SwingBy',
+  'invite.hero': 'Vous êtes invité à façonner Swingbyy',
+  'invite.inviter': 'L’équipe Swingbyy',
   'invite.inviterRole': 'vous a invité à rejoindre la bêta',
   'invite.subhead': 'Soyez parmi les premiers à découvrir le nouveau marché de services de Calgary.',
   'invite.body1':
-    'SwingBy met en relation les personnes qui cherchent un service avec des entreprises locales qualifiées — des réparations à domicile à l’entraînement personnel, au même endroit.',
+    'Swingbyy met en relation les personnes qui cherchent un service avec des entreprises locales qualifiées — des réparations à domicile à l’entraînement personnel, au même endroit.',
   'invite.body2':
     'En tant que testeur bêta, vos commentaires façonnent directement l’application. Dites-nous ce qui fonctionne, ce qui ne fonctionne pas et ce que vous aimeriez y trouver.',
   'invite.codeLabel': 'Votre code d’invitation',
@@ -2422,7 +2422,7 @@ Object.assign(translations['fr-CA'], {
   'invite.haveAccount': 'Vous avez déjà un compte?',
   'invite.signIn': 'Se connecter',
   'invite.finePrint': 'Cette invitation vous est personnelle. Merci de ne pas la partager.',
-  'invite.copyright': '© 2026 SwingBy',
+  'invite.copyright': '© 2026 Swingbyy',
   'invite.noCodeTitle': 'Ce lien d’invitation est incomplet',
   'invite.noCodeBody':
     'Le lien ne contenait pas de code d’invitation. Ouvrez de nouveau le lien d’origine, ou inscrivez-vous sans code — vous pourrez en ajouter un plus tard.',
@@ -2431,12 +2431,12 @@ Object.assign(translations['fr-CA'], {
 
 Object.assign(translations.ar, {
   'invite.badge': 'نسخة تجريبية',
-  'invite.hero': 'أنت مدعو للمساهمة في تشكيل SwingBy',
-  'invite.inviter': 'فريق SwingBy',
+  'invite.hero': 'أنت مدعو للمساهمة في تشكيل Swingbyy',
+  'invite.inviter': 'فريق Swingbyy',
   'invite.inviterRole': 'دعاك للانضمام إلى النسخة التجريبية',
   'invite.subhead': 'كن من أوائل من يجرب سوق الخدمات الجديد في كالغاري.',
   'invite.body1':
-    'يربط SwingBy الأشخاص الذين يحتاجون إلى خدمات بأنشطة تجارية محلية ماهرة — من إصلاحات المنزل إلى التدريب الشخصي، في مكان واحد.',
+    'يربط Swingbyy الأشخاص الذين يحتاجون إلى خدمات بأنشطة تجارية محلية ماهرة — من إصلاحات المنزل إلى التدريب الشخصي، في مكان واحد.',
   'invite.body2':
     'بصفتك مختبرًا للنسخة التجريبية، تسهم ملاحظاتك مباشرة في تطوير التطبيق. أخبرنا بما ينجح، وما لا ينجح، وما تتمنى وجوده.',
   'invite.codeLabel': 'رمز الدعوة الخاص بك',
@@ -2447,7 +2447,7 @@ Object.assign(translations.ar, {
   'invite.haveAccount': 'هل لديك حساب بالفعل؟',
   'invite.signIn': 'تسجيل الدخول',
   'invite.finePrint': 'هذه الدعوة شخصية لك. نرجو عدم مشاركتها.',
-  'invite.copyright': '© 2026 SwingBy',
+  'invite.copyright': '© 2026 Swingbyy',
   'invite.noCodeTitle': 'رابط الدعوة غير مكتمل',
   'invite.noCodeBody':
     'لم يتضمن الرابط رمز دعوة. افتح الرابط الأصلي مرة أخرى، أو سجّل بدون رمز — يمكنك إضافته لاحقًا.',
@@ -2456,12 +2456,12 @@ Object.assign(translations.ar, {
 
 Object.assign(translations.uk, {
   'invite.badge': 'БЕТА',
-  'invite.hero': 'Вас запрошено формувати SwingBy',
-  'invite.inviter': 'Команда SwingBy',
+  'invite.hero': 'Вас запрошено формувати Swingbyy',
+  'invite.inviter': 'Команда Swingbyy',
   'invite.inviterRole': 'запросила вас до бета-версії',
   'invite.subhead': 'Станьте одним із перших, хто скористається новим сервісним маркетплейсом Калгарі.',
   'invite.body1':
-    'SwingBy поєднує людей, яким потрібні послуги, з кваліфікованими місцевими підприємствами — від ремонту вдома до персональних тренувань, усе в одному місці.',
+    'Swingbyy поєднує людей, яким потрібні послуги, з кваліфікованими місцевими підприємствами — від ремонту вдома до персональних тренувань, усе в одному місці.',
   'invite.body2':
     'Як бета-тестувальник ви безпосередньо впливаєте на застосунок. Розкажіть, що працює, що ні та чого вам бракує.',
   'invite.codeLabel': 'Ваш код запрошення',
@@ -2472,7 +2472,7 @@ Object.assign(translations.uk, {
   'invite.haveAccount': 'Уже маєте обліковий запис?',
   'invite.signIn': 'Увійти',
   'invite.finePrint': 'Це запрошення персональне. Будь ласка, не діліться ним.',
-  'invite.copyright': '© 2026 SwingBy',
+  'invite.copyright': '© 2026 Swingbyy',
   'invite.noCodeTitle': 'Це посилання-запрошення неповне',
   'invite.noCodeBody':
     'Посилання не містило коду запрошення. Відкрийте початкове посилання ще раз або зареєструйтеся без коду — додати його можна пізніше.',
@@ -2498,7 +2498,7 @@ const walletEn = {
   'wallet.title': 'Wallet',
   'wallet.availableLabel': 'Available to cash out',
   'wallet.availableCaption':
-    'Money released to you from finished jobs, after SwingBy’s 10% fee, minus anything you’ve already cashed out.',
+    'Money released to you from finished jobs, after Swingbyy’s 10% fee, minus anything you’ve already cashed out.',
   'wallet.lifetimeEarned': 'Earned all time',
   'wallet.alreadyPaidOut': 'Already cashed out',
 
@@ -2526,7 +2526,7 @@ const walletEn = {
   // (and to getByText).
   'wallet.setupTitle': 'Get paid for your work',
   'wallet.setupBody':
-    'Add your details and a debit card or bank account so your earnings can reach you. Stripe handles this and SwingBy never sees your card number.',
+    'Add your details and a debit card or bank account so your earnings can reach you. Stripe handles this and Swingbyy never sees your card number.',
   'wallet.setupCta': 'Set up payouts',
   'wallet.setupFailedTitle': 'Could not start setup',
 
@@ -2566,7 +2566,7 @@ Object.assign(translations['fr-CA'], {
   'wallet.title': 'Portefeuille',
   'wallet.availableLabel': 'Disponible pour retrait',
   'wallet.availableCaption':
-    'L’argent qui vous a été versé pour des travaux terminés, après les frais de 10 % de SwingBy, moins ce que vous avez déjà retiré.',
+    'L’argent qui vous a été versé pour des travaux terminés, après les frais de 10 % de Swingbyy, moins ce que vous avez déjà retiré.',
   'wallet.lifetimeEarned': 'Gagné depuis le début',
   'wallet.alreadyPaidOut': 'Déjà retiré',
 
@@ -2591,7 +2591,7 @@ Object.assign(translations['fr-CA'], {
 
   'wallet.setupTitle': 'Faites-vous payer pour votre travail',
   'wallet.setupBody':
-    'Ajoutez vos renseignements et une carte de débit ou un compte bancaire pour recevoir vos gains. Stripe s’en occupe et SwingBy ne voit jamais votre numéro de carte.',
+    'Ajoutez vos renseignements et une carte de débit ou un compte bancaire pour recevoir vos gains. Stripe s’en occupe et Swingbyy ne voit jamais votre numéro de carte.',
   'wallet.setupCta': 'Configurer les versements',
   'wallet.setupFailedTitle': 'Impossible de lancer la configuration',
 
@@ -2630,7 +2630,7 @@ Object.assign(translations.ar, {
   'wallet.title': 'المحفظة',
   'wallet.availableLabel': 'المتاح للسحب',
   'wallet.availableCaption':
-    'الأموال التي حُوّلت إليك من الأعمال المنتهية، بعد رسوم SwingBy البالغة 10%، ناقص ما سحبته سابقًا.',
+    'الأموال التي حُوّلت إليك من الأعمال المنتهية، بعد رسوم Swingbyy البالغة 10%، ناقص ما سحبته سابقًا.',
   'wallet.lifetimeEarned': 'إجمالي الأرباح',
   'wallet.alreadyPaidOut': 'تم سحبه سابقًا',
 
@@ -2655,7 +2655,7 @@ Object.assign(translations.ar, {
 
   'wallet.setupTitle': 'احصل على أجر عملك',
   'wallet.setupBody':
-    'أضف بياناتك وبطاقة خصم أو حسابًا مصرفيًا حتى تصلك أرباحك. تتولى Stripe ذلك، ولا يرى SwingBy رقم بطاقتك أبدًا.',
+    'أضف بياناتك وبطاقة خصم أو حسابًا مصرفيًا حتى تصلك أرباحك. تتولى Stripe ذلك، ولا يرى Swingbyy رقم بطاقتك أبدًا.',
   'wallet.setupCta': 'إعداد التحويلات',
   'wallet.setupFailedTitle': 'تعذّر بدء الإعداد',
 
@@ -2694,7 +2694,7 @@ Object.assign(translations.uk, {
   'wallet.title': 'Гаманець',
   'wallet.availableLabel': 'Доступно до виведення',
   'wallet.availableCaption':
-    'Кошти, перераховані вам за завершені роботи, після комісії SwingBy 10%, мінус те, що ви вже вивели.',
+    'Кошти, перераховані вам за завершені роботи, після комісії Swingbyy 10%, мінус те, що ви вже вивели.',
   'wallet.lifetimeEarned': 'Зароблено за весь час',
   'wallet.alreadyPaidOut': 'Уже виведено',
 
@@ -2719,7 +2719,7 @@ Object.assign(translations.uk, {
 
   'wallet.setupTitle': 'Отримуйте гроші за свою роботу',
   'wallet.setupBody':
-    'Додайте свої дані та дебетову картку або банківський рахунок, щоб отримувати зароблене. Цим займається Stripe, і SwingBy ніколи не бачить номер вашої картки.',
+    'Додайте свої дані та дебетову картку або банківський рахунок, щоб отримувати зароблене. Цим займається Stripe, і Swingbyy ніколи не бачить номер вашої картки.',
   'wallet.setupCta': 'Налаштувати виплати',
   'wallet.setupFailedTitle': 'Не вдалося розпочати налаштування',
 

@@ -175,8 +175,8 @@ export default function GoogleReviewsConnect({ onImported, compact = false, styl
   function handleDisconnect() {
     confirm(
       'Disconnect Google?',
-      'Your imported Google reviews will be removed from your SwingBy profile. '
-      + 'Reviews left on SwingBy are not affected.',
+      'Your imported Google reviews will be removed from your Swingbyy profile. '
+      + 'Reviews left on Swingbyy are not affected.',
       async () => {
         setBusy(true);
         try {
@@ -222,7 +222,7 @@ export default function GoogleReviewsConnect({ onImported, compact = false, styl
             <Text variant="smallMedium">Bring your Google reviews across</Text>
             <Text variant="caption" color="secondary" style={styles.caption}>
               {status.message
-                || 'Coming soon — we are waiting on Google to approve SwingBy’s access.'}
+                || 'Coming soon — we are waiting on Google to approve Swingbyy’s access.'}
             </Text>
           </View>
         </Inline>
