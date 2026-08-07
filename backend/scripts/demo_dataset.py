@@ -1008,7 +1008,15 @@ def build(now: datetime | None = None) -> dict:
                 "escrow_held": 0.0 if released else round(amount - fee, 2),
                 "released_to_business": round(amount - fee, 2) if released else 0.0,
                 "platform_cut": fee,
-                "stripe_payment_intent_id": None,
+                # A held row with no PaymentIntent is NOT capture backed
+                # (escrow.is_capture_backed), so /payments/mine excludes it from
+                # `total_pending` and the business dashboard correctly reports
+                # $0 held — that guard exists because showing escrow against
+                # money nobody paid is a false financial statement (AUDIT L5).
+                # Demo data represents captured money, so it needs an id. The
+                # `pi_demo_` prefix makes these unmistakable against real Stripe
+                # ids, and it is deterministic so re-seeding does not churn.
+                "stripe_payment_intent_id": f"pi_demo_{did('payment', slug).replace('-', '')[:24]}",
                 "status": "fully_released" if released else "held",
                 "released_at": (
                     _iso(confirmed + timedelta(hours=6)) if released else None
