@@ -163,7 +163,10 @@ class TestCaptureWebhookHoldsRemainder:
                 return self
 
             def update(self, payload):
-                captured["update"] = payload
+                # Keyed by table name — bookings.payment_status is written
+                # too (Bug 4 fix), and a single shared "update" key would let
+                # that second write clobber the ledger capture asserted below.
+                captured[self.name] = payload
                 return self
 
             def execute(self):
@@ -184,12 +187,17 @@ class TestCaptureWebhookHoldsRemainder:
                 "bk-1", "cs_test", amount_total_cents=15000, payment_intent_id="pi_1"
             )
 
-        upd = captured["update"]
+        upd = captured["payments"]
         # The remainder, not the full charge.
         assert upd["escrow_held_cents"] == 7500
         assert upd["escrow_held"] == 75.0
         assert upd["status"] == "held"
         assert upd["stripe_payment_intent_id"] == "pi_1"
+
+        # Bug 4 — the same capture must mirror onto bookings.payment_status,
+        # not just the payments ledger, or the client keeps seeing PENDING
+        # next to money that is genuinely held.
+        assert captured["bookings"]["payment_status"] == "held"
         # Invariant: held + already-released never exceeds the charge.
         assert upd["escrow_held_cents"] + 7500 <= 15000
 
