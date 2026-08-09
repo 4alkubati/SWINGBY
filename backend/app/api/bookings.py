@@ -1119,6 +1119,76 @@ def complete_booking(booking_id: str, current_user: dict = Depends(get_current_u
             raise HTTPException(
                 status_code=403, detail="This booking doesn't belong to your business"
             )
+
+        # Who actually did this job? (W3 money bug.)
+        #
+        # This endpoint validated role, existence, not-already-completed and
+        # ownership — and never looked at `employee_id`. A booking nobody was
+        # ever assigned to completed and released escrow exactly like an
+        # assigned one, same shape as the "business paid itself" bug above.
+        #
+        # A blanket refusal here would be a worse bug: a solo operator (owner,
+        # no staff) never sees an assign screen — walkthrough M8 is the reason
+        # `/assign-employee` and `/assignees` both materialise the owner as a
+        # real assignee — so hard-refusing would dead-end them on a job they
+        # actually finished, money stuck. So: solo business -> auto-assign the
+        # owner via the same `_ensure_owner_employee` helper those two routes
+        # use, and proceed. A business that genuinely has other staff and
+        # never assigned anyone is the real gap — refuse, same 400
+        # plain-language convention as `approve_completed_work` below.
+        if not booking.get("employee_id"):
+            try:
+                other_staff = [
+                    e
+                    for e in _rows(
+                        supabase.table("employees")
+                        .select("id, user_id, is_active")
+                        .eq("business_id", biz.data["id"])
+                        .execute()
+                    )
+                    if e.get("is_active", True)
+                    and e.get("user_id") != current_user["id"]
+                ]
+            except Exception:
+                # Money release path — fail closed rather than guessing "solo"
+                # when we cannot see the roster.
+                logger.exception(
+                    "roster lookup failed for business %s while completing "
+                    "booking %s",
+                    biz.data["id"],
+                    booking_id,
+                )
+                raise HTTPException(
+                    status_code=400,
+                    detail="Could not verify who's assigned to this job. Try again.",
+                )
+
+            if other_staff:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Assign someone to this job before marking it complete.",
+                )
+
+            owner_row = _ensure_owner_employee(biz.data["id"], current_user["id"])
+            if not owner_row or not owner_row.get("id"):
+                raise HTTPException(
+                    status_code=400,
+                    detail="Could not assign this job to you before completing it.",
+                )
+            try:
+                supabase.table("bookings").update({"employee_id": owner_row["id"]}).eq(
+                    "id", booking_id
+                ).execute()
+            except Exception:
+                logger.exception(
+                    "could not persist owner auto-assignment for booking %s",
+                    booking_id,
+                )
+                raise HTTPException(
+                    status_code=400,
+                    detail="Could not assign this job to you before completing it.",
+                )
+            booking["employee_id"] = owner_row["id"]
     else:  # employee
         emp = (
             supabase.table("employees")
