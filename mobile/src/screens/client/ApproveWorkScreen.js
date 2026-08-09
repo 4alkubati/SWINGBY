@@ -270,6 +270,11 @@ export default function ApproveWorkScreen({ route, navigation }) {
   }
 
   const businessName = proof?.business_name || 'The business';
+  // Bug 6 — sentences below append their own trailing period right after this
+  // name. A name that already ends in one ("Douglas Glen Cleaning Co.") came
+  // out "Co.." — strip any trailing periods here once, rather than special-
+  // casing the punctuation at every call site that follows the name with one.
+  const businessNameForSentence = businessName.replace(/\.+$/, '');
   const releaseCents = proof?.release?.release_cents ?? 0;
   const releaseLabel = money(releaseCents);
 
@@ -309,7 +314,7 @@ export default function ApproveWorkScreen({ route, navigation }) {
       toast.show({
         type: 'success',
         text1: 'Payment released',
-        text2: `${releaseLabel} is on its way to ${businessName}.`,
+        text2: `${releaseLabel} is on its way to ${businessNameForSentence}.`,
       });
       navigation.goBack();
     } catch (err) {
@@ -417,7 +422,7 @@ export default function ApproveWorkScreen({ route, navigation }) {
               <Feather name="lock" size={16} color={colors.success} />
               <Text style={styles.releaseText}>
                 Approving releases{' '}
-                <Text style={styles.releaseAmount}>{releaseLabel}</Text> to {businessName}.
+                <Text style={styles.releaseAmount}>{releaseLabel}</Text> to {businessNameForSentence}.
               </Text>
             </View>
           </>

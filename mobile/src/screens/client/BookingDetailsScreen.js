@@ -108,8 +108,23 @@ const EVENT_COPY = {
   paused:          { icon: 'pause-circle',  key: 'booking.eventPaused' },
   resumed:         { icon: 'play-circle',   key: 'booking.eventResumed' },
   completed:       { icon: 'check-circle',  key: 'booking.eventCompleted' },
+  payment_released:{ icon: 'dollar-sign',   key: 'booking.eventPaymentReleased' },
   cancelled_event: { icon: 'x-circle',      key: 'booking.eventCancelled' },
 };
+
+// ─── Bug 10 — one 'completed' row can be two different real events ──────────
+// backend/app/api/proof_of_work.py::approve_proof inserts its OWN
+// event_type: 'completed' row the moment the client approves proof and the
+// payment releases — on top of the 'completed' row
+// backend/app/services/approvals.py::start_approval_window already wrote when
+// the business marked the job done. Both carry the identical event_type, so
+// EVENT_COPY alone renders "Job complete" twice for the same booking. The
+// note text is the only signal left that tells them apart by the time this
+// reaches the client: approve_proof's note always contains "payment
+// released", and no "mark done" note ever does.
+function isPaymentReleaseNote(note) {
+  return /payment released/i.test(note || '');
+}
 
 const ISO_IN_TEXT = /\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}(:\d{2})?(\.\d+)?(Z|[+-]\d{2}:?\d{2})?/g;
 
@@ -131,12 +146,18 @@ export function humaniseNote(note) {
   return note.replace(ISO_IN_TEXT, (m) => formatDateTime(m));
 }
 
-export function eventTitle(eventType) {
+export function eventTitle(eventType, note) {
+  if (eventType === 'completed' && isPaymentReleaseNote(note)) {
+    return i18n.t('booking.eventPaymentReleased');
+  }
   const meta = EVENT_COPY[eventType];
   return meta ? i18n.t(meta.key) : i18n.t('booking.eventGeneric');
 }
 
-export function eventIcon(eventType) {
+export function eventIcon(eventType, note) {
+  if (eventType === 'completed' && isPaymentReleaseNote(note)) {
+    return EVENT_COPY.payment_released.icon;
+  }
   return EVENT_COPY[eventType]?.icon || 'circle';
 }
 
@@ -394,7 +415,7 @@ function LiveStatusCard({ events, status, onRetry }) {
                 alignItems: 'center', justifyContent: 'center',
               }}>
                 <Feather
-                  name={eventIcon(ev.event_type)}
+                  name={eventIcon(ev.event_type, ev.note)}
                   size={14}
                   color={colors.accentText}
                   strokeWidth={1.8}
@@ -405,7 +426,7 @@ function LiveStatusCard({ events, status, onRetry }) {
                     "Time confirmed · 10:01 PM · Time set at posting: Sat, Jul
                     25 at 3:54 PM". One is when the update was logged, the
                     other is the appointment, and nothing said which. */}
-                <Text variant="smallMedium">{eventTitle(ev.event_type)}</Text>
+                <Text variant="smallMedium">{eventTitle(ev.event_type, ev.note)}</Text>
                 {ev.note ? (
                   <Text variant="caption">{humaniseNote(ev.note)}</Text>
                 ) : null}
@@ -829,6 +850,20 @@ export default function BookingDetailsScreen({ route, navigation }) {
     user?.role === 'client' && isAwaitingPayment(payment) && booking?.status !== 'cancelled';
   const isCompleted = booking?.status === 'completed';
 
+  // Bug 6 — once the ledger says the money already moved, "Review work &
+  // release payment" isn't stale copy, it's a lie: there is nothing left to
+  // release, and the screen it opens can only show a nonsensical "$0" release
+  // notice (the backend correctly refuses the actual release, so no money is
+  // ever at risk — this is a pure UI-state bug). `payment_state.state` is the
+  // same server-computed truth `awaitingApproval` below already trusts, so
+  // 'released' here is the honest "fully_released" signal named in the bug.
+  //
+  // Hidden rather than shown disabled: the EscrowMilestones card above and
+  // the 'View receipt' entry below already give a released booking its
+  // after-the-fact confirmation, so nothing is lost by removing this entry —
+  // only the false promise that tapping it can still release something.
+  const paymentReleased = booking?.payment_state?.state === 'released';
+
   // The pro says the job is done and the client's money is still held: their
   // approval is what releases it (services/approvals.py). Until 2026-07-31 the
   // business released the money itself, so there was nothing for the client to
@@ -861,7 +896,7 @@ export default function BookingDetailsScreen({ route, navigation }) {
     // before/after photos and voice note, or to release the held payment.
     // The screen handles "proof not submitted yet" and "already approved"
     // itself, so this only needs the job to be done.
-    isCompleted && {
+    isCompleted && !paymentReleased && {
       key: 'approve', label: i18n.t('booking.reviewRelease'), icon: 'check-circle',
       onPress: () => navigation.navigate('ApproveWork', { bookingId }),
     },
