@@ -209,20 +209,22 @@ function TileSpacer() {
 // ─── Voice memo card ─────────────────────────────────────────────────────────
 const WAVE_BARS = 34;
 
+// Owns the recorder for the card's whole life. This wrapper is deliberately
+// NOT keyed by note.url — VoiceNoteCardBody below is. The recorder has
+// nothing to do with which memo is currently playable; keying it too meant
+// that every time a recording finished saving (note.url changing), React
+// tore the recorder down and remounted a new one while
+// useAudioRecorderState's 250 ms poller — created before the remount — was
+// still reading the old, now-released native object.
+// ERR_USING_RELEASED_SHARED_OBJECT, 25 times in one walkthrough. The record
+// and save actions themselves always succeeded; only this re-render died.
 function VoiceNoteCard({ note, saving, onRecorded, onDelete }) {
   const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
   // 250 ms matches the old stub's tick, so the waveform advances at the same
   // rate the design was reviewed at.
   const recorderState = useAudioRecorderState(recorder, 250);
 
-  const hasNote = !!note?.url;
-  const duration = note?.duration_seconds ?? 0;
-
-  const player = useAudioPlayer(hasNote ? { uri: note.url } : null);
-  const playerStatus = useAudioPlayerStatus(player);
-
   const isRecording = !!recorderState?.isRecording;
-  const playing = !!playerStatus?.playing;
   // Guards a re-entrant stop: the 60 s auto-stop effect and a fast double-tap
   // can both land inside stopRecording() before the first await returns.
   const stopping = useRef(false);
@@ -265,7 +267,10 @@ function VoiceNoteCard({ note, saving, onRecorded, onDelete }) {
     }
   }, [isRecording, recordedSeconds, stopRecording]);
 
-  // Leaving mid-recording must not strand a live microphone session.
+  // Leaving mid-recording must not strand a live microphone session. This
+  // now only fires when the card itself unmounts (the screen is left) —
+  // the recorder lives above the url-keyed subtree, so a memo saving no
+  // longer triggers it mid-session.
   useEffect(
     () => () => {
       if (recorder?.isRecording) recorder.stop().catch(() => {});
@@ -294,6 +299,41 @@ function VoiceNoteCard({ note, saving, onRecorded, onDelete }) {
       );
     }
   }
+
+  return (
+    <VoiceNoteCardBody
+      // Keyed on the url so the PLAYER remounts instead of expo-audio
+      // releasing its native object out from under a live JS handle (see
+      // the comment where this renders, in ProofOfWorkScreen below). The
+      // recorder above this line is outside the remount, so it is untouched.
+      key={note?.url || 'no-voice-note'}
+      note={note}
+      saving={saving}
+      onDelete={onDelete}
+      isRecording={isRecording}
+      recordedSeconds={recordedSeconds}
+      startRecording={startRecording}
+      stopRecording={stopRecording}
+    />
+  );
+}
+
+function VoiceNoteCardBody({
+  note,
+  saving,
+  onDelete,
+  isRecording,
+  recordedSeconds,
+  startRecording,
+  stopRecording,
+}) {
+  const hasNote = !!note?.url;
+  const duration = note?.duration_seconds ?? 0;
+
+  const player = useAudioPlayer(hasNote ? { uri: note.url } : null);
+  const playerStatus = useAudioPlayerStatus(player);
+
+  const playing = !!playerStatus?.playing;
 
   function handleRecordPress() {
     haptics.buttonTap?.();
@@ -752,14 +792,15 @@ export default function ProofOfWorkScreen({ route, navigation }) {
         })}
 
         <VoiceNoteCard
-          // The card owns an expo-audio player whose source is derived from
-          // `note.url`. Changing that url in place (memo loads, a new one is
-          // recorded, one is deleted) makes expo-audio release the native
-          // shared object while useAudioPlayerStatus still holds the old JS
-          // handle — the next status read then throws
-          // NativeSharedObjectNotFoundException. Keying on the url remounts the
-          // card instead, so a player's source is fixed for its whole life.
-          key={proof?.voice_note?.url || 'no-voice-note'}
+          // Below, VoiceNoteCardBody owns an expo-audio player whose source
+          // is derived from `note.url`. Changing that url in place (memo
+          // loads, a new one is recorded, one is deleted) makes expo-audio
+          // release the native shared object while useAudioPlayerStatus
+          // still holds the old JS handle — the next status read then
+          // throws NativeSharedObjectNotFoundException. VoiceNoteCard keys
+          // VoiceNoteCardBody on the url internally so it remounts instead;
+          // the recorder lives in the (unkeyed) VoiceNoteCard above it and
+          // is untouched by that remount — see its comment.
           note={proof?.voice_note}
           saving={savingVoice}
           onRecorded={handleVoiceRecorded}
