@@ -48,9 +48,11 @@ def as_client():
 def _api_error(code: str) -> APIError:
     return APIError(
         {
-            "message": f'invalid input syntax for type uuid: "definitely-not-a-route"'
-            if code == "22P02"
-            else "some other postgrest failure",
+            "message": (
+                'invalid input syntax for type uuid: "definitely-not-a-route"'
+                if code == "22P02"
+                else "some other postgrest failure"
+            ),
             "code": code,
             "hint": None,
             "details": None,
@@ -113,5 +115,7 @@ def test_real_server_error_on_invoice_route_still_500s(as_client):
         mock_supabase.table.return_value.select.return_value.eq.return_value.single.return_value.execute.side_effect = _api_error(
             "42501"
         )
-        resp = strict_client.get("/bookings/33333333-3333-3333-3333-333333333333/invoice")
+        resp = strict_client.get(
+            "/bookings/33333333-3333-3333-3333-333333333333/invoice"
+        )
     assert resp.status_code == 500
