@@ -4,3 +4,28 @@
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=(self)
   Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://plausible.io https://www.googletagmanager.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://*.supabase.co https://plausible.io https://swingbyy-api.onrender.com; frame-ancestors 'none'
+
+# Social images. These MUST be publicly fetchable by anyone: Instagram will not
+# accept image bytes on upload — Meta's servers fetch the picture from a public
+# URL — and that fetch carries no cookies, no referer and no auth. So the
+# security here is not "who may read it" (everyone, by design) but "what can
+# this path ever be made to do".
+#
+# Rules come after /* so these win for this prefix.
+/media/*
+  # Nothing in here is ever a document. If a stray .html or .svg with script
+  # were ever dropped into this folder it would be inert: no scripts, no
+  # network, no same-origin privileges to inherit.
+  Content-Security-Policy: default-src 'none'; sandbox
+  # Belt and braces with the CSP — the browser must not re-interpret a PNG as
+  # anything else based on its bytes.
+  X-Content-Type-Options: nosniff
+  # Let other origins embed the image (link previews, the press kit). Meta's
+  # server-side fetch ignores this; browsers rendering a preview do not.
+  Cross-Origin-Resource-Policy: cross-origin
+  # A day. Deliberately NOT `immutable`: filenames here are stable and get
+  # replaced in place when the artwork is revised, so a year-long cache would
+  # pin an old post nobody can flush.
+  Cache-Control: public, max-age=86400
+  # These are marketing assets, not user content — no referrer trimming needed,
+  # but keep the default rather than widening it.
