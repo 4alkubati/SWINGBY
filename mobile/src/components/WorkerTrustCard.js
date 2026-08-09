@@ -30,8 +30,26 @@ export default function WorkerTrustCard({ booking, onViewBusiness }) {
     || 'Your provider';
   const companyName = booking?.businesses?.business_name || assignee?.business_name || '';
   const roleTitle = assignee?.role_title || booking?.employees?.role_title || '';
-  const rating = booking?.avg_rating;
-  const jobCount = booking?.job_count;
+  // `avg_rating` and `job_count` are not columns on `bookings` either — same
+  // phantom-field class as the $0.00 price and the name/date fields above,
+  // just left for a later pass (see d89ae42).
+  //
+  // `businesses.avg_rating` defaults to 0 in the DB and is only recomputed
+  // once a real review lands (reviews.py::create_review) — so a bare
+  // avg_rating column can't be told apart from "never rated" from here. Only
+  // trust it once `review_count` (nested on the same join, see
+  // bookings.py::get_booking) confirms a review is actually behind it;
+  // otherwise render nothing. A fabricated "0.0 stars" forever is the same
+  // bug as the fabricated $0.00 price.
+  const reviewCount = booking?.businesses?.review_count;
+  const rating = reviewCount ? booking?.businesses?.avg_rating : null;
+  // There is no `job_count` column anywhere. The real figure is server-derived
+  // per assignee in bookings.py::_completed_job_counts (wired through
+  // `_attach_assignee` on both the list and detail booking reads) — null when
+  // it genuinely could not be computed (nobody assigned yet, or the lookup
+  // failed), a real number — including a real 0 for a brand-new employee —
+  // once it can be. Never fall back to a made-up 0.
+  const jobCount = booking?.assignee?.jobs_completed;
   const status = STATUS_CONFIG[booking?.status] || STATUS_CONFIG.confirmed;
 
   return (
@@ -54,7 +72,7 @@ export default function WorkerTrustCard({ booking, onViewBusiness }) {
         </TouchableOpacity>
       ) : null}
 
-      {(rating || jobCount) ? (
+      {(rating != null || jobCount != null) ? (
         <View style={styles.statsRow}>
           {rating != null && (
             <View style={styles.statInline}>
