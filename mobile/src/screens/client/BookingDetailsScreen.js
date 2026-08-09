@@ -873,6 +873,20 @@ export default function BookingDetailsScreen({ route, navigation }) {
     user?.role === 'client' && isAwaitingPayment(payment) && booking?.status !== 'cancelled';
   const isCompleted = booking?.status === 'completed';
 
+  // Bug B (walkthrough) — "Scheduled: —" on a completed job. `scheduled_at`
+  // is `confirmed_date || proposed_date_1` (set above in fetchBooking); a
+  // booking created without a post-time `preferred_date` only gets
+  // `confirmed_date` once the propose/confirm handshake runs
+  // (assign-employee → confirm-date, backend/app/api/bookings.py), and
+  // nothing requires that handshake before /complete. So a real, completed
+  // job can genuinely have no date on file — that isn't a bug to paper over
+  // with a made-up date, but an em-dash next to "Scheduled" on a job that
+  // demonstrably happened reads as "this was never scheduled", which
+  // contradicts its own completed status. Once there IS a date, always show
+  // it; once the job is done and there never was one, drop the row instead
+  // of asserting a negative about the past.
+  const showScheduledRow = !!booking?.scheduled_at || !isCompleted;
+
   // Bug 6 — once the ledger says the money already moved, "Review work &
   // release payment" isn't stale copy, it's a lie: there is nothing left to
   // release, and the screen it opens can only show a nonsensical "$0" release
@@ -1080,15 +1094,19 @@ export default function BookingDetailsScreen({ route, navigation }) {
               </Text>
             </DetailRow>
 
-            <View style={{ height: 1, backgroundColor: colors.border }} />
-
-            {/* Scheduled row */}
-            <DetailRow icon="calendar" label="Scheduled">
-              <Text variant="bodyMedium" style={{ textAlign: TEXT_END }}>
-                {formatDate(booking?.scheduled_at)}{' '}
-                {formatTime(booking?.scheduled_at)}
-              </Text>
-            </DetailRow>
+            {/* Scheduled row — omitted on a completed job with no date on
+                file; see showScheduledRow above. */}
+            {showScheduledRow && (
+              <>
+                <View style={{ height: 1, backgroundColor: colors.border }} />
+                <DetailRow icon="calendar" label="Scheduled">
+                  <Text variant="bodyMedium" style={{ textAlign: TEXT_END }}>
+                    {formatDate(booking?.scheduled_at)}{' '}
+                    {formatTime(booking?.scheduled_at)}
+                  </Text>
+                </DetailRow>
+              </>
+            )}
 
             <View style={{ height: 1, backgroundColor: colors.border }} />
 

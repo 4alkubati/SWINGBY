@@ -348,3 +348,93 @@ describe('EscrowStatus — one honest state, never two contradictory ones (Bug A
     expect(queryByText(i18n.t('escrow.fullReleased'))).toBeNull();
   });
 });
+
+// Bug B (2026-08-09 walkthrough) — "Scheduled: —" on a completed job reads as
+// "this was never scheduled" on a job that demonstrably happened. A completed
+// booking can genuinely have no confirmed_date/proposed_date_1 on file (the
+// propose/confirm handshake is not required before /complete — see
+// showScheduledRow's comment in BookingDetailsScreen.js), so the fix omits
+// the row rather than fabricating a date.
+describe('BookingDetailsScreen — "Scheduled: —" on a completed job (Bug B)', () => {
+  it('omits the Scheduled row on a completed booking with no date on file', async () => {
+    const COMPLETED_NO_DATE = {
+      ...NESTED_BOOKING,
+      id: 'b3',
+      status: 'completed',
+      confirmed_date: null,
+      proposed_date_1: null,
+      payment_state: { state: 'released', amount_held: 0, amount_released: 195, amount_total: 195 },
+    };
+    api.get.mockImplementation((path) => {
+      if (path.startsWith('/bookings/')) return Promise.resolve(COMPLETED_NO_DATE);
+      if (path.startsWith('/payments/')) return Promise.resolve({ status: 'fully_released' });
+      return Promise.resolve({});
+    });
+
+    const { findByText, queryByText } = render(
+      <Providers>
+        <BookingDetailsScreen
+          route={{ params: { bookingId: 'b3' }, key: 'k3', name: 'BookingDetails' }}
+          navigation={mockNavigation}
+        />
+      </Providers>
+    );
+
+    await findByText('Job Details', {}, { timeout: 5000 });
+    expect(queryByText('Scheduled')).toBeNull();
+  });
+
+  it('still shows the real date on a completed booking that has one', async () => {
+    const COMPLETED_WITH_DATE = {
+      ...NESTED_BOOKING,
+      id: 'b4',
+      status: 'completed',
+      confirmed_date: '2026-07-20T14:00:00Z',
+    };
+    api.get.mockImplementation((path) => {
+      if (path.startsWith('/bookings/')) return Promise.resolve(COMPLETED_WITH_DATE);
+      if (path.startsWith('/payments/')) return Promise.resolve({ status: 'fully_released' });
+      return Promise.resolve({});
+    });
+
+    const { findByText, queryByText } = render(
+      <Providers>
+        <BookingDetailsScreen
+          route={{ params: { bookingId: 'b4' }, key: 'k4', name: 'BookingDetails' }}
+          navigation={mockNavigation}
+        />
+      </Providers>
+    );
+
+    await findByText('Job Details', {}, { timeout: 5000 });
+    expect(queryByText('Scheduled')).not.toBeNull();
+    expect(queryByText('—')).toBeNull();
+  });
+
+  it('still shows the row (with its placeholder) on an un-completed booking with no date yet — that one really is unscheduled', async () => {
+    const PENDING_NO_DATE = {
+      ...NESTED_BOOKING,
+      id: 'b5',
+      status: 'confirmed',
+      confirmed_date: null,
+      proposed_date_1: null,
+    };
+    api.get.mockImplementation((path) => {
+      if (path.startsWith('/bookings/')) return Promise.resolve(PENDING_NO_DATE);
+      if (path.startsWith('/payments/')) return Promise.resolve({ status: 'pending_payment' });
+      return Promise.resolve({});
+    });
+
+    const { findByText, queryByText } = render(
+      <Providers>
+        <BookingDetailsScreen
+          route={{ params: { bookingId: 'b5' }, key: 'k5', name: 'BookingDetails' }}
+          navigation={mockNavigation}
+        />
+      </Providers>
+    );
+
+    await findByText('Job Details', {}, { timeout: 5000 });
+    expect(queryByText('Scheduled')).not.toBeNull();
+  });
+});
