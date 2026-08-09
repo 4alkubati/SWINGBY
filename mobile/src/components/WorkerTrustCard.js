@@ -15,9 +15,21 @@ const STATUS_CONFIG = {
 };
 
 export default function WorkerTrustCard({ booking, onViewBusiness }) {
-  const workerName = booking?.employee_name || booking?.business_name || 'Your provider';
-  const companyName = booking?.business_name || '';
-  const roleTitle = booking?.employee_role || '';
+  // `employee_name` / `employee_role` / `business_name` are not columns the
+  // API returns. `assignee` (bookings.py::_attach_assignee) is the
+  // authoritative "who's going" — the business until someone is assigned,
+  // then that person — with a fallback to the raw nested joins for shapes
+  // that predate it. `businesses.business_name` is the company regardless of
+  // who is assigned.
+  const assignee = booking?.assignee;
+  const empUser = booking?.employees?.users;
+  const workerName =
+    assignee?.name
+    || (empUser ? [empUser.first_name, empUser.last_name].filter(Boolean).join(' ') : null)
+    || booking?.businesses?.business_name
+    || 'Your provider';
+  const companyName = booking?.businesses?.business_name || assignee?.business_name || '';
+  const roleTitle = assignee?.role_title || booking?.employees?.role_title || '';
   const rating = booking?.avg_rating;
   const jobCount = booking?.job_count;
   const status = STATUS_CONFIG[booking?.status] || STATUS_CONFIG.confirmed;
