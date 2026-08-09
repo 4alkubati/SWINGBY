@@ -105,6 +105,7 @@ async def _postgrest_bad_identifier_to_404(request: Request, exc: PostgrestAPIEr
         return JSONResponse(status_code=404, content={"detail": "Not Found"})
     raise exc
 
+
 # T12 — Request-ID middleware (register before CORS so every response gets it)
 app.add_middleware(RequestIDMiddleware)
 

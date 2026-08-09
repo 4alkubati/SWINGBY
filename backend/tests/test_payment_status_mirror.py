@@ -30,8 +30,6 @@ one reading a column nothing kept current.
 
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 from app.api import payments_stripe
 from app.services import escrow
 
@@ -117,9 +115,7 @@ def _run(payment_row, *, raise_on_bookings=False, amount_total_cents=19500):
 
     with patch.object(
         escrow, "load_single_payment", return_value=payment_row
-    ), patch.object(
-        payments_stripe, "supabase", MagicMock(table=stub)
-    ), patch(
+    ), patch.object(payments_stripe, "supabase", MagicMock(table=stub)), patch(
         "app.services.credits._existing_redemption_cents", return_value=0
     ), patch(
         "app.services.email.send_payment_receipt"
