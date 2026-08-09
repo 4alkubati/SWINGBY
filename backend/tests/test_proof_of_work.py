@@ -196,6 +196,8 @@ class TestApprove:
     def test_uncaptured_money_blocks_the_release(self, as_client):
         """escrow FINDING C: never pay out what was never collected."""
         with patch.object(
+            pow_api, "_load_booking", return_value={**BOOKING, "status": "completed"}
+        ), patch.object(
             pow_api, "_load_proof", return_value={"status": "submitted"}
         ), patch.object(
             pow_api.escrow,
@@ -210,6 +212,22 @@ class TestApprove:
         # Nothing was marked approved.
         upsert.assert_not_called()
 
+    def test_approve_refused_when_booking_not_marked_done(self, as_client):
+        """Gap: proof alone (2+2 photos, submitted) must not be enough to
+        release money. The business must have called PATCH
+        /bookings/{id}/complete — booking.status == 'completed' — first;
+        `BOOKING` (via `as_client`) sits at 'in_progress', the state before
+        that call. Matches the identical guard on the sibling endpoint,
+        bookings.py::approve_completed_work."""
+        with patch.object(
+            pow_api, "_load_proof", return_value={"status": "submitted"}
+        ), patch.object(pow_api.escrow, "release_escrow_on_complete") as release:
+            with pytest.raises(HTTPException) as exc:
+                pow_api.approve_proof("bk-1", current_user=CLIENT)
+        assert exc.value.status_code == 400
+        assert "isn't marked done" in exc.value.detail
+        release.assert_not_called()
+
     def test_happy_path_releases_then_marks_approved(self, as_client):
         supa = MagicMock()
         # Since 2026-07-31 the release goes through `approvals.release` rather
@@ -218,6 +236,8 @@ class TestApprove:
         # it needs its own double — without it the booking UPDATE inside
         # approvals.release reaches for the network and the test dies on DNS.
         with patch.object(
+            pow_api, "_load_booking", return_value={**BOOKING, "status": "completed"}
+        ), patch.object(
             pow_api, "_load_proof", return_value={"status": "submitted"}
         ), patch.object(
             pow_api.escrow,
@@ -239,11 +259,46 @@ class TestApprove:
         assert upsert.call_args[0][1]["status"] == "approved"
         assert out["outcome"] == "released"
 
+    def test_approve_writes_no_duplicate_completed_event(self, as_client):
+        """Gap: approvals.release() already inserts a `payment_released`
+        booking_event for this exact moment. approve_proof used to *also*
+        insert its own `event_type: 'completed'` row on top of the
+        `completed` row start_approval_window wrote when the business marked
+        the job done — two rows, same event_type, so the client's timeline
+        showed "Job complete" twice for one booking. approve_proof must not
+        write a booking_events row of its own any more."""
+        supa = MagicMock()
+        with patch.object(
+            pow_api, "_load_booking", return_value={**BOOKING, "status": "completed"}
+        ), patch.object(
+            pow_api, "_load_proof", return_value={"status": "submitted"}
+        ), patch.object(
+            pow_api.escrow,
+            "release_escrow_on_complete",
+            return_value={"outcome": "released", "payment": {}},
+        ), patch.object(
+            pow_api, "_upsert_proof", return_value={"status": "approved"}
+        ), patch.object(
+            pow_api, "supabase", supa
+        ), patch.object(
+            pow_api.approvals, "supabase", MagicMock()
+        ):
+            pow_api.approve_proof("bk-1", current_user=CLIENT)
+
+        insert_calls = [
+            c.args[0] for c in supa.table.return_value.insert.call_args_list if c.args
+        ]
+        assert not any(
+            row.get("event_type") == "completed" for row in insert_calls
+        ), insert_calls
+
     def test_approving_a_proof_also_closes_the_24h_window(self, as_client):
         """Otherwise the money is released but the booking still looks pending,
         and the sweep keeps re-examining a booking that is already settled."""
         approvals_supa = MagicMock()
         with patch.object(
+            pow_api, "_load_booking", return_value={**BOOKING, "status": "completed"}
+        ), patch.object(
             pow_api, "_load_proof", return_value={"status": "submitted"}
         ), patch.object(
             pow_api.escrow,

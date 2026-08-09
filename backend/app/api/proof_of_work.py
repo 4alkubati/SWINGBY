@@ -460,6 +460,19 @@ def approve_proof(booking_id: str, current_user: dict = Depends(get_current_user
             detail="This job is disputed — funds stay held until it is resolved",
         )
 
+    # The business must mark the job done (PATCH /bookings/{id}/complete,
+    # which opens the approval window) before a client approval can release
+    # anything. Without this, submitting a proof bundle alone was enough to
+    # let a client approve and release escrow on a booking the business never
+    # completed — matches the identical guard on the sibling endpoint,
+    # bookings.py::approve_completed_work (POST /bookings/{id}/approve),
+    # same status code and wording for the same wrong-state condition.
+    if booking.get("status") != "completed":
+        raise HTTPException(
+            status_code=400,
+            detail="This job isn't marked done yet, so there's nothing to approve.",
+        )
+
     try:
         # Routed through approvals.release rather than escrow directly, so this
         # path also clears `approval_deadline_at`. Otherwise approving a proof
@@ -496,17 +509,12 @@ def approve_proof(booking_id: str, current_user: dict = Depends(get_current_user
             "escrow released for %s but the bookings row did not update", booking_id
         )
 
-    try:
-        supabase.table("booking_events").insert(
-            {
-                "booking_id": booking_id,
-                "actor_id": current_user["id"],
-                "event_type": "completed",
-                "note": "Client approved the proof of work — payment released",
-            }
-        ).execute()
-    except Exception as exc:
-        logger.warning("booking_event write failed after approve: %s", exc)
+    # No manual booking_events write here. approvals.release() (called above)
+    # already inserts an event_type: 'payment_released' row for this exact
+    # moment — this used to *also* insert its own event_type: 'completed' row
+    # on top of the 'completed' row start_approval_window already wrote when
+    # the business marked the job done, so the client's timeline showed "Job
+    # complete" twice for one booking. release() is the single writer now.
 
     return {
         "proof": updated,

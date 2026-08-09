@@ -739,11 +739,56 @@ def _mark_payment_paid(
     # what FINDING C's guard has to reason about.
     if not payment.get("method"):
         update["method"] = "stripe_card"
+    payments_row_updated = True
     try:
         supabase.table("payments").update(update).eq("id", payment["id"]).execute()
     except Exception:
+        payments_row_updated = False
         logger.exception("Could not mark payment paid for booking %s", booking_id)
         # Don't raise — webhooks must be idempotent + always 200 to Stripe.
+
+    # Bug 4 (walkthrough) — mirror the capture onto bookings.payment_status.
+    #
+    # This is the ONLY place a real capture gets confirmed: hosted Checkout's
+    # webhook, the payment_intent.succeeded webhook, and confirm_payment_intent
+    # (the native Payment Sheet's settle call) all funnel here. Before this,
+    # none of them touched bookings.payment_status — the sole write to that
+    # column for a captured payment lived in interests.py's Flow A branch
+    # ("if post_payment:"), which only runs for the charge-AT-POST flow. That
+    # flow is gated off in api/service_posts.py (see CLAUDE.md), so on the
+    # live charge-AT-ACCEPT path bookings.payment_status never left the
+    # 'pending_payment' it was given at booking creation until /complete
+    # (services/approvals.py) rewrote it as a side effect of a wholly
+    # different action. The client saw a PENDING pill next to money that was
+    # already genuinely held.
+    #
+    # `_attach_payment_state` (api/bookings.py) does NOT depend on this column
+    # — it derives the real payment_state fresh from the payments ledger on
+    # every read, which is why "Funds held in escrow" was already correct
+    # while a raw payment_status pill sitting elsewhere lied. This write is
+    # for that second, older reader: the raw column itself.
+    #
+    # Skipped when the ledger write above failed — mirroring 'held' onto the
+    # booking when the ledger never actually recorded the capture would be a
+    # lie in the other direction. Never raises (same idempotent-webhook
+    # requirement as everything else here), but logged at ERROR with a full
+    # traceback rather than a bare warning: unlike a receipt email, a booking
+    # that silently keeps the wrong payment_status is actively showing the
+    # client false information about their own money, so this failure needs
+    # to be loud even though it cannot be allowed to block the response.
+    if payments_row_updated:
+        try:
+            supabase.table("bookings").update({"payment_status": "held"}).eq(
+                "id", booking_id
+            ).execute()
+        except Exception:
+            logger.error(
+                "could not mirror held payment_status onto booking %s — client "
+                "will see a stale pending_payment status until /complete "
+                "corrects it as a side effect of a different action",
+                booking_id,
+                exc_info=True,
+            )
 
     # Email the client a payment receipt — best-effort, never raises
     try:

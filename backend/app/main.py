@@ -51,12 +51,17 @@ if settings.SENTRY_DSN:
         send_default_pii=False,
     )
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 # T17 — Rate limiting (limiter defined in app/limiter.py to avoid circular import)
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
+
+# Bug 9 (walkthrough) — postgrest's APIError, for the invalid-UUID-cast handler
+# registered below, right after the FastAPI app exists.
+from postgrest.exceptions import APIError as PostgrestAPIError
 
 # Reported by /health as `direct_sql`, and used for nothing else — see
 # app/database.py. `text` went with the old SQL probe.
@@ -73,6 +78,33 @@ app = FastAPI(title="SwingBy API", version="1.0.0")
 # T17 — Attach limiter to app state before any routers are included
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+
+# Bug 9 (walkthrough) — unknown paths under a mounted router were surfacing as
+# 500, not 404. `/bookings` alone carries 6 routers, most of them shaped
+# `/{booking_id}/...`; a mistyped or garbage path segment still MATCHES that
+# pattern (FastAPI has no way to know `booking_id` should be a UUID unless the
+# route says so — most of these declare it `str`), so the request reaches the
+# handler and only fails once the id hits Postgres as a WHERE clause. Postgres
+# rejects it with code 22P02 (invalid_text_representation — "this string is
+# not a UUID"), which several handlers (app/api/invoices.py, booking_location.py,
+# payments_stripe.py, proof_of_work.py) never wrap in try/except, so it rode
+# all the way up as an unhandled 500. That is genuinely "not found," not a
+# server failure — a per-route try/except fix would need touching a dozen
+# files today and would silently miss the next one, so this is deliberately
+# a global handler keyed on the one Postgres code that means "malformed
+# identifier," not on APIError broadly.
+#
+# Anything else that reaches Postgres as an APIError (RLS denial, connection
+# drop, a real query bug) is a genuine server failure and must keep behaving
+# like one — re-raising here hands it to Starlette's default handler, which
+# is the same unhandled-exception 500 path this code did nothing to touch.
+@app.exception_handler(PostgrestAPIError)
+async def _postgrest_bad_identifier_to_404(request: Request, exc: PostgrestAPIError):
+    if exc.code == "22P02":
+        return JSONResponse(status_code=404, content={"detail": "Not Found"})
+    raise exc
+
 
 # T12 — Request-ID middleware (register before CORS so every response gets it)
 app.add_middleware(RequestIDMiddleware)
