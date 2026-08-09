@@ -27,6 +27,18 @@ const COPY = {
   cancelled_event: { icon: 'x-circle', title: 'Cancelled' },
 };
 
+// Bug 10 — a 'completed' row can be two different real events. Client
+// approval of proof also inserts its own event_type: 'completed' row
+// (backend/app/api/proof_of_work.py::approve_proof), on top of the
+// 'completed' row the business's own "mark done" already wrote
+// (backend/app/services/approvals.py::start_approval_window). Both carry the
+// identical event_type, so COPY alone would label them both "Job complete".
+// The note text is the only signal left that tells them apart — approve_proof
+// always writes "payment released" into it, and no "mark done" note does.
+function isPaymentReleaseNote(note) {
+  return /payment released/i.test(note || '');
+}
+
 // Notes are written by the backend and routinely embed a raw ISO timestamp
 // (`2026-07-25T20:30:00+00:00`). Appending one verbatim next to a friendly
 // time is the other half of B16.
@@ -102,12 +114,17 @@ export default function LiveStatusTimeline({ events = [], status = 'ready' }) {
   return (
       <Stack spacing="sm">
         {events.map((ev, i) => {
-          const meta = COPY[ev.event_type] || {
-            icon: 'circle',
-            // Never the bare enum: an unknown event type still gets read by a
-            // human, so spell it like words.
-            title: humaniseEventType(ev.event_type),
-          };
+          const meta = (ev.event_type === 'completed' && isPaymentReleaseNote(ev.note))
+            ? { icon: 'dollar-sign', title: i18n.t('booking.eventPaymentReleased') }
+            : COPY[ev.event_type] || {
+              icon: 'circle',
+              // Never the bare enum: an unknown event type still gets read by
+              // a human, so spell it like words. This also covers the real
+              // 'payment_released' event_type approvals.release() writes —
+              // "payment released" is already the right shape without a COPY
+              // entry.
+              title: humaniseEventType(ev.event_type),
+            };
           const last = i === events.length - 1;
           return (
             <View key={ev.id || `${ev.event_type}-${i}`} style={styles.row}>

@@ -108,8 +108,23 @@ const EVENT_COPY = {
   paused:          { icon: 'pause-circle',  key: 'booking.eventPaused' },
   resumed:         { icon: 'play-circle',   key: 'booking.eventResumed' },
   completed:       { icon: 'check-circle',  key: 'booking.eventCompleted' },
+  payment_released:{ icon: 'dollar-sign',   key: 'booking.eventPaymentReleased' },
   cancelled_event: { icon: 'x-circle',      key: 'booking.eventCancelled' },
 };
+
+// ─── Bug 10 — one 'completed' row can be two different real events ──────────
+// backend/app/api/proof_of_work.py::approve_proof inserts its OWN
+// event_type: 'completed' row the moment the client approves proof and the
+// payment releases — on top of the 'completed' row
+// backend/app/services/approvals.py::start_approval_window already wrote when
+// the business marked the job done. Both carry the identical event_type, so
+// EVENT_COPY alone renders "Job complete" twice for the same booking. The
+// note text is the only signal left that tells them apart by the time this
+// reaches the client: approve_proof's note always contains "payment
+// released", and no "mark done" note ever does.
+function isPaymentReleaseNote(note) {
+  return /payment released/i.test(note || '');
+}
 
 const ISO_IN_TEXT = /\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}(:\d{2})?(\.\d+)?(Z|[+-]\d{2}:?\d{2})?/g;
 
@@ -131,12 +146,18 @@ export function humaniseNote(note) {
   return note.replace(ISO_IN_TEXT, (m) => formatDateTime(m));
 }
 
-export function eventTitle(eventType) {
+export function eventTitle(eventType, note) {
+  if (eventType === 'completed' && isPaymentReleaseNote(note)) {
+    return i18n.t('booking.eventPaymentReleased');
+  }
   const meta = EVENT_COPY[eventType];
   return meta ? i18n.t(meta.key) : i18n.t('booking.eventGeneric');
 }
 
-export function eventIcon(eventType) {
+export function eventIcon(eventType, note) {
+  if (eventType === 'completed' && isPaymentReleaseNote(note)) {
+    return EVENT_COPY.payment_released.icon;
+  }
   return EVENT_COPY[eventType]?.icon || 'circle';
 }
 
@@ -258,37 +279,61 @@ export function hasBeenCharged(payment) {
   return CAPTURED.has((payment?.status || '').toLowerCase());
 }
 
-// ─── Escrow milestones (read-only) ─────────────────────────────────────────────
+// ─── Escrow status (read-only) ─────────────────────────────────────────────
 // GAP-AUDIT #10 — payments.escrow_held / released_to_business are tracked by
 // the backend but no screen ever surfaced them. Pure display, zero writes to
 // any payment endpoint.
 //
-// This comment used to say "interests.py accept → 50% released; complete_booking
-// → remaining released". Accept releases NOTHING — it charges and holds. The
-// release happens when the CLIENT approves, or 24h after the business marks the
-// work done (services/approvals.py).
-function EscrowMilestones({ payment }) {
-  if (!payment) return null;
+// This used to be a three-row ladder — "Funds held" / "Released when you
+// approve" / "Released on completion" — with each row lit up (or not)
+// independently by re-deriving "half released" / "fully released" from the
+// raw payments row. Two bugs came out of that shape:
+//
+//   1. On a PAID-OUT booking, "Funds held in escrow" (done, because
+//      total_charged was set) sat lit right next to "Released on completion"
+//      (also done) — a direct, simultaneous claim that the client's money
+//      was both sitting in escrow AND already gone. An 81-year-old reading
+//      that does not file a bug, they phone their son.
+//   2. "half released" + "fully released" is literally the shape of a staged
+//      50%-now/50%-later release. There is no such thing — see
+//      backend/app/services/escrow.py's module docstring and
+//      tests/test_no_staged_release_claim.py: money is charged once, at
+//      accept, held in FULL, and released once, in one shot, minus the 10%
+//      platform cut, on completion+approval or the 24h auto-release.
+//
+// The honest UI is therefore a STATE, not a checklist — money is in exactly
+// one of the backend's payment_state.state values at any moment
+// (bookings.py::_payment_state / _PAYMENT_LABELS), so exactly one sentence
+// can ever be true on screen, and a not-yet-reached state simply isn't
+// rendered rather than sitting there unchecked next to a done one.
+//
+// `payment_state` is the same server-computed ledger truth this screen
+// already trusts for `awaitingApproval` / `paymentReleased` below — that is
+// deliberate: re-deriving "released" from the raw payments row (as the old
+// ladder did) is exactly how "held" and "released" ended up lit together.
+// `held` deliberately carries no amountField: while state is 'held' the full
+// total is held (nothing has been released yet), so `amount_held` always
+// equals the total already shown on the Price row above — repeating it here
+// is pure redundancy, not new information. `released` DOES carry one: after
+// the 10% platform cut, `amount_released` is genuinely less than the total,
+// so it is the one number on this card the client cannot already read
+// elsewhere.
+const ESCROW_STATE_META = {
+  unpaid:             { icon: 'clock',        labelKey: 'escrow.status.unpaid',    amountField: null },
+  held:               { icon: 'lock',         labelKey: 'escrow.fundsHeld',        amountField: null },
+  released:           { icon: 'check-circle', labelKey: 'escrow.fullReleased',     amountField: 'amount_released' },
+  paid_off_platform:  { icon: 'check-circle', labelKey: 'escrow.status.offPlatform', amountField: null },
+  refunded:           { icon: 'rotate-ccw',   labelKey: 'escrow.status.refunded',  amountField: null },
+};
 
-  const totalCharged = parseFloat(payment.total_charged ?? 0);
-  const releasedToBusiness = parseFloat(payment.released_to_business ?? 0);
-  const escrowHeld = parseFloat(payment.escrow_held ?? 0);
-  const payStatus = (payment.status || '').toLowerCase();
+function EscrowStatus({ paymentState }) {
+  if (!paymentState?.state) return null;
 
-  // AUDIT L5 — `total_charged > 0` is not "the money arrived". The column is
-  // populated when the booking is priced, so this ticked "Funds held" on
-  // bookings that were never paid. hasBeenCharged() is defined 10 lines up and
-  // checks the payment STATUS against the captured set — use the helper that
-  // already exists rather than a second, looser definition of "paid".
-  const fundsHeld = hasBeenCharged(payment);
-  const halfReleased = releasedToBusiness > 0 || ['partial', 'fully_released'].includes(payStatus);
-  const fullyReleased = payStatus === 'fully_released' && escrowHeld === 0;
+  const meta = ESCROW_STATE_META[paymentState.state];
+  if (!meta) return null; // unrecognised future state — say nothing rather than guess
 
-  const steps = [
-    { key: 'held', label: i18n.t('escrow.fundsHeld'), done: fundsHeld },
-    { key: 'half', label: i18n.t('escrow.halfReleased'), done: halfReleased },
-    { key: 'full', label: i18n.t('escrow.fullReleased'), done: fullyReleased },
-  ];
+  const amount = meta.amountField ? Number(paymentState[meta.amountField] ?? 0) : null;
+  const isSettled = paymentState.state === 'held' || paymentState.state === 'released';
 
   return (
     <Surface elevation="subtle">
@@ -300,33 +345,32 @@ function EscrowMilestones({ payment }) {
           </Text>
         </Inline>
 
-        {steps.map((step, i) => (
-          <Inline key={step.key} spacing="sm" align="center">
-            <Feather
-              name={step.done ? 'check-circle' : 'circle'}
-              size={16}
-              color={step.done ? colors.success : colors.textSecondary}
-              strokeWidth={1.8}
-            />
-            <Text
-              variant="small"
-              color={step.done ? 'primary' : 'secondary'}
-              style={{ flex: 1 }}
-            >
-              {step.label}
+        <Inline spacing="sm" align="center">
+          <Feather
+            name={meta.icon}
+            size={16}
+            color={isSettled ? colors.success : colors.textSecondary}
+            strokeWidth={1.8}
+          />
+          <Text
+            variant="small"
+            color={isSettled ? 'primary' : 'secondary'}
+            style={{ flex: 1 }}
+          >
+            {i18n.t(meta.labelKey)}
+          </Text>
+          {amount != null && amount > 0 && (
+            <Text variant="caption" color="secondary">
+              ${amount.toFixed(2)}
             </Text>
-            {i === 1 && halfReleased && (
-              <Text variant="caption" color="secondary">
-                ${releasedToBusiness.toFixed(2)}
-              </Text>
-            )}
-            {i === 2 && fullyReleased && (
-              <Text variant="caption" color="secondary">
-                ${totalCharged.toFixed(2)}
-              </Text>
-            )}
-          </Inline>
-        ))}
+          )}
+        </Inline>
+
+        {paymentState.state === 'held' && (
+          <Text variant="caption" color="secondary">
+            {i18n.t('escrow.status.heldBody')}
+          </Text>
+        )}
       </Stack>
     </Surface>
   );
@@ -394,7 +438,7 @@ function LiveStatusCard({ events, status, onRetry }) {
                 alignItems: 'center', justifyContent: 'center',
               }}>
                 <Feather
-                  name={eventIcon(ev.event_type)}
+                  name={eventIcon(ev.event_type, ev.note)}
                   size={14}
                   color={colors.accentText}
                   strokeWidth={1.8}
@@ -405,7 +449,7 @@ function LiveStatusCard({ events, status, onRetry }) {
                     "Time confirmed · 10:01 PM · Time set at posting: Sat, Jul
                     25 at 3:54 PM". One is when the update was logged, the
                     other is the appointment, and nothing said which. */}
-                <Text variant="smallMedium">{eventTitle(ev.event_type)}</Text>
+                <Text variant="smallMedium">{eventTitle(ev.event_type, ev.note)}</Text>
                 {ev.note ? (
                   <Text variant="caption">{humaniseNote(ev.note)}</Text>
                 ) : null}
@@ -687,8 +731,9 @@ export default function BookingDetailsScreen({ route, navigation }) {
   // with the job's post title for display, so we read the raw column here
   // instead so the chip picker on PostJobScreen can actually match a
   // CATEGORY_LABELS entry. `booking.total_amount` is the real bookings-table
-  // price column (the Price row on this screen reads quoted_price/price,
-  // which aren't columns on this table — pre-existing, not touched here).
+  // price column — the Price row above now reads it directly (it used to
+  // read `quoted_price`/`price`, neither of which is a column on this table,
+  // which is why it rendered $0.00 on every booking).
   const handleRebook = () => {
     navigation.navigate('PostJob', {
       rebookBusinessId: booking?.business_id,
@@ -828,6 +873,34 @@ export default function BookingDetailsScreen({ route, navigation }) {
     user?.role === 'client' && isAwaitingPayment(payment) && booking?.status !== 'cancelled';
   const isCompleted = booking?.status === 'completed';
 
+  // Bug B (walkthrough) — "Scheduled: —" on a completed job. `scheduled_at`
+  // is `confirmed_date || proposed_date_1` (set above in fetchBooking); a
+  // booking created without a post-time `preferred_date` only gets
+  // `confirmed_date` once the propose/confirm handshake runs
+  // (assign-employee → confirm-date, backend/app/api/bookings.py), and
+  // nothing requires that handshake before /complete. So a real, completed
+  // job can genuinely have no date on file — that isn't a bug to paper over
+  // with a made-up date, but an em-dash next to "Scheduled" on a job that
+  // demonstrably happened reads as "this was never scheduled", which
+  // contradicts its own completed status. Once there IS a date, always show
+  // it; once the job is done and there never was one, drop the row instead
+  // of asserting a negative about the past.
+  const showScheduledRow = !!booking?.scheduled_at || !isCompleted;
+
+  // Bug 6 — once the ledger says the money already moved, "Review work &
+  // release payment" isn't stale copy, it's a lie: there is nothing left to
+  // release, and the screen it opens can only show a nonsensical "$0" release
+  // notice (the backend correctly refuses the actual release, so no money is
+  // ever at risk — this is a pure UI-state bug). `payment_state.state` is the
+  // same server-computed truth `awaitingApproval` below already trusts, so
+  // 'released' here is the honest "fully_released" signal named in the bug.
+  //
+  // Hidden rather than shown disabled: the EscrowStatus card above and
+  // the 'View receipt' entry below already give a released booking its
+  // after-the-fact confirmation, so nothing is lost by removing this entry —
+  // only the false promise that tapping it can still release something.
+  const paymentReleased = booking?.payment_state?.state === 'released';
+
   // The pro says the job is done and the client's money is still held: their
   // approval is what releases it (services/approvals.py). Until 2026-07-31 the
   // business released the money itself, so there was nothing for the client to
@@ -860,7 +933,7 @@ export default function BookingDetailsScreen({ route, navigation }) {
     // before/after photos and voice note, or to release the held payment.
     // The screen handles "proof not submitted yet" and "already approved"
     // itself, so this only needs the job to be done.
-    isCompleted && {
+    isCompleted && !paymentReleased && {
       key: 'approve', label: i18n.t('booking.reviewRelease'), icon: 'check-circle',
       onPress: () => navigation.navigate('ApproveWork', { bookingId }),
     },
@@ -1021,15 +1094,19 @@ export default function BookingDetailsScreen({ route, navigation }) {
               </Text>
             </DetailRow>
 
-            <View style={{ height: 1, backgroundColor: colors.border }} />
-
-            {/* Scheduled row */}
-            <DetailRow icon="calendar" label="Scheduled">
-              <Text variant="bodyMedium" style={{ textAlign: TEXT_END }}>
-                {formatDate(booking?.scheduled_at)}{' '}
-                {formatTime(booking?.scheduled_at)}
-              </Text>
-            </DetailRow>
+            {/* Scheduled row — omitted on a completed job with no date on
+                file; see showScheduledRow above. */}
+            {showScheduledRow && (
+              <>
+                <View style={{ height: 1, backgroundColor: colors.border }} />
+                <DetailRow icon="calendar" label="Scheduled">
+                  <Text variant="bodyMedium" style={{ textAlign: TEXT_END }}>
+                    {formatDate(booking?.scheduled_at)}{' '}
+                    {formatTime(booking?.scheduled_at)}
+                  </Text>
+                </DetailRow>
+              </>
+            )}
 
             <View style={{ height: 1, backgroundColor: colors.border }} />
 
@@ -1054,7 +1131,7 @@ export default function BookingDetailsScreen({ route, navigation }) {
             <DetailRow icon="dollar-sign" label="Price">
               <Inline spacing="sm" align="center" justify="flex-end">
                 <Text variant="display3" maxFontSizeMultiplier={1.4} style={{ color: colors.success, fontVariant: ['tabular-nums'] }}>
-                  ${parseFloat(booking?.quoted_price ?? booking?.price ?? 0).toFixed(2)}
+                  ${parseFloat(booking?.total_amount ?? 0).toFixed(2)}
                 </Text>
                 <View
                   style={{
@@ -1078,8 +1155,8 @@ export default function BookingDetailsScreen({ route, navigation }) {
           </Stack>
         </Surface>
 
-        {/* Escrow milestones — read-only (GAP-AUDIT #10) */}
-        <EscrowMilestones payment={payment} />
+        {/* Escrow status — read-only (GAP-AUDIT #10) */}
+        <EscrowStatus paymentState={booking?.payment_state} />
 
         {/* Spacer for the (now single-row) bottom bar */}
         <View style={{ height: 96 }} />

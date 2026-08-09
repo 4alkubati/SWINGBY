@@ -145,11 +145,19 @@ const translations = {
     'disputes.filedAgainstYou': 'Filed against you',
     'disputes.viewLink': 'My disputes',
 
-    // Escrow milestones — read-only (GAP-AUDIT #10)
+    // Escrow status — read-only (GAP-AUDIT #10). A single current state, not
+    // a ladder — see the EscrowStatus comment in BookingDetailsScreen.js.
+    // escrow.halfReleased used to live here ("Released when you approve");
+    // removed 2026-08-09 — paired with fullReleased it described a staged
+    // 50%-now/50%-later release that was never real (escrow.py: one charge,
+    // one release).
     'escrow.title': 'Payment protection',
     'escrow.fundsHeld': 'Funds held in escrow',
-    'escrow.halfReleased': 'Released when you approve',
     'escrow.fullReleased': 'Released on completion',
+    'escrow.status.unpaid': 'Payment due',
+    'escrow.status.heldBody': "Released once you approve the work, or automatically 24 hours after it's marked done.",
+    'escrow.status.offPlatform': 'Paid directly to the business',
+    'escrow.status.refunded': 'Refunded',
 
     // Profile photo upload (GAP-AUDIT #11)
     'profile.photoUploading': 'Uploading photo…',
@@ -468,11 +476,14 @@ const translations = {
     'disputes.filedAgainstYou': 'Déposé contre vous',
     'disputes.viewLink': 'Mes litiges',
 
-    // Escrow milestones — read-only (GAP-AUDIT #10)
+    // Escrow status — read-only (GAP-AUDIT #10)
     'escrow.title': 'Protection du paiement',
     'escrow.fundsHeld': 'Fonds détenus en entiercement',
-    'escrow.halfReleased': 'Libéré quand vous approuvez',
     'escrow.fullReleased': 'Libéré à la fin du travail',
+    'escrow.status.unpaid': 'Paiement dû',
+    'escrow.status.heldBody': 'Libéré dès que vous approuvez le travail, ou automatiquement 24 heures après qu’il soit marqué terminé.',
+    'escrow.status.offPlatform': 'Payé directement à l’entreprise',
+    'escrow.status.refunded': 'Remboursé',
 
     // Profile photo upload (GAP-AUDIT #11)
     'profile.photoUploading': 'Téléchargement de la photo…',
@@ -789,11 +800,14 @@ const translations = {
     'disputes.filedAgainstYou': 'قُدّم ضدك',
     'disputes.viewLink': 'نزاعاتي',
 
-    // Escrow milestones — read-only (GAP-AUDIT #10)
+    // Escrow status — read-only (GAP-AUDIT #10)
     'escrow.title': 'حماية الدفع',
     'escrow.fundsHeld': 'الأموال محتجزة كضمان',
-    'escrow.halfReleased': 'يُحرَّر عند موافقتك',
     'escrow.fullReleased': 'تم التحرير عند الاكتمال',
+    'escrow.status.unpaid': 'الدفع مستحق',
+    'escrow.status.heldBody': 'يُحرَّر بمجرد موافقتك على العمل، أو تلقائيًا بعد 24 ساعة من تحديده كمكتمل.',
+    'escrow.status.offPlatform': 'دُفع مباشرة إلى الشركة',
+    'escrow.status.refunded': 'تم استرداد المبلغ',
 
     // Profile photo upload (GAP-AUDIT #11)
     'profile.photoUploading': 'جارٍ رفع الصورة…',
@@ -1072,6 +1086,7 @@ const lane3 = {
   'booking.eventPaused': 'Job paused',
   'booking.eventResumed': 'Job resumed',
   'booking.eventCompleted': 'Job complete',
+  'booking.eventPaymentReleased': 'Payment released',
   'booking.eventCancelled': 'Cancelled',
   'booking.eventGeneric': 'Booking updated',
   'booking.timeSetAtPosting': 'Time set at posting: %{when}',
@@ -1494,6 +1509,28 @@ Object.assign(translations.en, {
   'approval.businessWaitingBody':
     'You marked this done. The client has 24 hours to approve — after that the payment releases to you automatically.',
   'approval.autoReleased': 'Released automatically — the client didn’t respond in 24 hours.',
+});
+
+// ── Proof of work — walkthrough bugs 3/7/8, 2026-08-08 ──────────────────────
+// Submitting proof and marking a job complete are two separate actions. Three
+// spots on the business side used to describe the wrong one of them: the
+// submit toast promised the client could approve immediately, the "Mark
+// complete" confirmation said it "may release final payment" (it holds it and
+// opens a 24h window instead — see approval.businessWaitingBody above, which
+// is what actually happens next), and the Progress tab gave no sign proof had
+// been sent at all. EN only for now — these aren't in the money-copy set above,
+// which shipped all locales because it is the screen where funds move.
+Object.assign(translations.en, {
+  'proof.submitToast.title': 'Proof saved',
+  'proof.submitToast.body': 'Mark the job complete to send it to the client for approval.',
+  'proof.progress.submittedTitle': 'Proof sent',
+  'proof.progress.submittedSubtitle': 'Awaiting the client’s approval',
+  'proof.progress.submittedBadge': 'Awaiting approval',
+  'proof.progress.approvedTitle': 'Proof approved',
+  'proof.progress.approvedSubtitle': 'The client approved this work',
+  'proof.progress.approvedBadge': 'Approved',
+  'jobStages.confirmComplete':
+    'Mark the job complete? This holds payment and starts the client’s 24-hour approval window.',
 });
 Object.assign(translations['fr-CA'], {
   'approval.approveCta': 'Approuver et libérer le paiement',
@@ -2008,8 +2045,11 @@ Object.assign(translations.uk, {
   'disputes.viewLink': 'Мої спори',
   'escrow.title': 'Захист платежу',
   'escrow.fundsHeld': 'Кошти на депонуванні',
-  'escrow.halfReleased': 'Переказується після вашого схвалення',
   'escrow.fullReleased': 'Переказано після завершення',
+  'escrow.status.unpaid': 'Очікує оплати',
+  'escrow.status.heldBody': 'Переказується одразу після вашого схвалення роботи, або автоматично через 24 години після позначення її виконаною.',
+  'escrow.status.offPlatform': 'Оплачено напряму компанії',
+  'escrow.status.refunded': 'Кошти повернено',
   'profile.photoUploading': 'Завантаження фото…',
   'profile.photoUpdated': 'Фото оновлено',
   'profile.photoUploadError': 'Не вдалося завантажити фото',
@@ -2752,6 +2792,56 @@ Object.assign(translations.uk, {
 
   'wallet.method.instant': 'Миттєво',
   'wallet.method.standard': 'Банківський переказ',
+});
+
+// The proof-of-work / mark-complete copy corrected during the 2026-08-06
+// walkthrough. These strings say WHEN money moves, so they are the last place
+// a loose translation is acceptable: marking complete HOLDS payment and opens
+// the client's 24h approval window — it does not release anything. Wording
+// follows the escrow vocabulary already established per locale
+// ('libérer/retenu en fiducie', 'محتجز في الضمان/يُحرَّر', 'на депонуванні').
+Object.assign(translations['fr-CA'], {
+  'booking.eventPaymentReleased': 'Paiement libéré',
+  'proof.submitToast.title': 'Preuve enregistrée',
+  'proof.submitToast.body':
+    'Marquez le travail comme terminé pour l’envoyer au client pour approbation.',
+  'proof.progress.submittedTitle': 'Preuve envoyée',
+  'proof.progress.submittedSubtitle': 'En attente de l’approbation du client',
+  'proof.progress.submittedBadge': 'En attente d’approbation',
+  'proof.progress.approvedTitle': 'Preuve approuvée',
+  'proof.progress.approvedSubtitle': 'Le client a approuvé ce travail',
+  'proof.progress.approvedBadge': 'Approuvée',
+  'jobStages.confirmComplete':
+    'Marquer le travail comme terminé? Le paiement est retenu en fiducie et le client a 24 heures pour l’approuver.',
+});
+
+Object.assign(translations.ar, {
+  'booking.eventPaymentReleased': 'تم تحرير الدفعة',
+  'proof.submitToast.title': 'تم حفظ الدليل',
+  'proof.submitToast.body': 'حدِّد العمل كمكتمل لإرساله إلى العميل للموافقة.',
+  'proof.progress.submittedTitle': 'تم إرسال الدليل',
+  'proof.progress.submittedSubtitle': 'في انتظار موافقة العميل',
+  'proof.progress.submittedBadge': 'في انتظار الموافقة',
+  'proof.progress.approvedTitle': 'تمت الموافقة على الدليل',
+  'proof.progress.approvedSubtitle': 'وافق العميل على هذا العمل',
+  'proof.progress.approvedBadge': 'تمت الموافقة',
+  'jobStages.confirmComplete':
+    'هل تريد تحديد العمل كمكتمل؟ يبقى المبلغ محتجزًا في الضمان ويحصل العميل على 24 ساعة للموافقة.',
+});
+
+Object.assign(translations.uk, {
+  'booking.eventPaymentReleased': 'Платіж переказано',
+  'proof.submitToast.title': 'Підтвердження збережено',
+  'proof.submitToast.body':
+    'Позначте роботу як завершену, щоб надіслати її клієнту на схвалення.',
+  'proof.progress.submittedTitle': 'Підтвердження надіслано',
+  'proof.progress.submittedSubtitle': 'Очікує схвалення клієнта',
+  'proof.progress.submittedBadge': 'Очікує схвалення',
+  'proof.progress.approvedTitle': 'Підтвердження схвалено',
+  'proof.progress.approvedSubtitle': 'Клієнт схвалив цю роботу',
+  'proof.progress.approvedBadge': 'Схвалено',
+  'jobStages.confirmComplete':
+    'Позначити роботу як завершену? Платіж залишається на депонуванні, і клієнт має 24 години, щоб його схвалити.',
 });
 
 const i18n = new I18n(translations);

@@ -6,6 +6,7 @@ import Stack from './Stack';
 import Button from './Button';
 import { spacing } from '../theme/tokens';
 import { ACTION_LABEL, ACTION_CONFIRM, currentStage, nextStage } from '../utils/jobStages';
+import i18n from '../i18n';
 
 /**
  * The provider's "next step" button.
@@ -25,9 +26,17 @@ export default function LiveStatusActions({ events, onAdvance, busy = false }) {
   const nextType = nextStage(events);
 
   const confirmAndPost = (event_type) => {
+    // `completed` isn't in ACTION_CONFIRM — that copy is money-adjacent
+    // (what marking complete actually does to payment), so it's read from
+    // i18n at the moment it's shown rather than baked into a module-level
+    // constant that would freeze at whatever locale was active on import.
+    const body =
+      event_type === 'completed'
+        ? i18n.t('jobStages.confirmComplete')
+        : ACTION_CONFIRM[event_type] || 'Confirm this update?';
     Alert.alert(
       ACTION_LABEL[event_type] || 'Confirm',
-      ACTION_CONFIRM[event_type] || 'Confirm this update?',
+      body,
       [
         { text: 'Cancel', style: 'cancel' },
         { text: 'Yes', onPress: () => onAdvance?.(event_type) },

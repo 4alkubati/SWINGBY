@@ -22,14 +22,26 @@ function initials(name = '') {
 
 export default function JobCard({ booking, onPress }) {
   const status = STATUS_CONFIG[booking.status] || STATUS_CONFIG.confirmed;
-  const clientName = booking.client_name || booking.client_id || 'Client';
-  const date = booking.scheduled_date
-    ? new Date(booking.scheduled_date).toLocaleDateString('en-CA', {
+  // `client_name` / `scheduled_date` / `scheduled_time` / `service_type` are
+  // not columns the API returns — the booking payload nests the client under
+  // `users` (bookings_client_id_fkey) and carries the date as `confirmed_date`
+  // (a single ISO timestamp, split here into a date + time string; there is
+  // no separate `scheduled_time` column). See bookings.py list_my_bookings /
+  // get_booking for the actual select().
+  const clientName = booking.users?.first_name
+    ? [booking.users.first_name, booking.users.last_name].filter(Boolean).join(' ')
+    : booking.client_name || booking.client_id || 'Client';
+  const scheduledAt = booking.confirmed_date || booking.proposed_date_1 || null;
+  const scheduledDate = scheduledAt ? new Date(scheduledAt) : null;
+  const date = scheduledDate
+    ? scheduledDate.toLocaleDateString('en-CA', {
         month: 'short',
         day: 'numeric',
       })
     : '—';
-  const time = booking.scheduled_time || '';
+  const time = scheduledDate
+    ? scheduledDate.toLocaleTimeString('en-CA', { hour: 'numeric', minute: '2-digit' })
+    : '';
 
   return (
     <TouchableOpacity
@@ -57,7 +69,7 @@ export default function JobCard({ booking, onPress }) {
         numberOfLines={1}
         maxFontSizeMultiplier={1.3}
       >
-        {booking.service_type || 'Service'}
+        {booking.service_posts?.title || booking.service_category || 'Service'}
       </Text>
       <Text style={styles.date} maxFontSizeMultiplier={1.3}>
         {date}

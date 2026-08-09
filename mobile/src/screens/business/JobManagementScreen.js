@@ -183,6 +183,12 @@ function JobDetailScreen({ navigation, route }) {
   // this just hides the action immediately after a successful submit so the
   // owner isn't invited to double-tap it in the same session.
   const [justReviewed, setJustReviewed] = useState(false);
+  // Walkthrough bug 8: the Progress tab used to render the exact same "Add
+  // photo" / "Send proof to client" controls whether or not proof had
+  // already been sent, so a business had no way to tell their submission
+  // went through. 'draft' | 'submitted' | 'approved' | null (not loaded /
+  // load failed — falls back to the draft-shaped controls, same as today).
+  const [proofStatus, setProofStatus] = useState(null);
 
   // View state
   const [activeTab, setActiveTab] = useState(0); // 0 = Details, 1 = Status
@@ -197,9 +203,13 @@ function JobDetailScreen({ navigation, route }) {
       // That list holds invited staff only — never the owner — which is why a
       // solo business saw "No active employees found." and could not assign
       // the job to anyone. `/assignees` always includes the owner.
-      const [bData, roster] = await Promise.all([
+      const [bData, roster, proofData] = await Promise.all([
         api.get(`/bookings/${bookingId}`),
         api.get(`/bookings/${bookingId}/assignees`).catch(() => null),
+        // Same endpoint ProofOfWorkScreen reads. Non-fatal like /assignees —
+        // this only feeds the Progress tab's submitted/approved indicator,
+        // it must not take the whole booking screen down if it 404s.
+        api.get(`/bookings/${bookingId}/proof`).catch(() => null),
       ]);
       // Flatten the nested joins (users / employees / service_posts) into the
       // flat fields this screen renders.
@@ -214,6 +224,7 @@ function JobDetailScreen({ navigation, route }) {
         scheduled_date: bData.confirmed_date || bData.proposed_date_1 || null,
       });
       setEmployees(roster?.items || []);
+      setProofStatus(proofData?.status || null);
     } catch (err) {
       setError(err?.message || 'Could not load job details.');
     } finally {
@@ -570,20 +581,53 @@ function JobDetailScreen({ navigation, route }) {
 
                   Not deleted, despite the photos card looking like it covers
                   this: ProofOfWorkScreen is the capture-and-send flow (before/
-                  after plus a voice memo, and sending it is what prompts the
-                  client to approve and release escrow), and this is still its
-                  ONLY route. Dropping the row would stand the screen back up
-                  with nothing navigating to it — the bug it was added to fix. */}
+                  after plus a voice memo — sending it is what makes the job
+                  approvable, but only once this booking is also marked
+                  complete below; see the proofStatus block underneath), and
+                  this is still its ONLY route. Dropping the row would stand
+                  the screen back up with nothing navigating to it — the bug
+                  it was added to fix. */}
               <View style={styles.cardMargin}>
                 <Stack spacing="xs">
-                  <BookingPhotos bookingId={booking.id} canAttach />
-                  <ListItem
-                    title="Send proof to client"
-                    subtitle="Before/after photos and a voice note"
-                    left={<Feather name="camera" size={16} color={colors.textSecondary} strokeWidth={2} />}
-                    onPress={() => navigation.navigate('ProofOfWork', { bookingId: booking.id })}
-                    showChevron
+                  {/* Locking Add once submitted mirrors ProofOfWorkScreen's own
+                      AddTile (disabled={alreadySubmitted}) — without this, a
+                      business could keep attaching photos here after sending
+                      proof, silently past the set the client is reviewing. */}
+                  <BookingPhotos
+                    bookingId={booking.id}
+                    canAttach={proofStatus !== 'submitted' && proofStatus !== 'approved'}
                   />
+                  {/* Walkthrough bug 8: this row used to read "Send proof to
+                      client" forever, even after the provider had already sent
+                      it — nothing distinguished "not sent yet" from "sent,
+                      waiting on the client" from "approved". Same ListItem,
+                      state-aware now; still opens ProofOfWorkScreen either way
+                      so a business can review what they sent. */}
+                  {proofStatus === 'submitted' ? (
+                    <ListItem
+                      title={i18n.t('proof.progress.submittedTitle')}
+                      subtitle={i18n.t('proof.progress.submittedSubtitle')}
+                      left={<Feather name="clock" size={16} color={colors.textSecondary} strokeWidth={2} />}
+                      right={<StatusBadge label={i18n.t('proof.progress.submittedBadge')} tone="warning" />}
+                      onPress={() => navigation.navigate('ProofOfWork', { bookingId: booking.id })}
+                    />
+                  ) : proofStatus === 'approved' ? (
+                    <ListItem
+                      title={i18n.t('proof.progress.approvedTitle')}
+                      subtitle={i18n.t('proof.progress.approvedSubtitle')}
+                      left={<Feather name="check-circle" size={16} color={colors.success} strokeWidth={2} />}
+                      right={<StatusBadge label={i18n.t('proof.progress.approvedBadge')} tone="success" />}
+                      onPress={() => navigation.navigate('ProofOfWork', { bookingId: booking.id })}
+                    />
+                  ) : (
+                    <ListItem
+                      title="Send proof to client"
+                      subtitle="Before/after photos and a voice note"
+                      left={<Feather name="camera" size={16} color={colors.textSecondary} strokeWidth={2} />}
+                      onPress={() => navigation.navigate('ProofOfWork', { bookingId: booking.id })}
+                      showChevron
+                    />
+                  )}
                 </Stack>
               </View>
               {advancing && (
