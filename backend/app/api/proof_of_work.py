@@ -509,17 +509,12 @@ def approve_proof(booking_id: str, current_user: dict = Depends(get_current_user
             "escrow released for %s but the bookings row did not update", booking_id
         )
 
-    try:
-        supabase.table("booking_events").insert(
-            {
-                "booking_id": booking_id,
-                "actor_id": current_user["id"],
-                "event_type": "completed",
-                "note": "Client approved the proof of work — payment released",
-            }
-        ).execute()
-    except Exception as exc:
-        logger.warning("booking_event write failed after approve: %s", exc)
+    # No manual booking_events write here. approvals.release() (called above)
+    # already inserts an event_type: 'payment_released' row for this exact
+    # moment — this used to *also* insert its own event_type: 'completed' row
+    # on top of the 'completed' row start_approval_window already wrote when
+    # the business marked the job done, so the client's timeline showed "Job
+    # complete" twice for one booking. release() is the single writer now.
 
     return {
         "proof": updated,
