@@ -2777,6 +2777,56 @@ Object.assign(translations.uk, {
   'wallet.method.standard': 'Банківський переказ',
 });
 
+// The proof-of-work / mark-complete copy corrected during the 2026-08-06
+// walkthrough. These strings say WHEN money moves, so they are the last place
+// a loose translation is acceptable: marking complete HOLDS payment and opens
+// the client's 24h approval window — it does not release anything. Wording
+// follows the escrow vocabulary already established per locale
+// ('libérer/retenu en fiducie', 'محتجز في الضمان/يُحرَّر', 'на депонуванні').
+Object.assign(translations['fr-CA'], {
+  'booking.eventPaymentReleased': 'Paiement libéré',
+  'proof.submitToast.title': 'Preuve enregistrée',
+  'proof.submitToast.body':
+    'Marquez le travail comme terminé pour l’envoyer au client pour approbation.',
+  'proof.progress.submittedTitle': 'Preuve envoyée',
+  'proof.progress.submittedSubtitle': 'En attente de l’approbation du client',
+  'proof.progress.submittedBadge': 'En attente d’approbation',
+  'proof.progress.approvedTitle': 'Preuve approuvée',
+  'proof.progress.approvedSubtitle': 'Le client a approuvé ce travail',
+  'proof.progress.approvedBadge': 'Approuvée',
+  'jobStages.confirmComplete':
+    'Marquer le travail comme terminé? Le paiement est retenu en fiducie et le client a 24 heures pour l’approuver.',
+});
+
+Object.assign(translations.ar, {
+  'booking.eventPaymentReleased': 'تم تحرير الدفعة',
+  'proof.submitToast.title': 'تم حفظ الدليل',
+  'proof.submitToast.body': 'حدِّد العمل كمكتمل لإرساله إلى العميل للموافقة.',
+  'proof.progress.submittedTitle': 'تم إرسال الدليل',
+  'proof.progress.submittedSubtitle': 'في انتظار موافقة العميل',
+  'proof.progress.submittedBadge': 'في انتظار الموافقة',
+  'proof.progress.approvedTitle': 'تمت الموافقة على الدليل',
+  'proof.progress.approvedSubtitle': 'وافق العميل على هذا العمل',
+  'proof.progress.approvedBadge': 'تمت الموافقة',
+  'jobStages.confirmComplete':
+    'هل تريد تحديد العمل كمكتمل؟ يبقى المبلغ محتجزًا في الضمان ويحصل العميل على 24 ساعة للموافقة.',
+});
+
+Object.assign(translations.uk, {
+  'booking.eventPaymentReleased': 'Платіж переказано',
+  'proof.submitToast.title': 'Підтвердження збережено',
+  'proof.submitToast.body':
+    'Позначте роботу як завершену, щоб надіслати її клієнту на схвалення.',
+  'proof.progress.submittedTitle': 'Підтвердження надіслано',
+  'proof.progress.submittedSubtitle': 'Очікує схвалення клієнта',
+  'proof.progress.submittedBadge': 'Очікує схвалення',
+  'proof.progress.approvedTitle': 'Підтвердження схвалено',
+  'proof.progress.approvedSubtitle': 'Клієнт схвалив цю роботу',
+  'proof.progress.approvedBadge': 'Схвалено',
+  'jobStages.confirmComplete':
+    'Позначити роботу як завершену? Платіж залишається на депонуванні, і клієнт має 24 години, щоб його схвалити.',
+});
+
 const i18n = new I18n(translations);
 
 // Default fallback
