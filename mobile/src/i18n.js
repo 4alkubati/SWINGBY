@@ -145,11 +145,19 @@ const translations = {
     'disputes.filedAgainstYou': 'Filed against you',
     'disputes.viewLink': 'My disputes',
 
-    // Escrow milestones — read-only (GAP-AUDIT #10)
+    // Escrow status — read-only (GAP-AUDIT #10). A single current state, not
+    // a ladder — see the EscrowStatus comment in BookingDetailsScreen.js.
+    // escrow.halfReleased used to live here ("Released when you approve");
+    // removed 2026-08-09 — paired with fullReleased it described a staged
+    // 50%-now/50%-later release that was never real (escrow.py: one charge,
+    // one release).
     'escrow.title': 'Payment protection',
     'escrow.fundsHeld': 'Funds held in escrow',
-    'escrow.halfReleased': 'Released when you approve',
     'escrow.fullReleased': 'Released on completion',
+    'escrow.status.unpaid': 'Payment due',
+    'escrow.status.heldBody': "Released once you approve the work, or automatically 24 hours after it's marked done.",
+    'escrow.status.offPlatform': 'Paid directly to the business',
+    'escrow.status.refunded': 'Refunded',
 
     // Profile photo upload (GAP-AUDIT #11)
     'profile.photoUploading': 'Uploading photo…',
@@ -468,11 +476,14 @@ const translations = {
     'disputes.filedAgainstYou': 'Déposé contre vous',
     'disputes.viewLink': 'Mes litiges',
 
-    // Escrow milestones — read-only (GAP-AUDIT #10)
+    // Escrow status — read-only (GAP-AUDIT #10)
     'escrow.title': 'Protection du paiement',
     'escrow.fundsHeld': 'Fonds détenus en entiercement',
-    'escrow.halfReleased': 'Libéré quand vous approuvez',
     'escrow.fullReleased': 'Libéré à la fin du travail',
+    'escrow.status.unpaid': 'Paiement dû',
+    'escrow.status.heldBody': 'Libéré dès que vous approuvez le travail, ou automatiquement 24 heures après qu’il soit marqué terminé.',
+    'escrow.status.offPlatform': 'Payé directement à l’entreprise',
+    'escrow.status.refunded': 'Remboursé',
 
     // Profile photo upload (GAP-AUDIT #11)
     'profile.photoUploading': 'Téléchargement de la photo…',
@@ -789,11 +800,14 @@ const translations = {
     'disputes.filedAgainstYou': 'قُدّم ضدك',
     'disputes.viewLink': 'نزاعاتي',
 
-    // Escrow milestones — read-only (GAP-AUDIT #10)
+    // Escrow status — read-only (GAP-AUDIT #10)
     'escrow.title': 'حماية الدفع',
     'escrow.fundsHeld': 'الأموال محتجزة كضمان',
-    'escrow.halfReleased': 'يُحرَّر عند موافقتك',
     'escrow.fullReleased': 'تم التحرير عند الاكتمال',
+    'escrow.status.unpaid': 'الدفع مستحق',
+    'escrow.status.heldBody': 'يُحرَّر بمجرد موافقتك على العمل، أو تلقائيًا بعد 24 ساعة من تحديده كمكتمل.',
+    'escrow.status.offPlatform': 'دُفع مباشرة إلى الشركة',
+    'escrow.status.refunded': 'تم استرداد المبلغ',
 
     // Profile photo upload (GAP-AUDIT #11)
     'profile.photoUploading': 'جارٍ رفع الصورة…',
@@ -2031,8 +2045,11 @@ Object.assign(translations.uk, {
   'disputes.viewLink': 'Мої спори',
   'escrow.title': 'Захист платежу',
   'escrow.fundsHeld': 'Кошти на депонуванні',
-  'escrow.halfReleased': 'Переказується після вашого схвалення',
   'escrow.fullReleased': 'Переказано після завершення',
+  'escrow.status.unpaid': 'Очікує оплати',
+  'escrow.status.heldBody': 'Переказується одразу після вашого схвалення роботи, або автоматично через 24 години після позначення її виконаною.',
+  'escrow.status.offPlatform': 'Оплачено напряму компанії',
+  'escrow.status.refunded': 'Кошти повернено',
   'profile.photoUploading': 'Завантаження фото…',
   'profile.photoUpdated': 'Фото оновлено',
   'profile.photoUploadError': 'Не вдалося завантажити фото',

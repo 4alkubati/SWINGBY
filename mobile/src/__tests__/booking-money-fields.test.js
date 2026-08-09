@@ -33,6 +33,7 @@ import { UnreadProvider } from '../context/UnreadContext';
 import BookingDetailsScreen from '../screens/client/BookingDetailsScreen';
 import JobCard from '../components/JobCard';
 import WorkerTrustCard from '../components/WorkerTrustCard';
+import i18n from '../i18n';
 
 jest.mock('../services/api');
 // eslint-disable-next-line import/first
@@ -268,5 +269,82 @@ describe('WorkerTrustCard — reads the server-derived assignee, not phantom fla
     // (avatar name + company row) so assert presence via getAllByText.
     expect(getAllByText('Test Cleaning Co.').length).toBeGreaterThan(0);
     expect(queryByText('Your provider')).toBeNull();
+  });
+});
+
+// Bug A (2026-08-09 walkthrough) — the escrow card used to be a three-row
+// ladder ("Funds held" / "Released when you approve" / "Released on
+// completion") where each row lit up independently off the raw payments
+// row. On a PAID-OUT booking that put "Funds held in escrow" on screen next
+// to "Released on completion" — a direct contradiction about where the
+// client's money is. These pin the fix: exactly one state renders, driven by
+// the server-computed `payment_state.state` (bookings.py::_payment_state),
+// never the old blend of raw payments-row fields.
+describe('EscrowStatus — one honest state, never two contradictory ones (Bug A)', () => {
+  const RELEASED_BOOKING = {
+    ...NESTED_BOOKING,
+    id: 'b2',
+    status: 'completed',
+    confirmed_date: '2026-08-01T14:00:00Z',
+    total_amount: 195,
+    payment_state: {
+      state: 'released',
+      label: 'Released to the business',
+      capture_backed: true,
+      amount_due: 0,
+      amount_held: 0,
+      amount_released: 175.5,
+      amount_total: 195,
+    },
+  };
+
+  it('a paid-out booking shows "Released on completion" and never "Funds held in escrow" at the same time', async () => {
+    api.get.mockImplementation((path) => {
+      if (path.startsWith('/bookings/')) return Promise.resolve(RELEASED_BOOKING);
+      if (path.startsWith('/payments/')) {
+        return Promise.resolve({
+          status: 'fully_released',
+          total_charged: 195,
+          released_to_business: 175.5,
+          escrow_held: 0,
+        });
+      }
+      return Promise.resolve({});
+    });
+
+    const { findByText, queryByText } = render(
+      <Providers>
+        <BookingDetailsScreen
+          route={{ params: { bookingId: 'b2' }, key: 'k2', name: 'BookingDetails' }}
+          navigation={mockNavigation}
+        />
+      </Providers>
+    );
+
+    await findByText('Job Details', {}, { timeout: 5000 });
+    expect(queryByText(i18n.t('escrow.fullReleased'))).not.toBeNull();
+    expect(queryByText(i18n.t('escrow.fundsHeld'))).toBeNull();
+    // The killed staged-release row must never resurrect, translated key or not.
+    expect(queryByText('Released when you approve')).toBeNull();
+  });
+
+  it('a held booking shows "Funds held in escrow" alone — no premature "released" claim', async () => {
+    api.get.mockImplementation((path) => {
+      if (path.startsWith('/bookings/')) return Promise.resolve(NESTED_BOOKING); // payment_state.state === 'held'
+      if (path.startsWith('/payments/')) {
+        return Promise.resolve({ status: 'held', total_charged: 195, escrow_held: 195, released_to_business: 0 });
+      }
+      return Promise.resolve({});
+    });
+
+    const { findByText, queryByText } = render(
+      <Providers>
+        <BookingDetailsScreen route={mockRoute} navigation={mockNavigation} />
+      </Providers>
+    );
+
+    await findByText('Job Details', {}, { timeout: 5000 });
+    expect(queryByText(i18n.t('escrow.fundsHeld'))).not.toBeNull();
+    expect(queryByText(i18n.t('escrow.fullReleased'))).toBeNull();
   });
 });

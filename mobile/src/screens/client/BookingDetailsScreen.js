@@ -279,37 +279,61 @@ export function hasBeenCharged(payment) {
   return CAPTURED.has((payment?.status || '').toLowerCase());
 }
 
-// ─── Escrow milestones (read-only) ─────────────────────────────────────────────
+// ─── Escrow status (read-only) ─────────────────────────────────────────────
 // GAP-AUDIT #10 — payments.escrow_held / released_to_business are tracked by
 // the backend but no screen ever surfaced them. Pure display, zero writes to
 // any payment endpoint.
 //
-// This comment used to say "interests.py accept → 50% released; complete_booking
-// → remaining released". Accept releases NOTHING — it charges and holds. The
-// release happens when the CLIENT approves, or 24h after the business marks the
-// work done (services/approvals.py).
-function EscrowMilestones({ payment }) {
-  if (!payment) return null;
+// This used to be a three-row ladder — "Funds held" / "Released when you
+// approve" / "Released on completion" — with each row lit up (or not)
+// independently by re-deriving "half released" / "fully released" from the
+// raw payments row. Two bugs came out of that shape:
+//
+//   1. On a PAID-OUT booking, "Funds held in escrow" (done, because
+//      total_charged was set) sat lit right next to "Released on completion"
+//      (also done) — a direct, simultaneous claim that the client's money
+//      was both sitting in escrow AND already gone. An 81-year-old reading
+//      that does not file a bug, they phone their son.
+//   2. "half released" + "fully released" is literally the shape of a staged
+//      50%-now/50%-later release. There is no such thing — see
+//      backend/app/services/escrow.py's module docstring and
+//      tests/test_no_staged_release_claim.py: money is charged once, at
+//      accept, held in FULL, and released once, in one shot, minus the 10%
+//      platform cut, on completion+approval or the 24h auto-release.
+//
+// The honest UI is therefore a STATE, not a checklist — money is in exactly
+// one of the backend's payment_state.state values at any moment
+// (bookings.py::_payment_state / _PAYMENT_LABELS), so exactly one sentence
+// can ever be true on screen, and a not-yet-reached state simply isn't
+// rendered rather than sitting there unchecked next to a done one.
+//
+// `payment_state` is the same server-computed ledger truth this screen
+// already trusts for `awaitingApproval` / `paymentReleased` below — that is
+// deliberate: re-deriving "released" from the raw payments row (as the old
+// ladder did) is exactly how "held" and "released" ended up lit together.
+// `held` deliberately carries no amountField: while state is 'held' the full
+// total is held (nothing has been released yet), so `amount_held` always
+// equals the total already shown on the Price row above — repeating it here
+// is pure redundancy, not new information. `released` DOES carry one: after
+// the 10% platform cut, `amount_released` is genuinely less than the total,
+// so it is the one number on this card the client cannot already read
+// elsewhere.
+const ESCROW_STATE_META = {
+  unpaid:             { icon: 'clock',        labelKey: 'escrow.status.unpaid',    amountField: null },
+  held:               { icon: 'lock',         labelKey: 'escrow.fundsHeld',        amountField: null },
+  released:           { icon: 'check-circle', labelKey: 'escrow.fullReleased',     amountField: 'amount_released' },
+  paid_off_platform:  { icon: 'check-circle', labelKey: 'escrow.status.offPlatform', amountField: null },
+  refunded:           { icon: 'rotate-ccw',   labelKey: 'escrow.status.refunded',  amountField: null },
+};
 
-  const totalCharged = parseFloat(payment.total_charged ?? 0);
-  const releasedToBusiness = parseFloat(payment.released_to_business ?? 0);
-  const escrowHeld = parseFloat(payment.escrow_held ?? 0);
-  const payStatus = (payment.status || '').toLowerCase();
+function EscrowStatus({ paymentState }) {
+  if (!paymentState?.state) return null;
 
-  // AUDIT L5 — `total_charged > 0` is not "the money arrived". The column is
-  // populated when the booking is priced, so this ticked "Funds held" on
-  // bookings that were never paid. hasBeenCharged() is defined 10 lines up and
-  // checks the payment STATUS against the captured set — use the helper that
-  // already exists rather than a second, looser definition of "paid".
-  const fundsHeld = hasBeenCharged(payment);
-  const halfReleased = releasedToBusiness > 0 || ['partial', 'fully_released'].includes(payStatus);
-  const fullyReleased = payStatus === 'fully_released' && escrowHeld === 0;
+  const meta = ESCROW_STATE_META[paymentState.state];
+  if (!meta) return null; // unrecognised future state — say nothing rather than guess
 
-  const steps = [
-    { key: 'held', label: i18n.t('escrow.fundsHeld'), done: fundsHeld },
-    { key: 'half', label: i18n.t('escrow.halfReleased'), done: halfReleased },
-    { key: 'full', label: i18n.t('escrow.fullReleased'), done: fullyReleased },
-  ];
+  const amount = meta.amountField ? Number(paymentState[meta.amountField] ?? 0) : null;
+  const isSettled = paymentState.state === 'held' || paymentState.state === 'released';
 
   return (
     <Surface elevation="subtle">
@@ -321,33 +345,32 @@ function EscrowMilestones({ payment }) {
           </Text>
         </Inline>
 
-        {steps.map((step, i) => (
-          <Inline key={step.key} spacing="sm" align="center">
-            <Feather
-              name={step.done ? 'check-circle' : 'circle'}
-              size={16}
-              color={step.done ? colors.success : colors.textSecondary}
-              strokeWidth={1.8}
-            />
-            <Text
-              variant="small"
-              color={step.done ? 'primary' : 'secondary'}
-              style={{ flex: 1 }}
-            >
-              {step.label}
+        <Inline spacing="sm" align="center">
+          <Feather
+            name={meta.icon}
+            size={16}
+            color={isSettled ? colors.success : colors.textSecondary}
+            strokeWidth={1.8}
+          />
+          <Text
+            variant="small"
+            color={isSettled ? 'primary' : 'secondary'}
+            style={{ flex: 1 }}
+          >
+            {i18n.t(meta.labelKey)}
+          </Text>
+          {amount != null && amount > 0 && (
+            <Text variant="caption" color="secondary">
+              ${amount.toFixed(2)}
             </Text>
-            {i === 1 && halfReleased && (
-              <Text variant="caption" color="secondary">
-                ${releasedToBusiness.toFixed(2)}
-              </Text>
-            )}
-            {i === 2 && fullyReleased && (
-              <Text variant="caption" color="secondary">
-                ${totalCharged.toFixed(2)}
-              </Text>
-            )}
-          </Inline>
-        ))}
+          )}
+        </Inline>
+
+        {paymentState.state === 'held' && (
+          <Text variant="caption" color="secondary">
+            {i18n.t('escrow.status.heldBody')}
+          </Text>
+        )}
       </Stack>
     </Surface>
   );
@@ -858,7 +881,7 @@ export default function BookingDetailsScreen({ route, navigation }) {
   // same server-computed truth `awaitingApproval` below already trusts, so
   // 'released' here is the honest "fully_released" signal named in the bug.
   //
-  // Hidden rather than shown disabled: the EscrowMilestones card above and
+  // Hidden rather than shown disabled: the EscrowStatus card above and
   // the 'View receipt' entry below already give a released booking its
   // after-the-fact confirmation, so nothing is lost by removing this entry —
   // only the false promise that tapping it can still release something.
@@ -1114,8 +1137,8 @@ export default function BookingDetailsScreen({ route, navigation }) {
           </Stack>
         </Surface>
 
-        {/* Escrow milestones — read-only (GAP-AUDIT #10) */}
-        <EscrowMilestones payment={payment} />
+        {/* Escrow status — read-only (GAP-AUDIT #10) */}
+        <EscrowStatus paymentState={booking?.payment_state} />
 
         {/* Spacer for the (now single-row) bottom bar */}
         <View style={{ height: 96 }} />

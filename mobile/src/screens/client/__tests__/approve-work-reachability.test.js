@@ -13,7 +13,7 @@
 //      for a completed booking whose money has not moved yet.
 //   2. The gate is deliberately a HIDE, not a disabled row — see the comment
 //      at `paymentReleased` in BookingDetailsScreen.js for why (the
-//      EscrowMilestones card and the 'View receipt' entry already give a
+//      EscrowStatus card and the 'View receipt' entry already give a
 //      released booking its after-the-fact confirmation).
 
 import React from 'react';
