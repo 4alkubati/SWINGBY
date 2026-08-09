@@ -28,12 +28,19 @@ export const ACTION_LABEL = {
   completed: 'Mark complete',
 };
 
-/** Confirmation prompt for entering each stage. */
+/** Confirmation prompt for entering each stage.
+ *
+ * `completed` is deliberately absent: it used to read "This may release final
+ * payment", which was never true (marking complete HOLDS payment and opens a
+ * 24h client-approval window — see services/escrow.py and
+ * approval.businessWaitingBody in i18n.js for what actually happens). Money
+ * copy that a business reads before tapping a button belongs behind i18n so
+ * it can't drift out of sync per-locale the way this one did — see
+ * `jobStages.confirmComplete` in i18n.js, applied in LiveStatusActions.js. */
 export const ACTION_CONFIRM = {
   en_route: 'Tell the client you are on your way?',
   arrived: 'Confirm you have arrived?',
   started: 'Start the job now? The client will be notified.',
-  completed: 'Mark the job complete? This may release final payment.',
 };
 
 /** Short label for the stage itself, as it reads on the tracker. */
