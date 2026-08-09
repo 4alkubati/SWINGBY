@@ -1072,6 +1072,7 @@ const lane3 = {
   'booking.eventPaused': 'Job paused',
   'booking.eventResumed': 'Job resumed',
   'booking.eventCompleted': 'Job complete',
+  'booking.eventPaymentReleased': 'Payment released',
   'booking.eventCancelled': 'Cancelled',
   'booking.eventGeneric': 'Booking updated',
   'booking.timeSetAtPosting': 'Time set at posting: %{when}',
