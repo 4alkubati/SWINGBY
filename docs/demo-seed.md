@@ -43,9 +43,45 @@ cd backend
 
 ## Demo accounts
 
-* Client: `nadia-whitfield@demo.swingbyy.com` — 3 bookings, 3 chat threads,
-  2 reviews written, 2 open job posts.
+* Client: `nadia-whitfield@demo.swingbyy.com` — 4 bookings (one **in progress**),
+  4 chat threads, 2 reviews written, 2 open job posts.
 * Business owner: `tomas-ferreira@demo.swingbyy.com` — Beltline Shine Cleaning.
+
+## The screenshot set (added 2026-08-05)
+
+These App Store / marketing screenshots are shot at 1290×2796 (Apple's 6.9"
+size), so the data behind them has to survive review, not just look tidy.
+Three gaps were closed after querying the live database:
+
+* **Nadia had no in-progress job**, so the live-tracking screen — the strongest
+  screen in the app — could not be reached from the demo account.
+  `bk-nadia-live-paint` is that job; its timeline deliberately stops at
+  `started`, because adding `completed` greys out the progress rail.
+* **Reviews were inconsistent with the counts.** Businesses advertised
+  `review_count` of 33–141 while the reviews table held 8 rows, so a profile
+  read "4.9 (63)" and then listed one review. `reviews.booking_id` is NOT NULL,
+  so more reviews meant more completed bookings — hence the `bk-r*` block.
+  Ratings are deliberately mixed (one 3-star with a fair complaint): a wall of
+  5.0s reads as fabricated.
+* **The open-jobs feed filters to the viewing business's own category**, so a
+  thin category gave that owner a one-card screen. Extra open posts now cover
+  Cleaning, Painting, Electrical and Landscaping.
+
+Verified against the production API on 2026-08-05 — client sees 4 bookings,
+5-event live timeline, 6-message live chat, 3 reviews, 4 threads, 10 open jobs;
+Cleaning/Painting/Electrical owners see 3/2/2 jobs in their feeds.
+
+**Proof-of-work photos are seeded, but they are placeholders.** `PHOTOS` in
+`demo_dataset.py` writes 5 `booking_photos` rows — before/after on the two
+completed jobs, before-only on the live one, which is what an in-progress
+booking should honestly look like. The files live in the public `job-photos`
+bucket under `demo/proof/` and each carries a **SAMPLE** mark on its face.
+
+That mark is deliberate and should stay until real photos replace it: an App
+Store screenshot showing photorealistic "completed work" is a claim about jobs
+that never happened. Swapping in real tester photos changes only the files in
+the bucket — the rows and their ids are derived from the booking slug and stay
+put.
 
 Log in as one of these, not as an admin account: `GET /bookings/` returns an
 empty list for `role = admin`, so an admin login shows no bookings and no

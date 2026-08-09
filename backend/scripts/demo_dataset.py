@@ -40,6 +40,7 @@ Design rules that make the seed safe to run against the live database:
 
 from __future__ import annotations
 
+import os
 import uuid
 from datetime import datetime, timedelta, timezone
 
@@ -454,6 +455,82 @@ POSTS = [
         "Brick-veneer wall in a condo. TV is 55 inch, mount is already here. "
         "Two shelves either side.",
     ),
+    # ── screenshot set, added 2026-08-05 ────────────────────────────────────
+    # The open-jobs feed auto-filters to the viewing business's OWN category,
+    # so a category with one open post gives that owner a one-card screen.
+    # Cleaning had exactly that problem. These spread open posts across the
+    # categories the demo businesses actually work in, so whichever account is
+    # used for the business-side screenshots opens on a populated feed.
+    (
+        "post-hillhurst-movein-clean",
+        "renee-cartier",
+        "Move-in clean before we take possession",
+        "Cleaning",
+        260.0,
+        "1815 Kensington Rd NW, Calgary, AB",
+        51.0551,
+        -114.0937,
+        1,
+        6,
+        "Three bedrooms, empty house. Want cupboards, oven and bathrooms done "
+        "before the furniture arrives on the Saturday.",
+    ),
+    (
+        "post-altadore-biweekly-clean",
+        "josh-beaumont",
+        "Bi-weekly cleaning for a 3-bed house",
+        "Cleaning",
+        175.0,
+        "3823 16 St SW, Calgary, AB",
+        51.0125,
+        -114.0958,
+        3,
+        8,
+        "Looking for someone regular, every second Friday. Two adults, one "
+        "dog, no kids. Main floor and two bathrooms.",
+    ),
+    (
+        "post-inglewood-panel",
+        "peter-lindqvist",
+        "Panel upgrade quote for a 1962 bungalow",
+        "Electrical",
+        2200.0,
+        "1236 8 Ave SE, Calgary, AB",
+        51.0398,
+        -114.0287,
+        2,
+        14,
+        "Still on 60 amp. Want a quote to go to 200 amp, permit included. "
+        "Adding an EV charger later so size it for that.",
+    ),
+    (
+        "post-marda-hedge",
+        "ibrahim-kante",
+        "Hedge trimming and one small tree removal",
+        "Landscaping",
+        340.0,
+        "2440 34 Ave SW, Calgary, AB",
+        51.0166,
+        -114.1041,
+        4,
+        5,
+        "Cedar hedge along the back fence has gotten away from us, plus a "
+        "dead mountain ash about 12 feet that needs to come out.",
+    ),
+    (
+        "post-bridgeland-deck-stain",
+        "amara-nwosu",
+        "Sand and re-stain a back deck",
+        "Painting",
+        620.0,
+        "620 1 Ave NE, Calgary, AB",
+        51.0511,
+        -114.0462,
+        5,
+        10,
+        "About 300 sq ft of deck plus the railing. Last done four years ago "
+        "and it is going grey. Happy to pick the stain colour with you.",
+    ),
 ]
 
 # ── bookings ────────────────────────────────────────────────────────────────
@@ -569,6 +646,174 @@ BOOKINGS = [
         1,
         0,
     ),
+    # ── screenshot set, added 2026-08-05 ────────────────────────────────────
+    # These exist so the APP STORE screenshots have something to photograph.
+    # Two problems they fix, both found by querying the live database:
+    #
+    #   1. The demo client (Nadia) had no in-progress job, so the live-tracking
+    #      screen — the best-looking screen in the app — was unreachable from
+    #      the account the demo logs into. `bk-nadia-live-paint` is that job.
+    #   2. Every business showed `review_count` in the 30-140 range while the
+    #      reviews table held 8 rows in total, so a profile read "4.9 (63)"
+    #      and then listed one review. reviews.booking_id is NOT NULL, so more
+    #      reviews requires more completed bookings — hence the block below,
+    #      spread across businesses and clients rather than piled on one.
+    (
+        "bk-nadia-live-paint",
+        "nadia-whitfield",
+        "yusuf-barre",
+        None,
+        "Painting",
+        640.0,
+        "in_progress",
+        "held",
+        1,
+        0,
+    ),
+    (
+        "bk-r1-beltline",
+        "peter-lindqvist",
+        "tomas-ferreira",
+        None,
+        "Cleaning",
+        210.0,
+        "completed",
+        "fully_released",
+        74,
+        -72,
+    ),
+    (
+        "bk-r2-beltline",
+        "amara-nwosu",
+        "tomas-ferreira",
+        None,
+        "Cleaning",
+        265.0,
+        "completed",
+        "fully_released",
+        48,
+        -46,
+    ),
+    (
+        "bk-r3-altadore",
+        "josh-beaumont",
+        "nadia-osei",
+        None,
+        "Cleaning",
+        180.0,
+        "completed",
+        "fully_released",
+        61,
+        -59,
+    ),
+    (
+        "bk-r4-altadore",
+        "renee-cartier",
+        "nadia-osei",
+        None,
+        "Cleaning",
+        205.0,
+        "completed",
+        "fully_released",
+        33,
+        -31,
+    ),
+    (
+        "bk-r5-kensington",
+        "ibrahim-kante",
+        "priya-raghunathan",
+        None,
+        "Plumbing",
+        320.0,
+        "completed",
+        "fully_released",
+        55,
+        -53,
+    ),
+    (
+        "bk-r6-kensington",
+        "josh-beaumont",
+        "priya-raghunathan",
+        None,
+        "Plumbing",
+        195.0,
+        "completed",
+        "fully_released",
+        28,
+        -26,
+    ),
+    (
+        "bk-r7-bridgeland",
+        "renee-cartier",
+        "yusuf-barre",
+        None,
+        "Painting",
+        950.0,
+        "completed",
+        "fully_released",
+        67,
+        -65,
+    ),
+    (
+        "bk-r8-bridgeland",
+        "peter-lindqvist",
+        "yusuf-barre",
+        None,
+        "Painting",
+        540.0,
+        "completed",
+        "fully_released",
+        41,
+        -39,
+    ),
+    (
+        "bk-r9-mission",
+        "amara-nwosu",
+        "hana-kobayashi",
+        None,
+        "Handyman",
+        145.0,
+        "completed",
+        "fully_released",
+        52,
+        -50,
+    ),
+    (
+        "bk-r10-mission",
+        "ibrahim-kante",
+        "hana-kobayashi",
+        None,
+        "Handyman",
+        230.0,
+        "completed",
+        "fully_released",
+        22,
+        -20,
+    ),
+    (
+        "bk-r11-mckenzie",
+        "renee-cartier",
+        "vincent-trang",
+        None,
+        "Moving",
+        720.0,
+        "completed",
+        "fully_released",
+        58,
+        -56,
+    ),
+    (
+        "bk-r12-marda",
+        "amara-nwosu",
+        "marisol-vega",
+        None,
+        "Landscaping",
+        60.0,
+        "completed",
+        "fully_released",
+        36,
+        -34,
+    ),
 ]
 
 # ── reviews (client → business, plus a couple business → client) ────────────
@@ -627,6 +872,106 @@ REVIEWS = [
         5,
         "Rooms were emptied before we arrived which saved us an hour. Great "
         "to work with.",
+        "client",
+    ),
+    # ── screenshot set, added 2026-08-05 ────────────────────────────────────
+    # Five businesses carry a scrollable reviews list now instead of a single
+    # entry. Deliberately not all five stars: a wall of 5.0s reads as fake to
+    # anyone scrolling it, and the 3-star with a reasonable complaint is what
+    # makes the rest legible as real.
+    (
+        "bk-r1-beltline",
+        5,
+        "Second time using them. Same two cleaners, same standard — the glass "
+        "shower door has never looked like that.",
+        "business",
+    ),
+    (
+        "bk-r2-beltline",
+        4,
+        "Very thorough on the kitchen and bathrooms. Missed the top of the "
+        "fridge, though they came back for it when I asked.",
+        "business",
+    ),
+    (
+        "bk-r3-altadore",
+        5,
+        "Booked a one-off and ended up on a monthly. Baseboards and window "
+        "tracks were the selling point.",
+        "business",
+    ),
+    (
+        "bk-r4-altadore",
+        5,
+        "She works around us with two kids in the house and never makes it "
+        "awkward. Worth every dollar.",
+        "business",
+    ),
+    (
+        "bk-r5-kensington",
+        5,
+        "Quoted before starting, stuck to it, and showed me the corroded valve "
+        "he pulled out. No upsell.",
+        "business",
+    ),
+    (
+        "bk-r6-kensington",
+        3,
+        "Fixed the leak properly but arrived near the end of the window with no "
+        "message. Work was fine, communication was not.",
+        "business",
+    ),
+    (
+        "bk-r7-bridgeland",
+        5,
+        "Whole main floor in two days. They moved a piano themselves rather "
+        "than ask me to sort it out.",
+        "business",
+    ),
+    (
+        "bk-r8-bridgeland",
+        4,
+        "Sharp lines and good colour advice. One small drip on the trim that "
+        "they touched up same week.",
+        "business",
+    ),
+    (
+        "bk-r9-mission",
+        5,
+        "Four jobs I'd been putting off for a year, done in an afternoon. "
+        "Brought his own everything.",
+        "business",
+    ),
+    (
+        "bk-r10-mission",
+        5,
+        "Hung a heavy mirror on plaster without a single crack. Knew exactly "
+        "what anchors to use.",
+        "business",
+    ),
+    (
+        "bk-r11-mckenzie",
+        4,
+        "Careful with the furniture and nothing got scratched. Ran about an "
+        "hour over the estimate.",
+        "business",
+    ),
+    (
+        "bk-r12-marda",
+        5,
+        "Same guy every week all summer, never had to chase him once.",
+        "business",
+    ),
+    (
+        "bk-r5-kensington",
+        5,
+        "Straightforward, knew what he wanted and left the access clear.",
+        "client",
+    ),
+    (
+        "bk-r11-mckenzie",
+        5,
+        "Everything boxed and labelled before we arrived. Ideal move.",
         "client",
     ),
 ]
@@ -729,6 +1074,47 @@ THREADS = {
             False,
         ),
     ],
+    # ── screenshot set, added 2026-08-05 ────────────────────────────────────
+    # The live job needs a conversation behind it. Without this the hero screen
+    # has a chat button that opens on nothing, and the Messages inbox shows the
+    # active job as "No messages yet" — which is precisely how the walkthrough
+    # screenshots ended up looking abandoned.
+    "bk-nadia-live-paint": [
+        ("client", 3200, "Hi Yusuf — confirming Wednesday for the two bedrooms?", True),
+        (
+            "business",
+            3140,
+            "Confirmed. We'll be there for 8, two coats on both rooms, done by "
+            "late afternoon.",
+            True,
+        ),
+        (
+            "client",
+            3080,
+            "Great. The warm white from the sample card is the one we want.",
+            True,
+        ),
+        (
+            "business",
+            3020,
+            "Noted — Cloud White, low-VOC. We bring the drop sheets and move the "
+            "furniture in ourselves.",
+            True,
+        ),
+        (
+            "client",
+            180,
+            "Just left the key under the mat, the cat is shut upstairs.",
+            True,
+        ),
+        (
+            "business",
+            20,
+            "Masking done, first coat going on now. I'll send photos before we "
+            "pack up.",
+            False,
+        ),
+    ],
     "bk-hillhurst-fence": [
         (
             "client",
@@ -800,7 +1186,74 @@ TIMELINES = {
         ("arrived", "business", 1, "On site, unloading"),
         ("started", "business", 0, "Pulling the broken rail"),
     ],
+    # ── screenshot set, added 2026-08-05 ────────────────────────────────────
+    # THE hero screen. Stops at `started` on purpose: the live-tracking view
+    # renders the Confirmed -> On the way -> In progress -> Done rail from the
+    # last event, so adding `completed` here would grey the whole thing out and
+    # lose the shot. Nadia is the account the demo logs into, and before this
+    # she had no in-progress job at all.
+    "bk-nadia-live-paint": [
+        ("dates_proposed", "business", 54, "Three start dates offered"),
+        ("date_confirmed", "client", 50, "Client picked Wednesday"),
+        ("en_route", "business", 2, "On the way — about 20 minutes out"),
+        ("arrived", "business", 1, "Arrived, unloading drop sheets"),
+        ("started", "business", 0, "Masking the trim in the first bedroom"),
+    ],
+    # Nadia's upcoming booking opened on an empty timeline before this — the
+    # booking detail screen looked broken rather than merely early.
+    "bk-altadore-clean": [
+        ("dates_proposed", "business", 40, "Two morning slots offered"),
+        ("date_confirmed", "client", 36, "Thursday 10am confirmed"),
+    ],
 }
+
+
+# ── proof-of-work photos ────────────────────────────────────────────────────
+# (booking_slug, phase, filename, caption)
+#
+# These are PLACEHOLDERS, not photographs, and each image carries a "SAMPLE"
+# mark on its face. The proof-of-work panel needs rows so the screen renders and
+# the marketing pipeline has something to build against; inventing photorealistic
+# "completed work" for an App Store submission would be a claim about jobs that
+# never happened. Swap in real tester photos later — only the files change, the
+# rows and ids stay put.
+#
+# Uploaded to the public `job-photos` bucket under demo/proof/ on 2026-08-05.
+PHOTO_BUCKET_PREFIX = "demo/proof"
+PHOTOS = [
+    (
+        "bk-beltline-deepclean",
+        "before",
+        "beltline-before.jpg",
+        "Kitchen before the move-out clean",
+    ),
+    (
+        "bk-beltline-deepclean",
+        "after",
+        "beltline-after.jpg",
+        "Same kitchen, cleaned and handed back",
+    ),
+    (
+        "bk-kensington-heater",
+        "before",
+        "kensington-before.jpg",
+        "Failed element, no hot water",
+    ),
+    (
+        "bk-kensington-heater",
+        "after",
+        "kensington-after.jpg",
+        "Element replaced, hot water restored",
+    ),
+    # In-progress job: a `before` with no `after` yet is exactly what a live
+    # booking should look like, and it keeps the hero screen honest.
+    (
+        "bk-nadia-live-paint",
+        "before",
+        "paint-before.jpg",
+        "First bedroom before the repaint",
+    ),
+]
 
 
 def _iso(dt: datetime) -> str:
@@ -1090,6 +1543,31 @@ def build(now: datetime | None = None) -> dict:
                 }
             )
 
+    # Public bucket URL is derived from SUPABASE_URL at build time rather than
+    # hardcoded, so the seed still points at the right project if it is ever run
+    # against a branch database.
+    base = (os.getenv("SUPABASE_URL") or "").rstrip("/")
+    photos: list[dict] = []
+    for booking_slug, phase, filename, caption in PHOTOS:
+        meta = booking_meta[booking_slug]
+        path = f"{PHOTO_BUCKET_PREFIX}/{filename}"
+        photos.append(
+            {
+                "id": did("photo", f"{booking_slug}:{phase}:{filename}"),
+                "booking_id": meta["id"],
+                # The business uploads proof of work, so the actor is the owner
+                # and `source` must agree with that — the check constraint
+                # allows business|client and the UI labels them differently.
+                "uploaded_by": meta["owner_id"],
+                "source": "business",
+                "phase": phase,
+                "url": f"{base}/storage/v1/object/public/job-photos/{path}",
+                "path": path,
+                "caption": caption,
+                "created_at": _iso(meta["confirmed"] + timedelta(hours=1)),
+            }
+        )
+
     return {
         "accounts": accounts,
         "users": users,
@@ -1100,6 +1578,7 @@ def build(now: datetime | None = None) -> dict:
         "reviews": reviews,
         "messages": messages,
         "booking_events": events,
+        "booking_photos": photos,
     }
 
 
@@ -1121,5 +1600,6 @@ INSERT_ORDER = [
     "reviews",
     "messages",
     "booking_events",
+    "booking_photos",
 ]
 DELETE_ORDER = list(reversed(INSERT_ORDER))
