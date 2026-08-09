@@ -687,8 +687,9 @@ export default function BookingDetailsScreen({ route, navigation }) {
   // with the job's post title for display, so we read the raw column here
   // instead so the chip picker on PostJobScreen can actually match a
   // CATEGORY_LABELS entry. `booking.total_amount` is the real bookings-table
-  // price column (the Price row on this screen reads quoted_price/price,
-  // which aren't columns on this table — pre-existing, not touched here).
+  // price column — the Price row above now reads it directly (it used to
+  // read `quoted_price`/`price`, neither of which is a column on this table,
+  // which is why it rendered $0.00 on every booking).
   const handleRebook = () => {
     navigation.navigate('PostJob', {
       rebookBusinessId: booking?.business_id,
@@ -1054,7 +1055,7 @@ export default function BookingDetailsScreen({ route, navigation }) {
             <DetailRow icon="dollar-sign" label="Price">
               <Inline spacing="sm" align="center" justify="flex-end">
                 <Text variant="display3" maxFontSizeMultiplier={1.4} style={{ color: colors.success, fontVariant: ['tabular-nums'] }}>
-                  ${parseFloat(booking?.quoted_price ?? booking?.price ?? 0).toFixed(2)}
+                  ${parseFloat(booking?.total_amount ?? 0).toFixed(2)}
                 </Text>
                 <View
                   style={{
