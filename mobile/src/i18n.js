@@ -1495,6 +1495,28 @@ Object.assign(translations.en, {
     'You marked this done. The client has 24 hours to approve — after that the payment releases to you automatically.',
   'approval.autoReleased': 'Released automatically — the client didn’t respond in 24 hours.',
 });
+
+// ── Proof of work — walkthrough bugs 3/7/8, 2026-08-08 ──────────────────────
+// Submitting proof and marking a job complete are two separate actions. Three
+// spots on the business side used to describe the wrong one of them: the
+// submit toast promised the client could approve immediately, the "Mark
+// complete" confirmation said it "may release final payment" (it holds it and
+// opens a 24h window instead — see approval.businessWaitingBody above, which
+// is what actually happens next), and the Progress tab gave no sign proof had
+// been sent at all. EN only for now — these aren't in the money-copy set above,
+// which shipped all locales because it is the screen where funds move.
+Object.assign(translations.en, {
+  'proof.submitToast.title': 'Proof saved',
+  'proof.submitToast.body': 'Mark the job complete to send it to the client for approval.',
+  'proof.progress.submittedTitle': 'Proof sent',
+  'proof.progress.submittedSubtitle': 'Awaiting the client’s approval',
+  'proof.progress.submittedBadge': 'Awaiting approval',
+  'proof.progress.approvedTitle': 'Proof approved',
+  'proof.progress.approvedSubtitle': 'The client approved this work',
+  'proof.progress.approvedBadge': 'Approved',
+  'jobStages.confirmComplete':
+    'Mark the job complete? This holds payment and starts the client’s 24-hour approval window.',
+});
 Object.assign(translations['fr-CA'], {
   'approval.approveCta': 'Approuver et libérer le paiement',
   'approval.approveShort': 'Approuver',

@@ -600,10 +600,15 @@ export default function ProofOfWorkScreen({ route, navigation }) {
     try {
       await api.post(`/bookings/${bookingId}/proof/submit`);
       haptics.successTap?.();
+      // Submitting proof only flips booking_proofs.status to 'submitted' — it
+      // does not touch bookings.status, and the client has no way to reach an
+      // approve action until it's 'completed'. Saying "sent for approval" here
+      // was a promise this screen alone can't keep; "Mark complete" (the other
+      // tab) is the step that actually opens the client's approval window.
       toast.show({
         type: 'success',
-        text1: 'Sent for approval',
-        text2: 'Payment releases when the client approves.',
+        text1: i18n.t('proof.submitToast.title'),
+        text2: i18n.t('proof.submitToast.body'),
       });
       navigation.goBack();
     } catch (err) {
