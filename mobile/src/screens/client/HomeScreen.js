@@ -4,6 +4,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   RefreshControl,
+  Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -23,8 +24,15 @@ import SectionHeader from '../../components/SectionHeader';
 
 import { api } from '../../services/api';
 import { getUserLocation } from '../../services/location';
+// Shared with My Jobs' Past row so the two surfaces can never disagree about
+// which jobs are waiting on the client.
+import { isAwaitingApproval, hoursUntilApproval } from '../../utils/approval';
+import * as haptics from '../../services/haptics';
+import * as toast from '../../services/toast';
+import i18n from '../../i18n';
 import { colors, spacing, radius } from '../../theme/tokens';
 import Text from '../../components/Text';
+import Button from '../../components/Button';
 import SearchField from '../../components/SearchField';
 import Stack from '../../components/Stack';
 import Surface from '../../components/Surface';
@@ -95,6 +103,105 @@ function bookingTime(b) {
   const raw = b.confirmed_date || b.proposed_date_1;
   const t = raw ? new Date(raw).getTime() : NaN;
   return Number.isNaN(t) ? Infinity : t;
+}
+
+// Whole dollars read better in a sentence; cents matter only when they exist.
+// Same rule as ApproveWorkScreen's money(), which takes cents — this one takes
+// the dollar figure `payment_state` already reports.
+function money(dollars) {
+  const value = Number(dollars || 0).toFixed(2);
+  return value.endsWith('.00') ? `$${value.slice(0, -3)}` : `$${value}`;
+}
+
+// ─── Needs-your-OK card ──────────────────────────────────────────────────────
+// Walkthrough bug 1 (Kira, 2026-08-06): "money with a deadline, filed under
+// Past, badged DONE, with no prompt on Home." Approving was Home → My Jobs →
+// Past → booking → scroll → Approve → confirm: five taps, seven through the
+// overflow, on the one action in the product that moves someone's money — and
+// if it was never found, the timer released it anyway.
+//
+// So the prompt comes to them, above the live job (a deadline outranks a
+// schedule) and above anything browsable. Both answers are on the card, side by
+// side, because "Approve" alone with no visible way to say no is a dark
+// pattern; the body still opens ApproveWorkScreen for the before/after photos.
+//
+// It confirms before releasing, so this is 2 taps rather than Kira's 1: the
+// release is irreversible and this card sits under a scrolling thumb. The
+// confirm names the amount — same alert, same keys as BookingDetailsScreen.
+function ApprovalPromptCard({ booking, approving, onApprove, onDispute, onReview }) {
+  const provider =
+    booking.businesses?.business_name || booking.business_name || 'Your provider';
+  const held = booking.payment_state?.amount_held;
+  const hours = hoursUntilApproval(booking);
+
+  const deadlineLabel =
+    hours === null
+      ? null
+      : hours <= 0
+        ? i18n.t('approvalCard.deadlineNow')
+        : hours === 1
+          ? i18n.t('approvalCard.deadlineSoon')
+          : i18n.t('approvalCard.deadlineHours', { hours });
+
+  return (
+    <Surface elevation="subtle" style={styles.approvalCard}>
+      <TouchableOpacity
+        onPress={onReview}
+        activeOpacity={0.85}
+        accessibilityRole="button"
+        accessibilityLabel={i18n.t('approvalCard.a11yReview', { business: provider })}
+      >
+        <Inline justify="space-between" align="flex-start" style={{ marginBottom: spacing.xs }}>
+          <Text variant="label" style={styles.approvalEyebrow}>
+            {i18n.t('approvalCard.eyebrow')}
+          </Text>
+          {deadlineLabel && <StatusBadge label={deadlineLabel} tone="warning" />}
+        </Inline>
+
+        {/* Three lines, and nothing on this card is capped with
+            maxFontSizeMultiplier: Android's accessibility text goes to 2.0×,
+            and this is the card someone who needs that setting most has to be
+            able to read. It grows; the layout gives way to it. */}
+        <Text variant="h1" numberOfLines={3} style={{ marginBottom: 4 }}>
+          {i18n.t('approvalCard.title', { business: provider })}
+        </Text>
+
+        {/* Money is green, and it is named on the card rather than only inside
+            the confirm — the client should know what they are approving before
+            they tap, not after. Falls back to a figure-free line rather than
+            printing $0: `amount_held` is the captured escrow, and a booking
+            with nothing captured never reaches this card. */}
+        <Text variant="small" style={styles.approvalMoney} numberOfLines={2}>
+          {held ? i18n.t('approvalCard.amountHeld', { amount: money(held) }) : i18n.t('approvalCard.amountUnknown')}
+        </Text>
+
+        <Inline spacing="xs" style={{ marginTop: spacing.xs }}>
+          <Feather name="image" size={13} color={colors.textSecondary} />
+          <Text variant="small" color="secondary" style={{ flex: 1 }}>
+            {i18n.t('approvalCard.seePhotos')}
+          </Text>
+          <Feather name="chevron-right" size={16} color={colors.textSecondary} />
+        </Inline>
+      </TouchableOpacity>
+
+      {/* Equal flex, so neither answer is the small one. */}
+      <View style={styles.approvalActions}>
+        <Button
+          label={i18n.t('approval.approveShort')}
+          onPress={onApprove}
+          loading={approving}
+          style={styles.approvalBtn}
+        />
+        <Button
+          variant="secondary"
+          label={i18n.t('approvalCard.somethingWrong')}
+          onPress={onDispute}
+          disabled={approving}
+          style={styles.approvalBtn}
+        />
+      </View>
+    </Surface>
+  );
 }
 
 // The live job, pinned to the top of Home (item #14). Taps through to
@@ -311,8 +418,60 @@ export default function HomeScreen({ navigation }) {
   const pinnedBooking = liveBookings[0] || null;
   const upcomingBookings = liveBookings.slice(1, 4);
 
+  // Soonest deadline first — the one about to release itself is the one to
+  // answer. Normally there is exactly one; the slice is a guard, not a design.
+  const awaitingApproval = bookings
+    .filter(isAwaitingApproval)
+    .sort((a, b) => new Date(a.approval_deadline_at) - new Date(b.approval_deadline_at))
+    .slice(0, 3);
+
   const openBooking = (id) => navigation.navigate('ActiveBooking', { bookingId: id });
   const openMyJobs = () => navigation.navigate('My Jobs');
+
+  // POST /bookings/{id}/approve, not /proof/approve: this one works whether or
+  // not the pro sent photos (most jobs never get any), and it is idempotent, so
+  // a double-tap is a no-op rather than an error. Same endpoint, same confirm
+  // and same toast keys as BookingDetailsScreen's Approve CTA — two entry
+  // points to one action, not two implementations of it.
+  const [approvingId, setApprovingId] = useState(null);
+
+  const approveBooking = useCallback(
+    (booking) => {
+      const held = booking.payment_state?.amount_held;
+      Alert.alert(
+        i18n.t('approval.confirmTitle'),
+        held
+          ? i18n.t('approval.confirmBodyAmount', { amount: `$${Number(held).toFixed(2)}` })
+          : i18n.t('approval.confirmBody'),
+        [
+          { text: i18n.t('common.cancel'), style: 'cancel' },
+          {
+            text: i18n.t('approval.approveShort'),
+            onPress: async () => {
+              setApprovingId(booking.id);
+              try {
+                await api.post(`/bookings/${booking.id}/approve`);
+                haptics.successTap?.();
+                toast.show({ type: 'success', text1: i18n.t('approval.released') });
+                // Re-pull rather than dropping the card locally: the card's
+                // whole claim is what the ledger says, so let the ledger say it.
+                await fetchJobs();
+              } catch (err) {
+                toast.show({
+                  type: 'error',
+                  text1: i18n.t('approval.failed'),
+                  text2: err?.response?.data?.detail || err?.message || '',
+                });
+              } finally {
+                setApprovingId(null);
+              }
+            },
+          },
+        ],
+      );
+    },
+    [fetchJobs],
+  );
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -386,8 +545,21 @@ export default function HomeScreen({ navigation }) {
           {/* Live job — pinned above everything browsable. Renders only when
               the client actually has one, so the browse-first Home is
               unchanged for everyone else. */}
-          {(pinnedBooking || openPosts.length > 0) && (
+          {(awaitingApproval.length > 0 || pinnedBooking || openPosts.length > 0) && (
             <Stack spacing="sm" style={styles.jobsBlock}>
+              {/* Above the live job on purpose: a job in progress can be
+                  answered whenever, this one releases money on a timer. */}
+              {awaitingApproval.map((b) => (
+                <ApprovalPromptCard
+                  key={b.id}
+                  booking={b}
+                  approving={approvingId === b.id}
+                  onApprove={() => approveBooking(b)}
+                  onDispute={() => navigation.navigate('DisputeFlow', { bookingId: b.id })}
+                  onReview={() => navigation.navigate('ApproveWork', { bookingId: b.id })}
+                />
+              ))}
+
               {pinnedBooking && (
                 <PinnedBookingCard
                   booking={pinnedBooking}
@@ -623,6 +795,33 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.base,
   },
+  // The one card on Home that is asking for an answer. Warning-tinted rather
+  // than accent so it does not read as "your next job" — and so the live-job
+  // card below it keeps its own identity when both are on screen.
+  approvalCard: {
+    backgroundColor: colors.surfaceAlt,
+    borderColor: colors.warning,
+  },
+  approvalEyebrow: {
+    color: colors.warning,
+    letterSpacing: 1.4,
+  },
+  approvalMoney: {
+    color: colors.success,
+  },
+  approvalActions: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginTop: spacing.base,
+  },
+  approvalBtn: {
+    flex: 1,
+    // Both answers grow with the text instead of clipping it — the whole point
+    // of this card is that someone who scales their type to 200 % can still
+    // find and read it.
+    paddingHorizontal: spacing.sm,
+  },
+
   // Accent-tinted so the live job reads as the one card on Home that is about
   // *you*, not about browsing.
   pinnedCard: {
