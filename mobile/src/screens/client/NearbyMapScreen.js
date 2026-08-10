@@ -31,7 +31,15 @@ import { colors, spacing, radius, shadows, motion } from '../../theme/tokens';
 // react-native-maps — already in package.json (v1.20.1). Which provider draws
 // (Apple on iOS, Google on Android) and the null-safe lazy require both live in
 // services/maps.js so this screen and ProviderLiveLocation cannot disagree.
-import { MapView, Marker, MAP_PROVIDER, darkMapProps } from '../../services/maps';
+import {
+  MapView,
+  Marker,
+  MAP_PROVIDER,
+  darkMapProps,
+  // Shared with the booking hero — one dark style, defined with the rest of
+  // the map decisions rather than owned by whichever screen drew a map first.
+  DARK_MAP_STYLE,
+} from '../../services/maps';
 
 const CALGARY_FALLBACK = { lat: 51.0447, lng: -114.0719 };
 
@@ -80,55 +88,6 @@ function toInitials(name) {
     .map((w) => w[0]).join('').toUpperCase().slice(0, 2) || '??';
 }
 
-// ─── Dark map style — mutes default colors to match app bg ───────────────────
-const DARK_MAP_STYLE = [
-  { elementType: 'geometry', stylers: [{ color: colors.mapBgTop }] },
-  { elementType: 'labels.text.fill', stylers: [{ color: colors.textSecondary }] },
-  { elementType: 'labels.text.stroke', stylers: [{ color: colors.bg }] },
-  {
-    featureType: 'administrative',
-    elementType: 'geometry',
-    stylers: [{ visibility: 'off' }],
-  },
-  {
-    featureType: 'poi',
-    stylers: [{ visibility: 'off' }],
-  },
-  {
-    featureType: 'road',
-    elementType: 'geometry',
-    stylers: [{ color: colors.border }],
-  },
-  {
-    featureType: 'road',
-    elementType: 'geometry.stroke',
-    stylers: [{ color: colors.border }],
-  },
-  {
-    featureType: 'road.highway',
-    elementType: 'geometry',
-    stylers: [{ color: colors.surfaceAlt }],
-  },
-  {
-    featureType: 'transit',
-    stylers: [{ visibility: 'off' }],
-  },
-  {
-    featureType: 'water',
-    elementType: 'geometry',
-    stylers: [{ color: colors.surface }],
-  },
-  {
-    featureType: 'landscape',
-    elementType: 'geometry',
-    stylers: [{ color: colors.mapBgTop }],
-  },
-  {
-    featureType: 'landscape.man_made',
-    elementType: 'geometry',
-    stylers: [{ color: colors.mapBgMid }],
-  },
-];
 
 // ─── AnimatedPressable for map overlay buttons ────────────────────────────────
 const AnimatedPressable = AnimatedRN.createAnimatedComponent(Pressable);

@@ -25,6 +25,14 @@ import BookingStatusTimeline from '../../components/BookingStatusTimeline';
 // definition of "what stage is this job in".
 import { stageFromEvents } from './BookingDetailsScreen';
 import { MapCanvas, MapPin, MapRoute } from '../../components/MapPreviewCard';
+import {
+  MapView,
+  Marker,
+  MAP_PROVIDER,
+  darkMapProps,
+  DARK_MAP_STYLE,
+  fitRegion,
+} from '../../services/maps';
 import { projectToBox, distanceKm, formatDistance } from '../../utils/mapProjection';
 import { fetchProviderLocation, CLIENT_POLL_MS } from '../../services/liveLocation';
 import PulseDot from '../../components/PulseDot';
@@ -209,13 +217,66 @@ function toInitials(name) {
     .slice(0, 2);
 }
 
-// The hero map. MapCanvas rather than react-native-maps deliberately: the
-// walkthrough device is a Huawei with no Play Services, so a real map renders
-// nothing there (audit B5/S5). What it plots is real, though — the job address
-// and, while the provider is sharing, their actual last fix. It used to draw a
-// dashed route through five hardcoded pixel coordinates and two pins that had
-// nothing to do with the booking, which meant the "live tracking" screen showed
-// a provider who never moved along a road that did not exist.
+// Back button + live pill, sitting over whichever surface drew underneath.
+// Shared by both hero branches so the real map and the canvas cannot end up
+// with different chrome — the pill in particular states something about the
+// booking, and two copies is two chances for one of them to say it wrong.
+function HeroChrome({ onBack, isLive, hasProvider, distanceLabel }) {
+  return (
+    <>
+      <TouchableOpacity
+        style={styles.backBtn}
+        onPress={onBack}
+        accessibilityRole="button"
+        accessibilityLabel="Back"
+      >
+        <Feather name="arrow-left" size={18} color={colors.textPrimary} />
+      </TouchableOpacity>
+
+      {/* When there is a real fix, say the real thing — a distance is worth more
+          than the word "Live", and it also stops the pill claiming liveness over
+          a map showing nothing but the destination. Falls back to the old label
+          when the booking is live but the provider is not sharing. */}
+      {(hasProvider && distanceLabel) || isLive ? (
+        <View style={styles.livePill}>
+          <PulseDot size={7} />
+          <Text
+            style={{
+              color: colors.textPrimary,
+              fontSize: 13,
+              fontWeight: '600',
+              marginLeft: 8,
+            }}
+            maxFontSizeMultiplier={1.2}
+          >
+            {hasProvider && distanceLabel ? `${distanceLabel} away` : 'Live'}
+          </Text>
+        </View>
+      ) : null}
+    </>
+  );
+}
+
+// The hero map — a REAL map wherever one can draw, the designed canvas where it
+// cannot (walkthrough W8, cause A).
+//
+// It used to be MapCanvas on every platform, and said so: "the walkthrough
+// device is a Huawei with no Play Services, so a real map renders nothing
+// there." That was true of the Huawei and was never made conditional, so when
+// Kira walked the app on iOS — where the map draws perfectly — the main "where
+// are they" screen showed a flat drawn surface. His words: "the image on top
+// still renders a normal image."
+//
+// ProviderLiveLocation.js has done this correctly since X3 and is the pattern
+// copied here: ask services/maps for a MapView, use it if there is one, fall
+// back otherwise. That module now also answers "is there an API key", so a
+// keyless build gets the canvas rather than a blank rectangle.
+//
+// What it plots is real either way — the job address and, while the provider is
+// sharing, their actual last fix. It used to draw a dashed route through five
+// hardcoded pixel coordinates and two pins that had nothing to do with the
+// booking, which meant the "live tracking" screen showed a provider who never
+// moved along a road that did not exist.
 function LiveMapHero({ onBack, status, destination, providerLoc, distanceLabel }) {
   const isLive =
     status === 'on_the_way' ||
@@ -237,6 +298,63 @@ function LiveMapHero({ onBack, status, destination, providerLoc, distanceLabel }
   const at = (key) => projected?.points.find((p) => p.key === key) || null;
   const dest = at('destination');
   const prov = at('provider');
+
+  // Both ends framed when both exist, otherwise a close-in box on whichever
+  // one does. Null when there is nothing real to centre on — in which case the
+  // canvas is the honest surface, because a map centred on a guess is worse
+  // than a drawing that claims nothing.
+  const region = fitRegion(destination, provider);
+
+  if (MapView && region) {
+    return (
+      <View style={styles.hero}>
+        <MapView
+          style={StyleSheet.absoluteFill}
+          provider={MAP_PROVIDER}
+          {...darkMapProps(DARK_MAP_STYLE)}
+          region={region}
+          pointerEvents="none"
+          toolbarEnabled={false}
+        >
+          {destination && (
+            <Marker
+              coordinate={{ latitude: destination.lat, longitude: destination.lng }}
+              title="Job address"
+            />
+          )}
+          {provider && (
+            <Marker
+              coordinate={{ latitude: provider.lat, longitude: provider.lng }}
+              title="Your provider"
+              description={distanceLabel ? `${distanceLabel} away` : undefined}
+              pinColor={colors.accent}
+            />
+          )}
+        </MapView>
+
+        {/* The same scrim the canvas gets — chrome has to stay legible over
+            map tiles too, and Google's are lighter than the drawn surface. */}
+        <Svg style={StyleSheet.absoluteFill} width="100%" height="100%" pointerEvents="none">
+          <Defs>
+            <LinearGradient id="scrim" x1="0" y1="0" x2="0" y2="1">
+              <Stop offset="0" stopColor={colors.bg} stopOpacity="0.55" />
+              <Stop offset="0.3" stopColor={colors.bg} stopOpacity="0" />
+              <Stop offset="0.75" stopColor={colors.bg} stopOpacity="0" />
+              <Stop offset="1" stopColor={colors.bg} stopOpacity="0.35" />
+            </LinearGradient>
+          </Defs>
+          <Rect x="0" y="0" width="100%" height="100%" fill="url(#scrim)" />
+        </Svg>
+
+        <HeroChrome
+          onBack={onBack}
+          isLive={isLive}
+          hasProvider={!!provider}
+          distanceLabel={distanceLabel}
+        />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.hero}>
@@ -280,35 +398,12 @@ function LiveMapHero({ onBack, status, destination, providerLoc, distanceLabel }
         </Svg>
       </MapCanvas>
 
-      <TouchableOpacity
-        style={styles.backBtn}
-        onPress={onBack}
-        accessibilityRole="button"
-        accessibilityLabel="Back"
-      >
-        <Feather name="arrow-left" size={18} color={colors.textPrimary} />
-      </TouchableOpacity>
-
-      {/* When there is a real fix, say the real thing — a distance is worth more
-          than the word "Live", and it also stops the pill claiming liveness over
-          a map showing nothing but the destination. Falls back to the old label
-          when the booking is live but the provider is not sharing. */}
-      {(prov && distanceLabel) || isLive ? (
-        <View style={styles.livePill}>
-          <PulseDot size={7} />
-          <Text
-            style={{
-              color: colors.textPrimary,
-              fontSize: 13,
-              fontWeight: '600',
-              marginLeft: 8,
-            }}
-            maxFontSizeMultiplier={1.2}
-          >
-            {prov && distanceLabel ? `${distanceLabel} away` : 'Live'}
-          </Text>
-        </View>
-      ) : null}
+      <HeroChrome
+        onBack={onBack}
+        isLive={isLive}
+        hasProvider={!!prov}
+        distanceLabel={distanceLabel}
+      />
     </View>
   );
 }
