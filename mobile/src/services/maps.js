@@ -25,6 +25,9 @@
 //     null on that path.
 
 import { Platform } from 'react-native';
+import Constants from 'expo-constants';
+
+import { colors } from '../theme/tokens';
 
 let mod = null;
 try {
@@ -33,8 +36,46 @@ try {
   mod = null;
 }
 
-export const MapView = (mod && mod.default) || null;
-export const Marker = (mod && mod.Marker) || null;
+// ── The key is part of "can a map draw here", not a build detail ────────────
+// The header above says an iOS build with an empty key renders a BLANK map,
+// not a fallback, and calls that configuration rather than a code fault. It is
+// both: nothing could ACT on it, because the one module that decides which map
+// draws never looked at the key. So a keyless build drew a blank rectangle on
+// every map surface — the nearby screen, the live-provider card, and (once it
+// adopts this) the booking hero — while the designed MapCanvas fallback, which
+// exists for exactly this, sat unused.
+//
+// Now the key is read the same way the native side receives it (app.config.js
+// injects it into BOTH shapes: android.config.googleMaps.apiKey nested,
+// ios.config.googleMapsApiKey flat) and a missing key degrades to the canvas.
+//
+// FAILS OPEN WHEN IT CANNOT TELL. `undefined` means "no config to read" — a
+// test renderer, or a runtime that does not expose one — and guessing "no key"
+// there would disable maps for builds that have one. Only an explicitly EMPTY
+// string is treated as a missing key, and app.config.js always writes the
+// field, so a real build always gives a definite answer.
+export function readMapsKey(os, expoConfig) {
+  if (!expoConfig) return undefined;
+  const key =
+    os === 'android'
+      ? expoConfig.android?.config?.googleMaps?.apiKey
+      : expoConfig.ios?.config?.googleMapsApiKey;
+  return typeof key === 'string' ? key.trim() : undefined;
+}
+
+export function hasMapsKey(os, expoConfig) {
+  const key = readMapsKey(os, expoConfig);
+  return key === undefined ? true : key.length > 0;
+}
+
+export const MAPS_KEY_PRESENT = hasMapsKey(Platform.OS, Constants.expoConfig);
+
+// Both conditions, in one place, so no screen has to remember either: the
+// native module has to exist AND there has to be a key for it to draw with.
+const canDrawRealMap = !!mod && MAPS_KEY_PRESENT;
+
+export const MapView = (canDrawRealMap && mod.default) || null;
+export const Marker = (canDrawRealMap && mod.Marker) || null;
 
 // Google on every platform. We name PROVIDER_GOOGLE explicitly rather than
 // leaning on PROVIDER_DEFAULT, so the intent survives a react-native-maps
@@ -58,4 +99,80 @@ export function darkMapProps(googleStyle, os = Platform.OS) {
   return { customMapStyle: googleStyle };
 }
 
-export const MAP_PROVIDER = pickProvider(Platform.OS);
+export const MAP_PROVIDER = canDrawRealMap ? pickProvider(Platform.OS) : null;
+
+// ─── Dark map style — mutes Google's default colors to match the app bg ─────
+// Lived in NearbyMapScreen until the booking hero needed the same look. Two
+// copies of a 14-rule style array is how one map surface quietly stops matching
+// the other, so it sits with the rest of the map decisions instead.
+export const DARK_MAP_STYLE = [
+  { elementType: 'geometry', stylers: [{ color: colors.mapBgTop }] },
+  { elementType: 'labels.text.fill', stylers: [{ color: colors.textSecondary }] },
+  { elementType: 'labels.text.stroke', stylers: [{ color: colors.bg }] },
+  {
+    featureType: 'administrative',
+    elementType: 'geometry',
+    stylers: [{ visibility: 'off' }],
+  },
+  {
+    featureType: 'poi',
+    stylers: [{ visibility: 'off' }],
+  },
+  {
+    featureType: 'road',
+    elementType: 'geometry',
+    stylers: [{ color: colors.border }],
+  },
+  {
+    featureType: 'road',
+    elementType: 'geometry.stroke',
+    stylers: [{ color: colors.border }],
+  },
+  {
+    featureType: 'road.highway',
+    elementType: 'geometry',
+    stylers: [{ color: colors.surfaceAlt }],
+  },
+  {
+    featureType: 'transit',
+    stylers: [{ visibility: 'off' }],
+  },
+  {
+    featureType: 'water',
+    elementType: 'geometry',
+    stylers: [{ color: colors.surface }],
+  },
+  {
+    featureType: 'landscape',
+    elementType: 'geometry',
+    stylers: [{ color: colors.mapBgTop }],
+  },
+  {
+    featureType: 'landscape.man_made',
+    elementType: 'geometry',
+    stylers: [{ color: colors.mapBgMid }],
+  },
+];
+
+// The region a two-point map should open on: both ends visible with room to
+// breathe, or a close-in box around whichever single point exists. Pure so the
+// framing can be checked without a renderer — a map that opens too far out to
+// read the street, or so far in that the provider is off-screen, is the same
+// bug class as no map at all.
+const SINGLE_POINT_DELTA = 0.014; // ~1.5 km — "which street", not "which city".
+
+export function fitRegion(a, b, minDelta = SINGLE_POINT_DELTA) {
+  const points = [a, b].filter((p) => p && Number.isFinite(p.lat) && Number.isFinite(p.lng));
+  if (points.length === 0) return null;
+
+  const lats = points.map((p) => p.lat);
+  const lngs = points.map((p) => p.lng);
+  const latitude = (Math.min(...lats) + Math.max(...lats)) / 2;
+  const longitude = (Math.min(...lngs) + Math.max(...lngs)) / 2;
+
+  // 1.6× the span so the pins sit inside the frame rather than on its edge.
+  const latitudeDelta = Math.max((Math.max(...lats) - Math.min(...lats)) * 1.6, minDelta);
+  const longitudeDelta = Math.max((Math.max(...lngs) - Math.min(...lngs)) * 1.6, minDelta);
+
+  return { latitude, longitude, latitudeDelta, longitudeDelta };
+}

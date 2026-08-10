@@ -9,6 +9,9 @@ import { useAuth } from '../../context/AuthContext';
 import { api } from '../../services/api';
 import * as toast from '../../services/toast';
 import i18n from '../../i18n';
+// Shared with client Home's prompt card — one predicate, so a row here can
+// never disagree with what Home is asking for.
+import { isAwaitingApproval } from '../../utils/approval';
 import { colors, spacing } from '../../theme/tokens';
 import { SkeletonList } from '../../components/Skeleton';
 import EmptyState from '../../components/EmptyState';
@@ -205,8 +208,18 @@ function assigneeLine(assignee) {
   return bits.length > 0 ? bits.join(' · ') : null;
 }
 
-function BookingRow({ booking, onPress, onReview, onDetails, onRebook, onInvoice, userRole }) {
-  const status = BOOKING_STATUS[booking.status] || BOOKING_STATUS.confirmed;
+function BookingRow({ booking, onPress, onReview, onDetails, onRebook, onInvoice, onApprove, userRole }) {
+  // Walkthrough bug 1: a finished job whose money is still held was badged
+  // "Done" in green, next to nothing that said the client still had to act —
+  // "money with a deadline, filed under Past, badged DONE". Done is true of the
+  // WORK and false of the money, and on this row the money is the part with a
+  // 24-hour timer on it. Home now prompts for these (HomeScreen's
+  // ApprovalPromptCard, same utils/approval.js predicate); this stops the row
+  // someone lands on from contradicting that prompt.
+  const awaiting = userRole === 'client' && isAwaitingApproval(booking);
+  const status = awaiting
+    ? { label: i18n.t('approvalCard.badge'), tone: 'warning' }
+    : BOOKING_STATUS[booking.status] || BOOKING_STATUS.confirmed;
   const service = booking.service_posts?.title || booking.service_category || 'Service';
   const assignee = booking.assignee;
   const businessName = booking.businesses?.business_name || booking.business_name || 'Business';
@@ -226,6 +239,21 @@ function BookingRow({ booking, onPress, onReview, onDetails, onRebook, onInvoice
   const isDone = booking.status === 'completed';
 
   const actionEls = [];
+  // First and highlighted: on a row waiting for the client, releasing the
+  // payment is the only thing that matters, and "Review work & release payment"
+  // was living behind the ⋯ on BookingDetails (walkthrough item 4 — that
+  // control is invisible to an older user).
+  if (awaiting && onApprove) {
+    actionEls.push(
+      <ActionButton
+        key="approve"
+        label={i18n.t('approvalCard.reviewAction')}
+        icon={<Feather name="check-circle" size={13} color={colors.accentText} strokeWidth={1.8} />}
+        onPress={onApprove}
+        highlight
+      />
+    );
+  }
   if (onDetails) {
     actionEls.push(
       <ActionButton key="details" label="Details" onPress={onDetails} />
@@ -249,10 +277,13 @@ function BookingRow({ booking, onPress, onReview, onDetails, onRebook, onInvoice
       <ActionButton key="review" label="Review" onPress={onReview} />
     );
   }
-  // CARD-12 — Rebook: cheapest nudge back on-platform for job #2.
+  // CARD-12 — Rebook: cheapest nudge back on-platform for job #2. It gives up
+  // the highlight while an approval is outstanding: two highlighted buttons on
+  // one row is no highlight at all, and hiring them again is not the thing
+  // being asked for yet.
   if (isDone && onRebook) {
     actionEls.push(
-      <ActionButton key="rebook" label={i18n.t('rebook.button')} onPress={onRebook} highlight />
+      <ActionButton key="rebook" label={i18n.t('rebook.button')} onPress={onRebook} highlight={!awaiting} />
     );
   }
 
@@ -683,6 +714,9 @@ export default function MyJobsScreen({ navigation }) {
                 userRole={user?.role}
                 onPress={() => handleBookingPress(booking)}
                 onDetails={isClient ? () => navigation.navigate('BookingDetails', { bookingId: booking.id }) : undefined}
+                // Straight to the before/after photos and the release button,
+                // rather than to BookingDetails and a scroll.
+                onApprove={isClient ? () => navigation.navigate('ApproveWork', { bookingId: booking.id }) : undefined}
                 // Same route + params as the business side's Past tab, so one
                 // InvoiceScreen serves both halves of the marketplace.
                 onInvoice={() => navigation.navigate('Invoice', { bookingId: booking.id })}

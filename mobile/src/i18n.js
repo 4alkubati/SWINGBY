@@ -2844,6 +2844,77 @@ Object.assign(translations.uk, {
     'Позначити роботу як завершену? Платіж залишається на депонуванні, і клієнт має 24 години, щоб його схвалити.',
 });
 
+// ── The "needs your OK" card on client Home — walkthrough bug 1, 2026-08-09 ──
+// The client was never told there was anything to approve: the prompt lived
+// five taps deep under My Jobs → Past, badged DONE, while a 24h timer released
+// the money on its own. This copy is the prompt, so it is money copy — all four
+// locales, no English fallback, same rule as the approval.* block above whose
+// buttons and confirm alert this card reuses.
+Object.assign(translations.en, {
+  'approvalCard.eyebrow': 'NEEDS YOUR OK',
+  'approvalCard.title': '%{business} finished your job',
+  'approvalCard.amountHeld': '%{amount} held — released when you approve',
+  'approvalCard.amountUnknown': 'Your payment is held until you approve',
+  'approvalCard.deadlineHours': 'Releases in %{hours}h',
+  'approvalCard.deadlineSoon': 'Releases within the hour',
+  'approvalCard.deadlineNow': 'Releasing now',
+  'approvalCard.seePhotos': 'See the photos first',
+  'approvalCard.somethingWrong': 'Something’s wrong',
+  'approvalCard.a11yReview':
+    'Review the work %{business} sent, with the photos, before you approve',
+  // My Jobs → Past. The row used to be badged "Done" in green while the money
+  // still needed an answer: done is true of the work, false of the payment.
+  'approvalCard.badge': 'Needs your OK',
+  'approvalCard.reviewAction': 'Review & approve',
+});
+
+Object.assign(translations['fr-CA'], {
+  'approvalCard.eyebrow': 'VOTRE ACCORD',
+  'approvalCard.title': '%{business} a terminé votre travail',
+  'approvalCard.amountHeld': '%{amount} retenu — libéré dès votre approbation',
+  'approvalCard.amountUnknown': 'Votre paiement est retenu jusqu’à votre approbation',
+  'approvalCard.deadlineHours': 'Libéré dans %{hours} h',
+  'approvalCard.deadlineSoon': 'Libéré d’ici une heure',
+  'approvalCard.deadlineNow': 'Libération en cours',
+  'approvalCard.seePhotos': 'Voir les photos d’abord',
+  'approvalCard.somethingWrong': 'Il y a un problème',
+  'approvalCard.a11yReview':
+    'Examiner le travail envoyé par %{business}, avec les photos, avant d’approuver',
+  'approvalCard.badge': 'Votre accord requis',
+  'approvalCard.reviewAction': 'Examiner et approuver',
+});
+
+Object.assign(translations.ar, {
+  'approvalCard.eyebrow': 'بانتظار موافقتك',
+  'approvalCard.title': 'أنهى %{business} عملك',
+  'approvalCard.amountHeld': '%{amount} محتجز في الضمان — يُحرَّر عند موافقتك',
+  'approvalCard.amountUnknown': 'دفعتك محتجزة في الضمان حتى توافق',
+  'approvalCard.deadlineHours': 'يُحرَّر خلال %{hours} ساعة',
+  'approvalCard.deadlineSoon': 'يُحرَّر خلال ساعة',
+  'approvalCard.deadlineNow': 'يجري تحريره الآن',
+  'approvalCard.seePhotos': 'اطّلع على الصور أولاً',
+  'approvalCard.somethingWrong': 'هناك مشكلة',
+  'approvalCard.a11yReview': 'راجع العمل الذي أرسله %{business} مع الصور قبل الموافقة',
+  'approvalCard.badge': 'بانتظار موافقتك',
+  'approvalCard.reviewAction': 'المراجعة والموافقة',
+});
+
+Object.assign(translations.uk, {
+  'approvalCard.eyebrow': 'ПОТРІБНЕ ВАШЕ СХВАЛЕННЯ',
+  'approvalCard.title': '%{business} завершив вашу роботу',
+  'approvalCard.amountHeld': '%{amount} на депонуванні — переказ після схвалення',
+  'approvalCard.amountUnknown': 'Ваш платіж на депонуванні, доки ви не схвалите',
+  'approvalCard.deadlineHours': 'Переказ через %{hours} год',
+  'approvalCard.deadlineSoon': 'Переказ протягом години',
+  'approvalCard.deadlineNow': 'Переказ виконується',
+  'approvalCard.seePhotos': 'Спершу перегляньте фото',
+  'approvalCard.somethingWrong': 'Щось не так',
+  'approvalCard.a11yReview':
+    'Перегляньте роботу, яку надіслав %{business}, разом із фото, перш ніж схвалити',
+  'approvalCard.badge': 'Потрібне схвалення',
+  'approvalCard.reviewAction': 'Переглянути й схвалити',
+});
+
 const i18n = new I18n(translations);
 
 // Default fallback
