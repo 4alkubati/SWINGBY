@@ -46,6 +46,9 @@ import { api, BASE_URL, getAuthToken } from '../../services/api';
 import * as haptics from '../../services/haptics';
 import * as toast from '../../services/toast';
 import i18n from '../../i18n';
+// One "I'm done" — the same module the stage tracker on JobManagementScreen
+// calls, so whichever control a business reaches first finishes the whole job.
+import { finishJob, needsProofSubmit, FINISH_DONE } from '../../services/finishJob';
 import { colors, radius } from '../../theme/tokens';
 
 // Local layout constants. theme/tokens.js is owned by another lane this cycle,
@@ -594,31 +597,69 @@ export default function ProofOfWorkScreen({ route, navigation }) {
     }
   }
 
-  async function handleSubmit() {
-    if (!canSubmit) return;
-    setSubmitting(true);
-    try {
-      await api.post(`/bookings/${bookingId}/proof/submit`);
-      haptics.successTap?.();
-      // Submitting proof only flips booking_proofs.status to 'submitted' — it
-      // does not touch bookings.status, and the client has no way to reach an
-      // approve action until it's 'completed'. Saying "sent for approval" here
-      // was a promise this screen alone can't keep; "Mark complete" (the other
-      // tab) is the step that actually opens the client's approval window.
-      toast.show({
-        type: 'success',
-        text1: i18n.t('proof.submitToast.title'),
-        text2: i18n.t('proof.submitToast.body'),
-      });
-      navigation.goBack();
-    } catch (err) {
-      Alert.alert(
-        "Couldn't send",
-        err?.response?.data?.detail || err?.message || 'Try again in a moment.',
-      );
-    } finally {
-      if (mounted.current) setSubmitting(false);
-    }
+  // ONE "I'm done" (walkthrough item 2, 2026-08-06).
+  //
+  // This used to be "Send for approval", and it only submitted the proof —
+  // which does not mark the job done, does not open the client's approval
+  // window, and therefore leaves the money held with nobody able to release it.
+  // The business had to know to go to the other screen's stage tracker and tap
+  // "Mark complete" as well. Nobody knows that.
+  //
+  // Both halves now run through services/finishJob.js, which the stage tracker
+  // calls too, so whichever control a business reaches first does the whole
+  // thing.
+  async function handleFinish() {
+    if (submitting || alreadyDone) return;
+
+    const willSendProof = needsProofSubmit(proof);
+    Alert.alert(
+      i18n.t('finish.confirmTitle'),
+      willSendProof
+        ? i18n.t('finish.confirmWithProof', {
+            count: counts.before + counts.after,
+          })
+        : // Said plainly rather than enforced with a disabled button: a control
+          // that refuses and does not explain is the same walkthrough class as
+          // the ⋯ menu. They may genuinely have no photos, and a finished job
+          // must not be un-finishable because of it.
+          i18n.t('finish.confirmNoProof'),
+      [
+        { text: i18n.t('common.cancel'), style: 'cancel' },
+        {
+          text: i18n.t('finish.confirmCta'),
+          onPress: async () => {
+            setSubmitting(true);
+            try {
+              const res = await finishJob(bookingId, { proof });
+              haptics.successTap?.();
+              toast.show({
+                type: 'success',
+                text1: i18n.t('finish.doneToastTitle'),
+                text2:
+                  res.outcome === FINISH_DONE
+                    ? i18n.t('finish.doneToastBodyProof')
+                    : i18n.t('finish.doneToastBodyNoProof'),
+              });
+              navigation.goBack();
+            } catch (err) {
+              // The half-failure gets its own copy, because it is the exact
+              // state this whole change exists to stop someone sitting in
+              // without knowing.
+              Alert.alert(
+                err?.proofSentButNotComplete
+                  ? i18n.t('finish.halfDoneTitle')
+                  : i18n.t('finish.failedTitle'),
+                err?.response?.data?.detail ||
+                  err?.message ||
+                  i18n.t('finish.failedBody'),
+              );
+            } finally {
+              if (mounted.current) setSubmitting(false);
+            }
+          },
+        },
+      ],
+    );
   }
 
   // Upload the file FIRST, then write the row. If the upload fails there is no
@@ -698,7 +739,10 @@ export default function ProofOfWorkScreen({ route, navigation }) {
     );
   }
 
-  const alreadySubmitted = proof?.status === 'submitted' || proof?.status === 'approved';
+  // The job is finished from this screen's point of view once the proof has
+  // gone. `submitted` covers "sent, client has not answered"; `approved` covers
+  // "client already released". Neither should offer to finish it again.
+  const alreadyDone = proof?.status === 'submitted' || proof?.status === 'approved';
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -765,7 +809,7 @@ export default function ProofOfWorkScreen({ route, navigation }) {
                         <AddTile
                           key={`add-${key}`}
                           onPress={() => pickAndUpload(key)}
-                          disabled={alreadySubmitted}
+                          disabled={alreadyDone}
                         />
                       );
                     }
@@ -814,25 +858,41 @@ export default function ProofOfWorkScreen({ route, navigation }) {
       </ScrollView>
 
       {/* Sticky footer CTA. Disabled = ONE opacity on the whole button; the
-          label keeps its colour (POLISH-TIPS §6). */}
+          label keeps its colour (POLISH-TIPS §6).
+
+          It is NOT gated on the photo minimum any more. It used to be, which
+          meant the only control on this screen that finishes a job refused —
+          silently, with no reason on screen — until four photos existed. The
+          minimum still governs whether PROOF can be sent (needsProofSubmit),
+          and the confirm says which of the two is about to happen. */}
       <View style={[styles.footer, { paddingBottom: 20 + insets.bottom }]}>
+        {!canSubmit && !alreadyDone ? (
+          <Text style={styles.footerHint}>
+            {i18n.t('finish.photoHint', {
+              before: counts.before_needed,
+              after: counts.after_needed,
+            })}
+          </Text>
+        ) : null}
         <Pressable
-          onPress={handleSubmit}
-          disabled={!canSubmit || alreadySubmitted}
+          onPress={handleFinish}
+          disabled={submitting || alreadyDone}
           style={({ pressed }) => [
             styles.cta,
-            (!canSubmit || alreadySubmitted) && { opacity: 0.4 },
-            pressed && canSubmit && { opacity: 0.9, transform: [{ scale: 0.98 }] },
+            (submitting || alreadyDone) && { opacity: 0.4 },
+            pressed && !alreadyDone && { opacity: 0.9, transform: [{ scale: 0.98 }] },
           ]}
           accessibilityRole="button"
-          accessibilityState={{ disabled: !canSubmit || alreadySubmitted, busy: submitting }}
-          accessibilityLabel="Send for approval"
+          accessibilityState={{ disabled: submitting || alreadyDone, busy: submitting }}
+          accessibilityLabel={
+            alreadyDone ? i18n.t('finish.ctaDone') : i18n.t('finish.ctaA11y')
+          }
         >
           {submitting ? (
             <ActivityIndicator color={colors.textPrimary} />
           ) : (
             <Text style={styles.ctaLabel}>
-              {alreadySubmitted ? 'Sent for approval' : 'Send for approval'}
+              {alreadyDone ? i18n.t('finish.ctaDone') : i18n.t('finish.cta')}
             </Text>
           )}
         </Pressable>

@@ -32,6 +32,9 @@ import { Feather } from '@expo/vector-icons';
 import { colors, spacing, radius, shadows, motion } from '../../theme/tokens';
 import i18n from '../../i18n';
 import { bucketBooking, needsActionReason } from '../../utils/bookingBuckets';
+// Shared with ProofOfWorkScreen's CTA: whichever control the business reaches
+// first sends the proof AND marks the job done.
+import { finishJob, FINISH_DONE } from '../../services/finishJob';
 import { groupScheduledJobs, countScheduledJobs } from '../../utils/scheduleGroups';
 import useQuotedPostIds from '../../hooks/useQuotedPostIds';
 
@@ -290,16 +293,25 @@ function JobDetailScreen({ navigation, route }) {
     setAdvancing(true);
     try {
       if (stage === 'completed') {
-        // /complete stays the completion path and still writes the `completed`
-        // event itself — but since 2026-07-31 it NO LONGER releases the money.
-        // It opens a 24h window for the client to approve; the client approving
-        // (or that window closing) is what pays the business. Say so, rather
-        // than let the business assume they have just been paid.
-        const res = await api.patch(`/bookings/${bookingId}/complete`);
-        if (res?.approval_deadline_at) {
+        // ONE "I'm done" (walkthrough item 2). This used to PATCH /complete
+        // and nothing else, so a business that had already loaded photos onto
+        // ProofOfWorkScreen but not tapped its separate send button finished
+        // the job WITHOUT them — the client then approved, or the 24h window
+        // released, against no evidence at all. finishJob sends any submittable
+        // proof first; it is the same call ProofOfWorkScreen's CTA makes, so
+        // the two controls cannot produce different outcomes.
+        //
+        // /complete still writes the `completed` event itself, and since
+        // 2026-07-31 it NO LONGER releases the money: it opens a 24h window for
+        // the client to approve. Say so, rather than let the business assume
+        // they have just been paid.
+        const res = await finishJob(bookingId);
+        if (res.approvalDeadlineAt) {
           Alert.alert(
             i18n.t('approval.businessWaitingTitle'),
-            i18n.t('approval.businessWaitingBody'),
+            res.outcome === FINISH_DONE
+              ? i18n.t('approval.businessWaitingBodyProof')
+              : i18n.t('approval.businessWaitingBody'),
           );
         }
       } else {
@@ -309,7 +321,14 @@ function JobDetailScreen({ navigation, route }) {
       // must not be able to describe different stages.
       await Promise.all([load(), loadEvents()]);
     } catch (err) {
-      Alert.alert('Error', err.message || 'Could not update status.');
+      // The half-failure — photos on the record, job not done — is the frozen
+      // money state, so it never shares the generic status-update copy.
+      Alert.alert(
+        err?.proofSentButNotComplete
+          ? i18n.t('finish.halfDoneTitle')
+          : 'Error',
+        err?.response?.data?.detail || err.message || 'Could not update status.',
+      );
     } finally {
       setAdvancing(false);
     }

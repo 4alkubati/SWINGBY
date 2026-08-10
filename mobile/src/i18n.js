@@ -1512,17 +1512,23 @@ Object.assign(translations.en, {
 });
 
 // ── Proof of work — walkthrough bugs 3/7/8, 2026-08-08 ──────────────────────
-// Submitting proof and marking a job complete are two separate actions. Three
-// spots on the business side used to describe the wrong one of them: the
-// submit toast promised the client could approve immediately, the "Mark
-// complete" confirmation said it "may release final payment" (it holds it and
-// opens a 24h window instead — see approval.businessWaitingBody above, which
-// is what actually happens next), and the Progress tab gave no sign proof had
-// been sent at all. EN only for now — these aren't in the money-copy set above,
-// which shipped all locales because it is the screen where funds move.
+// Submitting proof and marking a job complete WERE two separate actions, and
+// three spots on the business side described the wrong one of them: the submit
+// toast promised the client could approve immediately, the "Mark complete"
+// confirmation said it "may release final payment" (it holds it and opens a 24h
+// window instead — see approval.businessWaitingBody above), and the Progress
+// tab gave no sign proof had been sent at all.
+//
+// `proof.submitToast.*` was deleted on 2026-08-10, in all four locales. Its
+// corrected wording — "Proof saved. Mark the job complete to send it to the
+// client" — was true when written and became an instruction to go and do a step
+// that no longer exists: services/finishJob.js does both halves from one press
+// (see the `finish.*` block below). Copy that tells someone to visit a screen
+// they no longer need is the same class of defect as copy that lies.
+//
+// The `proof.progress.*` keys below are still live — they label what the
+// Progress tab shows AFTER a job is finished.
 Object.assign(translations.en, {
-  'proof.submitToast.title': 'Proof saved',
-  'proof.submitToast.body': 'Mark the job complete to send it to the client for approval.',
   'proof.progress.submittedTitle': 'Proof sent',
   'proof.progress.submittedSubtitle': 'Awaiting the client’s approval',
   'proof.progress.submittedBadge': 'Awaiting approval',
@@ -2802,9 +2808,6 @@ Object.assign(translations.uk, {
 // ('libérer/retenu en fiducie', 'محتجز في الضمان/يُحرَّر', 'на депонуванні').
 Object.assign(translations['fr-CA'], {
   'booking.eventPaymentReleased': 'Paiement libéré',
-  'proof.submitToast.title': 'Preuve enregistrée',
-  'proof.submitToast.body':
-    'Marquez le travail comme terminé pour l’envoyer au client pour approbation.',
   'proof.progress.submittedTitle': 'Preuve envoyée',
   'proof.progress.submittedSubtitle': 'En attente de l’approbation du client',
   'proof.progress.submittedBadge': 'En attente d’approbation',
@@ -2817,8 +2820,6 @@ Object.assign(translations['fr-CA'], {
 
 Object.assign(translations.ar, {
   'booking.eventPaymentReleased': 'تم تحرير الدفعة',
-  'proof.submitToast.title': 'تم حفظ الدليل',
-  'proof.submitToast.body': 'حدِّد العمل كمكتمل لإرساله إلى العميل للموافقة.',
   'proof.progress.submittedTitle': 'تم إرسال الدليل',
   'proof.progress.submittedSubtitle': 'في انتظار موافقة العميل',
   'proof.progress.submittedBadge': 'في انتظار الموافقة',
@@ -2831,9 +2832,6 @@ Object.assign(translations.ar, {
 
 Object.assign(translations.uk, {
   'booking.eventPaymentReleased': 'Платіж переказано',
-  'proof.submitToast.title': 'Підтвердження збережено',
-  'proof.submitToast.body':
-    'Позначте роботу як завершену, щоб надіслати її клієнту на схвалення.',
   'proof.progress.submittedTitle': 'Підтвердження надіслано',
   'proof.progress.submittedSubtitle': 'Очікує схвалення клієнта',
   'proof.progress.submittedBadge': 'Очікує схвалення',
@@ -2913,6 +2911,110 @@ Object.assign(translations.uk, {
     'Перегляньте роботу, яку надіслав %{business}, разом із фото, перш ніж схвалити',
   'approvalCard.badge': 'Потрібне схвалення',
   'approvalCard.reviewAction': 'Переглянути й схвалити',
+});
+
+// ── One "I'm done" for the business — walkthrough item 2, 2026-08-10 ────────
+// Mark complete and Send proof were two journeys in two places, and doing only
+// one left the money frozen: submitting proof opens no approval window, so the
+// client has nothing to approve and /bookings/{id}/approve 400s. One action
+// now (services/finishJob.js). This copy states what is about to happen to
+// someone's payment, so it ships in every locale — an English fallback at the
+// moment a tradesperson finishes a job is the language barrier at its most
+// expensive.
+Object.assign(translations.en, {
+  'finish.cta': 'I\u2019m done',
+  'finish.ctaDone': 'Sent to the client',
+  'finish.ctaA11y': 'I am done \u2014 send the photos and mark this job finished',
+  'finish.confirmTitle': 'Finish this job?',
+  'finish.confirmWithProof':
+    'Sends your %{count} photos to the client and marks the job done. They have 24 hours to approve, then the payment releases to you automatically.',
+  'finish.confirmNoProof':
+    'You haven\u2019t added before and after photos. You can still finish \u2014 the client has 24 hours to approve, then the payment releases to you automatically.',
+  'finish.confirmCta': 'Finish job',
+  'finish.doneToastTitle': 'Job finished',
+  'finish.doneToastBodyProof':
+    'Your photos are with the client. Payment releases when they approve, or in 24 hours.',
+  'finish.doneToastBodyNoProof':
+    'Payment releases when the client approves, or in 24 hours.',
+  'finish.photoHint':
+    '%{before} more before and %{after} more after photos to send proof with this.',
+  'finish.halfDoneTitle': 'Photos sent \u2014 job NOT marked done',
+  'finish.failedTitle': 'Couldn\u2019t finish the job',
+  'finish.failedBody': 'Nothing was sent. Try again in a moment.',
+  'approval.businessWaitingBodyProof':
+    'Your photos are with the client. They have 24 hours to approve \u2014 after that the payment releases to you automatically.',
+});
+
+Object.assign(translations['fr-CA'], {
+  'finish.cta': 'J\u2019ai termin\u00e9',
+  'finish.ctaDone': 'Envoy\u00e9 au client',
+  'finish.ctaA11y': 'J\u2019ai termin\u00e9 \u2014 envoyer les photos et marquer le travail comme termin\u00e9',
+  'finish.confirmTitle': 'Terminer ce travail?',
+  'finish.confirmWithProof':
+    'Envoie vos %{count} photos au client et marque le travail comme termin\u00e9. Il a 24 heures pour approuver, ensuite le paiement vous est lib\u00e9r\u00e9 automatiquement.',
+  'finish.confirmNoProof':
+    'Vous n\u2019avez pas ajout\u00e9 de photos avant et apr\u00e8s. Vous pouvez quand m\u00eame terminer \u2014 le client a 24 heures pour approuver, ensuite le paiement vous est lib\u00e9r\u00e9 automatiquement.',
+  'finish.confirmCta': 'Terminer',
+  'finish.doneToastTitle': 'Travail termin\u00e9',
+  'finish.doneToastBodyProof':
+    'Vos photos sont chez le client. Le paiement est lib\u00e9r\u00e9 d\u00e8s son approbation, ou dans 24 heures.',
+  'finish.doneToastBodyNoProof':
+    'Le paiement est lib\u00e9r\u00e9 d\u00e8s l\u2019approbation du client, ou dans 24 heures.',
+  'finish.photoHint':
+    'Encore %{before} photo(s) avant et %{after} apr\u00e8s pour envoyer une preuve avec ceci.',
+  'finish.halfDoneTitle': 'Photos envoy\u00e9es \u2014 travail NON marqu\u00e9 termin\u00e9',
+  'finish.failedTitle': 'Impossible de terminer le travail',
+  'finish.failedBody': 'Rien n\u2019a \u00e9t\u00e9 envoy\u00e9. R\u00e9essayez dans un instant.',
+  'approval.businessWaitingBodyProof':
+    'Vos photos sont chez le client. Il a 24 heures pour approuver \u2014 ensuite le paiement vous est lib\u00e9r\u00e9 automatiquement.',
+});
+
+Object.assign(translations.ar, {
+  'finish.cta': '\u0623\u0646\u0647\u064a\u062a \u0627\u0644\u0639\u0645\u0644',
+  'finish.ctaDone': '\u062a\u0645 \u0627\u0644\u0625\u0631\u0633\u0627\u0644 \u0625\u0644\u0649 \u0627\u0644\u0639\u0645\u064a\u0644',
+  'finish.ctaA11y': '\u0623\u0646\u0647\u064a\u062a \u0627\u0644\u0639\u0645\u0644 \u2014 \u0623\u0631\u0633\u0644 \u0627\u0644\u0635\u0648\u0631 \u0648\u062d\u062f\u0651\u062f \u0627\u0644\u0639\u0645\u0644 \u0643\u0645\u0643\u062a\u0645\u0644',
+  'finish.confirmTitle': '\u0647\u0644 \u062a\u0631\u064a\u062f \u0625\u0646\u0647\u0627\u0621 \u0647\u0630\u0627 \u0627\u0644\u0639\u0645\u0644\u061f',
+  'finish.confirmWithProof':
+    '\u064a\u064f\u0631\u0633\u0644 %{count} \u0635\u0648\u0631 \u0625\u0644\u0649 \u0627\u0644\u0639\u0645\u064a\u0644 \u0648\u064a\u062d\u062f\u0651\u062f \u0627\u0644\u0639\u0645\u0644 \u0643\u0645\u0643\u062a\u0645\u0644. \u0644\u062f\u064a\u0647 24 \u0633\u0627\u0639\u0629 \u0644\u0644\u0645\u0648\u0627\u0641\u0642\u0629\u060c \u062b\u0645 \u062a\u064f\u062d\u0631\u0651\u0631 \u0627\u0644\u062f\u0641\u0639\u0629 \u0644\u0643 \u062a\u0644\u0642\u0627\u0626\u064a\u064b\u0627.',
+  'finish.confirmNoProof':
+    '\u0644\u0645 \u062a\u0636\u0641 \u0635\u0648\u0631 \u0642\u0628\u0644 \u0648\u0628\u0639\u062f. \u064a\u0645\u0643\u0646\u0643 \u0627\u0644\u0625\u0646\u0647\u0627\u0621 \u0645\u0639 \u0630\u0644\u0643 \u2014 \u0644\u062f\u0649 \u0627\u0644\u0639\u0645\u064a\u0644 24 \u0633\u0627\u0639\u0629 \u0644\u0644\u0645\u0648\u0627\u0641\u0642\u0629\u060c \u062b\u0645 \u062a\u064f\u062d\u0631\u0651\u0631 \u0627\u0644\u062f\u0641\u0639\u0629 \u0644\u0643 \u062a\u0644\u0642\u0627\u0626\u064a\u064b\u0627.',
+  'finish.confirmCta': '\u0625\u0646\u0647\u0627\u0621 \u0627\u0644\u0639\u0645\u0644',
+  'finish.doneToastTitle': '\u0627\u0643\u062a\u0645\u0644 \u0627\u0644\u0639\u0645\u0644',
+  'finish.doneToastBodyProof':
+    '\u0648\u0635\u0644\u062a \u0635\u0648\u0631\u0643 \u0625\u0644\u0649 \u0627\u0644\u0639\u0645\u064a\u0644. \u062a\u064f\u062d\u0631\u0651\u0631 \u0627\u0644\u062f\u0641\u0639\u0629 \u0639\u0646\u062f \u0645\u0648\u0627\u0641\u0642\u062a\u0647\u060c \u0623\u0648 \u062e\u0644\u0627\u0644 24 \u0633\u0627\u0639\u0629.',
+  'finish.doneToastBodyNoProof':
+    '\u062a\u064f\u062d\u0631\u0651\u0631 \u0627\u0644\u062f\u0641\u0639\u0629 \u0639\u0646\u062f \u0645\u0648\u0627\u0641\u0642\u0629 \u0627\u0644\u0639\u0645\u064a\u0644\u060c \u0623\u0648 \u062e\u0644\u0627\u0644 24 \u0633\u0627\u0639\u0629.',
+  'finish.photoHint':
+    '\u062a\u062d\u062a\u0627\u062c %{before} \u0635\u0648\u0631\u0629 \u0642\u0628\u0644 \u0648%{after} \u0628\u0639\u062f \u0644\u0625\u0631\u0633\u0627\u0644 \u0627\u0644\u062f\u0644\u064a\u0644 \u0645\u0639 \u0630\u0644\u0643.',
+  'finish.halfDoneTitle': '\u062a\u0645 \u0625\u0631\u0633\u0627\u0644 \u0627\u0644\u0635\u0648\u0631 \u2014 \u0648\u0644\u0645 \u064a\u064f\u062d\u062f\u0651\u062f \u0627\u0644\u0639\u0645\u0644 \u0643\u0645\u0643\u062a\u0645\u0644',
+  'finish.failedTitle': '\u062a\u0639\u0630\u0651\u0631 \u0625\u0646\u0647\u0627\u0621 \u0627\u0644\u0639\u0645\u0644',
+  'finish.failedBody': '\u0644\u0645 \u064a\u064f\u0631\u0633\u0644 \u0634\u064a\u0621. \u062d\u0627\u0648\u0644 \u0645\u0631\u0629 \u0623\u062e\u0631\u0649 \u0628\u0639\u062f \u0642\u0644\u064a\u0644.',
+  'approval.businessWaitingBodyProof':
+    '\u0648\u0635\u0644\u062a \u0635\u0648\u0631\u0643 \u0625\u0644\u0649 \u0627\u0644\u0639\u0645\u064a\u0644. \u0644\u062f\u064a\u0647 24 \u0633\u0627\u0639\u0629 \u0644\u0644\u0645\u0648\u0627\u0641\u0642\u0629 \u2014 \u0628\u0639\u062f\u0647\u0627 \u062a\u064f\u062d\u0631\u0651\u0631 \u0627\u0644\u062f\u0641\u0639\u0629 \u0644\u0643 \u062a\u0644\u0642\u0627\u0626\u064a\u064b\u0627.',
+});
+
+Object.assign(translations.uk, {
+  'finish.cta': '\u042f \u0437\u0430\u043a\u0456\u043d\u0447\u0438\u0432',
+  'finish.ctaDone': '\u041d\u0430\u0434\u0456\u0441\u043b\u0430\u043d\u043e \u043a\u043b\u0456\u0454\u043d\u0442\u0443',
+  'finish.ctaA11y': '\u042f \u0437\u0430\u043a\u0456\u043d\u0447\u0438\u0432 \u2014 \u043d\u0430\u0434\u0456\u0441\u043b\u0430\u0442\u0438 \u0444\u043e\u0442\u043e \u0442\u0430 \u043f\u043e\u0437\u043d\u0430\u0447\u0438\u0442\u0438 \u0440\u043e\u0431\u043e\u0442\u0443 \u044f\u043a \u0437\u0430\u0432\u0435\u0440\u0448\u0435\u043d\u0443',
+  'finish.confirmTitle': '\u0417\u0430\u0432\u0435\u0440\u0448\u0438\u0442\u0438 \u0446\u044e \u0440\u043e\u0431\u043e\u0442\u0443?',
+  'finish.confirmWithProof':
+    '\u041d\u0430\u0434\u0456\u0448\u043b\u0435 %{count} \u0444\u043e\u0442\u043e \u043a\u043b\u0456\u0454\u043d\u0442\u0443 \u0442\u0430 \u043f\u043e\u0437\u043d\u0430\u0447\u0438\u0442\u044c \u0440\u043e\u0431\u043e\u0442\u0443 \u044f\u043a \u0437\u0430\u0432\u0435\u0440\u0448\u0435\u043d\u0443. \u0412\u0456\u043d \u043c\u0430\u0454 24 \u0433\u043e\u0434\u0438\u043d\u0438 \u043d\u0430 \u0441\u0445\u0432\u0430\u043b\u0435\u043d\u043d\u044f, \u043f\u043e\u0442\u0456\u043c \u043f\u043b\u0430\u0442\u0456\u0436 \u043f\u0435\u0440\u0435\u043a\u0430\u0437\u0443\u0454\u0442\u044c\u0441\u044f \u0432\u0430\u043c \u0430\u0432\u0442\u043e\u043c\u0430\u0442\u0438\u0447\u043d\u043e.',
+  'finish.confirmNoProof':
+    '\u0412\u0438 \u043d\u0435 \u0434\u043e\u0434\u0430\u043b\u0438 \u0444\u043e\u0442\u043e \u0434\u043e \u0442\u0430 \u043f\u0456\u0441\u043b\u044f. \u041c\u043e\u0436\u043d\u0430 \u0437\u0430\u0432\u0435\u0440\u0448\u0438\u0442\u0438 \u0439 \u0442\u0430\u043a \u2014 \u043a\u043b\u0456\u0454\u043d\u0442 \u043c\u0430\u0454 24 \u0433\u043e\u0434\u0438\u043d\u0438 \u043d\u0430 \u0441\u0445\u0432\u0430\u043b\u0435\u043d\u043d\u044f, \u043f\u043e\u0442\u0456\u043c \u043f\u043b\u0430\u0442\u0456\u0436 \u043f\u0435\u0440\u0435\u043a\u0430\u0437\u0443\u0454\u0442\u044c\u0441\u044f \u0432\u0430\u043c \u0430\u0432\u0442\u043e\u043c\u0430\u0442\u0438\u0447\u043d\u043e.',
+  'finish.confirmCta': '\u0417\u0430\u0432\u0435\u0440\u0448\u0438\u0442\u0438',
+  'finish.doneToastTitle': '\u0420\u043e\u0431\u043e\u0442\u0443 \u0437\u0430\u0432\u0435\u0440\u0448\u0435\u043d\u043e',
+  'finish.doneToastBodyProof':
+    '\u0412\u0430\u0448\u0456 \u0444\u043e\u0442\u043e \u0443 \u043a\u043b\u0456\u0454\u043d\u0442\u0430. \u041f\u043b\u0430\u0442\u0456\u0436 \u043f\u0435\u0440\u0435\u043a\u0430\u0437\u0443\u0454\u0442\u044c\u0441\u044f \u043f\u0456\u0441\u043b\u044f \u0441\u0445\u0432\u0430\u043b\u0435\u043d\u043d\u044f \u0430\u0431\u043e \u0447\u0435\u0440\u0435\u0437 24 \u0433\u043e\u0434\u0438\u043d\u0438.',
+  'finish.doneToastBodyNoProof':
+    '\u041f\u043b\u0430\u0442\u0456\u0436 \u043f\u0435\u0440\u0435\u043a\u0430\u0437\u0443\u0454\u0442\u044c\u0441\u044f \u043f\u0456\u0441\u043b\u044f \u0441\u0445\u0432\u0430\u043b\u0435\u043d\u043d\u044f \u043a\u043b\u0456\u0454\u043d\u0442\u043e\u043c \u0430\u0431\u043e \u0447\u0435\u0440\u0435\u0437 24 \u0433\u043e\u0434\u0438\u043d\u0438.',
+  'finish.photoHint':
+    '\u0429\u0435 %{before} \u0444\u043e\u0442\u043e \u0434\u043e \u0442\u0430 %{after} \u043f\u0456\u0441\u043b\u044f, \u0449\u043e\u0431 \u043d\u0430\u0434\u0456\u0441\u043b\u0430\u0442\u0438 \u043f\u0456\u0434\u0442\u0432\u0435\u0440\u0434\u0436\u0435\u043d\u043d\u044f.',
+  'finish.halfDoneTitle': '\u0424\u043e\u0442\u043e \u043d\u0430\u0434\u0456\u0441\u043b\u0430\u043d\u043e \u2014 \u0440\u043e\u0431\u043e\u0442\u0443 \u041d\u0415 \u043f\u043e\u0437\u043d\u0430\u0447\u0435\u043d\u043e \u044f\u043a \u0437\u0430\u0432\u0435\u0440\u0448\u0435\u043d\u0443',
+  'finish.failedTitle': '\u041d\u0435 \u0432\u0434\u0430\u043b\u043e\u0441\u044f \u0437\u0430\u0432\u0435\u0440\u0448\u0438\u0442\u0438 \u0440\u043e\u0431\u043e\u0442\u0443',
+  'finish.failedBody': '\u041d\u0456\u0447\u043e\u0433\u043e \u043d\u0435 \u043d\u0430\u0434\u0456\u0441\u043b\u0430\u043d\u043e. \u0421\u043f\u0440\u043e\u0431\u0443\u0439\u0442\u0435 \u0449\u0435 \u0440\u0430\u0437.',
+  'approval.businessWaitingBodyProof':
+    '\u0412\u0430\u0448\u0456 \u0444\u043e\u0442\u043e \u0443 \u043a\u043b\u0456\u0454\u043d\u0442\u0430. \u0412\u0456\u043d \u043c\u0430\u0454 24 \u0433\u043e\u0434\u0438\u043d\u0438 \u043d\u0430 \u0441\u0445\u0432\u0430\u043b\u0435\u043d\u043d\u044f \u2014 \u043f\u043e\u0442\u0456\u043c \u043f\u043b\u0430\u0442\u0456\u0436 \u043f\u0435\u0440\u0435\u043a\u0430\u0437\u0443\u0454\u0442\u044c\u0441\u044f \u0432\u0430\u043c \u0430\u0432\u0442\u043e\u043c\u0430\u0442\u0438\u0447\u043d\u043e.',
 });
 
 const i18n = new I18n(translations);
