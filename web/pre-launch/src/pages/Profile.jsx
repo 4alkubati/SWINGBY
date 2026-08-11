@@ -33,9 +33,18 @@ const API_BASE = import.meta.env.VITE_API_URL || 'https://swingbyy-api.onrender.
 //                for this to call. Disabled + "Coming soon", the same
 //                treatment AccountSettings gives email/language/2FA.
 //
-// No modal library exists on this surface (AccountSettings' own wired action
-// is a single click, no form), so name/phone reuse that minimalism via
-// `window.prompt` rather than inventing a new inline-edit component.
+// ⚠ name/phone use `window.prompt`, and that IS a new pattern here — it appears
+// nowhere else in web/pre-launch, and AccountSettings does NOT use it (an
+// earlier version of this comment claimed it did; that was wrong).
+//
+// It is deliberate but provisional. The endpoints are real, so disabling these
+// would hide working functionality, and the alternative — a modal — means
+// introducing form/dialog infrastructure this surface does not have, for two
+// fields on an authenticated page of a pre-launch site. A native prompt is
+// honest (it does what it says) but visually crude on a polished marketing
+// site, especially on mobile.
+//
+// If this page gains any real form UI, replace both call sites first.
 async function patchMe(fields) {
   const { data: { session } } = await supabase.auth.getSession()
   const token = session?.access_token
