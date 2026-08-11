@@ -27,6 +27,8 @@ import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 import Text from '../../components/Text';
 import SwImage from '../../components/SwImage';
 import ImageViewer from '../../components/ImageViewer';
+import ReportSheet from '../../components/ReportSheet';
+import * as moderation from '../../services/moderation';
 import { api } from '../../services/api';
 import * as haptics from '../../services/haptics';
 import * as toast from '../../services/toast';
@@ -128,7 +130,7 @@ function CompareColumn({ label, labelColor, borderColor, photos, onOpen, emptyLa
 // `NativeSharedObjectNotFoundException: Unable to find the native shared object
 // associated with given JavaScript object`. The source is stable now, so there
 // is no released object left for the status hook to read.
-function VoiceNotePlayer({ note, recordedBy }) {
+function VoiceNotePlayer({ note, recordedBy, onReport }) {
   const url = note.url;
   const player = useAudioPlayer({ uri: url });
   const status = useAudioPlayerStatus(player);
@@ -154,7 +156,19 @@ function VoiceNotePlayer({ note, recordedBy }) {
 
   return (
     <View style={styles.section}>
-      <Text style={styles.sectionLabel}>VOICE NOTE</Text>
+      <View style={styles.voiceHeader}>
+        <Text style={styles.sectionLabel}>VOICE NOTE</Text>
+        {onReport && note?.id ? (
+          <Pressable
+            onPress={() => onReport(note.id)}
+            hitSlop={10}
+            accessibilityRole="button"
+            accessibilityLabel={i18n.t('moderation.reportVoiceNote')}
+          >
+            <Feather name="more-horizontal" size={16} color={colors.textSecondary} />
+          </Pressable>
+        ) : null}
+      </View>
       <View style={styles.voiceCard}>
         <Pressable
           onPress={toggle}
@@ -210,6 +224,10 @@ export default function ApproveWorkScreen({ route, navigation }) {
   const [proof, setProof] = useState(null);
   const [approving, setApproving] = useState(false);
   const [viewer, setViewer] = useState(null);
+  // F028 — Guideline 1.2(b): report a specific proof-of-work photo or the
+  // voice note. `targetType`/`targetId` mirror the pattern already used for
+  // messages/reviews/businesses.
+  const [reportTarget, setReportTarget] = useState(null);
   const mounted = useRef(true);
 
   const load = useCallback(async () => {
@@ -281,11 +299,27 @@ export default function ApproveWorkScreen({ route, navigation }) {
   // Business-captured photos only in the AFTER column; BEFORE leads with the
   // client's own job-post photos, labelled, then the business's before shots
   // (walkthrough M5).
-  const beforePhotos = [
-    ...(proof?.client_photos || []),
-    ...(proof?.before || []).map((p) => p.url),
-  ].filter(Boolean);
-  const afterPhotos = (proof?.after || []).map((p) => p.url).filter(Boolean);
+  //
+  // F028 — `photoIds` rides alongside `photos`, index for index, for the
+  // report affordance on ImageViewer. The client's own job-post photos
+  // (proof.client_photos) are bare URLs on service_posts.image_urls, not a
+  // booking_photos row — there is nothing to report per-photo there (a
+  // client reporting their own photo makes no sense anyway), so those
+  // entries carry a null id. Business-captured rows (proof.before /
+  // proof.after) DO have a booking_photos.id. Built as one filtered array of
+  // pairs, not two arrays each filtered on their own, so a dropped falsy URL
+  // can never desync `photos` from `photoIds` at the same index.
+  const beforePairs = [
+    ...(proof?.client_photos || []).map((url) => ({ url, id: null })),
+    ...(proof?.before || []).map((p) => ({ url: p.url, id: p.id ?? null })),
+  ].filter((pair) => pair.url);
+  const afterPairs = (proof?.after || [])
+    .map((p) => ({ url: p.url, id: p.id ?? null }))
+    .filter((pair) => pair.url);
+  const beforePhotos = beforePairs.map((p) => p.url);
+  const beforePhotoIds = beforePairs.map((p) => p.id);
+  const afterPhotos = afterPairs.map((p) => p.url);
+  const afterPhotoIds = afterPairs.map((p) => p.id);
 
   const notSubmitted = proof?.status !== 'submitted';
   const alreadyApproved = proof?.status === 'approved';
@@ -390,7 +424,7 @@ export default function ApproveWorkScreen({ route, navigation }) {
                 borderColor={colors.border}
                 photos={beforePhotos}
                 emptyLabel="No before photos"
-                onOpen={(i) => setViewer({ images: beforePhotos, index: i })}
+                onOpen={(i) => setViewer({ images: beforePhotos, ids: beforePhotoIds, index: i })}
               />
               <CompareColumn
                 label="AFTER"
@@ -398,7 +432,7 @@ export default function ApproveWorkScreen({ route, navigation }) {
                 borderColor={AFTER_BORDER}
                 photos={afterPhotos}
                 emptyLabel="No after photos"
-                onOpen={(i) => setViewer({ images: afterPhotos, index: i })}
+                onOpen={(i) => setViewer({ images: afterPhotos, ids: afterPhotoIds, index: i })}
               />
             </View>
 
@@ -415,6 +449,10 @@ export default function ApproveWorkScreen({ route, navigation }) {
                 key={proof.voice_note.url}
                 note={proof.voice_note}
                 recordedBy={proof?.business_name}
+                onReport={(id) => setReportTarget({
+                  targetType: moderation.REPORT_TARGETS.VOICE_NOTE,
+                  targetId: id,
+                })}
               />
             ) : null}
 
@@ -467,6 +505,18 @@ export default function ApproveWorkScreen({ route, navigation }) {
         images={viewer?.images || []}
         initialIndex={viewer?.index || 0}
         onClose={() => setViewer(null)}
+        reportIds={viewer?.ids}
+        onReport={(id) => setReportTarget({
+          targetType: moderation.REPORT_TARGETS.BOOKING_PHOTO,
+          targetId: id,
+        })}
+      />
+
+      <ReportSheet
+        visible={!!reportTarget}
+        targetType={reportTarget?.targetType}
+        targetId={reportTarget?.targetId}
+        onClose={() => setReportTarget(null)}
       />
     </View>
   );
@@ -569,6 +619,11 @@ const styles = StyleSheet.create({
   swipeHintText: { fontSize: 11.5, color: colors.textTertiary },
 
   section: { marginTop: 32 },
+  voiceHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
   sectionLabel: {
     fontSize: 11,
     fontWeight: '600',

@@ -26,6 +26,8 @@ import EmptyState from '../../components/EmptyState';
 import SectionHeader from '../../components/SectionHeader';
 import JobOpportunityCard from '../../components/JobOpportunityCard';
 import SendQuoteSheet from '../../components/SendQuoteSheet';
+import ReportSheet from '../../components/ReportSheet';
+import * as moderation from '../../services/moderation';
 import ReviewSubmitSheet from '../../components/ReviewSubmitSheet';
 import { SkeletonBox, SkeletonList } from '../../components/Skeleton';
 import { Feather } from '@expo/vector-icons';
@@ -1088,6 +1090,9 @@ function JobsListScreen({ navigation, route }) {
   const [refreshing, setRefreshing] = useState(false);
   const [selectedPost, setSelectedPost] = useState(null);
   const [sheetVisible, setSheetVisible] = useState(false);
+  // F028 — same fix as DashboardScreen: report the surface a business sees a
+  // client's job post in detail.
+  const [reportTarget, setReportTarget] = useState(null);
 
   const load = useCallback(async () => {
     setError(null);
@@ -1204,6 +1209,10 @@ function JobsListScreen({ navigation, route }) {
           post={post}
           onSendQuote={() => openQuoteSheet(post)}
           onPass={() => passPost(post)}
+          onReport={(p) => setReportTarget({
+            targetType: moderation.REPORT_TARGETS.SERVICE_POST,
+            targetId: p.id,
+          })}
         />
       )),
     });
@@ -1361,6 +1370,13 @@ function JobsListScreen({ navigation, route }) {
             });
           }
         }}
+      />
+
+      <ReportSheet
+        visible={!!reportTarget}
+        targetType={reportTarget?.targetType}
+        targetId={reportTarget?.targetId}
+        onClose={() => setReportTarget(null)}
       />
     </View>
   );

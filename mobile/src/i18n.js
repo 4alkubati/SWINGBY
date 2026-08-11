@@ -1238,6 +1238,8 @@ const moderationEn = {
   'moderation.reportPost': 'Report this post',
   'moderation.reportBusiness': 'Report this business',
   'moderation.reportUser': 'Report this person',
+  'moderation.reportPhoto': 'Report this photo',
+  'moderation.reportVoiceNote': 'Report this voice note',
 
   // Report sheet
   'moderation.reportTitle': 'Report',
