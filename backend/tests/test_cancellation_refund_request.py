@@ -140,6 +140,22 @@ class TestNoProofSettlesImmediately:
         # A captured intent exists, so the refund really is sent.
         stripe_refund.assert_called_once()
 
+    def test_refunded_cents_is_written(self, as_client):
+        # F011 (2026-08-10): this branch claims status='refunded' above but
+        # used to never write refunded_cents, breaking the ledger invariant
+        # escrow_held + released_to_business + refunded == total_charged even
+        # though a real Stripe refund had just gone out. 'late' -> client
+        # refunded 75% of $200 = $150.
+        resp, stubs, _ = _cancel(proof_submitted=False)
+        assert resp.status_code == 200, resp.text
+        upd = _updates(stubs["payments"])[0]
+        assert upd["refunded"] == 150.00
+        assert upd["refunded_cents"] == 15000
+        # Invariant holds: escrow(0) + released(50) + refunded(150) == 200.
+        assert (
+            upd["escrow_held"] + upd["released_to_business"] + upd["refunded"] == 200.00
+        )
+
     def test_no_refund_request_is_opened(self, as_client):
         _, stubs, _ = _cancel(proof_submitted=False)
         assert stubs["disputes"].inserted is None
@@ -204,7 +220,8 @@ def _resolve(
     held_cents=15000,
     released_cents=5000,
     amount=None,
-    intent="pi_1"
+    intent="pi_1",
+    cancelled_by_role=None,
 ):
     payments = SupabaseTableStub(
         select_data={
@@ -234,6 +251,15 @@ def _resolve(
         "payments": payments,
         "booking_events": SupabaseTableStub(insert_data=[{"id": "ev-1"}]),
     }
+    if cancelled_by_role is not None:
+        # F014's decline guard looks up who cancelled via cancellations ->
+        # users.role. Only wired up when a test actually cares who cancelled —
+        # tests that omit this param exercise the "unknown canceller" path,
+        # which must behave exactly as it did before the guard existed.
+        stubs["cancellations"] = SupabaseTableStub(
+            select_data=[{"cancelled_by": "canceller-1"}]
+        )
+        stubs["users"] = SupabaseTableStub(select_data={"role": cancelled_by_role})
 
     ps = [
         patch("app.api.disputes.supabase"),
@@ -284,6 +310,50 @@ class TestAdminDecides:
         assert pay_upd["released_to_business"] == 200.00
         assert pay_upd["status"] == "fully_released"
         assert _updates(stubs["disputes"])[0]["status"] == "dismissed"
+
+    def test_approving_with_no_captured_intent_still_writes_refunded_cents(
+        self, as_admin
+    ):
+        # F033 (2026-08-10): the common beta case — no Stripe PaymentIntent, so
+        # refund_payment_row raises RefundNotPossible and the except branch
+        # clears the hold in the ledger only. That branch claimed
+        # status='refunded' without ever writing refunded_cents, hiding the
+        # $150 it just cleared from the ledger.
+        resp, stubs, stripe_mod = _resolve(approve=True, intent=None)
+        assert resp.status_code == 200, resp.text
+        stripe_mod.refund_payment_intent.assert_not_called()
+
+        pay_upd = _updates(stubs["payments"])[0]
+        assert pay_upd["status"] == "refunded"
+        assert pay_upd["escrow_held"] == 0
+        assert pay_upd["refunded"] == 150.00
+        assert pay_upd["refunded_cents"] == 15000
+
+    def test_declining_a_business_cancel_is_blocked(self, as_admin):
+        # F014 (2026-08-10): the ladder guarantees the client 100% back at ANY
+        # timing when the BUSINESS cancelled. Declining used to route the held
+        # amount to the business unconditionally — the exact inverse of a
+        # contract term the business itself triggered by cancelling. Must be
+        # refused, not silently paid.
+        resp, stubs, stripe_mod = _resolve(
+            approve=False, cancelled_by_role="business_owner"
+        )
+        assert resp.status_code == 409, resp.text
+        stripe_mod.refund_payment_intent.assert_not_called()
+        # Nothing moved — no payment write, no dispute resolution write either.
+        assert _updates(stubs["payments"]) == []
+        assert _updates(stubs["disputes"]) == []
+
+    def test_declining_a_client_cancel_still_pays_the_business(self, as_admin):
+        # The guard is narrow: a CLIENT-initiated cancel's refund request can
+        # still be legitimately declined (the ladder already gives the
+        # business a baked-in share; declining the disputed remainder on top
+        # of that is the normal "photos show the client was wrong" outcome).
+        resp, stubs, stripe_mod = _resolve(approve=False, cancelled_by_role="client")
+        assert resp.status_code == 200, resp.text
+        pay_upd = _updates(stubs["payments"])[0]
+        assert pay_upd["released_to_business"] == 200.00
+        assert pay_upd["status"] == "fully_released"
 
     def test_an_admin_may_refund_less_than_is_held(self, as_admin):
         resp, _, stripe_mod = _resolve(approve=True, amount=40.0)

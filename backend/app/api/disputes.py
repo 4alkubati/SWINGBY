@@ -260,6 +260,58 @@ def admin_dispute_queue(current_user: dict = Depends(get_current_user)):
     return {"items": items, "count": len(items)}
 
 
+def _cancelling_actor(booking_id: str) -> str | None:
+    """Who cancelled this booking — "client" or "business" — or None if unknown.
+
+    F014 (money audit, 2026-08-10). `compute_cancellation_split` guarantees the
+    client 100% back, at ANY timing, when the BUSINESS is the one who cancelled
+    (``escrow.py``'s own comment: "client is always made whole"). Declining a
+    cancellation-refund request must not be able to pay that business the
+    money the ladder says they owe 0% of.
+
+    Reconstructed the same way ``cancel_booking`` derived it in the first
+    place — from the cancelling user's role, not a stored "actor" column,
+    because none exists — via the ``cancellations.cancelled_by`` row that
+    ``cancel_booking`` writes. Best-effort: any lookup failure (missing row,
+    missing user, a transient error) degrades to "unknown" rather than
+    raising, because a dispute admins are actively trying to resolve must not
+    be blocked by a read that isn't the money itself.
+    """
+    try:
+        cancel_res = (
+            supabase.table("cancellations")
+            .select("cancelled_by")
+            .eq("booking_id", booking_id)
+            .order("created_at", desc=True)
+            .limit(1)
+            .execute()
+        )
+        rows = cancel_res.data or []
+        if not rows:
+            return None
+        cancelled_by = rows[0].get("cancelled_by")
+        if not cancelled_by:
+            return None
+        user_res = (
+            supabase.table("users")
+            .select("role")
+            .eq("id", cancelled_by)
+            .single()
+            .execute()
+        )
+        if not user_res.data:
+            return None
+        return "business" if user_res.data.get("role") == "business_owner" else "client"
+    except Exception:
+        logger.warning(
+            "could not determine who cancelled booking %s for dispute decline "
+            "guard — proceeding without it",
+            booking_id,
+            exc_info=True,
+        )
+        return None
+
+
 def _settle_cancellation_refund(
     *,
     booking_id: str,
@@ -314,12 +366,18 @@ def _settle_cancellation_refund(
                 booking_id,
                 exc,
             )
+            # F033 (money audit, 2026-08-10): same shape as F011 — this branch
+            # claims status='refunded' below but was never writing
+            # refunded_cents, silently hiding the amount cleared from the
+            # ledger and breaking the escrow_held + released_to_business +
+            # refunded == total_charged invariant.
             cleared = escrow.ledger_write(
                 escrow_held=held_c - move_c,
                 released_to_business=escrow.money_cents(
                     payment, "released_to_business"
                 ),
                 platform_cut=escrow.money_cents(payment, "platform_cut"),
+                refunded=escrow.money_cents(payment, "refunded") + move_c,
             )
             cleared["status"] = "refunded"
             supabase.table("payments").update(cleared).eq("id", payment["id"]).execute()
@@ -373,6 +431,24 @@ def resolve_dispute(
 
     is_cancellation = dispute["issue_type"] == CANCELLATION_REFUND
     moved_cents = 0
+
+    if is_cancellation and not body.approve:
+        # F014: the ladder guarantees the client 100% back whenever the
+        # BUSINESS cancelled, at any timing — there is no case where declining
+        # this request should hand that business the money. Block it rather
+        # than silently paying out the exact inverse of the contract.
+        canceller = _cancelling_actor(dispute["booking_id"])
+        if canceller == "business":
+            raise HTTPException(
+                status_code=409,
+                detail=(
+                    "This booking was cancelled by the business, not the "
+                    "client — the cancellation ladder guarantees the client a "
+                    "full refund regardless of timing, so this request cannot "
+                    "be declined. Approve it to release the held amount back "
+                    "to the client."
+                ),
+            )
 
     if is_cancellation:
         moved_cents = _settle_cancellation_refund(

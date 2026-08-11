@@ -1458,12 +1458,21 @@ def cancel_booking(
             # Integer cents (migration 20260723120000): the split is computed in
             # cents, so write cents and let escrow.ledger_write emit the legacy
             # dollar mirror from the same integer.
+            # F011 (money audit, 2026-08-10): `refunded` must be written here too
+            # — the ledger invariant is escrow_held + released_to_business +
+            # refunded == total_charged, and this branch is claiming
+            # status='refunded' a few lines below. Leaving refunded_cents at its
+            # pre-cancel value (typically 0) broke that invariant for every
+            # cancellation with a nonzero client_refund, even though the refund
+            # itself (Stripe or ledger-only) genuinely happened.
             cancel_ledger = escrow.ledger_write(
                 released_to_business=split["business_keeps_cents"],
                 escrow_held=0,
                 # No platform cut is taken on a cancellation — the retained
                 # penalty goes entirely to the business as compensation.
                 platform_cut=0,
+                refunded=escrow.money_cents(payment, "refunded")
+                + split["client_refund_cents"],
             )
             cancel_ledger["status"] = "refunded"
             cancel_ledger["released_at"] = datetime.now(timezone.utc).isoformat()
