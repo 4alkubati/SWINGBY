@@ -236,7 +236,19 @@ export default function NotificationsCenterScreen({ navigation }) {
           borderBottomColor: colors.border,
         }}
       >
-        <Text variant="display3">Notifications</Text>
+        {/* D20 — pushed screen, headerShown:false, and it drew no back
+            control. iOS left only the edge swipe. */}
+        <Inline spacing="sm" style={{ alignItems: 'center' }}>
+          <Pressable
+            onPress={() => navigation.goBack()}
+            hitSlop={12}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+          >
+            <Feather name="arrow-left" size={20} color={colors.textSecondary} />
+          </Pressable>
+          <Text variant="display3">Notifications</Text>
+        </Inline>
         {unreadCount > 0 && (
           <Pressable
             onPress={markAllRead}

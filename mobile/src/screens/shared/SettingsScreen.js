@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, ScrollView, StyleSheet,
-  Switch, Alert, Share, ActivityIndicator,
+  Switch, Alert, Share, ActivityIndicator, Pressable,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -318,6 +318,20 @@ export default function SettingsScreen() {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Header */}
       <View style={styles.header}>
+        {/* D20 — every navigator sets headerShown:false, so a pushed screen
+            that draws no back control has none. On Android the hardware button
+            still works; on iOS the ONLY way out was the edge swipe, which a
+            non-technical user does not know to try. Same arrow-left shape the
+            other 43 back controls in the app use. */}
+        <Pressable
+          onPress={() => navigation.goBack()}
+          hitSlop={12}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+          style={styles.backBtn}
+        >
+          <Feather name="arrow-left" size={20} color={colors.textSecondary} />
+        </Pressable>
         <Text variant="display3">Settings</Text>
         {user && (
           <Text variant="body" color="secondary" style={styles.headerSub}>
@@ -605,6 +619,10 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.lg,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border,
+  },
+  backBtn: {
+    marginBottom: spacing.sm,
+    alignSelf: 'flex-start',
   },
   headerSub: {
     marginTop: spacing.xs,

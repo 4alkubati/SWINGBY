@@ -494,11 +494,12 @@ function JobDetailScreen({ navigation, route }) {
                   )}
                   {/* See ActiveBookingScreen: a bare `x &&` on a numeric field
                       renders 0 as a loose text node and red-boxes the app.
-                      F104: this is what you'll RECEIVE (net of the 10% cut),
-                      not the client's gross charge — see paidToBusiness(). */}
-                  {paidToBusiness(booking) > 0 && (
-                    <Text variant="smallMedium" style={{ color: colors.success, fontFamily: 'SpaceGrotesk_700Bold', fontVariant: ['tabular-nums'] }}>
-                      ${paidToBusiness(booking)} total
+                      D19: green + "paid out" ONLY once it has actually been
+                      released. Escrow is the client's money until then, and
+                      still gross — see businessAmount(). */}
+                  {businessAmount(booking).amount > 0 && (
+                    <Text variant="smallMedium" style={{ color: businessAmount(booking).received ? colors.success : colors.textSecondary, fontFamily: 'SpaceGrotesk_700Bold', fontVariant: ['tabular-nums'] }}>
+                      ${businessAmount(booking).amount} {businessAmount(booking).received ? 'paid out' : 'in escrow'}
                     </Text>
                   )}
                 </Stack>
@@ -915,11 +916,32 @@ function jobClientName(booking) {
 // minus SwingBy's 10% cut, and BusinessInvoicesScreen already solved this by
 // reading the backend's honest payment_state block instead of the raw
 // booking total. Same fix, same source of truth, applied here.
-export function paidToBusiness(booking) {
+//
+// D19 (2026-08-11) — the first pass returned `released || held` as one number
+// and every caller painted it success-green, i.e. "this is yours". That is only
+// true of `amount_released`. `amount_held` is escrow: money the CLIENT has paid
+// that has NOT moved to the business, and it is still GROSS — the 10% comes out
+// when it releases, so the eventual payout is strictly less than the figure
+// shown. Green said "received and netted" about money that was neither.
+//
+// Mobile cannot net it itself: `payment_state` (bookings.py::_payment_state)
+// exposes amount_due / held / released / total and NO platform_cut, and
+// hardcoding 10% here would fork escrow.PLATFORM_RATE into the client, which is
+// how these numbers drifted apart in the first place. So the honest move is to
+// report the STATE accurately rather than invent the arithmetic: callers get
+// `received` and colour on it.
+export function businessAmount(booking) {
   const ps = booking.payment_state || {};
   const released = Number(ps.amount_released || 0);
   const held = Number(ps.amount_held || 0);
-  return released > 0 ? released : held;
+  if (released > 0) return { amount: released, received: true };
+  return { amount: held, received: false };
+}
+
+// Kept as the value-only form for existing callers/tests. Prefer
+// businessAmount() at any site that colours or labels the figure.
+export function paidToBusiness(booking) {
+  return businessAmount(booking).amount;
 }
 
 function formatRowTime(date) {
@@ -951,9 +973,9 @@ function JobRow({ booking, showDate, onPress }) {
               {when ? (showDate ? `${formatRowDate(when)} · ${formatRowTime(when)}` : formatRowTime(when)) : '—'}
             </Text>
           </Inline>
-          {paidToBusiness(booking) > 0 && (
-            <Text variant="smallMedium" style={{ color: colors.success, fontFamily: 'SpaceGrotesk_700Bold', fontVariant: ['tabular-nums'] }}>
-              ${paidToBusiness(booking)}
+          {businessAmount(booking).amount > 0 && (
+            <Text variant="smallMedium" style={{ color: businessAmount(booking).received ? colors.success : colors.textSecondary, fontFamily: 'SpaceGrotesk_700Bold', fontVariant: ['tabular-nums'] }}>
+              ${businessAmount(booking).amount}{businessAmount(booking).received ? '' : ' held'}
             </Text>
           )}
         </Inline>
@@ -1015,9 +1037,9 @@ function PastJobRow({ booking, onPress }) {
           <Text variant="small" color="secondary" numberOfLines={1} style={{ flex: 1 }}>
             {service}{when ? ` · ${formatRowDate(when)}` : ''}
           </Text>
-          {paidToBusiness(booking) > 0 && (
-            <Text variant="smallMedium" style={{ color: colors.success, fontFamily: 'SpaceGrotesk_700Bold', fontVariant: ['tabular-nums'] }}>
-              ${paidToBusiness(booking)}
+          {businessAmount(booking).amount > 0 && (
+            <Text variant="smallMedium" style={{ color: businessAmount(booking).received ? colors.success : colors.textSecondary, fontFamily: 'SpaceGrotesk_700Bold', fontVariant: ['tabular-nums'] }}>
+              ${businessAmount(booking).amount}{businessAmount(booking).received ? '' : ' held'}
             </Text>
           )}
         </Inline>
