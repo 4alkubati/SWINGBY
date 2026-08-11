@@ -73,7 +73,12 @@ function RootNavigator() {
   // user is logged OUT, and none of the navigators that own routable screens
   // are mounted yet. Completing the session sets `user`, and the swap below
   // happens on its own. See services/authLink.js.
-  const { busy: authLinkBusy } = useAuthDeepLink(adoptSession);
+  //
+  // The hook is mounted unconditionally (it's a hook), but a link can arrive
+  // while `user` IS already set — a stale tab, a second test account's mail,
+  // Gmail's own link-preview crawler. Passing `!!user` lets the hook no-op in
+  // that case instead of overwriting the live session. See F003.
+  const { busy: authLinkBusy } = useAuthDeepLink(adoptSession, !!user);
 
   // CARD-24 biometric app-lock. Gates only the cold-boot "resumed from a
   // stored token" path — never an interactive login/signup just now — and

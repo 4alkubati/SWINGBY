@@ -120,9 +120,11 @@ describe('completing the session', () => {
     expect(SecureStore.setItemAsync).not.toHaveBeenCalled();
   });
 
-  it('does not leave a half-written session when the token is rejected', async () => {
+  it('does not leave a half-written session when the token is rejected, and there was nothing before it', async () => {
     // A stored-but-dead token is worse than none: the next cold boot restores
     // it, 401s, and logs the client out mid-session for no visible reason.
+    // SecureStore.getItemAsync defaults to null (see the mock above), so this
+    // is the "nothing to restore" branch.
     getMe.mockRejectedValue(new Error('401'));
 
     await expect(
@@ -132,6 +134,38 @@ describe('completing the session', () => {
     expect(SecureStore.deleteItemAsync).toHaveBeenCalledWith('swingby_token');
     expect(SecureStore.deleteItemAsync).toHaveBeenCalledWith('swingby_refresh_token');
     expect(setAuthToken).toHaveBeenLastCalledWith(null);
+  });
+
+  // F003 regression — restore-on-failure half. If useAuthDeepLink's guard
+  // ever gets bypassed and this runs while a session is already live, a bad
+  // link must not be able to destroy it: the client must not be logged out
+  // on their next cold boot just because they tapped someone else's mail.
+  it('restores the prior session instead of wiping it when a bad link arrives on top of a live one', async () => {
+    SecureStore.getItemAsync.mockImplementation(async (key) => {
+      if (key === 'swingby_token') return 'LIVE_ACCESS';
+      if (key === 'swingby_refresh_token') return 'LIVE_REFRESH';
+      return null;
+    });
+    getMe.mockRejectedValue(new Error('401'));
+
+    await expect(
+      completeAuthFromUrl('swingby://auth-callback#access_token=FOREIGN')
+    ).rejects.toThrow('no longer valid');
+
+    // The foreign token was written and then must be overwritten back to the
+    // live one — never left in place, and never just deleted.
+    expect(SecureStore.setItemAsync).toHaveBeenCalledWith('swingby_token', 'FOREIGN');
+    expect(SecureStore.setItemAsync).toHaveBeenCalledWith('swingby_token', 'LIVE_ACCESS');
+    expect(SecureStore.setItemAsync).toHaveBeenCalledWith(
+      'swingby_refresh_token',
+      'LIVE_REFRESH'
+    );
+    expect(SecureStore.deleteItemAsync).not.toHaveBeenCalledWith('swingby_token');
+    expect(SecureStore.deleteItemAsync).not.toHaveBeenCalledWith('swingby_refresh_token');
+    // The axios client must end up armed with the restored token, not null —
+    // otherwise the live session looks fine in SecureStore but every request
+    // in flight right now is suddenly unauthenticated.
+    expect(setAuthToken).toHaveBeenLastCalledWith('LIVE_ACCESS');
   });
 
   it('says where to open a PKCE link rather than failing an exchange', async () => {
