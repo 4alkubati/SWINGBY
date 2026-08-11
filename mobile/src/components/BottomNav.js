@@ -103,11 +103,14 @@ function TabItem({ route, isActive, onPress, iconMap, totalUnread, raised }) {
         />
         {showBadge && <Badge count={totalUnread} color="accent" style={styles.badge} />}
       </View>
+      {/* B-03: was capped at 1.2x. The tab bar is a plain View sized to its
+          content (no fixed tabBarStyle height), and numberOfLines={1} already
+          guards against wrapping, so there is nothing here for a larger cap
+          to break — it just grows the bar slightly. */}
       <Text
         variant="caption"
         style={[styles.label, { color: activeColor }]}
         numberOfLines={1}
-        maxFontSizeMultiplier={1.2}
       >
         {route.name}
       </Text>
