@@ -834,8 +834,27 @@ export default function BusinessProfileScreen({ navigation, route }) {
                   )}
                 </View>
               ) : (
+                // F121 — this used to point owners at "swingbyy.com" for plan
+                // changes. swingbyy.com is currently served by web/pre-launch
+                // (VITE_PRELAUNCH_GATE=true), which only routes /, /privacy,
+                // /terms, /cookies, /contact — nothing else, including no
+                // subscription page, exists there; web/launch has the real
+                // billing routes but is, per docs/DEPLOY.md, "built and
+                // CI-green, never deployed." A mailto link to support is
+                // something this app can actually fulfill today (same
+                // support@swingbyy.com contact SettingsScreen already uses)
+                // and is not itself a 3.1.1 purchase link — it's a support
+                // contact, not a way to buy or manage a subscription.
                 <Text variant="caption" color="secondary" style={styles.ownerCtaWrap}>
-                  Plans are managed on swingbyy.com.
+                  {i18n.t('subscription.managedByTeam')}
+                  {' '}
+                  <Text
+                    variant="caption"
+                    onPress={() => Linking.openURL('mailto:support@swingbyy.com')}
+                    style={{ color: colors.accentText, fontWeight: '600' }}
+                  >
+                    {i18n.t('settings.contactUs')}
+                  </Text>
                 </Text>
               )}
             </>

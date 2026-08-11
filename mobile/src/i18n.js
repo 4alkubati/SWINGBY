@@ -55,6 +55,12 @@ const translations = {
     'settings.signOut': 'Sign Out',
     'settings.version': 'Version',
 
+    // Subscription — F121: this used to point owners at "swingbyy.com" for
+    // plan changes, a URL that (per docs/DEPLOY.md) has no billing page
+    // behind it. Replaced with a real support.contactUs mailto action.
+    'subscription.managedByTeam': 'Plans are managed by our team.',
+    'subscription.autoBiddingPlan': 'Auto-bidding is part of a Swingbyy plan.',
+
     // Profile
     'profile.title': 'Edit Profile',
     'profile.firstName': 'First name',
