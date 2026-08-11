@@ -344,7 +344,9 @@ def compute_completion_release_cents(
         int(already_c),
         int(refunded_c),
     )
-    target_c = max(total_c - refunded_c - cut_c, 0)  # what the business should end up with
+    target_c = max(
+        total_c - refunded_c - cut_c, 0
+    )  # what the business should end up with
     final_release_c = max(target_c - already_c, 0)
     released_c = already_c + final_release_c
     return {

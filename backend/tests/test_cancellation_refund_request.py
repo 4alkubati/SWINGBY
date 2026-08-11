@@ -152,7 +152,9 @@ class TestNoProofSettlesImmediately:
         assert upd["refunded"] == 150.00
         assert upd["refunded_cents"] == 15000
         # Invariant holds: escrow(0) + released(50) + refunded(150) == 200.
-        assert upd["escrow_held"] + upd["released_to_business"] + upd["refunded"] == 200.00
+        assert (
+            upd["escrow_held"] + upd["released_to_business"] + upd["refunded"] == 200.00
+        )
 
     def test_no_refund_request_is_opened(self, as_client):
         _, stubs, _ = _cancel(proof_submitted=False)
@@ -347,9 +349,7 @@ class TestAdminDecides:
         # still be legitimately declined (the ladder already gives the
         # business a baked-in share; declining the disputed remainder on top
         # of that is the normal "photos show the client was wrong" outcome).
-        resp, stubs, stripe_mod = _resolve(
-            approve=False, cancelled_by_role="client"
-        )
+        resp, stubs, stripe_mod = _resolve(approve=False, cancelled_by_role="client")
         assert resp.status_code == 200, resp.text
         pay_upd = _updates(stubs["payments"])[0]
         assert pay_upd["released_to_business"] == 200.00

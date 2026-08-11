@@ -299,7 +299,9 @@ def release_preview(payment: Optional[dict]) -> dict:
     cut_c = escrow.money_cents(payment, "platform_cut")
     already_c = escrow.money_cents(payment, "released_to_business")
     refunded_c = escrow.money_cents(payment, "refunded")
-    split = escrow.compute_completion_release_cents(total_c, cut_c, already_c, refunded_c)
+    split = escrow.compute_completion_release_cents(
+        total_c, cut_c, already_c, refunded_c
+    )
     return {
         "release_cents": split["final_release_cents"],
         "total_cents": total_c,
