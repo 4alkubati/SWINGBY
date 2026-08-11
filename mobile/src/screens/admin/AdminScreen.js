@@ -87,7 +87,7 @@ export default function AdminScreen({ navigation }) {
               ? `${pending} ${pending === 1 ? 'case needs' : 'cases need'} a call.` +
                 (moneyHolds > 0
                   ? ` ${moneyHolds} ${moneyHolds === 1 ? 'is' : 'are'} holding the client's money until you approve or decline the refund — decide from the before/after photos and the voice memo.`
-                  : ' None of these are holding money right now — they're record-keeping complaints to review.')
+                  : ' None of these are holding money right now — they are record-keeping complaints to review.')
               : 'Nothing waiting. When a job is cancelled after work started, the refund lands here for you to approve or decline.'}
           </Text>
           <View style={styles.cardAction}>
