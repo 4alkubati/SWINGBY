@@ -12,6 +12,7 @@ import i18n from '../../i18n';
 // Shared with client Home's prompt card — one predicate, so a row here can
 // never disagree with what Home is asking for.
 import { isAwaitingApproval } from '../../utils/approval';
+import { clientBookingRoute } from '../../utils/clientBookingRoute';
 import { colors, spacing } from '../../theme/tokens';
 import { SkeletonList } from '../../components/Skeleton';
 import EmptyState from '../../components/EmptyState';
@@ -541,10 +542,13 @@ export default function MyJobsScreen({ navigation }) {
       // tapped (this component renders all three — see the `isDone` actions in
       // BookingRow). `BookingDetails` is the screen the design system specs for
       // a static booking: status, provider, service/where/total, actions.
-      const finished = booking.status === 'completed' || booking.status === 'cancelled';
-      navigation.navigate(finished ? 'BookingDetails' : 'ActiveBooking', {
-        bookingId: booking.id,
-      });
+      // PRODUCT-01 (Kira, 2026-08-11): in flight -> the live map; finished ->
+      // the record. That rule now lives in utils/clientBookingRoute.js so the
+      // other five client entry points cannot drift from it, and it adds two
+      // cases this inline version missed: `disputed`/`refunded` are finished
+      // too, and a booking with money still owed has to go to BookingDetails
+      // because that is the only screen with a "Pay with card" button (:916).
+      navigation.navigate(clientBookingRoute(booking), { bookingId: booking.id });
     } else {
       navigation.navigate('JobManagement', { bookingId: booking.id });
     }
@@ -755,6 +759,9 @@ export default function MyJobsScreen({ navigation }) {
                 booking={booking}
                 userRole={user?.role}
                 onPress={() => handleBookingPress(booking)}
+                // Stays on BookingDetails deliberately: this is the explicit
+                // "show me the record" action, distinct from tapping the row
+                // (handleBookingPress), which follows clientBookingRoute.
                 onDetails={isClient ? () => navigation.navigate('BookingDetails', { bookingId: booking.id }) : undefined}
                 // Direct release (F139) — works whether or not the business
                 // sent before/after photos. BookingDetails still has a
