@@ -2,12 +2,62 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Storefront, Broom, Wrench, Lightning, Tree, PaintBrush, Hammer, Package, Plus, CheckCircle, Clock } from '@phosphor-icons/react'
+import { Storefront, Broom, Wrench, Lightning, Tree, PaintBrush, Hammer, Package, Plus, CheckCircle, Clock, WarningCircle } from '@phosphor-icons/react'
 import SEO from '../components/SEO'
 import Button from '../components/Button'
 import { useAuth } from '../context/AuthContext'
+import { supabase } from '../lib/supabase'
 import PageSkeleton from '../components/PageSkeleton'
 import s from './BusinessOnboarding.module.css'
+
+const API_BASE = import.meta.env.VITE_API_URL || 'https://swingbyy-api.onrender.com'
+
+// F110 fix (2026-08-11): this wizard used to be pure useState — six steps of
+// input discarded on navigation, ending in a completion screen that claimed
+// the business was "ready to start receiving job requests" when nothing had
+// ever been sent to the backend. `POST /businesses/` is real (businesses.py)
+// and the created row shows up in geo-browse immediately regardless of
+// `license_status`, so that claim is made true by actually calling it here.
+//
+// Team (step 4) and schedule (step 5) do NOT have a real backend counterpart:
+// `POST /employees/` requires email + password + full name (an actual login),
+// which this step never collects, and there is no `business_hours` table.
+// Rather than silently drop that input while still implying it was saved,
+// those two steps say plainly that they're for planning only.
+async function createBusiness({ bizName, bizDesc, bizAddress, category }) {
+  const { data: { session } } = await supabase.auth.getSession()
+  const token = session?.access_token
+  if (!token) throw new Error('Your session expired — please log in again.')
+
+  const res = await fetch(`${API_BASE}/businesses/`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      business_name: bizName.trim(),
+      category,
+      description: bizDesc.trim() || undefined,
+      address: bizAddress.trim() || undefined,
+    }),
+  })
+
+  if (!res.ok) {
+    let detail = 'Could not save your business. Please try again.'
+    try {
+      const body = await res.json()
+      if (typeof body?.detail === 'string') detail = body.detail
+    } catch { /* ignore json parse failures */ }
+    // "You already have a business registered" is not a failure from the
+    // user's point of view — it means this claim is already true.
+    if (res.status === 400 && /already have a business/i.test(detail)) {
+      return { alreadyExists: true }
+    }
+    throw new Error(detail)
+  }
+  return res.json()
+}
 
 const SERVICE_CATEGORIES = [
   { key: 'cleaning', icon: Broom },
@@ -45,11 +95,32 @@ export default function BusinessOnboarding() {
   const [schedule, setSchedule] = useState(
     DAYS.reduce((acc, day) => ({ ...acc, [day]: { open: '09:00', close: '17:00', closed: day === 'Sunday' } }), {})
   )
+  const [submitting, setSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState('')
 
   if (loading) return <PageSkeleton />
 
   function next() { setDir(1); setStep((s) => Math.min(s + 1, STEPS.length - 1)) }
   function back() { setDir(-1); setStep((s) => Math.max(s - 1, 0)) }
+
+  async function finish() {
+    setSubmitError('')
+    setSubmitting(true)
+    try {
+      await createBusiness({
+        bizName,
+        bizDesc,
+        bizAddress,
+        category: t(`categories.${selectedServices[0]}`),
+      })
+      setDir(1)
+      setStep(STEPS.length - 1)
+    } catch (err) {
+      setSubmitError(err.message || 'Could not save your business. Please try again.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
 
   function toggleService(key) {
     setSelectedServices((prev) => prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key])
@@ -121,7 +192,7 @@ export default function BusinessOnboarding() {
                 </div>
                 <div className={s.actions}>
                   <Button variant="secondary" onClick={back}>{t('common.back')}</Button>
-                  <Button variant="primary" onClick={next}>{t('common.next')}</Button>
+                  <Button variant="primary" onClick={next} disabled={!bizName.trim()} title={!bizName.trim() ? 'Enter a business name to continue' : undefined}>{t('common.next')}</Button>
                 </div>
               </motion.div>
             )}
@@ -141,7 +212,7 @@ export default function BusinessOnboarding() {
                 </div>
                 <div className={s.actions}>
                   <Button variant="secondary" onClick={back}>{t('common.back')}</Button>
-                  <Button variant="primary" onClick={next}>{t('common.next')}</Button>
+                  <Button variant="primary" onClick={next} disabled={selectedServices.length === 0} title={selectedServices.length === 0 ? 'Select at least one service to continue' : undefined}>{t('common.next')}</Button>
                 </div>
               </motion.div>
             )}
@@ -150,7 +221,7 @@ export default function BusinessOnboarding() {
               <motion.div key="team" custom={dir} variants={slideVariants} initial="enter" animate="center" exit="exit" transition={{ duration: 0.3 }}>
                 <div className={s.stepLabel}>Step 4 of 6</div>
                 <h2 className={s.stepTitle}>Your team</h2>
-                <p className={s.stepSubtitle}>Add team members who will be fulfilling jobs.</p>
+                <p className={s.stepSubtitle}>For your own planning — team accounts aren't part of setup yet, so this list isn't saved.</p>
                 {team.map((member, i) => (
                   <div key={i} className={s.teamRow}>
                     <div className={s.teamAvatar}>{(member.name?.[0] || String(i + 1)).toUpperCase()}</div>
@@ -174,7 +245,7 @@ export default function BusinessOnboarding() {
               <motion.div key="schedule" custom={dir} variants={slideVariants} initial="enter" animate="center" exit="exit" transition={{ duration: 0.3 }}>
                 <div className={s.stepLabel}>Step 5 of 6</div>
                 <h2 className={s.stepTitle}>Business hours</h2>
-                <p className={s.stepSubtitle}>Set your availability so clients know when to book.</p>
+                <p className={s.stepSubtitle}>For your own planning — hours aren't synced to booking yet, so this isn't saved.</p>
                 {DAYS.map((day) => (
                   <div key={day} className={s.dayRow}>
                     <span className={s.dayName}>{day.slice(0, 3)}</span>
@@ -206,11 +277,17 @@ export default function BusinessOnboarding() {
                 <p className={s.stepSubtitle}>Connect your payment method to receive earnings from completed jobs.</p>
                 <div style={{ padding: 'var(--space-xl)', textAlign: 'center', background: 'var(--color-surface-alt)', borderRadius: 'var(--radius-md)', marginBottom: 'var(--space-xl)' }}>
                   <Clock size={32} weight="regular" style={{ color: 'var(--color-text-secondary)', marginBottom: 'var(--space-sm)' }} />
-                  <p style={{ fontSize: '14px', color: 'var(--color-text-secondary)' }}>You can add a payout method any time from your dashboard. Skip for now and finish your profile — you'll be paid the moment a job completes.</p>
+                  <p style={{ fontSize: '14px', color: 'var(--color-text-secondary)' }}>You can add a payout method any time from your dashboard. Skip for now and finish your profile — you're paid out once a completed job is approved.</p>
                 </div>
+                {submitError && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-xs)', padding: 'var(--space-sm) var(--space-md)', marginBottom: 'var(--space-md)', borderRadius: 'var(--radius-md)', background: 'color-mix(in srgb, var(--color-danger) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--color-danger) 20%, transparent)', color: 'var(--color-danger)', fontSize: '13px' }}>
+                    <WarningCircle size={16} weight="bold" />
+                    {submitError}
+                  </div>
+                )}
                 <div className={s.actions}>
-                  <Button variant="secondary" onClick={back}>{t('common.back')}</Button>
-                  <Button variant="primary" onClick={next}>Finish setup</Button>
+                  <Button variant="secondary" onClick={back} disabled={submitting}>{t('common.back')}</Button>
+                  <Button variant="primary" onClick={finish} loading={submitting}>Finish setup</Button>
                 </div>
               </motion.div>
             )}

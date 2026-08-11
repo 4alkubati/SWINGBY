@@ -157,7 +157,12 @@ export default function ClientOnboarding() {
                 </div>
                 <h2 className={s.completeTitle}>{t('onboarding.complete')}</h2>
                 <p className={s.completeDesc}>
-                  Your preferences have been saved. You're ready to start exploring services in {city}.
+                  {/* F111 fix (2026-08-11): there is no client-preferences endpoint
+                      anywhere in the backend (users table has no city/category/
+                      notification columns — checked api/me.py, api/auth.py's
+                      ProfileUpdate). This screen never persisted anything and
+                      shouldn't claim it did; it's a local tour, not a save. */}
+                  You're ready to start exploring services in {city}.
                 </p>
                 <Button variant="primary" size="lg" style={{ width: '100%' }} onClick={() => navigate('/dashboard')}>
                   {t('dashboard.welcome', { name: '' }).replace(', ', '')}
