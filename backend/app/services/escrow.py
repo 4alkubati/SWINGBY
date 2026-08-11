@@ -304,22 +304,47 @@ def assert_capture_backed(payment: dict, *, action: str = "release") -> None:
 
 
 def compute_completion_release(
-    total_charged, platform_cut, released_to_business
+    total_charged, platform_cut, released_to_business, refunded=0
 ) -> dict:
     """Cents-based math for the completion release (dollar-arg back-compat form).
 
-    Business is owed the full charge minus the platform cut. Whatever has not
-    already been released is released now.
+    Business is owed the full charge minus the platform cut minus whatever has
+    already been refunded to the client. Whatever has not already been
+    released is released now.
     """
     return compute_completion_release_cents(
-        to_cents(total_charged), to_cents(platform_cut), to_cents(released_to_business)
+        to_cents(total_charged),
+        to_cents(platform_cut),
+        to_cents(released_to_business),
+        to_cents(refunded),
     )
 
 
-def compute_completion_release_cents(total_c: int, cut_c: int, already_c: int) -> dict:
-    """Integer-cents completion release. Never releases more than was charged."""
-    total_c, cut_c, already_c = int(total_c), int(cut_c), int(already_c)
-    target_c = max(total_c - cut_c, 0)  # what the business should end up with
+def compute_completion_release_cents(
+    total_c: int, cut_c: int, already_c: int, refunded_c: int = 0
+) -> dict:
+    """Integer-cents completion release. Never releases more than was charged.
+
+    F010 (money audit, 2026-08-10): `total_c` (``total_charged_cents``) can
+    include money already sent BACK to the client — e.g. a Post+Pay booking
+    accepted below budget (`budget_settlement.settle_on_accept`), where the
+    unused portion of the budget is refunded at accept time but stays counted
+    in `total_charged`. Basing the release target on `total_c` alone paid the
+    business out of money the client no longer had charged against them.
+    `refunded_c` backs that out, so the target becomes what is still actually
+    in play: `total_charged - refunded - cut`, which is the same figure as
+    `escrow_held + already_released - cut` (the ledger invariant
+    ``escrow_held + released_to_business + refunded == total_charged`` makes
+    the two forms equal). Defaults to 0 so old 3-arg callers are unaffected
+    when nothing was ever refunded.
+    """
+    total_c, cut_c, already_c, refunded_c = (
+        int(total_c),
+        int(cut_c),
+        int(already_c),
+        int(refunded_c),
+    )
+    target_c = max(total_c - refunded_c - cut_c, 0)  # what the business should end up with
     final_release_c = max(target_c - already_c, 0)
     released_c = already_c + final_release_c
     return {
@@ -562,7 +587,8 @@ def release_escrow_on_complete(booking_id: str) -> dict:
     total_c = money_cents(payment, "total_charged")
     cut_c = money_cents(payment, "platform_cut")
     already_c = money_cents(payment, "released_to_business")
-    release = compute_completion_release_cents(total_c, cut_c, already_c)
+    refunded_c = money_cents(payment, "refunded")
+    release = compute_completion_release_cents(total_c, cut_c, already_c, refunded_c)
 
     update = ledger_write(
         released_to_business=release["released_to_business_cents"],

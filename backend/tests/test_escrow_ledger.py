@@ -51,6 +51,29 @@ class TestEscrowMath:
         assert out["released_to_business"] == 90.00
         assert out["final_release"] == 0.00
 
+    def test_completion_release_backs_out_a_prior_refund(self):
+        # F010 (2026-08-10) — Kira's own worked example: budget $150 charged at
+        # post, quote accepted at $100. budget_settlement.settle_on_accept
+        # produces total_charged=15000, escrow_held=10000, refunded=5000,
+        # platform_cut=1000 (10% of the ACCEPTED 10000, not the 15000 budget).
+        # Before the fix, `total_c - cut_c` (15000 - 1000 = 14000) paid the
+        # business $140 — the $50 already refunded to the client on top of
+        # their real $100-minus-cut share. The correct release is
+        # accepted($100) - cut($10) = $90, exactly what settle_on_accept's own
+        # `business_net_cents` says.
+        out = escrow.compute_completion_release_cents(
+            total_c=15000, cut_c=1000, already_c=0, refunded_c=5000
+        )
+        assert out["final_release_cents"] == 9000
+        assert out["released_to_business_cents"] == 9000
+        assert out["released_to_business"] == 90.00
+
+    def test_completion_release_with_no_refund_is_unaffected(self):
+        # refunded_c defaults to 0 — the ordinary (no-refund) path must be
+        # byte-for-byte the same as before this fix.
+        out = escrow.compute_completion_release_cents(10000, 1000, 0)
+        assert out["final_release_cents"] == 9000
+
 
 # ── Cancellation penalty ladder (published ToS, 2026-07-21) ───────────────────
 
@@ -188,6 +211,36 @@ class TestReleaseOnComplete:
         upd = [c for c in stub.calls if c[0] == "update"][0][1][0]
         assert upd["released_to_business"] == 90.00
         assert upd["released_to_business_cents"] == 9000
+        assert upd["escrow_held"] == 0
+        assert upd["status"] == "fully_released"
+
+    def test_under_budget_accept_then_complete_pays_agreed_minus_cut(self):
+        # F010 end-to-end: budget $150 charged at post, accepted at $100 (Kira's
+        # worked example). settle_on_accept already refunded the $50 difference
+        # at accept time, leaving this row's ledger at total_charged=15000,
+        # escrow_held=10000, refunded=5000, platform_cut=1000 (10% of the
+        # accepted 10000). Completion must pay the business exactly
+        # 100 - 10 = $90, never the pre-refund 150 - 10 = $140.
+        payment = {
+            "id": "pay-1",
+            "booking_id": "booking-1",
+            "total_charged_cents": 15000,
+            "escrow_held_cents": 10000,
+            "released_to_business_cents": 0,
+            "refunded_cents": 5000,
+            "platform_cut_cents": 1000,
+            "status": "held",
+            "stripe_payment_intent_id": "pi_test_underbudget",
+        }
+        p, stub = self._patch_payments(payment)
+        try:
+            out = escrow.release_escrow_on_complete("booking-1")
+        finally:
+            p.stop()
+        assert out["outcome"] == "released"
+        upd = [c for c in stub.calls if c[0] == "update"][0][1][0]
+        assert upd["released_to_business_cents"] == 9000
+        assert upd["released_to_business"] == 90.00
         assert upd["escrow_held"] == 0
         assert upd["status"] == "fully_released"
 
