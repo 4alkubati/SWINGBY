@@ -69,14 +69,14 @@ function KpiCard({ label, value, sub, index = 0, onPress }) {
 
   const content = (
     <>
-      <Text style={styles.kpiLabel} maxFontSizeMultiplier={1.3}>
+      <Text style={styles.kpiLabel}>
         {label}
       </Text>
-      <Text style={styles.kpiValue} maxFontSizeMultiplier={1.2}>
+      <Text style={styles.kpiValue}>
         {value}
       </Text>
       {!!sub && (
-        <Text style={styles.kpiSub} maxFontSizeMultiplier={1.3}>
+        <Text style={styles.kpiSub}>
           {sub}
         </Text>
       )}
@@ -362,13 +362,12 @@ export default function DashboardScreen({ navigation }) {
       {/* Header row */}
       <View style={styles.header}>
         <View style={{ flex: 1 }}>
-          <Text style={styles.greeting} maxFontSizeMultiplier={1.3}>
+          <Text style={styles.greeting}>
             {getGreeting()}
           </Text>
           <Text
             style={styles.businessName}
             numberOfLines={1}
-            maxFontSizeMultiplier={1.2}
           >
             {businessName}
           </Text>
@@ -408,7 +407,7 @@ export default function DashboardScreen({ navigation }) {
                 accessibilityLabel={chip.label}
               >
                 <Feather name={chip.icon} size={14} color={colors.accentText} strokeWidth={2} />
-                <Text style={styles.attentionLabel} maxFontSizeMultiplier={1.2}>
+                <Text style={styles.attentionLabel}>
                   {chip.label}
                 </Text>
               </TouchableOpacity>
@@ -582,7 +581,7 @@ export default function DashboardScreen({ navigation }) {
             accessibilityLabel="Open earnings"
           >
             <Feather name="dollar-sign" size={18} color={colors.accentText} strokeWidth={1.8} />
-            <Text style={styles.toolLabel} maxFontSizeMultiplier={1.2}>
+            <Text style={styles.toolLabel}>
               Earnings
             </Text>
           </TouchableOpacity>
@@ -594,7 +593,7 @@ export default function DashboardScreen({ navigation }) {
             accessibilityLabel="Open analytics"
           >
             <Feather name="bar-chart-2" size={18} color={colors.accentText} strokeWidth={1.8} />
-            <Text style={styles.toolLabel} maxFontSizeMultiplier={1.2}>
+            <Text style={styles.toolLabel}>
               Analytics
             </Text>
           </TouchableOpacity>
@@ -606,7 +605,7 @@ export default function DashboardScreen({ navigation }) {
             accessibilityLabel="Manage team"
           >
             <Feather name="users" size={18} color={colors.accentText} strokeWidth={1.8} />
-            <Text style={styles.toolLabel} maxFontSizeMultiplier={1.2}>
+            <Text style={styles.toolLabel}>
               Team
             </Text>
           </TouchableOpacity>

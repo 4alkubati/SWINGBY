@@ -64,14 +64,19 @@ export default function EarningsHero({
       <View style={styles.inner}>
         <View style={styles.topRow}>
           <View style={{ flex: 1 }}>
-            <Text style={styles.eyebrow} maxFontSizeMultiplier={1.3}>
+            {/* B-03: this whole card was capped (eyebrow, amount, caption,
+                delta), including the week's dollar amount — the named worst
+                offender alongside BottomNav. `inner` has no fixed height
+                (padding + gap only), so nothing here needs a ceiling; it
+                just grows the card. */}
+            <Text style={styles.eyebrow}>
               THIS WEEK
             </Text>
-            <Text style={styles.amount} maxFontSizeMultiplier={1.2}>
+            <Text style={styles.amount}>
               {amount}
             </Text>
             {caption ? (
-              <Text style={styles.caption} maxFontSizeMultiplier={1.3}>
+              <Text style={styles.caption}>
                 {caption}
               </Text>
             ) : null}
@@ -85,7 +90,6 @@ export default function EarningsHero({
                 />
                 <Text
                   style={[styles.delta, !deltaUp && { color: colors.danger }]}
-                  maxFontSizeMultiplier={1.3}
                 >
                   {`${deltaUp ? '+' : ''}${deltaPct}% vs last week`}
                 </Text>

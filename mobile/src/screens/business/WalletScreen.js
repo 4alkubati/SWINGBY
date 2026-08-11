@@ -99,7 +99,7 @@ function BalanceHero({ loading, wallet }) {
 
   return (
     <View style={styles.hero}>
-      <Text variant="caption" style={styles.heroEyebrow} maxFontSizeMultiplier={1.3}>
+      <Text variant="caption" style={styles.heroEyebrow}>
         {i18n.t('wallet.availableLabel')}
       </Text>
       <Text style={styles.heroAmount} accessibilityRole="header">
@@ -284,7 +284,7 @@ function PayoutRow({ payout, last }) {
           </Text>
         )}
       </View>
-      <Text variant="caption" style={{ color: tone }} maxFontSizeMultiplier={1.3}>
+      <Text variant="caption" style={{ color: tone }}>
         {statusLabel(payout.status)}
       </Text>
     </View>

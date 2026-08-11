@@ -506,7 +506,7 @@ function ScreenHeader({ navigation, onShare }) {
         <Feather name="arrow-left" size={22} color={colors.textPrimary} accessible={false} />
       </Pressable>
 
-      <Text variant="bodyMedium" accessibilityRole="header" maxFontSizeMultiplier={1.4}>Booking Details</Text>
+      <Text variant="bodyMedium" accessibilityRole="header">Booking Details</Text>
 
       <Pressable
         onPress={onShare}
@@ -1081,7 +1081,6 @@ export default function BookingDetailsScreen({ route, navigation }) {
               variant="label"
               color="secondary"
               accessibilityRole="header"
-              maxFontSizeMultiplier={1.4}
               style={{ marginBottom: spacing.md }}
             >
               Job Details
@@ -1130,7 +1129,7 @@ export default function BookingDetailsScreen({ route, navigation }) {
             {/* Price row */}
             <DetailRow icon="dollar-sign" label="Price">
               <Inline spacing="sm" align="center" justify="flex-end">
-                <Text variant="display3" maxFontSizeMultiplier={1.4} style={{ color: colors.success, fontVariant: ['tabular-nums'] }}>
+                <Text variant="display3" style={{ color: colors.success, fontVariant: ['tabular-nums'] }}>
                   ${parseFloat(booking?.total_amount ?? 0).toFixed(2)}
                 </Text>
                 <View
