@@ -36,29 +36,41 @@ const code = (src) =>
   src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
 
 describe('My Jobs routes finished bookings away from live tracking', () => {
+  // 2026-08-11: the decision used to be an inline `finished ? ... : ...` inside
+  // handleBookingPress, and this block read that function's source text. It now
+  // lives in utils/clientBookingRoute.js, because PRODUCT-01 needed the same
+  // rule at six entry points and copying it to each is what stalled the
+  // previous attempt.
+  //
+  // So the guard follows the logic instead of being deleted with it: My Jobs
+  // must DELEGATE, and the thing it delegates to must make the right call. That
+  // is strictly stronger than the old text match — the behaviour is now
+  // asserted directly in utils/__tests__/clientBookingRoute.test.js rather than
+  // inferred from whether the word "completed" appears in a function body.
   const src = code(read('screens/client/MyJobsScreen.js'));
 
-  it('decides the destination from the booking status', () => {
+  it('delegates the destination instead of hardcoding one', () => {
     const handler = src.match(/function handleBookingPress[\s\S]*?\n {2}}/);
     expect(handler).not.toBeNull();
     const body = handler[0];
 
-    // Must consider both terminal states...
-    expect(body).toMatch(/completed/);
-    expect(body).toMatch(/cancelled/);
-    // ...and be able to reach the static screen.
-    expect(body).toMatch(/BookingDetails/);
+    expect(body).toMatch(/clientBookingRoute\(/);
+    // The bug shape this file was written for: a bare navigate to the live
+    // screen with nothing deciding between the two.
+    expect(body).not.toMatch(/navigate\(\s*['"]ActiveBooking['"]/);
   });
 
-  it('never navigates to ActiveBooking unconditionally from the row tap', () => {
-    const handler = src.match(/function handleBookingPress[\s\S]*?\n {2}}/)[0];
-    // The bug shape: a bare navigate to the live screen with no status test.
-    const bare = /navigate\(\s*['"]ActiveBooking['"]/.test(handler);
-    if (bare) {
-      // Allowed only when the same expression also picks BookingDetails.
-      expect(handler).toMatch(/BookingDetails/);
-    }
-    expect(handler).toMatch(/status/);
+  it('imports that decision from the shared rule', () => {
+    expect(src).toMatch(/import\s*\{[^}]*clientBookingRoute[^}]*\}\s*from\s*'\.\.\/\.\.\/utils\/clientBookingRoute'/);
+  });
+
+  it('and that rule considers both terminal states and can reach the static screen', () => {
+    const rule = code(read('utils/clientBookingRoute.js'));
+    expect(rule).toMatch(/completed/);
+    expect(rule).toMatch(/cancelled/);
+    expect(rule).toMatch(/BookingDetails/);
+    // It must branch on status, not send everything one way.
+    expect(rule).toMatch(/status/);
   });
 });
 
