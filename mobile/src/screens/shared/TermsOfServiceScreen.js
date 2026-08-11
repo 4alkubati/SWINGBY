@@ -25,7 +25,7 @@ const SECTIONS = [
     body: `All payments on Swingbyy are processed through our payment partner. When a client accepts a quote, payment is held in escrow until the job is marked complete by the service provider.\n\n` +
       `Once the service provider marks the job done, you have 24 hours to review and approve the work. Approving releases payment immediately; if you take no action, payment releases automatically once the 24-hour window closes. Before/after photos are not required to mark a job done, but if the provider does submit proof, at least two "before" and two "after" photos are required for it to be sent. In cases of dispute, Swingbyy may hold payment pending investigation.\n\n` +
       `Cancellations by the client are subject to a ladder measured against the confirmed date: more than 48 hours before, you are refunded in full; within 48 hours, 75% is refunded and 25% goes to the business; if the confirmed time has already passed, 50% is refunded. If no date has been confirmed yet, you are refunded in full.\n\n` +
-      `If the business cancels, you are refunded in full regardless of timing, and a goodwill credit is applied to your account for late or no-show cancellations.\n\n` +
+      `If the business cancels, you are refunded in full regardless of timing, and for late or no-show cancellations a goodwill credit is added to your account balance, to be applied toward a future booking.\n\n` +
       `If a dispute arises after work has started, Swingbyy will review submitted evidence (photos, messages) and make a final determination.\n\n` +
       `Swingbyy charges a platform fee on each completed transaction. This fee is disclosed at the time of booking.`,
   },
