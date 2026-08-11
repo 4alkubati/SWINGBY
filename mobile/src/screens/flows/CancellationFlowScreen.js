@@ -142,8 +142,8 @@ export default function CancellationFlowScreen({ route, navigation }) {
         // for a sentence that only reads correctly in full.
         text2: isBusiness
           ? finalAmount > 0
-            ? `Client refunded in full. $${finalAmount.toFixed(2)} penalty to you.`
-            : 'Client refunded in full. No penalty.'
+            ? `Client refunded in full. $${finalAmount.toFixed(2)} recorded against your standing.`
+            : 'Client refunded in full. Nothing recorded against your standing.'
           : finalAmount > 0
             ? `A $${finalAmount.toFixed(2)} fee applies.`
             : 'You will be refunded in full.',
@@ -194,14 +194,14 @@ export default function CancellationFlowScreen({ route, navigation }) {
               shared between the two branches except the layout. */}
           <View style={styles.penaltyCard}>
             <Text style={styles.penaltyLabel}>
-              {isBusiness ? 'Penalty To You' : 'Cancellation Fee'}
+              {isBusiness ? 'On Your Record' : 'Cancellation Fee'}
             </Text>
             <Text style={styles.penaltyAmount}>${amount.toFixed(2)}</Text>
             <Text style={styles.penaltyDesc}>
               {isBusiness
                 ? pct === 0
-                  ? `The client is refunded the full $${clientRefund.toFixed(2)}. No penalty applies to you.`
-                  : `The client is refunded the full $${clientRefund.toFixed(2)}. ${(pct * 100).toFixed(0)}% of the $${parseFloat(quotedPrice || 0).toFixed(2)} job is charged to you${credit > 0 ? `, and they receive a $${credit.toFixed(2)} credit for the late notice` : ''}.`
+                  ? `The client is refunded the full $${clientRefund.toFixed(2)}. Nothing recorded against your standing.`
+                  : `The client is refunded the full $${clientRefund.toFixed(2)} — you are not charged. ${(pct * 100).toFixed(0)}% of the $${parseFloat(quotedPrice || 0).toFixed(2)} job is recorded against your standing${credit > 0 ? `, and they receive a $${credit.toFixed(2)} credit for the late notice` : ''}.`
                 : pct === 0
                   ? `You'll be refunded the full $${parseFloat(quotedPrice || 0).toFixed(2)}. No cancellation fee applies.`
                   : `${(pct * 100).toFixed(0)}% of your $${parseFloat(quotedPrice || 0).toFixed(2)} booking will be charged as a cancellation fee.`}
@@ -211,12 +211,12 @@ export default function CancellationFlowScreen({ route, navigation }) {
               <Text style={styles.penaltyTipText}>
                 {isBusiness
                   ? timing === 'no_show'
-                    ? 'The scheduled time has already passed — 50% penalty, and it affects your standing.'
+                    ? 'The scheduled time has already passed — a 50% mark is recorded against your standing. You are not charged.'
                     : timing === 'late'
-                      ? 'Within 48h of the job — 25% penalty. Cancelling this late costs the client their plans.'
+                      ? 'Within 48h of the job — a 25% mark is recorded against your standing. Cancelling this late costs the client their plans.'
                       : timing === 'early'
-                        ? 'More than 48h away — no penalty. Telling them early is the right call.'
-                        : 'No date confirmed yet — no penalty.'
+                        ? 'More than 48h away — nothing recorded. Telling them early is the right call.'
+                        : 'No date confirmed yet — nothing recorded.'
                   : timing === 'no_show'
                     ? 'The scheduled time has already passed — 50% fee applies.'
                     : timing === 'late'
@@ -275,9 +275,13 @@ export default function CancellationFlowScreen({ route, navigation }) {
               ? <ActivityIndicator color={colors.textPrimary} />
               : (
                 <Text style={styles.confirmBtnText}>
-                  {amount > 0
-                    ? `Cancel booking and pay $${amount.toFixed(2)} fee`
-                    : 'Cancel booking — full refund'}
+                  {isBusiness
+                    ? amount > 0
+                      ? `Cancel booking — $${amount.toFixed(2)} on your record`
+                      : 'Cancel booking — client refunded in full'
+                    : amount > 0
+                      ? `Cancel booking and pay $${amount.toFixed(2)} fee`
+                      : 'Cancel booking — full refund'}
                 </Text>
               )
             }
