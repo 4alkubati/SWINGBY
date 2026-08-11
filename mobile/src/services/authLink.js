@@ -15,10 +15,24 @@
 // ----------------------------------
 // `linkingConfig` maps URLs onto screens, but those screens only exist inside
 // ClientNavigator / BusinessNavigator, and RootNavigator does not mount either
-// until `user` is set. A confirmation link arrives precisely when the user is
-// logged OUT, so there is no navigator to route into yet. The link has to be
-// consumed above navigation, which is what useAuthDeepLink does — completing
-// the session makes RootNavigator swap to the real app on its own.
+// until `user` is set. The common case is a confirmation link arriving while
+// the user is logged OUT, so there is no navigator to route into yet. The
+// link has to be consumed above navigation, which is what useAuthDeepLink
+// does — completing the session makes RootNavigator swap to the real app on
+// its own.
+//
+// NOT LOGGED OUT IS NOT GUARANTEED (F003). A device can carry a live session
+// when a foreign/stale auth-callback link gets tapped anyway — a second test
+// account's mail, an old link resurfacing, Gmail's link-preview crawler.
+// `storeSession` below writes to the SAME SecureStore keys the live session
+// uses, so an unguarded run here would silently overwrite or destroy it.
+// Two independent defenses:
+//   1. useAuthDeepLink skips calling this at all while a user is already
+//      logged in (see its `alreadyLoggedIn` param) — the normal case.
+//   2. Belt-and-braces, in case that guard is ever bypassed: this function
+//      snapshots whatever session is already in SecureStore before writing
+//      the new one, and restores it if the new token fails `getMe()` below,
+//      instead of blind-deleting both keys.
 //
 // TOKEN KEYS: same two SecureStore keys as auth.js / socialAuth.js. See the
 // note at the top of socialAuth.js — if auth.js renames them, rename here too.
@@ -131,6 +145,14 @@ export async function completeAuthFromUrl(url) {
     throw err;
   }
 
+  // Snapshot whatever session is already sitting in SecureStore BEFORE
+  // overwriting it. Normally this is empty (see the header comment — the
+  // hook keeps this function from even running while a session is live), but
+  // if that guard is ever bypassed, this is what lets the catch below put the
+  // prior session back instead of destroying it.
+  const priorAccessToken = await SecureStore.getItemAsync(TOKEN_KEY).catch(() => null);
+  const priorRefreshToken = await SecureStore.getItemAsync(REFRESH_KEY).catch(() => null);
+
   await storeSession(parsed.accessToken, parsed.refreshToken);
   setAuthToken(parsed.accessToken);
 
@@ -138,11 +160,20 @@ export async function completeAuthFromUrl(url) {
     const profile = await getMe();
     return { profile, accessToken: parsed.accessToken };
   } catch (e) {
-    // The token did not survive first contact — do not leave a half-written
-    // session behind that the next cold boot would try to restore.
-    await SecureStore.deleteItemAsync(TOKEN_KEY).catch(() => {});
-    await SecureStore.deleteItemAsync(REFRESH_KEY).catch(() => {});
-    setAuthToken(null);
+    // The token did not survive first contact. Never leave the device worse
+    // off than before the tap: restore whatever session was already there —
+    // only clear a key when there genuinely was nothing to restore.
+    if (priorAccessToken) {
+      await SecureStore.setItemAsync(TOKEN_KEY, priorAccessToken).catch(() => {});
+    } else {
+      await SecureStore.deleteItemAsync(TOKEN_KEY).catch(() => {});
+    }
+    if (priorRefreshToken) {
+      await SecureStore.setItemAsync(REFRESH_KEY, priorRefreshToken).catch(() => {});
+    } else {
+      await SecureStore.deleteItemAsync(REFRESH_KEY).catch(() => {});
+    }
+    setAuthToken(priorAccessToken || null);
     const err = new Error('That sign-in link is no longer valid.');
     err.code = 'auth_link_rejected';
     throw err;
