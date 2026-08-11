@@ -21,6 +21,7 @@ const WEB_ADMIN_URL = 'https://swingbyy.com/admin';
 export default function AdminScreen({ navigation }) {
   const { user, logout } = useAuth();
   const [pending, setPending] = useState(0);
+  const [moneyHolds, setMoneyHolds] = useState(0);
 
   // Refreshed on focus so the badge is right when you come back from deciding one.
   useFocusEffect(
@@ -29,11 +30,21 @@ export default function AdminScreen({ navigation }) {
       (async () => {
         try {
           const res = await api.get('/disputes/admin/queue');
-          if (alive) setPending(res?.count ?? (res?.items || []).length);
+          const items = res?.items || [];
+          if (alive) {
+            setPending(res?.count ?? items.length);
+            // needs_money_decision is per-item (backend/app/api/disputes.py) —
+            // only cancellation_refund cases hold money; a poor_quality or
+            // "other" complaint sitting in the same queue does not.
+            setMoneyHolds(items.filter((i) => i.needs_money_decision).length);
+          }
         } catch {
           // A dead count must not break the screen — the queue itself reports
           // its own errors.
-          if (alive) setPending(0);
+          if (alive) {
+            setPending(0);
+            setMoneyHolds(0);
+          }
         }
       })();
       return () => {
@@ -73,7 +84,10 @@ export default function AdminScreen({ navigation }) {
           </Inline>
           <Text style={styles.cardBody}>
             {pending > 0
-              ? `${pending} ${pending === 1 ? 'case needs' : 'cases need'} a call. Cancelled jobs where work had already started hold the client's money until you approve or decline the refund — you decide from the before/after photos and the voice memo.`
+              ? `${pending} ${pending === 1 ? 'case needs' : 'cases need'} a call.` +
+                (moneyHolds > 0
+                  ? ` ${moneyHolds} ${moneyHolds === 1 ? 'is' : 'are'} holding the client's money until you approve or decline the refund — decide from the before/after photos and the voice memo.`
+                  : ' None of these are holding money right now — they are record-keeping complaints to review.')
               : 'Nothing waiting. When a job is cancelled after work started, the refund lands here for you to approve or decline.'}
           </Text>
           <View style={styles.cardAction}>

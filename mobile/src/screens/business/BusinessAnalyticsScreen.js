@@ -346,7 +346,7 @@ export default function BusinessAnalyticsScreen({ navigation, route }) {
         >
           <MetricCard
             label="Profile Views"
-            value={loading ? '—' : (metrics?.profile_views ? String(metrics.profile_views) : '—')}
+            value={loading ? '—' : (metrics?.profile_views != null ? String(metrics.profile_views) : '—')}
             sub="This month"
           />
           <MetricCard
@@ -357,7 +357,7 @@ export default function BusinessAnalyticsScreen({ navigation, route }) {
           />
           <MetricCard
             label="Repeat Customers"
-            value={loading ? '—' : (metrics?.repeat_rate ? `${metrics.repeat_rate}%` : '—')}
+            value={loading ? '—' : (metrics?.repeat_rate != null ? `${metrics.repeat_rate}%` : '—')}
             sub="Come back rate"
             showProgress={loading ? false : metrics?.repeat_rate ?? 0}
           />

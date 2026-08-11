@@ -822,6 +822,18 @@ export default function ActiveBookingScreen({ navigation, route }) {
                   onPress={() =>
                     navigation.navigate('CancellationFlow', {
                       bookingId: booking.id,
+                      // F030: without these, CancellationFlowScreen's local
+                      // penalty preview falls back to 'no_date'/$0 and shows
+                      // a full-refund preview even when the server would
+                      // actually charge a late/no-show fee. Same fields
+                      // BookingDetailsScreen's cancel button passes.
+                      // F031: confirmed_date only — NOT proposed_date_1. The
+                      // server's classify_cancellation_timing() (backend
+                      // bookings.py) reads confirmed_date alone; a merely
+                      // proposed date can show a penalty tier the server will
+                      // never actually charge.
+                      scheduledDate: booking.confirmed_date,
+                      quotedPrice: booking.total_amount,
                     })
                   }
                   style={{
