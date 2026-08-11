@@ -612,7 +612,7 @@ export default function BusinessProfileScreen({ navigation, route }) {
         >
           {/* ── Title row ── */}
           <View style={styles.ownerTitleRow}>
-            <Text style={styles.ownerTitle} accessibilityRole="header" maxFontSizeMultiplier={1.3}>
+            <Text style={styles.ownerTitle} accessibilityRole="header">
               My Business
             </Text>
             <Pressable

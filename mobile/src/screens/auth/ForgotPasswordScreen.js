@@ -74,11 +74,10 @@ export default function ForgotPasswordScreen({ navigation }) {
                 <Text
                   style={styles.brandMark}
                   accessibilityRole="header"
-                  maxFontSizeMultiplier={1.4}
                 >
                   S
                 </Text>
-                <Text style={styles.title} accessibilityRole="header" maxFontSizeMultiplier={1.4}>
+                <Text style={styles.title} accessibilityRole="header">
                   Forgot password?
                 </Text>
                 <Text style={styles.subtitle}>

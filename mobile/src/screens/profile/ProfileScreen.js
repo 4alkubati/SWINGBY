@@ -141,7 +141,7 @@ export default function ProfileScreen({ navigation }) {
           <Animated.View entering={FadeInDown.duration(240).delay(40)} style={styles.identityRow}>
             <Avatar name={fullName || '?'} source={user?.avatar_url} size={68} />
             <View style={styles.identityText}>
-              <Text style={styles.name} numberOfLines={1} maxFontSizeMultiplier={1.3}>
+              <Text style={styles.name} numberOfLines={1}>
                 {fullName || user?.email || '—'}
               </Text>
               <Text style={styles.subtitle} numberOfLines={1}>{subtitle}</Text>

@@ -13,7 +13,7 @@ export default function ModeSwitch({ mode, onModeChange }) {
         accessibilityLabel="Browse services"
         accessibilityState={{ selected: mode === 'browse' }}
       >
-        <Text style={[styles.btnText, mode === 'browse' && styles.btnTextActive]} maxFontSizeMultiplier={1.3}>
+        <Text style={[styles.btnText, mode === 'browse' && styles.btnTextActive]}>
           Browse
         </Text>
       </TouchableOpacity>
@@ -25,7 +25,7 @@ export default function ModeSwitch({ mode, onModeChange }) {
         accessibilityLabel="Post a job"
         accessibilityState={{ selected: mode === 'post' }}
       >
-        <Text style={[styles.btnText, mode === 'post' && styles.btnTextActive]} maxFontSizeMultiplier={1.3}>
+        <Text style={[styles.btnText, mode === 'post' && styles.btnTextActive]}>
           Post a Job
         </Text>
       </TouchableOpacity>

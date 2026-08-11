@@ -104,7 +104,6 @@ export default function Tabs({ tabs, activeIndex = 0, onChange, style }) {
           <Text
             variant="smallMedium"
             color={index === activeIndex ? 'primary' : 'secondary'}
-            maxFontSizeMultiplier={1.3}
           >
             {tab}
           </Text>

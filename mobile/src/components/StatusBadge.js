@@ -21,7 +21,7 @@ export default function StatusBadge({ label, tone = 'muted', style }) {
   const t = TONES[tone] || TONES.muted;
   return (
     <View style={[styles.pill, { backgroundColor: t.bg }, style]}>
-      <Text variant="label" style={{ color: t.text }} maxFontSizeMultiplier={1.2}>
+      <Text variant="label" style={{ color: t.text }}>
         {label}
       </Text>
     </View>

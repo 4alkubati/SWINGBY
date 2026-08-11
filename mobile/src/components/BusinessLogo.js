@@ -81,6 +81,11 @@ export default function BusinessLogo({
           accessible={false}
         />
       ) : (
+        // Kept, raised from 1.2: this is a fixed size×size tile with
+        // overflow:hidden — a real circle/tile, not a flexible row. The
+        // smallest live caller is 30px (ChatScreen header avatar), where the
+        // baseline 11px monogram already sits close to the edge; 1.4 leaves
+        // headroom without letters clipping out of the tile at that size.
         <Text
           style={{
             fontFamily: 'SpaceGrotesk_700Bold',
@@ -88,7 +93,7 @@ export default function BusinessLogo({
             color: colors.accentText,
             letterSpacing: -0.3,
           }}
-          maxFontSizeMultiplier={1.2}
+          maxFontSizeMultiplier={1.4}
         >
           {businessInitials(name)}
         </Text>

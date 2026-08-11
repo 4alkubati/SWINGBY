@@ -216,7 +216,7 @@ function PinnedBookingCard({ booking, onPress }) {
     <TouchableOpacity onPress={onPress} activeOpacity={0.85} accessibilityRole="button">
       <Surface elevation="subtle" style={styles.pinnedCard}>
         <Inline justify="space-between" align="flex-start" style={{ marginBottom: spacing.xs }}>
-          <Text variant="label" style={styles.pinnedEyebrow} maxFontSizeMultiplier={1.2}>
+          <Text variant="label" style={styles.pinnedEyebrow}>
             {isLive ? 'HAPPENING NOW' : 'YOUR NEXT JOB'}
           </Text>
           <StatusBadge
@@ -531,12 +531,12 @@ export default function HomeScreen({ navigation }) {
         >
           {/* Greeting hero */}
           <View style={styles.greetingSection}>
-            <Text variant="display2" style={styles.heyHeading} maxFontSizeMultiplier={1.3}>
+            <Text variant="display2" style={styles.heyHeading}>
               Hey {firstName}.
             </Text>
             <View style={styles.locationRow}>
               <Feather name="map-pin" size={13} color={colors.textSecondary} />
-              <Text variant="small" color="secondary" maxFontSizeMultiplier={1.3}>
+              <Text variant="small" color="secondary">
                 {cityLabel} · What needs doing?
               </Text>
             </View>

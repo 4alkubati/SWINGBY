@@ -61,17 +61,16 @@ export default function JobCard({ booking, onPress }) {
           </Text>
         </View>
       </View>
-      <Text style={styles.name} numberOfLines={1} maxFontSizeMultiplier={1.3}>
+      <Text style={styles.name} numberOfLines={1}>
         {clientName}
       </Text>
       <Text
         style={styles.meta}
         numberOfLines={1}
-        maxFontSizeMultiplier={1.3}
       >
         {booking.service_posts?.title || booking.service_category || 'Service'}
       </Text>
-      <Text style={styles.date} maxFontSizeMultiplier={1.3}>
+      <Text style={styles.date}>
         {date}
         {time ? ` · ${time}` : ''}
       </Text>

@@ -40,7 +40,7 @@ function SlideItem({ item }) {
         <Feather name={item.icon} size={72} color={colors.accentText} strokeWidth={1.8} />
       </View>
       <View style={styles.slideText}>
-        <Text style={styles.slideTitle} accessibilityRole="header" maxFontSizeMultiplier={1.4}>
+        <Text style={styles.slideTitle} accessibilityRole="header">
           {item.title}
         </Text>
         <Text style={styles.slideSubtitle}>{item.subtitle}</Text>

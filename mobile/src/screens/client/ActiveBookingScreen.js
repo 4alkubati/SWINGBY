@@ -240,6 +240,10 @@ function HeroChrome({ onBack, isLive, hasProvider, distanceLabel }) {
       {(hasProvider && distanceLabel) || isLive ? (
         <View style={styles.livePill}>
           <PulseDot size={7} />
+          {/* Kept, raised from 1.2: livePill has a hard `height: 30`
+              (no overflow:hidden, absolute-positioned over the map) — text
+              tall enough to exceed that pushes visibly past the pill's
+              rounded background rather than growing it. */}
           <Text
             style={{
               color: colors.textPrimary,
@@ -247,7 +251,7 @@ function HeroChrome({ onBack, isLive, hasProvider, distanceLabel }) {
               fontWeight: '600',
               marginLeft: 8,
             }}
-            maxFontSizeMultiplier={1.2}
+            maxFontSizeMultiplier={1.4}
           >
             {hasProvider && distanceLabel ? `${distanceLabel} away` : 'Live'}
           </Text>
@@ -610,13 +614,11 @@ export default function ActiveBookingScreen({ navigation, route }) {
                     <View style={{ flex: 1 }}>
                       <Text
                         style={styles.eyebrow}
-                        maxFontSizeMultiplier={1.3}
                       >
                         {eyebrow}
                       </Text>
                       <Text
                         style={styles.heroTitle}
-                        maxFontSizeMultiplier={1.3}
                       >
                         {heroTitle}
                       </Text>
@@ -638,13 +640,12 @@ export default function ActiveBookingScreen({ navigation, route }) {
                       accessibilityRole="button"
                       accessibilityLabel="View business profile"
                     >
-                      <Text style={styles.providerName} maxFontSizeMultiplier={1.3}>
+                      <Text style={styles.providerName}>
                         {workerName}
                       </Text>
                       <View style={styles.providerMetaRow}>
                         <Text
                           style={styles.providerMeta}
-                          maxFontSizeMultiplier={1.3}
                         >
                           {companyName ? `${companyName}` : 'Independent'}
                         </Text>
@@ -652,7 +653,7 @@ export default function ActiveBookingScreen({ navigation, route }) {
                           <>
                             <Text style={styles.providerMeta}>·</Text>
                             <Feather name="star" size={11} color={colors.accentText} strokeWidth={2} />
-                            <Text style={styles.providerMeta} maxFontSizeMultiplier={1.3}>
+                            <Text style={styles.providerMeta}>
                               {Number(rating).toFixed(1)}
                             </Text>
                           </>
@@ -801,7 +802,6 @@ export default function ActiveBookingScreen({ navigation, route }) {
                 <Feather name="lock" size={12.5} color={colors.textSecondary} />
                 <Text
                   style={styles.escrowCaption}
-                  maxFontSizeMultiplier={1.3}
                 >
                   Payment releases only when you approve the work.
                 </Text>

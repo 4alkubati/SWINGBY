@@ -33,23 +33,23 @@ export default function NearbyCard({ name, initials, logoUrl, rating, reviews, d
         fontSize={15}
       />
       <View style={styles.info}>
-        <Text style={styles.name} numberOfLines={1} maxFontSizeMultiplier={1.3}>
+        <Text style={styles.name} numberOfLines={1}>
           {name}
         </Text>
         <View style={styles.metaRow} accessible={false}>
           <Feather name="star" size={11} color={colors.textPrimary} />
-          <Text style={styles.rating} maxFontSizeMultiplier={1.3}>
+          <Text style={styles.rating}>
             {rating}
           </Text>
-          <Text style={styles.dotSep} maxFontSizeMultiplier={1.3}>·</Text>
-          <Text style={styles.meta} maxFontSizeMultiplier={1.3}>
+          <Text style={styles.dotSep}>·</Text>
+          <Text style={styles.meta}>
             {reviews} reviews
           </Text>
         </View>
       </View>
       {distance ? (
         <View style={styles.distPill}>
-          <Text style={styles.distText} maxFontSizeMultiplier={1.2}>
+          <Text style={styles.distText}>
             {distance}
           </Text>
         </View>

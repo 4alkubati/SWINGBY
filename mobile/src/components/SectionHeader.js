@@ -19,7 +19,7 @@ export default function SectionHeader({
     <View style={[styles.row, style]}>
       <View style={styles.left}>
         {isHeading ? (
-          <Text variant="h1" accessibilityRole="header" maxFontSizeMultiplier={1.4}>
+          <Text variant="h1" accessibilityRole="header">
             {title}
           </Text>
         ) : (
@@ -27,17 +27,20 @@ export default function SectionHeader({
             variant="label"
             style={styles.label}
             accessibilityRole="header"
-            maxFontSizeMultiplier={1.4}
           >
             {title}
           </Text>
         )}
         {typeof count === 'number' && count > 0 && (
           <View style={styles.countBadge}>
+            {/* Kept, raised from 1.2: countBadge is a fixed 22x22 circle
+                (minWidth/height set, no overflow:hidden) — a two-digit count
+                at 2.0x would push the digits past the circle's edge. 1.4
+                still gives real headroom without that. */}
             <Text
               variant="caption"
               style={styles.countText}
-              maxFontSizeMultiplier={1.2}
+              maxFontSizeMultiplier={1.4}
             >
               {count}
             </Text>
@@ -55,7 +58,6 @@ export default function SectionHeader({
           <Text
             variant="smallMedium"
             style={styles.action}
-            maxFontSizeMultiplier={1.3}
           >
             {actionLabel}
           </Text>

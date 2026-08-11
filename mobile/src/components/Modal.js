@@ -91,7 +91,6 @@ export default function Modal({ visible, onClose, title, children }) {
               <Animated.Text
                 style={{ fontFamily: 'SpaceGrotesk_700Bold', fontSize: 20, color: colors.textPrimary }}
                 accessibilityRole="header"
-                maxFontSizeMultiplier={1.4}
               >
                 {title}
               </Animated.Text>
