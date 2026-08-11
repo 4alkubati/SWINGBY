@@ -163,18 +163,11 @@ export default function DisputeFlowScreen({ route, navigation }) {
       await haptics.successTap();
       navigation.goBack();
     } catch (err) {
-      // Endpoint not yet live — api.js interceptor unwraps to detail string only,
-      // so match FastAPI's "Not Found" detail (no HTTP status reaches err.message).
-      if (err.message?.toLowerCase().includes('not found')) {
-        toast.show({
-          type: 'info',
-          text1: 'Submitted',
-          text2: 'Our team will contact you within 24h.',
-        });
-        navigation.goBack();
-      } else {
-        toast.show({ type: 'error', text1: 'Submission failed', text2: err.message });
-      }
+      // POST /disputes/ is live (backend/app/api/disputes.py) and legitimately
+      // 404s with "Booking not found" when booking_id doesn't exist — that is
+      // a real failure, not a sign the endpoint is missing. Show it like any
+      // other error instead of faking a success toast.
+      toast.show({ type: 'error', text1: 'Submission failed', text2: err.message });
     } finally {
       setSubmitting(false);
     }
