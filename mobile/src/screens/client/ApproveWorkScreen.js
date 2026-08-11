@@ -50,6 +50,21 @@ function formatClock(seconds) {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 }
 
+// F023: proof.submitted_at was rendered as the hardcoded literal "finished
+// today" for every proof, regardless of when it was actually submitted.
+// Compare calendar days against now instead of assuming "today".
+function submittedWhen(iso) {
+  if (!iso) return null;
+  const submitted = new Date(iso);
+  if (Number.isNaN(submitted.getTime())) return null;
+  const now = new Date();
+  const startOf = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const days = Math.round((startOf(now) - startOf(submitted)) / 86400000);
+  if (days <= 0) return 'finished today';
+  if (days === 1) return 'finished yesterday';
+  return `finished ${submitted.toLocaleDateString('en-CA', { month: 'short', day: 'numeric' })}`;
+}
+
 // ─── One swipeable column ────────────────────────────────────────────────────
 // Each side pages through its OWN set, independently, so the client can hold a
 // before shot still while swiping the afters (spec §1).
@@ -365,7 +380,7 @@ export default function ApproveWorkScreen({ route, navigation }) {
           {businessName} sent proof
         </Text>
         <Text style={styles.heroSub} numberOfLines={2}>
-          {[proof?.service_category, proof?.submitted_at ? 'finished today' : null]
+          {[proof?.service_category, submittedWhen(proof?.submitted_at)]
             .filter(Boolean)
             .join(' · ') || 'Review the photos before you release payment.'}
         </Text>
