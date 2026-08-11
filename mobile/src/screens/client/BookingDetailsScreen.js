@@ -837,12 +837,16 @@ export default function BookingDetailsScreen({ route, navigation }) {
   }
 
   // ── Ready ──
-  const worker = booking?.worker ?? booking?.employee ?? {};
+  // Backend attaches the assignee at `booking.assignee` (bookings.py
+  // _attach_assignee) — there is no `booking.worker` or `booking.employee`
+  // key. F050: this used to read those non-existent keys, so `worker` was
+  // always `{}` and workerJobs silently fell through to review_count.
+  const worker = booking?.assignee ?? {};
   const workerName = worker.name ?? worker.full_name ?? 'Worker';
   const workerRole = worker.role_title ?? 'Service Provider';
   const companyName = booking?.business_name ?? worker.company_name ?? '';
   const workerRating = parseFloat(worker.avg_rating ?? worker.rating ?? 0);
-  const workerJobs = worker.job_count ?? worker.review_count ?? 0;
+  const workerJobs = worker.jobs_completed ?? 0;
 
   const payPill = paymentPillStyle(booking?.payment_status);
   // Both sides now. This was clients-only because CancellationFlow lived in
@@ -1050,7 +1054,7 @@ export default function BookingDetailsScreen({ route, navigation }) {
             <Inline spacing="base" align="center">
               {/* Avatar with shadow wrap */}
               <View style={shadows.subtle}>
-                {worker.is_business ? (
+                {worker.type === 'business' ? (
                   <BusinessLogo uri={booking?.business_logo} name={workerName} size={64} />
                 ) : (
                   <Avatar size="lg" name={workerName} source={worker.avatar_url ?? worker.photo_url} />
