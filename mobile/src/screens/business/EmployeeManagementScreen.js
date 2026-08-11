@@ -129,7 +129,14 @@ function EmployeeEditModal({ employee, visible, onClose, onSaved }) {
       } else if (!isActive && employee.is_active !== false) {
         await api.patch(`/employees/${employee.id}/deactivate`);
       }
-      onSaved({ ...employee, role_title: roleTitle, is_active: isActive });
+      // F103: role_title used to only update local state — nothing sent it to
+      // the backend, so the next refetch silently reverted it. PATCH
+      // /employees/{id} persists it for real.
+      const trimmedRole = roleTitle.trim();
+      if (trimmedRole !== (employee.role_title || '')) {
+        await api.patch(`/employees/${employee.id}`, { role_title: trimmedRole || null });
+      }
+      onSaved({ ...employee, role_title: trimmedRole, is_active: isActive });
       onClose();
     } catch (err) {
       Alert.alert('Error', err.message || 'Could not save changes.');

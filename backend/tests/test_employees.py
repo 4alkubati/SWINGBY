@@ -111,6 +111,77 @@ class TestCreateEmployeeTriggerRow:
         assert body["employee"]["user_id"] == "emp-user-1"
 
 
+class TestUpdateEmployee:
+    """PATCH /employees/{id} — F103: EmployeeEditModal's Role Title field had
+    no endpoint to persist to; the mobile fix now calls this."""
+
+    def test_updates_role_title_for_own_business(self, test_client, as_owner):
+        biz_stub = SupabaseTableStub(select_data={"id": "biz-1"})
+        emp_stub = SupabaseTableStub(
+            select_data={"id": "emp-1"},
+            update_data=[{"id": "emp-1", "role_title": "Senior Cleaner"}],
+        )
+
+        def _table(name):
+            return {"businesses": biz_stub, "employees": emp_stub}[name]
+
+        with patch("app.api.employees.supabase") as mock_supabase:
+            mock_supabase.table.side_effect = _table
+            response = test_client.patch(
+                "/employees/emp-1",
+                json={"role_title": "Senior Cleaner"},
+                headers={"Authorization": "Bearer test-token"},
+            )
+
+        assert response.status_code == 200, response.text
+        assert response.json()["employee"]["role_title"] == "Senior Cleaner"
+
+        update_calls = [c for c in emp_stub.calls if c[0] == "update"]
+        assert len(update_calls) == 1
+        assert update_calls[0][1][0] == {"role_title": "Senior Cleaner"}
+
+        # Scoped to the owner's own business, not any employee id.
+        eq_calls = [c for c in emp_stub.calls if c[0] == "eq"]
+        assert ("eq", ("business_id", "biz-1"), {}) in eq_calls
+
+    def test_404s_for_an_employee_outside_the_caller_s_business(
+        self, test_client, as_owner
+    ):
+        biz_stub = SupabaseTableStub(select_data={"id": "biz-1"})
+        # The ownership-scoped select finds nothing: this employee belongs to
+        # a different business.
+        emp_stub = SupabaseTableStub(select_data=None)
+
+        def _table(name):
+            return {"businesses": biz_stub, "employees": emp_stub}[name]
+
+        with patch("app.api.employees.supabase") as mock_supabase:
+            mock_supabase.table.side_effect = _table
+            response = test_client.patch(
+                "/employees/someone-elses-emp",
+                json={"role_title": "Senior Cleaner"},
+                headers={"Authorization": "Bearer test-token"},
+            )
+
+        assert response.status_code == 404
+
+    def test_non_owner_is_forbidden(self, test_client):
+        app.dependency_overrides[get_current_user] = lambda: {
+            "id": "u1",
+            "role": "client",
+        }
+        try:
+            response = test_client.patch(
+                "/employees/emp-1",
+                json={"role_title": "Senior Cleaner"},
+                headers={"Authorization": "Bearer test-token"},
+            )
+        finally:
+            app.dependency_overrides.pop(get_current_user, None)
+
+        assert response.status_code == 403
+
+
 class TestPublicRosterHardening:
     """GET /employees/business/{id} — public trust card, hardened 2026-07-21:
     only active employees, and user_id never in the select/payload."""

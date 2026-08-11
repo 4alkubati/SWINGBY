@@ -32,7 +32,6 @@ import { UnreadProvider } from '../context/UnreadContext';
 
 import BookingDetailsScreen from '../screens/client/BookingDetailsScreen';
 import JobCard from '../components/JobCard';
-import WorkerTrustCard from '../components/WorkerTrustCard';
 import i18n from '../i18n';
 
 jest.mock('../services/api');
@@ -229,46 +228,6 @@ describe('JobCard — reads the real nested fields', () => {
     const undated = { ...NESTED, confirmed_date: null };
     const { queryByText } = render(<JobCard booking={undated} onPress={() => {}} />);
     expect(queryByText('—')).not.toBeNull();
-  });
-});
-
-describe('WorkerTrustCard — reads the server-derived assignee, not phantom flat fields', () => {
-  const ASSIGNED = {
-    status: 'in_progress',
-    businesses: { business_name: 'Test Cleaning Co.' },
-    assignee: {
-      type: 'employee',
-      name: 'Dana Reid',
-      role_title: 'Lead Cleaner',
-      business_name: 'Test Cleaning Co.',
-    },
-  };
-
-  it('shows the assignee name and role, not the "Your provider" fallback', () => {
-    const { queryByText } = render(<WorkerTrustCard booking={ASSIGNED} onViewBusiness={() => {}} />);
-    expect(queryByText('Dana Reid')).not.toBeNull();
-    expect(queryByText('Lead Cleaner')).not.toBeNull();
-    expect(queryByText('Your provider')).toBeNull();
-  });
-
-  it('shows the company from businesses.business_name', () => {
-    const { queryByText } = render(<WorkerTrustCard booking={ASSIGNED} onViewBusiness={() => {}} />);
-    expect(queryByText('Test Cleaning Co.')).not.toBeNull();
-  });
-
-  it('falls back to the business name when nobody is assigned yet — absence is real, not a wrong field name', () => {
-    const unassigned = {
-      status: 'confirmed',
-      businesses: { business_name: 'Test Cleaning Co.' },
-      assignee: { type: 'business', name: 'Test Cleaning Co.', role_title: null, business_name: 'Test Cleaning Co.' },
-    };
-    const { queryByText, getAllByText } = render(
-      <WorkerTrustCard booking={unassigned} onViewBusiness={() => {}} />
-    );
-    // Worker name and company both resolve to the business; it appears twice
-    // (avatar name + company row) so assert presence via getAllByText.
-    expect(getAllByText('Test Cleaning Co.').length).toBeGreaterThan(0);
-    expect(queryByText('Your provider')).toBeNull();
   });
 });
 

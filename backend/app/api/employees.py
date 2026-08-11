@@ -14,6 +14,10 @@ router = APIRouter()
 # ── Schemas ───────────────────────────────────────────────────────────────────
 
 
+class EmployeeUpdate(BaseModel):
+    role_title: Optional[str] = Field(None, max_length=120)
+
+
 class EmployeeCreate(BaseModel):
     email: EmailStr = Field(..., max_length=320)
     password: str = Field(..., min_length=8, max_length=128)
@@ -215,6 +219,53 @@ def list_employees(current_user: dict = Depends(get_current_user)):
     except Exception:
         logger.exception("Could not list employees")
         raise HTTPException(status_code=400, detail="Could not list employees")
+
+
+@router.patch("/{employee_id}")
+def update_employee(
+    employee_id: str,
+    data: EmployeeUpdate,
+    current_user: dict = Depends(get_current_user),
+):
+    """F103 — EmployeeEditModal's Role Title field had no endpoint to save to;
+    handleSave only merged it into local state, which the next GET /employees/
+    (refocus, restart, pull-to-refresh) silently reverted. This is that
+    endpoint. Deliberately narrow (role_title only) — deactivate/reactivate
+    already own the is_active toggle and stay separate.
+    """
+    if current_user["role"] != "business_owner":
+        raise HTTPException(
+            status_code=403, detail="Only business owners can update employees"
+        )
+
+    biz = _get_owner_business(current_user["id"])
+    emp = (
+        supabase.table("employees")
+        .select("id")
+        .eq("id", employee_id)
+        .eq("business_id", biz["id"])
+        .single()
+        .execute()
+    )
+    if not emp.data:
+        raise HTTPException(
+            status_code=404, detail="Employee not found in your business"
+        )
+
+    updates = data.model_dump(exclude_unset=True)
+    if "role_title" in updates and updates["role_title"] is not None:
+        updates["role_title"] = updates["role_title"].strip() or None
+    if not updates:
+        raise HTTPException(status_code=400, detail="No fields to update")
+
+    try:
+        res = (
+            supabase.table("employees").update(updates).eq("id", employee_id).execute()
+        )
+        return {"message": "Employee updated", "employee": res.data[0]}
+    except Exception:
+        logger.exception("Could not update employee")
+        raise HTTPException(status_code=400, detail="Could not update employee")
 
 
 @router.patch("/{employee_id}/deactivate")

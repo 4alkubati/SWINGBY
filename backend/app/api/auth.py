@@ -112,6 +112,49 @@ def _validate_phone(v: Optional[str]) -> Optional[str]:
     return v
 
 
+def _normalize_referral_code(v: Optional[str]) -> Optional[str]:
+    """Blank -> None; otherwise uppercase + strip. Never raises — an
+    unparseable/garbage code degrades to a no-op claim later, it must
+    not block signup. Shared by every entry point that can create an
+    account (email signup, social exchange, social id-token) so the
+    normalization can't drift between them."""
+    if v is None:
+        return None
+    v = str(v).strip().upper()
+    return v or None
+
+
+def _claim_referral_code(code: str, user_id: str) -> None:
+    """Best-effort referral claim — never blocks the signup/social flow that
+    calls it. Shared tail for /auth/signup and the two social entry points
+    (F128): a beta-invite code was only ever attributed on the email/password
+    path because the social flows had nowhere to send it. GAP-AUDIT-2026-07-18
+    #4: an invalid/unknown code (or a self-refer edge case) silently degrades
+    to a no-op; nothing sensitive is logged either way."""
+    try:
+        ref_res = (
+            supabase.table("referrals")
+            .select("referrer_id")
+            .eq("code", code)
+            .is_("referee_id", "null")
+            .limit(1)
+            .execute()
+        )
+        ref_rows = ref_res.data or []
+        if ref_rows and ref_rows[0]["referrer_id"] != user_id:
+            supabase.table("referrals").insert(
+                {
+                    "code": code,
+                    "referrer_id": ref_rows[0]["referrer_id"],
+                    "referee_id": user_id,
+                    "status": "joined",
+                    "credit_cents": 0,
+                }
+            ).execute()
+    except Exception:
+        pass
+
+
 # ── Schemas ───────────────────────────────────────────────────────────────────
 
 
@@ -171,13 +214,7 @@ class SignupRequest(BaseModel):
     @field_validator("referral_code", mode="before")
     @classmethod
     def normalize_referral_code(cls, v: Optional[str]) -> Optional[str]:
-        """Blank -> None; otherwise uppercase + strip. Never raises — an
-        unparseable/garbage code degrades to a no-op claim later, it must
-        not block signup."""
-        if v is None:
-            return None
-        v = str(v).strip().upper()
-        return v or None
+        return _normalize_referral_code(v)
 
 
 class LoginRequest(BaseModel):
@@ -275,32 +312,8 @@ def signup(request: Request, data: SignupRequest):
             _record_terms_acceptance(user_id)
 
         # Referral code claim — best-effort, never blocks signup.
-        # GAP-AUDIT-2026-07-18 #4: an invalid/unknown code (or a self-refer
-        # edge case) silently degrades to a no-op; nothing sensitive is
-        # logged either way.
         if data.referral_code:
-            try:
-                ref_res = (
-                    supabase.table("referrals")
-                    .select("referrer_id")
-                    .eq("code", data.referral_code)
-                    .is_("referee_id", "null")
-                    .limit(1)
-                    .execute()
-                )
-                ref_rows = ref_res.data or []
-                if ref_rows and ref_rows[0]["referrer_id"] != user_id:
-                    supabase.table("referrals").insert(
-                        {
-                            "code": data.referral_code,
-                            "referrer_id": ref_rows[0]["referrer_id"],
-                            "referee_id": user_id,
-                            "status": "joined",
-                            "credit_cents": 0,
-                        }
-                    ).execute()
-            except Exception:
-                pass
+            _claim_referral_code(data.referral_code, user_id)
 
         # Welcome email — best-effort, never blocks signup
         try:
@@ -847,6 +860,7 @@ def _social_session_response(
     requested_role: Optional[str],
     name_hint: Optional[Dict[str, str]] = None,
     accepted_terms: bool = False,
+    referral_code: Optional[str] = None,
 ) -> dict:
     """Shared tail for both social flows: provision, then return the SAME
     token envelope /auth/login returns so the mobile client has one code path.
@@ -863,6 +877,13 @@ def _social_session_response(
     # column exists to preserve.
     if is_new and accepted_terms:
         _record_terms_acceptance(user.id)
+
+    # F128 — same "only on the way in" rule as terms acceptance: a returning
+    # social user who happens to carry a stale invite param from a link they
+    # tapped once must never claim a second referral against their own
+    # existing account.
+    if is_new and referral_code:
+        _claim_referral_code(referral_code, user.id)
 
     return {
         "access_token": session.access_token,
@@ -910,6 +931,11 @@ class SocialExchangeRequest(BaseModel):
     provider: str = Field("google", max_length=16)
     role: Optional[str] = Field(None, max_length=32)
     accepted_terms: bool = False
+    # F128 — the beta-invite code rides through Signup's route params on the
+    # email path (referral_code) but had no field to travel on here, so a
+    # tester who signed up with Google after tapping an invite link never got
+    # attributed. Same normalization as SignupRequest.referral_code.
+    referral_code: Optional[str] = Field(None, max_length=32)
 
     @field_validator("provider")
     @classmethod
@@ -924,6 +950,11 @@ class SocialExchangeRequest(BaseModel):
     def validate_role(cls, v):
         return _validate_social_role(v)
 
+    @field_validator("referral_code", mode="before")
+    @classmethod
+    def normalize_referral_code(cls, v: Optional[str]) -> Optional[str]:
+        return _normalize_referral_code(v)
+
 
 class SocialIdTokenRequest(BaseModel):
     provider: str = Field(..., max_length=16)
@@ -933,6 +964,9 @@ class SocialIdTokenRequest(BaseModel):
     last_name: Optional[str] = Field(None, max_length=80)
     role: Optional[str] = Field(None, max_length=32)
     accepted_terms: bool = False
+    # F128 — same as SocialExchangeRequest.referral_code: this is the Apple
+    # (and native-Google) door, which needs the same attribution path.
+    referral_code: Optional[str] = Field(None, max_length=32)
 
     @field_validator("provider")
     @classmethod
@@ -946,6 +980,11 @@ class SocialIdTokenRequest(BaseModel):
     @classmethod
     def validate_role(cls, v):
         return _validate_social_role(v)
+
+    @field_validator("referral_code", mode="before")
+    @classmethod
+    def normalize_referral_code(cls, v: Optional[str]) -> Optional[str]:
+        return _normalize_referral_code(v)
 
 
 class SocialRoleRequest(BaseModel):
@@ -1009,7 +1048,11 @@ def social_exchange(request: Request, data: SocialExchangeRequest):
         raise HTTPException(status_code=401, detail="Social sign-in failed")
 
     return _social_session_response(
-        res, data.provider, data.role, accepted_terms=data.accepted_terms
+        res,
+        data.provider,
+        data.role,
+        accepted_terms=data.accepted_terms,
+        referral_code=data.referral_code,
     )
 
 
@@ -1052,6 +1095,7 @@ def social_id_token(request: Request, data: SocialIdTokenRequest):
         data.role,
         name_hint or None,
         accepted_terms=data.accepted_terms,
+        referral_code=data.referral_code,
     )
 
 

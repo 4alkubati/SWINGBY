@@ -10,6 +10,16 @@
 //   images        string[]  — array of image URIs
 //   initialIndex  number    — which photo to open on (default 0)
 //   onClose       () => void
+//   reportIds     (string|null)[] — F028, optional. Parallel to `images`: the
+//                 reportable-content id behind each photo (e.g. a
+//                 booking_photos.id), or null/undefined where the photo has
+//                 no individually-reportable row (a client's own job-post
+//                 photo is a URL on service_posts.image_urls, not a row of
+//                 its own — report the POST for those, not the photo). Only
+//                 rendered when both this AND `onReport` are supplied, and
+//                 only for the currently-open photo, mirroring the icon-
+//                 button pattern ReviewCard already uses.
+//   onReport      (id: string) => void
 import React, { useRef, useState, useEffect } from 'react';
 import {
   Modal,
@@ -26,7 +36,9 @@ import SwImage from './SwImage';
 import Text from './Text';
 import i18n from '../i18n';
 
-export default function ImageViewer({ visible, images = [], initialIndex = 0, onClose }) {
+export default function ImageViewer({
+  visible, images = [], initialIndex = 0, onClose, reportIds, onReport,
+}) {
   const insets = useSafeAreaInsets();
   const scrollRef = useRef(null);
   const [width, setWidth] = useState(Dimensions.get('window').width);
@@ -101,6 +113,20 @@ export default function ImageViewer({ visible, images = [], initialIndex = 0, on
           <Feather name="x" size={24} color="#fff" />
         </TouchableOpacity>
 
+        {/* F028 — report the currently-open photo, when it has a reportable
+            id behind it. */}
+        {onReport && reportIds?.[index] ? (
+          <TouchableOpacity
+            style={[styles.reportBtn, { top: insets.top + 8 }]}
+            onPress={() => onReport(reportIds[index])}
+            accessibilityRole="button"
+            accessibilityLabel={i18n.t('moderation.reportPhoto')}
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+          >
+            <Feather name="flag" size={20} color="#fff" />
+          </TouchableOpacity>
+        ) : null}
+
         {/* Page counter (only when there's more than one photo) */}
         {count > 1 && (
           <View style={[styles.counter, { bottom: insets.bottom + 16 }]}>
@@ -120,6 +146,16 @@ const styles = StyleSheet.create({
   closeBtn: {
     position: 'absolute',
     right: 16,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  reportBtn: {
+    position: 'absolute',
+    left: 16,
     width: 40,
     height: 40,
     borderRadius: 20,

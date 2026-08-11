@@ -4,8 +4,13 @@
 // in chat." Once a quote is accepted the thread's identity is the BOOKING, so
 // this card sits above the message list and carries the real booking state —
 // confirmed date/time, address, status, service, payment — and taps through
-// to the full BookingDetails screen. The demoted quote lives in the small
-// floating bubble (QuoteBubble), not here.
+// to the full BookingDetails screen. The demoted quote sits directly below
+// this card, rendered by ChatScreen's renderQuoteCard() as a ChatQuoteCard in
+// its collapsed `status="accepted"` record (F131, 2026-08-11): a separate
+// QuoteBubble component was built the same week as this file for that same
+// role, but ChatQuoteCard grew its own accepted/expired/declined resolved-
+// record states two days later and that's what actually shipped — QuoteBubble
+// was never wired to anything and has been deleted.
 //
 // Fed by bookingMeta (GET /bookings/{id}) which ChatScreen already fetches.
 import React from 'react';

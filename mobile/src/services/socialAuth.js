@@ -57,17 +57,19 @@ function extractCode(url) {
  * browser tab, captures the returned auth code, exchanges it for a session,
  * persists the tokens, and resolves the user's profile.
  *
- * @param {{ role?: 'client'|'business_owner', acceptedTerms?: boolean }} opts
+ * @param {{ role?: 'client'|'business_owner', acceptedTerms?: boolean, referralCode?: string }} opts
  *   `role` is only honoured for a brand-new account — an existing user keeps
  *   the role they already have (enforced server-side). Omit it when the button
  *   lives on the Login screen; pass it from the Signup screen's role picker.
  *   `acceptedTerms` is the signup screen's consent checkbox; it is recorded
  *   against the account when this call creates one, and ignored otherwise.
+ *   `referralCode` (F128) is a beta-invite code carried from a deep link; like
+ *   acceptedTerms it is only ever claimed against a brand-new account.
  * @returns {Promise<{ profile: object, isNewUser: boolean, role: string }>}
  * @throws {Error} 'cancelled' if the user dismisses the browser; otherwise a
  *   message suitable for display.
  */
-export async function signInWithGoogle({ role, acceptedTerms } = {}) {
+export async function signInWithGoogle({ role, acceptedTerms, referralCode } = {}) {
   const redirectTo = getRedirectUri();
 
   // Step 1 — ask the backend for the authorize URL + PKCE verifier.
@@ -98,6 +100,7 @@ export async function signInWithGoogle({ role, acceptedTerms } = {}) {
     provider: 'google',
     role: role || undefined,
     accepted_terms: acceptedTerms || undefined,
+    referral_code: referralCode || undefined,
   });
 
   await storeSession(data.access_token, data.refresh_token);
@@ -113,7 +116,7 @@ export async function signInWithGoogle({ role, acceptedTerms } = {}) {
  * an identityToken. Kept here so both social paths share one storage + /me tail.
  */
 export async function signInWithIdToken({
-  provider, idToken, nonce, firstName, lastName, role, acceptedTerms,
+  provider, idToken, nonce, firstName, lastName, role, acceptedTerms, referralCode,
 }) {
   const data = await api.post('/auth/social/id-token', {
     provider,
@@ -123,6 +126,7 @@ export async function signInWithIdToken({
     last_name: lastName || undefined,
     role: role || undefined,
     accepted_terms: acceptedTerms || undefined,
+    referral_code: referralCode || undefined,
   });
 
   await storeSession(data.access_token, data.refresh_token);

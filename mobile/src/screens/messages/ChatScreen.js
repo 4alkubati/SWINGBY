@@ -15,8 +15,6 @@ import Animated, {
   withSpring,
   withTiming,
   withSequence,
-  withRepeat,
-  withDelay,
   FadeIn,
   FadeOut,
 } from 'react-native-reanimated';
@@ -102,74 +100,13 @@ function timeStr(dateStr) {
   return new Date(dateStr).toLocaleTimeString('en-CA', { hour: '2-digit', minute: '2-digit' });
 }
 
-// ─── Typing indicator ─────────────────────────────────────────────────────────
-
-function TypingDot({ delay }) {
-  const translateY = useSharedValue(0);
-
-  useEffect(() => {
-    translateY.value = withDelay(
-      delay,
-      withRepeat(
-        withSequence(
-          withTiming(-5, { duration: 320 }),
-          withTiming(0, { duration: 320 }),
-        ),
-        -1,
-        false,
-      ),
-    );
-    return () => {
-      translateY.value = 0;
-    };
-  }, []);
-
-  const dotStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: translateY.value }],
-  }));
-
-  return <Animated.View style={[typingStyles.dot, dotStyle]} />;
-}
-
-function TypingIndicator() {
-  return (
-    <Animated.View
-      entering={FadeIn.duration(200)}
-      exiting={FadeOut.duration(200)}
-      style={typingStyles.wrapper}
-    >
-      <Surface elevation="subtle" rounded="pill" padding={0} style={typingStyles.bubble}>
-        <Inline spacing="xs" style={typingStyles.inner}>
-          <TypingDot delay={0} />
-          <TypingDot delay={140} />
-          <TypingDot delay={280} />
-        </Inline>
-      </Surface>
-    </Animated.View>
-  );
-}
-
-const typingStyles = StyleSheet.create({
-  wrapper: {
-    alignSelf: 'flex-start',
-    marginLeft: spacing.base,
-    marginBottom: spacing.sm,
-  },
-  bubble: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-  },
-  inner: {
-    height: 20,
-    alignItems: 'center',
-  },
-  dot: {
-    width: 7,
-    height: 7,
-    borderRadius: 3.5,
-    backgroundColor: colors.textSecondary,
-  },
-});
+// F021: a typing indicator (TypingDot/TypingIndicator + isTyping state) used
+// to live here, but there was never a real signal behind it — no typing-event
+// endpoint, no websocket presence, nothing anywhere ever called setIsTyping.
+// It was permanently "simulated" (per its own state comment) and could never
+// turn on. Wiring a real one needs a backend presence/typing-event channel
+// that doesn't exist yet; that's a new feature, not a mobile-only fix, so it
+// was removed rather than left dead. See TRIAGE-mobile-2026-08-10.md F021.
 
 // ─── Message bubble ───────────────────────────────────────────────────────────
 
@@ -366,7 +303,6 @@ export default function ChatScreen({ navigation, route }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [sending, setSending] = useState(false);
-  const [isTyping, setIsTyping] = useState(false); // simulated typing indicator state
   // Older-history paging (ported from MessageThreadScreen when the two screens
   // were consolidated): the API returns the newest `limit` messages plus a
   // `next_before` cursor for the page behind them.
@@ -1332,7 +1268,6 @@ export default function ChatScreen({ navigation, route }) {
 
           return <MessageBubble item={item} isMine={isMine} onReport={reportMessage} />;
         }}
-        ListFooterComponent={isTyping ? <TypingIndicator /> : null}
       />
 
       {/* Off-platform-leakage notice (item 31) — always visible above the

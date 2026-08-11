@@ -851,6 +851,149 @@ class TestSocialExchange:
         assert response.status_code == 401
 
 
+class TestSocialReferralClaim:
+    """F128 — a beta-invite code only ever rode through the email/password
+    signup path (SignupRequest.referral_code); social sign-up had no field to
+    carry it, so a tester who followed an invite link and signed up with
+    Google/Apple never got attributed. These pin the fix on both social
+    entry points.
+    """
+
+    def _tables(self, users_rows, referrer_id="referrer-1"):
+        from tests.conftest import SupabaseTableStub
+
+        users = _FakeTable(users_rows)
+        referrals = SupabaseTableStub(select_data=[{"referrer_id": referrer_id}])
+
+        def _table(name):
+            return {"users": users, "referrals": referrals}[name]
+
+        return users, referrals, _table
+
+    def test_exchange_claims_the_referral_for_a_new_user(self, test_client):
+        app.state.limiter.reset()
+        _, referrals, _table = self._tables(
+            [
+                {
+                    "id": "social-user-id",
+                    "first_name": "",
+                    "last_name": "",
+                    "email": "new.user@gmail.com",
+                    "role": "client",
+                    "avatar_url": None,
+                    "is_suspended": False,
+                    "deleted_at": None,
+                }
+            ]
+        )
+        with patch("app.api.auth.supabase") as mock_supabase, patch(
+            "app.api.auth.supabase_auth"
+        ) as mock_auth:
+            mock_supabase.table.side_effect = _table
+            mock_auth.auth.exchange_code_for_session.return_value = _social_auth_res(
+                metadata={"given_name": "Ada", "family_name": "Lovelace"}
+            )
+            response = test_client.post(
+                "/auth/social/exchange",
+                json={
+                    "code": "auth-code",
+                    "code_verifier": "verifier",
+                    "provider": "google",
+                    "referral_code": "friend1",
+                },
+            )
+
+        assert response.status_code == 200, response.text
+        assert response.json()["is_new_user"] is True
+
+        insert_calls = [c for c in referrals.calls if c[0] == "insert"]
+        assert len(insert_calls) == 1
+        payload = insert_calls[0][1][0]
+        # Normalized upper-case, matching SignupRequest.referral_code.
+        assert payload["code"] == "FRIEND1"
+        assert payload["referrer_id"] == "referrer-1"
+        assert payload["referee_id"] == "social-user-id"
+
+    def test_returning_user_never_claims_a_second_referral(self, test_client):
+        """Same 'only on the way in' rule as terms-consent stamping — a
+        returning social user carrying a stale invite param must not claim
+        against their own already-existing account."""
+        app.state.limiter.reset()
+        _, referrals, _table = self._tables(
+            [
+                {
+                    "id": "social-user-id",
+                    "first_name": "Returning",
+                    "last_name": "User",
+                    "email": "returning@gmail.com",
+                    "role": "client",
+                    "avatar_url": None,
+                    "is_suspended": False,
+                    "deleted_at": None,
+                }
+            ]
+        )
+        with patch("app.api.auth.supabase") as mock_supabase, patch(
+            "app.api.auth.supabase_auth"
+        ) as mock_auth:
+            mock_supabase.table.side_effect = _table
+            mock_auth.auth.exchange_code_for_session.return_value = _social_auth_res()
+            response = test_client.post(
+                "/auth/social/exchange",
+                json={
+                    "code": "auth-code",
+                    "code_verifier": "verifier",
+                    "provider": "google",
+                    "referral_code": "friend1",
+                },
+            )
+
+        assert response.status_code == 200, response.text
+        assert response.json()["is_new_user"] is False
+        assert [c for c in referrals.calls if c[0] == "insert"] == []
+
+    def test_id_token_path_claims_the_referral_too(self, test_client):
+        """The Apple/native-Google door needs the same attribution path as
+        the PKCE exchange above."""
+        app.state.limiter.reset()
+        _, referrals, _table = self._tables(
+            [
+                {
+                    "id": "social-user-id",
+                    "first_name": "",
+                    "last_name": "",
+                    "email": "new.user@icloud.com",
+                    "role": "client",
+                    "avatar_url": None,
+                    "is_suspended": False,
+                    "deleted_at": None,
+                }
+            ]
+        )
+        with patch("app.api.auth.supabase") as mock_supabase, patch(
+            "app.api.auth.supabase_auth"
+        ) as mock_auth:
+            mock_supabase.table.side_effect = _table
+            mock_auth.auth.sign_in_with_id_token.return_value = _social_auth_res(
+                email="new.user@icloud.com"
+            )
+            response = test_client.post(
+                "/auth/social/id-token",
+                json={
+                    "provider": "apple",
+                    "id_token": "a.b.c",
+                    "first_name": "Ada",
+                    "last_name": "Lovelace",
+                    "referral_code": "friend1",
+                },
+            )
+
+        assert response.status_code == 200, response.text
+        insert_calls = [c for c in referrals.calls if c[0] == "insert"]
+        assert len(insert_calls) == 1
+        assert insert_calls[0][1][0]["referee_id"] == "social-user-id"
+
+
 class TestSocialIdToken:
     """POST /auth/social/id-token — the Apple-on-iOS door (and native Google).
 

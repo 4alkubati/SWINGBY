@@ -14,6 +14,8 @@ import { useAuth } from '../../context/AuthContext';
 import { api } from '../../services/api';
 import JobOpportunityCard from '../../components/JobOpportunityCard';
 import SendQuoteSheet from '../../components/SendQuoteSheet';
+import ReportSheet from '../../components/ReportSheet';
+import * as moderation from '../../services/moderation';
 import SectionHeader from '../../components/SectionHeader';
 import EarningsHero from '../../components/EarningsHero';
 import HeaderGlow from '../../components/HeaderGlow';
@@ -126,6 +128,9 @@ export default function DashboardScreen({ navigation }) {
   const [selectedPost, setSelectedPost] = useState(null);
   const [sheetVisible, setSheetVisible] = useState(false);
   const [dismissedIds, setDismissedIds] = useState(new Set());
+  // F028 — Guideline 1.2(b): report on the one surface a business ever sees a
+  // client's job post in detail.
+  const [reportTarget, setReportTarget] = useState(null);
   // B10 — an opportunity the business already quoted kept sitting under "New
   // opportunities" offering "Send quote" a second time. /service-posts/ has no
   // idea who quoted; /interests/mine is the only place that knows. Same fix,
@@ -553,6 +558,10 @@ export default function DashboardScreen({ navigation }) {
                 highlighted
                 onSendQuote={() => openQuoteSheet(post)}
                 onPass={() => passPost(post)}
+                onReport={(p) => setReportTarget({
+                  targetType: moderation.REPORT_TARGETS.SERVICE_POST,
+                  targetId: p.id,
+                })}
               />
             ))}
             {visiblePosts.slice(1, 3).map((post) => (
@@ -561,6 +570,10 @@ export default function DashboardScreen({ navigation }) {
                 post={post}
                 compact
                 onSendQuote={() => openQuoteSheet(post)}
+                onReport={(p) => setReportTarget({
+                  targetType: moderation.REPORT_TARGETS.SERVICE_POST,
+                  targetId: p.id,
+                })}
               />
             ))}
           </View>
@@ -638,6 +651,13 @@ export default function DashboardScreen({ navigation }) {
             });
           }
         }}
+      />
+
+      <ReportSheet
+        visible={!!reportTarget}
+        targetType={reportTarget?.targetType}
+        targetId={reportTarget?.targetId}
+        onClose={() => setReportTarget(null)}
       />
     </View>
   );

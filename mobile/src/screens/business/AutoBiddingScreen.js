@@ -516,9 +516,24 @@ export default function AutoBiddingScreen({ navigation }) {
                 )}
               </Pressable>
             ) : (
+              // F121 — same fix as BusinessProfileScreen's Plan block: stop
+              // pointing owners at a swingbyy.com page that doesn't exist
+              // (web/pre-launch only serves /, /privacy, /terms, /cookies,
+              // /contact; the real billing routes live in web/launch, which
+              // per docs/DEPLOY.md is never deployed). support@swingbyy.com
+              // is real and already used the same way in SettingsScreen; a
+              // support mailto is not a 3.1.1 purchase link.
               <Text style={styles.upgradeBody}>
-                Auto-bidding is part of a Swingbyy plan. Plans are managed on
-                swingbyy.com.
+                {i18n.t('subscription.autoBiddingPlan')}
+                {' '}
+                {i18n.t('subscription.managedByTeam')}
+                {' '}
+                <Text
+                  onPress={() => Linking.openURL('mailto:support@swingbyy.com')}
+                  style={{ color: colors.accentText, fontWeight: '600' }}
+                >
+                  {i18n.t('settings.contactUs')}
+                </Text>
               </Text>
             )}
           </View>

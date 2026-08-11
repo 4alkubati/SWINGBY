@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, ScrollView, TouchableOpacity, Pressable, StyleSheet } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import Text from './Text';
 import Button from './Button';
@@ -11,10 +11,18 @@ import { colors, spacing, radius } from '../theme/tokens';
 
 // Business "new opportunity" card. Highlighted (new) variant uses purple-tinted border.
 // Buttons row: Send quote (primary, flex:1) + Pass (secondary, ~88px wide, both 44px tall).
+//
+// F028 — this is the only surface a business ever sees a client's job post
+// in detail (there is no separate "post detail" screen; open posts are
+// cards here and on JobManagementScreen, quoted from a sheet). REPORT_TARGETS
+// has carried SERVICE_POST since the moderation migration landed, but nothing
+// ever rendered a control for it. `onReport`, when supplied, mirrors the same
+// icon-button pattern ReviewCard already uses for REPORT_TARGETS.REVIEW.
 export default function JobOpportunityCard({
   post,
   onSendQuote,
   onPass,
+  onReport,
   highlighted = false,
   compact = false,
 }) {
@@ -73,6 +81,16 @@ export default function JobOpportunityCard({
             <Text variant="caption" color="secondary">{photoCount}</Text>
           </View>
         )}
+        {onReport && (
+          <Pressable
+            onPress={() => onReport(post)}
+            hitSlop={10}
+            accessibilityRole="button"
+            accessibilityLabel={i18n.t('moderation.reportPost')}
+          >
+            <Feather name="more-horizontal" size={16} color={colors.textSecondary} />
+          </Pressable>
+        )}
         {/* The mock renders "Quote →". The arrow is drawn as a Feather icon,
             not a glyph — iconography is Feather-only (POLISH-TIPS §5). */}
         <Button
@@ -116,6 +134,17 @@ export default function JobOpportunityCard({
             {priceLabel}
           </Text>
         ) : null}
+        {onReport && (
+          <Pressable
+            onPress={() => onReport(post)}
+            hitSlop={10}
+            accessibilityRole="button"
+            accessibilityLabel={i18n.t('moderation.reportPost')}
+            style={{ marginTop: 2 }}
+          >
+            <Feather name="more-horizontal" size={18} color={colors.textSecondary} />
+          </Pressable>
+        )}
       </View>
 
       {client ? (

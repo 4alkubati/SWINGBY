@@ -55,6 +55,12 @@ const translations = {
     'settings.signOut': 'Sign Out',
     'settings.version': 'Version',
 
+    // Subscription — F121: this used to point owners at "swingbyy.com" for
+    // plan changes, a URL that (per docs/DEPLOY.md) has no billing page
+    // behind it. Replaced with a real support.contactUs mailto action.
+    'subscription.managedByTeam': 'Plans are managed by our team.',
+    'subscription.autoBiddingPlan': 'Auto-bidding is part of a Swingbyy plan.',
+
     // Profile
     'profile.title': 'Edit Profile',
     'profile.firstName': 'First name',
@@ -385,6 +391,8 @@ const translations = {
     'settings.contactUs': 'Nous contacter',
     'settings.signOut': 'Se déconnecter',
     'settings.version': 'Version',
+    'subscription.managedByTeam': 'Les forfaits sont gérés par notre équipe.',
+    'subscription.autoBiddingPlan': 'Les offres automatiques font partie d\'un forfait Swingbyy.',
 
     // Profile
     'profile.title': 'Modifier le profil',
@@ -709,6 +717,8 @@ const translations = {
     'settings.contactUs': 'اتصل بنا',
     'settings.signOut': 'تسجيل الخروج',
     'settings.version': 'الإصدار',
+    'subscription.managedByTeam': 'تتم إدارة الخطط من قبل فريقنا.',
+    'subscription.autoBiddingPlan': 'المزايدة التلقائية جزء من خطة Swingbyy.',
 
     // Profile
     'profile.title': 'تعديل الملف الشخصي',
@@ -1232,6 +1242,8 @@ const moderationEn = {
   'moderation.reportPost': 'Report this post',
   'moderation.reportBusiness': 'Report this business',
   'moderation.reportUser': 'Report this person',
+  'moderation.reportPhoto': 'Report this photo',
+  'moderation.reportVoiceNote': 'Report this voice note',
 
   // Report sheet
   'moderation.reportTitle': 'Report',
@@ -1305,6 +1317,8 @@ Object.assign(translations['fr-CA'], {
   'moderation.report': 'Signaler',
   'moderation.reportMessage': 'Signaler ce message',
   'moderation.reportReview': 'Signaler cet avis',
+  'moderation.reportPhoto': 'Signaler cette photo',
+  'moderation.reportVoiceNote': 'Signaler cette note vocale',
   'moderation.reportPost': 'Signaler cette annonce',
   'moderation.reportBusiness': 'Signaler cette entreprise',
   'moderation.reportUser': 'Signaler cette personne',
@@ -1377,6 +1391,8 @@ Object.assign(translations.ar, {
   'moderation.report': 'إبلاغ',
   'moderation.reportMessage': 'الإبلاغ عن هذه الرسالة',
   'moderation.reportReview': 'الإبلاغ عن هذا التقييم',
+  'moderation.reportPhoto': 'الإبلاغ عن هذه الصورة',
+  'moderation.reportVoiceNote': 'الإبلاغ عن هذه الرسالة الصوتية',
   'moderation.reportPost': 'الإبلاغ عن هذا الطلب',
   'moderation.reportBusiness': 'الإبلاغ عن هذه الشركة',
   'moderation.reportUser': 'الإبلاغ عن هذا الشخص',
@@ -1979,6 +1995,8 @@ Object.assign(translations.uk, {
   'settings.contactUs': 'Зв’язатися з нами',
   'settings.signOut': 'Вийти',
   'settings.version': 'Версія',
+  'subscription.managedByTeam': 'Тарифи керуються нашою командою.',
+  'subscription.autoBiddingPlan': 'Автоставки входять до тарифу Swingbyy.',
   'profile.title': 'Редагувати профіль',
   'profile.firstName': 'Ім’я',
   'profile.lastName': 'Прізвище',
@@ -2313,6 +2331,8 @@ Object.assign(translations.uk, {
   'moderation.report': 'Поскаржитись',
   'moderation.reportMessage': 'Поскаржитись на це повідомлення',
   'moderation.reportReview': 'Поскаржитись на цей відгук',
+  'moderation.reportPhoto': 'Поскаржитись на це фото',
+  'moderation.reportVoiceNote': 'Поскаржитись на це голосове повідомлення',
   'moderation.reportPost': 'Поскаржитись на це оголошення',
   'moderation.reportBusiness': 'Поскаржитись на цю компанію',
   'moderation.reportUser': 'Поскаржитись на цю людину',
