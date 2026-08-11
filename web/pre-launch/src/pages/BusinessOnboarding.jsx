@@ -24,7 +24,7 @@ const API_BASE = import.meta.env.VITE_API_URL || 'https://swingbyy-api.onrender.
 // which this step never collects, and there is no `business_hours` table.
 // Rather than silently drop that input while still implying it was saved,
 // those two steps say plainly that they're for planning only.
-async function createBusiness({ bizName, bizDesc, bizAddress, category }) {
+async function createBusiness({ bizName, bizDesc, bizAddress, bizPhone, category }) {
   const { data: { session } } = await supabase.auth.getSession()
   const token = session?.access_token
   if (!token) throw new Error('Your session expired — please log in again.')
@@ -52,11 +52,39 @@ async function createBusiness({ bizName, bizDesc, bizAddress, category }) {
     // "You already have a business registered" is not a failure from the
     // user's point of view — it means this claim is already true.
     if (res.status === 400 && /already have a business/i.test(detail)) {
+      await saveOwnerPhone(token, bizPhone)
       return { alreadyExists: true }
     }
     throw new Error(detail)
   }
+  await saveOwnerPhone(token, bizPhone)
   return res.json()
+}
+
+// The phone number this form collects had nowhere to go: `businesses` has no
+// phone column and BusinessCreate has no phone field, so it was typed in and
+// dropped on the floor. It belongs on the OWNER's user row, which does have
+// one, and PATCH /auth/me accepts it (auth.py::ProfileUpdate).
+//
+// Called only once the business is known to exist — saving a contact number
+// for a business that failed to create would be worse than not saving it.
+// Non-fatal on its own: the business is what the wizard promises, and failing
+// the whole flow over a secondary detail would lose the real work. The error is
+// logged, not swallowed silently.
+async function saveOwnerPhone(token, bizPhone) {
+  if (!bizPhone?.trim()) return
+  try {
+    await fetch(`${API_BASE}/auth/me`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ phone: bizPhone.trim() }),
+    })
+  } catch (e) {
+    console.error('Could not save the contact phone number', e)
+  }
 }
 
 const SERVICE_CATEGORIES = [
@@ -111,6 +139,7 @@ export default function BusinessOnboarding() {
         bizName,
         bizDesc,
         bizAddress,
+        bizPhone,
         category: t(`categories.${selectedServices[0]}`),
       })
       setDir(1)
@@ -122,8 +151,17 @@ export default function BusinessOnboarding() {
     }
   }
 
+  // SINGLE select, deliberately. This was a multi-select, but only
+  // `selectedServices[0]` was ever sent — a business that picked three got one,
+  // silently. `businesses.category` is a single column and BusinessCreate takes
+  // a single `category` string (backend/app/api/businesses.py), so there is
+  // nowhere for the others to go.
+  //
+  // Offering one choice is the honest fix: the alternative — keep the grid and
+  // caption it "only the first is saved" — is a worse question to ask someone.
+  // If multi-category is wanted, it needs a schema change first, not a UI one.
   function toggleService(key) {
-    setSelectedServices((prev) => prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key])
+    setSelectedServices((prev) => (prev[0] === key ? [] : [key]))
   }
 
   function toggleDay(day) {
@@ -201,7 +239,7 @@ export default function BusinessOnboarding() {
               <motion.div key="services" custom={dir} variants={slideVariants} initial="enter" animate="center" exit="exit" transition={{ duration: 0.3 }}>
                 <div className={s.stepLabel}>Step 3 of 6</div>
                 <h2 className={s.stepTitle}>Services offered</h2>
-                <p className={s.stepSubtitle}>Select the categories that best describe your services.</p>
+                <p className={s.stepSubtitle}>Select the category that best describes your services.</p>
                 <div className={s.categoryGrid}>
                   {SERVICE_CATEGORIES.map(({ key, icon: Icon }) => (
                     <button key={key} className={`${s.chip} ${selectedServices.includes(key) ? s.chipSelected : ''}`} onClick={() => toggleService(key)}>
@@ -212,7 +250,7 @@ export default function BusinessOnboarding() {
                 </div>
                 <div className={s.actions}>
                   <Button variant="secondary" onClick={back}>{t('common.back')}</Button>
-                  <Button variant="primary" onClick={next} disabled={selectedServices.length === 0} title={selectedServices.length === 0 ? 'Select at least one service to continue' : undefined}>{t('common.next')}</Button>
+                  <Button variant="primary" onClick={next} disabled={selectedServices.length === 0} title={selectedServices.length === 0 ? 'Select a category to continue' : undefined}>{t('common.next')}</Button>
                 </div>
               </motion.div>
             )}
