@@ -721,7 +721,13 @@ export default function BookingDetailsScreen({ route, navigation }) {
   const handleCancel = () => {
     navigation.navigate('CancellationFlow', {
       bookingId,
-      scheduledDate: booking?.scheduled_at,
+      // F031: NOT booking.scheduled_at — that field falls back to
+      // proposed_date_1 (see fetchBooking, for the display-only "Scheduled: —"
+      // fix), but the server's classify_cancellation_timing() only ever reads
+      // confirmed_date (backend/app/api/bookings.py). Feeding the preview a
+      // merely-proposed date can show a late/no_show penalty tier the server
+      // will never actually charge (no confirmed_date == 100% refund).
+      scheduledDate: booking?.confirmed_date,
       // F030: CancellationFlowScreen's penalty preview needs a price to show
       // a dollar figure — without it every preview computed off a silent 0.
       quotedPrice: booking?.total_amount,

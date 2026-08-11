@@ -827,7 +827,12 @@ export default function ActiveBookingScreen({ navigation, route }) {
                       // a full-refund preview even when the server would
                       // actually charge a late/no-show fee. Same fields
                       // BookingDetailsScreen's cancel button passes.
-                      scheduledDate: booking.confirmed_date || booking.proposed_date_1,
+                      // F031: confirmed_date only — NOT proposed_date_1. The
+                      // server's classify_cancellation_timing() (backend
+                      // bookings.py) reads confirmed_date alone; a merely
+                      // proposed date can show a penalty tier the server will
+                      // never actually charge.
+                      scheduledDate: booking.confirmed_date,
                       quotedPrice: booking.total_amount,
                     })
                   }
