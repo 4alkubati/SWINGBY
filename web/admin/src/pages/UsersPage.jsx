@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import api from '@/services/api'
 import DataTable from '@/components/DataTable'
 import styles from './UsersPage.module.css'
@@ -22,8 +22,18 @@ function formatDate(value) {
   }
 }
 
+// F052 fix (2026-08-11): GET /admin/users never returns `name` or
+// `full_name` (admin.py:64: "id, email, first_name, last_name, role,
+// is_suspended, created_at") — only first_name/last_name. Every read of
+// `user.name || user.full_name` was always undefined, so every Name cell,
+// the drawer, and search all rendered "—" / matched nothing.
+function displayName(user) {
+  const name = [user.first_name, user.last_name].filter(Boolean).join(' ').trim()
+  return name || user.email || '—'
+}
+
 function userInitials(user) {
-  const name = user.name || user.full_name || user.email || '?'
+  const name = displayName(user)
   return name.split(/\s+/).slice(0, 2).map((s) => s[0]).join('').toUpperCase()
 }
 
@@ -51,7 +61,7 @@ function buildColumns(onToggleSuspend) {
       label: 'Name',
       sortable: true,
       render: (val, row) => (
-        <span>{row.name || row.full_name || '—'}</span>
+        <span>{displayName(row)}</span>
       ),
     },
     {
@@ -71,28 +81,36 @@ function buildColumns(onToggleSuspend) {
       ),
     },
     {
-      key: 'is_active',
+      // F051 fix (2026-08-11): backend only ever returns `is_suspended`
+      // (admin.py:64) — never `is_active`. This read `row.is_active`, which
+      // is always undefined, so Status showed "Active" for every user
+      // including suspended ones. (Distinct key from the toggle column below
+      // — DataTable uses `col.key` as a React key, and both columns read the
+      // same field.)
+      key: 'status',
       label: 'Status',
       sortable: false,
-      render: (val) => (
-        val !== false
+      render: (_val, row) => (
+        !row.is_suspended
           ? <span className="badge badge-green">Active</span>
           : <span className="badge badge-red">Inactive</span>
       ),
     },
     {
-      key: 'suspended',
+      // F051 fix: same field — `suspended` doesn't exist on the row, so this
+      // checkbox was always unchecked no matter the user's real state.
+      key: 'suspend_toggle',
       label: 'Suspended',
       sortable: false,
-      render: (val, row) => (
+      render: (_val, row) => (
         <label
           className="toggle"
           onClick={(e) => e.stopPropagation()}
-          aria-label={`${val ? 'Unsuspend' : 'Suspend'} ${row.name || row.email}`}
+          aria-label={`${row.is_suspended ? 'Unsuspend' : 'Suspend'} ${displayName(row)}`}
         >
           <input
             type="checkbox"
-            checked={!!val}
+            checked={!!row.is_suspended}
             onChange={() => onToggleSuspend(row)}
           />
           <span className="toggle-track" />
@@ -124,7 +142,7 @@ function SkeletonRows() {
 
 function UserDrawer({ user, onClose, onToggleSuspend }) {
   const isOpen = !!user
-  const drawerRef = React.useRef(null)
+  const drawerRef = useRef(null)
 
   // Trap body scroll and focus when open; handle Escape
   useEffect(() => {
@@ -204,7 +222,7 @@ function UserDrawer({ user, onClose, onToggleSuspend }) {
               <div className={styles.avatarCircle}>{userInitials(user)}</div>
               <div>
                 <div className={styles.drawerName}>
-                  {user.name || user.full_name || '—'}
+                  {displayName(user)}
                 </div>
                 <div className={styles.drawerEmail}>{user.email}</div>
               </div>
@@ -227,7 +245,7 @@ function UserDrawer({ user, onClose, onToggleSuspend }) {
               <div className={styles.detailRow}>
                 <span className={styles.detailLabel}>Status</span>
                 <span className={styles.detailValue}>
-                  {user.is_active !== false
+                  {!user.is_suspended
                     ? <span className="badge badge-green">Active</span>
                     : <span className="badge badge-red">Inactive</span>}
                 </span>
@@ -248,21 +266,21 @@ function UserDrawer({ user, onClose, onToggleSuspend }) {
               <div className={styles.drawerSectionBody}>
                 <div>
                   <div className={styles.drawerSectionLabel}>
-                    {user.suspended ? 'Account suspended' : 'Account active'}
+                    {user.is_suspended ? 'Account suspended' : 'Account active'}
                   </div>
                   <div className={styles.drawerSectionSub}>
-                    {user.suspended
+                    {user.is_suspended
                       ? 'User cannot sign in or use the platform.'
                       : 'User has full access to the platform.'}
                   </div>
                 </div>
                 <label
                   className="toggle"
-                  aria-label={user.suspended ? 'Unsuspend user' : 'Suspend user'}
+                  aria-label={user.is_suspended ? 'Unsuspend user' : 'Suspend user'}
                 >
                   <input
                     type="checkbox"
-                    checked={!!user.suspended}
+                    checked={!!user.is_suspended}
                     onChange={() => onToggleSuspend(user)}
                   />
                   <span className="toggle-track" />
@@ -307,7 +325,7 @@ export default function UsersPage() {
   const filteredUsers = useMemo(() => {
     const q = search.trim().toLowerCase()
     return users.filter((u) => {
-      const name  = (u.name || u.full_name || '').toLowerCase()
+      const name  = displayName(u).toLowerCase()
       const email = (u.email || '').toLowerCase()
       const matchesSearch = !q || name.includes(q) || email.includes(q)
       const matchesRole   =
@@ -317,11 +335,19 @@ export default function UsersPage() {
     })
   }, [users, search, roleFilter])
 
+  // F051 fix (2026-08-11): always POSTed to /admin/suspend-user/ regardless
+  // of current state — /admin/unsuspend-user/{id} exists (admin.py:208) but
+  // was never called, so a suspended user could never be reinstated from
+  // this page. Neither endpoint reads a request body (admin.py:96-131,
+  // 208-227 both take no body param); the direction is which route you hit.
   async function toggleSuspend(user) {
+    const path = user.is_suspended
+      ? `/admin/unsuspend-user/${user.id}`
+      : `/admin/suspend-user/${user.id}`
     try {
-      await api.post(`/admin/suspend-user/${user.id}`, { suspended: !user.suspended })
+      await api.post(path)
       setUsers((prev) =>
-        prev.map((u) => u.id === user.id ? { ...u, suspended: !u.suspended } : u)
+        prev.map((u) => u.id === user.id ? { ...u, is_suspended: !u.is_suspended } : u)
       )
     } catch (err) {
       alert(err.response?.data?.detail || 'Action failed')
