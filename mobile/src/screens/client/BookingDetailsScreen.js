@@ -722,6 +722,9 @@ export default function BookingDetailsScreen({ route, navigation }) {
     navigation.navigate('CancellationFlow', {
       bookingId,
       scheduledDate: booking?.scheduled_at,
+      // F030: CancellationFlowScreen's penalty preview needs a price to show
+      // a dollar figure — without it every preview computed off a silent 0.
+      quotedPrice: booking?.total_amount,
     });
   };
 

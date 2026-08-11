@@ -822,6 +822,13 @@ export default function ActiveBookingScreen({ navigation, route }) {
                   onPress={() =>
                     navigation.navigate('CancellationFlow', {
                       bookingId: booking.id,
+                      // F030: without these, CancellationFlowScreen's local
+                      // penalty preview falls back to 'no_date'/$0 and shows
+                      // a full-refund preview even when the server would
+                      // actually charge a late/no-show fee. Same fields
+                      // BookingDetailsScreen's cancel button passes.
+                      scheduledDate: booking.confirmed_date || booking.proposed_date_1,
+                      quotedPrice: booking.total_amount,
                     })
                   }
                   style={{
