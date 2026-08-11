@@ -93,7 +93,7 @@ function MetricCard({ label, value, sub, showProgress }) {
       <Text style={styles.metricLabel}>{label}</Text>
       <Text style={styles.metricValue}>{value}</Text>
       {sub && <Text style={styles.metricSub}>{sub}</Text>}
-      {showProgress && typeof showProgress === 'number' && (
+      {typeof showProgress === 'number' && showProgress > 0 && (
         <ProgressBar value={showProgress} />
       )}
     </View>

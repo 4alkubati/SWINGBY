@@ -547,7 +547,7 @@ function StepDetails({
 }
 
 // ─── Step 2: Budget ──────────────────────────────────────────────────────────
-function StepBudget({ budget, setBudget, date, setDate, time, setTime }) {
+function StepBudget({ budget, setBudget, date, setDate, time, setTime, descError }) {
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [pickerTime, setPickerTime] = useState(() => time || new Date());
@@ -598,7 +598,7 @@ function StepBudget({ budget, setBudget, date, setDate, time, setTime }) {
         <Stack spacing="sm">
           <Text variant="display3">Budget &amp; timing</Text>
           <Text variant="body" color="secondary">
-            Optional — helps businesses tailor their quote.
+            Budget is required. Date &amp; time are optional — they help businesses tailor their quote.
           </Text>
         </Stack>
         <Stack spacing="base">
@@ -608,6 +608,7 @@ function StepBudget({ budget, setBudget, date, setDate, time, setTime }) {
             onChangeText={setBudget}
             keyboardType="numeric"
             placeholder="e.g. 150"
+            error={descError}
           />
           <Inline spacing="sm" align="flex-start">
             <TouchableOpacity
@@ -734,7 +735,7 @@ function StepBudget({ budget, setBudget, date, setDate, time, setTime }) {
 // paths from disagreeing about price (PAYMENTS.md §The rule). "Your budget" in
 // the summary is the client's own input echoed back, not a total; the total
 // (budget + client-side service fee) exists only inside the sheet.
-function StepConfirm({ category, description, address, budget, date, time, photos, onSubmit, submitting, targetBusinessName }) {
+function StepConfirm({ category, description, address, budget, date, time, photos, onSubmit, submitting, targetBusinessName, descError }) {
   const rows = [
     // On the targeted "Book now" flow the client never picked a category (it's
     // derived from the business server-side), so show the business instead.
@@ -844,6 +845,10 @@ function StepConfirm({ category, description, address, budget, date, time, photo
             correct rule, wrong premise: this button charges nothing. Naming a
             figure on it is precisely how it read as a charge. Both paths now
             describe the action they actually perform. */}
+        {!!descError && (
+          <Text variant="caption" color="danger">{descError}</Text>
+        )}
+
         <Button
           label={
             targetBusinessName
@@ -1268,6 +1273,7 @@ export default function PostJobScreen() {
               setDate={setDate}
               time={time}
               setTime={setTime}
+              descError={descError}
             />
           )}
           {stepKey === 'confirm' && (
@@ -1283,6 +1289,7 @@ export default function PostJobScreen() {
               onSubmit={handleReviewCta}
               submitting={submitting}
               targetBusinessName={targetBusinessName}
+              descError={descError}
             />
           )}
         </View>
