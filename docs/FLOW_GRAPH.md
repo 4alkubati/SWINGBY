@@ -112,6 +112,7 @@ flowchart LR
   Profile --> Favorites
   Profile --> PaymentMethod
   Profile --> ReferralScreen
+  Profile --> NotificationsCenter
   Profile --> Settings
   Profile --> HelpFAQ
   Profile --> PrivacyPolicy
@@ -179,7 +180,6 @@ flowchart LR
   My_Jobs --> QuoteComparison
   My_Jobs --> Chat
   My_Jobs --> BookingDetails
-  My_Jobs --> ApproveWork
   My_Jobs --> Invoice
   My_Jobs --> PostJob
   My_Jobs --> Review
@@ -207,6 +207,7 @@ flowchart LR
   Chat --> BookingDetails
   Messages --> Chat
   Messages --> QuoteComparison
+  favorites_empty_browse_test --> Home
   BottomNav --> PostJob
   TermsConsent --> TermsOfService
   TermsConsent --> PrivacyPolicy
@@ -250,6 +251,6 @@ Mobile calls to endpoints **not exposed by the backend** (path params normalized
 
 - Navigators: **5**  
 - Registered screens: **74**  
-- Navigation edges: **145**  
+- Navigation edges: **147**  
 - Backend routes: **140**  
-- Mobile API calls: **155**  
+- Mobile API calls: **156**  

@@ -183,6 +183,11 @@ export default function ProfileScreen({ navigation }) {
 
           {/* ── Block 2 — Settings / Help / Privacy / Terms ── */}
           <Animated.View entering={FadeInDown.duration(240).delay(160)} style={styles.block}>
+            {/* F025 — NotificationsCenter is registered in ClientNavigator but
+                only BusinessProfileScreen ever navigated to it, so a client
+                could never reach their own notification history. Same row the
+                business side has (BusinessProfileScreen: "Notifications"). */}
+            <MenuRow label="Notifications" onPress={() => navigation.navigate('NotificationsCenter')} />
             <MenuRow label="Settings" onPress={() => navigation.navigate('Settings')} />
             <MenuRow label="Help & FAQ" onPress={() => navigation.navigate('HelpFAQ')} />
             <MenuRow label="Privacy Policy" onPress={() => navigation.navigate('PrivacyPolicy')} />
