@@ -757,10 +757,16 @@ export default function BusinessProfileScreen({ navigation, route }) {
               label={i18n.t('wallet.title')}
               onPress={() => navigation.navigate('Wallet')}
             />
-            <ManageRow
-              label="How you get paid"
-              onPress={() => navigation.navigate('PaymentMethod')}
-            />
+            {/* F061 — "How you get paid" used to point here at PaymentMethodScreen,
+                which is written entirely as the CLIENT's payer flow ("When you
+                accept a quote, the full amount is charged...", an "Add a card"
+                button backed by services/cards.js — "the client's saved cards").
+                A business owner got offered someone else's screen. The real
+                payout door is the Wallet row directly above (D5, Stripe Connect
+                onboarding) — this row was a leftover duplicate pointing at the
+                wrong destination, not a second real feature. Removed rather than
+                relabelled: Wallet already covers everything a business needs to
+                know about getting paid. */}
             <ManageRow
               label="Invoices"
               onPress={() => navigation.navigate('BusinessInvoices')}
