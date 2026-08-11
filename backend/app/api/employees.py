@@ -223,7 +223,9 @@ def list_employees(current_user: dict = Depends(get_current_user)):
 
 @router.patch("/{employee_id}")
 def update_employee(
-    employee_id: str, data: EmployeeUpdate, current_user: dict = Depends(get_current_user)
+    employee_id: str,
+    data: EmployeeUpdate,
+    current_user: dict = Depends(get_current_user),
 ):
     """F103 — EmployeeEditModal's Role Title field had no endpoint to save to;
     handleSave only merged it into local state, which the next GET /employees/
@@ -258,10 +260,7 @@ def update_employee(
 
     try:
         res = (
-            supabase.table("employees")
-            .update(updates)
-            .eq("id", employee_id)
-            .execute()
+            supabase.table("employees").update(updates).eq("id", employee_id).execute()
         )
         return {"message": "Employee updated", "employee": res.data[0]}
     except Exception:
