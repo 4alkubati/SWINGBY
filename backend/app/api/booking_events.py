@@ -17,10 +17,13 @@ Authorisation
 
 Side-effects
 ------------
-On 'completed' we also call the existing payment-release path used by
-PATCH /bookings/{id}/complete — kept in one place there (we just emit the
-event here; the client app can call /complete separately when ready, or
-we can extend this endpoint later to chain the two).
+This endpoint does NOT release payment, on 'completed' or any other event
+type — it only inserts a booking_events row and pushes a notification.
+Completion + escrow release happen exclusively through
+PATCH /bookings/{id}/complete (see bookings.py), which the mobile app calls
+via LiveStatusActions -> onAdvance -> PATCH /bookings/{id}/complete
+(JobManagementScreen.js's StatusTracker/handleAdvance). Do not assume a
+'completed' event posted here has moved any money.
 """
 
 from __future__ import annotations
