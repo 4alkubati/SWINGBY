@@ -158,7 +158,10 @@ export default function DashboardPage() {
         <KpiCard label="Clients" value={fmt(clients)} sub="role = client" />
         <KpiCard label="Business owners" value={fmt(bizOwners)} sub="role = business_owner" />
         <KpiCard label="Active bookings" value={fmt(activeCount)} sub="confirmed + in progress" />
-        <KpiCard label="Completed jobs" value={fmt(completedCount)} sub={`${gmv > 0 ? ((completedCount / totalBookings * 100) || 0).toFixed(0) : 0}% completion rate`} />
+        {/* F043 fix (2026-08-11): gated on gmv > 0 (gross dollar value) instead
+            of totalBookings > 0 (the actual denominator) — a nonzero
+            completed-jobs count next to a $0 GMV forced "0% completion rate". */}
+        <KpiCard label="Completed jobs" value={fmt(completedCount)} sub={`${totalBookings > 0 ? ((completedCount / totalBookings * 100) || 0).toFixed(0) : 0}% completion rate`} />
       </div>
 
       {/* ── Recent bookings ── */}
