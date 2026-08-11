@@ -1147,7 +1147,12 @@ export default function BookingDetailsScreen({ route, navigation }) {
                     variant="caption"
                     style={{ color: payPill.text, fontWeight: '700', letterSpacing: 0.8 }}
                   >
-                    {paymentPillLabel(booking?.payment_status)}
+                    {/* F126: bookings.payment_status never carries
+                        'paid_off_platform' — payments_offplatform.py sets
+                        that on the payments row (payment.status) and writes
+                        'fully_released' to bookings.payment_status instead.
+                        Prefer the payments-row status so that case can fire. */}
+                    {paymentPillLabel(payment?.status || booking?.payment_status)}
                   </Text>
                 </View>
               </Inline>
