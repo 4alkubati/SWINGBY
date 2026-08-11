@@ -71,7 +71,7 @@ SHEET_PAYLOAD = {
     "publishable_key": "pk_test_abc",
     "amount_cents": 20000,
     "currency": "cad",
-    "merchant_display_name": "SwingBy",
+    "merchant_display_name": "Swingbyy",
 }
 
 
@@ -192,8 +192,8 @@ class TestPaymentIntentHappyPath:
         assert body["ephemeral_key"] == "ek_test_abc"
         assert body["customer_id"] == "cus_test_abc"
         assert body["publishable_key"] == "pk_test_abc"
-        # Branding: the native sheet must say SwingBy, not "Stripe".
-        assert body["merchant_display_name"] == "SwingBy"
+        # Branding: the native sheet must say Swingbyy, not "Stripe".
+        assert body["merchant_display_name"] == "Swingbyy"
         assert body["currency"] == "cad"
 
     def test_charges_the_booking_total_in_cents(
