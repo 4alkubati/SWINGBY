@@ -168,7 +168,11 @@ export default function SignupScreen({ navigation, route }) {
       // takes the currently-selected role (defaults to 'client' on step 0),
       // and the backend still lets a fresh account switch to business later.
       const role = roleIndex === 0 ? 'client' : 'business_owner';
-      const { profile } = await fn({ role, acceptedTerms });
+      // F128: the email path already threads inviteCode -> referral_code
+      // (see handleSignup below); this used to stop here, so a tester who
+      // followed a beta-invite link and signed up with Apple/Google got the
+      // referral silently unattributed.
+      const { profile } = await fn({ role, acceptedTerms, referralCode: inviteCode });
       updateUser(profile);
       try { await registerForPushAsync(); } catch { /* non-fatal */ }
     } catch (err) {

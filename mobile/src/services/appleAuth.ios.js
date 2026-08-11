@@ -53,11 +53,11 @@ function randomNonce(length = 32) {
  * authorization, so we forward whatever it gives us; the backend falls back to
  * the email local-part when it is absent.
  *
- * @param {{ role?: 'client'|'business_owner', acceptedTerms?: boolean }} opts
+ * @param {{ role?: 'client'|'business_owner', acceptedTerms?: boolean, referralCode?: string }} opts
  * @returns {Promise<{ profile: object, isNewUser: boolean, role: string }>}
  * @throws {Error} 'cancelled' when the user dismisses the sheet.
  */
-export async function signInWithApple({ role, acceptedTerms } = {}) {
+export async function signInWithApple({ role, acceptedTerms, referralCode } = {}) {
   const rawNonce = randomNonce();
   const hashedNonce = await Crypto.digestStringAsync(
     Crypto.CryptoDigestAlgorithm.SHA256,
@@ -94,5 +94,6 @@ export async function signInWithApple({ role, acceptedTerms } = {}) {
     lastName: credential.fullName?.familyName || undefined,
     role,
     acceptedTerms,
+    referralCode,
   });
 }
