@@ -69,7 +69,7 @@ function QueueRow({ item, onPress }) {
       <Surface elevation="subtle" rounded="card" padding="base">
         <Inline spacing="md" align="flex-start">
           <Avatar
-            uri={item.reported?.avatar_url}
+            source={item.reported?.avatar_url}
             name={fullName(item.reported)}
             size={34}
           />

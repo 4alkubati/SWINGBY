@@ -136,7 +136,7 @@ export default function ReportReviewScreen({ route, navigation }) {
           <Surface elevation="subtle" rounded="card" padding="base">
             <Inline spacing="md" align="center">
               <Avatar
-                uri={report.reported?.avatar_url}
+                source={report.reported?.avatar_url}
                 name={fullName(report.reported)}
                 size={40}
               />

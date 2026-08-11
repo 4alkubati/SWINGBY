@@ -36,7 +36,13 @@ const FAQS = [
     id: '3',
     question: 'When does payment happen?',
     answer:
-      'When you accept a quote, your payment is placed in escrow — it\'s charged to your card but held securely. The business never receives the money until the job is completed and photo proof is submitted. Once you confirm the job is done (or after an automatic 24-hour window), the payment is released to the business. This protects both sides.',
+      // F057: dropped "and photo proof is submitted" — proof photos are
+      // optional (bookings.py:1258-1262, "most jobs never get photos"), and
+      // release never waits on them. The 24-hour-window clause is accurate:
+      // completion opens a 24h approval window (services/approvals.py) that
+      // either the client's approval or the timeout can close — that is not
+      // the old flat-manual claim, it's real self-healing-on-read logic.
+      'When you accept a quote, your payment is placed in escrow — it\'s charged to your card but held securely. The business never receives the money until the job is marked complete. Once you confirm the job is done (or after an automatic 24-hour window), the payment is released to the business. This protects both sides.',
   },
   {
     id: '4',
