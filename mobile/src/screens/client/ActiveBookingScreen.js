@@ -733,14 +733,23 @@ export default function ActiveBookingScreen({ navigation, route }) {
                     carries `capture_backed`, true only when a Stripe capture or a
                     recorded off-platform payment stands behind the figure. Trust
                     that, never the total alone. When it is absent (older backend)
-                    we state the amount without claiming anything about it. */}
+                    we state the amount without claiming anything about it.
+
+                    F124: `capture_backed` alone isn't enough — it's also true for
+                    `paid_off_platform` (escrow.was_ever_captured treats cash/
+                    e-transfer as "captured" too), so this used to tell a client
+                    who paid cash that SwingBy was holding their money in escrow
+                    when it never touched the platform. `payment_state.state`
+                    tells the two apart; branch on that instead. */}
                 {Number(booking.total_amount) > 0 && (
                   <DetailRow
                     label="Total"
                     value={
-                      booking.payment_state?.capture_backed
-                        ? `$${booking.total_amount} · held in escrow`
-                        : `$${booking.total_amount} · not paid yet`
+                      booking.payment_state?.state === 'paid_off_platform'
+                        ? `$${booking.total_amount} · ${i18n.t('escrow.status.offPlatform')}`
+                        : booking.payment_state?.capture_backed
+                          ? `$${booking.total_amount} · held in escrow`
+                          : `$${booking.total_amount} · not paid yet`
                     }
                     valueStyle={{
                       color: booking.payment_state?.capture_backed
