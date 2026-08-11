@@ -185,7 +185,7 @@ export default function Dashboard() {
               Book services on the go. Available for iOS and Android.
             </p>
           </div>
-          <button className={styles.ctaBtn}>Download</button>
+          <button className={styles.ctaBtn} onClick={() => navigate('/download')}>Download</button>
         </div>
 
         {/* 5. Recent activity */}
