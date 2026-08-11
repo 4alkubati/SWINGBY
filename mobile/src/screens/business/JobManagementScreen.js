@@ -723,7 +723,7 @@ function JobDetailScreen({ navigation, route }) {
                 {!isDone && booking.status !== 'cancelled' && (
                   <ListItem
                     title="Cancel this job"
-                    subtitle="The client is refunded in full; a penalty may apply to you"
+                    subtitle="The client is refunded in full; a late cancellation is recorded against your standing"
                     left={<Feather name="x-circle" size={16} color={colors.danger} strokeWidth={2} />}
                     onPress={() =>
                       navigation.navigate('CancellationFlow', {
