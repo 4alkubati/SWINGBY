@@ -125,7 +125,7 @@ export default function Button({
       ) : (
         <>
           {icon}
-          <Text variant="bodyMedium" style={{ color: v.text }} maxFontSizeMultiplier={1.3}>
+          <Text variant="bodyMedium" style={{ color: v.text }}>
             {label}
           </Text>
           {iconRight}
