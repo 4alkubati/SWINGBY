@@ -113,3 +113,6 @@ GoogleService-Info.plist
 # These were only ignored by self-written nested .gitignore files — fragile.
 .pytest_cache/
 .ruff_cache/
+
+# graphify knowledge graph — 27MB build artifact, regenerate with `graphify update .`
+graphify-out/

@@ -200,6 +200,47 @@ npx expo start --clear
 
 ---
 
+## Knowledge graph — query it before you grep
+
+`graphify` maps this monorepo (8.7k nodes / 14.8k edges) into `graphify-out/`
+(gitignored, 27 MB). **Locating code by query is far cheaper than repeated
+`grep`/`Read` sweeps**, which is the single biggest token cost in a session.
+
+```
+graphify update .                              # rebuild — AST/tree-sitter, ~60s, NO LLM, zero tokens
+graphify query "how does escrow release" --budget 1500
+graphify god-nodes --top 10                    # architectural hubs
+graphify affected "compute_completion_release_cents"   # reverse impact — what breaks if I change X
+graphify path "PostJobScreen" "release_escrow_on_complete"
+graphify explain "settle_on_accept"
+```
+
+**It is a locator, not an oracle.** It returns nodes with `file:line`, not
+prose — use it to decide *what to Read*, then read only those files. Verify the
+code itself before acting; the graph tells you where, not whether.
+
+⚠️ **`affected` under-reports module-qualified calls, and it has already
+mattered.** `graphify affected "compute_completion_release_cents"` returns 2
+callers; `grep -rn` returns **3**. The one it misses is
+`api/proof_of_work.py:302`, which calls it as
+`escrow.compute_completion_release_cents(...)` — and that caller carried the
+*identical* money bug (F010, 2026-08-10) as the two it does find. Scoping that
+fix from the graph alone would have shipped half of it. **For a change that
+moves money, confirm the caller list with `grep` before you trust the graph.**
+
+Rebuild after any significant merge — it is a snapshot, and a stale graph points
+at moved line numbers. Regenerating costs nothing but a minute.
+
+Two known gaps: 5 JSX files partially extract (bare `&` in JSX text, e.g.
+`BusinessProfileScreen.js:698` "Services & pricing" — valid React, a tree-sitter
+quirk, **not a real syntax error**), and doc/PDF/image semantic passes need an
+LLM key, so only code + SQL are currently mapped.
+
+Complements `docs/FLOW_GRAPH.md`, which stays the authority for screen↔screen
+navigation and route/orphan questions.
+
+---
+
 ## Test Credentials
 
 - Client: `testclient@swingby.dev` / `SwingBy2024!`
