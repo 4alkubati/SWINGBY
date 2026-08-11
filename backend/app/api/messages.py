@@ -161,7 +161,7 @@ def _get_interest_thread(interest_id: str) -> dict:
     res = (
         supabase.table("interests")
         .select(
-            "*, service_posts(id, title, status, client_id), "
+            "*, service_posts(id, title, status, client_id, expires_at), "
             "businesses(business_name, logo_url)"
         )
         .eq("id", interest_id)
@@ -1393,6 +1393,13 @@ def get_interest_messages(
                 "id": interest["id"],
                 "status": interest["status"],
                 "quoted_price": interest.get("quoted_price"),
+                # F020/F046: ChatScreen's quote-status check needs these two to
+                # do the same expiry-clock comparison MessagesScreen's inbox
+                # already does (utils/quoteStatus.quoteExpiry) — without them a
+                # quote the inbox shows "Expired" still renders live Accept &
+                # pay / Decline buttons in the thread.
+                "created_at": interest.get("created_at"),
+                "post_expires_at": interest["service_posts"].get("expires_at"),
                 # Header tap-through to the business profile (client side) —
                 # the interest thread has no bookingMeta to read business_id off.
                 "business_id": interest.get("business_id"),
