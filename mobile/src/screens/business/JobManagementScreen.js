@@ -493,10 +493,12 @@ function JobDetailScreen({ navigation, route }) {
                     </Text>
                   )}
                   {/* See ActiveBookingScreen: a bare `x &&` on a numeric field
-                      renders 0 as a loose text node and red-boxes the app. */}
-                  {Number(booking.total_amount) > 0 && (
+                      renders 0 as a loose text node and red-boxes the app.
+                      F104: this is what you'll RECEIVE (net of the 10% cut),
+                      not the client's gross charge — see paidToBusiness(). */}
+                  {paidToBusiness(booking) > 0 && (
                     <Text variant="smallMedium" style={{ color: colors.success, fontFamily: 'SpaceGrotesk_700Bold', fontVariant: ['tabular-nums'] }}>
-                      ${booking.total_amount} total
+                      ${paidToBusiness(booking)} total
                     </Text>
                   )}
                 </Stack>
@@ -908,6 +910,18 @@ function jobClientName(booking) {
     : (booking.client_name || 'Client');
 }
 
+// F090/F104: these rows used to render booking.total_amount — the client's
+// GROSS charge — in success-green. The business's actual take is total_amount
+// minus SwingBy's 10% cut, and BusinessInvoicesScreen already solved this by
+// reading the backend's honest payment_state block instead of the raw
+// booking total. Same fix, same source of truth, applied here.
+export function paidToBusiness(booking) {
+  const ps = booking.payment_state || {};
+  const released = Number(ps.amount_released || 0);
+  const held = Number(ps.amount_held || 0);
+  return released > 0 ? released : held;
+}
+
 function formatRowTime(date) {
   return date.toLocaleTimeString('en-CA', { hour: 'numeric', minute: '2-digit' });
 }
@@ -937,9 +951,9 @@ function JobRow({ booking, showDate, onPress }) {
               {when ? (showDate ? `${formatRowDate(when)} · ${formatRowTime(when)}` : formatRowTime(when)) : '—'}
             </Text>
           </Inline>
-          {booking.total_amount != null && (
+          {paidToBusiness(booking) > 0 && (
             <Text variant="smallMedium" style={{ color: colors.success, fontFamily: 'SpaceGrotesk_700Bold', fontVariant: ['tabular-nums'] }}>
-              ${booking.total_amount}
+              ${paidToBusiness(booking)}
             </Text>
           )}
         </Inline>
@@ -1001,9 +1015,9 @@ function PastJobRow({ booking, onPress }) {
           <Text variant="small" color="secondary" numberOfLines={1} style={{ flex: 1 }}>
             {service}{when ? ` · ${formatRowDate(when)}` : ''}
           </Text>
-          {booking.total_amount != null && (
+          {paidToBusiness(booking) > 0 && (
             <Text variant="smallMedium" style={{ color: colors.success, fontFamily: 'SpaceGrotesk_700Bold', fontVariant: ['tabular-nums'] }}>
-              ${booking.total_amount}
+              ${paidToBusiness(booking)}
             </Text>
           )}
         </Inline>

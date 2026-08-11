@@ -239,11 +239,17 @@ export default function InvoiceScreen({ navigation, route }) {
                 <Text variant="smallMedium">{money(totals?.paid_to_business)}</Text>
               </Inline>
               <Inline justify="space-between">
-                <Text variant="bodyMedium">Total charged</Text>
+                <Text variant="bodyMedium">
+                  {payment?.capture_backed ? 'Total charged' : 'Total (not yet captured)'}
+                </Text>
                 <Text
                   variant="bodyMedium"
                   style={{
-                    color: colors.success,
+                    // F105: an invoice must not imply money was collected when
+                    // no charge exists behind it (invoices.py's own comment on
+                    // `payment.capture_backed`). Mirrors ActiveBookingScreen's
+                    // capture_backed gate on the same claim.
+                    color: payment?.capture_backed ? colors.success : colors.textSecondary,
                     fontFamily: 'SpaceGrotesk_700Bold',
                     fontVariant: ['tabular-nums'],
                   }}

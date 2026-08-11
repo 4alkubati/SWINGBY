@@ -26,9 +26,15 @@ import Text from '../../components/Text';
 
 const MAX_PHOTOS = 3;
 
+// F102: keys must match backend/app/api/disputes.py's VALID_ISSUE_TYPES
+// ({no_show, poor_quality, damage, overcharge, safety, other}) or POST
+// /disputes/ 400s. 'quality' -> 'poor_quality' is a clean rename.
+// 'not_completed' has NO backend equivalent — it is left as-is deliberately;
+// see the walkthrough report for the product decision this needs (map it to
+// an existing type, or get it added to VALID_ISSUE_TYPES).
 const ISSUE_TYPES = [
   { key: 'not_completed', label: 'Work not completed' },
-  { key: 'quality',       label: 'Quality concerns' },
+  { key: 'poor_quality',  label: 'Quality concerns' },
   { key: 'damage',        label: 'Damage to property' },
   { key: 'other',         label: 'Other' },
 ];
