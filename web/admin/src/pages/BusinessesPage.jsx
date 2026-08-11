@@ -25,7 +25,13 @@ function licenseKey(biz) {
 }
 
 function ownerName(biz) {
-  return biz.owner_name || biz.owner?.name || '—'
+  // GET /admin/businesses joins the owner as `users: {first_name, last_name,
+  // email}` (admin.py:411-414), not a top-level `owner_name`/`owner` field —
+  // this used to always render "—".
+  const u = biz.users
+  if (!u) return '—'
+  const name = [u.first_name, u.last_name].filter(Boolean).join(' ').trim()
+  return name || u.email || '—'
 }
 
 function jobsDone(biz) {
@@ -106,7 +112,7 @@ function BusinessDrawer({ biz, onClose, onVerifyToggle }) {
             {/* Header */}
             <div className={styles.drawerHeader}>
               <div className={styles.drawerTitleGroup}>
-                <h2 className={styles.drawerTitle}>{biz.name}</h2>
+                <h2 className={styles.drawerTitle}>{biz.business_name}</h2>
                 <span className={styles.drawerOwner}>Owner: {ownerName(biz)}</span>
               </div>
               <button
@@ -223,9 +229,17 @@ export default function BusinessesPage() {
   const [filter, setFilter]         = useState('all')
   const [selected, setSelected]     = useState(null)
 
+  // F040 fix (2026-08-11): GET /admin/businesses and POST
+  // /admin/businesses/{id}/verify both exist now (admin.py:394,433) — the
+  // finding that flagged them as missing predates this. What was still
+  // broken: the envelope key (`{items: [...]}`, not `{businesses: [...]}`,
+  // so this always fell through to `[]`) and every field name below
+  // (`business_name` not `name`, a nested `users` object not a flat
+  // `owner_name`/`owner`) — so the page loaded an empty table with no error
+  // even once the routes were real.
   useEffect(() => {
     api.get('/admin/businesses')
-      .then((res) => setBusinesses(Array.isArray(res.data) ? res.data : res.data?.businesses ?? []))
+      .then((res) => setBusinesses(Array.isArray(res.data) ? res.data : res.data?.items ?? []))
       .catch((err) => setError(err.response?.data?.detail || 'Failed to load businesses'))
       .finally(() => setLoading(false))
   }, [])
@@ -243,7 +257,7 @@ export default function BusinessesPage() {
   /* Filtered + searched slice */
   const filtered = businesses.filter((biz) => {
     const matchSearch = search.trim() === ''
-      || biz.name?.toLowerCase().includes(search.toLowerCase())
+      || biz.business_name?.toLowerCase().includes(search.toLowerCase())
     const matchFilter = filter === 'all'
       || licenseKey(biz) === filter
     return matchSearch && matchFilter
@@ -252,7 +266,7 @@ export default function BusinessesPage() {
   /* DataTable columns */
   const columns = [
     {
-      key: 'name',
+      key: 'business_name',
       label: 'Business',
       sortable: true,
       render: (val, row) => (
