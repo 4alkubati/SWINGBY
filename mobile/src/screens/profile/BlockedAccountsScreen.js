@@ -118,7 +118,7 @@ export default function BlockedAccountsScreen() {
           renderItem={({ item }) => (
             <View style={styles.row}>
               <Avatar
-                uri={item.blocked?.avatar_url}
+                source={item.blocked?.avatar_url}
                 name={fullName(item.blocked)}
                 size={40}
               />
