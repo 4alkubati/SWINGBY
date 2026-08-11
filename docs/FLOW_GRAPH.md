@@ -9,11 +9,21 @@ Orphans (unreachable in their navigator) are highlighted in red.
 ```mermaid
 flowchart LR
   classDef orphan fill:#3a0f0f,stroke:#ff5c5c,color:#ffb3b3;
+  subgraph AdminNavigator
+    AdminHome["AdminHome"]
+    RefundQueue["RefundQueue"]
+    RefundReview["RefundReview"]
+    ReportQueue["ReportQueue"]
+    ReportReview["ReportReview"]
+  end
   subgraph AuthNavigator
     Onboarding["Onboarding"]
+    BetaInvite["BetaInvite"]
     Login["Login"]
     Signup["Signup"]
     ForgotPassword["ForgotPassword"]
+    TermsOfService["TermsOfService"]
+    PrivacyPolicy["PrivacyPolicy"]
   end
   subgraph BusinessNavigator
     Dashboard["Dashboard"]
@@ -26,8 +36,10 @@ flowchart LR
     EmployeeManagement["EmployeeManagement"]
     EmployeeProfile["EmployeeProfile"]
     Earnings["Earnings"]
+    Wallet["Wallet"]
     BusinessAnalytics["BusinessAnalytics"]
     Settings["Settings"]
+    BlockedAccounts["BlockedAccounts"]
     PrivacyPolicy["PrivacyPolicy"]
     TermsOfService["TermsOfService"]
     HelpFAQ["HelpFAQ"]
@@ -36,6 +48,7 @@ flowchart LR
     MessageThread["MessageThread"]
     PaymentMethod["PaymentMethod"]
     DisputeFlow["DisputeFlow"]
+    CancellationFlow["CancellationFlow"]
     Invoice["Invoice"]
     BusinessInvoices["BusinessInvoices"]
     ProofOfWork["ProofOfWork"]
@@ -62,6 +75,7 @@ flowchart LR
     NearbyMap["NearbyMap"]
     ProfileEdit["ProfileEdit"]
     Settings["Settings"]
+    BlockedAccounts["BlockedAccounts"]
     PrivacyPolicy["PrivacyPolicy"]
     TermsOfService["TermsOfService"]
     HelpFAQ["HelpFAQ"]
@@ -82,15 +96,23 @@ flowchart LR
   Signup --> Login
   Login --> ForgotPassword
   Login --> Signup
+  BetaInvite --> Signup
+  BetaInvite --> Login
   Onboarding --> Login
   Settings --> ProfileEdit
+  Settings --> BlockedAccounts
   Settings --> PrivacyPolicy
   Settings --> TermsOfService
   Settings --> HelpFAQ
+  RefundQueue --> RefundReview
+  AdminHome --> RefundQueue
+  AdminHome --> ReportQueue
+  ReportQueue --> ReportReview
   Profile --> ProfileEdit
   Profile --> Favorites
   Profile --> PaymentMethod
   Profile --> ReferralScreen
+  Profile --> NotificationsCenter
   Profile --> Settings
   Profile --> HelpFAQ
   Profile --> PrivacyPolicy
@@ -102,6 +124,7 @@ flowchart LR
   NotificationsCenter --> MessageThread
   NotificationsCenter --> BookingDetails
   My_Business --> EmployeeManagement
+  My_Business --> Wallet
   My_Business --> PaymentMethod
   My_Business --> BusinessInvoices
   My_Business --> AutoBidding
@@ -126,7 +149,10 @@ flowchart LR
   Jobs --> ProofOfWork
   Jobs --> Invoice
   Jobs --> DisputeFlow
+  Jobs --> CancellationFlow
   Jobs --> JobManagement
+  Earnings --> Wallet
+  Favorites --> ClientTabs
   Favorites --> Home
   Favorites --> BusinessProfile
   MyDisputes --> BookingDetails
@@ -145,10 +171,11 @@ flowchart LR
   Home --> ActiveBooking
   Home --> My_Jobs
   Home --> Notifications
+  Home --> DisputeFlow
+  Home --> ApproveWork
   Home --> Search
   Home --> NearbyMap
   Home --> BusinessProfile
-  My_Jobs --> ActiveBooking
   My_Jobs --> JobManagement
   My_Jobs --> QuoteComparison
   My_Jobs --> Chat
@@ -180,7 +207,13 @@ flowchart LR
   Chat --> BookingDetails
   Messages --> Chat
   Messages --> QuoteComparison
+  favorites_empty_browse_test --> Home
   BottomNav --> PostJob
+  TermsConsent --> TermsOfService
+  TermsConsent --> PrivacyPolicy
+  class BetaInvite orphan;
+  class PrivacyPolicy orphan;
+  class TermsOfService orphan;
 ```
 
 
@@ -194,13 +227,17 @@ Screens that call `navigation.navigate('X')` where **X is not registered** in an
 
 Registered screens with **no incoming navigation from anywhere** (excluding navigator roots).
 
-*None.* Every screen is reachable somewhere.
+- `BetaInvite`
 
 ## Orphan screens (per-navigator)
 
 Screens that ARE registered in a navigator but **cannot be reached by that user role's flow**. A screen may be reachable from ClientNavigator yet still be unreachable to a Business user, and vice-versa.
 
-*None.* Every screen is reachable from within its own navigator.
+### `AuthNavigator`
+
+- `BetaInvite`
+- `PrivacyPolicy`
+- `TermsOfService`
 
 ## Broken API calls
 
@@ -208,12 +245,12 @@ Mobile calls to endpoints **not exposed by the backend** (path params normalized
 
 | From file:line | Method | Path (raw) | Normalized |
 |---|---|---|---|
-| `mobile/src/components/PaySheet.js:168` | POST | `/payments/quote` | `/payments/quote` |
+| `mobile/src/services/__mocks__/api.js:14` | GET | `/x` | `/x` |
 
 ## Inventory
 
-- Navigators: **4**  
-- Registered screens: **62**  
-- Navigation edges: **128**  
-- Backend routes: **115**  
-- Mobile API calls: **131**  
+- Navigators: **5**  
+- Registered screens: **74**  
+- Navigation edges: **147**  
+- Backend routes: **140**  
+- Mobile API calls: **156**  

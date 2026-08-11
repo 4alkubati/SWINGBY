@@ -178,7 +178,9 @@ export default function FavoritesScreen({ navigation }) {
           body="Tap the heart on any business to save it"
           action={{
             label: 'Browse',
-            onPress: () => navigation.navigate('Home'),
+            // F099: 'Home' only exists inside the ClientTabs navigator, not on
+            // this screen's Stack — a bare navigate('Home') silently no-ops.
+            onPress: () => navigation.navigate('ClientTabs', { screen: 'Home' }),
           }}
         />
       </Stack>
@@ -251,7 +253,7 @@ export default function FavoritesScreen({ navigation }) {
             icon="heart"
             title="No favorites yet"
             body="Tap the heart on any business to save it"
-            action={{ label: 'Browse', onPress: () => navigation.navigate('Home') }}
+            action={{ label: 'Browse', onPress: () => navigation.navigate('ClientTabs', { screen: 'Home' }) }}
           />
         }
       />

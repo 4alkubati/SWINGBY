@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, ScrollView, StyleSheet,
-  Switch, Alert, Share, ActivityIndicator,
+  Switch, Alert, Share, ActivityIndicator, Pressable,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -17,6 +17,7 @@ const isExpoGo =
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../services/api';
 import { show as showToast } from '../../services/toast';
+import { registerForPushAsync, unregisterPushAsync } from '../../services/notifications';
 import {
   isBiometricAvailable,
   getBiometricPref,
@@ -131,11 +132,21 @@ export default function SettingsScreen() {
       return;
     }
     try {
-      const Notifications = require('expo-notifications');
       if (val) {
-        const { status } = await Notifications.requestPermissionsAsync();
+        // F117: this used to stop at requestPermissionsAsync(), which only
+        // flips the OS permission and the local switch — it never obtained an
+        // Expo push token or POSTed it to /push-tokens/register, so the
+        // backend had nothing to send to even when the switch read "on".
+        // registerForPushAsync() (services/notifications.js) does the full
+        // permission + token + register round-trip; it already runs at
+        // login/signup, so this only matters for someone who denied it there
+        // and is opting back in from here.
+        const Notifications = require('expo-notifications');
+        await registerForPushAsync();
+        const { status } = await Notifications.getPermissionsAsync();
         setNotifEnabled(status === 'granted');
       } else {
+        await unregisterPushAsync();
         setNotifEnabled(false);
       }
     } catch {
@@ -307,6 +318,20 @@ export default function SettingsScreen() {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Header */}
       <View style={styles.header}>
+        {/* D20 — every navigator sets headerShown:false, so a pushed screen
+            that draws no back control has none. On Android the hardware button
+            still works; on iOS the ONLY way out was the edge swipe, which a
+            non-technical user does not know to try. Same arrow-left shape the
+            other 43 back controls in the app use. */}
+        <Pressable
+          onPress={() => navigation.goBack()}
+          hitSlop={12}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+          style={styles.backBtn}
+        >
+          <Feather name="arrow-left" size={20} color={colors.textSecondary} />
+        </Pressable>
         <Text variant="display3">Settings</Text>
         {user && (
           <Text variant="body" color="secondary" style={styles.headerSub}>
@@ -594,6 +619,10 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.lg,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border,
+  },
+  backBtn: {
+    marginBottom: spacing.sm,
+    alignSelf: 'flex-start',
   },
   headerSub: {
     marginTop: spacing.xs,

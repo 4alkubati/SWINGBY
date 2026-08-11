@@ -12,6 +12,7 @@ import i18n from '../../i18n';
 // Shared with client Home's prompt card — one predicate, so a row here can
 // never disagree with what Home is asking for.
 import { isAwaitingApproval } from '../../utils/approval';
+import { clientBookingRoute } from '../../utils/clientBookingRoute';
 import { colors, spacing } from '../../theme/tokens';
 import { SkeletonList } from '../../components/Skeleton';
 import EmptyState from '../../components/EmptyState';
@@ -436,6 +437,15 @@ export default function MyJobsScreen({ navigation }) {
   const [deletingPostId, setDeletingPostId] = useState(null);
   const [postsExpanded, setPostsExpanded] = useState(false);
   const isClient = user?.role === 'client';
+  // F139: the Approve action used to be a bare navigate('ApproveWork') — the
+  // before/after photo review screen. Most jobs never get photos (see
+  // bookings.py::approve_completed_work), and that screen's own "No proof
+  // yet" state has no release control at all, so a photo-less job left the
+  // client with a badge that says money is waiting on them and nothing on
+  // the row that can act on it. Same direct release used by Home's
+  // ApprovalPromptCard and BookingDetailsScreen — POST /bookings/{id}/approve
+  // — which works whether or not proof exists.
+  const [approvingId, setApprovingId] = useState(null);
 
   const load = useCallback(async () => {
     try {
@@ -486,6 +496,39 @@ export default function MyJobsScreen({ navigation }) {
     ? active.map((b) => ({ kind: 'booking', id: b.id, at: bookingSortTime(b), data: b }))
     : pastItems;
 
+  function handleApprove(booking) {
+    if (approvingId) return;
+    const held = booking?.payment_state?.amount_held;
+    Alert.alert(
+      i18n.t('approval.confirmTitle'),
+      held
+        ? i18n.t('approval.confirmBodyAmount', { amount: `$${Number(held).toFixed(2)}` })
+        : i18n.t('approval.confirmBody'),
+      [
+        { text: i18n.t('common.cancel'), style: 'cancel' },
+        {
+          text: i18n.t('approval.approveShort'),
+          onPress: async () => {
+            setApprovingId(booking.id);
+            try {
+              await api.post(`/bookings/${booking.id}/approve`);
+              toast.show({ type: 'success', text1: i18n.t('approval.released') });
+              await load();
+            } catch (err) {
+              toast.show({
+                type: 'error',
+                text1: i18n.t('approval.failed'),
+                text2: err?.response?.data?.detail || err?.message || '',
+              });
+            } finally {
+              setApprovingId(null);
+            }
+          },
+        },
+      ],
+    );
+  }
+
   function handleBookingPress(booking) {
     if (isClient) {
       // A finished job does not belong on the live-tracking screen. This used
@@ -499,10 +542,13 @@ export default function MyJobsScreen({ navigation }) {
       // tapped (this component renders all three — see the `isDone` actions in
       // BookingRow). `BookingDetails` is the screen the design system specs for
       // a static booking: status, provider, service/where/total, actions.
-      const finished = booking.status === 'completed' || booking.status === 'cancelled';
-      navigation.navigate(finished ? 'BookingDetails' : 'ActiveBooking', {
-        bookingId: booking.id,
-      });
+      // PRODUCT-01 (Kira, 2026-08-11): in flight -> the live map; finished ->
+      // the record. That rule now lives in utils/clientBookingRoute.js so the
+      // other five client entry points cannot drift from it, and it adds two
+      // cases this inline version missed: `disputed`/`refunded` are finished
+      // too, and a booking with money still owed has to go to BookingDetails
+      // because that is the only screen with a "Pay with card" button (:916).
+      navigation.navigate(clientBookingRoute(booking), { bookingId: booking.id });
     } else {
       navigation.navigate('JobManagement', { bookingId: booking.id });
     }
@@ -713,10 +759,15 @@ export default function MyJobsScreen({ navigation }) {
                 booking={booking}
                 userRole={user?.role}
                 onPress={() => handleBookingPress(booking)}
+                // Stays on BookingDetails deliberately: this is the explicit
+                // "show me the record" action, distinct from tapping the row
+                // (handleBookingPress), which follows clientBookingRoute.
                 onDetails={isClient ? () => navigation.navigate('BookingDetails', { bookingId: booking.id }) : undefined}
-                // Straight to the before/after photos and the release button,
-                // rather than to BookingDetails and a scroll.
-                onApprove={isClient ? () => navigation.navigate('ApproveWork', { bookingId: booking.id }) : undefined}
+                // Direct release (F139) — works whether or not the business
+                // sent before/after photos. BookingDetails still has a
+                // separate "Review proof" entry into ApproveWorkScreen for
+                // whoever wants to look at the photos first.
+                onApprove={isClient ? () => handleApprove(booking) : undefined}
                 // Same route + params as the business side's Past tab, so one
                 // InvoiceScreen serves both halves of the marketplace.
                 onInvoice={() => navigation.navigate('Invoice', { bookingId: booking.id })}

@@ -385,6 +385,26 @@ export default function SearchScreen({ navigation, route }) {
         paddingTop: insets.top,
       }}
     >
+      {/* D20 — Search is a pushed screen under headerShown:false and drew no
+          back control, so on iOS the only exit was the edge swipe. Sits above
+          the search field rather than beside it: the field is the focal point
+          and autoFocus pops the keyboard, so the way out has to stay visible
+          without competing with it. */}
+      <Pressable
+        onPress={() => navigation.goBack()}
+        hitSlop={12}
+        accessibilityRole="button"
+        accessibilityLabel="Go back"
+        style={{
+          alignSelf: 'flex-start',
+          paddingHorizontal: spacing.base,
+          paddingTop: spacing.sm,
+          paddingBottom: spacing.xs,
+        }}
+      >
+        <Feather name="arrow-left" size={20} color={colors.textSecondary} />
+      </Pressable>
+
       {/* Sticky search bar — dominant focal point */}
       <SearchField
         value={query}

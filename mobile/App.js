@@ -53,7 +53,8 @@ import BusinessNavigator from './src/navigation/BusinessNavigator';
 import AdminNavigator from './src/navigation/AdminNavigator';
 import BiometricLockScreen from './src/screens/shared/BiometricLockScreen';
 import { getBiometricPref, isBiometricAvailable } from './src/services/biometrics';
-import { configureNotificationHandlers } from './src/services/notifications';
+import { configureNotificationHandlers, registerNotificationResponseHandler } from './src/services/notifications';
+import { navigationRef } from './src/services/navigationRef';
 import OfflineBanner from './src/components/OfflineBanner';
 import Toast from 'react-native-toast-message';
 import { toastConfig } from './src/services/toast';
@@ -175,6 +176,15 @@ function App() {
     Inter_600SemiBold,
   });
 
+  // F118 — tap-to-navigate for push notifications. Registered once at app
+  // root, independent of auth/role state, since a tap can cold-start the app
+  // before any of that has resolved (handleNotificationResponse just no-ops
+  // until navigationRef.isReady()).
+  useEffect(() => {
+    const unsubscribe = registerNotificationResponseHandler();
+    return unsubscribe;
+  }, []);
+
   if (!fontsLoaded && !fontError) return null;
 
   return (
@@ -186,7 +196,7 @@ function App() {
           <AuthProvider>
             <BookingProvider>
               <UnreadProvider>
-                <NavigationContainer linking={linkingConfig}>
+                <NavigationContainer ref={navigationRef} linking={linkingConfig}>
                   <RootNavigator />
                 </NavigationContainer>
               </UnreadProvider>
