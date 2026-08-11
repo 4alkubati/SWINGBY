@@ -189,7 +189,7 @@ export default function ReferralScreen() {
             color="secondary"
             style={{ textAlign: 'center', maxWidth: 300 }}
           >
-            When your friend completes their first booking, you both get $10 off your next job.
+            When your friend completes their first booking, you both earn a $10 credit — applied by our team during beta.
           </Text>
         </Stack>
 
