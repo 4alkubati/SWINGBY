@@ -65,8 +65,6 @@ export default function RequestSentScreen({ navigation, route }) {
     medianReplyMinutes,
     postId,
     postTitle,
-    threadId,
-    interestId,
     category,
     address,
   } = route.params || {};
@@ -83,21 +81,17 @@ export default function RequestSentScreen({ navigation, route }) {
     }, [navigation])
   );
 
-  // A thread only exists once the business has replied (a message thread hangs
-  // off an interest — see backend/app/api/messages.py _get_interest_thread), so
-  // right after sending there is usually nothing to open. Send the client to
-  // the request they just made instead of a chat that 404s.
-  const hasThread = !!(threadId || interestId);
-
+  // F060: this used to branch on a hasThread flag built from threadId/
+  // interestId route params, meant to open the chat thread directly once one
+  // existed. Neither param was ever supplied by this screen's sole caller
+  // (PostJobScreen's navigation.reset), and none could be: a message thread
+  // hangs off an interest (backend/app/api/messages.py _get_interest_thread),
+  // and create_service_post only ever creates the post row at send-time — no
+  // interest exists yet to thread even if the ids were wired through. The
+  // branch was permanently dead code implying a capability that doesn't
+  // exist at this point in the flow. Always send the client to the request
+  // they just made instead.
   function openConversation() {
-    if (hasThread) {
-      navigation.navigate('Chat', {
-        interestId: interestId || undefined,
-        threadId: threadId || undefined,
-        otherPartyName: businessName || 'Business',
-      });
-      return;
-    }
     // Pass the business through: this is the TARGETED flow, so the quotes
     // screen must not tell the client that "nearby pros have been notified"
     // when exactly one company was asked directly.
@@ -169,9 +163,7 @@ export default function RequestSentScreen({ navigation, route }) {
 
         <View style={styles.ctas}>
           <Button
-            label={hasThread
-              ? i18n.t('requestSent.openConversation')
-              : i18n.t('requestSent.trackRequest')}
+            label={i18n.t('requestSent.trackRequest')}
             onPress={openConversation}
             style={styles.primaryCta}
           />
