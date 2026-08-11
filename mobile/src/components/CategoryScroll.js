@@ -42,7 +42,6 @@ export default function CategoryScroll({ activeCategory, onSelect, prependAll = 
             />
             <Text
               style={[styles.label, { color: active ? colors.textPrimary : colors.textSecondary }]}
-              maxFontSizeMultiplier={1.3}
             >
               {cat.label}
             </Text>
@@ -99,7 +98,6 @@ export function CategoryGrid({
                 styles.gridLabel,
                 { color: active ? colors.textPrimary : colors.textSecondary },
               ]}
-              maxFontSizeMultiplier={1.2}
               numberOfLines={1}
             >
               {cat.label}

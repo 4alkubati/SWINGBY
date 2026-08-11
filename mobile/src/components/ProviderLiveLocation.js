@@ -174,7 +174,6 @@ export default function ProviderLiveLocation({ bookingId, providerName, destinat
           )}
           <Text
             style={[styles.badgeText, stale && { color: colors.textSecondary }]}
-            maxFontSizeMultiplier={1.2}
           >
             {stale ? 'Last seen' : 'Live'}
           </Text>

@@ -52,7 +52,6 @@ export default function FeaturedCard({
           <Text
             style={styles.name}
             numberOfLines={1}
-            maxFontSizeMultiplier={1.3}
           >
             {name}
           </Text>
@@ -64,7 +63,7 @@ export default function FeaturedCard({
                 color={colors.success}
                 style={{ marginRight: 3 }}
               />
-              <Text style={styles.verifiedText} maxFontSizeMultiplier={1.2}>
+              <Text style={styles.verifiedText}>
                 Verified
               </Text>
             </View>
@@ -73,21 +72,21 @@ export default function FeaturedCard({
 
         <View style={styles.metaRow} accessible={false}>
           <Feather name="star" size={12} color={colors.textPrimary} />
-          <Text style={styles.ratingText} maxFontSizeMultiplier={1.3}>
+          <Text style={styles.ratingText}>
             {rating}
           </Text>
-          <Text style={styles.dotSep} maxFontSizeMultiplier={1.3}>
+          <Text style={styles.dotSep}>
             ·
           </Text>
-          <Text style={styles.metaText} maxFontSizeMultiplier={1.3}>
+          <Text style={styles.metaText}>
             {reviews} reviews
           </Text>
           {distance ? (
             <>
-              <Text style={styles.dotSep} maxFontSizeMultiplier={1.3}>
+              <Text style={styles.dotSep}>
                 ·
               </Text>
-              <Text style={styles.metaText} maxFontSizeMultiplier={1.3}>
+              <Text style={styles.metaText}>
                 {distance}
               </Text>
             </>

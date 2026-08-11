@@ -190,10 +190,16 @@ export default function MapPreviewCard({
               style={{ marginRight: 6 }}
             />
             <View>
-              <Text variant="smallMedium" maxFontSizeMultiplier={1.3}>
+              {/* Kept, raised from 1.3: `wrap` (below) has overflow:hidden
+                  and an explicit fixed `height` prop (default 170) — this
+                  overlay bar is bottom-absolute inside it, so text growing
+                  enough to push past that height gets clipped rather than
+                  pushing the card taller. 1.5 leaves real headroom while
+                  keeping the two-line count+area block inside a 170px card. */}
+              <Text variant="smallMedium" maxFontSizeMultiplier={1.5}>
                 {countLabel}
               </Text>
-              <Text variant="caption" color="secondary" maxFontSizeMultiplier={1.3}>
+              <Text variant="caption" color="secondary" maxFontSizeMultiplier={1.5}>
                 {areaLabel}
               </Text>
             </View>
@@ -202,7 +208,7 @@ export default function MapPreviewCard({
             <Text
               variant="smallMedium"
               style={{ color: colors.accentText, fontSize: 13 }}
-              maxFontSizeMultiplier={1.3}
+              maxFontSizeMultiplier={1.5}
             >
               {actionLabel}
             </Text>

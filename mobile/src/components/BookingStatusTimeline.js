@@ -82,7 +82,6 @@ export default function BookingStatusTimeline({ currentStatus, timestamps }) {
               <Text
                 style={[styles.label, { color, fontWeight: weight }]}
                 numberOfLines={1}
-                maxFontSizeMultiplier={1.2}
               >
                 {stage.label}
               </Text>
@@ -90,7 +89,6 @@ export default function BookingStatusTimeline({ currentStatus, timestamps }) {
                 <Text
                   style={styles.timestamp}
                   numberOfLines={1}
-                  maxFontSizeMultiplier={1.2}
                 >
                   {ts}
                 </Text>

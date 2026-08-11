@@ -51,7 +51,6 @@ export default function JobOpportunityCard({
           <Text
             style={styles.compactTitle}
             numberOfLines={1}
-            maxFontSizeMultiplier={1.3}
           >
             {title}
           </Text>
@@ -60,7 +59,6 @@ export default function JobOpportunityCard({
               variant="caption"
               color="secondary"
               numberOfLines={1}
-              maxFontSizeMultiplier={1.3}
             >
               {[client, metaParts].filter(Boolean).join(' · ')}
             </Text>
@@ -100,7 +98,6 @@ export default function JobOpportunityCard({
           <Text
             style={styles.title}
             numberOfLines={2}
-            maxFontSizeMultiplier={1.3}
           >
             {title}
           </Text>
@@ -109,14 +106,13 @@ export default function JobOpportunityCard({
               variant="caption"
               color="secondary"
               style={{ marginTop: 4 }}
-              maxFontSizeMultiplier={1.3}
             >
               {metaParts}
             </Text>
           ) : null}
         </View>
         {priceLabel ? (
-          <Text style={styles.price} maxFontSizeMultiplier={1.3}>
+          <Text style={styles.price}>
             {priceLabel}
           </Text>
         ) : null}
@@ -126,11 +122,11 @@ export default function JobOpportunityCard({
         <View style={styles.clientRow}>
           <Avatar name={client} size="sm" source={post.users?.avatar_url} />
           <View style={{ flex: 1 }}>
-            <Text variant="smallMedium" numberOfLines={1} maxFontSizeMultiplier={1.3}>
+            <Text variant="smallMedium" numberOfLines={1}>
               {client}
             </Text>
             {post.address ? (
-              <Text variant="caption" color="secondary" numberOfLines={1} maxFontSizeMultiplier={1.3}>
+              <Text variant="caption" color="secondary" numberOfLines={1}>
                 {post.address}
               </Text>
             ) : null}
