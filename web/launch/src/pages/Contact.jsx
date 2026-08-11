@@ -5,6 +5,7 @@ import toast from 'react-hot-toast'
 import SEO from '../components/SEO'
 import Button from '../components/Button'
 import Input from '../components/Input'
+import api from '../lib/api'
 import styles from './page.module.css'
 
 const schema = z.object({
@@ -13,13 +14,24 @@ const schema = z.object({
   message: z.string().min(10, 'Message must be at least 10 characters'),
 })
 
+// F065 fix (2026-08-11): this used to `await` a fake 800ms timeout and toast
+// success without ever calling the backend — `_data` was never even read.
+// `POST /contact/` is real (`backend/app/api/contact.py:38`) and pre-launch's
+// Contact.jsx already calls it correctly; this form just never did. The
+// backend's `topic` field is required but falls back to "general" for
+// anything outside its known set (`contact.py:41-43`), so it's sent as a
+// fixed value rather than adding a topic picker this form never had.
 export default function Contact() {
   const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm({ resolver: zodResolver(schema) })
 
-  async function onSubmit(_data) {
-    await new Promise(r => setTimeout(r, 800))
-    toast.success('Message sent. We\'ll reply within one business day.')
-    reset()
+  async function onSubmit(data) {
+    try {
+      await api.post('/contact/', { ...data, topic: 'general' })
+      toast.success('Message sent. We\'ll reply within one business day.')
+      reset()
+    } catch {
+      toast.error('Could not send your message. Please try again.')
+    }
   }
 
   return (

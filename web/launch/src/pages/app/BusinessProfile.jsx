@@ -16,6 +16,7 @@ const schema = z.object({
   business_name: z.string().min(1, 'Required').max(120),
   category: z.string().min(1, 'Required'),
   description: z.string().max(800).optional(),
+  address: z.string().max(500).optional(),
   service_radius_km: z.number().positive().max(500),
 })
 
@@ -33,6 +34,7 @@ export default function BusinessProfile() {
       business_name: biz.business_name ?? '',
       category: biz.category ?? '',
       description: biz.description ?? '',
+      address: biz.address ?? '',
       service_radius_km: biz.service_radius_km ?? 25,
     } : undefined,
   })
@@ -77,12 +79,18 @@ export default function BusinessProfile() {
 
         <Input label="Service radius (km)" type="number" error={errors.service_radius_km?.message} {...register('service_radius_km', { valueAsNumber: true })} />
 
-        <div style={{ paddingTop: 'var(--space-sm)', borderTop: '1px solid var(--color-border)' }}>
-          <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)', marginBottom: 'var(--space-sm)' }}>
-            Location · <span style={{ color: 'var(--color-text-primary)' }}>{biz.lat?.toFixed(4)}, {biz.lng?.toFixed(4)}</span>
+        {/* F098 fix (2026-08-11): this used to be read-only text claiming
+            "Contact support to update it" — no support-ticket flow for this
+            exists anywhere in the repo, so that was a dead end. `PATCH
+            /businesses/{id}` already accepts `address` and re-geocodes when it
+            changes (businesses.py:825-835), so it's a normal form field now,
+            same as the others on this page. */}
+        <Input label="Business address" placeholder="e.g. 123 8 Ave SW, Calgary, AB" error={errors.address?.message} {...register('address')} />
+        {biz.lat != null && biz.lng != null && (
+          <p style={{ fontSize: '12px', color: 'var(--color-text-secondary)' }}>
+            Current map position: {biz.lat.toFixed(4)}, {biz.lng.toFixed(4)} — updates when you save a new address.
           </p>
-          <p style={{ fontSize: '12px', color: 'var(--color-text-secondary)' }}>Location is set during onboarding. Contact support to update it.</p>
-        </div>
+        )}
 
         <Button type="submit" disabled={!isDirty} loading={update.isPending || isSubmitting}>Save changes</Button>
       </form>

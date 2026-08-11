@@ -2,6 +2,7 @@ import { useParams, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { ArrowLeft } from '@phosphor-icons/react'
 import api from '../../lib/api'
+import { useUser } from '../../hooks/useUser'
 import Spinner from '../../components/Spinner'
 import Button from '../../components/Button'
 import Badge from '../../components/Badge'
@@ -12,11 +13,19 @@ const STATUS_VARIANT = { confirmed: 'accent', in_progress: 'warning', completed:
 export default function BookingDetail() {
   const { id } = useParams()
   const qc = useQueryClient()
+  const { data: user } = useUser()
 
   const { data: booking, isLoading } = useQuery({
     queryKey: ['booking', id],
     queryFn: () => api.get(`/bookings/${id}`).then(r => r.data),
   })
+
+  // F136 fix (2026-08-11): rendered for any confirmed booking with no role
+  // check, so a client opening their own booking saw a button that always
+  // 403'd — completion is hard-gated to business_owner/employee server-side
+  // (bookings.py:1092-1096: "Only business owners or employees can complete
+  // bookings").
+  const canComplete = user?.role === 'business_owner' || user?.role === 'employee'
 
   const complete = useMutation({
     mutationFn: () => api.patch(`/bookings/${id}/complete`),
@@ -50,7 +59,7 @@ export default function BookingDetail() {
         ))}
       </div>
       <div style={{ display: 'flex', gap: 'var(--space-md)' }}>
-        {booking.status === 'confirmed' && (
+        {booking.status === 'confirmed' && canComplete && (
           <Button onClick={() => complete.mutate()} loading={complete.isPending}>Mark as complete</Button>
         )}
         <Link to={`/app/messages/${booking.id}`}><Button variant="secondary">View messages</Button></Link>
