@@ -183,11 +183,26 @@ export default function ProfileScreen({ navigation }) {
 
           {/* ── Block 2 — Settings / Help / Privacy / Terms ── */}
           <Animated.View entering={FadeInDown.duration(240).delay(160)} style={styles.block}>
-            {/* F025 — NotificationsCenter is registered in ClientNavigator but
-                only BusinessProfileScreen ever navigated to it, so a client
-                could never reach their own notification history. Same row the
-                business side has (BusinessProfileScreen: "Notifications"). */}
-            <MenuRow label="Notifications" onPress={() => navigation.navigate('NotificationsCenter')} />
+            {/* F025 was "fixed" here by re-adding a Notifications row, and that
+                was wrong: D11 (see this file's header) deliberately REMOVED it.
+                Reverted. The finding underneath is still real, but it is a
+                design question, not a missing row — there are two notification
+                screens and the client can only reach one:
+
+                  `Notifications`       -> NotificationsScreen. What the home
+                                           bell opens (HomeScreen.js:499).
+                                           Derived from bookings/posts, no
+                                           read/unread concept at all.
+                  `NotificationsCenter` -> this AsyncStorage-backed screen, WITH
+                                           read state. Only BusinessProfile
+                                           navigates to it (:854), so no client
+                                           can reach it.
+
+                D11's note that it is "still reachable from that bell" is
+                therefore inaccurate — the bell goes to the other screen. Now
+                that F058/F118 make NotificationsCenter actually hold pushed
+                notifications, the coherent fix is probably to point the bell at
+                it, or merge the two. Both are Kira's call, not a row here. */}
             <MenuRow label="Settings" onPress={() => navigation.navigate('Settings')} />
             <MenuRow label="Help & FAQ" onPress={() => navigation.navigate('HelpFAQ')} />
             <MenuRow label="Privacy Policy" onPress={() => navigation.navigate('PrivacyPolicy')} />
