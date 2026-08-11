@@ -556,7 +556,10 @@ export default function ChatScreen({ navigation, route }) {
           ...(interestId ? { interest_id: interestId } : { booking_id: bookingId }),
           content: trimmed,
         },
-        { _retryNonGet: true },
+        // F029: silenced so this catch owns the toast — a blocked-pair 403 or
+        // a content-moderation BLOCK each have purpose-built, three-locale
+        // copy below that the generic "Request failed" toast was masking.
+        { _retryNonGet: true, _silent: true },
       );
       const msg = res?.data || res;
       setMessages((prev) => reconcileSent(prev, tempId, msg));
@@ -572,10 +575,31 @@ export default function ChatScreen({ navigation, route }) {
           text2: 'Keep phone numbers and emails in Swingbyy — payments and support are only covered here.',
         });
       }
-    } catch {
+    } catch (err) {
       // Drop the optimistic bubble and restore the draft so the user can retry.
       setMessages((prev) => prev.filter((m) => m.id !== tempId));
       setText(trimmed);
+      // messages.py's blocked-pair 403 and content_moderation.BLOCK_MESSAGE
+      // (400) are the two backend detail strings this thread can actually
+      // hit on send — matched here because _silent above means nothing else
+      // will tell the user why the send failed.
+      const detail = err?.message || '';
+      if (/blocked the other/i.test(detail)) {
+        setThreadBlocked(true);
+        showToast({
+          type: 'error',
+          text1: i18n.t('moderation.threadBlockedTitle'),
+          text2: i18n.t('moderation.threadBlockedBody'),
+        });
+      } else if (/can.?t be sent/i.test(detail)) {
+        showToast({
+          type: 'error',
+          text1: 'Message not sent',
+          text2: i18n.t('moderation.messageRefused'),
+        });
+      } else {
+        showToast({ type: 'error', text1: 'Request failed', text2: detail || 'Something went wrong' });
+      }
     } finally {
       setSending(false);
     }
@@ -1364,7 +1388,7 @@ export default function ChatScreen({ navigation, route }) {
         />
         <SendButton
           onPress={handleSend}
-          disabled={!text.trim() || sending}
+          disabled={!text.trim() || sending || threadBlocked}
           loading={sending}
         />
       </Surface>
