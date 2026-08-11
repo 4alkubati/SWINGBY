@@ -221,7 +221,7 @@ function toInitials(name) {
 // Shared by both hero branches so the real map and the canvas cannot end up
 // with different chrome — the pill in particular states something about the
 // booking, and two copies is two chances for one of them to say it wrong.
-function HeroChrome({ onBack, isLive, hasProvider, distanceLabel }) {
+function HeroChrome({ onBack, isLive, hasProvider, distanceLabel, stale }) {
   return (
     <>
       <TouchableOpacity
@@ -236,24 +236,35 @@ function HeroChrome({ onBack, isLive, hasProvider, distanceLabel }) {
       {/* When there is a real fix, say the real thing — a distance is worth more
           than the word "Live", and it also stops the pill claiming liveness over
           a map showing nothing but the destination. Falls back to the old label
-          when the booking is live but the provider is not sharing. */}
+          when the booking is live but the provider is not sharing.
+          F015: a stale fix (per the same `is_stale` field ProviderLiveLocation.js
+          gates its pulse/badge on) is still worth showing, but not as "Live" — a
+          dot with no fresh timestamp is a promise this pill cannot keep either. */}
       {(hasProvider && distanceLabel) || isLive ? (
         <View style={styles.livePill}>
-          <PulseDot size={7} />
+          {stale ? (
+            <Feather name="clock" size={12} color={colors.textSecondary} />
+          ) : (
+            <PulseDot size={7} />
+          )}
           {/* Kept, raised from 1.2: livePill has a hard `height: 30`
               (no overflow:hidden, absolute-positioned over the map) — text
               tall enough to exceed that pushes visibly past the pill's
               rounded background rather than growing it. */}
           <Text
             style={{
-              color: colors.textPrimary,
+              color: stale ? colors.textSecondary : colors.textPrimary,
               fontSize: 13,
               fontWeight: '600',
               marginLeft: 8,
             }}
             maxFontSizeMultiplier={1.4}
           >
-            {hasProvider && distanceLabel ? `${distanceLabel} away` : 'Live'}
+            {hasProvider && distanceLabel
+              ? stale
+                ? `Last seen ${distanceLabel} away`
+                : `${distanceLabel} away`
+              : 'Live'}
           </Text>
         </View>
       ) : null}
@@ -295,6 +306,11 @@ function LiveMapHero({ onBack, status, destination, providerLoc, distanceLabel }
   // Stale-but-present is still shown; the badge says how old it is. A missing
   // fix draws nothing rather than a guess.
   const provider = isLive && providerLoc ? { ...providerLoc, key: 'provider' } : null;
+  // F015: same `is_stale` field ProviderLiveLocation.js reads off this endpoint
+  // to disable its pulse and show a "Last seen" badge — this hero polls the
+  // identical /bookings/{id}/location response and owes the client the same
+  // honesty about a fix that's minutes old.
+  const stale = !!providerLoc?.is_stale;
   const projected = projectToBox(
     [destination ? { ...destination, key: 'destination' } : null, provider],
     box
@@ -330,8 +346,14 @@ function LiveMapHero({ onBack, status, destination, providerLoc, distanceLabel }
             <Marker
               coordinate={{ latitude: provider.lat, longitude: provider.lng }}
               title="Your provider"
-              description={distanceLabel ? `${distanceLabel} away` : undefined}
-              pinColor={colors.accent}
+              description={
+                distanceLabel
+                  ? stale
+                    ? `Last seen ${distanceLabel} away`
+                    : `${distanceLabel} away`
+                  : undefined
+              }
+              pinColor={stale ? colors.textSecondary : colors.accent}
             />
           )}
         </MapView>
@@ -355,6 +377,7 @@ function LiveMapHero({ onBack, status, destination, providerLoc, distanceLabel }
           isLive={isLive}
           hasProvider={!!provider}
           distanceLabel={distanceLabel}
+          stale={stale}
         />
       </View>
     );
@@ -407,6 +430,7 @@ function LiveMapHero({ onBack, status, destination, providerLoc, distanceLabel }
         isLive={isLive}
         hasProvider={!!prov}
         distanceLabel={distanceLabel}
+        stale={stale}
       />
     </View>
   );
