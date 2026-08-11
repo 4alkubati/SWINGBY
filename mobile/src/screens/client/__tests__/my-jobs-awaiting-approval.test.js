@@ -43,9 +43,17 @@ describe('a Past row waiting on the client does not claim to be finished', () =>
 });
 
 describe('releasing the payment is on the row, not behind an overflow', () => {
-  it('offers Review & approve straight to the proof screen', () => {
+  // F139: this used to navigate('ApproveWork', ...) unconditionally — the
+  // before/after photo review screen. Most jobs never get photos
+  // (bookings.py::approve_completed_work), and that screen's own "no proof
+  // yet" state has no release control at all, so a photo-less job left the
+  // client with a badge and no working action. The row now does the same
+  // direct POST /bookings/{id}/approve release Home's ApprovalPromptCard and
+  // BookingDetailsScreen already use, which works with or without photos.
+  it('offers Review & approve as a direct release, not a dead end into the photo screen', () => {
     expect(src).toMatch(/approvalCard\.reviewAction/);
-    expect(src).toMatch(/navigate\('ApproveWork', \{ bookingId: booking\.id \}\)/);
+    expect(src).toMatch(/onApprove=\{isClient \? \(\) => handleApprove\(booking\) : undefined\}/);
+    expect(src).toMatch(/api\.post\(`\/bookings\/\$\{booking\.id\}\/approve`\)/);
   });
 
   it('gives that action the row\'s single highlight', () => {

@@ -436,6 +436,15 @@ export default function MyJobsScreen({ navigation }) {
   const [deletingPostId, setDeletingPostId] = useState(null);
   const [postsExpanded, setPostsExpanded] = useState(false);
   const isClient = user?.role === 'client';
+  // F139: the Approve action used to be a bare navigate('ApproveWork') — the
+  // before/after photo review screen. Most jobs never get photos (see
+  // bookings.py::approve_completed_work), and that screen's own "No proof
+  // yet" state has no release control at all, so a photo-less job left the
+  // client with a badge that says money is waiting on them and nothing on
+  // the row that can act on it. Same direct release used by Home's
+  // ApprovalPromptCard and BookingDetailsScreen — POST /bookings/{id}/approve
+  // — which works whether or not proof exists.
+  const [approvingId, setApprovingId] = useState(null);
 
   const load = useCallback(async () => {
     try {
@@ -485,6 +494,39 @@ export default function MyJobsScreen({ navigation }) {
   const shownItems = tab === 'active'
     ? active.map((b) => ({ kind: 'booking', id: b.id, at: bookingSortTime(b), data: b }))
     : pastItems;
+
+  function handleApprove(booking) {
+    if (approvingId) return;
+    const held = booking?.payment_state?.amount_held;
+    Alert.alert(
+      i18n.t('approval.confirmTitle'),
+      held
+        ? i18n.t('approval.confirmBodyAmount', { amount: `$${Number(held).toFixed(2)}` })
+        : i18n.t('approval.confirmBody'),
+      [
+        { text: i18n.t('common.cancel'), style: 'cancel' },
+        {
+          text: i18n.t('approval.approveShort'),
+          onPress: async () => {
+            setApprovingId(booking.id);
+            try {
+              await api.post(`/bookings/${booking.id}/approve`);
+              toast.show({ type: 'success', text1: i18n.t('approval.released') });
+              await load();
+            } catch (err) {
+              toast.show({
+                type: 'error',
+                text1: i18n.t('approval.failed'),
+                text2: err?.response?.data?.detail || err?.message || '',
+              });
+            } finally {
+              setApprovingId(null);
+            }
+          },
+        },
+      ],
+    );
+  }
 
   function handleBookingPress(booking) {
     if (isClient) {
@@ -714,9 +756,11 @@ export default function MyJobsScreen({ navigation }) {
                 userRole={user?.role}
                 onPress={() => handleBookingPress(booking)}
                 onDetails={isClient ? () => navigation.navigate('BookingDetails', { bookingId: booking.id }) : undefined}
-                // Straight to the before/after photos and the release button,
-                // rather than to BookingDetails and a scroll.
-                onApprove={isClient ? () => navigation.navigate('ApproveWork', { bookingId: booking.id }) : undefined}
+                // Direct release (F139) — works whether or not the business
+                // sent before/after photos. BookingDetails still has a
+                // separate "Review proof" entry into ApproveWorkScreen for
+                // whoever wants to look at the photos first.
+                onApprove={isClient ? () => handleApprove(booking) : undefined}
                 // Same route + params as the business side's Past tab, so one
                 // InvoiceScreen serves both halves of the marketplace.
                 onInvoice={() => navigation.navigate('Invoice', { bookingId: booking.id })}

@@ -17,6 +17,7 @@ const isExpoGo =
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../services/api';
 import { show as showToast } from '../../services/toast';
+import { registerForPushAsync, unregisterPushAsync } from '../../services/notifications';
 import {
   isBiometricAvailable,
   getBiometricPref,
@@ -131,11 +132,21 @@ export default function SettingsScreen() {
       return;
     }
     try {
-      const Notifications = require('expo-notifications');
       if (val) {
-        const { status } = await Notifications.requestPermissionsAsync();
+        // F117: this used to stop at requestPermissionsAsync(), which only
+        // flips the OS permission and the local switch — it never obtained an
+        // Expo push token or POSTed it to /push-tokens/register, so the
+        // backend had nothing to send to even when the switch read "on".
+        // registerForPushAsync() (services/notifications.js) does the full
+        // permission + token + register round-trip; it already runs at
+        // login/signup, so this only matters for someone who denied it there
+        // and is opting back in from here.
+        const Notifications = require('expo-notifications');
+        await registerForPushAsync();
+        const { status } = await Notifications.getPermissionsAsync();
         setNotifEnabled(status === 'granted');
       } else {
+        await unregisterPushAsync();
         setNotifEnabled(false);
       }
     } catch {
