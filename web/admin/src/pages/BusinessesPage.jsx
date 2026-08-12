@@ -288,6 +288,9 @@ export default function BusinessesPage() {
       key: 'owner_name',
       label: 'Owner',
       sortable: true,
+      // `owner_name` is not a column on the row — the owner arrives nested
+      // under `users`. Sort on the same helper the cell renders.
+      sortValue: (row) => ownerName(row),
       render: (_val, row) => ownerName(row),
     },
     {

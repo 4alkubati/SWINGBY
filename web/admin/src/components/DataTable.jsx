@@ -11,16 +11,41 @@ export default function DataTable({ columns, data, pageSize = 10, onRowClick, ro
     else { setSortKey(key); setSortDir('asc'); }
   };
 
+  // Sorting had two independent faults, and together they scrambled the table.
+  //
+  // 1. IT READ THE WRONG FIELD. `a[sortKey]` only works when a column's key is
+  //    literally a property of the row. The Users table's Name column is
+  //    key:'name', but a user row carries `first_name`/`last_name` — there is no
+  //    `name` property — so `av` was `undefined` for EVERY row. Businesses has
+  //    the same shape via a nested `users` object. Columns can now supply
+  //    `sortValue(row)`; `row[key]` stays the default for the plain cases.
+  //
+  // 2. THE COMPARATOR WAS INCONSISTENT. `if (av == null) return 1` returned a
+  //    constant 1 for every pair once everything was undefined — never 0, never
+  //    -1. A comparator that contradicts itself makes Array.prototype.sort's
+  //    result implementation-defined, which is why the rows came back shuffled
+  //    rather than merely unsorted. Two equal nulls now compare 0, so ordering
+  //    is stable and missing values sort to the end deterministically.
+  //
+  // Fault 2 is the dangerous one: it would have scrambled ANY column whose
+  // values were all null, not just the mis-keyed ones.
   const sorted = useMemo(() => {
     if (!sortKey) return data;
+    const col = columns.find((c) => c.key === sortKey);
+    const valueOf = (row) =>
+      typeof col?.sortValue === 'function' ? col.sortValue(row) : row[sortKey];
+
     return [...data].sort((a, b) => {
-      const av = a[sortKey], bv = b[sortKey];
-      if (av == null) return 1;
+      const av = valueOf(a), bv = valueOf(b);
+      if (av == null && bv == null) return 0;
+      if (av == null) return 1;   // missing sorts last, in both directions
       if (bv == null) return -1;
-      const cmp = typeof av === 'number' ? av - bv : String(av).localeCompare(String(bv));
+      const cmp = typeof av === 'number' && typeof bv === 'number'
+        ? av - bv
+        : String(av).localeCompare(String(bv));
       return sortDir === 'asc' ? cmp : -cmp;
     });
-  }, [data, sortKey, sortDir]);
+  }, [columns, data, sortKey, sortDir]);
 
   const totalPages = Math.ceil(sorted.length / pageSize);
   const paged = sorted.slice(page * pageSize, (page + 1) * pageSize);

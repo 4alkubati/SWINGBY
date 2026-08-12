@@ -60,6 +60,10 @@ function buildColumns(onToggleSuspend) {
       key: 'name',
       label: 'Name',
       sortable: true,
+      // There is no `name` property on a user row — it is composed from
+      // first_name/last_name. Sorting on the same helper the cell renders is
+      // what keeps the order matching what the admin can actually see.
+      sortValue: (row) => displayName(row),
       render: (val, row) => (
         <span>{displayName(row)}</span>
       ),
