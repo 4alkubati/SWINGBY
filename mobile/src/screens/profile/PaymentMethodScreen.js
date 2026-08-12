@@ -29,7 +29,6 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { colors, spacing, radius } from '../../theme/tokens';
 import Text from '../../components/Text';
@@ -79,7 +78,6 @@ const STEPS = [
 ];
 
 export default function PaymentMethodScreen({ navigation }) {
-  const insets = useSafeAreaInsets();
   const { user } = useAuth();
 
   // `null` = not loaded. Never rendered as "no cards", which would tell someone
