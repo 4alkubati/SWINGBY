@@ -1,0 +1,106 @@
+# CI for web/pre-launch and web/admin.
+#
+# WHY THIS EXISTS
+# ---------------
+# `web-launch-ci.yml` covered `web/launch/**` only — and web/launch is NEVER
+# DEPLOYED. So the app nobody can reach had lint, build, a dependency audit and
+# a secret scan, while **web/pre-launch — the one live at swingbyy.com via
+# Cloudflare Pages — had no CI at all**, and neither did web/admin.
+#
+# That was not theoretical. On 2026-08-11 four PRs touching only web/pre-launch
+# (#130, #131, #132 and its follow-ups) merged to main, and therefore deployed,
+# with **zero** GitHub Actions runs between them. The only gate was somebody
+# running `npm run build` by hand and reporting the exit code. One of those PRs
+# rewrote the Safety page's insurance claims and wired the business-onboarding
+# wizard to a live POST.
+#
+# The matrix is over the two previously-uncovered apps. web/launch keeps its own
+# richer workflow: it has lint and test scripts these two do not, plus
+# launch-specific build env. Consolidating all three is worth doing later, but
+# not in the same change that first gives a production site a gate — breaking
+# working CI while adding missing CI is a bad trade.
+
+name: web CI
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'web/pre-launch/**'
+      - 'web/admin/**'
+      - '.github/workflows/web-ci.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'web/pre-launch/**'
+      - 'web/admin/**'
+      - '.github/workflows/web-ci.yml'
+
+jobs:
+  build:
+    name: Build (${{ matrix.app }})
+    runs-on: ubuntu-latest
+    strategy:
+      # Don't let a red admin build hide the state of the live site, or vice
+      # versa — each app's result should stand on its own.
+      fail-fast: false
+      matrix:
+        app: [pre-launch, admin]
+    defaults:
+      run:
+        working-directory: web/${{ matrix.app }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: web/${{ matrix.app }}/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Neither app defines `lint` or `test` today (only web/launch does), so
+      # these are --if-present rather than absent: the day someone adds either
+      # script it starts running here with no workflow change. A step that
+      # silently does nothing is better than a gate nobody remembers to add.
+      - name: Lint
+        run: npm run lint --if-present
+
+      - name: Test
+        run: npm run test --if-present
+
+      - name: Build
+        env:
+          # swingbyy.com — the double-y domain is the one we actually own.
+          VITE_API_URL: https://swingbyy-api.onrender.com
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
+        run: npm run build
+
+      - name: Check bundle size
+        run: du -sh dist/
+
+  secret-scan:
+    name: Secret Scan (web)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # The existing scan in web-launch-ci.yml covers web/launch/ and
+      # backend/app/ only, so a service key or live Stripe secret committed into
+      # the DEPLOYED site would not have been caught. Same patterns, aimed at
+      # the two apps that had no coverage.
+      - name: Scan for leaked secrets
+        run: |
+          if grep -rE "(SUPABASE_SERVICE_KEY|eyJhbGci[A-Za-z0-9+/]{20,}|sk_live_[A-Za-z0-9]+)" \
+               web/pre-launch/src web/admin/src \
+               --include="*.js" --include="*.jsx" --include="*.ts" --include="*.tsx" 2>/dev/null; then
+            echo "::error::Potential secret found in web/pre-launch or web/admin"
+            exit 1
+          fi
+          echo "No secrets found."
