@@ -211,8 +211,36 @@ def main():
                 {"method": "cash", "note": "e2e smoke"})
     check("mark paid off-platform", s in (200, 201), str(s))
 
+    # W3 guard (2026-08-12): a business that HAS active staff and assigned
+    # nobody must not be able to complete — 248 production bookings reached
+    # fully_released with employee_id NULL before this existed. The test
+    # business has an active non-owner employee, so it takes this branch.
+    # Ordering matters and is asserted above: while the booking was unpaid the
+    # answer was 409 "not paid", not this 400 — the payment fact is the more
+    # specific one.
+    s, body = call("PATCH", f"/bookings/{booking_id}/complete", btok, {})
+    check("unassigned booking cannot be completed (W3 guard)", s == 400, str(s))
+    check("W3 refusal names the fix",
+          "assign" in str(body.get("detail", "")).lower(),
+          str(body.get("detail")))
+
+    # Assign someone, the way the business actually would, and the same
+    # completion must then go through.
+    s, assignees = call("GET", f"/bookings/{booking_id}/assignees", btok)
+    check("assignees listed", s == 200, str(s))
+    items = assignees.get("items", assignees if isinstance(assignees, list) else [])
+    # /assignees returns rows keyed `employee_id` (not `id`) — it is a picker
+    # payload, not an employees row.
+    first = (items[0] if items else None) or {}
+    emp_id = first.get("employee_id") or first.get("id")
+    check("at least one assignable person", bool(emp_id), str(items)[:120])
+
+    s, _ = call("PATCH", f"/bookings/{booking_id}/assign-employee", btok,
+                {"employee_id": emp_id})
+    check("assign employee", s == 200, str(s))
+
     s, _ = call("PATCH", f"/bookings/{booking_id}/complete", btok, {})
-    check("paid booking completes", s == 200, str(s))
+    check("paid + assigned booking completes", s == 200, str(s))
 
     s, pay = call("GET", f"/payments/{booking_id}", ctok)
     check("payment settled off-platform", pay.get("status") == "paid_off_platform",

@@ -270,6 +270,181 @@ class TestCompleteBookingFailures:
             )
         assert response.status_code == 404
 
+    def test_unassigned_multi_employee_business_blocked(self, test_client, as_owner):
+        """W3: a business with real staff and nobody picked cannot complete —
+        this is the actual gap left when the null-employee_id case is closed.
+        A blanket 400 for EVERY unassigned booking would also wrongly hit a
+        solo owner (see TestCompleteBookingOwnerAutoAssign below); this pins
+        the multi-person half of that decision."""
+        booking_stub = SupabaseTableStub(select_data=_booking_row(status="confirmed"))
+        biz_stub = SupabaseTableStub(select_data={"id": "biz-1"})
+        emp_stub = SupabaseTableStub(
+            select_data=[{"id": "emp-2", "user_id": "worker-1", "is_active": True}]
+        )
+        # The guard sits AFTER the capture check, so a booking has to look paid
+        # before the assignment question is even reached.
+        with patch("app.api.bookings.supabase") as mock_supabase, patch(
+            "app.services.approvals.assert_releasable"
+        ) as mock_assert:
+            mock_assert.return_value = None
+            mock_supabase.table.side_effect = _multi_table(
+                {
+                    "bookings": booking_stub,
+                    "businesses": biz_stub,
+                    "employees": emp_stub,
+                }
+            )
+            response = test_client.patch(
+                f"/bookings/{BOOKING_UUID}/complete",
+                headers={"Authorization": "Bearer test-token"},
+            )
+        assert response.status_code == 400
+        assert "Assign someone" in response.json()["detail"]
+
+    def test_unpaid_booking_reports_payment_not_assignment(self, test_client, as_owner):
+        """Ordering guard: an unassigned AND unpaid booking must answer 409
+        'not paid', not 400 'assign someone'. The payment fact is the more
+        specific one, and e2e_smoke pins it — an earlier draft of this fix put
+        the assignment check first and turned that 409 into a 400."""
+        booking_stub = SupabaseTableStub(select_data=_booking_row(status="confirmed"))
+        biz_stub = SupabaseTableStub(select_data={"id": "biz-1"})
+        with patch("app.api.bookings.supabase") as mock_supabase, patch(
+            "app.services.approvals.assert_releasable"
+        ) as mock_assert:
+            from app.services import escrow
+
+            mock_assert.side_effect = escrow.CaptureRequiredError("no capture")
+            mock_supabase.table.side_effect = _multi_table(
+                {"bookings": booking_stub, "businesses": biz_stub}
+            )
+            response = test_client.patch(
+                f"/bookings/{BOOKING_UUID}/complete",
+                headers={"Authorization": "Bearer test-token"},
+            )
+        assert response.status_code == 409
+        assert "not been paid" in response.json()["detail"]
+
+    def test_roster_lookup_failure_fails_closed(self, test_client, as_owner):
+        """Money release path: if the roster can't be read, do not guess
+        'solo' and auto-release — refuse and let the caller retry."""
+
+        class Exploding(SupabaseTableStub):
+            def execute(self):
+                raise RuntimeError("postgrest is down")
+
+        booking_stub = SupabaseTableStub(select_data=_booking_row(status="confirmed"))
+        biz_stub = SupabaseTableStub(select_data={"id": "biz-1"})
+        with patch("app.api.bookings.supabase") as mock_supabase, patch(
+            "app.services.approvals.assert_releasable"
+        ) as mock_assert:
+            mock_assert.return_value = None
+            mock_supabase.table.side_effect = _multi_table(
+                {
+                    "bookings": booking_stub,
+                    "businesses": biz_stub,
+                    "employees": Exploding(),
+                }
+            )
+            response = test_client.patch(
+                f"/bookings/{BOOKING_UUID}/complete",
+                headers={"Authorization": "Bearer test-token"},
+            )
+        assert response.status_code == 400
+
+
+class TestCompleteBookingOwnerAutoAssign:
+    """W3 fix, positive side: a solo business (owner, no staff) never sees an
+    assign screen, so it must not be dead-ended out of completing its own job.
+    `/complete` now auto-assigns the owner the same way `/assign-employee`
+    and `/assignees` already do (walkthrough M8's `_ensure_owner_employee`),
+    then proceeds — instead of either silently completing with employee_id
+    still null (the bug) or hard-refusing (the worse bug)."""
+
+    def _owner_employee_row(self):
+        return {
+            "id": "emp-owner",
+            "business_id": "biz-1",
+            "user_id": "owner-1",
+            "role_title": "Owner",
+            "is_active": True,
+        }
+
+    def test_solo_business_auto_assigns_owner_and_completes(
+        self, test_client, as_owner
+    ):
+        booking_stub = SupabaseTableStub(
+            select_data=_booking_row(status="confirmed"),
+            update_data=[_booking_row(status="confirmed", employee_id="emp-owner")],
+        )
+        biz_stub = SupabaseTableStub(
+            select_data={"id": "biz-1", "business_name": "Solo Co"}
+        )
+        emp_stub = SupabaseTableStub(select_data=[])
+        calls = {"n": 0}
+
+        def _employees_table():
+            # Call 1: this endpoint's own roster check (no OTHER staff).
+            # Call 2: _ensure_owner_employee's first read (no owner row yet).
+            # Call 3: the insert it issues.
+            # Call 4: its re-read after insert (the row now exists).
+            if calls["n"] < 2:
+                emp_stub._data["select"] = []
+            else:
+                emp_stub._data["select"] = [self._owner_employee_row()]
+            calls["n"] += 1
+            return emp_stub
+
+        with patch("app.api.bookings.supabase") as mock_supabase, patch(
+            "app.services.approvals.assert_releasable"
+        ) as mock_assert, patch(
+            "app.services.approvals.start_approval_window"
+        ) as mock_start:
+            mock_assert.return_value = None
+            mock_start.return_value = "2026-08-10T00:00:00+00:00"
+            mock_supabase.table.side_effect = lambda name: (
+                _employees_table()
+                if name == "employees"
+                else {"bookings": booking_stub, "businesses": biz_stub}.get(name)
+            )
+            response = test_client.patch(
+                f"/bookings/{BOOKING_UUID}/complete",
+                headers={"Authorization": "Bearer test-token"},
+            )
+
+        assert response.status_code == 200, response.text
+        update_calls = [c for c in booking_stub.calls if c[0] == "update"]
+        assert update_calls, "the booking was never given a real employee_id"
+        assert update_calls[0][1][0]["employee_id"] == "emp-owner"
+
+    def test_already_assigned_booking_unaffected(self, test_client, as_owner):
+        """An already-assigned booking must not touch the roster lookup at
+        all — the whole point is this path is unchanged for the normal case."""
+        booking_stub = SupabaseTableStub(
+            select_data=_booking_row(status="confirmed", employee_id="emp-1")
+        )
+        biz_stub = SupabaseTableStub(
+            select_data={"id": "biz-1", "business_name": "Crew Co"}
+        )
+        with patch("app.api.bookings.supabase") as mock_supabase, patch(
+            "app.services.approvals.assert_releasable"
+        ) as mock_assert, patch(
+            "app.services.approvals.start_approval_window"
+        ) as mock_start:
+            mock_assert.return_value = None
+            mock_start.return_value = "2026-08-10T00:00:00+00:00"
+            # No "employees" stub registered at all — a call to it 500s the
+            # test loudly instead of silently degrading.
+            mock_supabase.table.side_effect = _multi_table(
+                {"bookings": booking_stub, "businesses": biz_stub}
+            )
+            response = test_client.patch(
+                f"/bookings/{BOOKING_UUID}/complete",
+                headers={"Authorization": "Bearer test-token"},
+            )
+        assert response.status_code == 200, response.text
+        update_calls = [c for c in booking_stub.calls if c[0] == "update"]
+        assert not update_calls, "an already-assigned booking must not be re-written"
+
 
 # ── PATCH /bookings/{id}/assign-employee ────────────────────────────────────
 

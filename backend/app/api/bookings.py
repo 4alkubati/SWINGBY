@@ -1107,6 +1107,7 @@ def complete_booking(booking_id: str, current_user: dict = Depends(get_current_u
         raise HTTPException(status_code=400, detail="Booking is already completed")
 
     # Authorisation
+    owner_business_id = None
     if current_user["role"] == "business_owner":
         biz = (
             supabase.table("businesses")
@@ -1119,6 +1120,7 @@ def complete_booking(booking_id: str, current_user: dict = Depends(get_current_u
             raise HTTPException(
                 status_code=403, detail="This booking doesn't belong to your business"
             )
+        owner_business_id = biz.data["id"]
     else:  # employee
         emp = (
             supabase.table("employees")
@@ -1177,6 +1179,90 @@ def complete_booking(booking_id: str, current_user: dict = Depends(get_current_u
                 detail="Cannot complete: no payment record to release. "
                 "Contact support — this booking's payment is missing.",
             )
+
+        # Who actually did this job? (W3, 2026-08-09 walkthrough; ported here
+        # 2026-08-12 after the money moved out of this endpoint.)
+        #
+        # This endpoint validated role, existence, not-already-completed and
+        # ownership — and never looked at `employee_id`. Proven against
+        # production on 2026-08-12: 248 bookings reached `fully_released` with
+        # `employee_id IS NULL`, 19 of them backed by a real Stripe
+        # PaymentIntent. Unassigned is the DEFAULT state (254 of 263 rows), not
+        # an edge case.
+        #
+        # WHY HERE, and not in approvals.release() where the money actually
+        # moves: release() is reached from settle_if_due(), which is best-effort
+        # and swallows every exception. Raising there would convert a leak into a
+        # permanent trap — escrow stuck, retried on every read, no human present
+        # to see the error. start_approval_window() has exactly one caller (this
+        # line) and nothing else writes payment_status='awaiting_approval', so
+        # this is a genuine chokepoint.
+        #
+        # WHY AFTER assert_releasable and not before the auth block: an unpaid
+        # booking must still answer 409 "not paid" rather than 400 "assign
+        # someone" — the payment fact is the more specific one, and e2e_smoke
+        # pins it. Placing the guard here also means the auto-assign below never
+        # mutates a booking that was going to be refused anyway.
+        #
+        # Only owners reach this with a null employee_id: the employee branch
+        # above already requires emp.id == booking.employee_id.
+        #
+        # A blanket refusal would be a worse bug. A solo operator never sees an
+        # assign screen — that is why /assign-employee and /assignees both
+        # materialise the owner as a real assignee via _ensure_owner_employee —
+        # so hard-refusing would dead-end them on a job they actually finished,
+        # with the money stuck behind the very guard meant to protect it.
+        if owner_business_id and not booking.get("employee_id"):
+            try:
+                other_staff = [
+                    e
+                    for e in _rows(
+                        supabase.table("employees")
+                        .select("id, user_id, is_active")
+                        .eq("business_id", owner_business_id)
+                        .execute()
+                    )
+                    if e.get("is_active", True)
+                    and e.get("user_id") != current_user["id"]
+                ]
+            except Exception:
+                # Money path — fail closed rather than guessing "solo" when we
+                # cannot see the roster.
+                logger.exception(
+                    "roster lookup failed for business %s while completing booking %s",
+                    owner_business_id,
+                    booking_id,
+                )
+                raise HTTPException(
+                    status_code=400,
+                    detail="Could not verify who's assigned to this job. Try again.",
+                )
+
+            if other_staff:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Assign someone to this job before marking it complete.",
+                )
+
+            owner_row = _ensure_owner_employee(owner_business_id, current_user["id"])
+            if not owner_row or not owner_row.get("id"):
+                raise HTTPException(
+                    status_code=400,
+                    detail="Could not assign this job to you before completing it.",
+                )
+            try:
+                supabase.table("bookings").update({"employee_id": owner_row["id"]}).eq(
+                    "id", booking_id
+                ).execute()
+            except Exception:
+                logger.exception(
+                    "could not persist owner auto-assignment for booking %s", booking_id
+                )
+                raise HTTPException(
+                    status_code=400,
+                    detail="Could not assign this job to you before completing it.",
+                )
+            booking["employee_id"] = owner_row["id"]
 
         # Closes the live-status timeline too: start_approval_window writes the
         # `completed` booking_event itself, so this endpoint no longer appends a

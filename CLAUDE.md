@@ -244,7 +244,12 @@ navigation and route/orphan questions.
 ## Test Credentials
 
 - Client: `testclient@swingby.dev` / `SwingBy2024!`
-- Business: `testbusiness@swingby.dev` / `SwingBy2024!` (Test Cleaning Co., Calgary)
+- Business: `testbusiness@swingby.dev` / `SwingBy2024!` (**Douglas Glen Cleaning
+  Co.**, Calgary — this said "Test Cleaning Co." until 2026-08-12; read from the
+  live row, not from here, if it matters). **It has an active non-owner employee
+  ("Cleaner") plus two inactive ones**, so it is a *multi-staff* business and
+  takes the "must assign someone before completing" branch of the W3 guard — it
+  will never exercise the solo-owner auto-assign path.
 - Admin: `amrbasem37@gmail.com`
 
 ---
