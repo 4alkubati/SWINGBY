@@ -32,6 +32,7 @@ Installed 2026-07-24 from Kira's handoff. This file is the index; the system liv
 - Cards `#0F1115` + 1px `#1F232B` + 20px radius.
 - Empty, loading and error states get restyled too, not just the happy path.
 - **A control sitting directly on `bg` must have a boundary that clears 3:1** (WCAG 1.4.11) — use `colors.borderStrong` (`#565D6B`). Card fills do **not** qualify: measured on `bg` (`#07080a`), `surface` is 1.06:1, `surfaceAlt` 1.15:1, `border` 1.27:1. See the segmented-control rule below.
+- **Every pushed screen renders `ScreenHeader`** — no screen draws its own back icon, title style, or hit target. `headerShown: false` stays on every navigator; this is the app's only header. Icon and label follow the screen's `presentation` option (`arrow-left`/"Back" for `card`, `x`/"Close" for `modal`) — never a per-screen choice. See `design/SPEC-screen-header.md` (added 2026-08-11).
 
 ## Segmented controls / tabs (added 2026-08-02)
 
