@@ -1,5 +1,5 @@
 import React from 'react';
-import { Text as RNText } from 'react-native';
+import { Text as RNText, PixelRatio } from 'react-native';
 import { typeScale } from '../theme/typography';
 import { colors } from '../theme/tokens';
 
@@ -28,6 +28,30 @@ const colorMap = {
 const CAPPED_VARIANTS = new Set(['caption', 'label', 'smallMedium']);
 const BUTTON_VARIANTS = new Set(['bodyMedium', 'smallMedium', 'label']);
 
+// Every one of the 17 variants in typeScale pairs a fixed `lineHeight` with a
+// `fontSize` — display1 40/48, h1 20/26, body 16/24, and so on. React Native
+// scales `fontSize` by the OS font setting when allowFontScaling is on, but it
+// does NOT scale a hardcoded `lineHeight`. So at Android's 2.0x accessibility
+// setting every style in the app became ~2x-tall glyphs inside their original
+// line box, and clipped — the exact opposite of what that setting is for, and
+// invisible to anyone not using it.
+//
+// Fixing it in the variants themselves is not possible: a static stylesheet
+// cannot know the runtime scale. Dropping lineHeight entirely would work, but
+// throws away deliberate ratios (moneyLarge is 1.10, body is 1.50 — those are
+// design decisions, not accidents).
+//
+// So the ratio is preserved and the box is scaled to match, at render time.
+// `maxFontSizeMultiplier` is honoured: a capped Text stops growing at the cap,
+// so its line box must stop there too or it gains dead space.
+export function scaledLineHeight(variant, cap) {
+  const base = typeScale[variant];
+  if (!base?.lineHeight || !base?.fontSize) return null;
+  const scale = Math.min(PixelRatio.getFontScale(), cap ?? Infinity);
+  if (scale <= 1) return null; // untouched at default size
+  return { lineHeight: base.lineHeight * scale };
+}
+
 export default function Text({ variant = 'body', color = 'primary', style, children, maxFontSizeMultiplier, ...props }) {
   const cap = maxFontSizeMultiplier !== undefined
     ? maxFontSizeMultiplier
@@ -39,6 +63,7 @@ export default function Text({ variant = 'body', color = 'primary', style, child
     <RNText
       style={[
         typeScale[variant],
+        scaledLineHeight(variant, cap),
         { color: colorMap[color] || color },
         style,
       ]}
