@@ -21,6 +21,7 @@ import { Feather } from '@expo/vector-icons';
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 
 import Text from '../../components/Text';
+import ScreenHeader from '../../components/ScreenHeader';
 import Surface from '../../components/Surface';
 import Inline from '../../components/Inline';
 import Button from '../../components/Button';
@@ -197,18 +198,8 @@ export default function RefundReviewScreen({ navigation, route }) {
   const isMoneyDecision = !!dispute.needs_money_decision;
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <View style={styles.header}>
-        <Pressable
-          onPress={() => navigation.goBack()}
-          hitSlop={10}
-          accessibilityRole="button"
-          accessibilityLabel="Back"
-        >
-          <Feather name="arrow-left" size={20} color={colors.textPrimary} />
-        </Pressable>
-        <Text style={styles.title}>Review</Text>
-      </View>
+    <SafeAreaView style={styles.safe} edges={['left', 'right', 'bottom']}>
+      <ScreenHeader title="Review" onBack={() => navigation.goBack()} />
 
       <ScrollView
         contentContainerStyle={styles.scroll}
@@ -345,14 +336,6 @@ export default function RefundReviewScreen({ navigation, route }) {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-  },
-  title: { fontFamily: 'SpaceGrotesk_700Bold', fontSize: 20, color: colors.textPrimary },
   scroll: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xl * 2 },
   block: { marginBottom: spacing.md },
   sectionLabel: {

@@ -40,6 +40,7 @@ import { Feather } from '@expo/vector-icons';
 import * as WebBrowser from 'expo-web-browser';
 
 import Text from '../../components/Text';
+import ScreenHeader from '../../components/ScreenHeader';
 import Button from '../../components/Button';
 import EmptyState from '../../components/EmptyState';
 import { SkeletonBox } from '../../components/Skeleton';
@@ -403,23 +404,8 @@ export default function WalletScreen({ navigation }) {
   }, [wallet, account, doCashOut]);
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Pressable
-          onPress={() => navigation.goBack()}
-          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-          accessibilityLabel={i18n.t('common.back')}
-          accessibilityRole="button"
-          style={styles.backBtn}
-        >
-          <Feather name="arrow-left" size={20} color={colors.textSecondary} strokeWidth={1.8} />
-        </Pressable>
-        <Text variant="h1" style={styles.headerTitle} accessibilityRole="header">
-          {i18n.t('wallet.title')}
-        </Text>
-        <View style={styles.backBtn} />
-      </View>
+    <View style={styles.container}>
+      <ScreenHeader title={i18n.t('wallet.title')} onBack={() => navigation.goBack()} />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -516,17 +502,6 @@ export default function WalletScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   scroll: { paddingHorizontal: spacing.lg, gap: spacing.base },
-
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.sm,
-  },
-  backBtn: { width: 40, minHeight: 44, justifyContent: 'center' },
-  headerTitle: { flex: 1, textAlign: 'center' },
 
   // Hero
   hero: { alignItems: 'center', paddingTop: spacing.lg, paddingBottom: spacing.sm },

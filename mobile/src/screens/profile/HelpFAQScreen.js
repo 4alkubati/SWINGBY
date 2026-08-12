@@ -14,6 +14,7 @@ import { Feather } from '@expo/vector-icons';
 
 import { colors, spacing, radius, motion } from '../../theme/tokens';
 import Text from '../../components/Text';
+import ScreenHeader from '../../components/ScreenHeader';
 import Stack from '../../components/Stack';
 import Inline from '../../components/Inline';
 import Surface from '../../components/Surface';
@@ -188,33 +189,9 @@ export default function HelpFAQScreen() {
       style={{
         flex: 1,
         backgroundColor: colors.bg,
-        paddingTop: insets.top,
       }}
     >
-      {/* ── Header ── */}
-      <Inline
-        justify="space-between"
-        align="center"
-        style={{
-          paddingHorizontal: spacing.base,
-          paddingBottom: spacing.md,
-          borderBottomWidth: 1,
-          borderBottomColor: colors.border,
-        }}
-      >
-        <Pressable
-          onPress={() => navigation.goBack()}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          style={{ width: 40, height: 40, alignItems: 'center', justifyContent: 'center' }}
-        >
-          <Feather name="arrow-left" size={22} color={colors.textPrimary} />
-        </Pressable>
-
-        <Text variant="h2">Help & FAQ</Text>
-
-        {/* spacer to keep title centered */}
-        <View style={{ width: 40 }} />
-      </Inline>
+      <ScreenHeader title="Help & FAQ" onBack={() => navigation.goBack()} />
 
       {/* ── Content ── */}
       <ScrollView

@@ -4,8 +4,6 @@
 // Read-only list: status chip, issue type, booking context, filed-by/against.
 import React, { useCallback, useEffect, useState } from 'react';
 import { View, FlatList, Pressable } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Feather } from '@expo/vector-icons';
 
 import { api } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
@@ -13,6 +11,7 @@ import i18n from '../../i18n';
 import EmptyState from '../../components/EmptyState';
 import { SkeletonList } from '../../components/Skeleton';
 import Text from '../../components/Text';
+import ScreenHeader from '../../components/ScreenHeader';
 import Stack from '../../components/Stack';
 import Inline from '../../components/Inline';
 import Surface from '../../components/Surface';
@@ -108,7 +107,6 @@ function DisputeCard({ item, isMine, onPress }) {
 }
 
 export default function MyDisputesScreen({ navigation }) {
-  const insets = useSafeAreaInsets();
   const { user } = useAuth();
 
   const [items, setItems] = useState([]);
@@ -127,34 +125,10 @@ export default function MyDisputesScreen({ navigation }) {
 
   useEffect(() => { load(); }, [load]);
 
-  const containerStyle = { flex: 1, backgroundColor: colors.bg, paddingTop: insets.top };
+  const containerStyle = { flex: 1, backgroundColor: colors.bg };
 
   const header = (
-    <Inline
-      justify="space-between"
-      align="center"
-      style={{
-        paddingHorizontal: spacing.base,
-        paddingTop: spacing.sm,
-        paddingBottom: spacing.md,
-        borderBottomWidth: 1,
-        borderBottomColor: colors.border,
-      }}
-    >
-      <Pressable
-        onPress={() => navigation.goBack()}
-        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        accessibilityRole="button"
-        accessibilityLabel={i18n.t('common.back')}
-        style={{ width: 36, height: 36, alignItems: 'center', justifyContent: 'center' }}
-      >
-        <Feather name="arrow-left" size={20} color={colors.textPrimary} />
-      </Pressable>
-      <Text variant="h2" style={{ flex: 1, textAlign: 'center' }}>
-        {i18n.t('disputes.title')}
-      </Text>
-      <View style={{ width: 36 }} />
-    </Inline>
+    <ScreenHeader title={i18n.t('disputes.title')} onBack={() => navigation.goBack()} />
   );
 
   if (status === 'loading') {

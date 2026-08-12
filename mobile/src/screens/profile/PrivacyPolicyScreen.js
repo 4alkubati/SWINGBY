@@ -1,13 +1,13 @@
 // T52 — PrivacyPolicyScreen (UX polish pass)
 import React from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
 import { colors, spacing, radius } from '../../theme/tokens';
 import Text from '../../components/Text';
+import ScreenHeader from '../../components/ScreenHeader';
 import Stack from '../../components/Stack';
-import Inline from '../../components/Inline';
 import Surface from '../../components/Surface';
 
 const LAST_UPDATED = 'July 2026';
@@ -44,30 +44,8 @@ export default function PrivacyPolicyScreen() {
   const navigation = useNavigation();
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.bg, paddingTop: insets.top }}>
-      {/* Header */}
-      <Inline
-        justify="space-between"
-        style={{
-          paddingHorizontal: spacing.base,
-          paddingBottom: spacing.md,
-          borderBottomWidth: 1,
-          borderBottomColor: colors.border,
-        }}
-      >
-        <Pressable
-          onPress={() => navigation.goBack()}
-          hitSlop={{ top: spacing.sm, bottom: spacing.sm, left: spacing.sm, right: spacing.sm }}
-          style={{ width: 40, height: 40, alignItems: 'center', justifyContent: 'center' }}
-        >
-          <Feather name="arrow-left" size={22} color={colors.textPrimary} />
-        </Pressable>
-
-        <Text variant="h2">Privacy Policy</Text>
-
-        {/* spacer to balance the back button */}
-        <View style={{ width: 40 }} />
-      </Inline>
+    <View style={{ flex: 1, backgroundColor: colors.bg }}>
+      <ScreenHeader title="Privacy Policy" onBack={() => navigation.goBack()} />
 
       <ScrollView
         style={{ flex: 1 }}

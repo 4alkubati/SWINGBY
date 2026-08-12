@@ -1,9 +1,9 @@
-import { View, ScrollView, StyleSheet, Pressable, Linking, TouchableOpacity } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { View, ScrollView, StyleSheet, Linking, TouchableOpacity } from 'react-native';
 import { useEffect, useState } from 'react';
 import { Feather } from '@expo/vector-icons';
 
 import Text from '../../components/Text';
+import ScreenHeader from '../../components/ScreenHeader';
 import Button from '../../components/Button';
 import Stack from '../../components/Stack';
 import Inline from '../../components/Inline';
@@ -84,7 +84,6 @@ function ProofOfWork({ proof, onOpen, indexOf }) {
 }
 
 export default function InvoiceScreen({ navigation, route }) {
-  const insets = useSafeAreaInsets();
   const { bookingId } = route.params || {};
 
   const [data, setData] = useState(null);
@@ -124,14 +123,8 @@ export default function InvoiceScreen({ navigation, route }) {
 
   if (loading) {
     return (
-      <View style={[styles.container, { paddingTop: insets.top }]}>
-        <View style={styles.header}>
-          <Pressable onPress={() => navigation.goBack()} hitSlop={12}>
-            <Feather name="arrow-left" size={20} color={colors.textSecondary} />
-          </Pressable>
-          <Text variant="h1">Receipt</Text>
-          <View style={{ width: 20 }} />
-        </View>
+      <View style={styles.container}>
+        <ScreenHeader title="Receipt" onBack={() => navigation.goBack()} />
         <View style={{ padding: spacing.base }}>
           <SkeletonCard />
         </View>
@@ -141,14 +134,8 @@ export default function InvoiceScreen({ navigation, route }) {
 
   if (error || !data) {
     return (
-      <View style={[styles.container, { paddingTop: insets.top }]}>
-        <View style={styles.header}>
-          <Pressable onPress={() => navigation.goBack()} hitSlop={12}>
-            <Feather name="arrow-left" size={20} color={colors.textSecondary} />
-          </Pressable>
-          <Text variant="h1">Receipt</Text>
-          <View style={{ width: 20 }} />
-        </View>
+      <View style={styles.container}>
+        <ScreenHeader title="Receipt" onBack={() => navigation.goBack()} />
         <View style={styles.errorBox}>
           <Feather name="alert-circle" size={28} color={colors.danger} />
           <Text variant="body" color="secondary" style={{ textAlign: 'center' }}>
@@ -173,14 +160,8 @@ export default function InvoiceScreen({ navigation, route }) {
   const indexOfUri = (uri) => Math.max(proofUris.indexOf(uri), 0);
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      <View style={styles.header}>
-        <Pressable onPress={() => navigation.goBack()} hitSlop={12}>
-          <Feather name="arrow-left" size={20} color={colors.textSecondary} />
-        </Pressable>
-        <Text variant="h1">Receipt</Text>
-        <View style={{ width: 20 }} />
-      </View>
+    <View style={styles.container}>
+      <ScreenHeader title="Receipt" onBack={() => navigation.goBack()} />
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <Stack spacing="lg">
@@ -291,11 +272,6 @@ export default function InvoiceScreen({ navigation, route }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: spacing.base, paddingTop: spacing.md, paddingBottom: spacing.base,
-    borderBottomWidth: 1, borderBottomColor: colors.border,
-  },
   scroll: { padding: spacing.base, paddingBottom: spacing.xl },
   divider: { height: 1, backgroundColor: colors.border, marginVertical: spacing.xs },
   thumbRow: { flexDirection: 'row', gap: spacing.sm },

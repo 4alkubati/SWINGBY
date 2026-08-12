@@ -17,11 +17,11 @@
 // suspending twice or re-hiding something an admin has since restored are both
 // wrong. So the destructive actions confirm first.
 import { useState } from 'react';
-import { View, ScrollView, StyleSheet, Pressable, Alert } from 'react-native';
+import { View, ScrollView, StyleSheet, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Feather } from '@expo/vector-icons';
 
 import Text from '../../components/Text';
+import ScreenHeader from '../../components/ScreenHeader';
 import Surface from '../../components/Surface';
 import Stack from '../../components/Stack';
 import Inline from '../../components/Inline';
@@ -114,18 +114,8 @@ export default function ReportReviewScreen({ route, navigation }) {
   }
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <View style={styles.header}>
-        <Pressable
-          onPress={() => navigation.goBack()}
-          hitSlop={10}
-          accessibilityRole="button"
-          accessibilityLabel="Back"
-        >
-          <Feather name="arrow-left" size={20} color={colors.textPrimary} />
-        </Pressable>
-        <Text style={styles.title}>{i18n.t('moderation.reviewTitle')}</Text>
-      </View>
+    <SafeAreaView style={styles.safe} edges={['left', 'right', 'bottom']}>
+      <ScreenHeader title={i18n.t('moderation.reviewTitle')} onBack={() => navigation.goBack()} />
 
       <ScrollView
         contentContainerStyle={styles.body}
@@ -217,18 +207,6 @@ export default function ReportReviewScreen({ route, navigation }) {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-  },
-  title: {
-    fontFamily: 'SpaceGrotesk_700Bold',
-    fontSize: 20,
-    color: colors.textPrimary,
-  },
   body: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xl * 2 },
   divider: { height: 1, backgroundColor: colors.border, marginVertical: 2 },
 });

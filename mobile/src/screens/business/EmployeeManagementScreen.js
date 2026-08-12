@@ -16,10 +16,10 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { api } from '../../services/api';
 import { SkeletonList } from '../../components/Skeleton';
+import ScreenHeader from '../../components/ScreenHeader';
 import { colors } from '../../theme/tokens';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -403,7 +403,6 @@ function EmptyTeam({ onInvite }) {
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 export default function EmployeeManagementScreen({ navigation, route }) {
-  const insets = useSafeAreaInsets();
   const bizId = route?.params?.businessId;
 
   const [employees, setEmployees] = useState([]);
@@ -470,21 +469,14 @@ export default function EmployeeManagementScreen({ navigation, route }) {
   }
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-          <Feather name="arrow-left" size={20} color={colors.textPrimary} strokeWidth={2} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Team</Text>
-        <TouchableOpacity
-          style={styles.inviteBtn}
-          onPress={() => setShowAddEmployee(true)}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.inviteBtnText}>+ Add</Text>
-        </TouchableOpacity>
-      </View>
+    <View style={styles.container}>
+      <ScreenHeader
+        title="Team"
+        onBack={() => navigation.goBack()}
+        trailingIcon="plus"
+        onTrailingPress={() => setShowAddEmployee(true)}
+        trailingAccessibilityLabel="Add employee"
+      />
 
       {/* Search */}
       <View style={styles.searchBar}>
@@ -562,31 +554,6 @@ export default function EmployeeManagementScreen({ navigation, route }) {
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
-
-  // Header
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 22,
-    paddingTop: 12,
-    paddingBottom: 10,
-  },
-  backBtn: { fontSize: 24, color: colors.textSecondary, width: 40 },
-  headerTitle: { fontSize: 20, fontWeight: '700', color: colors.textPrimary, letterSpacing: -0.5 },
-  inviteBtn: {
-    backgroundColor: colors.accentMuted,
-    borderWidth: 1,
-    borderColor: colors.borderAccent,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    minWidth: 44,
-    minHeight: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  inviteBtnText: { fontSize: 13, fontWeight: '600', color: colors.accentText },
 
   // Search
   searchBar: {

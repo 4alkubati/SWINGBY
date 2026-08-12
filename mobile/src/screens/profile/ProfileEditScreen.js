@@ -18,6 +18,7 @@ import { show as showToast } from '../../services/toast';
 import { buttonTap } from '../../services/haptics';
 
 import Text from '../../components/Text';
+import ScreenHeader from '../../components/ScreenHeader';
 import Stack from '../../components/Stack';
 import Avatar from '../../components/Avatar';
 import Button from '../../components/Button';
@@ -144,41 +145,7 @@ export default function ProfileEditScreen() {
       style={{ flex: 1, backgroundColor: colors.bg }}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      {/* ── Header ── */}
-      <View
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          gap: spacing.md,
-          paddingHorizontal: spacing.lg,
-          paddingTop: insets.top + spacing.md,
-          paddingBottom: spacing.md,
-        }}
-      >
-        {/* 38px bordered circle, per the frame. No bottom hairline under the
-            header — the mock has none, and the first thing below it is the
-            avatar block, not a list. */}
-        <Pressable
-          onPress={() => navigation.goBack()}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-          style={({ pressed }) => ({
-            width: 38,
-            height: 38,
-            borderRadius: 19,
-            backgroundColor: pressed ? colors.surfaceAlt : colors.surface,
-            borderWidth: 1,
-            borderColor: colors.border,
-            alignItems: 'center',
-            justifyContent: 'center',
-          })}
-        >
-          <Feather name="arrow-left" size={19} strokeWidth={1.8} color={colors.textPrimary} />
-        </Pressable>
-
-        <Text variant="h2" accessibilityRole="header">Edit profile</Text>
-      </View>
+      <ScreenHeader title="Edit profile" onBack={() => navigation.goBack()} />
 
       {/* ── Scrollable body ── */}
       <ScrollView

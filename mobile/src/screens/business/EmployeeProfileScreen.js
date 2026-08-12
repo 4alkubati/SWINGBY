@@ -6,12 +6,12 @@ import {
   RefreshControl,
   Animated,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Feather } from '@expo/vector-icons';
 import { api } from '../../services/api';
 import { colors, spacing, radius, shadows } from '../../theme/tokens';
 import Text from '../../components/Text';
+import ScreenHeader from '../../components/ScreenHeader';
 import Avatar from '../../components/Avatar';
 import Surface from '../../components/Surface';
 import Stack from '../../components/Stack';
@@ -36,14 +36,10 @@ function formatJoinedAt(iso) {
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
 
-function ProfileSkeleton({ insets }) {
+function ProfileSkeleton({ onBack }) {
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      <View style={styles.header}>
-        <SkeletonBox width={32} height={32} borderRadius={radius.chip} />
-        <SkeletonBox width={80} height={18} borderRadius={6} />
-        <View style={{ width: 32 }} />
-      </View>
+    <View style={styles.container}>
+      <ScreenHeader title="Profile" onBack={onBack} />
 
       <ScrollView
         contentContainerStyle={[styles.content, { paddingBottom: spacing['2xl'] }]}
@@ -148,7 +144,6 @@ function EmployeeReviewCard({ review }) {
 // ─── Main screen ──────────────────────────────────────────────────────────────
 
 export default function EmployeeProfileScreen({ navigation, route }) {
-  const insets = useSafeAreaInsets();
   const { employeeId } = route.params || {};
 
   const [profile, setProfile] = useState(null);
@@ -189,19 +184,13 @@ export default function EmployeeProfileScreen({ navigation, route }) {
   }, [load, employeeId]);
 
   if (loading) {
-    return <ProfileSkeleton insets={insets} />;
+    return <ProfileSkeleton onBack={() => navigation.goBack()} />;
   }
 
   if (error || !profile) {
     return (
-      <View style={[styles.container, { paddingTop: insets.top }]}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={8} accessibilityRole="button" accessibilityLabel="Back">
-            <Feather name="arrow-left" size={20} color={colors.textSecondary} strokeWidth={1.8} />
-          </TouchableOpacity>
-          <Text variant="bodyMedium">Profile</Text>
-          <View style={{ width: 32 }} />
-        </View>
+      <View style={styles.container}>
+        <ScreenHeader title="Profile" onBack={() => navigation.goBack()} />
         <View style={styles.centeredState}>
           <Surface padding="lg" rounded="card" style={{ alignItems: 'center', gap: spacing.base }}>
             <Text variant="h1" style={{ textAlign: 'center' }}>Could not load profile</Text>
@@ -229,14 +218,8 @@ export default function EmployeeProfileScreen({ navigation, route }) {
   const businessName = profile.business_name;
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={8}>
-          <Feather name="arrow-left" size={20} strokeWidth={1.8} color={colors.textSecondary} />
-        </TouchableOpacity>
-        <Text variant="bodyMedium">Profile</Text>
-        <View style={{ width: 32 }} />
-      </View>
+    <View style={styles.container}>
+      <ScreenHeader title="Profile" onBack={() => navigation.goBack()} />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -356,14 +339,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.bg,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.sm,
   },
   content: {
     paddingBottom: spacing['2xl'],

@@ -15,12 +15,11 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 
 import Text from '../../components/Text';
+import ScreenHeader from '../../components/ScreenHeader';
 import Stack from '../../components/Stack';
-import Inline from '../../components/Inline';
 import Badge from '../../components/Badge';
 import EmptyState from '../../components/EmptyState';
 import { SkeletonList } from '../../components/Skeleton';
@@ -155,7 +154,6 @@ function NotifItem({ item, onPress }) {
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
 export default function NotificationsCenterScreen({ navigation }) {
-  const insets = useSafeAreaInsets();
   const [notifications, setNotifications] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -222,42 +220,19 @@ export default function NotificationsCenterScreen({ navigation }) {
       style={{
         flex: 1,
         backgroundColor: colors.bg,
-        paddingTop: insets.top,
       }}
     >
-      {/* Header */}
-      <Inline
-        justify="space-between"
-        style={{
-          paddingHorizontal: spacing.base + spacing.xs,
-          paddingTop: spacing.md,
-          paddingBottom: spacing.base - 2,
-          borderBottomWidth: 1,
-          borderBottomColor: colors.border,
-        }}
-      >
-        {/* D20 — pushed screen, headerShown:false, and it drew no back
-            control. iOS left only the edge swipe. */}
-        <Inline spacing="sm" style={{ alignItems: 'center' }}>
-          <Pressable
-            onPress={() => navigation.goBack()}
-            hitSlop={12}
-            accessibilityRole="button"
-            accessibilityLabel="Go back"
-          >
-            <Feather name="arrow-left" size={20} color={colors.textSecondary} />
-          </Pressable>
-          <Text variant="display3">Notifications</Text>
-        </Inline>
-        {unreadCount > 0 && (
-          <Pressable
-            onPress={markAllRead}
-            hitSlop={{ top: spacing.sm, bottom: spacing.sm, left: spacing.sm, right: spacing.sm }}
-          >
-            <Text variant="smallMedium" style={{ color: colors.accentText }}>Mark all read</Text>
-          </Pressable>
-        )}
-      </Inline>
+      <ScreenHeader
+        title="Notifications"
+        onBack={() => navigation.goBack()}
+        {...(unreadCount > 0
+          ? {
+              trailingIcon: 'check-circle',
+              onTrailingPress: markAllRead,
+              trailingAccessibilityLabel: 'Mark all read',
+            }
+          : {})}
+      />
 
       {/* Loading skeleton — shown only on first mount before AsyncStorage resolves */}
       {loading ? (

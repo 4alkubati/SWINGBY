@@ -7,7 +7,6 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
 } from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '../../services/api';
 import { show as showToast } from '../../services/toast';
@@ -15,9 +14,8 @@ import { buttonTap } from '../../services/haptics';
 import { useFavorites } from '../../hooks/useFavorites';
 import NearbyCard from '../../components/NearbyCard';
 import EmptyState from '../../components/EmptyState';
-import Text from '../../components/Text';
+import ScreenHeader from '../../components/ScreenHeader';
 import Stack from '../../components/Stack';
-import Inline from '../../components/Inline';
 import { SkeletonList } from '../../components/Skeleton';
 import { Feather } from '@expo/vector-icons';
 import { colors, spacing, radius, shadows, motion } from '../../theme/tokens';
@@ -79,7 +77,6 @@ function HeartButton({ onPress }) {
 }
 
 export default function FavoritesScreen({ navigation }) {
-  const insets = useSafeAreaInsets();
   const { ids, remove } = useFavorites();
 
   const [businesses, setBusinesses] = useState([]);
@@ -126,45 +123,13 @@ export default function FavoritesScreen({ navigation }) {
 
   // ─── Header ──────────────────────────────────────────────────────────────
   const renderHeader = () => (
-    <Inline
-      justify="space-between"
-      style={{
-        paddingHorizontal: spacing.base,
-        paddingTop: spacing.sm,
-        paddingBottom: spacing.md,
-      }}
-    >
-      <Pressable
-        onPress={() => navigation.goBack()}
-        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        style={{
-          width: 40,
-          height: 40,
-          backgroundColor: colors.surface,
-          borderWidth: 1,
-          borderColor: colors.border,
-          borderRadius: radius.pill,
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <Feather name="arrow-left" size={20} color={colors.textPrimary} />
-      </Pressable>
-
-      <Text variant="h2" style={{ flex: 1, textAlign: 'center' }}>
-        Favorites
-      </Text>
-
-      {/* Spacer to balance the back button */}
-      <View style={{ width: 40 }} />
-    </Inline>
+    <ScreenHeader title="Favorites" onBack={() => navigation.goBack()} />
   );
 
   // ─── Shared container ─────────────────────────────────────────────────────
   const containerStyle = {
     flex: 1,
     backgroundColor: colors.bg,
-    paddingTop: insets.top,
   };
 
   // ─── Empty state ─────────────────────────────────────────────────────────

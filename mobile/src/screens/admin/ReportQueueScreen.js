@@ -16,9 +16,9 @@ import { useCallback, useState } from 'react';
 import { View, FlatList, RefreshControl, StyleSheet, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
-import { Feather } from '@expo/vector-icons';
 
 import Text from '../../components/Text';
+import ScreenHeader from '../../components/ScreenHeader';
 import Surface from '../../components/Surface';
 import Inline from '../../components/Inline';
 import Avatar from '../../components/Avatar';
@@ -141,18 +141,8 @@ export default function ReportQueueScreen({ navigation }) {
   );
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <View style={styles.header}>
-        <Pressable
-          onPress={() => navigation.goBack()}
-          hitSlop={10}
-          accessibilityRole="button"
-          accessibilityLabel="Back"
-        >
-          <Feather name="arrow-left" size={20} color={colors.textPrimary} />
-        </Pressable>
-        <Text style={styles.title}>{i18n.t('moderation.queueTitle')}</Text>
-      </View>
+    <SafeAreaView style={styles.safe} edges={['left', 'right', 'bottom']}>
+      <ScreenHeader title={i18n.t('moderation.queueTitle')} onBack={() => navigation.goBack()} />
 
       {loading ? (
         <View style={{ paddingHorizontal: spacing.lg }}>
@@ -206,18 +196,6 @@ export default function ReportQueueScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-  },
-  title: {
-    fontFamily: 'SpaceGrotesk_700Bold',
-    fontSize: 20,
-    color: colors.textPrimary,
-  },
   list: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xl * 2, gap: spacing.md },
   suspended: {
     fontFamily: 'Inter_600SemiBold',

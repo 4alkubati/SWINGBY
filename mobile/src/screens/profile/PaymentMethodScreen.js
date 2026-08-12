@@ -29,10 +29,10 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { colors, spacing, radius } from '../../theme/tokens';
 import Text from '../../components/Text';
+import ScreenHeader from '../../components/ScreenHeader';
 import Button from '../../components/Button';
 import { useAuth } from '../../context/AuthContext';
 import { show as showToast } from '../../services/toast';
@@ -78,7 +78,6 @@ const STEPS = [
 ];
 
 export default function PaymentMethodScreen({ navigation }) {
-  const insets = useSafeAreaInsets();
   const { user } = useAuth();
 
   // `null` = not loaded. Never rendered as "no cards", which would tell someone
@@ -150,20 +149,8 @@ export default function PaymentMethodScreen({ navigation }) {
   }
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={styles.backBtn}
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-        >
-          <Feather name="arrow-left" size={22} color={colors.textPrimary} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Payments</Text>
-        <View style={{ width: 36 }} />
-      </View>
+    <View style={styles.container}>
+      <ScreenHeader title="Payments" onBack={() => navigation.goBack()} />
 
       <ScrollView
         contentContainerStyle={styles.scroll}
@@ -275,22 +262,6 @@ export default function PaymentMethodScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.base,
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  backBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
-  headerTitle: {
-    fontSize: 16,
-    fontFamily: 'SpaceGrotesk_700Bold',
-    color: colors.textPrimary,
-    letterSpacing: -0.3,
-  },
 
   scroll: {
     paddingHorizontal: spacing.lg,

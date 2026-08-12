@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, ScrollView, StyleSheet,
-  Switch, Alert, Share, ActivityIndicator, Pressable,
+  Switch, Alert, Share, ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -28,6 +28,7 @@ import LanguageSelector from '../../components/LanguageSelector';
 import i18n from '../../i18n';
 import { colors, spacing, radius } from '../../theme/tokens';
 import Text from '../../components/Text';
+import ScreenHeader from '../../components/ScreenHeader';
 import Stack from '../../components/Stack';
 import Surface from '../../components/Surface';
 import Button from '../../components/Button';
@@ -315,30 +316,16 @@ export default function SettingsScreen() {
   );
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      {/* Header */}
-      <View style={styles.header}>
-        {/* D20 — every navigator sets headerShown:false, so a pushed screen
-            that draws no back control has none. On Android the hardware button
-            still works; on iOS the ONLY way out was the edge swipe, which a
-            non-technical user does not know to try. Same arrow-left shape the
-            other 43 back controls in the app use. */}
-        <Pressable
-          onPress={() => navigation.goBack()}
-          hitSlop={12}
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-          style={styles.backBtn}
-        >
-          <Feather name="arrow-left" size={20} color={colors.textSecondary} />
-        </Pressable>
-        <Text variant="display3">Settings</Text>
-        {user && (
-          <Text variant="body" color="secondary" style={styles.headerSub}>
-            {user.first_name} {user.last_name} · {user.email}
-          </Text>
-        )}
-      </View>
+    <View style={styles.container}>
+      {/* D20 — every navigator sets headerShown:false, so a pushed screen
+          that draws no back control has none. On Android the hardware button
+          still works; on iOS the ONLY way out was the edge swipe, which a
+          non-technical user does not know to try. Now the shared
+          ScreenHeader every pushed screen uses (design/SPEC-screen-header.md).
+          This screen used to also print the signed-in name/email under the
+          title; ScreenHeader has no subtitle slot (spec §12) so that line is
+          dropped here — it isn't shown anywhere else on this screen. */}
+      <ScreenHeader title="Settings" onBack={() => navigation.goBack()} />
 
       <ScrollView
         style={styles.scroll}
@@ -612,20 +599,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.bg,
-  },
-  header: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.lg,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
-  },
-  backBtn: {
-    marginBottom: spacing.sm,
-    alignSelf: 'flex-start',
-  },
-  headerSub: {
-    marginTop: spacing.xs,
   },
   scroll: {
     flex: 1,

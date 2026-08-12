@@ -14,6 +14,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { Feather } from '@expo/vector-icons';
 
 import Text from '../../components/Text';
+import ScreenHeader from '../../components/ScreenHeader';
 import TextField from '../../components/TextField';
 import Button from '../../components/Button';
 import Stack from '../../components/Stack';
@@ -1225,9 +1226,21 @@ export default function PostJobScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={[styles.wrapper, { paddingTop: insets.top }]}
+      style={styles.wrapper}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
+      {/* Real bug found migrating onto ScreenHeader (design/SPEC-screen-header.md):
+          this wizard had NO visible way out on its first step — the footer
+          nav's "Back" button only renders once !isFirstStep, and there was no
+          top-of-screen back control at all. On iOS the only exit was the
+          edge-swipe gesture, the exact D20 class of bug this migration exists
+          to close. onBack mirrors DisputeFlowScreen's Bucket C pattern: pop one
+          wizard step, or leave the flow entirely on step 0. The footer's own
+          per-step Back button (below) is unchanged. */}
+      <ScreenHeader
+        title="Post a job"
+        onBack={() => (isFirstStep ? navigation.goBack() : goBack())}
+      />
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.container}

@@ -1,14 +1,13 @@
 import {
   View, ScrollView, StyleSheet, Pressable,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useState, useEffect, useRef } from 'react';
 import Animated, {
   useSharedValue, useAnimatedStyle, withSpring,
 } from 'react-native-reanimated';
-import { Feather } from '@expo/vector-icons';
 
 import Text from '../../components/Text';
+import ScreenHeader from '../../components/ScreenHeader';
 import Button from '../../components/Button';
 import Avatar from '../../components/Avatar';
 import BusinessLogo from '../../components/BusinessLogo';
@@ -211,8 +210,6 @@ function QuoteListCard({ quote, isRecommended, onSelect, onViewProfile, onMessag
 
 // ─── Main screen ─────────────────────────────────────────────────────────────
 export default function QuoteComparisonScreen({ navigation, route }) {
-  const insets = useSafeAreaInsets();
-
   // Original state — preserved in full
   const { postId, postTitle, targetBusinessName } = route.params || {};
   const [quotes, setQuotes] = useState([]);
@@ -379,28 +376,20 @@ export default function QuoteComparisonScreen({ navigation, route }) {
   }
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      {/* ── Header ─────────────────────────────────────────────────────────── */}
-      <View style={styles.header}>
-        <Pressable onPress={() => navigation.goBack()} hitSlop={12} style={styles.backBtn} accessibilityLabel="Back" accessibilityRole="button">
-          <Feather name="arrow-left" size={20} color={colors.textSecondary} strokeWidth={1.8} />
-        </Pressable>
-        <Stack spacing="xs" style={styles.headerCenter}>
-          <Text variant="h1" style={styles.headerTitle}>
-            {loading
-              ? 'Loading quotes…'
-              : quotes.length === 0
-                ? 'Your job'
-                : `${quotes.length} ${quotes.length === 1 ? 'business' : 'businesses'} quoted`}
-          </Text>
-          {postTitle ? (
-            <Text variant="caption" color="secondary" numberOfLines={1}>
-              {postTitle}
-            </Text>
-          ) : null}
-        </Stack>
-        <View style={styles.headerRight} />
-      </View>
+    <View style={styles.container}>
+      {/* ScreenHeader has no subtitle slot (design/SPEC-screen-header.md §12),
+          so the job's postTitle — previously a caption line under the title —
+          is dropped here. It still reaches the PaySheet summary below. */}
+      <ScreenHeader
+        title={
+          loading
+            ? 'Loading quotes…'
+            : quotes.length === 0
+              ? 'Your job'
+              : `${quotes.length} ${quotes.length === 1 ? 'business' : 'businesses'} quoted`
+        }
+        onBack={() => navigation.goBack()}
+      />
 
       {/* ── Body ──────────────────────────────────────────────────────────── */}
       {loading ? (
@@ -473,21 +462,6 @@ export default function QuoteComparisonScreen({ navigation, route }) {
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
-
-  // Header
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.base,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.base,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  backBtn: { width: 36 },
-  headerCenter: { flex: 1, alignItems: 'center' },
-  headerTitle: { textAlign: 'center' },
-  headerRight: { width: 36 },
 
   // Sort hint
   sortHint: { textAlign: 'center', marginBottom: spacing.sm },

@@ -19,7 +19,6 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   View,
   ScrollView,
-  TouchableOpacity,
   Pressable,
   Switch,
   PanResponder,
@@ -33,6 +32,7 @@ import { Feather } from '@expo/vector-icons';
 import Svg, { Defs, LinearGradient, Stop, Rect } from 'react-native-svg';
 
 import Text from '../../components/Text';
+import ScreenHeader from '../../components/ScreenHeader';
 import AutoBidPreviewSheet from '../../components/AutoBidPreviewSheet';
 import { api } from '../../services/api';
 import * as haptics from '../../services/haptics';
@@ -400,33 +400,39 @@ export default function AutoBiddingScreen({ navigation }) {
   // ── States ─────────────────────────────────────────────────────────────────
   if (status === 'loading') {
     return (
-      <View style={[styles.container, styles.centered, { paddingTop: insets.top }]}>
-        <ActivityIndicator color={colors.accent} />
-        <Text style={styles.centeredBody}>{i18n.t('common.loading')}</Text>
+      <View style={styles.container}>
+        <ScreenHeader title="Auto-bidding" onBack={() => navigation.goBack()} />
+        <View style={[styles.centered, { flex: 1 }]}>
+          <ActivityIndicator color={colors.accent} />
+          <Text style={styles.centeredBody}>{i18n.t('common.loading')}</Text>
+        </View>
       </View>
     );
   }
 
   if (status === 'error') {
     return (
-      <View style={[styles.container, styles.centered, { paddingTop: insets.top }]}>
-        <View style={styles.stateCircle}>
-          <Feather name="wifi-off" size={26} color={colors.textSecondary} />
+      <View style={styles.container}>
+        <ScreenHeader title="Auto-bidding" onBack={() => navigation.goBack()} />
+        <View style={[styles.centered, { flex: 1 }]}>
+          <View style={styles.stateCircle}>
+            <Feather name="wifi-off" size={26} color={colors.textSecondary} />
+          </View>
+          <Text style={styles.centeredTitle}>Couldn't load your rules</Text>
+          <Text style={styles.centeredBody}>
+            Nothing changed. Check your connection and try again.
+          </Text>
+          <Pressable
+            onPress={() => {
+              setStatus('loading');
+              load();
+            }}
+            style={({ pressed }) => [styles.secondaryBtn, pressed && { opacity: 0.9 }]}
+            accessibilityRole="button"
+          >
+            <Text style={styles.secondaryBtnText}>{i18n.t('common.retry')}</Text>
+          </Pressable>
         </View>
-        <Text style={styles.centeredTitle}>Couldn't load your rules</Text>
-        <Text style={styles.centeredBody}>
-          Nothing changed. Check your connection and try again.
-        </Text>
-        <Pressable
-          onPress={() => {
-            setStatus('loading');
-            load();
-          }}
-          style={({ pressed }) => [styles.secondaryBtn, pressed && { opacity: 0.9 }]}
-          accessibilityRole="button"
-        >
-          <Text style={styles.secondaryBtnText}>{i18n.t('common.retry')}</Text>
-        </Pressable>
       </View>
     );
   }
@@ -434,20 +440,8 @@ export default function AutoBiddingScreen({ navigation }) {
   const locked = !entitled;
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-          accessibilityRole="button"
-          accessibilityLabel={i18n.t('common.back')}
-          style={styles.headerBtn}
-        >
-          <Feather name="arrow-left" size={20} color={colors.textSecondary} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Auto-bidding</Text>
-        <View style={styles.headerBtn} />
-      </View>
+    <View style={styles.container}>
+      <ScreenHeader title="Auto-bidding" onBack={() => navigation.goBack()} />
 
       <ScrollView
         contentContainerStyle={[styles.scroll, { paddingBottom: 120 + insets.bottom }]}
@@ -711,22 +705,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   secondaryBtnText: { fontSize: 14, fontWeight: '600', color: colors.textSecondary },
-
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 8,
-  },
-  headerBtn: { width: 40, minHeight: 44, justifyContent: 'center' },
-  headerTitle: {
-    fontFamily: 'SpaceGrotesk_700Bold',
-    fontSize: 17,
-    color: colors.textPrimary,
-    letterSpacing: -0.3,
-  },
 
   scroll: { paddingHorizontal: 20, paddingTop: 12 },
 
