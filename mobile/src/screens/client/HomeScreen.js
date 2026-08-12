@@ -425,7 +425,19 @@ export default function HomeScreen({ navigation }) {
     .sort((a, b) => new Date(a.approval_deadline_at) - new Date(b.approval_deadline_at))
     .slice(0, 3);
 
-  const openBooking = (id) => navigation.navigate('ActiveBooking', { bookingId: id });
+  // Was `navigate('ActiveBooking', ...)` unconditionally, for every booking on
+  // this screen — including finished ones. That is the exact defect the
+  // 2026-07-29 walkthrough found on My Jobs ("cards flip from job progress to a
+  // normal details posting"): ActiveBooking has no completed state, so a done
+  // job still drew a faux en-route map and a timeline pinned at its last
+  // segment. My Jobs was fixed by clientBookingRoute; this call site was missed,
+  // and the awaiting-approval list below routes through it — those bookings are
+  // finished by definition, so they were the ones landing in the wrong place.
+  //
+  // Takes the booking rather than an id now, because the rule needs status and
+  // payment_state. Both call sites already had the whole object.
+  const openBooking = (booking) =>
+    navigation.navigate(clientBookingRoute(booking), { bookingId: booking.id });
   const openMyJobs = () => navigation.navigate('My Jobs');
 
   // POST /bookings/{id}/approve, not /proof/approve: this one works whether or
@@ -563,7 +575,7 @@ export default function HomeScreen({ navigation }) {
               {pinnedBooking && (
                 <PinnedBookingCard
                   booking={pinnedBooking}
-                  onPress={() => openBooking(pinnedBooking.id)}
+                  onPress={() => openBooking(pinnedBooking)}
                 />
               )}
 
@@ -579,7 +591,7 @@ export default function HomeScreen({ navigation }) {
                     <UpcomingBookingRow
                       key={b.id}
                       booking={b}
-                      onPress={() => openBooking(b.id)}
+                      onPress={() => openBooking(b)}
                     />
                   ))}
                 </>
