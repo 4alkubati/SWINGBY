@@ -12,7 +12,6 @@
 import React, { useCallback, useState } from 'react';
 import { View, FlatList, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import { Feather } from '@expo/vector-icons';
 
 import Text from '../../components/Text';
 import ScreenHeader from '../../components/ScreenHeader';

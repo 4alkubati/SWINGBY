@@ -1,4 +1,4 @@
-import { View, ScrollView, StyleSheet, Pressable, Linking, TouchableOpacity } from 'react-native';
+import { View, ScrollView, StyleSheet, Linking, TouchableOpacity } from 'react-native';
 import { useEffect, useState } from 'react';
 import { Feather } from '@expo/vector-icons';
 

@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, ScrollView, StyleSheet,
-  Switch, Alert, Share, ActivityIndicator, Pressable,
+  Switch, Alert, Share, ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';

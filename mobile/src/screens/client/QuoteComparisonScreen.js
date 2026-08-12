@@ -5,7 +5,6 @@ import { useState, useEffect, useRef } from 'react';
 import Animated, {
   useSharedValue, useAnimatedStyle, withSpring,
 } from 'react-native-reanimated';
-import { Feather } from '@expo/vector-icons';
 
 import Text from '../../components/Text';
 import ScreenHeader from '../../components/ScreenHeader';

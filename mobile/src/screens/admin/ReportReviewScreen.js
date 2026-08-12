@@ -17,9 +17,8 @@
 // suspending twice or re-hiding something an admin has since restored are both
 // wrong. So the destructive actions confirm first.
 import { useState } from 'react';
-import { View, ScrollView, StyleSheet, Pressable, Alert } from 'react-native';
+import { View, ScrollView, StyleSheet, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Feather } from '@expo/vector-icons';
 
 import Text from '../../components/Text';
 import ScreenHeader from '../../components/ScreenHeader';

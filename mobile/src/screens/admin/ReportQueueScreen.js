@@ -16,7 +16,6 @@ import { useCallback, useState } from 'react';
 import { View, FlatList, RefreshControl, StyleSheet, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
-import { Feather } from '@expo/vector-icons';
 
 import Text from '../../components/Text';
 import ScreenHeader from '../../components/ScreenHeader';

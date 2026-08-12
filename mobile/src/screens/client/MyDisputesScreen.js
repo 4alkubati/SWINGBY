@@ -4,7 +4,6 @@
 // Read-only list: status chip, issue type, booking context, filed-by/against.
 import React, { useCallback, useEffect, useState } from 'react';
 import { View, FlatList, Pressable } from 'react-native';
-import { Feather } from '@expo/vector-icons';
 
 import { api } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';

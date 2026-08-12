@@ -1,6 +1,6 @@
 // T53 — TermsOfServiceScreen (UX polish pass)
 import React from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
@@ -8,7 +8,6 @@ import { colors, spacing, radius } from '../../theme/tokens';
 import Text from '../../components/Text';
 import ScreenHeader from '../../components/ScreenHeader';
 import Stack from '../../components/Stack';
-import Inline from '../../components/Inline';
 import Surface from '../../components/Surface';
 
 const LAST_UPDATED = 'June 2026';

@@ -20,7 +20,6 @@ import { Feather } from '@expo/vector-icons';
 import Text from '../../components/Text';
 import ScreenHeader from '../../components/ScreenHeader';
 import Stack from '../../components/Stack';
-import Inline from '../../components/Inline';
 import Badge from '../../components/Badge';
 import EmptyState from '../../components/EmptyState';
 import { SkeletonList } from '../../components/Skeleton';

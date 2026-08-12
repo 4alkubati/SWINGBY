@@ -13,7 +13,6 @@ import {
 // which conflict with Expo SDK 54 (RN 0.81). Chart is stubbed with a placeholder
 // until we upgrade Expo OR pin victory-native to ~40.x (older API). All other
 // EarningsScreen UI (hero, stats grid, range chips) is unaffected.
-import { Feather } from '@expo/vector-icons';
 import { api } from '../../services/api';
 import { SkeletonBox } from '../../components/Skeleton';
 import ScreenHeader from '../../components/ScreenHeader';
