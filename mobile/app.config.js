@@ -28,6 +28,28 @@ const mapsKey = process.env.GOOGLE_MAPS_API_KEY || '';
 // localhost is exactly who that fallback is for.
 const releaseProfiles = ['preview', 'testflight', 'production'];
 const profile = process.env.EAS_BUILD_PROFILE;
+// The maps key gets a WARNING, not a throw, and the asymmetry is deliberate.
+// A missing API URL means no screen in the app can load anything — the build is
+// worthless, so failing it costs nothing. A missing maps key costs the map
+// screens and nothing else, so a hard failure here would block an otherwise
+// testable internal build over one degraded feature.
+//
+// It is worth saying out loud, though, because the failure looks like a bug in
+// the app rather than a missing variable: geo-browse renders a blank grey
+// rectangle where the map should be, with no error. Unlike a warning inside a
+// shipped bundle, this one prints in the EAS build log and in the terminal that
+// started the build, where somebody is actually looking.
+if (releaseProfiles.includes(profile) && !mapsKey) {
+  // eslint-disable-next-line no-console
+  console.warn(
+    `[swingby] GOOGLE_MAPS_API_KEY is not set for the "${profile}" build.\n` +
+      '  The build will succeed and every map screen will render blank.\n' +
+      '  Fix: eas env:create --environment ' +
+      (profile === 'production' ? 'production' : 'preview') +
+      ' --name GOOGLE_MAPS_API_KEY --value <key>',
+  );
+}
+
 if (releaseProfiles.includes(profile) && !process.env.EXPO_PUBLIC_API_URL) {
   throw new Error(
     `EXPO_PUBLIC_API_URL is not set for the "${profile}" build.\n` +

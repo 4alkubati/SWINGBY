@@ -66,6 +66,25 @@ import { colors } from './src/theme/tokens';
 // Configure push notification display behavior once at module load time.
 configureNotificationHandlers();
 
+// Every "not ready yet" state in this file renders THIS — never `null`. A root
+// component that returns null renders nothing, and nothing is a bare white
+// screen, because no expo-splash-screen call is holding the native splash for
+// us (the package is not installed). A dark branded screen with a spinner reads
+// as loading; a white void reads as a broken install, and carries no
+// information the user could report back.
+function LoadingScreen() {
+  return (
+    <View style={{ flex: 1, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center' }}>
+      <ActivityIndicator color={colors.accent} size="large" />
+    </View>
+  );
+}
+
+// How long the app waits on webfonts before it gives up and draws in the system
+// face. Long enough that nobody on a slow connection sees a typeface change,
+// short enough that a hung load does not read as a dead app.
+const FONT_TIMEOUT_MS = 5000;
+
 function RootNavigator() {
   const { user, isLoading, restoredFromStorage, logout, adoptSession } = useAuth();
 
@@ -142,13 +161,7 @@ function RootNavigator() {
   // Hold the spinner while a confirmation link is being exchanged. Without
   // this the client watches the login screen appear and then vanish, which
   // reads as "it failed" at the exact moment it is working.
-  if (isLoading || checkingLock || authLinkBusy) {
-    return (
-      <View style={{ flex: 1, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center' }}>
-        <ActivityIndicator color={colors.accent} size="large" />
-      </View>
-    );
-  }
+  if (isLoading || checkingLock || authLinkBusy) return <LoadingScreen />;
 
   if (!user) return <AuthNavigator />;
 
@@ -185,7 +198,28 @@ function App() {
     return unsubscribe;
   }, []);
 
-  if (!fontsLoaded && !fontError) return null;
+  // The font load is not allowed to hold the whole app hostage.
+  //
+  // This line used to be `if (!fontsLoaded && !fontError) return null` — the
+  // only path in the app that rendered NOTHING. Every other pending state
+  // draws LoadingScreen. With nothing holding the native splash, "nothing" is
+  // a white screen for as long as the load takes, and if the promise never
+  // settles it is a permanent white screen with no spinner, no error, and
+  // nothing in it anyone could report. That is what the 2026-08-11 iOS
+  // development build showed.
+  //
+  // `fontError` already fell through to a normal render, so a font that FAILED
+  // was survivable and only a font that HUNG was fatal. Time the wait out and
+  // treat a hang like the failure it is: the system typeface is wrong, and
+  // wrong beats absent.
+  const [fontsTimedOut, setFontsTimedOut] = useState(false);
+  useEffect(() => {
+    if (fontsLoaded || fontError) return undefined;
+    const timer = setTimeout(() => setFontsTimedOut(true), FONT_TIMEOUT_MS);
+    return () => clearTimeout(timer);
+  }, [fontsLoaded, fontError]);
+
+  if (!fontsLoaded && !fontError && !fontsTimedOut) return <LoadingScreen />;
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>

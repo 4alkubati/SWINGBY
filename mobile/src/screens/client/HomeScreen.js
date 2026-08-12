@@ -27,6 +27,7 @@ import { getUserLocation } from '../../services/location';
 // Shared with My Jobs' Past row so the two surfaces can never disagree about
 // which jobs are waiting on the client.
 import { isAwaitingApproval, hoursUntilApproval } from '../../utils/approval';
+import { clientBookingRoute } from '../../utils/clientBookingRoute';
 import * as haptics from '../../services/haptics';
 import * as toast from '../../services/toast';
 import i18n from '../../i18n';
