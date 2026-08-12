@@ -1598,11 +1598,30 @@ def cancel_booking(
                     .execute()
                 )
                 if other_user_res.data:
+                    # `penalty_amount` carries TWO different meanings depending
+                    # on who cancelled (escrow.py::compute_cancellation_split):
+                    #
+                    #   client cancelled   -> business_keeps, money genuinely
+                    #                         withheld from the client's refund
+                    #   business cancelled -> business_penalty, which is
+                    #                         AUDIT-ONLY. business_keeps stays 0
+                    #                         and the client is refunded 100%.
+                    #                         Nothing charges it. Ever.
+                    #
+                    # The template renders "Penalty applied: $X" for anything
+                    # > 0, so a provider cancelling sent the client a full
+                    # refund AND an email saying "Penalty applied: $25.00".
+                    # Nobody was charged $25; it reads as either "you were
+                    # charged" or "the provider was fined", and both are false.
+                    #
+                    # One variable, two meanings, one label — so only the
+                    # meaning that represents real money reaches the email.
+                    charged_penalty = penalty_amount if actor == "client" else 0.0
                     send_booking_cancelled(
                         other_user_res.data["email"],
                         other_user_res.data["first_name"],
                         booking_id,
-                        penalty_amount,
+                        charged_penalty,
                     )
         except Exception:
             pass
