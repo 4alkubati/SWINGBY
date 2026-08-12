@@ -9,7 +9,6 @@ import {
   StyleSheet,
   Dimensions,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 // victory-native@41 requires @shopify/react-native-skia + react-native-reanimated@4
 // which conflict with Expo SDK 54 (RN 0.81). Chart is stubbed with a placeholder
 // until we upgrade Expo OR pin victory-native to ~40.x (older API). All other
@@ -17,6 +16,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { api } from '../../services/api';
 import { SkeletonBox } from '../../components/Skeleton';
+import ScreenHeader from '../../components/ScreenHeader';
 import { colors } from '../../theme/tokens';
 import i18n from '../../i18n';
 
@@ -145,7 +145,6 @@ function HeroSkeleton() {
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 export default function EarningsScreen({ navigation }) {
-  const insets = useSafeAreaInsets();
   const [range, setRange] = useState('month');
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -183,37 +182,21 @@ export default function EarningsScreen({ navigation }) {
   const stats = aggregateStats(inRange);
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          accessibilityLabel="Back"
-          accessibilityRole="button"
-          style={{ width: 40 }}
-        >
-          <Feather name="arrow-left" size={20} color={colors.textSecondary} strokeWidth={1.8} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Earnings</Text>
-        {/* D5 — this header slot held an "Export CSV" button whose entire
-            behaviour was an alert saying the feature did not exist. This screen
-            answers "what have I earned"; the obvious next question is "how do I
-            get it", and until now nothing on it led anywhere. The slot now
-            opens the Wallet, which is a real destination. CSV export was never
-            built and is not lost by removing a button that only apologised for
-            it. */}
-        <TouchableOpacity
-          style={styles.exportBtn}
-          onPress={() => navigation.navigate('Wallet')}
-          accessibilityRole="button"
-          accessibilityLabel={i18n.t('wallet.title')}
-          activeOpacity={0.8}
-        >
-          <Feather name="credit-card" size={14} color={colors.textSecondary} strokeWidth={1.8} />
-          <Text style={styles.exportText}>{i18n.t('wallet.title')}</Text>
-        </TouchableOpacity>
-      </View>
+    <View style={styles.container}>
+      {/* D5 — this trailing slot held an "Export CSV" button whose entire
+          behaviour was an alert saying the feature did not exist. This screen
+          answers "what have I earned"; the obvious next question is "how do I
+          get it", and until now nothing on it led anywhere. The slot now
+          opens the Wallet, which is a real destination. CSV export was never
+          built and is not lost by removing a button that only apologised for
+          it. */}
+      <ScreenHeader
+        title="Earnings"
+        onBack={() => navigation.goBack()}
+        trailingIcon="credit-card"
+        onTrailingPress={() => navigation.navigate('Wallet')}
+        trailingAccessibilityLabel={i18n.t('wallet.title')}
+      />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -296,31 +279,6 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   scroll: { paddingBottom: 40 },
 
-  // Header
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 22,
-    paddingTop: 12,
-    paddingBottom: 10,
-  },
-  backBtn: { fontSize: 24, color: colors.textSecondary, width: 40 },
-  headerTitle: { fontSize: 20, fontWeight: '700', color: colors.textPrimary, letterSpacing: -0.5 },
-  exportBtn: {
-    flexDirection: 'row',
-    gap: 6,
-    backgroundColor: colors.surfaceAlt,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 20,
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    minHeight: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  exportText: { fontSize: 12, fontWeight: '700', color: colors.textSecondary },
 
   // Hero
   hero: { alignItems: 'center', paddingTop: 24, paddingBottom: 8 },

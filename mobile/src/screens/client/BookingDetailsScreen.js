@@ -33,6 +33,7 @@ import { RatingStarsDisplay } from '../../components/RatingStars';
 import { SkeletonBox } from '../../components/Skeleton';
 import EmptyState from '../../components/EmptyState';
 import Text from '../../components/Text';
+import ScreenHeader from '../../components/ScreenHeader';
 import Stack from '../../components/Stack';
 import Inline from '../../components/Inline';
 import Surface from '../../components/Surface';
@@ -479,52 +480,9 @@ function BookingSkeleton() {
   );
 }
 
-// ─── Screen Header ────────────────────────────────────────────────────────────
-function ScreenHeader({ navigation, onShare }) {
-  return (
-    <Inline
-      justify="space-between"
-      style={{
-        paddingHorizontal: spacing.base,
-        paddingVertical: spacing.md,
-        borderBottomWidth: 1,
-        borderBottomColor: colors.border,
-      }}
-    >
-      <Pressable
-        onPress={() => navigation.goBack()}
-        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        accessibilityRole="button"
-        accessibilityLabel="Go back"
-        style={{
-          width: 36,
-          height: 36,
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <Feather name="arrow-left" size={22} color={colors.textPrimary} accessible={false} />
-      </Pressable>
-
-      <Text variant="bodyMedium" accessibilityRole="header">Booking Details</Text>
-
-      <Pressable
-        onPress={onShare}
-        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        accessibilityRole="button"
-        accessibilityLabel="Share booking link"
-        style={{
-          width: 36,
-          height: 36,
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <Feather name="share-2" size={18} color={colors.textSecondary} accessible={false} />
-      </Pressable>
-    </Inline>
-  );
-}
+// Booking Details' own header is now the shared ScreenHeader (imported
+// above) — this screen used to hand-draw a centered arrow-left/title/share-2
+// bar here; see design/SPEC-screen-header.md.
 
 // ─── Detail row with spring press ─────────────────────────────────────────────
 function DetailRow({ icon, label, children, onPress }) {
@@ -800,8 +758,14 @@ export default function BookingDetailsScreen({ route, navigation }) {
   // ── Loading state ──
   if (status === 'loading') {
     return (
-      <View style={{ flex: 1, backgroundColor: colors.bg, paddingTop: insets.top }}>
-        <ScreenHeader navigation={navigation} onShare={handleShare} />
+      <View style={{ flex: 1, backgroundColor: colors.bg }}>
+        <ScreenHeader
+          title="Booking Details"
+          onBack={() => navigation.goBack()}
+          trailingIcon="share-2"
+          onTrailingPress={handleShare}
+          trailingAccessibilityLabel="Share booking link"
+        />
         <BookingSkeleton />
       </View>
     );
@@ -810,8 +774,14 @@ export default function BookingDetailsScreen({ route, navigation }) {
   // ── Deleted state ──
   if (status === 'deleted') {
     return (
-      <View style={{ flex: 1, backgroundColor: colors.bg, paddingTop: insets.top }}>
-        <ScreenHeader navigation={navigation} onShare={handleShare} />
+      <View style={{ flex: 1, backgroundColor: colors.bg }}>
+        <ScreenHeader
+          title="Booking Details"
+          onBack={() => navigation.goBack()}
+          trailingIcon="share-2"
+          onTrailingPress={handleShare}
+          trailingAccessibilityLabel="Share booking link"
+        />
         <EmptyState
           icon="trash-2"
           title="Booking no longer exists"
@@ -824,8 +794,14 @@ export default function BookingDetailsScreen({ route, navigation }) {
   // ── Error state ──
   if (status === 'error') {
     return (
-      <View style={{ flex: 1, backgroundColor: colors.bg, paddingTop: insets.top }}>
-        <ScreenHeader navigation={navigation} onShare={handleShare} />
+      <View style={{ flex: 1, backgroundColor: colors.bg }}>
+        <ScreenHeader
+          title="Booking Details"
+          onBack={() => navigation.goBack()}
+          trailingIcon="share-2"
+          onTrailingPress={handleShare}
+          trailingAccessibilityLabel="Share booking link"
+        />
         <EmptyState
           icon="wifi-off"
           title="Could not load booking"
@@ -960,9 +936,14 @@ export default function BookingDetailsScreen({ route, navigation }) {
   ].filter(Boolean);
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.bg, paddingTop: insets.top }}>
-      {/* Header */}
-      <ScreenHeader navigation={navigation} onShare={handleShare} />
+    <View style={{ flex: 1, backgroundColor: colors.bg }}>
+      <ScreenHeader
+        title="Booking Details"
+        onBack={() => navigation.goBack()}
+        trailingIcon="share-2"
+        onTrailingPress={handleShare}
+        trailingAccessibilityLabel="Share booking link"
+      />
 
       <ScrollView
         contentContainerStyle={{

@@ -40,6 +40,7 @@ import {
 } from 'expo-audio';
 
 import Text from '../../components/Text';
+import ScreenHeader from '../../components/ScreenHeader';
 import SwImage from '../../components/SwImage';
 import ImageViewer from '../../components/ImageViewer';
 import { api, BASE_URL, getAuthToken } from '../../services/api';
@@ -708,33 +709,39 @@ export default function ProofOfWorkScreen({ route, navigation }) {
   // ── States ─────────────────────────────────────────────────────────────────
   if (status === 'loading') {
     return (
-      <View style={[styles.container, styles.centered, { paddingTop: insets.top }]}>
-        <ActivityIndicator color={colors.accent} />
-        <Text style={styles.centeredBody}>{i18n.t('common.loading')}</Text>
+      <View style={styles.container}>
+        <ScreenHeader title="Finish job" onBack={() => navigation.goBack()} />
+        <View style={[styles.centered, { flex: 1 }]}>
+          <ActivityIndicator color={colors.accent} />
+          <Text style={styles.centeredBody}>{i18n.t('common.loading')}</Text>
+        </View>
       </View>
     );
   }
 
   if (status === 'error') {
     return (
-      <View style={[styles.container, styles.centered, { paddingTop: insets.top }]}>
-        <View style={styles.errorCircle}>
-          <Feather name="wifi-off" size={26} color={colors.textSecondary} />
+      <View style={styles.container}>
+        <ScreenHeader title="Finish job" onBack={() => navigation.goBack()} />
+        <View style={[styles.centered, { flex: 1 }]}>
+          <View style={styles.errorCircle}>
+            <Feather name="wifi-off" size={26} color={colors.textSecondary} />
+          </View>
+          <Text style={styles.centeredTitle}>Couldn't load this job</Text>
+          <Text style={styles.centeredBody}>
+            Check your connection and try again — nothing you added is lost.
+          </Text>
+          <Pressable
+            onPress={() => {
+              setStatus('loading');
+              load();
+            }}
+            style={({ pressed }) => [styles.retryBtn, pressed && { opacity: 0.9 }]}
+            accessibilityRole="button"
+          >
+            <Text style={styles.retryBtnText}>{i18n.t('common.retry')}</Text>
+          </Pressable>
         </View>
-        <Text style={styles.centeredTitle}>Couldn't load this job</Text>
-        <Text style={styles.centeredBody}>
-          Check your connection and try again — nothing you added is lost.
-        </Text>
-        <Pressable
-          onPress={() => {
-            setStatus('loading');
-            load();
-          }}
-          style={({ pressed }) => [styles.retryBtn, pressed && { opacity: 0.9 }]}
-          accessibilityRole="button"
-        >
-          <Text style={styles.retryBtnText}>{i18n.t('common.retry')}</Text>
-        </Pressable>
       </View>
     );
   }
@@ -745,20 +752,8 @@ export default function ProofOfWorkScreen({ route, navigation }) {
   const alreadyDone = proof?.status === 'submitted' || proof?.status === 'approved';
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-          accessibilityRole="button"
-          accessibilityLabel={i18n.t('common.back')}
-          style={styles.headerBtn}
-        >
-          <Feather name="arrow-left" size={20} color={colors.textSecondary} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Finish job</Text>
-        <View style={styles.headerBtn} />
-      </View>
+    <View style={styles.container}>
+      <ScreenHeader title="Finish job" onBack={() => navigation.goBack()} />
 
       <ScrollView
         contentContainerStyle={[styles.scroll, { paddingBottom: 140 + insets.bottom }]}
@@ -943,22 +938,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   retryBtnText: { fontSize: 14, fontWeight: '600', color: colors.textSecondary },
-
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 8,
-  },
-  headerBtn: { width: 40, minHeight: 44, justifyContent: 'center' },
-  headerTitle: {
-    fontFamily: 'SpaceGrotesk_700Bold',
-    fontSize: 17,
-    color: colors.textPrimary,
-    letterSpacing: -0.3,
-  },
 
   scroll: { paddingHorizontal: 20 },
   hero: {
