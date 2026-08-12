@@ -11,15 +11,14 @@ import {
   RefreshControl,
   Share,
   Alert,
-  ActivityIndicator,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 // victory-native@41 requires Skia + reanimated@4 which conflict with Expo SDK 54.
 // CategoryChart is stubbed with native View bars until we upgrade Expo OR pin
 // victory-native to ~40.x. All other UI on this screen is unaffected.
 import { Feather } from '@expo/vector-icons';
 import { api, extractMessage } from '../../services/api';
 import * as toast from '../../services/toast';
+import ScreenHeader from '../../components/ScreenHeader';
 import { SkeletonBox } from '../../components/Skeleton';
 import { RatingStarsDisplay } from '../../components/RatingStars';
 import ReviewCard from '../../components/ReviewCard';
@@ -158,7 +157,6 @@ async function exportAnalytics(format) {
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 export default function BusinessAnalyticsScreen({ navigation, route }) {
-  const insets = useSafeAreaInsets();
   const bizId = route?.params?.businessId;
 
   const [loading, setLoading] = useState(true);
@@ -233,14 +231,8 @@ export default function BusinessAnalyticsScreen({ navigation, route }) {
 
   if (!loading && error) {
     return (
-      <View style={[styles.container, { paddingTop: insets.top }]}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-            <Feather name="arrow-left" size={20} color={colors.textPrimary} strokeWidth={2} />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Analytics</Text>
-          <View style={{ width: 40 }} />
-        </View>
+      <View style={styles.container}>
+        <ScreenHeader title="Analytics" onBack={() => navigation.goBack()} />
         <View style={styles.emptyFull}>
           <Feather name="alert-triangle" size={40} color={colors.warning} strokeWidth={1.6} style={styles.emptyIcon} />
           <Text style={styles.emptyTitle}>Failed to load</Text>
@@ -259,56 +251,28 @@ export default function BusinessAnalyticsScreen({ navigation, route }) {
 
   if (!loading && !hasData) {
     return (
-      <View style={[styles.container, { paddingTop: insets.top }]}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-            <Feather name="arrow-left" size={20} color={colors.textPrimary} strokeWidth={2} />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Analytics</Text>
-          <TouchableOpacity
-            onPress={handleExportPress}
-            disabled={exporting}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            style={styles.exportBtn}
-            accessibilityLabel="Export analytics"
-          >
-            {exporting ? (
-              <ActivityIndicator size="small" color={colors.textPrimary} />
-            ) : (
-              <Feather name="share" size={20} color={colors.textPrimary} strokeWidth={2} />
-            )}
-          </TouchableOpacity>
-        </View>
+      <View style={styles.container}>
+        <ScreenHeader
+          title="Analytics"
+          onBack={() => navigation.goBack()}
+          trailingIcon="share"
+          onTrailingPress={handleExportPress}
+          trailingAccessibilityLabel="Export analytics"
+        />
         <EmptyAnalytics />
       </View>
     );
   }
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        >
-          <Feather name="arrow-left" size={20} color={colors.textPrimary} strokeWidth={2} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Analytics</Text>
-        <TouchableOpacity
-          onPress={handleExportPress}
-          disabled={exporting}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          style={styles.exportBtn}
-          accessibilityLabel="Export analytics"
-        >
-          {exporting ? (
-            <ActivityIndicator size="small" color={colors.textPrimary} />
-          ) : (
-            <Feather name="share" size={20} color={colors.textPrimary} strokeWidth={2} />
-          )}
-        </TouchableOpacity>
-      </View>
+    <View style={styles.container}>
+      <ScreenHeader
+        title="Analytics"
+        onBack={() => navigation.goBack()}
+        trailingIcon="share"
+        onTrailingPress={handleExportPress}
+        trailingAccessibilityLabel="Export analytics"
+      />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -416,23 +380,6 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   scroll: { paddingBottom: 40 },
 
-  // Header
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 22,
-    paddingTop: 12,
-    paddingBottom: 10,
-  },
-  backBtn: { fontSize: 24, color: colors.textSecondary, width: 40 },
-  headerTitle: { fontSize: 20, fontWeight: '700', color: colors.textPrimary, letterSpacing: -0.5 },
-  exportBtn: {
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
 
   // Hero
   hero: {

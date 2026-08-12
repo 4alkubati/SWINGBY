@@ -8,6 +8,7 @@ import { Feather } from '@expo/vector-icons';
 import { api } from '../../services/api';
 import { colors, spacing, radius } from '../../theme/tokens';
 import Text from '../../components/Text';
+import ScreenHeader from '../../components/ScreenHeader';
 import Button from '../../components/Button';
 import Surface from '../../components/Surface';
 import Stack from '../../components/Stack';
@@ -109,17 +110,8 @@ export default function BusinessInvoicesScreen({ navigation }) {
   useEffect(() => { load(); }, [load]);
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      <Inline spacing="md" style={styles.header}>
-        <Button
-          variant="ghost"
-          label=""
-          icon={<Feather name="arrow-left" size={20} color={colors.textSecondary} />}
-          onPress={() => navigation.goBack()}
-          style={styles.iconBtn}
-        />
-        <Text variant="h1">Invoices</Text>
-      </Inline>
+    <View style={styles.container}>
+      <ScreenHeader title="Invoices" onBack={() => navigation.goBack()} />
 
       {loading ? (
         <Stack spacing="md" style={{ paddingHorizontal: spacing.lg }}>
@@ -172,12 +164,6 @@ export default function BusinessInvoicesScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
-  header: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    alignItems: 'center',
-  },
-  iconBtn: { paddingVertical: 0, paddingHorizontal: 0, width: 44, justifyContent: 'center' },
   row: { paddingVertical: spacing.md, paddingHorizontal: spacing.base },
   pill: {
     paddingHorizontal: spacing.sm,
