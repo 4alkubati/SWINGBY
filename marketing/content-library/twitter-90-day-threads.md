@@ -32,7 +32,7 @@ Every business on SwingBy is vetted: business registration, license check, ID, r
 
 We've declined ~30% of applicants. That number will probably go up.
 
-5/ Payment is held in escrow. Released when the client confirms the job is complete. No more cash handoffs. No chasing invoices. No dispute with no resolution.
+5/ Payment is held in escrow — the full amount. Released when the client approves the work, not when the business says it's done. No more cash handoffs. No chasing invoices. No dispute with no resolution.
 
 6/ Reviews are real. Every one tied to a confirmed booking. Can't be faked, purchased, or imported.
 

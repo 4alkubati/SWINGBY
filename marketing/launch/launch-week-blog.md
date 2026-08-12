@@ -38,13 +38,13 @@ That's not a marketplace. That's a phone book with a booking button.
 
 The moment I landed on the escrow model, everything clicked.
 
-Here's the idea: when a client books a job on SwingBy, their payment is held in escrow immediately. The business gets paid in two tranches — 50% when the booking is confirmed, 50% when the job is marked complete.
+Here's the idea: when a client accepts a quote on Swingbyy, their payment is charged and held immediately — the full amount, not a deposit. It stays held while the work happens. The business uploads before and after photos. The client looks at them and approves. Only then does the money move.
 
 This does three things:
 
-**It protects clients.** The client's money doesn't go anywhere until the work is done. A contractor can't disappear with a deposit because the deposit is sitting in escrow.
+**It protects clients.** The client's money doesn't go anywhere until they say so. A contractor can't disappear with a deposit, because there is no deposit — the whole amount is held.
 
-**It creates accountability for businesses.** If a business no-shows or does shoddy work, they don't get their second tranche. The money doesn't automatically flow to them — it waits for completion.
+**It creates accountability for businesses.** Marking a job "complete" doesn't pay anyone. The client approving does. The money doesn't flow on the business's say-so.
 
 **It builds trust by design.** You don't have to hope that the business is trustworthy. The system makes trustworthy behavior the path of least resistance.
 
@@ -72,9 +72,9 @@ SwingBy has two sides.
 
 **For clients:** You post a job. You describe what you need, set a budget, and the system shows it to local businesses that match your location and service category. Businesses that are interested send you a quote. You review who's reached out, check their profile and reviews, and choose who you want. Once you accept a quote, a booking is created, payment is confirmed in escrow, and you're connected through the app for the logistics.
 
-**For businesses:** You set up your profile — what you do, where you serve, what your average job looks like. You browse open jobs near you. You send quotes to the ones that fit. When a client accepts your quote the money is held by SwingBy, and it is released to you once they approve the finished work — automatically 24 hours after you mark it done if they do not respond. You never have to cold-call or wonder where your next customer is coming from.
+**For businesses:** You set up your profile — what you do, where you serve, what your average job looks like. You browse open jobs near you. You see the work, the client's photos and the area — enough to price it properly — but never their budget, so you quote your own number instead of racing to theirs. When a client accepts your quote the money is held by Swingbyy, and it is released to you once they approve the finished work. If they never respond, it settles to you 24 hours after you mark the work done.
 
-There's no monthly fee. No subscription. SwingBy takes a 10% platform cut from completed jobs — so we only make money when you do.
+Swingbyy takes 10% of an on-platform booking, taken when the payment is released to you.
 
 ---
 
@@ -84,7 +84,7 @@ I want to be honest about this.
 
 We're launching without Stripe fully integrated. Payments in the first version are handled manually — I'll facilitate the first few transactions personally to make sure the escrow model works in practice before automating it.
 
-We're also launching mobile-web first, not native app first. The React Native app is built; we're fine-tuning it before the App Store submission. For now, swingbyapp.com works great on mobile browsers.
+We're also launching mobile-web first, not native app first. The React Native app is built; we're fine-tuning it before the App Store submission. For now, swingbyy.com works great on mobile browsers.
 
 And we're in Calgary only. Not Edmonton. Not Vancouver. Not Toronto. One city, done right, before we think about expansion.
 
@@ -110,4 +110,4 @@ Calgary, AB
 
 ---
 
-*SwingBy is live at swingbyapp.com. No signup required to browse. Jobs post in 60 seconds.*
+*SwingBy is live at swingbyy.com. No signup required to browse. Jobs post in 60 seconds.*

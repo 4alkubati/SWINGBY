@@ -28,7 +28,7 @@ Three years ago, I booked a handyman off an online classifieds site. He didn't s
 
 I spent the next month asking around. Turns out almost everyone in Calgary had a version of this story. The problem isn't a lack of service businesses — Calgary has thousands of them. The problem is trust. There's no reliable way to know who to hire, and no protection if something goes wrong.
 
-SwingBy is my answer to that problem. We vet every business that joins. We hold the payment on the platform and release it when the client confirms the work is done (or 24 hours later, if they go quiet). We give clients real reviews from real booked jobs.
+Swingbyy is my answer to that problem. We hold the full payment on the platform and release it when the client approves the work — if they go quiet, it settles to the business 24 hours after the business marked it done. And the business never sees the client's budget, so the quote you get is their price, not a number you handed them.
 
 We launched this week. 40 businesses already on the platform. Come see what we're building.
 
@@ -391,7 +391,7 @@ If there's a dispute about the quality or scope of work, we review and resolve i
 
 If a business misrepresents their credentials on our platform, they're removed immediately.
 
-We can make this guarantee because we vet businesses before they join and monitor performance after. If you have any issue with a SwingBy booking, contact us within 48 hours. We'll make it right.
+We can make this guarantee because the money is still held when you raise the issue — approving is what releases it. If you have any issue with a Swingbyy booking, contact us before you approve. We'll make it right.
 
 ---
 

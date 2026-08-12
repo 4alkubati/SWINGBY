@@ -21,9 +21,9 @@
 
 **Hook:** You shouldn't have to spend Sundays chasing leads.
 
-**Body:** SwingBy sends you qualified job requests in your category, in your service area. You reply when you want. No pressure, no subscriptions. Pay a small fee only when you complete a job.
+**Body:** Swingbyy sends you job requests in your category, in your service area. You see the work, the photos and the area — enough to price it — but never the client's budget, so you quote your own number. You reply when you want.
 
-**CTA:** Sign up as a business. Free to join. Link in bio.
+**CTA:** Calgary businesses — early access. Link in bio.
 
 **Hashtags:** #CalgaryBusiness #SwingBy #LocalContractor #SmallBusiness #YYCBusiness #HomeServices #NoSubscription
 
@@ -45,7 +45,7 @@
 
 **Hook:** Your money does not move until you say the job is done.
 
-**Body:** SwingBy holds your payment in escrow. When the job is confirmed, we release 50% to the business so they can schedule your work. The rest releases when you mark it complete. Simple. Safe. Fair.
+**Body:** Swingbyy holds your payment from the moment you accept a quote. The full amount stays held while the work happens — nothing goes to the business early. They upload before and after photos, you approve, and then it's released. Simple. Safe. Fair.
 
 **CTA:** Learn how SwingBy protects your payment. Link in bio.
 
