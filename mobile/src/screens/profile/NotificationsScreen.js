@@ -1,10 +1,10 @@
 import {
   View, FlatList, TouchableOpacity, StyleSheet, RefreshControl,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useState, useEffect, useCallback } from 'react';
 import { Feather } from '@expo/vector-icons';
 import Text from '../../components/Text';
+import ScreenHeader from '../../components/ScreenHeader';
 import { api } from '../../services/api';
 import { colors, spacing } from '../../theme/tokens';
 import { SkeletonList } from '../../components/Skeleton';
@@ -80,7 +80,6 @@ const TONE_MAP = {
 };
 
 export default function NotificationsScreen({ navigation }) {
-  const insets = useSafeAreaInsets();
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -107,12 +106,8 @@ export default function NotificationsScreen({ navigation }) {
 
   if (loading) {
     return (
-      <View style={[styles.container, { paddingTop: insets.top }]}>
-        <View style={styles.header}>
-          <View style={{ width: 32 }} />
-          <Text style={styles.headerTitle}>Notifications</Text>
-          <View style={{ width: 32 }} />
-        </View>
+      <View style={styles.container}>
+        <ScreenHeader title="Notifications" onBack={() => navigation.goBack()} />
         <View style={{ paddingHorizontal: spacing.base, paddingTop: spacing.sm }}>
           <SkeletonList count={5} />
         </View>
@@ -121,14 +116,8 @@ export default function NotificationsScreen({ navigation }) {
   }
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={8}>
-          <Feather name="arrow-left" size={20} color={colors.textPrimary} strokeWidth={2} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Notifications</Text>
-        <View style={{ width: 32 }} />
-      </View>
+    <View style={styles.container}>
+      <ScreenHeader title="Notifications" onBack={() => navigation.goBack()} />
 
       <FlatList
         data={notifications}
@@ -169,16 +158,6 @@ export default function NotificationsScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 22, paddingTop: 12, paddingBottom: 8,
-  },
-  headerTitle: {
-    fontFamily: 'SpaceGrotesk_700Bold',
-    fontSize: 17,
-    color: colors.textPrimary,
-    letterSpacing: -0.3,
-  },
   list: { paddingHorizontal: 22, paddingBottom: 24 },
   notifRow: {
     flexDirection: 'row', alignItems: 'center', gap: 12,

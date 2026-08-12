@@ -17,6 +17,7 @@ import { show as showToast } from '../../services/toast';
 import { buttonTap } from '../../services/haptics';
 import { colors, spacing, radius, shadows, motion } from '../../theme/tokens';
 import Text from '../../components/Text';
+import ScreenHeader from '../../components/ScreenHeader';
 import Stack from '../../components/Stack';
 import Inline from '../../components/Inline';
 import Surface from '../../components/Surface';
@@ -104,37 +105,9 @@ export default function ReferralScreen() {
       style={{
         flex: 1,
         backgroundColor: colors.bg,
-        paddingTop: insets.top,
       }}
     >
-      {/* Header */}
-      <Inline
-        justify="space-between"
-        style={{
-          paddingHorizontal: spacing.base,
-          paddingBottom: spacing.md,
-          borderBottomWidth: 1,
-          borderBottomColor: colors.border,
-        }}
-      >
-        <Pressable
-          onPress={() => navigation.goBack()}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          style={{
-            width: 40,
-            height: 40,
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <Feather name="arrow-left" size={22} color={colors.textPrimary} />
-        </Pressable>
-
-        <Text variant="h2">Referrals</Text>
-
-        {/* Spacer to balance header */}
-        <View style={{ width: 40, height: 40 }} />
-      </Inline>
+      <ScreenHeader title="Referrals" onBack={() => navigation.goBack()} />
 
       <ScrollView
         style={{ flex: 1 }}
