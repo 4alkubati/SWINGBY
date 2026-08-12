@@ -11,11 +11,11 @@
 
 import React, { useCallback, useState } from 'react';
 import { View, FlatList, StyleSheet, Alert, ActivityIndicator } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
 
 import Text from '../../components/Text';
+import ScreenHeader from '../../components/ScreenHeader';
 import Button from '../../components/Button';
 import Avatar from '../../components/Avatar';
 import EmptyState from '../../components/EmptyState';
@@ -29,7 +29,6 @@ function fullName(u) {
 }
 
 export default function BlockedAccountsScreen() {
-  const insets = useSafeAreaInsets();
   const navigation = useNavigation();
 
   const [items, setItems] = useState([]);
@@ -83,17 +82,11 @@ export default function BlockedAccountsScreen() {
   }
 
   return (
-    <View style={[styles.screen, { paddingTop: insets.top }]}>
-      <View style={styles.header}>
-        <Button
-          variant="ghost"
-          label=""
-          icon={<Feather name="arrow-left" size={20} color={colors.textPrimary} />}
-          onPress={() => navigation.goBack()}
-          style={styles.backBtn}
-        />
-        <Text variant="h1">{i18n.t('moderation.blockedAccountsTitle')}</Text>
-      </View>
+    <View style={styles.screen}>
+      <ScreenHeader
+        title={i18n.t('moderation.blockedAccountsTitle')}
+        onBack={() => navigation.goBack()}
+      />
 
       {loading ? (
         <View style={styles.center}>
@@ -152,16 +145,6 @@ export default function BlockedAccountsScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    paddingHorizontal: spacing.base,
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  backBtn: { paddingHorizontal: 0, minWidth: 32 },
   emptyWrap: { flexGrow: 1, justifyContent: 'center' },
   row: {
     flexDirection: 'row',

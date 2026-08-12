@@ -19,6 +19,7 @@ import * as toast from '../../services/toast';
 import * as haptics from '../../services/haptics';
 import { colors, spacing, radius } from '../../theme/tokens';
 import Text from '../../components/Text';
+import ScreenHeader from '../../components/ScreenHeader';
 import { useAuth } from '../../context/AuthContext';
 
 const CLIENT_REASONS = [
@@ -159,15 +160,8 @@ export default function CancellationFlowScreen({ route, navigation }) {
   };
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Feather name="arrow-left" size={22} color={colors.textPrimary} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Cancel Booking</Text>
-        <View style={{ width: 36 }} />
-      </View>
+    <View style={styles.container}>
+      <ScreenHeader title="Cancel Booking" onBack={() => navigation.goBack()} />
 
       <KeyboardAvoidingView
         style={styles.flex}
@@ -302,18 +296,6 @@ export default function CancellationFlowScreen({ route, navigation }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   flex: { flex: 1 },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  backBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { fontSize: 16, fontFamily: 'SpaceGrotesk_700Bold', color: colors.textPrimary, letterSpacing: -0.3 },
-
   scroll: { paddingHorizontal: 22, paddingTop: 28, gap: 16 },
 
   warningRow: { alignItems: 'center' },

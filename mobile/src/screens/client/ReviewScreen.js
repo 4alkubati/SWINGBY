@@ -9,6 +9,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 
 import Text from '../../components/Text';
+import ScreenHeader from '../../components/ScreenHeader';
 import Stack from '../../components/Stack';
 import Inline from '../../components/Inline';
 import Surface from '../../components/Surface';
@@ -87,36 +88,10 @@ export default function ReviewScreen({ navigation, route }) {
       style={{
         flex: 1,
         backgroundColor: colors.bg,
-        paddingTop: insets.top,
         paddingBottom: insets.bottom,
       }}
     >
-      {/* Header */}
-      <Inline
-        spacing="sm"
-        align="center"
-        justify="space-between"
-        style={{
-          paddingHorizontal: spacing.base,
-          paddingTop: spacing.md,
-          paddingBottom: spacing.sm,
-        }}
-      >
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          style={{ width: 32, alignItems: 'flex-start' }}
-        >
-          <Feather name="arrow-left" size={20} color={colors.textSecondary} strokeWidth={1.8} />
-        </TouchableOpacity>
-
-        <Text variant="h2" style={{ flex: 1, textAlign: 'center' }}>
-          Leave a Review
-        </Text>
-
-        {/* Spacer to balance back button */}
-        <View style={{ width: 32 }} />
-      </Inline>
+      <ScreenHeader title="Leave a Review" onBack={() => navigation.goBack()} />
 
       <ScrollView
         contentContainerStyle={{
