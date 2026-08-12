@@ -87,6 +87,15 @@ Status values: **TODO** · **DONE** · **BLOCKED** · **DECIDE**
 | H16 | **ANSWERED** | **Plain script.** `tools/social_post.py` — one command, all platforms, dry-run by default, 10 tests in CI. n8n was *designed* (43 nodes across 3 workflows, `marketing/11-n8n-social-workflow.md`) and its own first paragraph says it uses placeholder credentials and has never run: it needs Notion, OpenAI, Slack and Buffer wired before one post goes out. Two posts do not need an approval gate and a GPT caption writer. If you want the visible version later, n8n can call this script from one Execute Command node — nothing here blocks that. |
 | H17 | **TODO** | **"Link in bio" needs a working link.** `swingbyy.com` is still the frozen pre-launch site and the app is not on the App Store. Until one is true the posts say "join the waitlist", not "download the app". Decide which. |
 
+## Preview build — blocks the laptop-free test loop (added 2026-08-12)
+
+| # | Status | Task |
+|---|---|---|
+| H27 | **TODO — blocks the build** | **`eas login`.** No EAS CLI is installed on this box and no session exists (`eas-cli whoami` → *Not logged in*), so an agent cannot start a build, read `eas env:list`, or register a device. Everything below needs this first. Run `! npx eas-cli@latest login` in a session so the output lands in the transcript. |
+| H28 | **TODO — the build FAILS without it** | **Confirm `EXPO_PUBLIC_API_URL` exists in the EAS `preview` environment.** `app.config.js:31` throws on any release profile without it — by design, since the alternative is a shipped app pointing at the phone's own loopback. Check with `eas env:list --environment preview`; set with `eas env:create --environment preview --name EXPO_PUBLIC_API_URL --value https://swingbyy-api.onrender.com`. **The value is not in doubt** — that host answered `/health` 200 in 0.99s on 2026-08-12 — only whether EAS has it. `mobile/.env` does **not** travel to EAS: `.easignore` excludes it deliberately. |
+| H29 | **TODO — silent if missed** | **Confirm `GOOGLE_MAPS_API_KEY` in the same environment.** Unlike H28 this does **not** fail the build, it ships one where every map renders a blank grey rectangle — which reads as an app bug, not a missing variable. As of 2026-08-12 `app.config.js` prints a warning naming the fix in the EAS build log, so watch for it rather than assuming. |
+| H30 | **DECIDE** | **Which platform for the laptop-free build?** **Android** is the short path: `preview` already sets `buildType: apk`, internal distribution gives an install URL, and any Android phone sideloads it. **iOS** needs the test device's UDID registered for ad-hoc signing first (`eas device:create` → scan the QR on the phone → rebuild), because internal distribution signs against a fixed device list. H5 proved device signing works against Team `ZTYJ33HPDX`, so this is a step, not a blocker — but it is a step that must happen *before* the build, not after. |
+
 ---
 
 ## Recently closed
