@@ -112,7 +112,6 @@ flowchart LR
   Profile --> Favorites
   Profile --> PaymentMethod
   Profile --> ReferralScreen
-  Profile --> NotificationsCenter
   Profile --> Settings
   Profile --> HelpFAQ
   Profile --> PrivacyPolicy
@@ -125,7 +124,6 @@ flowchart LR
   NotificationsCenter --> BookingDetails
   My_Business --> EmployeeManagement
   My_Business --> Wallet
-  My_Business --> PaymentMethod
   My_Business --> BusinessInvoices
   My_Business --> AutoBidding
   My_Business --> NotificationsCenter
@@ -164,11 +162,9 @@ flowchart LR
   ActiveBooking --> CancellationFlow
   RequestSent --> ClientTabs
   RequestSent --> Home
-  RequestSent --> Chat
   RequestSent --> QuoteComparison
   RequestSent --> Search
   Home --> PostJob
-  Home --> ActiveBooking
   Home --> My_Jobs
   Home --> Notifications
   Home --> DisputeFlow
@@ -251,6 +247,6 @@ Mobile calls to endpoints **not exposed by the backend** (path params normalized
 
 - Navigators: **5**  
 - Registered screens: **74**  
-- Navigation edges: **147**  
-- Backend routes: **140**  
-- Mobile API calls: **156**  
+- Navigation edges: **143**  
+- Backend routes: **141**  
+- Mobile API calls: **157**  
