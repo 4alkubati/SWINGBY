@@ -15,6 +15,23 @@
  *
  * Deliberately source-text based: mounting all 47 screens to look for a button
  * is far slower and much more fragile than reading what they render.
+ *
+ * Tightened 2026-08-11 (design/SPEC-screen-header.md migration): the old
+ * BACK_AFFORDANCE regex matched `goBack()`/`arrow-left`/`chevron-left`/`x`
+ * ANYWHERE in a screen's source, which the spec's own audit caught passing on
+ * pure accident — `chevron-left` on ApproveWorkScreen's photo-comparator swipe
+ * hint, `x` on three unrelated "remove photo" buttons, and even the literal
+ * substring `goBack()` inside PostJobScreen's locally-defined wizard-step
+ * `function goBack()`, which never calls `navigation.goBack()` on its first
+ * step at all. None of those prove a real back control exists.
+ *
+ * Now that every mechanical screen renders the shared `ScreenHeader`
+ * component, most screens are checked by asserting that import instead of
+ * pattern-matching icon names — a screen either imports it or it doesn't.
+ * The screens NOT on ScreenHeader are a short, named list, each with a
+ * documented reason (see design/SPEC-screen-header.md's migration report):
+ * those keep the old loose regex, which is still meaningful for a genuinely
+ * hand-rolled header, just not proof by itself for everyone else anymore.
  */
 const fs = require('fs');
 const path = require('path');
@@ -33,7 +50,29 @@ const NOT_PUSHED = new Set([
   'RequestSent',
 ]);
 
+// Named, documented exceptions that do NOT render <ScreenHeader> — each one
+// keeps its own hand-rolled back control instead, for a specific reason:
+//   - NearbyMap: the one permanent floating-circle-over-map exception (spec §2).
+//   - ActiveBooking: same shape as NearbyMap — a translucent circle floating
+//     over the live map/canvas hero, not a top bar (HeroChrome).
+//   - Search: D20's own comment says the back arrow sits ABOVE the search
+//     field with no title at all, on purpose, so autoFocus's keyboard never
+//     competes with a title. ScreenHeader requires a non-empty title (spec §4).
+//   - Chat / MessageThread (shim to Chat): the header's middle "title" area is
+//     an interactive open-business-profile button with a live subtitle, not
+//     static text — ScreenHeader's title is plain, non-interactive Text.
+//   - BusinessProfile: a conditional 3-4-widget trailing area (Edit/Cancel
+//     text buttons, a favorite heart, an animated sticky title-on-scroll)
+//     that doesn't fit ScreenHeader's single icon-only trailing slot.
+//   - JobManagement: its JobDetailScreen branch's trailing content is a
+//     StatusChip pill, not a Feather icon.
+const NOT_ON_SCREEN_HEADER = new Set([
+  'NearbyMap', 'ActiveBooking', 'Search', 'Chat', 'MessageThread',
+  'BusinessProfile', 'JobManagement',
+]);
+
 const BACK_AFFORDANCE = /goBack\(\)|navigation\.pop\(|arrow-left|chevron-left|name="x"/;
+const SCREEN_HEADER_IMPORT = /from\s+['"][^'"]*\/components\/ScreenHeader['"]/;
 
 function screenNames() {
   const names = new Set();
@@ -88,14 +127,34 @@ describe('pushed screens have a visible way back', () => {
   it.each(pushed)('%s draws a back affordance', (name) => {
     const file = findScreenFile(name);
     if (!file) return; // screen defined inline in a navigator — nothing to read
-    expect(readThroughShim(file)).toMatch(BACK_AFFORDANCE);
+    const src = readThroughShim(file);
+    if (NOT_ON_SCREEN_HEADER.has(name)) {
+      expect(src).toMatch(BACK_AFFORDANCE);
+    } else {
+      expect(src).toMatch(SCREEN_HEADER_IMPORT);
+    }
   });
 
   it('covers the three that regressed', () => {
-    for (const name of ['Settings', 'NotificationsCenter', 'Search']) {
+    // Settings and NotificationsCenter are migrated onto ScreenHeader; Search
+    // deliberately keeps its own bare arrow (no title at all, see
+    // NOT_ON_SCREEN_HEADER above) so it stays on the old regex.
+    for (const name of ['Settings', 'NotificationsCenter']) {
       const file = findScreenFile(name);
       expect(file).not.toBeNull();
-      expect(readThroughShim(file)).toMatch(BACK_AFFORDANCE);
+      expect(readThroughShim(file)).toMatch(SCREEN_HEADER_IMPORT);
+    }
+    const searchFile = findScreenFile('Search');
+    expect(searchFile).not.toBeNull();
+    expect(readThroughShim(searchFile)).toMatch(BACK_AFFORDANCE);
+  });
+
+  it('every NOT_ON_SCREEN_HEADER name is still a real, currently-pushed screen', () => {
+    // Guards the exception list itself from going stale — if a name is
+    // migrated later or removed from the navigators, this catches the drift
+    // instead of the exception silently doing nothing.
+    for (const name of NOT_ON_SCREEN_HEADER) {
+      expect(pushed).toContain(name);
     }
   });
 });
