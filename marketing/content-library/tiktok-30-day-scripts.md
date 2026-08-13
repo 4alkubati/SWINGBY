@@ -243,7 +243,7 @@
 **On-screen captions:**
 - [0–3s] "Day in the life: Calgary cleaner 🧹"
 - [3–12s] "Bookings ready in the morning"
-- [12–22s] "Job done. Payment auto-released."
+- [12–22s] "Client approves. Payment released."
 - [22–30s] "Next job already booked ✅"
 
 **Hashtags:** #DayInTheLife #Cleaner #CalgaryBusiness #SwingBy #CleaningBusiness #YYC #Hustle #ServiceBusiness
@@ -548,7 +548,7 @@
 
 **Hook (0–3s):** "As a service business on SwingBy, here's exactly how you get paid."
 
-**Beat 1 (3–12s):** "Client posts a job. You quote. Client accepts. Booking confirmed — 50% of the payment is released to you right away."
+**Beat 1 (3–12s):** "Client posts a job. You quote. Client accepts — and the full amount is held from that moment, so you know the money is there before you show up."
 
 **Beat 2 (12–20s):** "You do the job. The client approves it — or 24 hours pass — and the whole amount (minus our 10% platform fee) releases to your account."
 

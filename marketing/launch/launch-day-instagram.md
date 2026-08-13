@@ -18,7 +18,7 @@ If you've been waiting for a better way to find trusted local services — or if
 
 Post a job. Browse businesses. Get things done.
 
-Link in bio → swingbyapp.com
+Link in bio → swingbyy.com
 
 ---
 
@@ -62,7 +62,7 @@ Come try it. Tell me what you think. I'm literally right here.
 
 — Amr
 
-Link in bio → swingbyapp.com
+Link in bio → swingbyy.com
 
 ---
 
@@ -86,7 +86,7 @@ If you're in Calgary and need help with [category], there are businesses waiting
 
 What do you need done this week?
 
-Link in bio → swingbyapp.com
+Link in bio → swingbyy.com
 
 ---
 

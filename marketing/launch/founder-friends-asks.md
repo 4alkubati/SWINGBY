@@ -11,14 +11,14 @@ Send these on launch day or within the first week. Personalize every single one 
 ### Template A — Family / closest friends
 
 **Text:**
-> Hey [Name] — SwingBy went live today. You know I've been building this for months. Would mean a lot if you could download it (or check out swingbyapp.com) and post a job — even something small around the house. Takes 5 minutes and your first real experience as a user will help me more than anything else right now. Love you.
+> Hey [Name] — SwingBy went live today. You know I've been building this for months. Would mean a lot if you could download it (or check out swingbyy.com) and post a job — even something small around the house. Takes 5 minutes and your first real experience as a user will help me more than anything else right now. Love you.
 
 ---
 
 ### Template B — Best friends (casual)
 
 **Text/DM:**
-> [Name]! It's launch day. SwingBy is live. Can you do me one favour — go to swingbyapp.com and try posting a job? Even "need my lawn mowed" or something. I want a real person walking through it. You'd be doing me a massive solid. 🙏
+> [Name]! It's launch day. SwingBy is live. Can you do me one favour — go to swingbyy.com and try posting a job? Even "need my lawn mowed" or something. I want a real person walking through it. You'd be doing me a massive solid. 🙏
 
 ---
 
@@ -27,14 +27,14 @@ Send these on launch day or within the first week. Personalize every single one 
 ### Template C — Friends who are homeowners
 
 **Text/DM:**
-> Hey [Name]! Launching SwingBy today — it's a marketplace for local services in Calgary. You own a place right? Perfect user. Would you try it and send the link to one person who might find it useful? That's literally all I need from you today. swingbyapp.com
+> Hey [Name]! Launching SwingBy today — it's a marketplace for local services in Calgary. You own a place right? Perfect user. Would you try it and send the link to one person who might find it useful? That's literally all I need from you today. swingbyy.com
 
 ---
 
 ### Template D — Friends with service businesses
 
 **Text/DM:**
-> [Name] — launching SwingBy today. I know you run [their business]. There's a business side where you can post your profile and see open jobs in your area. Would you set up your profile? Would love a real tradesperson in there from day one. swingbyapp.com/business — takes 10 minutes.
+> [Name] — launching SwingBy today. I know you run [their business]. There's a business side where you can post your profile and see open jobs in your area. Would you set up your profile? Would love a real tradesperson in there from day one. swingbyy.com/business — takes 10 minutes.
 
 ---
 
@@ -48,7 +48,7 @@ Send these on launch day or within the first week. Personalize every single one 
 ### Template F — Calgary-specific friends
 
 **Text:**
-> [Name] — this is the Calgary thing I've been building. It's live today. If you know anyone here who needs a cleaner, contractor, handyman, whatever — send them swingbyapp.com. That's it. That's my ask for the whole year. Lol. 😅
+> [Name] — this is the Calgary thing I've been building. It's live today. If you know anyone here who needs a cleaner, contractor, handyman, whatever — send them swingbyy.com. That's it. That's my ask for the whole year. Lol. 😅
 
 ---
 
@@ -57,14 +57,14 @@ Send these on launch day or within the first week. Personalize every single one 
 ### Template G — LinkedIn connections / professional contacts
 
 **LinkedIn DM:**
-> Hey [Name] — just launched SwingBy today. It's a local services marketplace for Calgary (swingbyapp.com). Not asking you to use it unless it fits, but if you know one person — homeowner, local business, anyone in the trades — who might find it useful, I'd love an intro or a forward. No pressure. Thanks for connecting.
+> Hey [Name] — just launched SwingBy today. It's a local services marketplace for Calgary (swingbyy.com). Not asking you to use it unless it fits, but if you know one person — homeowner, local business, anyone in the trades — who might find it useful, I'd love an intro or a forward. No pressure. Thanks for connecting.
 
 ---
 
 ### Template H — University connections
 
 **DM/text:**
-> [Name]! You remember I was building that marketplace app? It's live today 🎉. If you're still in Calgary (or know people here), swingbyapp.com. Would love it if you shared it with even one person who might use it. Thanks for the support over the years — means more than you know.
+> [Name]! You remember I was building that marketplace app? It's live today 🎉. If you're still in Calgary (or know people here), swingbyy.com. Would love it if you shared it with even one person who might use it. Thanks for the support over the years — means more than you know.
 
 ---
 
@@ -73,7 +73,7 @@ Send these on launch day or within the first week. Personalize every single one 
 **Email:**
 > Hey [Name],
 >
-> Hope you're doing well. Quick note — I launched something today I've been working on for a while. It's called SwingBy — a local services marketplace for Calgary (swingbyapp.com).
+> Hope you're doing well. Quick note — I launched something today I've been working on for a while. It's called SwingBy — a local services marketplace for Calgary (swingbyy.com).
 >
 > If you know anyone in Calgary looking for home services or running a service business, I'd love a quick intro or forward. That's the whole ask.
 >
@@ -86,7 +86,7 @@ Send these on launch day or within the first week. Personalize every single one 
 ### Template J — Social media followers / acquaintances
 
 **Public post tag or reply:**
-> [Name] — you're in Calgary right? Just launched SwingBy (swingbyapp.com). Think it might be relevant for [specific reason based on what you know about them]. Worth a look if you have 2 minutes.
+> [Name] — you're in Calgary right? Just launched SwingBy (swingbyy.com). Think it might be relevant for [specific reason based on what you know about them]. Worth a look if you have 2 minutes.
 
 ---
 

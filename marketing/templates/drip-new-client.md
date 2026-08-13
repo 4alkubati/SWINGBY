@@ -22,7 +22,7 @@ Here's how it works in three steps:
 
 1. **Post a job.** Describe what you need, set a rough budget, and choose your area. Takes two minutes.
 2. **Get quotes.** Vetted local businesses in your area respond with their price and availability.
-3. **Book with confidence.** Half your payment releases at booking so the business can schedule; the rest is held until the job is done to your satisfaction.
+3. **Book with confidence.** Your payment is held in full from the moment you accept — nothing goes to the business until you approve the finished work.
 
 **Post your first job free:** [swingbyy.com/app/post](https://swingbyy.com/app/post)
 
@@ -75,7 +75,7 @@ Give a rough range. You can adjust based on quotes. Businesses are used to this.
 Post it anyway. Experienced businesses will ask the right questions and quote accordingly.
 
 **"What if no one responds?"**
-We'll let you know within 24 hours if there aren't enough businesses in your area for your job type. We'll also suggest alternatives.
+If there aren't enough businesses in your area for your job type, we'll tell you and suggest alternatives.
 
 Still have a question? Reply to this email — we read them all.
 

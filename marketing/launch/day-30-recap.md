@@ -151,4 +151,4 @@ Founder, SwingBy
 
 ---
 
-*SwingBy is live at swingbyapp.com*
+*SwingBy is live at swingbyy.com*

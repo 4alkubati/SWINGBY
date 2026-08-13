@@ -98,5 +98,5 @@ through the app when the client signs off. SwingBy takes 10%.
    other companies). HUMAN-TODO H14/H15.
 2. "Link in bio" needs a link that works. `swingbyy.com` is still the frozen
    pre-launch site; the app is not on the App Store yet. Until one of those is
-   true, **do not** write "download the app" — say "join the waitlist" and point
+   true, **do not** write "download the app" — say "join the waitlist" and point  <!-- lint-ok -->
    at the waitlist form, or hold the posts.

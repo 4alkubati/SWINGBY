@@ -43,7 +43,7 @@ Send the waitlist launch email (Variant A — see `waitlist-launch-email.md`):
 Post #1 (announce — see `launch-day-instagram.md` Post 1):
 - Upload the image/graphic
 - Caption + hashtags
-- Add to Story as well (link sticker to swingbyapp.com)
+- Add to Story as well (link sticker to swingbyy.com)
 
 ---
 

@@ -123,7 +123,7 @@ Built solo. Took [X months]. Ships today.
 
 If you're in Calgary and need something done — or if you run a service business and want a fair platform — come try it.
 
-→ swingbyapp.com
+→ swingbyy.com
 
 If you liked this thread, the best thing you can do is share tweet 1.
 
@@ -141,7 +141,7 @@ They feel like your neighbourhood knowing what you need.
 
 That's what we're building with SwingBy.
 
-→ swingbyapp.com
+→ swingbyy.com
 
 ---
 
@@ -153,9 +153,9 @@ If you run a service business in Calgary:
 → Browse jobs near you right now
 → Send your first quote today
 
-No monthly fee to get started. No gatekeeping.
+You quote your own number — the client's budget is never shown to you.
 
-→ swingbyapp.com
+→ swingbyy.com
 
 ---
 
@@ -195,4 +195,4 @@ This is how it starts. One job. One match. One completed booking.
 
 Then another.
 
-→ swingbyapp.com
+→ swingbyy.com

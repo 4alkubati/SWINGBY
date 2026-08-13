@@ -61,7 +61,7 @@
 
 **Hook:** The worst part of hiring local help: not knowing if they'll show up.
 
-**Body:** Every business on SwingBy is verified before they can take bookings. Half your payment is held until the job is done. If something goes wrong, we're here. That's the SwingBy promise.
+**Body:** Your payment is held until you approve the work — the full amount, the whole time. The business uploads before and after photos; you look, then you approve. If something goes wrong, we're here. That's the Swingbyy promise.
 
 **CTA:** Safe, simple local services. Link in bio.
 

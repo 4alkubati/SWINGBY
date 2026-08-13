@@ -29,7 +29,7 @@ Today it's live. First city is YYC. More to come.
 
 If you know anyone in Calgary who runs a service business, or anyone who's ever struggled to find a trustworthy local pro — please share this with them. That's the whole ask.
 
-Link to try it: swingbyapp.com
+Link to try it: swingbyy.com
 
 Thank you to everyone who encouraged this along the way. You know who you are.
 
@@ -51,7 +51,7 @@ For businesses: browse open jobs near you, send quotes, get paid directly. No 20
 
 We're starting in Calgary because it's home — and because every neighbourhood here has skilled tradespeople who deserve a better way to connect with customers.
 
-Try it at swingbyapp.com
+Try it at swingbyy.com
 
 Questions? Our founder reads every message: support@swingbyy.com
 
@@ -69,7 +69,7 @@ SwingBy launched today. We're in Calgary.
 
 If you can do any of these three things, I'd be genuinely grateful:
 
-1. **Try it.** Post a job (even a small one) or browse the business listings. See if it makes sense. swingbyapp.com
+1. **Try it.** Post a job (even a small one) or browse the business listings. See if it makes sense. swingbyy.com
 
 2. **Share it.** If you know someone in Calgary — a neighbour, a friend, anyone who's ever said "I need someone to do X and I don't know who to call" — send them the link.
 

@@ -77,7 +77,7 @@ Strong fit, and nearly free. Amr is a solo founder building a marketplace — th
 
 ### Rule of 100 / three posts a day
 
-Directionally right, practically wrong for a solo founder with a day job and an Aug 31 launch. **Three high-quality posts a week, sustained, beats three a day abandoned in week two** — and [12-social-media-playbook.md](12-social-media-playbook.md) already commits to that. The volume advice exists because most people post nothing; it isn't a physical law. Batch a week's content in one Sunday session and schedule it.
+Directionally right, practically wrong for a solo founder with a day job and an Aug 31 launch. **Three high-quality posts a week, sustained, beats three a day abandoned in week two** — and [12-social-media-playbook.md](12-social-media-playbook.md) already commits to that. The volume advice exists because most people post nothing; it isn't a physical law. Batch a week's content in one Sunday session and schedule it.  <!-- lint-ok -->
 
 ### CTA every fifth post, always have something to invite people to
 
@@ -122,7 +122,7 @@ These matter more here than anything above.
 3. **Geographic density over city coverage.** Own three Calgary quadrants properly before claiming the whole city. A marketplace that's thin everywhere feels broken everywhere.
 4. **Neighbourhood Facebook groups are the highest-intent free channel in Calgary.** "Can anyone recommend a cleaner?" is posted daily. Be genuinely useful there — do not spam; most groups ban self-promotion and the ban is permanent.
 5. **The 10%-on-completion model is the entire pitch.** Lead with it every time. It's the one thing competitors structurally can't copy without breaking their revenue model.
-6. **Sell safety to clients, not convenience.** The competitor is Kijiji and a stranger with a van. Staged payment and a dispute process is the message.
+6. **Sell safety to clients, not convenience.** The competitor is Kijiji and a stranger with a van. Payment held until you approve, proof-of-work photos, and a dispute process is the message.
 7. **Every completed job is three content assets** — before/after, a business testimonial, a client testimonial. Ask at the moment of completion, in-app, while satisfaction is highest.
 8. **Seasonality is the local content calendar.** Snow removal (Oct), spring cleaning (Apr), moving (Jul 1), Stampede prep (Jul), furnace/gutters (Sep). Plan campaigns against these, not against generic content themes.
 9. **Reply within 2 hours or the lead is gone.** Already in [12](12-social-media-playbook.md); the [14](14-automation-stack.md) DM triage exists to make it achievable while holding a day job.
