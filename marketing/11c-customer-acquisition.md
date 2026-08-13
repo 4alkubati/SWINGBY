@@ -44,7 +44,7 @@ Start with Tier A.
 >
 > Hey [first name],
 >
-> I'm Amr — I built SwingBy, a platform that sends you client leads in Calgary with the payment already committed on the platform. You quote, they accept, and 50% lands with you right away — the rest on completion. No chasing invoices.
+> I'm Amr — I built SwingBy, a platform that sends you client leads in Calgary with the payment already committed on the platform. You quote, they accept, and the money is collected and held on the platform right then — it goes to you after the client approves the finished work. No chasing invoices.
 >
 > You'd be one of the first [category] businesses in [neighbourhood]. First 100 businesses are at 5% (instead of 10%) for 6 months.
 >

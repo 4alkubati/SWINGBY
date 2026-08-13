@@ -142,6 +142,34 @@ RULES: list[tuple[str, str, str, str]] = [
     # the booking is confirmed, 50% when the job is marked complete" and every
     # earlier pattern missed it.
     ("50/50 split", "§2", "all", r"\btranche"),
+    # Added 2026-08-12, SECOND pass. This file's own header says the claim has
+    # been killed four times; it was alive a fifth time in the cold-outreach
+    # email at 11c-customer-acquisition.md:47 — "50% lands with you right away
+    # — the rest on completion" — and THIS LINTER REPORTED THE TREE CLEAN.
+    #
+    # Every pattern above needs the number to sit next to releas\w*, or one of
+    # a short list of literals (up front / now / at booking / pay half). The
+    # live copy used a verb none of them knew ("lands"), so the whole rule set
+    # walked past a false statement about a business's money in send-ready copy.
+    #
+    # So: stop requiring the RELEASE verb. Two independent shapes now catch it —
+    # the amount next to any arrival phrasing, and the giveaway second clause,
+    # which is a claim on its own even with no number anywhere near it.
+    (
+        "50/50 split",
+        "§2",
+        "all",
+        r"\b(50\s?%|half)\b[^.\n]{0,40}\b(land\w*|arriv\w*|hit\w*|in your account|"
+        r"arrives|right away|straight away|immediately|instantly|same day|"
+        r"on acceptance|when they accept|once they accept)",
+    ),
+    (
+        "50/50 split",
+        "§2",
+        "all",
+        r"\b(the rest|the remainder|the other half|the balance|remaining 50\s?%)"
+        r"\b[^.\n]{0,25}\b(on|at|after|upon) completion",
+    ),
     # Kept narrow on purpose: "Deep clean adds 30–50%." and the cancellation
     # ladder's own "50%" are legitimate.
     ("50/50 split", "§2", "all", r"50\s?%\s+(when|on|at)\b"),
