@@ -4,7 +4,7 @@ from datetime import datetime, timedelta, timezone
 from uuid import UUID
 
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Depends, Query, Request
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import Field, field_validator, model_validator
 from typing import Literal, Optional
 from app.deps import get_current_user
 from app.privacy import mask_service_post_row, mask_user_public
@@ -20,6 +20,7 @@ from app.services.push import send_push_to_user
 # definition of where an image lives — see _attachment_url() for the privacy
 # reasoning and for why reads re-derive the URL from the stored path.
 from app.api.uploads import BUCKET as IMAGE_BUCKET
+from app.text_safety import ScrubbedText
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +47,7 @@ def _require_uuid(value: str, label: str) -> None:
 # ── Schemas ───────────────────────────────────────────────────────────────────
 
 
-class MessageSend(BaseModel):
+class MessageSend(ScrubbedText):
     # A message belongs to exactly one thread: a confirmed booking OR a quote
     # (interest) — pre-booking negotiation happens on the interest thread.
     booking_id: Optional[str] = Field(None, min_length=1, max_length=500)
@@ -91,7 +92,7 @@ class MessageSend(BaseModel):
         return self
 
 
-class TermsPropose(BaseModel):
+class TermsPropose(ScrubbedText):
     """A business proposing scope of work for the client to explicitly accept."""
 
     booking_id: Optional[str] = Field(None, min_length=1, max_length=500)

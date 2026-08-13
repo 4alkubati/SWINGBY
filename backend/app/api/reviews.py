@@ -1,10 +1,11 @@
 import logging
 
 from fastapi import APIRouter, HTTPException, Depends
-from pydantic import BaseModel, Field, field_validator
+from pydantic import Field, field_validator
 from typing import Optional
 from app.deps import get_current_user
 from app.supabase_client import supabase
+from app.text_safety import ScrubbedText
 
 logger = logging.getLogger(__name__)
 
@@ -14,7 +15,7 @@ router = APIRouter()
 # ── Schemas ───────────────────────────────────────────────────────────────────
 
 
-class ReviewCreate(BaseModel):
+class ReviewCreate(ScrubbedText):
     booking_id: str = Field(..., min_length=1)
     rating: int = Field(..., ge=1, le=5)
     comment: Optional[str] = Field(None, max_length=2000)

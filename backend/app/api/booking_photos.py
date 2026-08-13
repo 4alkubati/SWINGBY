@@ -26,10 +26,11 @@ import logging
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel, Field
+from pydantic import Field
 
 from app.deps import get_current_user
 from app.supabase_client import supabase
+from app.text_safety import ScrubbedText
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +40,7 @@ router = APIRouter()
 _ALLOWED_PHASES = {"before", "after"}
 
 
-class AttachPhoto(BaseModel):
+class AttachPhoto(ScrubbedText):
     phase: str = Field(..., min_length=1, max_length=16)
     url: str = Field(..., min_length=1, max_length=2048)
     path: str = Field(..., min_length=1, max_length=512)
