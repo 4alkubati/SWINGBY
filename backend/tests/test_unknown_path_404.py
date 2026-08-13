@@ -74,6 +74,52 @@ def test_invalid_uuid_cast_becomes_404():
     assert response.body == b'{"detail":"Not Found"}'
 
 
+def _pgrst116(details: str) -> APIError:
+    """PGRST116 is `.single()` not getting exactly one row. The CODE alone does
+    not say whether that means none or too many — only `details` does, which is
+    why the handler keys on it."""
+    return APIError(
+        {
+            "message": "Cannot coerce the result to a single JSON object",
+            "code": "PGRST116",
+            "hint": None,
+            "details": details,
+        }
+    )
+
+
+def test_single_row_query_with_no_rows_becomes_404():
+    """Six production Sentry issues in one hour, 2026-08-13 — every
+    /bookings/{id} sub-resource plus /messages/{id} — were a well-formed uuid
+    that simply did not exist. 22P02 does not cover that; only a malformed id
+    takes that path. Reproduced locally as 500s before this handler existed."""
+    response = asyncio.run(
+        _postgrest_bad_identifier_to_404(
+            request=MagicMock(), exc=_pgrst116("The result contains 0 rows")
+        )
+    )
+    assert response.status_code == 404
+    assert response.body == b'{"detail":"Not Found"}'
+
+
+def test_single_row_query_with_MANY_rows_still_500s():
+    """The half that matters. PGRST116 also fires when `.single()` matched
+    several rows, which means the code assumed a uniqueness the data does not
+    have — a real bug. Same code, same message as the 0-row case; only
+    `details` differs. Swallowing this as 404 would hide duplicate rows in a
+    place the caller believes is unique, so it must keep raising."""
+    exc = _pgrst116("The result contains 267 rows")
+    with pytest.raises(APIError):
+        asyncio.run(_postgrest_bad_identifier_to_404(request=MagicMock(), exc=exc))
+
+
+def test_pgrst116_with_no_details_still_500s():
+    """Fail closed when we cannot tell which case it is."""
+    exc = _pgrst116(None)
+    with pytest.raises(APIError):
+        asyncio.run(_postgrest_bad_identifier_to_404(request=MagicMock(), exc=exc))
+
+
 def test_other_postgrest_error_codes_are_not_swallowed():
     """
     A different Postgrest failure (RLS denial, real query bug, connection

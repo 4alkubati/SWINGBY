@@ -103,6 +103,38 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 async def _postgrest_bad_identifier_to_404(request: Request, exc: PostgrestAPIError):
     if exc.code == "22P02":
         return JSONResponse(status_code=404, content={"detail": "Not Found"})
+
+    # PGRST116 — `.single()` did not get exactly one row. Added 2026-08-13 after
+    # SIX production Sentry issues in one hour, all "Cannot coerce the result to
+    # a single JSON object", all unhandled 500s:
+    #
+    #   /bookings/{id}/events   /bookings/{id}/photos    /bookings/{id}/proof
+    #   /bookings/{id}/location /bookings/{id}/invoice.pdf   /messages/{id}
+    #
+    # The 22P02 rule above only covers a MALFORMED id. A well-formed uuid that
+    # simply does not exist takes a different path: PostgREST answers PGRST116
+    # and supabase-py raises, so the request 500s where it should 404. Confirmed
+    # by reproducing all six locally — `/bookings/{id}` itself already 404s
+    # because it checks `.data` explicitly; its five sub-resources never did.
+    #
+    # KEYED ON `details`, NOT ON THE CODE, and that distinction is the whole
+    # point. PGRST116 means "not exactly one row", which covers both:
+    #
+    #   0 rows   -> details "The result contains 0 rows"     -> genuinely absent
+    #   many     -> details "The result contains 267 rows"   -> a DATA BUG
+    #
+    # Same code, same message; only `details` separates them. Mapping the
+    # multi-row case to 404 would silently swallow duplicate rows where the code
+    # assumed uniqueness — so that case keeps 500ing, loudly, as it must.
+    #
+    # The tradeoff, stated rather than hidden: this is a global handler, so a
+    # `.single()` on an INSERT that somehow returned nothing would now read as
+    # 404 instead of 500. That shape is rare (an insert returns its row), and
+    # the alternative is the status quo, where every not-found sub-resource
+    # pages someone at 3am.
+    if exc.code == "PGRST116" and "0 rows" in (exc.details or ""):
+        return JSONResponse(status_code=404, content={"detail": "Not Found"})
+
     raise exc
 
 
