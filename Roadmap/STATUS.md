@@ -133,7 +133,7 @@ green.**
 
 What is left, highest first:
 
-1. **H1** — apply the two migrations. Blocks nothing in the app, but until then
+1. **D30** — apply the two migrations. Blocks nothing in the app, but until then
    we cannot say when an account consented (see HUMAN-TODO).
 2. **M2** — card-on-file (SetupIntent + a manage-cards screen). The biggest
    remaining piece and a **decision** first (D4): build it this cycle, or ship
@@ -158,12 +158,12 @@ What is left, highest first:
    Dry run by default, `--publish` to send, `--check` lists the credentials
    still missing. An unconfigured platform is skipped, not failed, so the first
    account that exists can post without waiting for the rest. 10 tests in CI.
-3. **n8n was not chosen** — see H16. It is designed (43 nodes) and has never
+3. **n8n was not chosen** — see DEC-11. It is designed (43 nodes) and has never
    run; it needs Notion, OpenAI, Slack and Buffer before one post goes out.
    n8n can drive this script later from one node if the visible version is
    wanted.
 
-**Blocked only on H15:** the accounts do not exist yet. `@swingbyapp` is taken
+**Blocked only on D22:** the accounts do not exist yet. `@swingbyapp` is taken
 by three other companies; **`swingbyy`** is free across IG/FB/X/YT.
 
 ---
@@ -228,7 +228,7 @@ assertion correctly fails — so it is checking something real.
 (Cloudflare Pages:Edit), then run the workflow once. Until it exists the
 workflow fails at preflight rather than pretending to ship.
 
-Filed as H13 as "not a store blocker" — true for the *privacy* URL, but the
+Filed as DEC-9 as "not a store blocker" — true for the *privacy* URL, but the
 Terms page is a different document and it is currently wrong about money.
 
 **The privacy policy itself is fine** — `assets/PrivacyPage-*.js` serves the
