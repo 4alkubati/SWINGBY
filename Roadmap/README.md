@@ -1,49 +1,103 @@
-# SwingBy Roadmap — now → Aug 31, 2026
-
-> The single plan to ship SwingBy. Three phases. One output: real people using it.
-> Daily files use the morning/night format (see `_TEMPLATE-daily.md`). The morning brief automation is **gen-1**; more launch automations come as we go.
-
-> 👉 **Active plan: [[DOMINOES]]** — the ordered list of dominoes between today and BETA LIVE. Each domino has its own file under [[dominoes]] with steps + an append-only log. Read DOMINOES first; this README is the north star.
-
+---
+type: index
+status: active
+tags: [roadmap, dominoes, index]
 ---
 
-## 👉 Tomorrow (Jun 18) — per Kira
-- **Morning:** set up Zoho (or Cloudflare+Gmail) email · upgrade the morning debrief to cover that day's morning + night plan.
-- **Night:** the OS work — n8n, how agents run night/morning, the debrief templates, and review this roadmap.
-- ⚠️ Mentor note: this is an *infrastructure* day, not a domino day. Fine for ONE more day — after this, the machine has to start dropping beta dominoes (D1 email → D4 booking) or it's just polished scaffolding.
+# 🁢 Roadmap — start here
 
----
+One ID scheme: **dominoes**. Knock one and the next falls.
 
-## The North Star
-**By Aug 31:** SwingBy is live and real businesses + clients are using it. A stranger can sign up, post/find a service, book, and pay (sandbox → live). Health at ~145 lean; AI fluency up. SwingBy is the output everything else serves.
+* **`D<n>`** — a thing to *do*. Work. Every task in this repo is one of these.
+* **`DEC-<n>`** — a thing to *decide*. Not a domino: nothing falls until a human
+  answers it, and no amount of engineering knocks it over.
 
-## The three phases
+Renamed 2026-08-13. `H`, and the ad-hoc `F`/`B`/`W` prefixes, are gone —
+crosswalk at the bottom so old references still resolve.
 
-| Phase | Window | Theme | Done when |
-|---|---|---|---|
-| **1 — BETA** | June (now) | Make it actually work for a handful of real testers | A real tester does a full booking on a real device, gets a real email |
-| **2 — POLISH + PREP** | July | Fix what beta breaks; prep public launch (store, payments live, legal) | App store-ready, Stripe live, 0 critical bugs |
-| **3 — PUBLIC LAUNCH** | August | Ship publicly + drive signups | Live on web (+ stores), real users transacting |
+## Which file answers which question
 
-## The 4 dominoes (Phase 1 — happening now)
-1. **Resend** — email actually sends
-2. **Kill mock data** — Home/Dashboard/Chat on real APIs
-3. **Installable build** — EAS → TestFlight / Play internal
-4. **End-to-end run** — a tester completes a booking (sandbox payment)
+| Question | File |
+|---|---|
+| What is the ordered plan to beta? | **`DOMINOES.md`** + `dominoes/D2.0–D8` |
+| What is actually live right now? | **`STATUS.md`** |
+| What blocks launch? | **`LAUNCH-BLOCKERS.md`** |
+| What can only Kira do? | **`HUMAN-TODO.md`** (D10–D39, DEC-1–DEC-12) |
+| What did the last audit find? | **`OPEN-2026-08-12.md`** |
+| What did the walkthrough find? | **`WALKTHROUGH-2026-08-06.md`** |
+| What does it cost / which keys? | **`COSTS-CREDENTIALS-APIS.md`** |
 
-See `June.md` (all June in one file) and `July/` (one file per day) for the daily plan. Master timeline: `DOMINOES.md`. Costs/credentials/APIs: `COSTS-CREDENTIALS-APIS.md`.
+Anything under `archive/` is history. It is not planning input.
 
-## The OS vision (why this folder exists)
-This is your command center. One place where:
-- **Agents** (`../BOH`, `../FOH`, `../claude`) build the product.
-- **Automations** (`../claude/automation/`) run your recurring jobs — gen-1 = morning brief. Future gens: beta-recruiting digest, launch-day broadcast, weekly metrics.
-- **Roadmap** (this folder) holds the plan the agents and you both follow.
+## The two ID spaces, and why they collided
 
-Goal: you run ONE thing in the morning and the system does the rest. We add one automation at a time — never all at once.
+`dominoes/` numbered work `D2.0…D8`. `HUMAN-TODO.md` separately numbered
+*decisions* `D1…D7`. Two different `D5`s existed at once — one meant "hire paid
+testers", the other meant "instant payouts". Decisions moved to `DEC-` because a
+domino is something you knock over, and a decision is not.
 
-## Daily rhythm (weekdays)
-- **Morning (6:10):** read brief → 50 min outreach → clear any human-only blocker (paste a key, approve copy).
-- **Day job 10–6:** SwingBy off-limits.
-- **Evening lock-in (7:15–9:45):** the real build — run the day's domino, supervised then autonomous.
-- **Night:** launch overnight agent run; PC awake, Docker up.
-- **Weekends:** big deep-work blocks for the heavy dominoes.
+## Live chain — what unblocks what
+
+```
+D10 eas login
+ ├─ D11 EXPO_PUBLIC_API_URL      (build FAILS without it)
+ ├─ D12 GOOGLE_MAPS_API_KEY      (silent blank maps)
+ └─ DEC-8 Android or iOS         → preview build
+
+D14 Team ZTYJ33HPDX: Individual or Org?   ← nobody recorded this
+ └─ D15 App Store record → D16 ascAppId → D17 .p8 key → D18 agreements
+      ↑ also gated by DEC-2 (incorporation)
+
+DEC-7 subscriptions on/off
+ └─ D13 STRIPE_PRICE_TEAM        ← every business 500s on subscribe today
+
+D25 create + verify a Google Business Profile
+ └─ D26 Business Profile API access        ~11-14 weeks
+
+D21 Instagram → Business account
+ └─ D22 social tokens → D20 display names → DEC-10 link in bio
+```
+
+## Crosswalk — old id → new id
+
+| Was | Now | What |
+|---|---|---|
+| `D1` | `DEC-1` | Client goes quiet after work is done -> auto-release 24h |
+| `D2` | `DEC-2` | Incorporation / holding company, privacy-policy entity |
+| `D3` | `DEC-3` | Apple Pay merchant id |
+| `D4` | `DEC-4` | Card on file |
+| `D5` | `DEC-5` | Instant payouts (Stripe Connect Express) |
+| `D6` | `DEC-6` | Credit redemption at checkout |
+| `H26` | `DEC-7` | Subscriptions: billing on, or back to track-only |
+| `H30` | `DEC-8` | Preview build platform: Android or iOS |
+| `H13` | `DEC-9` | Does swingbyy.com serve web/launch/ instead of pre-launch |
+| `H17` | `DEC-10` | Link in bio: waitlist or App Store |
+| `H16` | `DEC-11` | Social publisher: plain script, not n8n |
+| `H14` | `DEC-12` | Handle to claim: swingbyy (TikTok swingbyyy) |
+| `H27` | `D10` | eas login — blocks every EAS command |
+| `H28` | `D11` | EXPO_PUBLIC_API_URL in EAS preview — build FAILS without it |
+| `H29` | `D12` | GOOGLE_MAPS_API_KEY in EAS preview — silent blank maps |
+| `H25` | `D13` | Render STRIPE_PRICE_TEAM — every business 500s on subscribe |
+| `H7` | `D15` | App Store Connect app record |
+| `H8` | `D16` | ascAppId + Apple ID email into eas.json |
+| `H9` | `D17` | App Store Connect API key (.p8) |
+| `H10` | `D18` | Paid Apps / Free agreement |
+| `H24` | `D19` | Cloudflare CNAME www -> swingbyy.com |
+| `H22` | `D20` | Display names on the live social accounts |
+| `H23` | `D21` | Instagram -> Business account (unblocks Graph API) |
+| `H15` | `D22` | Social tokens in .env.social |
+| `H20` | `D23` | YouTube handle — last one unclaimed |
+| `H12` | `D24` | Keep-warm cron for Render |
+| `H31` | `D26` | Google Business Profile API access |
+| `H1` | `D30` | Two migrations applied |
+| `H2` | `D31` | PR #81 merged |
+| `H3` | `D32` | STRIPE_SECRET_KEY confirmed test key |
+| `H4` | `D33` | Apple Developer account active |
+| `H5` | `D34` | Sign In with Apple capability |
+| `H6` | `D35` | Supabase Auth -> Apple |
+| `H11` | `D36` | ENV=production in Render |
+| `H18` | `D37` | Stripe Connect enabled |
+| `H19` | `D38` | Cloudflare email routing for amr@ |
+| `H21` | `D39` | D5 payouts migrations applied |
+| — | `D14` | Confirm Apple Team enrolment type (new) |
+| — | `D25` | Create + verify a Google Business Profile (new) |

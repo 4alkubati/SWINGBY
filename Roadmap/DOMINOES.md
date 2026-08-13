@@ -286,7 +286,7 @@ Re-tested 2026-08-03 by fetching the chunks the live page actually loads:
 | `/assets/TermsPage-a5jjFbyw.js` | **200**, 4,801 B — *"By creating an account on SwingBy, you agree…"*, *2. Payments, Escrow & Refunds*, *3. Disclaimers & Limitation of Liability* |
 | `/assets/CookiesPage-BAovAQCB.js` | **200**, 3,739 B — a real cookie policy |
 
-**All three legal documents are live on swingbyy.com today.** `HUMAN-TODO.md` H13 was
+**All three legal documents are live on swingbyy.com today.** `HUMAN-TODO.md` DEC-9 was
 right — "a real privacy policy is already served" — and was wrongly flagged as a false
 claim. There is no legal emergency and no deploy needs to be rushed for one.
 

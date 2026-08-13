@@ -17,7 +17,7 @@ awaiting a repro. Nothing here is assumed from an older doc.
 no record. Apex `https://swingbyy.com` answers **200**; `https://www.swingbyy.com`
 fails to connect (curl `000`).
 
-This is already filed as **H24** in `Roadmap/HUMAN-TODO.md`. One Cloudflare
+This is already filed as **D19** in `Roadmap/HUMAN-TODO.md`. One Cloudflare
 action: **DNS → CNAME `www` → `swingbyy.com`, proxied.** Not a code change, and
 no agent can do it.
 
