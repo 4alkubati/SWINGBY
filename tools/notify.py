@@ -10,15 +10,19 @@ tools/social_post.py: nothing leaves this machine unless you pass --send.
     make status-open && python3 tools/notify.py --file .status/summary.txt --send
     echo "build failed" | python3 tools/notify.py --send
 
-Setup, once:
+SETUP IS ALREADY DONE on this machine. `.claude/secrets/n8n.env` (gitignored)
+holds TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID and has been driving the n8n
+morning brief, sentinel.sh and the rest of agents/claude/automation/ since
+2026-07-14. This script reads that file — it does NOT want a second bot.
 
- 1. Talk to @BotFather in Telegram -> /newbot -> it gives you a token that
-    looks like 8123456789:AAH...  That is TELEGRAM_BOT_TOKEN.
- 2. Send your new bot any message from the chat you want notified. A bot
-    cannot start a conversation — this step is what makes it possible for it
-    to message you at all, and skipping it is the usual reason sends 403.
+Only if you want a DIFFERENT bot or chat (say, a noisy CI channel kept out of
+the morning brief), put it in .env.notify, which is read first and wins:
+
+ 1. @BotFather -> /newbot -> gives a token like 8123456789:AAH...
+ 2. Message the new bot from the target chat. A bot cannot open a conversation;
+    skipping this is the usual reason a send 403s.
  3. python3 tools/notify.py --whoami        # prints the chat ids it can see
- 4. Put both in .env.notify (gitignored):
+ 4. Write .env.notify (gitignored):
 
         TELEGRAM_BOT_TOKEN=8123456789:AAH...
         TELEGRAM_CHAT_ID=-1001234567890
@@ -41,7 +45,22 @@ import urllib.request
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
-ENV_FILE = REPO / ".env.notify"
+
+# Read in order, first value wins (os.environ.setdefault), so a real environment
+# variable always beats a file and .env.notify beats the shared secrets.
+#
+# `.claude/secrets/n8n.env` ALREADY HOLDS TELEGRAM_BOT_TOKEN and
+# TELEGRAM_CHAT_ID — it is what the n8n morning brief, sentinel.sh and the rest
+# of agents/claude/automation/ have been sending through since 2026-07-14. This
+# script reads it rather than asking anyone to register a second bot, because
+# the same credential in two files is the one that goes stale and gets
+# rotated in only one place. .env.notify stays supported for a DIFFERENT bot or
+# chat (e.g. a noisy CI channel you do not want in the morning brief).
+ENV_FILES = (
+    REPO / ".env.notify",
+    REPO / ".claude" / "secrets" / "n8n.env",
+)
+ENV_FILE = ENV_FILES[0]  # the one --check names when nothing is configured
 
 REQUIRED = ("TELEGRAM_BOT_TOKEN", "TELEGRAM_CHAT_ID")
 
@@ -54,16 +73,28 @@ TIMEOUT = 20.0
 LIMIT = 4096
 
 
-def load_dotenv(path: Path = ENV_FILE) -> None:
-    """Read a local .env.notify if present. Never committed — see .gitignore."""
-    if not path.exists():
-        return
-    for line in path.read_text(encoding="utf-8").splitlines():
-        line = line.strip()
-        if not line or line.startswith("#") or "=" not in line:
+def load_dotenv(paths=ENV_FILES) -> None:
+    """Read the known credential files, if present. Neither is ever committed —
+    `.env.notify` and `.claude/secrets/*` are both gitignored.
+
+    Only the two keys this script needs are taken. `n8n.env` also carries
+    Discord, X, Meta and NVIDIA credentials, and a notifier has no business
+    pulling those into its process environment.
+    """
+    if isinstance(paths, (str, Path)):
+        paths = (Path(paths),)
+    for path in paths:
+        path = Path(path)
+        if not path.exists():
             continue
-        key, _, value = line.partition("=")
-        os.environ.setdefault(key.strip(), value.strip().strip("'\""))
+        for line in path.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, _, value = line.partition("=")
+            key = key.strip()
+            if key in REQUIRED:
+                os.environ.setdefault(key, value.strip().strip("'\""))
 
 
 def missing() -> list[str]:
@@ -248,8 +279,12 @@ def main(argv=None) -> int:
                 print(f"  set      {key} = {val}")
         if gaps:
             print(f"\nNot configured. Add to {ENV_FILE.name}: {', '.join(gaps)}")
+            print("Files read, in order: " + ", ".join(str(p) for p in ENV_FILES))
             return 1
-        print("\nConfigured. A message would be sent with --send.")
+        source = next(
+            (str(p) for p in ENV_FILES if Path(p).exists()), "the environment"
+        )
+        print(f"\nConfigured (from {source}). A message would be sent with --send.")
         return 0
 
     if args.whoami:

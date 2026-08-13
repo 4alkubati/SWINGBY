@@ -112,6 +112,55 @@ class TestTokenNeverLeaks:
         assert "send your bot a message first" in str(caught.value)
 
 
+# ── credential loading ───────────────────────────────────────────────────────
+
+
+class TestCredentialLoading:
+    def test_reads_the_shared_n8n_secrets(self, tmp_path, monkeypatch):
+        """The bot already exists: .claude/secrets/n8n.env has been driving the
+        n8n morning brief and sentinel.sh since 2026-07-14. Reading it is what
+        stops the same credential living in two files and being rotated in one."""
+        monkeypatch.delenv("TELEGRAM_BOT_TOKEN", raising=False)
+        monkeypatch.delenv("TELEGRAM_CHAT_ID", raising=False)
+        shared = tmp_path / "n8n.env"
+        shared.write_text("TELEGRAM_BOT_TOKEN=from-n8n\nTELEGRAM_CHAT_ID=123\n")
+        notify.load_dotenv((tmp_path / "nope.env", shared))
+        assert notify.missing() == []
+
+    def test_env_notify_wins_over_shared(self, tmp_path, monkeypatch):
+        """First file read wins, so a dedicated bot can override the shared one."""
+        monkeypatch.delenv("TELEGRAM_BOT_TOKEN", raising=False)
+        monkeypatch.delenv("TELEGRAM_CHAT_ID", raising=False)
+        first = tmp_path / ".env.notify"
+        first.write_text("TELEGRAM_BOT_TOKEN=dedicated\nTELEGRAM_CHAT_ID=1\n")
+        second = tmp_path / "n8n.env"
+        second.write_text("TELEGRAM_BOT_TOKEN=shared\nTELEGRAM_CHAT_ID=2\n")
+        notify.load_dotenv((first, second))
+        import os
+
+        assert os.environ["TELEGRAM_BOT_TOKEN"] == "dedicated"
+
+    def test_does_not_import_unrelated_secrets(self, tmp_path, monkeypatch):
+        """n8n.env also carries Discord, X, Meta and NVIDIA credentials. A
+        notifier has no business pulling those into its process environment,
+        where any subprocess it spawns would inherit them."""
+        monkeypatch.delenv("TELEGRAM_BOT_TOKEN", raising=False)
+        monkeypatch.delenv("TELEGRAM_CHAT_ID", raising=False)
+        monkeypatch.delenv("DISCORD_BOT_TOKEN", raising=False)
+        monkeypatch.delenv("X_API_KEY", raising=False)
+        shared = tmp_path / "n8n.env"
+        shared.write_text(
+            "TELEGRAM_BOT_TOKEN=t\nTELEGRAM_CHAT_ID=1\n"
+            "DISCORD_BOT_TOKEN=nope\nX_API_KEY=alsonope\n"
+        )
+        notify.load_dotenv((shared,))
+        import os
+
+        assert os.environ.get("DISCORD_BOT_TOKEN") is None
+        assert os.environ.get("X_API_KEY") is None
+        assert os.environ["TELEGRAM_BOT_TOKEN"] == "t"
+
+
 # ── long messages are split, never truncated ─────────────────────────────────
 
 
