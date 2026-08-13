@@ -38,6 +38,8 @@ from __future__ import annotations
 import re
 from typing import Optional
 
+from pydantic import BaseModel, model_validator
+
 # C0 controls except \t (09), \n (0A), \r (0D), plus DEL (7F).
 _CONTROL_RE = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
 
@@ -53,6 +55,36 @@ def scrub(value: Optional[str]) -> Optional[str]:
         return value
     cleaned = _CONTROL_RE.sub("", value)
     return cleaned
+
+
+class ScrubbedText(BaseModel):
+    """Base model that scrubs every incoming string field.
+
+    Added 2026-08-13, same day as the module, because the first version of this
+    fix only covered service posts — and a NUL reaching Postgres is not a
+    service-post problem, it is a "user typed text" problem. Chat messages,
+    review comments, dispute descriptions, admin resolutions, timeline notes and
+    photo captions all take free text and all write it to a `text` column, so
+    every one of them could 500 exactly the same way. Scoping the fix to the one
+    endpoint Sentry happened to catch would have left the other six live.
+
+    Applied by inheritance rather than by listing field names, so a NEW prose
+    field on an existing model is covered the day it is added instead of the day
+    someone remembers. It scrubs ids and urls too; that is intentional and free,
+    since none of those should contain a control character either.
+
+    Deliberately NOT applied at the supabase client layer. That would catch all
+    94 insert/update sites at once, but it would also silently rewrite values
+    the caller believes it controls — including ones this module has no business
+    touching. Request-model validation is where user input already gets checked.
+    """
+
+    @model_validator(mode="before")
+    @classmethod
+    def _scrub_incoming_strings(cls, data):
+        if isinstance(data, dict):
+            return {k: scrub(v) if isinstance(v, str) else v for k, v in data.items()}
+        return data
 
 
 def scrub_required(value: str) -> str:

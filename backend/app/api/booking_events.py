@@ -32,11 +32,12 @@ import logging
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel, Field
+from pydantic import Field
 
 from app.deps import get_current_user
 from app.supabase_client import supabase
 from app.services.push import send_push_to_user
+from app.text_safety import ScrubbedText
 
 logger = logging.getLogger(__name__)
 
@@ -58,7 +59,7 @@ _ALLOWED_EVENT_TYPES = {
 }
 
 
-class CreateEvent(BaseModel):
+class CreateEvent(ScrubbedText):
     event_type: str = Field(..., min_length=1, max_length=32)
     note: Optional[str] = Field(None, max_length=500)
     lat: Optional[float] = Field(None, ge=-90, le=90)

@@ -85,3 +85,74 @@ class TestScrubRequired:
     def test_emoji_only_title_is_allowed(self):
         """Not our call to reject. Storable is the only question here."""
         assert scrub_required("🧹") == "🧹"
+
+
+class TestEveryProseModelScrubs:
+    """The first version of this fix covered service posts only.
+
+    A NUL reaching Postgres is not a service-post problem, it is a "user typed
+    text" problem — chat, reviews, disputes, admin resolutions, timeline notes
+    and photo captions all take free text into a `text` column and all could
+    500 identically. This pins every one of them, so the next prose endpoint
+    that forgets ScrubbedText fails here rather than in production.
+    """
+
+    def test_message_content(self):
+        from app.api.messages import MessageSend
+
+        b = "22222222-2222-2222-2222-222222222222"
+        assert MessageSend(booking_id=b, content="hi\x00 there 🧹").content == (
+            "hi there 🧹"
+        )
+
+    def test_review_comment(self):
+        from app.api.reviews import ReviewCreate
+
+        assert ReviewCreate(
+            booking_id="x", rating=5, comment="great\x00job"
+        ).comment == ("greatjob")
+
+    def test_dispute_description_and_resolution(self):
+        from app.api.disputes import DisputeCreate, DisputeResolve
+
+        d = DisputeCreate(
+            booking_id="x",
+            issue_type="quality",
+            description="the work was\x00 unfinished",
+        )
+        assert "\x00" not in d.description
+        assert "\x00" not in DisputeResolve(resolution="refund\x00 issued").resolution
+
+    def test_timeline_note(self):
+        from app.api.booking_events import CreateEvent
+
+        assert CreateEvent(event_type="en_route", note="on my\x00 way").note == (
+            "on my way"
+        )
+
+    def test_photo_caption(self):
+        from app.api.booking_photos import AttachPhoto
+
+        p = AttachPhoto(
+            path="p/x.jpg", url="https://x/y.jpg", phase="after", caption="done\x00 ✅"
+        )
+        assert p.caption == "done ✅"
+
+    def test_scrub_runs_before_length_validation(self):
+        """Ordering matters: a description that only reaches min_length BECAUSE
+        of its control characters must be rejected, not stored short."""
+        import pytest as _pytest
+        from pydantic import ValidationError
+
+        from app.api.disputes import DisputeCreate
+
+        with _pytest.raises(ValidationError):
+            DisputeCreate(
+                booking_id="x", issue_type="quality", description="bad\x00\x00\x00work"
+            )
+
+    def test_arabic_and_emoji_survive_the_real_models(self):
+        from app.api.reviews import ReviewCreate
+
+        text = "ممتاز جدا 🎉 café"
+        assert ReviewCreate(booking_id="x", rating=5, comment=text).comment == text

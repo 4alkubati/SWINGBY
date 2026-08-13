@@ -33,12 +33,13 @@ import logging
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Request
-from pydantic import BaseModel, Field
+from pydantic import Field
 
 from app.deps import get_current_user
 from app.supabase_client import supabase
 from app.services import escrow, refunds
 from app.services.audit import record_audit
+from app.text_safety import ScrubbedText
 
 logger = logging.getLogger(__name__)
 
@@ -60,13 +61,13 @@ VALID_ISSUE_TYPES = {
 CANCELLATION_REFUND = "cancellation_refund"
 
 
-class DisputeCreate(BaseModel):
+class DisputeCreate(ScrubbedText):
     booking_id: str
     issue_type: str = Field(..., min_length=1)
     description: str = Field(..., min_length=10, max_length=2000)
 
 
-class DisputeResolve(BaseModel):
+class DisputeResolve(ScrubbedText):
     resolution: str = Field(..., min_length=1, max_length=1000)
     refund_amount: float | None = None
     # Only meaningful for a cancellation_refund. True (the default) approves and
