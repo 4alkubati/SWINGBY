@@ -10,6 +10,7 @@ from app.deps import get_current_user
 from app.privacy import mask_service_post_row
 from app.services import expiry_sweep
 from app.services.geocoding import resolve_coordinates
+from app.text_safety import scrub, scrub_required
 from app.services.push import send_push_to_user
 from app.services.visibility import blocked_pair_ids
 from app.supabase_client import supabase
@@ -75,17 +76,28 @@ class ServicePostCreate(BaseModel):
     @field_validator("title", mode="before")
     @classmethod
     def strip_title(cls, v):
-        v = str(v).strip()
+        # scrub_required before strip: a title of nothing but control characters
+        # passes min_length=3 and then dies at the INSERT. See app/text_safety.py.
+        v = scrub_required(v).strip()
         if not v:
             raise ValueError("Field cannot be blank")
         return v
+
+    @field_validator("description", "address", mode="before")
+    @classmethod
+    def scrub_free_text(cls, v):
+        # Sentry SWINGBY-API-17, 2026-08-13: "unsupported Unicode escape
+        # sequence" — a NUL reached Postgres, which cannot store one in `text`.
+        # JSON can carry it, Pydantic's length checks pass it, and the failure
+        # names neither the field nor the row.
+        return scrub(v)
 
     @field_validator("category", "target_business_id", mode="before")
     @classmethod
     def strip_optional(cls, v):
         if v is None:
             return None
-        v = str(v).strip()
+        v = str(scrub(v)).strip()
         return v or None
 
     @model_validator(mode="after")
@@ -131,10 +143,17 @@ class ServicePostUpdate(BaseModel):
     @classmethod
     def strip_title(cls, v):
         if v is not None:
-            v = str(v).strip()
+            v = scrub_required(v).strip()
             if not v:
                 raise ValueError("Field cannot be blank")
         return v
+
+    @field_validator("description", "address", mode="before")
+    @classmethod
+    def scrub_free_text(cls, v):
+        # PATCH is the other way in — the create path being clean is no use if
+        # an edit can still put a NUL in the same column.
+        return scrub(v)
 
     @field_validator("image_urls", mode="before")
     @classmethod

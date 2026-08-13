@@ -1160,7 +1160,19 @@ def complete_booking(booking_id: str, current_user: dict = Depends(get_current_u
             # FINDING C (money audit, 2026-07-23). Completing a job used to pay
             # the business whether or not anyone had ever paid — proven live by
             # releasing $180 against a booking with no Stripe charge.
-            logger.exception(
+            #
+            # WARNING, not exception, since 2026-08-13. This branch is the guard
+            # WORKING: an unpaid booking is a legitimate state (the client never
+            # completed checkout), the caller gets a clean 409, and nothing is
+            # broken. logger.exception shipped it to Sentry as an Error with a
+            # traceback, so correct behaviour paged someone — SWINGBY-API-S. A
+            # guard that alerts every time it succeeds is how people learn to
+            # ignore the alert, which is the opposite of what FINDING C bought.
+            #
+            # The EscrowError branch below stays at exception on purpose: "no
+            # payments row at all" is not a legitimate state, it means a booking
+            # exists whose money never got recorded.
+            logger.warning(
                 "complete_booking: BLOCKED — booking %s has no captured payment",
                 booking_id,
             )
