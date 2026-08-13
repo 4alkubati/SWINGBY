@@ -191,3 +191,29 @@ jest.spyOn(console, 'warn').mockImplementation((msg) => {
   // let everything else through so agents still see real warnings
   process.stderr.write(`console.warn: ${msg}\n`);
 });
+
+// react-native-view-shot — native capture, no jsdom equivalent.
+//
+// `virtual: true` because this mock has to work on a checkout where the package
+// has not been installed yet. Without it, adding PhotoAnnotator's import broke
+// every suite that renders BookingPhotos (and therefore BookingDetailsScreen)
+// with "Cannot find module", which looks like a test failure and is not one.
+//
+// captureRef resolves a fake file URI so the markup save path can be asserted
+// end to end: draw -> capture -> upload -> attach as a NEW photo row.
+jest.mock(
+  'react-native-view-shot',
+  () => {
+    const React = require('react');
+    const { View } = require('react-native');
+    return {
+      __esModule: true,
+      default: React.forwardRef((props, ref) => {
+        React.useImperativeHandle(ref, () => ({}), []);
+        return React.createElement(View, props, props.children);
+      }),
+      captureRef: jest.fn(() => Promise.resolve('file:///tmp/markup-capture.jpg')),
+    };
+  },
+  { virtual: true },
+);
