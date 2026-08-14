@@ -25,14 +25,25 @@ import HeaderGlow from '../../components/HeaderGlow';
 import i18n from '../../i18n';
 import { colors, radius, spacing } from '../../theme/tokens';
 
-// "20 minutes" from a median-reply-time in minutes. Falls back to the vaguer
-// copy the spec asks for when the business has no history to average.
+// "20 minutes" from a median-reply-time in minutes.
+//
+// D-W8 (walkthrough 2026-08-13). The no-history branch used to claim
+// "%{business} usually replies within a few hours." Screenshot 15 shows that
+// sentence under a business with ZERO completed jobs — an invented service
+// level, stated to a client at the moment they are deciding whether to trust
+// us. "Usually" is a claim about history, so it cannot be said by a business
+// that has none. It is the same §4 family claim_lint already reports 81 of.
+//
+// With no median we now say only what is true: the request is with them. The
+// vaguer-but-still-invented fallback string stays in the catalogue unused
+// rather than being deleted, so nothing else that references it breaks — but
+// nothing reaches it any more.
 function replyCopy(businessName, medianMinutes) {
   const name = businessName || '';
   const mins = Number(medianMinutes);
   if (!name) return i18n.t('requestSent.subFallbackGeneric');
   if (!Number.isFinite(mins) || mins <= 0) {
-    return i18n.t('requestSent.subFallback', { business: name });
+    return i18n.t('requestSent.subNoHistory', { business: name });
   }
   const time =
     mins < 60

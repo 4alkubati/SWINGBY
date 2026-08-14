@@ -3107,6 +3107,23 @@ Object.assign(translations.uk, {
   'quoteCard.acceptedTitleUnpaid': '\u041f\u0440\u0438\u0439\u043d\u044f\u0442\u043e \u00b7 %{amount}',
 });
 
+
+// D-W8 (walkthrough 2026-08-13) — no invented service level.
+// The old copy said "%{business} usually replies within a few hours" for a
+// business with no history at all. "Usually" is a claim about the past.
+Object.assign(translations.en, {
+  'requestSent.subNoHistory': 'Your request is with %{business}.',
+});
+Object.assign(translations['fr-CA'], {
+  'requestSent.subNoHistory': 'Votre demande est chez %{business}.',
+});
+Object.assign(translations.ar, {
+  'requestSent.subNoHistory': '\u0637\u0644\u0628\u0643 \u0644\u062f\u0649 %{business}.',
+});
+Object.assign(translations.uk, {
+  'requestSent.subNoHistory': '\u0412\u0430\u0448 \u0437\u0430\u043f\u0438\u0442 \u043d\u0430\u0434\u0456\u0441\u043b\u0430\u043d\u043e \u0434\u043e %{business}.',
+});
+
 const i18n = new I18n(translations);
 
 // Default fallback

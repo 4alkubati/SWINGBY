@@ -97,7 +97,13 @@ export default function SendTermsSheet({ visible, sending = false, onClose, onSe
                 style={styles.input}
                 value={title}
                 onChangeText={setTitle}
-                placeholder="Hallway repaint"
+                // D-W8 (walkthrough 2026-08-13): these placeholders were
+                // hardcoded for a PAINTING job and shown on a MOVING job
+                // (screenshot 04 — "Hallway repaint" over "I need help
+                // moving"). A placeholder that describes someone else's trade
+                // reads as the app not knowing what job it is looking at.
+                // Category-neutral copy works for every trade on the platform.
+                placeholder="What this job covers"
                 placeholderTextColor={colors.textTertiary}
                 maxLength={MAX_TITLE}
                 returnKeyType="next"
@@ -112,7 +118,7 @@ export default function SendTermsSheet({ visible, sending = false, onClose, onSe
                 value={body}
                 onChangeText={setBody}
                 placeholder={
-                  'Two coats on all four walls.\nWe move and cover the furniture.\nDrywall repair is not included.'
+                  'What you will do.\nWhat is included in the price.\nAnything that is not included.'
                 }
                 placeholderTextColor={colors.textTertiary}
                 multiline
