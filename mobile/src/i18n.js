@@ -3047,8 +3047,48 @@ i18n.enableFallback = true;
 // locale. NUL can't appear in a key, so this makes each key one flat segment.
 i18n.defaultSeparator = String.fromCharCode(0);
 
+// ── Locale change notifier ───────────────────────────────────────────────────
+//
+// D-W1 (walkthrough 2026-08-13). The app shipped running in UKRAINIAN while the
+// Settings row read "EN", and both halves of that trace back to this file.
+//
+// The locale is restored ASYNCHRONOUSLY below (SecureStore is async), but every
+// consumer read `i18n.locale` SYNCHRONOUSLY into `useState` at mount — which
+// happens first. So the UI captured the constructor default 'en' forever, while
+// the real locale settled to whatever was persisted. A user who tried Ukrainian
+// once was pinned to it, shown a chip that said EN, and had no way to know.
+//
+// Fixed by making the settle observable: anything that displays or depends on
+// the locale subscribes, and re-reads when boot finishes or the user switches.
+// A plain Set rather than an EventEmitter — one event, no payload, no deps.
+const localeListeners = new Set();
+
+function notifyLocaleChanged() {
+  for (const fn of localeListeners) {
+    try {
+      fn(i18n.locale);
+    } catch {
+      /* a broken listener must never take the app down */
+    }
+  }
+}
+
+/** Subscribe to locale changes. Returns an unsubscribe function. */
+export function onLocaleChange(fn) {
+  localeListeners.add(fn);
+  return () => localeListeners.delete(fn);
+}
+
+/**
+ * Resolves once the persisted locale has been restored.
+ *
+ * Anything that must not render text before the real locale is known can await
+ * this. It never rejects — a failed restore settles on 'en'.
+ */
+export let localeReady;
+
 // Restore persisted locale on import (fire-and-forget)
-(async () => {
+localeReady = (async () => {
   try {
     const stored = await SecureStore.getItemAsync(LOCALE_KEY);
     if (stored) {
@@ -3068,6 +3108,10 @@ i18n.defaultSeparator = String.fromCharCode(0);
   // on. Sets the flag only — deliberately does NOT restart here; see the note
   // on syncDirectionOnBoot about boot loops.
   syncDirectionOnBoot(i18n.locale);
+  // Tell every subscriber the real locale is now in effect. Without this the UI
+  // keeps rendering whatever it captured before this promise resolved.
+  notifyLocaleChanged();
+  return i18n.locale;
 })();
 
 /**
@@ -3081,6 +3125,7 @@ i18n.defaultSeparator = String.fromCharCode(0);
  */
 export async function setLocale(locale) {
   i18n.locale = locale;
+  notifyLocaleChanged();
   try {
     await SecureStore.setItemAsync(LOCALE_KEY, locale);
   } catch { /* non-fatal */ }

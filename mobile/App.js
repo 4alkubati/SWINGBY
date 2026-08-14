@@ -44,6 +44,8 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useFonts } from 'expo-font';
 import { SpaceGrotesk_700Bold, SpaceGrotesk_400Regular } from '@expo-google-fonts/space-grotesk';
 import { Inter_400Regular, Inter_600SemiBold } from '@expo-google-fonts/inter';
+// D-W1: the boot-time locale restore. Awaited below so no text renders first.
+import { localeReady } from './src/i18n';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
 import { BookingProvider } from './src/context/BookingContext';
 import { UnreadProvider } from './src/context/UnreadContext';
@@ -219,6 +221,36 @@ function App() {
     return () => clearTimeout(timer);
   }, [fontsLoaded, fontError]);
 
+  // D-W1 (walkthrough 2026-08-13) — do not render text before the locale is
+  // known.
+  //
+  // The persisted locale is restored asynchronously (SecureStore), so the first
+  // frame used to render with the constructor default while the real locale
+  // arrived a tick later. Screens that had already mounted kept their captured
+  // value, which is how the app shipped rendering Ukrainian strings under a
+  // Settings row that read "EN".
+  //
+  // Gated the same way as fonts and with the same philosophy: this is allowed to
+  // delay the first frame, never to prevent it. `localeReady` cannot reject — a
+  // failed restore settles on 'en' — but it is still given the same timeout as
+  // fonts so a wedged SecureStore degrades to English instead of a stuck
+  // spinner. Wrong language beats no app; that is the fontError lesson above.
+  const [localeSettled, setLocaleSettled] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    const timer = setTimeout(() => alive && setLocaleSettled(true), FONT_TIMEOUT_MS);
+    localeReady.finally(() => {
+      if (!alive) return;
+      clearTimeout(timer);
+      setLocaleSettled(true);
+    });
+    return () => {
+      alive = false;
+      clearTimeout(timer);
+    };
+  }, []);
+
+  if (!localeSettled) return <LoadingScreen />;
   if (!fontsLoaded && !fontError && !fontsTimedOut) return <LoadingScreen />;
 
   return (

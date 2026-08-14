@@ -25,7 +25,7 @@ import {
   authenticateAsync,
 } from '../../services/biometrics';
 import LanguageSelector from '../../components/LanguageSelector';
-import i18n from '../../i18n';
+import i18n, { onLocaleChange } from '../../i18n';
 import { colors, spacing, radius } from '../../theme/tokens';
 import Text from '../../components/Text';
 import ScreenHeader from '../../components/ScreenHeader';
@@ -49,7 +49,11 @@ export default function SettingsScreen() {
 
   const [notifEnabled, setNotifEnabled] = useState(false);
   const [langVisible, setLangVisible] = useState(false);
+  // D-W1: `i18n.locale` is restored asynchronously on boot, so reading it once
+  // at mount captured the constructor default and the chip claimed "EN" while
+  // the app rendered Ukrainian. Subscribe instead of snapshotting.
   const [currentLocale, setCurrentLocale] = useState(i18n.locale);
+  useEffect(() => onLocaleChange(setCurrentLocale), []);
   const [exportLoading, setExportLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   // Delete-account sheet (Guideline 5.1.1(v)). `needsPassword` decides whether
