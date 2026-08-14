@@ -98,12 +98,31 @@ export default function Tabs({ tabs, activeIndex = 0, onChange, style }) {
           style={{
             flex: 1,
             alignItems: 'center',
+            justifyContent: 'center',
             paddingVertical: spacing.sm,
+            paddingHorizontal: spacing.xs,
+            // D-W7 (walkthrough 2026-08-13). Screenshot 02: the label
+            // "Needs action (2)" wrapped onto a second line, grew the pill past
+            // the sliding indicator behind it, and collided with "Scheduled (2)"
+            // and "Past (4)" either side. `flex: 1` sized the touch target but
+            // nothing constrained the TEXT, so a longer string simply broke the
+            // row. Every count in that row is dynamic, so the widest label is
+            // whatever the data happens to be that day — this cannot be solved
+            // by picking shorter copy.
+            minWidth: 0,
           }}
         >
           <Text
             variant="smallMedium"
             color={index === activeIndex ? 'primary' : 'secondary'}
+            // One line, shrink before truncating, and only truncate as a last
+            // resort. A tab that reads "Needs acti…" is still legible; a tab row
+            // that has reflowed into two rows is not.
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.85}
+            ellipsizeMode="tail"
+            style={{ textAlign: 'center' }}
           >
             {tab}
           </Text>

@@ -37,6 +37,7 @@ import { bucketBooking, needsActionReason } from '../../utils/bookingBuckets';
 // Shared with ProofOfWorkScreen's CTA: whichever control the business reaches
 // first sends the proof AND marks the job done.
 import { finishJob, FINISH_DONE } from '../../services/finishJob';
+import * as toast from '../../services/toast';
 import { groupScheduledJobs, countScheduledJobs } from '../../utils/scheduleGroups';
 import useQuotedPostIds from '../../hooks/useQuotedPostIds';
 
@@ -117,14 +118,33 @@ function SectionLabel({ children }) {
 // NOTHING, never as "0 jobs", because a fabricated zero reads as a real (and
 // damning) credential. A genuine zero is different: it's true, and it says
 // "new to the team" rather than a bare numeral.
+// D-W5 (walkthrough 2026-08-13) — the OWNER is not new to their own company.
+//
+// Screenshots 01 and 03: "Amr Basem · Owner · New to the team · 18 days with
+// Amr's Moving Company". Both halves are wrong for an owner, and both undermine
+// the exact trust this card exists to build:
+//
+//   * "New to the team" is the zero-jobs copy. An owner with no completed jobs
+//     yet is not a new hire — they are the business. Saying it to the person
+//     who founded the company reads as the app not knowing who they are.
+//   * The tenure is measured from the OWNER'S EMPLOYEES ROW, which
+//     `_ensure_owner_employee` materialises on first use (walkthrough M8) — so
+//     it dates from whenever the owner first got assigned to a job, not from
+//     when the business started. "18 days with Amr's Moving Company" for the
+//     founder is not a rounding error, it is a different fact.
+//
+// `is_owner` already ships on the assignee payload (bookings.py:356), so this
+// needs no backend change. An owner shows a real job count when there is one,
+// and otherwise says nothing — the "no fabricated credential" rule that already
+// governs a null figure below.
 function assigneeCredentials(assignee) {
   if (!assignee || assignee.type !== 'employee') return [];
   const bits = [];
   const jobs = assignee.jobs_completed;
-  if (jobs != null) {
+  if (jobs != null && !(assignee.is_owner && jobs === 0)) {
     bits.push(jobs === 0 ? 'New to the team' : `${jobs} job${jobs === 1 ? '' : 's'} completed`);
   }
-  if (assignee.tenure_label) {
+  if (assignee.tenure_label && !assignee.is_owner) {
     bits.push(
       assignee.business_name
         ? `${assignee.tenure_label} with ${assignee.business_name}`
@@ -323,13 +343,74 @@ function JobDetailScreen({ navigation, route }) {
       // must not be able to describe different stages.
       await Promise.all([load(), loadEvents()]);
     } catch (err) {
+      // D-W2 (walkthrough 2026-08-13) — THE DEAD END.
+      //
+      // /complete answers 409 when no payment was ever captured. That refusal is
+      // correct (FINDING C: releasing money nobody paid), but this handler
+      // rendered it as an Alert with a single OK button. The business had
+      // finished the work, was told "there is no money to release", and had no
+      // route forward from that screen. It is the "I get to a page and there is
+      // no escaping it" report.
+      //
+      // A route already exists and is already theirs to use: D2.3 shipped
+      // off-platform "mark as paid", and payments_offplatform.py:55 explicitly
+      // permits the BUSINESS OWNER to record it — tradespeople take cash and
+      // e-transfer constantly, which is the whole reason that domino exists.
+      // So offer it here instead of stranding them. Nothing is invented and no
+      // money row is rewritten: this is the same call BookingDetailsScreen
+      // already makes, moved to the moment it is actually needed.
+      const status = err?.response?.status;
+      const detail = err?.response?.data?.detail || err.message || '';
+      const unpaid = status === 409 && /has not been paid|no money to release/i.test(detail);
+
+      if (unpaid && !err?.proofSentButNotComplete) {
+        Alert.alert(
+          i18n.t('finish.unpaidTitle'),
+          i18n.t('finish.unpaidBody'),
+          [
+            { text: i18n.t('common.cancel'), style: 'cancel' },
+            { text: i18n.t('offPlatform.cash'), onPress: () => recordOffPlatformThenComplete('cash') },
+            { text: i18n.t('offPlatform.eTransfer'), onPress: () => recordOffPlatformThenComplete('e_transfer') },
+          ],
+        );
+        return;
+      }
+
       // The half-failure — photos on the record, job not done — is the frozen
       // money state, so it never shares the generic status-update copy.
       Alert.alert(
         err?.proofSentButNotComplete
           ? i18n.t('finish.halfDoneTitle')
           : 'Error',
-        err?.response?.data?.detail || err.message || 'Could not update status.',
+        detail || 'Could not update status.',
+      );
+    } finally {
+      setAdvancing(false);
+    }
+  }
+
+  /**
+   * Record a cash / e-transfer payment, then finish the job.
+   *
+   * Deliberately sequential and deliberately NOT silent about a partial
+   * failure: if the payment records but completion still fails, the business
+   * must be told the money is now on the record so they do not record it twice.
+   */
+  async function recordOffPlatformThenComplete(method) {
+    setAdvancing(true);
+    let recorded = false;
+    try {
+      await api.post(`/bookings/${bookingId}/mark-paid-offplatform`, { method });
+      recorded = true;
+      await finishJob(bookingId);
+      await Promise.all([load(), loadEvents()]);
+      toast.show({ type: 'success', text1: i18n.t('finish.unpaidRecorded') });
+    } catch (err) {
+      Alert.alert(
+        'Error',
+        recorded
+          ? i18n.t('finish.unpaidRecordedNotComplete')
+          : err?.response?.data?.detail || err.message || 'Could not record the payment.',
       );
     } finally {
       setAdvancing(false);

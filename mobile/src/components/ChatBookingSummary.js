@@ -93,7 +93,13 @@ export default function ChatBookingSummary({ booking, onPress }) {
           <Text variant="bodyMedium" numberOfLines={1} style={{ flex: 1 }}>
             {service}
           </Text>
-          <StatusPill status={booking.status || 'confirmed'} />
+          {/* D-W4 (walkthrough 2026-08-13). This was `booking.status ||
+              'confirmed'` — a missing status rendered as CONFIRMED, which is
+              the most reassuring value it could have invented. A booking whose
+              state we could not read is not a confirmed booking. Render the
+              pill only when there is a real status; the money row below already
+              carries the fact that matters. */}
+          {!!booking.status && <StatusPill status={booking.status} />}
         </Inline>
 
         <View style={styles.rows}>
