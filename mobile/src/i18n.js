@@ -3037,6 +3037,93 @@ Object.assign(translations.uk, {
     '\u0412\u0430\u0448\u0456 \u0444\u043e\u0442\u043e \u0443 \u043a\u043b\u0456\u0454\u043d\u0442\u0430. \u0412\u0456\u043d \u043c\u0430\u0454 24 \u0433\u043e\u0434\u0438\u043d\u0438 \u043d\u0430 \u0441\u0445\u0432\u0430\u043b\u0435\u043d\u043d\u044f \u2014 \u043f\u043e\u0442\u0456\u043c \u043f\u043b\u0430\u0442\u0456\u0436 \u043f\u0435\u0440\u0435\u043a\u0430\u0437\u0443\u0454\u0442\u044c\u0441\u044f \u0432\u0430\u043c \u0430\u0432\u0442\u043e\u043c\u0430\u0442\u0438\u0447\u043d\u043e.',
 });
 
+
+// D-W2 (walkthrough 2026-08-13) — the completion dead end.
+//
+// /complete refuses with 409 when nothing was ever captured. That refusal is
+// right; the dead end was offering no way forward. D2.3's off-platform "mark as
+// paid" is the business's own route (payments_offplatform.py:55 permits the
+// owner), so these strings turn a wall into a choice.
+//
+// All four locales, not English-with-fallback: this is a money moment, and a
+// business reading a language it did not choose at the point of recording cash
+// is exactly the D-W1 failure repeating.
+Object.assign(translations.en, {
+  'finish.unpaidTitle': 'No payment on record',
+  'finish.unpaidBody':
+    'This job has no card payment. If the client paid you directly, record it and the job will be marked done.',
+  'finish.unpaidRecorded': 'Payment recorded — job complete',
+  'finish.unpaidRecordedNotComplete':
+    'The payment was recorded, but the job could not be marked done. Do not record it again — try finishing the job once more.',
+  'offPlatform.cash': 'Paid cash',
+  'offPlatform.eTransfer': 'Paid by e-transfer',
+});
+Object.assign(translations['fr-CA'], {
+  'finish.unpaidTitle': 'Aucun paiement enregistr\u00e9',
+  'finish.unpaidBody':
+    "Aucun paiement par carte pour ce travail. Si le client vous a pay\u00e9 directement, enregistrez-le et le travail sera marqu\u00e9 comme termin\u00e9.",
+  'finish.unpaidRecorded': 'Paiement enregistr\u00e9 \u2014 travail termin\u00e9',
+  'finish.unpaidRecordedNotComplete':
+    "Le paiement a \u00e9t\u00e9 enregistr\u00e9, mais le travail n'a pas pu \u00eatre marqu\u00e9 comme termin\u00e9. Ne l'enregistrez pas deux fois \u2014 r\u00e9essayez de terminer le travail.",
+  'offPlatform.cash': 'Pay\u00e9 comptant',
+  'offPlatform.eTransfer': 'Pay\u00e9 par virement',
+});
+Object.assign(translations.ar, {
+  'finish.unpaidTitle': '\u0644\u0627 \u064a\u0648\u062c\u062f \u062f\u0641\u0639 \u0645\u0633\u062c\u0651\u0644',
+  'finish.unpaidBody':
+    '\u0644\u0627 \u064a\u0648\u062c\u062f \u062f\u0641\u0639 \u0628\u0627\u0644\u0628\u0637\u0627\u0642\u0629 \u0644\u0647\u0630\u0647 \u0627\u0644\u0645\u0647\u0645\u0629. \u0625\u0630\u0627 \u062f\u0641\u0639 \u0644\u0643 \u0627\u0644\u0639\u0645\u064a\u0644 \u0645\u0628\u0627\u0634\u0631\u0629\u060c \u0633\u062c\u0651\u0644 \u0630\u0644\u0643 \u0648\u0633\u064a\u062a\u0645 \u0625\u0646\u0647\u0627\u0621 \u0627\u0644\u0645\u0647\u0645\u0629.',
+  'finish.unpaidRecorded': '\u062a\u0645 \u062a\u0633\u062c\u064a\u0644 \u0627\u0644\u062f\u0641\u0639 \u2014 \u0627\u0643\u062a\u0645\u0644\u062a \u0627\u0644\u0645\u0647\u0645\u0629',
+  'finish.unpaidRecordedNotComplete':
+    '\u062a\u0645 \u062a\u0633\u062c\u064a\u0644 \u0627\u0644\u062f\u0641\u0639\u060c \u0644\u0643\u0646 \u062a\u0639\u0630\u0631 \u0625\u0646\u0647\u0627\u0621 \u0627\u0644\u0645\u0647\u0645\u0629. \u0644\u0627 \u062a\u0633\u062c\u0651\u0644\u0647 \u0645\u0631\u0629 \u0623\u062e\u0631\u0649 \u2014 \u062d\u0627\u0648\u0644 \u0625\u0646\u0647\u0627\u0621 \u0627\u0644\u0645\u0647\u0645\u0629 \u0645\u062c\u062f\u062f\u064b\u0627.',
+  'offPlatform.cash': '\u062f\u064f\u0641\u0650\u0639 \u0646\u0642\u062f\u064b\u0627',
+  'offPlatform.eTransfer': '\u062f\u064f\u0641\u0650\u0639 \u0628\u0627\u0644\u062a\u062d\u0648\u064a\u0644 \u0627\u0644\u0625\u0644\u0643\u062a\u0631\u0648\u0646\u064a',
+});
+Object.assign(translations.uk, {
+  'finish.unpaidTitle': '\u041e\u043f\u043b\u0430\u0442\u0443 \u043d\u0435 \u0437\u0430\u0444\u0456\u043a\u0441\u043e\u0432\u0430\u043d\u043e',
+  'finish.unpaidBody':
+    '\u0417\u0430 \u0446\u044e \u0440\u043e\u0431\u043e\u0442\u0443 \u043d\u0435\u043c\u0430\u0454 \u043e\u043f\u043b\u0430\u0442\u0438 \u043a\u0430\u0440\u0442\u043a\u043e\u044e. \u042f\u043a\u0449\u043e \u043a\u043b\u0456\u0454\u043d\u0442 \u0437\u0430\u043f\u043b\u0430\u0442\u0438\u0432 \u0432\u0430\u043c \u043d\u0430\u043f\u0440\u044f\u043c\u0443, \u0437\u0430\u0444\u0456\u043a\u0441\u0443\u0439\u0442\u0435 \u0446\u0435.',
+  'finish.unpaidRecorded': '\u041e\u043f\u043b\u0430\u0442\u0443 \u0437\u0430\u0444\u0456\u043a\u0441\u043e\u0432\u0430\u043d\u043e \u2014 \u0440\u043e\u0431\u043e\u0442\u0443 \u0437\u0430\u0432\u0435\u0440\u0448\u0435\u043d\u043e',
+  'finish.unpaidRecordedNotComplete':
+    '\u041e\u043f\u043b\u0430\u0442\u0443 \u0437\u0430\u0444\u0456\u043a\u0441\u043e\u0432\u0430\u043d\u043e, \u0430\u043b\u0435 \u0440\u043e\u0431\u043e\u0442\u0443 \u043d\u0435 \u0432\u0434\u0430\u043b\u043e\u0441\u044f \u0437\u0430\u0432\u0435\u0440\u0448\u0438\u0442\u0438. \u041d\u0435 \u0444\u0456\u043a\u0441\u0443\u0439\u0442\u0435 \u043f\u043e\u0432\u0442\u043e\u0440\u043d\u043e.',
+  'offPlatform.cash': '\u041e\u043f\u043b\u0430\u0447\u0435\u043d\u043e \u0433\u043e\u0442\u0456\u0432\u043a\u043e\u044e',
+  'offPlatform.eTransfer': '\u041e\u043f\u043b\u0430\u0447\u0435\u043d\u043e \u043f\u0435\u0440\u0435\u043a\u0430\u0437\u043e\u043c',
+});
+
+
+// D-W4 (walkthrough 2026-08-13). "Accepted · $X paid" was rendered even when
+// nothing had cleared, because the amount fell back to the quoted price. This
+// is the same sentence WITHOUT the payment claim, for the case where the quote
+// was accepted but no capture stands behind it.
+Object.assign(translations.en, {
+  'quoteCard.acceptedTitleUnpaid': 'Accepted \u00b7 %{amount}',
+});
+Object.assign(translations['fr-CA'], {
+  'quoteCard.acceptedTitleUnpaid': 'Accept\u00e9 \u00b7 %{amount}',
+});
+Object.assign(translations.ar, {
+  'quoteCard.acceptedTitleUnpaid': '\u0645\u0642\u0628\u0648\u0644 \u00b7 %{amount}',
+});
+Object.assign(translations.uk, {
+  'quoteCard.acceptedTitleUnpaid': '\u041f\u0440\u0438\u0439\u043d\u044f\u0442\u043e \u00b7 %{amount}',
+});
+
+
+// D-W8 (walkthrough 2026-08-13) — no invented service level.
+// The old copy said "%{business} usually replies within a few hours" for a
+// business with no history at all. "Usually" is a claim about the past.
+Object.assign(translations.en, {
+  'requestSent.subNoHistory': 'Your request is with %{business}.',
+});
+Object.assign(translations['fr-CA'], {
+  'requestSent.subNoHistory': 'Votre demande est chez %{business}.',
+});
+Object.assign(translations.ar, {
+  'requestSent.subNoHistory': '\u0637\u0644\u0628\u0643 \u0644\u062f\u0649 %{business}.',
+});
+Object.assign(translations.uk, {
+  'requestSent.subNoHistory': '\u0412\u0430\u0448 \u0437\u0430\u043f\u0438\u0442 \u043d\u0430\u0434\u0456\u0441\u043b\u0430\u043d\u043e \u0434\u043e %{business}.',
+});
+
 const i18n = new I18n(translations);
 
 // Default fallback
@@ -3047,8 +3134,48 @@ i18n.enableFallback = true;
 // locale. NUL can't appear in a key, so this makes each key one flat segment.
 i18n.defaultSeparator = String.fromCharCode(0);
 
+// ── Locale change notifier ───────────────────────────────────────────────────
+//
+// D-W1 (walkthrough 2026-08-13). The app shipped running in UKRAINIAN while the
+// Settings row read "EN", and both halves of that trace back to this file.
+//
+// The locale is restored ASYNCHRONOUSLY below (SecureStore is async), but every
+// consumer read `i18n.locale` SYNCHRONOUSLY into `useState` at mount — which
+// happens first. So the UI captured the constructor default 'en' forever, while
+// the real locale settled to whatever was persisted. A user who tried Ukrainian
+// once was pinned to it, shown a chip that said EN, and had no way to know.
+//
+// Fixed by making the settle observable: anything that displays or depends on
+// the locale subscribes, and re-reads when boot finishes or the user switches.
+// A plain Set rather than an EventEmitter — one event, no payload, no deps.
+const localeListeners = new Set();
+
+function notifyLocaleChanged() {
+  for (const fn of localeListeners) {
+    try {
+      fn(i18n.locale);
+    } catch {
+      /* a broken listener must never take the app down */
+    }
+  }
+}
+
+/** Subscribe to locale changes. Returns an unsubscribe function. */
+export function onLocaleChange(fn) {
+  localeListeners.add(fn);
+  return () => localeListeners.delete(fn);
+}
+
+/**
+ * Resolves once the persisted locale has been restored.
+ *
+ * Anything that must not render text before the real locale is known can await
+ * this. It never rejects — a failed restore settles on 'en'.
+ */
+export let localeReady;
+
 // Restore persisted locale on import (fire-and-forget)
-(async () => {
+localeReady = (async () => {
   try {
     const stored = await SecureStore.getItemAsync(LOCALE_KEY);
     if (stored) {
@@ -3068,6 +3195,10 @@ i18n.defaultSeparator = String.fromCharCode(0);
   // on. Sets the flag only — deliberately does NOT restart here; see the note
   // on syncDirectionOnBoot about boot loops.
   syncDirectionOnBoot(i18n.locale);
+  // Tell every subscriber the real locale is now in effect. Without this the UI
+  // keeps rendering whatever it captured before this promise resolved.
+  notifyLocaleChanged();
+  return i18n.locale;
 })();
 
 /**
@@ -3081,6 +3212,7 @@ i18n.defaultSeparator = String.fromCharCode(0);
  */
 export async function setLocale(locale) {
   i18n.locale = locale;
+  notifyLocaleChanged();
   try {
     await SecureStore.setItemAsync(LOCALE_KEY, locale);
   } catch { /* non-fatal */ }

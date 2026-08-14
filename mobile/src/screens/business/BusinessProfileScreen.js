@@ -64,6 +64,21 @@ function computeDistanceKm(lat1, lng1, lat2, lng2) {
 // fetched on `business` — zero backend dependency. The "jobs done" stat is not
 // part of completeness (it measures work, not a filled-in profile); it is a
 // real figure and renders in the stat row from `completed_bookings`.
+// D-W3 (walkthrough 2026-08-13) — THIS METER MUST ONLY COUNT WHAT THE APP CAN
+// EDIT.
+//
+// It used to count seven fields, three of which (`description`, `photos`,
+// `services`) had no input anywhere in the product. Every business scored
+// 4/7 = 57% and was shown "Add a description to…" with nowhere to type one.
+// 57% was a ceiling, not a state: no amount of work by the owner could move it.
+// A progress bar that cannot reach 100% is worse than no progress bar, because
+// it reads as the owner's fault.
+//
+// `description` now has a real input (see the edit block below), so it stays.
+// `photos` and `services` do NOT, so they are gone from the score — a field
+// returns here on the day its editor ships, and not before. The same rule
+// applies to whatever gets added next: if the owner cannot change it, it cannot
+// be counted against them.
 function computeProfileCompleteness(business) {
   const checks = [
     !!business?.business_name,
@@ -75,15 +90,15 @@ function computeProfileCompleteness(business) {
     // strings are translated into FR and AR in the shared catalogue, and this
     // screen should not be the thing that ships an English-only tip.
     !!business?.logo_url,
-    Array.isArray(business?.photos) && business.photos.length > 0,
-    Array.isArray(business?.services) && business.services.length > 0,
   ];
   const done = checks.filter(Boolean).length;
   const pct = Math.round((done / checks.length) * 100);
   let tip = null;
+  // Tips point ONLY at fields with an editor, for the same reason. The photos
+  // and services tips are deliberately not reachable while their inputs do not
+  // exist; the strings stay in the catalogue so restoring them is a one-line
+  // change rather than a re-translation.
   if (!business?.description) tip = i18n.t('businessProfile.completenessTipDescription');
-  else if (!(Array.isArray(business?.photos) && business.photos.length > 0)) tip = i18n.t('businessProfile.completenessTipPhotos');
-  else if (!(Array.isArray(business?.services) && business.services.length > 0)) tip = i18n.t('businessProfile.completenessTipServices');
   else if (!business?.service_radius_km) tip = i18n.t('businessProfile.completenessTipRadius');
   return { pct, tip };
 }
@@ -327,6 +342,7 @@ export default function BusinessProfileScreen({ navigation, route }) {
   const [editName, setEditName] = useState('');
   const [editCategory, setEditCategory] = useState('');
   const [editRadius, setEditRadius] = useState('');
+  const [editDescription, setEditDescription] = useState('');
   const [saving, setSaving] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
@@ -423,6 +439,7 @@ export default function BusinessProfileScreen({ navigation, route }) {
       setEditName(biz.business_name || '');
       setEditCategory(biz.category || '');
       setEditRadius(String(biz.service_radius_km || 25));
+      setEditDescription(biz.description || '');
     } catch {
       setError(true);
     } finally {
@@ -440,6 +457,7 @@ export default function BusinessProfileScreen({ navigation, route }) {
         business_name: editName,
         category: editCategory,
         service_radius_km: parseInt(editRadius, 10),
+        description: editDescription,
       });
       await load();
       setEditMode(false);
@@ -1063,6 +1081,24 @@ export default function BusinessProfileScreen({ navigation, route }) {
                     placeholder="25"
                     placeholderTextColor={colors.textSecondary}
                     keyboardType="numeric"
+                  />
+                  {/* D-W3 (walkthrough 2026-08-13). The completeness meter has
+                      always counted `description` and told the owner to add one
+                      — and no input for it existed anywhere in the app. Every
+                      business was pinned at 57% with a tip it could not act on.
+                      The backend already accepted it (BusinessUpdate.description,
+                      businesses.py:134); only the field was missing. */}
+                  <Text variant="label" color="secondary">About your business</Text>
+                  <TextInput
+                    style={[styles.editInput, styles.editInputMultiline]}
+                    value={editDescription}
+                    onChangeText={setEditDescription}
+                    placeholder="What you do, what makes you different, anything a client should know."
+                    placeholderTextColor={colors.textSecondary}
+                    multiline
+                    numberOfLines={4}
+                    maxLength={2000}
+                    textAlignVertical="top"
                   />
                 </Stack>
               ) : (

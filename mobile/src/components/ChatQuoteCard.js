@@ -156,7 +156,20 @@ export default function ChatQuoteCard({
         icon="check"
         tint={TINT_SUCCESS}
         iconColor={colors.success}
-        title={i18n.t('quoteCard.acceptedTitle', { amount: formatMoney(paidTotal ?? price) || '' })}
+        /* D-W4 (walkthrough 2026-08-13) — "paid" must mean paid.
+           This read `paidTotal ?? price`: when nothing had actually cleared,
+           it silently fell back to the QUOTED amount and still rendered
+           "Accepted · $180 paid". Screenshot 04 shows that claim sitting
+           directly under the booking summary's own "pending payment · $180",
+           on the same screen, about the same booking — and screenshot 11 is
+           the business being refused completion because no payment exists.
+           `paidTotal` is "what actually cleared" (see the prop comment above),
+           so when it is absent the card states acceptance and nothing more. */
+        title={
+          paidTotal != null
+            ? i18n.t('quoteCard.acceptedTitle', { amount: formatMoney(paidTotal) || '' })
+            : i18n.t('quoteCard.acceptedTitleUnpaid', { amount: formatMoney(price) || '' })
+        }
         subtitle={when ? i18n.t('quoteCard.acceptedWhen', { when }) : i18n.t('quoteCard.acceptedNow')}
         actionLabel={onView ? i18n.t('quoteCard.view') : null}
         onAction={onView}
@@ -238,22 +251,35 @@ export default function ChatQuoteCard({
         )}
       </View>
 
+      {/* D-W6 (walkthrough 2026-08-13) — do not draw a control that cannot act.
+          Screenshot 05 showed BOTH buttons greyed with an apology underneath:
+          "Changing a sent quote isn't available yet — message the client
+          instead." Two things that look tappable, do nothing, and explain
+          themselves after the fact. A disabled button is a promise the product
+          does not keep, and the business still has to read the note to find out.
+          Each button now renders only when it can actually run; when neither
+          can, the note stands alone and says the true thing without pretending
+          there was an action. */}
       {isBusiness ? (
         <>
-          <View style={styles.actions}>
-            <SecondaryButton
-              label={i18n.t('quoteCard.withdraw')}
-              onPress={onWithdraw}
-              disabled={!canWithdraw}
-              style={styles.btnFlex}
-            />
-            <SecondaryButton
-              label={i18n.t('quoteCard.editQuote')}
-              onPress={onEdit}
-              disabled={!canEdit}
-              style={styles.btnFlex}
-            />
-          </View>
+          {(canWithdraw || canEdit) && (
+            <View style={styles.actions}>
+              {canWithdraw && (
+                <SecondaryButton
+                  label={i18n.t('quoteCard.withdraw')}
+                  onPress={onWithdraw}
+                  style={styles.btnFlex}
+                />
+              )}
+              {canEdit && (
+                <SecondaryButton
+                  label={i18n.t('quoteCard.editQuote')}
+                  onPress={onEdit}
+                  style={styles.btnFlex}
+                />
+              )}
+            </View>
+          )}
           {(!canWithdraw || !canEdit) && (
             <Text variant="caption" style={styles.note} numberOfLines={2}>
               {i18n.t('quoteCard.sentLocked')}
