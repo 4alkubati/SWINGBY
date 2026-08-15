@@ -16,7 +16,6 @@ import pytest
 
 from app.services import session_security as ss
 
-
 NOW = datetime(2026, 8, 14, 12, 0, 0, tzinfo=timezone.utc)
 
 

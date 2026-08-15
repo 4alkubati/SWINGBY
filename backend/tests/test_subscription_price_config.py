@@ -15,7 +15,6 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-
 BIZ = {"id": "biz-1", "business_name": "Douglas Glen Cleaning Co."}
 OWNER = {"id": "owner-1", "role": "business_owner", "email": "biz@swingby.dev"}
 
