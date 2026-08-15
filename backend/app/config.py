@@ -264,6 +264,66 @@ def stripe_publishable_diagnosis() -> dict:
     }
 
 
+def stripe_webhook_diagnosis() -> dict:
+    """The THIRD key. Same treatment for STRIPE_WEBHOOK_SECRET.
+
+    `stripe_publishable_diagnosis` above says a health check that reads only one
+    of the keys is not a health check. That argument did not stop at two: with
+    the secret and publishable keys both green, `/health` still reported a
+    fully-healthy Stripe while the webhook secret was missing — and that is the
+    one whose absence silently EATS MONEY rather than blocking it.
+
+    The failure is asymmetric and invisible from the client. A missing secret or
+    publishable key fails loudly and up front: no charge is created, the payment
+    sheet refuses to open, the user sees an error. A missing webhook secret lets
+    the charge succeed at Stripe — the client's card is really debited — and
+    then makes `stripe_service.verify_webhook_signature` refuse every incoming
+    event (`services/stripe_service.py:188-201` raises when the secret is
+    unset). So `_mark_payment_paid` never runs, the payments row never records
+    the capture, `escrow.is_capture_backed` stays False, and the escrow is never
+    released to the business. Real money leaves the client, and the ledger
+    believes nothing was ever paid.
+
+    Checks are deliberately conservative. A false "malformed" here would be its
+    own bug — an alarm nobody trusts is worse than no alarm — so this flags only
+    what cannot be a valid signing secret, and does not impose a strict
+    character set on the body: Stripe does not document one, and guessing would
+    turn a working deployment red.
+
+    Withholds the value for the same reason as its two siblings.
+    """
+    raw = os.getenv("STRIPE_WEBHOOK_SECRET", "")
+    stripped = raw.strip()
+    if not stripped:
+        # The money-eating case: charges succeed, every webhook is rejected.
+        return {"state": "not_configured"}
+
+    if not stripped.isascii():
+        problem = "non_ascii_character"
+    elif stripped[:1] in ("'", '"') or stripped[-1:] in ("'", '"'):
+        problem = "wrapped_in_quotes"
+    elif stripped.startswith("sk_"):
+        problem = "secret_key_not_webhook_secret"
+    elif stripped.startswith(("pk_test_", "pk_live_")):
+        problem = "publishable_key_not_webhook_secret"
+    elif not stripped.startswith("whsec_"):
+        problem = "wrong_prefix"
+    elif len(stripped) <= len("whsec_"):
+        problem = "prefix_only_no_body"
+    elif any(c.isspace() for c in stripped):
+        # An embedded newline from a wrapped copy-paste out of the dashboard.
+        problem = "whitespace_in_body"
+    else:
+        return {"state": "ok", "length": len(stripped)}
+
+    return {
+        "state": "malformed",
+        "problem": problem,
+        "length": len(stripped),
+        "had_surrounding_whitespace": raw != stripped,
+    }
+
+
 if STRIPE_KEY_ERROR:
     if os.getenv("STRIPE_KEY_STRICT", "0").strip().lower() not in (
         "0",

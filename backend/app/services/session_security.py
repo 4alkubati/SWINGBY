@@ -212,6 +212,25 @@ def record_issued(token_hash: Optional[str], user_id: str) -> None:
 
     A None hash means there was no token to record — nothing to do, and not an
     error worth a log line on every anonymous path.
+
+    ``consumed_at`` is deliberately NOT written here, and the omission is the
+    whole of the replay defence — the mirror of the rule `record_consumed`
+    documents about ``issued_at``.
+
+    This used to upsert ``"consumed_at": None`` explicitly, which erased the
+    evidence one line after it was written. `/auth/refresh` calls
+    `record_consumed(old)` and then `record_issued(new)`; whenever Supabase
+    hands back the SAME refresh token rather than a rotated one — which GoTrue
+    does inside its refresh-token reuse interval — ``hash(new) == hash(old)``,
+    the upsert collides on that hash, and the freshly-stamped ``consumed_at``
+    went back to NULL. The row then looked unspent for ever, so
+    `classify_refresh` returned ``"ok"`` on every later replay and a stolen
+    token stayed usable indefinitely: precisely the finding this module exists
+    to close, defeated by its own bookkeeping.
+
+    Omitting the key fixes both paths at once. A Postgres upsert only writes the
+    columns supplied, so a colliding row keeps whatever ``consumed_at`` it had,
+    and a genuinely new row takes the column's NULL default.
     """
     if not token_hash:
         return
@@ -221,7 +240,6 @@ def record_issued(token_hash: Optional[str], user_id: str) -> None:
                 "token_hash": token_hash,
                 "user_id": user_id,
                 "issued_at": datetime.now(timezone.utc).isoformat(),
-                "consumed_at": None,
             },
             on_conflict="token_hash",
         ).execute()

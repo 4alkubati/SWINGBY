@@ -314,6 +314,15 @@ def health_check():
     pub_state = pub_info.pop("state")
     pub_detail = pub_info if pub_state == "malformed" else None
 
+    # The THIRD key, and the only one whose absence loses money instead of
+    # blocking it. With this unreported, /health called Stripe healthy on two of
+    # three keys while a missing webhook secret let charges succeed and every
+    # confirming webhook be rejected — card debited, capture never recorded,
+    # escrow never released. See config.stripe_webhook_diagnosis.
+    hook_info = config_module.stripe_webhook_diagnosis()
+    hook_state = hook_info.pop("state")
+    hook_detail = hook_info if hook_state == "malformed" else None
+
     # What Sentry stamps on every issue from this process. Render has no ENV
     # var set, so production has been tagging its errors "development" — which
     # makes a prod incident indistinguishable from a laptop. Surfacing it here
@@ -351,11 +360,14 @@ def health_check():
     body["direct_sql"] = "configured" if engine is not None else "not_configured"
 
     body["stripe_publishable"] = pub_state
+    body["stripe_webhook"] = hook_state
     body["environment"] = env_name
     if stripe_detail:
         body["stripe_detail"] = stripe_detail
     if pub_detail:
         body["stripe_publishable_detail"] = pub_detail
+    if hook_detail:
+        body["stripe_webhook_detail"] = hook_detail
     return body
 
 
