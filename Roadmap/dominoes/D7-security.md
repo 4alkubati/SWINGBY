@@ -128,7 +128,7 @@ First-party authorized engagement. 1 Critical · 5 Medium · 4 Low · 13 Info.
 | **D7.9** | M-05 | 🟠 Medium | Upload type was client-declared — SVG-as-JPEG and EICAR both stored | ✅ fixed |
 | **D7.10** | L-01 | 🔵 Low | `android:allowBackup="true"` | ✅ `false` in app.json — **needs a rebuild to take effect** |
 | **D7.11** | L-02 | 🔵 Low | Maps API key ships in the bundle | ⚠️ **Kira only** — verify package+SHA-1 restriction in Google Cloud Console |
-| **D7.12** | L-03 | 🔵 Low | 500 instead of 404 on nonexistent-booking sub-resources | ✅ fixed in source (#146) — ⚠️ **still live in prod until Render redeploys** |
+| **D7.12** | L-03 | 🔵 Low | 500 instead of 404 on nonexistent-booking sub-resources | ✅ **CLOSED — prod-verified 2026-08-15** |
 | **D7.13** | L-04 | 🔵 Low | No documented refresh-token rotation policy | ✅ `docs/SECURITY.md` now carries one |
 
 ### What changed, in one place
@@ -173,3 +173,54 @@ generator. **"No sink found" is a statement about where you looked.**
 - **Rotate the test-account credentials** used across the engagement.
 - **D7.11** — Google Cloud Console, Kira only.
 - **D7.12** — confirm prod stops serving the 500s once Render redeploys.
+
+### 2026-08-15 — verified against the live system, not against source
+
+Two things stopped being claims today.
+
+**D7.4 — proven end-to-end.** Kira applied
+`20260814000000_session_revocation.sql`. The pentest's exact reproduction was
+then re-run against a local backend on live Supabase:
+
+| Step | Result | |
+|---|---|---|
+| login, refresh with `R0` | 200 | normal use, untouched |
+| replay `R0` immediately | 200 | grace window — a client that died before persisting the rotated token is not signed out |
+| **replay `R0` after 65s** | **401** | **the finding, closed** |
+| access token after that replay | 401 | revoked at once, not after the ~1h token life |
+| the legitimate rotated `R1` | 401 | whole family revoked |
+| log in again | 200 | **not bricked** |
+| new session authenticates + refreshes | 200 | the watermark did not orphan it |
+
+Server log, in its own words:
+`session.revoked · reason: refresh_token_replay`. `tools/e2e_smoke.py` was re-run
+afterwards — **ALL PASS** — confirming the revocation left nothing stuck.
+
+**Before** the migration, the same replay returned **200**. That is the designed
+inert state (the lookup fails open when the table is absent), and it is now the
+empirical proof of the fail-open claim rather than an assertion about it.
+
+**D7.12 — closed, prod-verified.** All five booking sub-resources plus
+`GET /messages/{id}` now answer **404** on `swingbyy-api.onrender.com` for a
+nonexistent id, authenticated. Render has redeployed past #146. This row said
+"still live in prod" for two days; it was checked rather than assumed stale.
+
+**D7.11 remains the only open pentest item**, and it is console-only.
+
+### 2026-08-15 — D13 no longer needs a Render edit to stop 500ing
+
+`api/subscriptions.py` raised **500** when `STRIPE_PRICE_TEAM` held an unusable
+value, as a deliberate fail-fast. The intent was right and the blast radius was
+wrong: the variable holds `prod_Un0sRFGpiSHrL9`, all 18 businesses are
+team-tier, and so *every* owner who tapped Subscribe got a server error from
+either of two screens.
+
+An unusable price id now means "billing is not configured" and takes the
+track-only branch that already existed five lines below — flip to `trialing`,
+charge nothing — which is the documented beta posture locked 2026-06-27.
+`logger.error` still names the variable and the value, so it stays loud for the
+operator and silent for the user. 10 tests pin it, including that a valid
+`price_...` is not swallowed.
+
+**DEC-7 is still worth answering** — this stops the bleeding, it does not decide
+whether billing is on.
