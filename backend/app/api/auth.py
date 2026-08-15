@@ -40,6 +40,7 @@ from app.supabase_client import supabase, supabase_auth
 from app.deps import get_current_user
 from app.limiter import limiter  # shared limiter — see app/limiter.py
 from app.config import settings
+from app.services import session_security, url_safety
 
 logger = structlog.get_logger(__name__)
 
@@ -246,6 +247,21 @@ class ProfileUpdate(BaseModel):
     def validate_phone(cls, v: Optional[str]) -> Optional[str]:
         return _validate_phone(v)
 
+    @field_validator("avatar_url", mode="before")
+    @classmethod
+    def validate_avatar_url(cls, v):
+        """D7.8 (pentest M-04) — refuse URLs that point inside the network.
+
+        This field used to store anything: the cloud metadata IP, localhost,
+        `file:///etc/passwd`, a gopher URL aimed at redis. Nothing on the
+        server fetches it today, which is the only reason this was Medium — and
+        exactly the reason to close it at the write, before something starts to.
+        """
+        try:
+            return url_safety.validate_public_https_url(v)
+        except url_safety.UnsafeUrl as exc:
+            raise ValueError(str(exc)) from exc
+
 
 # ── Endpoints ─────────────────────────────────────────────────────────────────
 
@@ -365,7 +381,17 @@ def signup(request: Request, data: SignupRequest):
 
 
 @router.post("/login")
-@limiter.limit("5/minute")
+# 10/minute, raised from 5 on 2026-08-14. The mobile client now retries a
+# login whose connection dropped (see the retry interceptor in
+# mobile/src/services/api.js), so one tap can legitimately cost up to three
+# requests — at 5/minute a user with a flaky connection could exhaust the
+# window on a single sign-in and be told "too many attempts" having made one.
+#
+# This is not the brute-force control and never was. That is T18's
+# (email, ip) lockout below: 5 failures in 15 minutes, untouched. This limit
+# only bounds request volume from one address, and 10 is still far under what
+# a guessing attack needs.
+@limiter.limit("10/minute")
 def login(request: Request, data: LoginRequest):
     ip = _remote_ip(request)
     email = str(data.email)
@@ -430,9 +456,20 @@ def login(request: Request, data: LoginRequest):
         # 500 an otherwise-valid login. The session itself is already known
         # non-None — the `if not res.session` guard above returns 401.
         session = res.session
+        issued_refresh = getattr(session, "refresh_token", None)
+
+        # D7.4 — date the refresh token this login issues. Without this, a user
+        # who has just changed their password holds a token the watermark
+        # cannot date, and the very login that proves they own the account
+        # would be refused at its first refresh.
+        if issued_refresh:
+            session_security.record_issued(
+                session_security.hash_refresh_token(issued_refresh), user_id
+            )
+
         return {
             "access_token": session.access_token,
-            "refresh_token": getattr(session, "refresh_token", None),
+            "refresh_token": issued_refresh,
             "expires_in": getattr(session, "expires_in", None),
             "user_id": user_id,
             "role": user_data.get("role"),
@@ -455,7 +492,61 @@ def refresh_token(request: Request, data: RefreshRequest):
     """
     T28 — Exchanges a refresh_token for a new access_token + refresh_token pair.
     Rate-limited to 10/minute per IP.
+
+    D7.4 (pentest C-01) — replay detection. Supabase rotates the refresh token
+    on every use but was still honouring the OLD one 65 seconds later, so a
+    stolen refresh token granted indefinite reissue and there was no way to
+    revoke a compromised session short of disabling the account. Every token
+    this endpoint spends is now recorded by hash, and presenting a spent one
+    again outside the grace window refuses the request and revokes the
+    account's live sessions.
+
+    Note what is NOT here: no idle timeout, no maximum session age. A signed-in
+    user stays signed in until they log out. See services/session_security.py.
     """
+    token_hash = session_security.hash_refresh_token(data.refresh_token)
+    known = session_security.lookup_token(token_hash) if token_hash else None
+
+    if known:
+        watermark = None
+        try:
+            wm_res = (
+                supabase.table("users")
+                .select("sessions_valid_after")
+                .eq("id", known["user_id"])
+                .single()
+                .execute()
+            )
+            watermark = (wm_res.data or {}).get("sessions_valid_after")
+        except Exception:
+            # Fail open — an unreadable watermark must not refuse a refresh.
+            logger.exception("auth.refresh watermark read failed")
+
+        verdict = session_security.classify_refresh(known, watermark)
+
+        if verdict == "replay":
+            # Outside the grace window there is no benign explanation left: a
+            # client that received its rotated token has no reason to present
+            # the old one, and one that did not would have retried immediately.
+            # Treat it as stolen and kill the account's sessions, this one
+            # included.
+            session_security.revoke_sessions(
+                known["user_id"], reason="refresh_token_replay"
+            )
+            logger.warning(
+                "auth.refresh replay rejected",
+                user_id=known.get("user_id"),
+                ip=_remote_ip(request),
+            )
+            raise HTTPException(status_code=401, detail="Could not refresh session")
+
+        if verdict == "revoked":
+            logger.info(
+                "auth.refresh rejected — issued before revocation",
+                user_id=known.get("user_id"),
+            )
+            raise HTTPException(status_code=401, detail="Could not refresh session")
+
     try:
         # supabase_auth (NOT supabase) — see supabase_client.py for why.
         res = supabase_auth.auth.refresh_session(data.refresh_token)
@@ -477,6 +568,16 @@ def refresh_token(request: Request, data: RefreshRequest):
                 raise HTTPException(status_code=403, detail="account_deactivated")
             if gu.get("is_suspended"):
                 raise HTTPException(status_code=403, detail="account_suspended")
+
+            # Mark the presented token spent, and date the one replacing it, so
+            # the chain stays unbroken: the rotation product is what the client
+            # will present next time, and it needs an issued_at of its own for
+            # the watermark to reason about.
+            session_security.record_consumed(token_hash, res.user.id)
+            session_security.record_issued(
+                session_security.hash_refresh_token(res.session.refresh_token),
+                res.user.id,
+            )
 
         return {
             "access_token": res.session.access_token,
@@ -665,12 +766,57 @@ def _allowed_redirect_prefixes() -> Tuple[str, ...]:
     return _DEFAULT_REDIRECT_PREFIXES + parsed
 
 
+# D7.5 (pentest M-01) — the only callback the app ever constructs.
+#
+# `getRedirectUri()` in mobile/src/services/socialAuth.js is
+# `Linking.createURL('auth-callback')` and nothing else. That renders as
+# `swingby://auth-callback` in a standalone build and
+# `exp://<host>:<port>/--/auth-callback` under Expo Go, so the host varies and
+# the tail does not. Match on the tail.
+_REDIRECT_CALLBACK_SUFFIX = "auth-callback"
+
+
 def _validate_redirect(redirect_to: str) -> str:
+    """Allowlist a post-OAuth redirect target.
+
+    D7.5 (pentest M-01) — this used to be `startswith(prefix)` and nothing
+    else. That correctly refused `https://evil.tld`, subdomain confusion,
+    `@`-hijack and `javascript:`, but it accepted **`swingby://../../root`**
+    (200) and echoed it straight into the Supabase authorize URL: any path
+    passed as long as the scheme matched.
+
+    The scheme gate stays exactly as it was — it is doing real work. What is
+    added is that the rest of the URL now has to be the callback, rather than
+    merely being attached to an approved scheme:
+
+      * no `..` and no backslash anywhere. Traversal is meaningless in a
+        callback, and a backslash is how a parser is talked into reading part
+        of a path as a host.
+      * no query or fragment. Supabase appends `?code=…` on the way back; the
+        client has no business specifying either on the way out.
+      * the path must END in `auth-callback`. Matching the tail rather than the
+        whole remainder is what keeps Expo Go working, where the host and port
+        are part of the URL and change per machine.
+
+    `SOCIAL_AUTH_REDIRECT_PREFIXES` still extends the scheme list for Expo Go.
+    It now grants a scheme rather than a blanket.
+    """
     redirect_to = (redirect_to or "").strip()
-    if not redirect_to or not any(
-        redirect_to.startswith(p) for p in _allowed_redirect_prefixes()
-    ):
+    if not redirect_to:
         raise HTTPException(status_code=400, detail="redirect_to is not allowed")
+
+    if not any(redirect_to.startswith(p) for p in _allowed_redirect_prefixes()):
+        raise HTTPException(status_code=400, detail="redirect_to is not allowed")
+
+    if ".." in redirect_to or "\\" in redirect_to:
+        raise HTTPException(status_code=400, detail="redirect_to is not allowed")
+
+    if "?" in redirect_to or "#" in redirect_to:
+        raise HTTPException(status_code=400, detail="redirect_to is not allowed")
+
+    if redirect_to.rstrip("/").split("/")[-1] != _REDIRECT_CALLBACK_SUFFIX:
+        raise HTTPException(status_code=400, detail="redirect_to is not allowed")
+
     return redirect_to
 
 
@@ -767,6 +913,19 @@ def _provision_social_user(
 
     first_name, last_name = _split_provider_name(meta, email)
     avatar = (meta.get("avatar_url") or meta.get("picture") or "").strip() or None
+
+    # D7.8 — the same rule PATCH /auth/me enforces, applied to the provider's
+    # value. Google and Apple send public https URLs, so this should never
+    # fire; it is here because "the identity provider gave it to us" is a trust
+    # assumption, and an unsafe avatar must not get in through a second door
+    # just because the first one is now locked. Drop it rather than fail the
+    # sign-in: a missing picture is not a reason to refuse someone entry.
+    if avatar:
+        try:
+            avatar = url_safety.validate_public_https_url(avatar)
+        except url_safety.UnsafeUrl:
+            logger.warning("auth.social rejected provider avatar", user_id=user_id)
+            avatar = None
 
     if row is None:
         # Trigger did not fire (or a race lost it) — write the whole row.

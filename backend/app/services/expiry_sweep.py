@@ -55,7 +55,7 @@ import logging
 from datetime import datetime, timezone
 from typing import Optional
 
-from app.services import escrow, refunds
+from app.services import escrow, refunds, session_security
 from app.supabase_client import supabase
 
 logger = logging.getLogger(__name__)
@@ -197,6 +197,20 @@ def sweep_once(
                     "notify the client",
                     post_id,
                 )
+
+    # D7.4 — piggyback the refresh-token housekeeping on the sweep that already
+    # runs. `refresh_token_usage` gains a row per login and per refresh, so it
+    # grows for ever without something trimming it; a client_id-scoped sweep is
+    # one user's view and must not prune the whole table.
+    #
+    # Last, and swallowed, for the same reason the notification is: money is
+    # this function's job, and a failed prune must never make a settled post
+    # look unsettled to the next run.
+    if client_id is None:
+        try:
+            summary["refresh_tokens_pruned"] = session_security.prune_refresh_usage()
+        except Exception:
+            logger.exception("expiry sweep: refresh-token prune failed")
 
     if summary["refunded"] or summary["failed"]:
         logger.info("expiry sweep summary: %s", summary)

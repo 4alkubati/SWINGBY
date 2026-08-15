@@ -21,3 +21,52 @@
 | CI secret scan + npm audit | ✅ .github/workflows/web-launch-ci.yml |
 | react-router-dom XSS (GHSA-2w69) | ✅ Upgraded to 6.30.4 |
 | xlsx prototype pollution (no npm fix) | ✅ Replaced with ExcelJS |
+| Refresh-token rotation + reuse detection | ✅ D7.4, 2026-08-14 — see the section below |
+| Session revocation on password change | ✅ D7.4 — trigger on `auth.users`, `users.sessions_valid_after` |
+| Upload content verified by magic bytes | ✅ D7.9 — `services/image_sniff.py`, not the declared type |
+| `avatar_url` restricted to public https | ✅ D7.8 — `services/url_safety.py` |
+| OAuth `redirect_to` path allowlisted | ✅ D7.5 — scheme *and* path, `auth.py::_validate_redirect` |
+| Rate limit on `POST /messages/` | ✅ D7.6 — 60/minute |
+| User text escaped before reportlab | ✅ D7.7 — `api/invoices.py`, Paragraph parses markup |
+| `android:allowBackup` | ✅ D7.10 — `false` in `mobile/app.json` (needs a rebuild to take effect) |
+| Google Maps API key restriction | ⚠️ D7.11 — **unverified.** Key ships in the bundle by design; confirm in Google Cloud Console that it is restricted by Android package name + SHA-1 and has a quota. Console access is not available to agents. |
+
+---
+
+## Refresh-token rotation policy
+
+*Added 2026-08-14 to close D7.13 (pentest L-04), which was simply that this
+section did not exist. The code fix is D7.4.*
+
+**Rotation.** Supabase rotates the refresh token on every use. The API does not
+issue its own tokens; it passes through to `supabase_auth.auth.refresh_session`.
+
+**Reuse detection is ours, not Supabase's.** The engagement proved Supabase's
+own reuse interval does not reject a replay: log in, refresh with `R0`, wait 65
+seconds, refresh with `R0` again — it succeeded and issued a fresh access token.
+So `backend/app/services/session_security.py` records the SHA-256 of every
+refresh token the API issues and spends. Presenting a spent token again:
+
+| When | What happens |
+|---|---|
+| within 60s of it being spent | allowed — a client that never persisted the rotated token, not an attacker |
+| after 60s | **refused, and the account's sessions are revoked** |
+
+**Sessions do not expire.** There is no idle timeout and no maximum session
+age. A signed-in user stays signed in until they log out. This is a product
+requirement, not an oversight — anything else is a worse experience than every
+app SwingBy is compared to.
+
+**Revocation.** `users.sessions_valid_after` is a watermark. Any access token
+whose `iat` predates it is refused by `deps.py::_user_from_token`, and any
+refresh token issued before it is refused by `/auth/refresh`. It is stamped by:
+
+* a trigger on `auth.users`, when and only when `encrypted_password` changes —
+  the reset flow runs client-side against Supabase and never reaches our
+  backend, so a database trigger is the only place that sees every change;
+* refresh-replay detection, above.
+
+The watermark is NULL for every user until one of those fires.
+
+**Retention.** `refresh_token_usage` rows are pruned after 30 days by the
+expiry sweep. The tokens themselves are never stored — only their hashes.

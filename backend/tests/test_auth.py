@@ -251,8 +251,19 @@ class TestLogin:
             )
 
             assert response.status_code == 429
-            # slowapi's default handler responds {"error": "Rate limit exceeded: ..."}
-            assert "Rate limit exceeded" in response.json().get("error", "")
+            # T18's (email, ip) lockout — the control this test is named after.
+            #
+            # Until 2026-08-14 this asserted slowapi's {"error": "Rate limit
+            # exceeded: ..."} instead, which means it was passing on the IP
+            # limiter tripping at request 6 (the budget was 5/minute) and never
+            # exercised the lockout at all. Raising that limit to 10/minute, so
+            # the client can retry a dropped login, let the real lockout answer
+            # — and the assertion that was supposedly testing it failed.
+            #
+            # Both are 429. This one is the account-level control: 5 failures
+            # per (email, ip) in 15 minutes, and it is what actually stops
+            # password guessing. Assert on it by its own message.
+            assert "Too many attempts" in response.json().get("detail", "")
 
 
 class TestGetMe:

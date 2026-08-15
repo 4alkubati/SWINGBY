@@ -23,6 +23,7 @@ from __future__ import annotations
 import io
 import logging
 from typing import Optional
+from xml.sax.saxutils import escape as xml_escape
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
@@ -317,21 +318,40 @@ def get_invoice_pdf(
 
     story = []
 
+    # D7.7 (pentest M-03) — escape every user-controlled value before it reaches
+    # a Paragraph.
+    #
+    # The report called M-03 "not proven exploitable today: no render sink
+    # found". This is the render sink. ReportLab's Paragraph does not take
+    # plain text — it parses a mini-HTML dialect, which is why the literal
+    # "<b>SwingBy</b>" below comes out bold. Every f-string here interpolates
+    # names, categories and role titles straight into that parser, so a client
+    # whose surname contains "<" produces either a mangled invoice or an
+    # unhandled parse error, and one who sets it to "<font size=40>" restyles
+    # someone else's receipt.
+    #
+    # `esc` is applied to the DATA and never to the literal markup around it,
+    # which keeps the intended <b> and <br/> working. Non-strings become "" so
+    # a missing middle name renders as nothing rather than "None".
+    def esc(value) -> str:
+        return xml_escape(str(value)) if value not in (None, "") else ""
+
     story.append(Paragraph("<b>SwingBy</b>", h1))
-    story.append(Paragraph(f"Invoice {data['invoice_number']}", small))
-    story.append(Paragraph(f"Issued {data['issued_at'] or ''}", small))
+    story.append(Paragraph(f"Invoice {esc(data['invoice_number'])}", small))
+    story.append(Paragraph(f"Issued {esc(data['issued_at'])}", small))
     story.append(Spacer(1, 14))
 
     parties = [
         [Paragraph("<b>Bill to</b>", body), Paragraph("<b>From</b>", body)],
         [
             Paragraph(
-                f"{data['client']['name']}<br/>{data['client'].get('email') or ''}",
+                f"{esc(data['client']['name'])}<br/>{esc(data['client'].get('email'))}",
                 body,
             ),
             Paragraph(
-                f"{data['business']['name']}<br/>{data['business'].get('category') or ''}<br/>"
-                f"License: {data['business'].get('license_status') or 'unverified'}",
+                f"{esc(data['business']['name'])}<br/>"
+                f"{esc(data['business'].get('category'))}<br/>"
+                f"License: {esc(data['business'].get('license_status')) or 'unverified'}",
                 body,
             ),
         ],
@@ -351,7 +371,8 @@ def get_invoice_pdf(
     if data.get("employee") and data["employee"].get("name"):
         story.append(
             Paragraph(
-                f"Service delivered by: {data['employee']['name']} — {data['employee'].get('role_title') or ''}",
+                f"Service delivered by: {esc(data['employee']['name'])} — "
+                f"{esc(data['employee'].get('role_title'))}",
                 body,
             )
         )
@@ -360,8 +381,8 @@ def get_invoice_pdf(
     if data["service"].get("category") or data["schedule"].get("completed_at"):
         story.append(
             Paragraph(
-                f"<b>Service:</b> {data['service'].get('category') or 'Booking'} · "
-                f"Completed {data['schedule'].get('completed_at') or '—'}",
+                f"<b>Service:</b> {esc(data['service'].get('category')) or 'Booking'} · "
+                f"Completed {esc(data['schedule'].get('completed_at')) or '—'}",
                 body,
             )
         )
@@ -408,10 +429,11 @@ def get_invoice_pdf(
         story.append(Spacer(1, 10))
 
     pay_line = (
-        f"Payment: {data['payment']['method']} · Status: {data['payment']['status']}"
+        f"Payment: {esc(data['payment']['method'])} · "
+        f"Status: {esc(data['payment']['status'])}"
     )
     if data["payment"].get("processor_ref"):
-        pay_line += f" · Ref: {data['payment']['processor_ref']}"
+        pay_line += f" · Ref: {esc(data['payment']['processor_ref'])}"
     story.append(Paragraph(pay_line, small))
     story.append(Spacer(1, 20))
     story.append(

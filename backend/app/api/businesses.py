@@ -314,7 +314,11 @@ def get_my_business(current_user: dict = Depends(get_current_user)):
                 .single()
                 .execute()
             )
-            return {**_with_logo_key(res.data), "is_employee": True}
+            return {
+                **_with_logo_key(res.data),
+                "is_employee": True,
+                "completed_bookings": _completed_bookings(emp.data["business_id"]),
+            }
         except Exception:
             raise HTTPException(
                 status_code=404, detail="No business linked to this employee"
@@ -332,7 +336,15 @@ def get_my_business(current_user: dict = Depends(get_current_user)):
             .single()
             .execute()
         )
-        return _with_logo_key(res.data)
+        # D-W8 — `GET /businesses/{id}` has attached this since the stat
+        # shipped; this endpoint never did. So a client viewing a business saw
+        # its real "jobs done" figure and the OWNER, whose profile screen reads
+        # /businesses/me, saw the stat vanish entirely — the one person who
+        # knows the number is wrong was the only one shown nothing.
+        return {
+            **_with_logo_key(res.data),
+            "completed_bookings": _completed_bookings(res.data["id"]),
+        }
     except Exception:
         raise HTTPException(
             status_code=404, detail="No business found for this account"

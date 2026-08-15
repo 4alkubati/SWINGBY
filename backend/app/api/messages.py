@@ -7,6 +7,7 @@ from fastapi import APIRouter, BackgroundTasks, HTTPException, Depends, Query, R
 from pydantic import Field, field_validator, model_validator
 from typing import Literal, Optional
 from app.deps import get_current_user
+from app.limiter import limiter  # shared limiter — see app/limiter.py
 from app.privacy import mask_service_post_row, mask_user_public
 from app.services.contact_masking import mask_contact_info
 from app.services import content_moderation
@@ -651,6 +652,22 @@ def _accessible_thread_ids(current_user: dict):
 
 
 @router.post("/")
+# D7.6 (pentest M-02) — 110 of 110 messages were accepted with zero 429s. This
+# module carried NO rate limit at all while auth.py carried eight, and this is
+# a write that consumes storage AND fires a push notification on every call, so
+# an unthrottled loop is both a storage bill and a way to make someone's phone
+# buzz until they uninstall the app.
+#
+# 60/minute is deliberately generous. Real chat is bursty — a tradesperson
+# firing off six short lines in ten seconds is normal, and a limit that catches
+# that is a bug in the product, not protection. A person cannot type 60 messages
+# a minute; a script can do 110 in a few seconds, and now cannot.
+#
+# Per IP, like every other limit here: the shared limiter keys on address, so a
+# household behind one NAT shares a budget. At 60/minute that is not a real
+# constraint. Moving to a per-user key is the follow-up when the limiter moves
+# off in-memory storage (see the note at the top of auth.py about Redis).
+@limiter.limit("60/minute")
 def send_message(
     data: MessageSend,
     background_tasks: BackgroundTasks,

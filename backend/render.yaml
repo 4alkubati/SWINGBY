@@ -2,7 +2,16 @@ services:
   - type: web
     name: swingby-api
     env: docker
-    plan: free
+    # Starter, not free. Corrected 2026-08-14 — the live service had already
+    # been upgraded but this blueprint still said `free`, so re-applying it
+    # would have silently downgraded production back.
+    #
+    # The free tier spins the instance down when idle and takes 30-60s to wake,
+    # which is indistinguishable from "the app won't let me sign in" on a
+    # client with a 30s timeout. Starter does not spin down. Do not put this
+    # back on free to save money without also accepting that first-open is
+    # broken for every user.
+    plan: starter
     branch: main
     rootDir: backend
     autoDeploy: true

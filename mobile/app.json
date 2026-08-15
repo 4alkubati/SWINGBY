@@ -34,6 +34,7 @@
         "backgroundColor": "#07080a"
       },
       "package": "com.swingby.app",
+      "allowBackup": false,
       "permissions": [
         "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.ACCESS_COARSE_LOCATION",

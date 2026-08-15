@@ -551,7 +551,28 @@ function StepDetails({
 function StepBudget({ budget, setBudget, date, setDate, time, setTime, descError }) {
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
-  const [pickerTime, setPickerTime] = useState(() => time || new Date());
+  // D-W8 — the picker opens on a service time, not on "right now".
+  //
+  // This defaulted to `new Date()`, so the spinner showed the current instant
+  // WITH its current minutes. A client posting a job at 11:36 PM who opened
+  // the time picker and tapped Done — without scrolling, because the value
+  // shown looked like a value — booked 11:36 PM that same night. That is the
+  // "Sunday, August 9 · 11:36 PM" in the walkthrough: not stale data, not a
+  // creation timestamp rendered as an appointment, but a real preferred_date
+  // the product invited someone to pick. `interests.py:385` then copies it to
+  // `confirmed_date` at accept, and days later it renders as an appointment in
+  // the past.
+  //
+  // 9 AM because it is the earliest hour any of these trades actually starts,
+  // so it reads as a proposal rather than a default. The date picker already
+  // refuses past days (minimumDate below); this makes the time half as
+  // deliberate as the date half.
+  const [pickerTime, setPickerTime] = useState(() => {
+    if (time) return time;
+    const d = new Date();
+    d.setHours(9, 0, 0, 0);
+    return d;
+  });
   const [pickerDate, setPickerDate] = useState(() => date || new Date());
 
   function onTimeChange(event, selected) {
@@ -664,6 +685,11 @@ function StepBudget({ budget, setBudget, date, setDate, time, setTime, descError
                 value={pickerTime}
                 mode="time"
                 display="spinner"
+                // Quarter-hours. A service window is "2:30", never "2:36" —
+                // and a minute value nobody would choose on purpose is how you
+                // tell a real appointment from a timestamp that leaked into
+                // one. See the pickerTime default above.
+                minuteInterval={15}
                 onChange={onTimeChange}
                 style={{ height: 200 }}
               />
@@ -676,6 +702,7 @@ function StepBudget({ budget, setBudget, date, setDate, time, setTime, descError
             value={pickerTime}
             mode="time"
             display="default"
+            minuteInterval={15}
             onChange={onTimeChange}
           />
         )

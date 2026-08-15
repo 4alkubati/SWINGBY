@@ -13,3 +13,9 @@ sentry-sdk[fastapi]>=2.66.1
 slowapi>=0.1.10
 stripe>=10.0,<12
 reportlab>=4.0
+# D7.4 — app/deps.py reads the `iat` claim off an already-validated access
+# token to enforce the session revocation watermark. PyJWT was already present
+# transitively (via supabase/gotrue); pinned explicitly because we now import
+# it directly, and a transitive dep that disappears in a future supabase
+# release would break authentication on every route at once.
+pyjwt>=2.8

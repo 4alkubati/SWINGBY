@@ -129,7 +129,26 @@ api.interceptors.response.use(
     const shouldRetry = isNetworkError || is5xx || is408;
 
     const isGet = config.method?.toUpperCase() === 'GET';
-    const allowedToRetry = isGet || config._retryNonGet === true;
+
+    // Sign-in retries a dropped connection, and ONLY a dropped connection.
+    //
+    // Reported 2026-08-14: "when i sign in it wont let me sign in the first
+    // time, i have to log in like 5 times then it logs in." Nothing was wrong
+    // with the credentials or the endpoint — a login that lost its connection
+    // failed outright, because writes are not retried (replaying a write that
+    // may have committed is how you double-post a job). For POST /auth/login
+    // that reasoning does not apply: it creates nothing. The worst case of a
+    // duplicate is a second token for the same person, and the user was
+    // already producing exactly that by tapping the button five times.
+    //
+    // Deliberately network-errors only. A 5xx must not be retried here the way
+    // it is for a GET, and a 401 never was: /auth/login is rate limited per IP,
+    // so a client that retries a *rejection* spends its own budget and turns
+    // "wrong password" into "locked out". `!error.response` means the reply
+    // never arrived at all, which is the only case a retry can fix.
+    const isLogin = config.url?.startsWith('/auth/login');
+    const allowedToRetry =
+      isGet || config._retryNonGet === true || (isLogin && isNetworkError);
 
     config._retryCount = config._retryCount || 0;
 
@@ -166,8 +185,37 @@ api.interceptors.response.use(
 // `new Error(...)` stringifies to "[object Object]" and shows up that way in
 // the UI. extractMessage walks every common error shape and always returns a
 // plain string so the UI can render it.
+/**
+ * True when the request never got an answer — no response at all, or it timed
+ * out. Distinct from "the server said no", which is what a status code means.
+ *
+ * Sign-in leaned on this: a dropped connection surfaced as axios's raw
+ * "Network Error" / "timeout of 30000ms exceeded" printed under the PASSWORD
+ * field, so a connection problem read as a rejected password. People retyped a
+ * correct password and tapped again, which is how "it won't let me sign in the
+ * first time" happens with nothing wrong with the credentials.
+ */
+export function isConnectionError(error) {
+  if (!error) return false;
+  if (error.response) return false;
+  return (
+    error.code === 'ECONNABORTED' ||
+    error.code === 'ETIMEDOUT' ||
+    error.code === 'ERR_NETWORK' ||
+    /network|timeout/i.test(error.message || '')
+  );
+}
+
+export const CONNECTION_ERROR_MESSAGE =
+  "Couldn't reach SwingBy. Check your connection and try again.";
+
 export function extractMessage(error) {
   if (!error) return 'Something went wrong';
+
+  // Say what actually happened, in words that name the real problem. "Network
+  // Error" is the transport's vocabulary, not a person's.
+  if (isConnectionError(error)) return CONNECTION_ERROR_MESSAGE;
+
   const data = error.response?.data;
 
   if (data) {

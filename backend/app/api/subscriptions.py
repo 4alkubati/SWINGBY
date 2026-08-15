@@ -62,23 +62,35 @@ def subscribe(current_user: dict = Depends(get_current_user)):
     business = _get_owner_business(current_user["id"])
     tier, price_id = _resolve_tier_and_price(business["id"])
 
-    # Fail-fast: env var must hold a Price ID (price_...), not a Product ID (prod_...).
-    # Stripe rejects prod_... in line_items.price with a cryptic "No such price" error.
-    if price_id and price_id.startswith("prod_"):
+    # D13 — a misconfigured price id degrades to the beta posture instead of 500ing.
+    #
+    # This used to raise 500 as a deliberate fail-fast, so a bad env var could not
+    # pass unnoticed. The intent was right and the blast radius was wrong.
+    # `STRIPE_PRICE_TEAM` is set to `prod_Un0sRFGpiSHrL9` — a Product id where a
+    # Price id is required, and one that does not exist in the Stripe account at
+    # all. Every one of the 18 businesses is team-tier, so EVERY business owner
+    # who tapped Subscribe got a 500, from two different screens, for weeks.
+    #
+    # A config mistake on the operator's side should not be an error surface for
+    # the user. The correct beta behaviour already exists five lines below —
+    # track-only, flip to `trialing`, charge nothing — and that is the documented
+    # posture (locked 2026-06-27; payments stay in sandbox for the whole beta).
+    # An unusable price id means "billing is not configured", which is exactly
+    # the state the fallback was written for.
+    #
+    # Visibility is kept where it belongs: logger.error names the variable and
+    # the value, so it is loud in the logs and silent in the product. Anything
+    # that is not a `price_...` is treated the same way — a Product id was just
+    # the shape we happened to ship.
+    if price_id and not price_id.startswith("price_"):
         env_name = "STRIPE_PRICE_SOLO" if tier == "solo" else "STRIPE_PRICE_TEAM"
         logger.error(
-            "%s is set to a Product ID (%s); Stripe requires a Price ID (price_...)",
+            "%s is not a Stripe Price ID (got %r) — falling back to track-only. "
+            "Open the Product in the Stripe Dashboard and copy its price_... id.",
             env_name,
             price_id,
         )
-        raise HTTPException(
-            status_code=500,
-            detail=(
-                f"{env_name} is misconfigured: expected a Stripe Price ID "
-                f"(price_...), got a Product ID ({price_id}). "
-                "Open the Product in Stripe Dashboard and copy its Price ID."
-            ),
-        )
+        price_id = None
 
     if not price_id:
         supabase.table("businesses").update(

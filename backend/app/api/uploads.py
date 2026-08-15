@@ -3,6 +3,7 @@ import logging
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from app.deps import get_current_user
+from app.services import image_sniff
 from app.supabase_client import supabase
 
 logger = logging.getLogger(__name__)
@@ -69,6 +70,30 @@ async def upload_image(
     contents = await file.read()
     if len(contents) > MAX_BYTES:
         raise HTTPException(status_code=400, detail="Image must be under 10 MB")
+
+    # D7.9 (pentest M-05) — the check above this line reads the content type the
+    # CLIENT declared. That is a claim, not a fact: an SVG declared image/jpeg
+    # was accepted and stored, and so was an EICAR string. SVG is the one that
+    # matters — it is a document that can carry <script>, so an SVG in a public
+    # bucket is stored XSS wearing a .jpg extension.
+    #
+    # Now the bytes have to agree with the claim. Same 400 and the same wording
+    # as the declared-type check: from the outside these are one rule ("that is
+    # not an image we take"), and splitting the message would only tell someone
+    # probing which half they tripped.
+    if not image_sniff.matches_declared(contents, file.content_type):
+        logger.warning(
+            "uploads.image rejected — content did not match declared type",
+            extra={
+                "user_id": current_user["id"],
+                "declared": file.content_type,
+                "sniffed": image_sniff.sniff(contents),
+            },
+        )
+        raise HTTPException(
+            status_code=400,
+            detail="Only JPEG, PNG, WebP, and GIF images are allowed",
+        )
 
     ext = "jpg"
     if file.filename and "." in file.filename:
