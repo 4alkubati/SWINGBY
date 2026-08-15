@@ -318,7 +318,11 @@ def _record_event(
             }
         ).execute()
     except Exception:
-        logger.debug(
+        # Was logger.debug, which is off in production — so these writes
+        # violated the event_type CHECK from the day they shipped and left no
+        # trace anywhere. Still best-effort (a timeline row must never fail a
+        # charge), now at a level somebody sees.
+        logger.exception(
             "payment_triggers: could not record booking_event %s for %s",
             event_type,
             booking_id,
