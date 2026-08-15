@@ -34,6 +34,7 @@ import {
   fitRegion,
 } from '../../services/maps';
 import { projectToBox, distanceKm, formatDistance } from '../../utils/mapProjection';
+import { isPastDue } from '../../utils/bookingBuckets';
 import { fetchProviderLocation, CLIENT_POLL_MS } from '../../services/liveLocation';
 import PulseDot from '../../components/PulseDot';
 import Text from '../../components/Text';
@@ -736,7 +737,12 @@ export default function ActiveBookingScreen({ navigation, route }) {
                 )}
                 {(date || time) && (
                   <DetailRow
-                    label="When"
+                    // D-W8 — a date that has already gone must not read as an
+                    // appointment. Screenshot 03 showed "Sunday, August 9 ·
+                    // 11:36 PM" four days later, styled exactly like something
+                    // still ahead, so the screen looked like it was waiting for
+                    // a moment that had already passed. Say so instead.
+                    label={isPastDue(booking) ? 'Was scheduled for' : 'When'}
                     value={[date, time].filter(Boolean).join(' · ')}
                   />
                 )}

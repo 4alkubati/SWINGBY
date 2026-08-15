@@ -101,3 +101,75 @@ So D7 is genuinely part-done. Leaving it `active` rather than flipping it to
 
 - **"Rotated" and "deleted" are not the same word.** A secret removed from HEAD but present in history is still live until revoked at the source.
 - **Instrument claims need an observed event.** The gap between "the SDK is initialised" and "an error arrived in the dashboard" is where false confidence lives.
+
+---
+
+## 🔐 D7.4 – D7.13 — the penetration test findings
+
+*Added 2026-08-14. Filed here, under D7, because D7 is security and a domino id
+should tell you what it is about without a lookup.*
+
+**Why they were renumbered.** The engagement shipped its report with `C-01`,
+`M-01…M-05` and `L-01…L-04` — one day after PR #148 established that this repo
+has exactly one ID scheme. Kira, 2026-08-14: *"idk why we are back into using
+other letters, it should all be a domino."* Correct. The crosswalk below keeps
+the original report readable; nothing else uses the old ids.
+
+**Tested against** `main @ f2dd461` on prod Render, Supabase, Stripe TEST.
+First-party authorized engagement. 1 Critical · 5 Medium · 4 Low · 13 Info.
+
+| Domino | Was | Sev | Finding | Status |
+|---|---|---|---|---|
+| **D7.4** | C-01 | 🔴 Critical | Refresh-token replay — a spent token still worked 65s after rotation | ✅ fixed 2026-08-14 |
+| **D7.5** | M-01 | 🟠 Medium | `redirect_to` allowlist checked scheme, not path — `swingby://../../root` passed | ✅ fixed |
+| **D7.6** | M-02 | 🟠 Medium | No rate limit on `POST /messages/` — 110/110 accepted, zero 429s | ✅ fixed |
+| **D7.7** | M-03 | 🟠 Medium | Stored unsanitized markup in post titles and message bodies | ✅ fixed — **and a live sink was found, see below** |
+| **D7.8** | M-04 | 🟠 Medium | `avatar_url` stored any URL: metadata IP, localhost, `file://`, `gopher://` | ✅ fixed |
+| **D7.9** | M-05 | 🟠 Medium | Upload type was client-declared — SVG-as-JPEG and EICAR both stored | ✅ fixed |
+| **D7.10** | L-01 | 🔵 Low | `android:allowBackup="true"` | ✅ `false` in app.json — **needs a rebuild to take effect** |
+| **D7.11** | L-02 | 🔵 Low | Maps API key ships in the bundle | ⚠️ **Kira only** — verify package+SHA-1 restriction in Google Cloud Console |
+| **D7.12** | L-03 | 🔵 Low | 500 instead of 404 on nonexistent-booking sub-resources | ✅ fixed in source (#146) — ⚠️ **still live in prod until Render redeploys** |
+| **D7.13** | L-04 | 🔵 Low | No documented refresh-token rotation policy | ✅ `docs/SECURITY.md` now carries one |
+
+### What changed, in one place
+
+* **D7.4** — `supabase/migrations/20260814000000_session_revocation.sql`,
+  `services/session_security.py`, `api/auth.py`, `deps.py`. Every refresh token
+  the API issues and spends is recorded by hash; a replay inside 60s is allowed
+  (a client that never persisted the rotated token), outside it is refused and
+  revokes the account. A password change stamps `users.sessions_valid_after`
+  via a trigger on `auth.users` — the reset runs client-side against Supabase
+  and never reaches our backend, so a trigger is the only place that sees it.
+* **D7.5** — `auth.py::_validate_redirect`. Scheme gate kept; path must now end
+  in `auth-callback`, with no `..`, no backslash, no query, no fragment.
+* **D7.6** — `messages.py`, 60/minute. Generous on purpose: real chat is bursty.
+* **D7.7** — two layers. `text_safety.scrub` strips executable tags and event
+  handlers at write; `api/invoices.py` escapes user values before reportlab.
+* **D7.8** — `services/url_safety.py`, https + public host only, on both
+  `PATCH /auth/me` and the social sign-in avatar.
+* **D7.9** — `services/image_sniff.py`, magic bytes must agree with the header.
+
+### 🎓 What the pentest got wrong, and it is the useful part
+
+The report filed **M-03 as "not proven exploitable today: no render sink
+found — no `dangerouslySetInnerHTML`, no `autoescape=False`. React/RN default
+escaping holds."**
+
+There is a sink. `api/invoices.py` builds the PDF with reportlab's `Paragraph`,
+which does not take plain text — it parses a mini-HTML dialect, which is why
+the literal `<b>SwingBy</b>` in that file renders bold. Client names, business
+names, categories and role titles were interpolated straight into it. A surname
+containing `<` produced a mangled invoice or an unhandled parse error; a value
+like `<font size=40>` restyled someone else's receipt.
+
+The search looked for the two sinks a *web* app has. The sink was in a PDF
+generator. **"No sink found" is a statement about where you looked.**
+
+### Still owed
+
+- **117 `[PENTEST]` rows in the production database** — 5 messages, 2 service
+  posts, 110 `[PENTEST-FLOOD]` messages. All greppable by prefix. Deleting is
+  destructive, so it waits for Kira's explicit go-ahead.
+- **Rotate the test-account credentials** used across the engagement.
+- **D7.11** — Google Cloud Console, Kira only.
+- **D7.12** — confirm prod stops serving the 500s once Render redeploys.

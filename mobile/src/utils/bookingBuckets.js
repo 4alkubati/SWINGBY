@@ -4,15 +4,21 @@
 // this so the numbers they show always agree with each other (CARD-24).
 //
 // Backend booking status lifecycle (backend/app/api/bookings.py):
-//   confirmed   → booking just created. confirmed_date is ALWAYS null here —
-//                 the date handshake (propose-dates / confirm-date) hasn't
-//                 happened yet. So EVERY 'confirmed' booking needs the
-//                 owner's action, no exceptions.
+//   confirmed   → booking just created. MAY already carry a confirmed_date:
+//                 when the client gave a time at posting, interests.py:385
+//                 copies preferred_date straight onto the booking and the
+//                 propose/confirm handshake is skipped entirely. Otherwise it
+//                 is null and the owner has to act.
 //   in_progress → set the same instant confirmed_date is written (see
-//                 PATCH /bookings/{id}/confirm-date). Only status that ever
-//                 carries a real confirmed_date.
+//                 PATCH /bookings/{id}/confirm-date).
 //   completed   → done, moves to Past → Invoice.
 //   cancelled   → dead, moves to Past (no invoice).
+//
+// ⚠ The first entry used to read "confirmed_date is ALWAYS null here — the
+// date handshake hasn't happened yet. So EVERY 'confirmed' booking needs the
+// owner's action, no exceptions." That stopped being true the day the
+// preferred-date path shipped, and it is the kind of stale comment that makes
+// the next person write a wrong guard. Corrected 2026-08-14 (D-W8).
 
 /** True if two Date objects fall on the same calendar day, local time. */
 export function isSameLocalDay(a, b) {
@@ -57,6 +63,26 @@ export function bucketBooking(booking, now = new Date()) {
   }
   // Unknown/legacy status — surface it rather than silently bury it.
   return 'needsAction';
+}
+
+/**
+ * True when a booking's scheduled date has already passed and the job is still
+ * live (not completed, not cancelled).
+ *
+ * D-W8 — screenshot 03 showed a confirmed date of "Sunday, August 9 · 11:36 PM"
+ * four days after the fact, presented exactly like an upcoming appointment. The
+ * business view already handled this (`bucketBooking` folds a past date into
+ * 'today'), but the client view rendered the raw date with no acknowledgement
+ * that it was behind them — so the app looked like it was waiting for a moment
+ * that had already gone.
+ *
+ * `now` is injectable for tests, like everything else in this file.
+ */
+export function isPastDue(booking, now = new Date()) {
+  if (!booking) return false;
+  if (booking.status === 'completed' || booking.status === 'cancelled') return false;
+  const d = jobDate(booking);
+  return !!d && d < now && !isSameLocalDay(d, now);
 }
 
 /** Ascending by scheduled date; bookings with no date sort last. */

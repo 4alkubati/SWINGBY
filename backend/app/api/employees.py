@@ -414,7 +414,7 @@ def employee_profile(employee_id: str, current_user: dict = Depends(get_current_
 
     biz = (
         supabase.table("businesses")
-        .select("business_name, license_status")
+        .select("business_name, license_status, owner_id")
         .eq("id", employee["business_id"])
         .single()
         .execute()
@@ -422,6 +422,7 @@ def employee_profile(employee_id: str, current_user: dict = Depends(get_current_
     if not biz.data:
         raise HTTPException(status_code=404, detail="Parent business not found")
     business = biz.data
+    is_owner = business.get("owner_id") == employee["user_id"]
 
     user = (
         supabase.table("users")
@@ -447,14 +448,31 @@ def employee_profile(employee_id: str, current_user: dict = Depends(get_current_
         logger.exception("Could not load employee reviews")
         avg_rating, review_count = None, 0
 
+    # D-W8 — the owner is the business, so count the business's work.
+    #
+    # This counted `bookings.employee_id = <this employee>` for everyone,
+    # including the owner. An owner's `employees` row is materialised lazily by
+    # `_ensure_owner_employee`, and bookings they handled before that (or
+    # handled without assigning anyone) carry no employee_id at all — so the
+    # owner's own trust card read "0 JOBS" while their Jobs tab showed Past (4).
+    # Two different questions rendered under one label.
+    #
+    # For a real staff member the employee-scoped count is still the honest
+    # number: it is THEIR record, not the company's, and inflating it with work
+    # they did not do is the opposite of a trust signal. Only the owner reads
+    # business-wide, because for them the two are the same thing — which is the
+    # same reasoning D-W5 applied to tenure.
     try:
-        jobs_res = (
+        query = (
             supabase.table("bookings")
             .select("id", count="exact")
-            .eq("employee_id", employee_id)
             .eq("status", "completed")
-            .execute()
         )
+        if is_owner:
+            query = query.eq("business_id", employee["business_id"])
+        else:
+            query = query.eq("employee_id", employee_id)
+        jobs_res = query.execute()
         jobs_completed = jobs_res.count or 0
     except Exception:
         logger.exception("Could not count completed jobs for employee")

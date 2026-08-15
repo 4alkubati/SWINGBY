@@ -91,7 +91,18 @@ function StatItem({ value, label, sub, isFirst }) {
     <Animated.View
       style={[styles.statBox, { opacity: fadeAnim, transform: [{ translateY }] }]}
     >
-      <Text variant="display3" color="primary" style={{ textAlign: 'center' }}>
+      {/* D-W7 — one line, shrink before truncating. "Jul 2026" is wider than
+          "5.0" and this box is a third of a row, so a fixed size either clips
+          the value or forces the caller to chop the string up (which is what
+          the Since stat used to do — see below). Same rule the tab row got. */}
+      <Text
+        variant="display3"
+        color="primary"
+        numberOfLines={1}
+        adjustsFontSizeToFit
+        minimumFontScale={0.7}
+        style={{ textAlign: 'center' }}
+      >
         {value}
       </Text>
       <Text variant="label" color="secondary" style={{ textAlign: 'center' }}>
@@ -298,10 +309,19 @@ export default function EmployeeProfileScreen({ navigation, route }) {
                 isFirst={false}
               />
               <View style={styles.statDivider} />
+              {/* D-W7 — "Jul 2026", not "2026" with "Jul" stranded underneath.
+                  This split the formatted string across `value` and `sub`, and
+                  `sub` renders BELOW the label, so the screen read:
+
+                      2026
+                      SINCE
+                      Jul
+
+                  A date torn in half around its own caption. It is one value;
+                  it renders as one value, and StatItem now shrinks to fit it. */}
               <StatItem
-                value={sinceLabel ? sinceLabel.split(' ')[1] : '—'}
+                value={sinceLabel || '—'}
                 label="Since"
-                sub={sinceLabel ? sinceLabel.split(' ')[0] : null}
                 isFirst={null}
               />
             </View>

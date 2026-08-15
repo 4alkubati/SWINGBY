@@ -242,3 +242,78 @@ Ordered by "what makes the walkthrough feel finished", not by effort.
 Do not close any of these on a passing test. Close them on an image of the screen
 from a build. That rule is the actual deliverable of this document; the eight
 defects are just what it caught the first time it was applied.
+
+---
+
+## §7 — Closed 2026-08-14 (append-only)
+
+PR #157 closed D-W1 through D-W7 and part of D-W8, and recorded the rest as
+open rather than quietly dropping it. This pass closes the remainder.
+
+### D-W8 · the past-dated appointment — CLOSED
+
+#157 called this "data-shaped… needs the booking data traced". It was not data.
+It was a picker default, and the trace ends at a line of code.
+
+`PostJobScreen.js` initialised its time picker to `new Date()` — the current
+instant, **including the current minutes**. A client posting at 11:36 PM who
+opened the time picker and tapped **Done** without scrolling — because the value
+displayed looked like a chosen value — set `preferred_date` to 11:36 PM that
+same night. `interests.py:385` copies `preferred_date` to `confirmed_date` at
+accept, skipping the handshake. Four days later that renders as an appointment
+in the past. The non-zero minutes were the tell: a picker anchored to noon or a
+whole hour cannot produce `:36`.
+
+* the picker now opens at **9:00 AM** and steps in **15-minute** intervals, so
+  the default reads as a proposal and `:36` is not reachable;
+* `bookingBuckets.isPastDue()` is new, and `ActiveBookingScreen` now labels a
+  passed date **"Was scheduled for"** instead of **"When"** — the business view
+  already handled this, the client view did not;
+* the `bookingBuckets` docblock claiming `confirmed_date` is *always* null while
+  status is `confirmed` is corrected. It has been false since the preferred-date
+  path shipped, and it is exactly the kind of stale comment that produces a
+  wrong guard next time.
+
+### D-W8 · 0 JOBS vs Past (4) — CLOSED
+
+Two different questions rendered under one label, and both numbers were right.
+
+`employees.py` counted `bookings.employee_id = <this employee> AND
+status='completed'`. `JobManagementScreen` counts *business*-scoped past work,
+which includes cancelled. An owner's `employees` row is materialised lazily by
+`_ensure_owner_employee`, so bookings handled before that — or handled without
+assigning anyone — carry no `employee_id` at all, and the owner's own trust card
+read 0 while their Jobs tab read 4.
+
+* for an **owner**, `jobs_completed` now counts the business's completed
+  bookings. For a real staff member it stays employee-scoped, because that is
+  *their* record and inflating it with work they did not do is the opposite of
+  a trust signal. Same reasoning D-W5 applied to tenure;
+* **found on the way:** `GET /businesses/{id}` has attached `completed_bookings`
+  since the stat shipped and `GET /businesses/me` never did — so a client saw
+  the real figure and the owner saw the stat disappear entirely.
+
+### D-W7 · the SINCE stat — CLOSED
+
+**This was still open and was being counted as closed.** #157's D-W7 work was
+the tab row only; the audit lists two separate items under D-W7 and the second
+was never touched.
+
+`EmployeeProfileScreen` split `"Jul 2026"` across `value` and `sub` — and `sub`
+renders *below* the label, so the card read:
+
+```
+2026
+SINCE
+Jul
+```
+
+A date torn in half around its own caption. It is one value and now renders as
+one; `StatItem` shrinks to fit rather than forcing the caller to chop the string
+up.
+
+### Method note
+
+Per §6, none of these is closed on a passing test. They are closed in source
+with tests pinning the logic, and they stay **test-verified** until they are
+seen on a build.

@@ -43,17 +43,57 @@ from pydantic import BaseModel, model_validator
 # C0 controls except \t (09), \n (0A), \r (0D), plus DEL (7F).
 _CONTROL_RE = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
 
+# D7.7 (pentest M-03) — the markup that is dangerous no matter where it lands.
+#
+# The engagement stored raw <script>, <img onerror>, <svg onload> and an RTL
+# override verbatim, and called it unexploitable because no render sink was
+# found. One was found on 2026-08-14: reportlab's Paragraph in api/invoices.py
+# parses a mini-HTML dialect, so an interpolated name containing markup either
+# restyles the receipt or 500s it. That sink is now escaped at the point of
+# render, which is the correct fix there and does not mangle what people typed.
+#
+# This is the second layer, and it is deliberately NARROW. The obvious move —
+# escaping every < and > at write time — was rejected: this text is a chat
+# message and a job title, "under $50 <br the sink>" and "5 < 6" are things
+# tradespeople actually write, and a filter that rewrites them is a visible,
+# certain harm traded against a hypothetical one. React Native does not render
+# HTML, so nothing today is one <script> away from executing.
+#
+# What is stripped is only what has no legitimate reading in a job title:
+# executable tags by name, and event-handler attributes. `a<b and c>d` does not
+# match either pattern and survives untouched.
+_DANGEROUS_TAG_RE = re.compile(
+    r"</?\s*(?:script|iframe|object|embed|svg|link|meta|base|form|style)\b[^>]*>?",
+    re.IGNORECASE,
+)
+# on<something>= inside what is plausibly a tag. Requires the leading `<` so a
+# sentence like "turn iton= now" is not caught.
+_EVENT_HANDLER_RE = re.compile(
+    r"(<[^>]*?)\bon[a-z]+\s*=\s*(?:\"[^\"]*\"|'[^']*'|[^\s>]+)",
+    re.IGNORECASE,
+)
+
 
 def scrub(value: Optional[str]) -> Optional[str]:
-    """Strip characters Postgres text cannot store. None and non-str pass through.
+    """Strip characters Postgres text cannot store, plus executable markup.
 
-    Returns None for a string that was nothing but control characters, so a
-    field that becomes empty is caught by the caller's own min_length rule
-    rather than being stored blank.
+    None and non-str pass through unchanged.
+
+    Two separate jobs, kept in one place because both are "make this storable
+    and inert" rather than "decide whether this is allowed" — that second
+    question belongs to services/content_moderation.py and always has.
     """
     if value is None or not isinstance(value, str):
         return value
     cleaned = _CONTROL_RE.sub("", value)
+    cleaned = _DANGEROUS_TAG_RE.sub("", cleaned)
+    # Applied repeatedly: stripping one handler can bring another into view
+    # ("<img on=x onerror=y>"), and a single pass would leave the second.
+    while True:
+        stripped = _EVENT_HANDLER_RE.sub(r"\1", cleaned)
+        if stripped == cleaned:
+            break
+        cleaned = stripped
     return cleaned
 
 

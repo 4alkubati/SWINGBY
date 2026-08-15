@@ -14,6 +14,7 @@ import HeaderGlow from '../../components/HeaderGlow';
 import { signInWithGoogle } from '../../services/socialAuth';
 import { isAppleAuthAvailable, signInWithApple } from '../../services/appleAuth';
 import { registerForPushAsync } from '../../services/notifications';
+import { CONNECTION_ERROR_MESSAGE } from '../../services/api';
 // The role pick a social sign-in never offered — see the component header.
 import RolePickerSheet from '../../components/RolePickerSheet';
 import { TermsNotice } from '../../components/TermsConsent';
@@ -31,6 +32,9 @@ export default function LoginScreen({ navigation }) {
   const [loading, setLoading] = useState(false);
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
+  // Whole-form problems (couldn't reach the server) as opposed to
+  // field problems (that password is wrong). See handleLogin.
+  const [formError, setFormError] = useState('');
 
   // Social sign-in state. `socialBusy` names which provider is mid-flight so
   // both buttons disable together and only the active one shows a spinner.
@@ -57,11 +61,21 @@ export default function LoginScreen({ navigation }) {
     setLoading(true);
     setEmailError('');
     setPasswordError('');
+    setFormError('');
     try {
       await login(email.trim().toLowerCase(), password);
     } catch (err) {
       const message = err.message || 'Login failed. Check your credentials.';
-      setPasswordError(message);
+      // A connection failure is not a password failure. Putting it under the
+      // password field told people their correct password was wrong, so they
+      // retyped it and tried again — the reported "I have to log in five times
+      // before it works". Reaching the server is a different problem and gets
+      // its own line, above the form, where it does not accuse a field.
+      if (message === CONNECTION_ERROR_MESSAGE) {
+        setFormError(message);
+      } else {
+        setPasswordError(message);
+      }
     } finally {
       setLoading(false);
     }
@@ -161,6 +175,12 @@ export default function LoginScreen({ navigation }) {
 
           {/* Actions */}
           <Animated.View entering={FadeInDown.duration(400).delay(320)}>
+            {/* Couldn't reach the server — a whole-form problem, so it sits
+                above the button rather than accusing the password field. */}
+            {formError ? (
+              <Text style={styles.socialError}>{formError}</Text>
+            ) : null}
+
             <Button
               variant="primary"
               label="Log in"
