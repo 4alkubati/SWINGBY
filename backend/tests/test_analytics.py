@@ -38,14 +38,18 @@ class TestTrackEventPayloadShape:
         assert body["api_key"] == "phc_test"
         assert body["event"] == "Signup"
         assert body["properties"]["role"] == "client"
-        assert body["properties"]["$current_url"] == f"app://{analytics.APP_DOMAIN}/signup"
+        assert (
+            body["properties"]["$current_url"] == f"app://{analytics.APP_DOMAIN}/signup"
+        )
         assert body["properties"]["source"] == "backend"
         assert "User-Agent" in kwargs["headers"]
 
     def test_uses_the_given_distinct_id(self):
         with patch("app.services.analytics.httpx.post") as mock_post:
             mock_post.return_value = MagicMock(status_code=200)
-            track_event("Booking Created", url_path="/booking/created", distinct_id="user-42")
+            track_event(
+                "Booking Created", url_path="/booking/created", distinct_id="user-42"
+            )
 
         assert mock_post.call_args.kwargs["json"]["distinct_id"] == "user-42"
 
@@ -77,7 +81,9 @@ class TestTrackEventPayloadShape:
 
 class TestTrackEventNeverRaises:
     def test_network_exception_is_swallowed(self):
-        with patch("app.services.analytics.httpx.post", side_effect=RuntimeError("boom")):
+        with patch(
+            "app.services.analytics.httpx.post", side_effect=RuntimeError("boom")
+        ):
             track_event("Signup", url_path="/signup")
 
     def test_non_2xx_response_does_not_raise(self):
