@@ -104,7 +104,6 @@ You can change your preferences at any time by visiting the cookie settings link
 ### Opt-out of analytics
 
 - **PostHog:** visit posthog.com/privacy or contact us at privacy@swingbyy.com
-- **Plausible:** visit plausible.io/data-policy (Plausible does not use cookies by default)
 
 ---
 

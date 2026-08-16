@@ -1,51 +1,82 @@
 """
 test_analytics.py — CARD-23 GOAL 4 (audit K7 — no-analytics).
 
-app.services.analytics.track_event() POSTs a minimal funnel event to
-Plausible's keyless Events API. Verified live 2026-07-19: a real POST in
-this exact payload shape returned HTTP 202 for "Signup", "Booking Created",
-and "Booking Completed" (see CARD-23-report.md / BACKEND-report.md for the
-transcript). These tests pin the contract with a mock so CI doesn't depend
-on network access, plus the one hard rule that matters most here: analytics
-failures must never surface to the caller or block the request path.
+app.services.analytics.track_event() POSTs a minimal funnel event to PostHog's
+capture endpoint (migrated off Plausible 2026-08-15; the public signature is
+unchanged, so no call site moved). These tests pin the payload contract with a
+mock so CI doesn't depend on network access, plus the two rules that matter
+most: analytics failures must never surface to the caller or block the request
+path, and nothing is sent at all without a project key — which is what keeps
+local dev and CI off the network.
 """
 
 from unittest.mock import MagicMock, patch
 
-from app.services.analytics import track_event, PLAUSIBLE_DOMAIN, PLAUSIBLE_EVENT_URL
+import pytest
+
+from app.services import analytics
+from app.services.analytics import track_event
+
+
+@pytest.fixture(autouse=True)
+def _project_key():
+    """Every test but the unset-key one needs a key present."""
+    with patch.object(analytics, "POSTHOG_PROJECT_KEY", "phc_test"):
+        yield
 
 
 class TestTrackEventPayloadShape:
-    def test_sends_correct_domain_name_and_synthesized_url(self):
+    def test_sends_key_event_and_synthesized_url(self):
         with patch("app.services.analytics.httpx.post") as mock_post:
-            mock_post.return_value = MagicMock(status_code=202)
+            mock_post.return_value = MagicMock(status_code=200)
             track_event("Signup", url_path="/signup", props={"role": "client"})
 
         mock_post.assert_called_once()
         args, kwargs = mock_post.call_args
-        assert args[0] == PLAUSIBLE_EVENT_URL
-        assert kwargs["json"]["domain"] == PLAUSIBLE_DOMAIN
-        assert kwargs["json"]["name"] == "Signup"
-        assert kwargs["json"]["url"] == f"app://{PLAUSIBLE_DOMAIN}/signup"
-        assert kwargs["json"]["props"] == {"role": "client"}
+        assert args[0] == analytics.POSTHOG_CAPTURE_URL
+        body = kwargs["json"]
+        assert body["api_key"] == "phc_test"
+        assert body["event"] == "Signup"
+        assert body["properties"]["role"] == "client"
+        assert (
+            body["properties"]["$current_url"] == f"app://{analytics.APP_DOMAIN}/signup"
+        )
+        assert body["properties"]["source"] == "backend"
         assert "User-Agent" in kwargs["headers"]
 
-    def test_omits_props_key_when_none_given(self):
+    def test_uses_the_given_distinct_id(self):
         with patch("app.services.analytics.httpx.post") as mock_post:
-            mock_post.return_value = MagicMock(status_code=202)
+            mock_post.return_value = MagicMock(status_code=200)
+            track_event(
+                "Booking Created", url_path="/booking/created", distinct_id="user-42"
+            )
+
+        assert mock_post.call_args.kwargs["json"]["distinct_id"] == "user-42"
+
+    def test_falls_back_to_an_anonymous_id_when_none_given(self):
+        """Still recorded, but as its own person — the documented limitation
+        that passing distinct_id at the call sites exists to remove."""
+        with patch("app.services.analytics.httpx.post") as mock_post:
+            mock_post.return_value = MagicMock(status_code=200)
             track_event("Booking Completed", url_path="/booking/completed")
 
-        _, kwargs = mock_post.call_args
-        assert "props" not in kwargs["json"]
+        assert mock_post.call_args.kwargs["json"]["distinct_id"].startswith("anon-")
 
-    def test_sends_a_timeout_so_a_slow_plausible_cannot_hang_a_request(self):
+    def test_props_are_optional(self):
         with patch("app.services.analytics.httpx.post") as mock_post:
-            mock_post.return_value = MagicMock(status_code=202)
+            mock_post.return_value = MagicMock(status_code=200)
+            track_event("Booking Completed", url_path="/booking/completed")
+
+        props = mock_post.call_args.kwargs["json"]["properties"]
+        assert set(props) == {"$current_url", "source"}
+
+    def test_sends_a_timeout_so_slow_analytics_cannot_hang_a_request(self):
+        with patch("app.services.analytics.httpx.post") as mock_post:
+            mock_post.return_value = MagicMock(status_code=200)
             track_event("Booking Created", url_path="/booking/created")
 
-        _, kwargs = mock_post.call_args
-        assert kwargs["timeout"] is not None
-        assert kwargs["timeout"] <= 5.0
+        timeout = mock_post.call_args.kwargs["timeout"]
+        assert timeout is not None and timeout <= 5.0
 
 
 class TestTrackEventNeverRaises:
@@ -53,12 +84,20 @@ class TestTrackEventNeverRaises:
         with patch(
             "app.services.analytics.httpx.post", side_effect=RuntimeError("boom")
         ):
-            # Must not raise — this is the whole point of the module.
             track_event("Signup", url_path="/signup")
 
     def test_non_2xx_response_does_not_raise(self):
         with patch("app.services.analytics.httpx.post") as mock_post:
             mock_post.return_value = MagicMock(status_code=500)
             track_event("Signup", url_path="/signup")
-        # httpx.post() itself doesn't raise on non-2xx (no raise_for_status
-        # call in track_event) — reaching this line at all is the assertion.
+
+
+class TestNoKeyMeansNoNetwork:
+    def test_nothing_is_sent_without_a_project_key(self):
+        """CI and local dev run with no key; a suite that quietly posted real
+        events to production analytics would be worse than no tests."""
+        with patch.object(analytics, "POSTHOG_PROJECT_KEY", ""), patch(
+            "app.services.analytics.httpx.post"
+        ) as mock_post:
+            track_event("Signup", url_path="/signup")
+        mock_post.assert_not_called()

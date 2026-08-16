@@ -17,7 +17,7 @@ export default function CookiesPage() {
             <li><strong>Session cookies (essential)</strong> — Used by Supabase Auth to keep you signed in. These are strictly necessary and cannot be disabled.</li>
           </ul>
           <h2>Analytics</h2>
-          <p>We use <strong>Plausible Analytics</strong> — a privacy-first analytics provider that does not use cookies and does not collect personal data. No consent is needed for Plausible.</p>
+          <p>We use <strong>PostHog</strong> for product analytics, configured to store its identifier in localStorage rather than in cookies. To opt out, visit posthog.com/privacy or email privacy@swingbyy.com.</p>
           <h2>No third-party ad cookies</h2>
           <p>We do not use advertising cookies, tracking pixels, or any third-party cookies for ad targeting.</p>
           <h2>Your choices</h2>

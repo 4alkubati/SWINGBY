@@ -6,6 +6,7 @@ import { Toaster } from 'react-hot-toast'
 import { I18nextProvider } from 'react-i18next'
 import { AuthProvider } from './context/AuthContext'
 import { initSentry } from './lib/sentry'
+import { initAnalytics } from './lib/analytics'
 import i18n from './lib/i18n'
 import App from './App'
 
@@ -15,6 +16,7 @@ import './theme/typography.css'
 import './index.css'
 
 initSentry()
+initAnalytics()
 
 const queryClient = new QueryClient({
   defaultOptions: {

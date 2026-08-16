@@ -159,7 +159,7 @@ Key subprocessors include:
 - **Resend** — transactional email delivery
 - **Expo** — mobile push notification delivery
 - **Cloudflare** — DNS, CDN, and the waitlist endpoint
-- **Plausible Analytics** — cookie-free product and site analytics
+- **PostHog** — product and site analytics (identifier stored in localStorage, not cookies)
 - **hCaptcha** — bot protection on signup
 - **Notion** — storage of pre-launch waitlist sign-ups (name and email only)
 
@@ -255,7 +255,7 @@ You can withdraw consent at any time by emailing privacy@swingbyy.com. Withdrawa
 
 We use cookies and similar technologies to operate the platform and understand how it is used. For full details, see our [Cookie Policy](cookie-policy.md).
 
-We do not currently use any advertising or cross-site tracking cookies. The analytics we use (Plausible) sets no cookies at all. You can manage the remaining, strictly necessary storage through your browser settings.
+We do not currently use any advertising or cross-site tracking cookies. Our analytics (PostHog) is configured to store its identifier in localStorage and sets no cookies. You can manage the remaining, strictly necessary storage through your browser settings.
 
 ---
 

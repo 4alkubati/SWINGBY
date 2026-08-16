@@ -7,9 +7,11 @@ import './theme/typography.css'
 import './index.css'
 import './locales/i18n'
 import { initSentry } from './lib/sentry'
+import { initAnalytics } from './lib/analytics'
 import App from './App'
 
 initSentry()
+initAnalytics()
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

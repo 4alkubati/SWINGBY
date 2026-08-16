@@ -25,7 +25,7 @@ export default function PrivacyPage() {
           <h2>Your rights and deletion</h2>
           <p>Under PIPEDA and Alberta PIPA you can access, correct, export, or delete your personal information. Deleting your account scrubs your personal identifiers; financial records we are legally required to keep are retained in de-identified form. Email privacy@swingbyy.com to exercise these rights.</p>
           <h2>Cookies</h2>
-          <p>We use essential cookies for authentication (session management). We use Plausible Analytics, which is cookie-free. See our <a href="/cookies" style={{ color: 'var(--color-accent-text)' }}>cookies page</a> for details.</p>
+          <p>We use essential cookies for authentication (session management). We use PostHog for product analytics, configured to store its identifier in localStorage rather than cookies. See our <a href="/cookies" style={{ color: 'var(--color-accent-text)' }}>cookies page</a> for details.</p>
           <h2>Contact</h2>
           <p>Privacy questions: <a href="mailto:privacy@swingbyy.com" style={{ color: 'var(--color-accent-text)' }}>privacy@swingbyy.com</a></p>
         </div>

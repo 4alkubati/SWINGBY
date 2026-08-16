@@ -119,7 +119,7 @@ SwingBy uses the following subprocessors to provide its platform. Each has been 
 | **Privacy policy** | cloudflare.com/web-analytics (privacy notice) |
 | **DPA** | cloudflare.com/gdpr/introduction |
 | **Security certifications** | ISO 27001, SOC 2, PCI DSS |
-| **Notes** | Cookie-free and privacy-first by design — no consent banner required under PIPEDA/GDPR. We do not use any product analytics tool (PostHog, Mixpanel, etc.) at this stage. |
+| **Notes** | Cookie-free and privacy-first by design. Since 2026-08-15 we also use PostHog for product analytics — see its entry below; this row covers Cloudflare's edge analytics only. |
 
 ---
 
@@ -137,15 +137,19 @@ SwingBy uses the following subprocessors to provide its platform. Each has been 
 
 ---
 
-### Plausible Analytics
+### PostHog
+
+Replaced Plausible Analytics on 2026-08-15.
 
 | Field | Detail |
 |---|---|
-| **Purpose** | Cookie-free site and product funnel analytics. Wired on the web launch site (client-side) and called server-side from the backend for mobile-app funnel events (signup / booking / completion), since the mobile app has no DOM for the JS snippet. |
-| **Data processed** | Aggregate event counts, referrer, page/screen, coarse location. No cookies, no persistent per-user identifier. |
-| **Hosting location** | EU (Plausible is EU-hosted) |
-| **Privacy policy** | plausible.io/data-policy |
-| **Notes** | Chosen specifically because it is cookie-free — no consent banner required under PIPEDA/PIPA. |
+| **Purpose** | Site and product funnel analytics. Wired on both web apps (client-side, gated on `VITE_POSTHOG_KEY`) and called server-side from the backend for mobile-app funnel events (signup / booking / completion), since the mobile app has no DOM for the JS snippet. |
+| **Data processed** | Event names and counts, page/screen path, referrer, coarse location, and a per-user identifier (`distinct_id`). |
+| **Persistent identifier** | **Yes** — unlike the Plausible setup this replaces. The web client is configured `persistence: 'localStorage'`, so the identifier is stored in localStorage and **not** in a cookie. Backend events carry the user id where the call site supplies one. |
+| **Hosting location** | `NEEDS-CONFIRM: US Cloud or EU Cloud — set when the project is created, then fix this row, the CSP in web/*/public/_headers, and VITE_POSTHOG_HOST.` |
+| **Privacy policy** | posthog.com/privacy |
+| **DPA** | posthog.com/dpa |
+| **Notes** | The identifier is why the swap was worth making: Plausible could count events but could not follow one person from a visit to a signup to a completed job, which is the only question that matters before launch. It is also why the "no persistent identifiers" language used for Cloudflare Web Analytics must **not** be copied onto this row. |
 
 ---
 
