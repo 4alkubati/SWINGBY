@@ -20,15 +20,24 @@ from app.main import app
 def _no_real_analytics_calls():
     """
     CARD-23 GOAL 4: several routes (signup, accept_interest, complete_booking)
-    fire a best-effort Plausible event via app.services.analytics.track_event.
-    Autouse + session-independent so no test accidentally makes a real
-    network call to plausible.io just by exercising one of those routes
-    without remembering to mock analytics itself. Individual tests can still
+    fire a best-effort PostHog event via app.services.analytics.track_event
+    (migrated off Plausible 2026-08-15). Autouse + session-independent so no
+    test accidentally makes a real network call to the analytics host just by
+    exercising one of those routes without remembering to mock analytics
+    itself. track_event also no-ops with no project key, which CI has none of,
+    so this is the second of two guards. Individual tests can still
     nest their own patch on the same target to assert call shape (the inner
     patch just takes over for the duration of its `with` block).
     """
-    with patch("app.services.analytics.httpx.post") as mock_post:
-        mock_post.return_value = MagicMock(status_code=202)
+    with patch("app.services.analytics.httpx.post") as mock_post, patch(
+        # track_event no-ops without a project key, which is the correct
+        # production behaviour and would otherwise make every route test that
+        # asserts "signup fired an event" vacuously pass. A dummy key keeps
+        # those assertions meaningful; the transport is mocked either way.
+        "app.services.analytics.POSTHOG_PROJECT_KEY",
+        "phc_test",
+    ):
+        mock_post.return_value = MagicMock(status_code=200)
         yield mock_post
 
 

@@ -1,50 +1,58 @@
 """
-analytics.py — minimal funnel events to Plausible (audit fault K7 — no-analytics).
+analytics.py — minimal funnel events to PostHog (audit fault K7 — no-analytics).
 
-Plausible is the platform's analytics layer: client-side + keyless, wired
-into the web launch site via VITE_PLAUSIBLE_DOMAIN=swingbyy.com (frontend's
-domain — see docs/DEPLOY.md). The actual product — signup, booking,
-completion — happens in the mobile app (Expo/React Native), which has no
-DOM, so Plausible's JS snippet cannot fire there at all. Server-side calls
-to Plausible's Events API from the backend routes that already see those
-moments are the only way to get this funnel out of the real product rather
-than just the marketing site. This module is deliberately backend-only and
-does not touch, replace, or duplicate the frontend's client-side wiring.
+MIGRATED FROM PLAUSIBLE 2026-08-15. The public contract is unchanged:
+``track_event(name, url_path=..., props=...)``, fire-and-forget, never raises.
+No call site needed editing.
 
-Non-blocking by construction: every call is wrapped in try/except with a
-short timeout and NEVER raises — an analytics outage must not fail a
-signup, a booking, or a payment. Mirrors the existing "best-effort, never
-blocks" pattern already used for Notion CRM sync and welcome emails in
-app/api/auth.py.
+Why the swap. Plausible answers "how many", and the product questions before
+the October launch are all "how many of the same people" — how many who signed
+up posted a job, how many of those got a quote. Plausible could not answer
+those from here *in principle*, and this module said so: its own docstring
+recorded that a server-side event carries no browser session, so every call
+landed as a separate visit and the funnel was event counts rather than per-user
+conversion.
 
-Plausible's Events API needs no API key ("keyless") — only a domain match
-and a User-Agent header (requests without one are dropped as bot traffic).
-Verified live 2026-07-19: a test POST to this endpoint returned HTTP 202.
+PostHog fixes precisely that, because identity is a field rather than an
+inferred session: pass ``distinct_id`` and the event joins that person's other
+events, web included. That is why the parameter exists below, and why wiring it
+at the four call sites (auth, bookings, interests) is the one follow-up worth
+doing — until then events carry a synthetic per-event id and this still only
+counts occurrences.
 
-Known limitation (documented, not hidden): Plausible's visitor-uniqueness
-model is built for browser sessions (cookies/fingerprint from a real
-pageview). A server-side event carries no such session, so each call shows
-as its own visit in the Plausible dashboard — this tracks EVENT OCCURRENCES
-(a signup happened, a booking was created, a booking completed), not a
-per-user funnel conversion rate. That's consistent with "wire the smallest
-useful funnel" — for true per-user conversion tracking later, a dedicated
-events table + admin-dashboard aggregation would be the correct next step,
-not more Plausible calls.
+Where the client-side half lives: ``web/*/src/lib/analytics.js``, gated on
+``VITE_POSTHOG_KEY``. This module is backend-only and does not duplicate it.
+
+Non-blocking by construction: every call is wrapped in try/except with a short
+timeout and NEVER raises — an analytics outage must not fail a signup, a
+booking, or a payment. Mirrors the "best-effort, never blocks" pattern already
+used for Notion CRM sync and welcome emails in app/api/auth.py.
+
+The key here is the PROJECT key (``phc_...``), the same public write-only value
+the website bundle carries — not a personal API key. It can only append events.
 """
 
 from __future__ import annotations
 
 import logging
+import os
+import uuid
 from typing import Optional
 
 import httpx
 
 logger = logging.getLogger(__name__)
 
-PLAUSIBLE_EVENT_URL = "https://plausible.io/api/event"
-PLAUSIBLE_DOMAIN = "swingbyy.com"
+# Ingest host, not the dashboard host: events go to <region>.i.posthog.com and
+# queries go to <region>.posthog.com. Swapping them yields a 404 that reads
+# like a credentials problem.
+POSTHOG_HOST = os.getenv("POSTHOG_HOST", "https://us.i.posthog.com").rstrip("/")
+POSTHOG_CAPTURE_URL = f"{POSTHOG_HOST}/i/v0/e/"
+POSTHOG_PROJECT_KEY = os.getenv("POSTHOG_PROJECT_KEY", "")
+
+APP_DOMAIN = "swingbyy.com"
 _TIMEOUT_SECONDS = 3.0
-_USER_AGENT = "SwingBy-Backend/1.0 (+https://swingbyy.com)"
+_USER_AGENT = "SwingByy-Backend/1.0 (+https://swingbyy.com)"
 
 
 def track_event(
@@ -52,33 +60,48 @@ def track_event(
     *,
     url_path: str = "/",
     props: Optional[dict] = None,
+    distinct_id: Optional[str] = None,
 ) -> None:
     """
-    Fire-and-forget a custom event to Plausible.
+    Fire-and-forget a custom event to PostHog.
 
     Never raises — callers should NOT wrap this in their own try/except; it
-    already swallows everything so a Plausible outage can't take down a
-    request path. Call it AFTER the state-changing work has already
-    succeeded (mirrors where the welcome-email / CRM-sync calls sit in
-    auth.py), never before or in place of it.
+    already swallows everything so an analytics outage can't take down a
+    request path. Call it AFTER the state-changing work has already succeeded
+    (mirrors where the welcome-email / CRM-sync calls sit in auth.py), never
+    before or in place of it.
+
+    `distinct_id` is the user id when the caller has one. Pass it: it is what
+    turns these from counts into a funnel, and it is the whole reason for the
+    migration off Plausible. Omitted, a random id is generated so the event is
+    still recorded — as its own anonymous person, which is exactly the
+    limitation we moved to fix.
 
     `url_path` is synthesized — the mobile app has no real URL — as
-    app://<domain><path> so these events are visibly distinguishable in the
-    Plausible dashboard from real web pageviews on the same domain.
+    app://<domain><path>, so these stay visibly distinguishable from real web
+    pageviews on the same domain.
     """
+    if not POSTHOG_PROJECT_KEY:
+        # Unset in local dev and CI. Silent by design: a warning per signup in
+        # a test run is noise, and there is nothing an operator can do about it
+        # from inside a request.
+        return
     try:
         payload: dict = {
-            "domain": PLAUSIBLE_DOMAIN,
-            "name": event_name,
-            "url": f"app://{PLAUSIBLE_DOMAIN}{url_path}",
+            "api_key": POSTHOG_PROJECT_KEY,
+            "event": event_name,
+            "distinct_id": distinct_id or f"anon-{uuid.uuid4()}",
+            "properties": {
+                **(props or {}),
+                "$current_url": f"app://{APP_DOMAIN}{url_path}",
+                "source": "backend",
+            },
         }
-        if props:
-            payload["props"] = props
         httpx.post(
-            PLAUSIBLE_EVENT_URL,
+            POSTHOG_CAPTURE_URL,
             json=payload,
             headers={"User-Agent": _USER_AGENT, "Content-Type": "application/json"},
             timeout=_TIMEOUT_SECONDS,
         )
     except Exception:
-        logger.warning("plausible_track_event_failed", exc_info=True)
+        logger.warning("posthog_track_event_failed", exc_info=True)

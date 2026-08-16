@@ -50,9 +50,9 @@ class TestSignup:
             mock_supabase.table.return_value.upsert.return_value.execute.return_value = (
                 None
             )
-            # CARD-23 GOAL 4: signup fires a best-effort Plausible event — mock
+            # CARD-23 GOAL 4: signup fires a best-effort PostHog event — mock
             # the network call out so this test stays hermetic (no real POST
-            # to plausible.io during the suite).
+            # to the analytics host during the suite).
             mock_analytics_post.return_value = MagicMock(status_code=202)
 
             response = test_client.post(
@@ -71,22 +71,23 @@ class TestSignup:
             assert "access_token" in data
             assert data["user_id"] == "test-user-id"
             # CARD-23 GOAL 4 (K7 — no-analytics): signup fires a "Signup"
-            # funnel event to Plausible.
+            # funnel event. PostHog since 2026-08-15 — the event name moved
+            # from the payload's "name" key to "event".
             mock_analytics_post.assert_called_once()
             sent_json = mock_analytics_post.call_args.kwargs["json"]
-            assert sent_json["name"] == "Signup"
+            assert sent_json["event"] == "Signup"
 
     def test_signup_succeeds_even_if_analytics_call_raises(self, test_client):
         """
         K7's hard rule: analytics must never block a request path. If
-        Plausible is unreachable, signup must still return 200 — the
+        the analytics host is unreachable, signup must still return 200 — the
         exception is swallowed inside track_event(), not propagated.
         """
         with patch("app.api.auth.supabase") as mock_supabase, patch(
             "app.api.auth.supabase_auth"
         ) as mock_supabase_auth, patch(
             "app.services.analytics.httpx.post",
-            side_effect=RuntimeError("Plausible is down"),
+            side_effect=RuntimeError("PostHog is down"),
         ):
             mock_user = MagicMock()
             mock_user.id = "test-user-id-2"

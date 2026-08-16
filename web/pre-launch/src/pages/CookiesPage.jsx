@@ -18,7 +18,7 @@ const SECTIONS = [
     body: `We use the following types of cookies:
 
 • Essential cookies — Required for the site to function. These handle authentication, security, and basic features. You cannot opt out of essential cookies.
-• Analytics cookies — Help us understand how visitors use our site. We use Plausible Analytics, a privacy-focused analytics tool that does not use cookies for tracking by default.
+• Analytics — Helps us understand how visitors use our site. We use PostHog, configured to store its identifier in localStorage rather than in cookies. To opt out, visit posthog.com/privacy or email privacy@swingbyy.com.
 • Preference cookies — Remember your settings like language and theme preferences.
 • Marketing cookies — Currently, SwingBy does not use marketing or advertising cookies.`,
   },
