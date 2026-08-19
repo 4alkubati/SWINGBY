@@ -264,6 +264,11 @@ navigation and route/orphan questions.
 - DB schema → `docs/swingby_database_schema.md`
 - **Code-flow graph → `docs/FLOW_GRAPH.md` + `docs/flow-graph.json`** — every screen ↔ screen edge, backend routes vs mobile calls, orphans in red. **Read this FIRST for any nav / 404 / dead-end question** — cheaper than scanning screen files. Regenerate: `python3 tools/flow_graph.py`. How-to: `~/brain/10-swingby/agents/claude/automation/FLOW_GRAPH.md`.
 - **Booking-loop smoke test → `tools/e2e_smoke.py`** — full post→quote→accept→booking→complete journey with response-SHAPE checks against a local backend (`python tools/e2e_smoke.py [base_url]`). **Mandatory before accepting any change to the booking loop** (DISPATCH_GATE Layer 6). Uses the test accounts above.
+- **Bug ledger → `docs/bugs/ledger.jsonl`, driven by `tools/bugctl.py`; skill `/deepscan`.** Every finding has a permanent id (`SB-0001`), a status, and a **verify step** — the literal check that proves it fixed. `bugctl close` refuses without one, which is what stops the "I think I already fixed that" loop that produced the backlog. Never hand-edit the jsonl or the generated `docs/bugs/LEDGER.md`.
+  - `bugctl next` only hands out findings re-verified as still broken. If it is empty, run the VERIFY pass — do not pick a bug at random.
+  - **A finding not in the ledger did not happen.** Reporting a bug without filing it is how the last four months of findings evaporated.
+  - `~/brain/inbox/SENTINEL-findings.md` (~40 findings, ~half stale) is **not yet migrated** — it is a log, not a queue. Migration procedure in `.claude/skills/deepscan/references/LEDGER.md`.
+  - Coverage of what has actually been swept: `docs/bugs/COVERAGE.md`.
 - Notion nudge layer → `~/brain/10-swingby/agents/claude/config/NOTION_SYNC.md` — database ID, schema, query pattern, drift-check rule
 - Orchestrator briefs → `~/brain/10-swingby/agents/briefs/BRIEF-*.md`
 - New-project scaffolder → `~/brain/docs/KICKOFF.md` (invoked by the user-level `kira-kickoff` skill)
