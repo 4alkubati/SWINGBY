@@ -32,7 +32,6 @@ from fastapi.testclient import TestClient
 from app.deps import get_current_user
 from app.main import app
 
-
 REPO_BACKEND = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 UPLOADER = {"id": "11111111-1111-1111-1111-111111111111", "role": "client"}
@@ -60,7 +59,13 @@ class TestUploadsAreMetered:
         for _ in range(attempts):
             resp = client.post(
                 path,
-                files={"file": (filename, io.BytesIO(b"not-a-real-media-file"), content_type)},
+                files={
+                    "file": (
+                        filename,
+                        io.BytesIO(b"not-a-real-media-file"),
+                        content_type,
+                    )
+                },
             )
             seen.add(resp.status_code)
             if resp.status_code == 429:
@@ -93,7 +98,8 @@ class TestNoPhantomGlobalLimit:
         limiter_src = open(os.path.join(REPO_BACKEND, "app", "limiter.py")).read()
         app_dir = os.path.join(REPO_BACKEND, "app")
         registered = any(
-            "SlowAPIMiddleware" in open(os.path.join(root, name), encoding="utf-8").read()
+            "SlowAPIMiddleware"
+            in open(os.path.join(root, name), encoding="utf-8").read()
             for root, _, names in os.walk(app_dir)
             for name in names
             if name.endswith(".py")

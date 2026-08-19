@@ -32,7 +32,6 @@ from starlette.requests import Request
 
 from app.main import app
 
-
 REPO_BACKEND = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
@@ -173,7 +172,9 @@ class TestConfigurationFacts:
         """
         limiter_src = open(os.path.join(REPO_BACKEND, "app", "limiter.py")).read()
         code = "\n".join(
-            line for line in limiter_src.splitlines() if not line.lstrip().startswith("#")
+            line
+            for line in limiter_src.splitlines()
+            if not line.lstrip().startswith("#")
         )
         # Strip the module docstring before looking for real usage.
         if code.count('"""') >= 2:
@@ -186,7 +187,10 @@ class TestConfigurationFacts:
         )
 
     def test_limiter_is_wired_to_the_shared_derivation(self):
-        assert app.state.limiter._key_func(make_request(None, peer="10.0.0.7")) == "10.0.0.7"
+        assert (
+            app.state.limiter._key_func(make_request(None, peer="10.0.0.7"))
+            == "10.0.0.7"
+        )
 
     def test_container_pins_an_explicit_trusted_proxy_list(self):
         """
@@ -195,9 +199,11 @@ class TestConfigurationFacts:
         `scope["client"]` in the first place.
         """
         dockerfile = open(os.path.join(REPO_BACKEND, "Dockerfile")).read()
-        start_lines = [ln for ln in dockerfile.splitlines() if "uvicorn app.main:app" in ln]
+        start_lines = [
+            ln for ln in dockerfile.splitlines() if "uvicorn app.main:app" in ln
+        ]
         assert start_lines, "expected a uvicorn start command in the Dockerfile"
         for line in start_lines:
-            assert "--forwarded-allow-ips" in line, (
-                "the container start command must pin an explicit trusted-proxy list"
-            )
+            assert (
+                "--forwarded-allow-ips" in line
+            ), "the container start command must pin an explicit trusted-proxy list"

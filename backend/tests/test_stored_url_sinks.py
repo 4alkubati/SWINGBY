@@ -41,7 +41,9 @@ UNSAFE_URLS = [
     "gopher://127.0.0.1:6379/_SET%20foo%20bar",
 ]
 
-SAFE_URL = "https://ulnxapnsenzyddddldjt.supabase.co/storage/v1/object/public/job-photos/x.jpg"
+SAFE_URL = (
+    "https://ulnxapnsenzyddddldjt.supabase.co/storage/v1/object/public/job-photos/x.jpg"
+)
 
 
 def _build_business(logo_url):

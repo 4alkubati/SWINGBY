@@ -23,7 +23,6 @@ import pytest
 
 from app.api import businesses
 
-
 # Every column that is not a public property of a business, from the live
 # schema at the time of filing.
 SENSITIVE_COLUMNS = [
@@ -95,9 +94,9 @@ class TestProjection:
     @pytest.mark.parametrize("column", SENSITIVE_COLUMNS)
     def test_sensitive_columns_never_survive(self, column):
         out = businesses._public_business(full_row())
-        assert column not in out, (
-            f"{column} reached a client through a public business read (SB-0014)"
-        )
+        assert (
+            column not in out
+        ), f"{column} reached a client through a public business read (SB-0014)"
 
     @pytest.mark.parametrize("column", EXPECTED_PUBLIC)
     def test_public_columns_do_survive(self, column):
@@ -119,7 +118,12 @@ class TestProjection:
         after the row is read, and must ride along.
         """
         out = businesses._public_business(
-            {**full_row(), "distance_km": 3.2, "completed_bookings": 7, "is_employee": True}
+            {
+                **full_row(),
+                "distance_km": 3.2,
+                "completed_bookings": 7,
+                "is_employee": True,
+            }
         )
         assert out["distance_km"] == 3.2
         assert out["completed_bookings"] == 7
@@ -157,6 +161,6 @@ class TestReadPathsUseIt:
         if func is None:
             pytest.skip(f"{func_name} not found — route renamed?")
         src = inspect.getsource(func)
-        assert "_public_business" in src, (
-            f"{func_name} returns business rows without projecting them (SB-0014)"
-        )
+        assert (
+            "_public_business" in src
+        ), f"{func_name} returns business rows without projecting them (SB-0014)"
