@@ -66,6 +66,30 @@ def create_review(data: ReviewCreate, current_user: dict = Depends(get_current_u
         reviewee_id = booking["business_id"]
         reviewee_type = "business"
 
+        # SB-0005 — refuse a self-review.
+        #
+        # `businesses.owner_id` does not require role == 'business_owner', so a
+        # user whose role is 'client' can own a business, book it, and reach
+        # here. Both checks above pass: they really are the client on the
+        # booking, and it really is a completed booking. Neither asks whether
+        # the reviewer owns the thing being reviewed.
+        #
+        # This is not a cosmetic problem. `avg_rating` is the number geo-browse
+        # ranks on, so a self-review is a business promoting itself in the
+        # search results every client sees.
+        owner_check = (
+            supabase.table("businesses")
+            .select("id, owner_id")
+            .eq("id", reviewee_id)
+            .single()
+            .execute()
+        )
+        if owner_check.data and owner_check.data.get("owner_id") == current_user["id"]:
+            raise HTTPException(
+                status_code=403,
+                detail="You cannot review a business you own.",
+            )
+
         if booking.get("employee_id"):
             emp_row = (
                 supabase.table("employees")
@@ -123,13 +147,24 @@ def create_review(data: ReviewCreate, current_user: dict = Depends(get_current_u
         if reviewee_type == "business":
             all_reviews = (
                 supabase.table("reviews")
-                .select("rating")
+                .select("rating, reviewer_id")
                 .eq("reviewee_id", reviewee_id)
                 .eq("reviewee_type", "business")
                 .execute()
             )
-            if all_reviews.data:
-                avg = sum(r["rating"] for r in all_reviews.data) / len(all_reviews.data)
+            # SB-0005 — the write guard above stops NEW self-reviews; this keeps
+            # any already in the table out of the published average, so the
+            # number corrects itself on the next genuine review rather than
+            # needing a backfill to be trustworthy.
+            owner_id = (owner_check.data or {}).get("owner_id")
+            counted = [
+                r
+                for r in (all_reviews.data or [])
+                if not owner_id or r.get("reviewer_id") != owner_id
+            ]
+            if counted:
+                all_reviews.data = counted
+                avg = sum(r["rating"] for r in counted) / len(counted)
                 supabase.table("businesses").update(
                     {
                         "avg_rating": round(avg, 2),
