@@ -121,7 +121,24 @@ def _count(column: str, value: str) -> Optional[int]:
             return int(res.count)
         return len(res.data or [])
     except Exception:
-        logger.exception("login_guard.count_failed", column=column)
+        # SB-0019 — this is the fail-OPEN path, and it is silent by nature.
+        #
+        # When it fires, brute-force protection is simply OFF: check_lockout
+        # treats None as "no opinion", so logins proceed unthrottled for as
+        # long as PostgREST is unhappy, and nothing about the API's behaviour
+        # says so. `alert=True` marks the one log line that must page someone
+        # rather than merely be searchable after the fact.
+        #
+        # Deliberately still fail-open. Failing CLOSED would turn a database
+        # blip into a total login outage, which is a worse trade for a
+        # marketplace than a window of unthrottled guessing — but that choice
+        # is only defensible if somebody finds out it happened.
+        logger.exception(
+            "login_guard.count_failed",
+            column=column,
+            alert=True,
+            impact="brute_force_protection_disabled",
+        )
         return None
 
 
@@ -131,6 +148,19 @@ def check_lockout(email: str, ip: str) -> Optional[str]:
     The reason is for OUR logs, never for the response body — the endpoint
     answers with one generic message either way, so that a locked-out account
     and an unknown one stay indistinguishable (checklist #5).
+
+    Two properties worth knowing before changing anything here (SB-0019):
+
+    * It is FAIL-OPEN. A PostgREST outage makes `_count` return None and this
+      function returns None, so the guard is off until the database recovers.
+      That is the intended trade — failing closed would convert a database blip
+      into a total login outage — and `login_guard.count_failed` is logged with
+      `alert=True` so it cannot happen unnoticed.
+    * The per-IP arm is a targeted-lockout surface by construction: 30 failures
+      from one address lock everyone behind it. That is only safe because the
+      address is now derived from hops our own proxy appended
+      (`services/client_ip.py`, SB-0017) rather than from a header the caller
+      writes. Do not reintroduce a raw X-Forwarded-For read here.
     """
     email_failures = _count("email_hash", hash_email(email))
     if email_failures is not None and email_failures >= MAX_FAILURES_PER_EMAIL:
