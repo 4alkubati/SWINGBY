@@ -31,7 +31,7 @@ Dual-sided service marketplace connecting service providers (**Businesses**) wit
 | Maps | Google Maps API (placeholder key, real key for Phase 5) |
 | Push | Expo Push + FCM (post-MVP) |
 | Project nudges | Notion (connected MCP, same tier as Google Calendar) — "SwingBy" database mirrors Roadmap/DOMINOES + Launch Checklist, flags overdue/blocked/gate items. Read-only nudge layer, not source of truth — see `~/brain/10-swingby/agents/claude/config/NOTION_SYNC.md` |
-| CRM (separate) | `backend/app/services/notion_crm.py` — best-effort sync of new signups to a Notion leads DB via `NOTION_TOKEN`/`NOTION_CRM_DB_ID`. Unrelated to the nudge DB above |
+| CRM (separate) | ~~`backend/app/services/notion_crm.py`~~ — **removed.** This module and `NOTION_CRM_DB_ID` no longer exist anywhere in the repo (SB-0050); the row survived the deletion and sent readers looking for a file that is not there. `NOTION_TOKEN` is still read, by the waitlist endpoint. |
 
 ---
 

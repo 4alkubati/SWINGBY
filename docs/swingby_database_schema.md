@@ -28,6 +28,60 @@
 
 ---
 
+## Live inventory — 32 tables (SB-0069)
+
+> Read from the live schema on 2026-08-19. This section exists because the
+> detailed sections below covered 15 tables while the database had 32,
+> and CLAUDE.md points sessions here as the schema authority — so a session
+> checking "does this table have RLS?" or "what columns exist?" got a confident
+> answer for less than half the database and no signal for the rest.
+>
+> **Every public table has RLS enabled (32/32).**
+>
+> Tables marked *not documented* are real and in use; they simply have no
+> detailed section yet. Do not infer from a missing section that a table does
+> not exist — that inference is what this row set exists to prevent.
+
+| Table | Columns | RLS | Detail |
+|---|---|---|---|
+| `audit_log` | 8 | ✅ | **not documented** |
+| `booking_events` | 8 | ✅ | detailed below |
+| `booking_locations` | 8 | ✅ | **not documented** |
+| `booking_photos` | 10 | ✅ | detailed below |
+| `booking_proofs` | 9 | ✅ | **not documented** |
+| `booking_voice_notes` | 7 | ✅ | **not documented** |
+| `bookings` | 20 | ✅ | detailed below |
+| `business_auto_bid_rules` | 11 | ✅ | **not documented** |
+| `business_google_connections` | 15 | ✅ | **not documented** |
+| `business_google_oauth_states` | 9 | ✅ | **not documented** |
+| `business_imported_reviews` | 15 | ✅ | **not documented** |
+| `business_work_index` | 10 | ✅ | **not documented** |
+| `businesses` | 33 | ✅ | detailed below |
+| `cancellations` | 6 | ✅ | detailed below |
+| `content_reports` | 13 | ✅ | **not documented** |
+| `disputes` | 13 | ✅ | detailed below |
+| `employees` | 7 | ✅ | detailed below |
+| `interests` | 8 | ✅ | detailed below |
+| `login_attempts` | 5 | ✅ | **not documented** |
+| `message_terms` | 14 | ✅ | **not documented** |
+| `messages` | 13 | ✅ | detailed below |
+| `payments` | 21 | ✅ | detailed below |
+| `payouts` | 13 | ✅ | **not documented** |
+| `push_tokens` | 6 | ✅ | detailed below |
+| `referrals` | 8 | ✅ | detailed below |
+| `refresh_token_usage` | 4 | ✅ | **not documented** |
+| `reviews` | 9 | ✅ | detailed below |
+| `service_posts` | 19 | ✅ | detailed below |
+| `stripe_events` | 3 | ✅ | **not documented** |
+| `user_blocks` | 5 | ✅ | **not documented** |
+| `user_credits` | 6 | ✅ | **not documented** |
+| `users` | 15 | ✅ | detailed below |
+
+Three of these have no `CREATE TABLE` in `supabase/migrations/` at all —
+`push_tokens`, `audit_log` and `stripe_events` — so a fresh environment built
+from the migration pipeline would not have them. See SB-0043 / SB-0044 and the
+migration added alongside this note.
+
 ## 1. `users`
 
 **Source:** no CREATE TABLE found in `docs/*.sql` (table predates the migrations kept in this repo) — reconstructed from `docs/wave-5-admin-role.sql` (role CHECK), `docs/rls_policies.sql`, `backend/app/api/auth.py`, `backend/app/api/admin.py`, `backend/app/deps.py`.

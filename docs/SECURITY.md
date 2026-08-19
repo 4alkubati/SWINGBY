@@ -2,15 +2,15 @@
 
 | Item | Status |
 |---|---|
-| RLS on all 10 tables | ✅ Applied via MCP |
+| RLS on every public table | ✅ **32/32 enabled**, verified against the live schema 2026-08-19. This row said "all 10 tables" and had been outgrown three times over (SB-0078) — the count is not the point, the coverage is. Re-check with `list_tables` rather than trusting the number here. |
 | Supabase security advisors | ⚠️ 1 open — HIBP leaked-password protection disabled (dashboard-only toggle, Auth → Sign In / Providers → Password → "Leaked password protection" → Enable). 2 others (disputes trigger fn missing pinned `search_path`, `job-photos` bucket publicly listable) fixed 2026-07-19 via `docs/card06_security_advisors_fix.sql` (CARD-06). Verify live with `mcp__claude_ai_Supabase__get_advisors` before checking this row off — don't trust this line without re-running it. |
 | No table open to anon | ✅ Zero anon policies |
 | Service role key backend-only | ✅ Never in mobile/ or web/ |
 | `.env` not in git | ✅ Confirmed via git ls-files |
-| All routes auth-protected | ✅ 2 intentionally open (signup/login) |
+| All routes auth-protected | ✅ **13 intentionally open**, not 2 (SB-0067). The authoritative list is generated into `docs/API.md` under "Public / unauthenticated" by `tools/gen_api_docs.py` — it is derived from each route's dependency tree, so it cannot drift the way this row did. Today: the 7 `/auth/*` pre-auth routes, `/contact/`, `/waitlist/`, `/health`, `/healthz`, `/google-reviews/callback` (OAuth) and `/payments/stripe/webhook` (signature-verified). Anything NEW appearing there is a finding. |
 | Input validation on all models | ✅ Pydantic Field constraints + EmailStr |
 | supabase_client hard-fails if key missing | ✅ RuntimeError at startup |
-| Post expiry cron (hourly, pg_cron) | ✅ Live on Supabase |
+| Post expiry cron (hourly, pg_cron) | ⚠️ **CONTESTED — do not trust either answer** (SB-0068 vs SB-0074). One auditor found two source files stating flatly that no scheduler exists in this deployment; another verified `docs/expiry_cron.sql` is scheduled `'0 * * * *'` and that posts do reach `status='expired'`. Both cannot be true. Settle it with `select jobname, schedule, active from cron.job;` against the live project and then fix this row. Note the PRIMARY expiry path is lazy either way (`GET /service-posts/my` sweeps the caller's own posts) plus the manual `POST /admin/sweeps/post-expiry`. |
 | JWT expiry | ✅ 3600s default (free plan, not configurable) |
 | Email confirmation | ⚠️ Check: Auth → Sign In / Providers → Email → "Confirm email" ON |
 | AWS S3 bucket | ⚪ Not needed — using Supabase Storage instead |
@@ -68,5 +68,15 @@ refresh token issued before it is refused by `/auth/refresh`. It is stamped by:
 
 The watermark is NULL for every user until one of those fires.
 
-**Retention.** `refresh_token_usage` rows are pruned after 30 days by the
-expiry sweep. The tokens themselves are never stored — only their hashes.
+**Retention.** `refresh_token_usage` rows are pruned after 30 days by
+`session_security.prune_refresh_usage()`, called from the expiry sweep. The
+tokens themselves are never stored — only their hashes.
+
+That prune is **not scheduled** (SB-0075). This deployment has no scheduler, so
+it runs only when the expiry sweep does: lazily via `GET /service-posts/my`, or
+when an admin calls `POST /admin/sweeps/post-expiry`. Until one of those
+happens the 30-day horizon is a policy nobody is enforcing. The same is true of
+`login_attempts`, whose 7-day sweep is `POST /admin/sweeps/login-attempts`
+(SB-0071). If either retention window needs to be a guarantee rather than an
+intention, it needs a scheduler — that is a deliberate open decision, not an
+oversight.
