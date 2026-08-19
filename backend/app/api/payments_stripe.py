@@ -475,10 +475,77 @@ def _dispatch_webhook_event(etype, data_object) -> None:
         and data_object is not None
     ):
         _sync_subscription(data_object)
-    elif etype == "invoice.payment_failed" and data_object is not None:
-        _mark_past_due(data_object)
+    elif etype == "account.updated" and data_object is not None:
+        _sync_connect_account(data_object)
     else:
         logger.info("Stripe webhook event ignored: %s", etype)
+
+
+def _sync_connect_account(account_obj) -> None:
+    """Mirror a Connect account's state when Stripe says it changed (SB-0080).
+
+    DEC-5 recorded that account.updated, payout.* and transfer.* were subscribed
+    but unhandled. What saved it is reconcile-on-read: every gate in payouts.py
+    re-reads Stripe and calls `_mirror_account_state`, so the cached columns are
+    refreshed whenever the owner opens their wallet.
+
+    That is a real mitigation and it is why this is not urgent — but it means
+    the mirror is only as fresh as the last time somebody looked. A business
+    whose payouts Stripe just disabled keeps showing "payouts enabled" until
+    they next open the screen, which is precisely when they would rather have
+    been told. Handling this event closes the lag without changing where truth
+    lives: Stripe stays authoritative, this only updates the cache sooner.
+
+    payout.* and transfer.* stay unhandled on purpose. They report the movement
+    of money that this system has already recorded in `payments`, and writing a
+    second, differently-shaped record of the same event is how two ledgers start
+    disagreeing. Reconciling them needs a decision about which one wins, which
+    is a design question, not a missing handler.
+    """
+    account_id = _obj_get(account_obj, "id")
+    if not account_id:
+        logger.warning("account.updated with no account id; ignoring")
+        return
+    try:
+        res = (
+            supabase.table("businesses")
+            .select("id")
+            .eq("stripe_connect_account_id", account_id)
+            .limit(1)
+            .execute()
+        )
+        rows = res.data or []
+        if not rows:
+            # A Connect account we do not know about. Normal in a shared Stripe
+            # test account; not an error.
+            logger.info("account.updated for unknown Connect account")
+            return
+        from app.api.payouts import _mirror_account_state
+
+        _mirror_account_state(
+            rows[0]["id"],
+            {
+                "payouts_enabled": _obj_get(account_obj, "payouts_enabled"),
+                "charges_enabled": _obj_get(account_obj, "charges_enabled"),
+                "details_submitted": _obj_get(account_obj, "details_submitted"),
+                "disabled_reason": (
+                    _obj_get(
+                        _obj_get(account_obj, "requirements") or {}, "disabled_reason"
+                    )
+                ),
+                "requirements_due": (
+                    _obj_get(
+                        _obj_get(account_obj, "requirements") or {}, "currently_due"
+                    )
+                    or []
+                ),
+            },
+        )
+    except Exception:
+        # Never fail the webhook over a cache refresh — reconcile-on-read is
+        # still there, and raising here would make Stripe retry an event whose
+        # only job was to save someone a round-trip.
+        logger.warning("could not sync Connect account state", exc_info=True)
 
 
 def _release_event_claim(event_id) -> None:
