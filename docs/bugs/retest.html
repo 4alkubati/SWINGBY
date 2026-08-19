@@ -1,0 +1,588 @@
+<title>Walkthrough Retest Sheet</title>
+<style>
+  :root {
+    --ground: #F7F6FB;
+    --surface: #FFFFFF;
+    --surface-2: #EFEDF7;
+    --ink: #17151F;
+    --ink-2: #45415A;
+    --muted: #6F6A85;
+    --line: #DFDCEC;
+    --accent: #5B3FE0;
+    --accent-soft: #EDE9FF;
+    --pass: #17825C;
+    --pass-soft: #E2F4EC;
+    --fail: #C3312F;
+    --fail-soft: #FCE8E7;
+    --blocker: #C3312F;
+    --broken: #B4671A;
+    --sloppy: #6F6A85;
+
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #0E0D14;
+      --surface: #191726;
+      --surface-2: #221F33;
+      --ink: #EFEDF7;
+      --ink-2: #C4C0D8;
+      --muted: #8B87A3;
+      --line: #2C2940;
+      --accent: #7B5CFF;
+      --accent-soft: #241E44;
+      --pass: #3DB98A;
+      --pass-soft: #14312A;
+      --fail: #FF5F5F;
+      --fail-soft: #3A1B1E;
+      --blocker: #FF6B6B;
+      --broken: #E0A93F;
+      --sloppy: #8B87A3;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --ground: #0E0D14;
+    --surface: #191726;
+    --surface-2: #221F33;
+    --ink: #EFEDF7;
+    --ink-2: #C4C0D8;
+    --muted: #8B87A3;
+    --line: #2C2940;
+    --accent: #7B5CFF;
+    --accent-soft: #241E44;
+    --pass: #3DB98A;
+    --pass-soft: #14312A;
+    --fail: #FF5F5F;
+    --fail-soft: #3A1B1E;
+    --blocker: #FF6B6B;
+    --broken: #E0A93F;
+    --sloppy: #8B87A3;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.55;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  .wrap {
+    max-width: 34rem;
+    margin: 0 auto;
+    padding: 0 1rem 5rem;
+  }
+
+  /* ---- sticky progress ---- */
+  .bar {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: color-mix(in srgb, var(--ground) 92%, transparent);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--line);
+    padding: 0.7rem 1rem;
+    margin: 0 -1rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .track {
+    flex: 1;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--surface-2);
+    overflow: hidden;
+  }
+  .fill {
+    height: 100%;
+    width: 0%;
+    background: var(--accent);
+    border-radius: 3px;
+    transition: width 0.25s ease;
+  }
+  .count {
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  /* ---- masthead ---- */
+  header { padding-top: 1.75rem; }
+  h1 {
+    font-size: 1.6rem;
+    line-height: 1.15;
+    margin: 0 0 0.4rem;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+  }
+  .sub { color: var(--muted); font-size: 0.94rem; margin: 0 0 1.1rem; }
+
+  .build {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 0.6rem 0.8rem;
+    margin-bottom: 1.75rem;
+  }
+  .build label {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .build input {
+    flex: 1;
+    min-width: 0;
+    background: transparent;
+    border: none;
+    color: var(--ink);
+    font-family: var(--mono);
+    font-size: 0.88rem;
+    padding: 0.2rem 0;
+  }
+  .build input:focus { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 3px; }
+
+  /* ---- sections ---- */
+  section { margin-bottom: 2.5rem; }
+  .sec-head {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 0.35rem;
+  }
+  .sec-head h2 {
+    font-size: 1.05rem;
+    margin: 0;
+    letter-spacing: -0.01em;
+  }
+  .sec-head .n {
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .sec-note {
+    font-size: 0.88rem;
+    color: var(--muted);
+    margin: 0 0 1rem;
+  }
+  .sec-note strong { color: var(--ink-2); font-weight: 600; }
+
+  /* ---- check card ---- */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--line);
+    border-radius: 10px;
+    padding: 0.9rem 1rem;
+    margin-bottom: 0.75rem;
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+  .card[data-state="pass"] { border-left-color: var(--pass); background: var(--pass-soft); }
+  .card[data-state="fail"] { border-left-color: var(--fail); background: var(--fail-soft); }
+
+  .id-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.4rem;
+    flex-wrap: wrap;
+  }
+  .id {
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--accent);
+    letter-spacing: 0.02em;
+  }
+  .sev {
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    padding: 0.15rem 0.4rem;
+    border-radius: 3px;
+    border: 1px solid currentColor;
+  }
+  .sev.blocker { color: var(--blocker); }
+  .sev.broken  { color: var(--broken); }
+  .sev.sloppy  { color: var(--sloppy); }
+
+  .card h3 {
+    font-size: 0.98rem;
+    line-height: 1.35;
+    margin: 0 0 0.6rem;
+    font-weight: 600;
+    text-wrap: balance;
+  }
+
+  .step { font-size: 0.9rem; margin: 0 0 0.5rem; color: var(--ink-2); }
+  .step b {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    display: block;
+    margin-bottom: 0.12rem;
+    font-weight: 500;
+  }
+
+  .btns { display: flex; gap: 0.5rem; margin-top: 0.75rem; }
+  .btns button {
+    flex: 1;
+    min-height: 48px;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    background: var(--surface-2);
+    color: var(--ink-2);
+    font-family: var(--sans);
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.12s ease;
+  }
+  .btns button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .btns button[aria-pressed="true"].ok {
+    background: var(--pass); border-color: var(--pass); color: #fff;
+  }
+  .btns button[aria-pressed="true"].no {
+    background: var(--fail); border-color: var(--fail); color: #fff;
+  }
+
+  .note {
+    width: 100%;
+    margin-top: 0.55rem;
+    background: var(--ground);
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 0.88rem;
+    padding: 0.55rem 0.65rem;
+    resize: vertical;
+    min-height: 44px;
+    display: none;
+  }
+  .card[data-state="fail"] .note,
+  .card[data-state="pass"] .note { display: block; }
+  .note:focus { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* ---- extras ---- */
+  .extra {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 0.92rem;
+    padding: 0.7rem 0.8rem;
+    min-height: 100px;
+    resize: vertical;
+  }
+  .extra:focus { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* ---- output ---- */
+  .out-btn {
+    width: 100%;
+    min-height: 52px;
+    border-radius: 10px;
+    border: none;
+    background: var(--accent);
+    color: #fff;
+    font-family: var(--sans);
+    font-size: 0.98rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .out-btn:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  pre {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 0.85rem;
+    overflow-x: auto;
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    line-height: 1.6;
+    color: var(--ink-2);
+    margin: 0.85rem 0 0;
+    white-space: pre;
+    -webkit-user-select: all;
+    user-select: all;
+  }
+  pre:empty { display: none; }
+
+  footer {
+    margin-top: 2.5rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--line);
+    font-size: 0.82rem;
+    color: var(--muted);
+  }
+  footer code { font-family: var(--mono); font-size: 0.78rem; color: var(--ink-2); }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
+  }
+</style>
+
+<div class="wrap">
+  <div class="bar">
+    <div class="track"><div class="fill" id="fill"></div></div>
+    <span class="count" id="count">0/10</span>
+  </div>
+
+  <header>
+    <h1>Walkthrough retest</h1>
+    <p class="sub">Walk the app once, top to bottom. Every check maps to a ledger id, so the results paste straight back in.</p>
+    <div class="build">
+      <label for="build">Build</label>
+      <input id="build" placeholder="preview build no. / date" autocomplete="off">
+    </div>
+  </header>
+
+  <section>
+    <div class="sec-head">
+      <h2>A · Did the fix survive?</h2>
+      <span class="n">1 check</span>
+    </div>
+    <p class="sec-note">Fixed in code, <strong>not yet confirmed on a device</strong>. A FAIL here is the most valuable result on this sheet — it means a fix didn't survive the trip to the phone. That has already happened once: the language chip was fixed on Aug 13, and the bug was still in the Aug 15 preview build because the fix addressed only half the mechanism.</p>
+    <div id="secA"></div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <h2>B · Does it still reproduce?</h2>
+      <span class="n">9 checks</span>
+    </div>
+    <p class="sec-note">Filed from the last walkthrough, none re-checked on a device. Expect some to be <strong>already fixed</strong> — marking those is how the backlog shrinks.</p>
+    <div id="secB"></div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <h2>C · Anything else</h2>
+      <span class="n">free text</span>
+    </div>
+    <p class="sec-note">Screens where something looked wrong that isn't listed. Name the screen and what you expected. Screenshot into <code>~/brain/inbox/debugging/</code>.</p>
+    <textarea class="extra" id="extra" placeholder="One per line — screen, then what looked wrong."></textarea>
+  </section>
+
+  <section>
+    <button class="out-btn" id="gen">Generate the paste-back commands</button>
+    <pre id="out"></pre>
+  </section>
+
+  <footer>
+    Generated from <code>docs/bugs/ledger.jsonl</code> via <code>python tools/bugctl.py retest</code>.
+    Answers save to this device as you tap, so you can put the phone down mid-walkthrough.
+  </footer>
+</div>
+
+<script>
+const CHECKS = {
+  A: [
+    {
+      id: "SB-0008", sev: "blocker",
+      title: "Language chip read EN in every language but French",
+      doIt: "Settings → Language. Set Ukrainian, back out, read the chip on the Language row. Then Arabic. Then English. Force-quit and relaunch, check once more.",
+      passIf: "The chip reads UK, AR, EN, FR — always matching the checkmark inside the sheet, and still matching after the relaunch."
+    }
+  ],
+  B: [
+    {
+      id: "SB-0007", sev: "blocker",
+      title: "Business dashboard renders Ukrainian in an English session",
+      doIt: "Set the language to English. Open the business Dashboard and read every section header."
+    },
+    {
+      id: "SB-0001", sev: "broken",
+      title: "Thread header says 'pending payment' beside a card saying 'paid'",
+      doIt: "As a client, accept a quote and pay. Open the message thread. Compare the booking card at the top against the system card below it."
+    },
+    {
+      id: "SB-0003", sev: "broken",
+      title: "Setup trades never reach 'Services & pricing'",
+      doIt: "As a business with a category set, open My Business → Services & pricing."
+    },
+    {
+      id: "SB-0005", sev: "broken",
+      title: "Owner's own review shows on the business public profile",
+      doIt: "Open the business public profile and read the reviews. Check whether the reviewer is the owner."
+    },
+    {
+      id: "SB-0006", sev: "broken",
+      title: "'Propose a time' shown for an already-confirmed booking",
+      doIt: "Confirm a date on a booking. As the business, open Jobs → Needs action and look for that booking."
+    },
+    {
+      id: "SB-0009", sev: "broken",
+      title: "A job completes with zero proof-of-work photos",
+      doIt: "As the business, mark a job done without adding any before/after photos. Then open Booking Details as the client."
+    },
+    {
+      id: "SB-0002", sev: "sloppy",
+      title: "Profile-completeness hint truncated mid-sentence",
+      doIt: "As a business with an incomplete profile, open My Business and read the completeness card."
+    },
+    {
+      id: "SB-0004", sev: "sloppy",
+      title: "Two conflicting exits in public-profile preview",
+      doIt: "My Business → Preview public. Count the ways out of the screen."
+    },
+    {
+      id: "SB-0010", sev: "sloppy",
+      title: "Booking timeline mixes scheduled and logged clocks",
+      doIt: "Open a completed booking's timeline and read the times in order."
+    }
+  ]
+};
+
+const KEY = "swingby-retest-v1";
+let state = {};
+try { state = JSON.parse(localStorage.getItem(KEY) || "{}"); } catch (e) { state = {}; }
+
+function persist() {
+  try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { /* private mode */ }
+}
+
+function total() { return CHECKS.A.length + CHECKS.B.length; }
+
+function refresh() {
+  const done = Object.keys(state).filter((k) => k.endsWith(":v") && state[k]).length;
+  document.getElementById("fill").style.width = (done / total() * 100) + "%";
+  document.getElementById("count").textContent = done + "/" + total();
+}
+
+function card(c, section) {
+  const el = document.createElement("div");
+  el.className = "card";
+  const saved = state[c.id + ":v"] || "";
+  if (saved) el.dataset.state = saved;
+
+  const labels = section === "A" ? ["Fix held", "Still broken"] : ["Still broken", "Looks fixed"];
+  // Section A: "pass" means the fix held. Section B: a bug that still reproduces
+  // is the "fail" state, so the colours stay honest — green always means good news.
+  const vals = section === "A" ? ["pass", "fail"] : ["fail", "pass"];
+
+  el.innerHTML = `
+    <div class="id-row">
+      <span class="id">${c.id}</span>
+      <span class="sev ${c.sev}">${c.sev}</span>
+    </div>
+    <h3>${c.title}</h3>
+    <p class="step"><b>Do</b>${c.doIt}</p>
+    ${c.passIf ? `<p class="step"><b>Pass if</b>${c.passIf}</p>` : ""}
+    <div class="btns">
+      <button class="ok" type="button">${labels[0]}</button>
+      <button class="no" type="button">${labels[1]}</button>
+    </div>
+    <textarea class="note" placeholder="What you actually saw"></textarea>
+  `;
+
+  const [b0, b1] = el.querySelectorAll("button");
+  const note = el.querySelector(".note");
+  note.value = state[c.id + ":n"] || "";
+
+  // Map each button to the semantic value it records, not to its position.
+  const map = new Map([[b0, vals[0]], [b1, vals[1]]]);
+
+  function paint() {
+    const v = state[c.id + ":v"] || "";
+    for (const [btn, val] of map) btn.setAttribute("aria-pressed", String(v === val));
+    if (v) el.dataset.state = v; else delete el.dataset.state;
+    refresh();
+  }
+
+  for (const [btn, val] of map) {
+    btn.addEventListener("click", () => {
+      state[c.id + ":v"] = state[c.id + ":v"] === val ? "" : val;
+      persist(); paint();
+    });
+  }
+  note.addEventListener("input", () => { state[c.id + ":n"] = note.value; persist(); });
+
+  paint();
+  return el;
+}
+
+for (const c of CHECKS.A) document.getElementById("secA").appendChild(card(c, "A"));
+for (const c of CHECKS.B) document.getElementById("secB").appendChild(card(c, "B"));
+
+const buildEl = document.getElementById("build");
+const extraEl = document.getElementById("extra");
+buildEl.value = state.build || "";
+extraEl.value = state.extra || "";
+buildEl.addEventListener("input", () => { state.build = buildEl.value; persist(); });
+extraEl.addEventListener("input", () => { state.extra = extraEl.value; persist(); });
+
+function q(s) { return String(s || "").replace(/"/g, '\\"'); }
+
+document.getElementById("gen").addEventListener("click", () => {
+  const build = buildEl.value.trim() || "unnamed build";
+  const lines = ["# paste into the repo root — " + build, ""];
+
+  for (const c of CHECKS.A) {
+    const v = state[c.id + ":v"];
+    const n = (state[c.id + ":n"] || "").trim();
+    if (!v) continue;
+    if (v === "pass") {
+      lines.push(`python tools/bugctl.py note ${c.id} "device-confirmed on ${q(build)}${n ? " — " + q(n) : ""}"`);
+    } else {
+      lines.push(`# REOPEN — the fix did not survive to the device`);
+      lines.push(`python tools/bugctl.py edit ${c.id} --status confirmed`);
+      lines.push(`python tools/bugctl.py note ${c.id} "still broken on ${q(build)}${n ? " — " + q(n) : ""}"`);
+    }
+  }
+
+  for (const c of CHECKS.B) {
+    const v = state[c.id + ":v"];
+    const n = (state[c.id + ":n"] || "").trim();
+    if (!v) continue;
+    const res = v === "fail" ? "still-broken" : "gone";
+    lines.push(`python tools/bugctl.py verified ${c.id} --result ${res} --note "${q(build)}${n ? " — " + q(n) : ""}"`);
+  }
+
+  const extras = extraEl.value.split("\n").map((s) => s.trim()).filter(Boolean);
+  if (extras.length) {
+    lines.push("", "# new — needs a verify step written before it can be closed");
+    for (const e of extras) {
+      lines.push(`python tools/bugctl.py check "${q(e)}"   # dedupe first, then add`);
+    }
+  }
+
+  lines.push("", "python tools/bugctl.py render > docs/bugs/LEDGER.md", "python tools/bugctl.py stats");
+
+  const text = lines.join("\n");
+  document.getElementById("out").textContent = text;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(
+      () => { document.getElementById("gen").textContent = "Copied — paste into the repo root"; },
+      () => { document.getElementById("gen").textContent = "Select the block below to copy"; }
+    );
+  } else {
+    document.getElementById("gen").textContent = "Select the block below to copy";
+  }
+});
+
+refresh();
+</script>

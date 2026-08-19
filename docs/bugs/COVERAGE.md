@@ -12,6 +12,7 @@ A surface goes stale after roughly 30 commits touching it.
 | Date | Surface | Commit | Filed | Notes |
 |---|---|---|---|---|
 | 2026-08-19 | walkthrough screenshots (Img1–Img7) | fd5c063 | SB-0001…SB-0010 | Ingest only, not a code scan. All entered `open` — a screenshot proves a symptom, not a cause. |
+| 2026-08-19 | VERIFY: SB-0007, SB-0008 (i18n) | cf7e79f | — | Both **confirmed still broken**, neither stale. SB-0008 fixed in `5021c6d`; SB-0007 left open pending a product call. |
 
 ## Not yet scanned
 

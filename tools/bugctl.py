@@ -472,6 +472,94 @@ def cmd_stats(args) -> None:
     print(f"  {never_checked} live finding(s) never re-verified (may already be fixed)")
 
 
+def cmd_retest(args) -> None:
+    """Emit a phone walkthrough sheet.
+
+    Deliberately includes findings already marked `fixed`. SB-0008 is the reason:
+    it was fixed once, the fix was confirmed by reading the code, and the bug
+    shipped in the next preview build because the fix addressed only half the
+    mechanism. A fix confirmed in code and never confirmed on the device is a
+    hypothesis. This sheet is where hypotheses go to be settled.
+    """
+    rows = load()
+    live = [r for r in rows if r["status"] in ("open", "confirmed")]
+    recent = [r for r in rows if r["status"] == "fixed" and not r.get("device_confirmed")]
+
+    out = [
+        f"# Phone retest — {today()}",
+        "",
+        f"Build under test: _______________   ledger @ `{git_head()}`",
+        "",
+        "Walk the app once. For each check write **PASS** (behaves correctly) or",
+        "**FAIL** (still wrong), and for a FAIL add one line on what you actually saw.",
+        "Photograph anything that fails into `~/brain/inbox/debugging/`.",
+        "",
+        "---",
+        "",
+        f"## A. Confirm the fixes actually landed ({len(recent)})",
+        "",
+        "These are marked fixed in code but **not yet confirmed on a device**.",
+        "A FAIL here is the most valuable result in the sheet — it means a fix",
+        "did not survive the trip to the phone, which has now happened once.",
+        "",
+    ]
+    for r in sorted(recent, key=lambda r: (sev_rank(r), r["id"])):
+        out += [
+            f"### {r['id']} — {r['title']}",
+            "",
+            f"- **do** {r.get('repro') or 'see the ledger'}",
+            f"- **PASS if** {r.get('fix_hint') or 'the behaviour above no longer occurs'}",
+            "- [ ] PASS  [ ] FAIL → what you saw: ______________________",
+            "",
+        ]
+    if not recent:
+        out += ["_Nothing awaiting device confirmation._", ""]
+
+    out += ["---", "", f"## B. Does it still reproduce? ({len(live)})", ""]
+    for sev in SEVERITIES:
+        chunk = [r for r in live if r["severity"] == sev]
+        if not chunk:
+            continue
+        out += [f"### {sev.upper()}", ""]
+        for r in chunk:
+            out += [
+                f"**{r['id']} — {r['title']}**",
+                "",
+                f"- **do** {r.get('repro') or 'see the ledger'}",
+                "- [ ] still broken  [ ] looks fixed now  → note: ______________",
+                "",
+            ]
+
+    out += [
+        "---",
+        "",
+        "## C. Anything else",
+        "",
+        "Screens where something looked wrong that is not listed above. Name the",
+        "screen and what you expected — a screenshot into",
+        "`~/brain/inbox/debugging/` is enough.",
+        "",
+        "1. ______________________________________________",
+        "2. ______________________________________________",
+        "3. ______________________________________________",
+        "",
+        "---",
+        "",
+        "## Feeding results back",
+        "",
+        "```",
+        "# still broken",
+        "python tools/bugctl.py verified SB-0003 --result still-broken --note \"<what you saw>\"",
+        "# no longer reproduces",
+        "python tools/bugctl.py verified SB-0003 --result gone --note \"confirmed on <build>\"",
+        "# a fix survived to the device",
+        "python tools/bugctl.py note SB-0008 \"device-confirmed on <build>\"",
+        "```",
+        "",
+    ]
+    print("\n".join(out))
+
+
 def cmd_render(args) -> None:
     """Human-readable view. Regenerate after every change; never hand-edit."""
     rows = load()
@@ -615,6 +703,9 @@ def main() -> None:
 
     a = sub.add_parser("stats", help="ledger health")
     a.set_defaults(func=cmd_stats)
+
+    a = sub.add_parser("retest", help="emit a phone walkthrough sheet from the ledger")
+    a.set_defaults(func=cmd_retest)
 
     a = sub.add_parser("render", help="write the human-readable LEDGER.md to stdout")
     a.set_defaults(func=cmd_render)
