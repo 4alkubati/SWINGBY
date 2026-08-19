@@ -45,6 +45,14 @@ import { useFonts } from 'expo-font';
 import { SpaceGrotesk_700Bold, SpaceGrotesk_400Regular } from '@expo-google-fonts/space-grotesk';
 import { Inter_400Regular, Inter_600SemiBold } from '@expo-google-fonts/inter';
 // D-W1: the boot-time locale restore. Awaited below so no text renders first.
+import * as SplashScreen from 'expo-splash-screen';
+
+// Module scope, deliberately: this must run before React mounts, or the native
+// splash is already gone by the time any component could ask to keep it
+// (SB-0079). Rejection is ignored — if the splash cannot be held, the app must
+// still start.
+SplashScreen.preventAutoHideAsync().catch(() => {});
+
 import { localeReady } from './src/i18n';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
 import { BookingProvider } from './src/context/BookingContext';
@@ -249,6 +257,26 @@ function App() {
       clearTimeout(timer);
     };
   }, []);
+
+  // SB-0079 — hold the native splash across mount, then hand over.
+  //
+  // app.json has configured a `splash` image since the project started, but
+  // expo-splash-screen was never installed, so nothing held it: the native
+  // splash vanished the moment the JS bundle loaded and the user watched
+  // LoadingScreen (or, before the fontError fix above, a white screen) while
+  // fonts and locale settled. The branded frame the config promises was only
+  // ever shown for the instant before React took over.
+  //
+  // Hidden once BOTH gates below have cleared, so the first frame the user sees
+  // after the splash is the real app rather than a spinner. Both gates already
+  // time out rather than block forever — the splash inherits that, which is the
+  // property that matters: it can delay the first frame, never prevent it.
+  useEffect(() => {
+    if (!localeSettled) return;
+    if (!fontsLoaded && !fontError && !fontsTimedOut) return;
+    // Failing to hide is not worth crashing over — worst case the OS clears it.
+    SplashScreen.hideAsync().catch(() => {});
+  }, [localeSettled, fontsLoaded, fontError, fontsTimedOut]);
 
   if (!localeSettled) return <LoadingScreen />;
   if (!fontsLoaded && !fontError && !fontsTimedOut) return <LoadingScreen />;
