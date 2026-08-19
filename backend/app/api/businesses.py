@@ -10,7 +10,7 @@ from app.categories import normalize_category
 from app.deps import get_current_user
 from app.supabase_client import supabase
 from app.limiter import limiter
-from app.services import search_index
+from app.services import search_index, url_safety
 from app.services.geocoding import resolve_coordinates
 from app.services.visibility import blocked_pair_ids, hidden_user_ids
 
@@ -36,22 +36,18 @@ def _validate_logo_url(v):
     """
     Normalize a business logo URL, or reject it.
 
-    Same contract as `users.avatar_url`: an absolute http(s) URL produced by
-    POST /uploads/image. Scheme is checked here because this value is rendered
-    as an <Image> source on every client — a `javascript:` or `data:` URL has
-    no business reaching a react-native Image, and an arbitrary third-party
-    host would turn every search result into a tracking beacon for whoever
-    owns it. Empty string normalizes to None so "remove my logo" is expressible
-    without a separate endpoint.
+    Same contract as `users.avatar_url` — and now genuinely the same code.
+    This used to be a local `startswith(("http://", "https://"))` test while
+    that claim sat in this docstring, which stopped being true the moment the
+    M-04 fix landed on users.avatar_url alone (SB-0015). It accepted
+    http://169.254.169.254/, http://127.0.0.1:22/x and http://localhost/.
+
+    A logo is rendered as an <Image> source on every client, so a `javascript:`
+    or `data:` URL has no business reaching it and an arbitrary third-party
+    host would turn every search result into a tracking beacon. Empty string
+    still normalizes to None, so "remove my logo" needs no separate endpoint.
     """
-    if v is None:
-        return None
-    v = str(v).strip()
-    if not v:
-        return None
-    if not v.lower().startswith(("http://", "https://")):
-        raise ValueError("logo_url must be an absolute http(s) URL")
-    return v
+    return url_safety.as_stored_image_url(v)
 
 
 def _is_missing_logo_column(exc: Exception) -> bool:
