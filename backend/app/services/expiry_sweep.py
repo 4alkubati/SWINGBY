@@ -60,9 +60,33 @@ from app.supabase_client import supabase
 
 logger = logging.getLogger(__name__)
 
-# Only these are candidates. 'matched' has a booking behind it; 'cancelled' and
-# 'expired' have already been settled by whatever cancelled or expired them.
-SWEEPABLE_STATUSES = ("open",)
+# Which posts this sweep will look at.
+#
+# SB-0074 — 'expired' used to be EXCLUDED, on the stated grounds that
+# "'cancelled' and 'expired' have already been settled by whatever cancelled or
+# expired them". That is true of a cancellation, which runs the ladder in
+# escrow.compute_cancellation_split as part of cancelling. It was never true of
+# expiry: docs/expiry_cron.sql is one statement —
+#
+#     update service_posts set status='expired'
+#     where status='open' and expires_at < now();
+#
+# — and moves no money at all.
+#
+# So the two halves raced. If the client opened My Jobs before the hour, the
+# lazy sweep refunded them; if the cron got there first, the post moved to a
+# status this function would never look at again and the escrow sat there
+# permanently. The comment is what made that exclusion look deliberate to every
+# reader since, which is why it is quoted here rather than deleted.
+#
+# CLAUDE.md is explicit that this path stays unconditional: escrow held against
+# a post that expires with no accepted quote is "refunded immediately — not
+# held ... do not make it conditional or deferred". Including 'expired' is safe
+# to do repeatedly: an already-refunded post has zero escrow and is skipped on
+# the money, not on a flag.
+#
+# 'matched' still has a booking behind it, so its money is not stranded.
+SWEEPABLE_STATUSES = ("open", "expired")
 
 
 def find_expired_unquoted_posts(
