@@ -11,6 +11,7 @@ import { Feather } from '@expo/vector-icons';
 import Text from './Text';
 import EarningsSparkline from './EarningsSparkline';
 import { colors, spacing } from '../theme/tokens';
+import i18n from '../i18n';
 
 // Sanctioned "gradient earnings hero" card. 135deg purple-charcoal gradient
 // with inner top-right radial glow, purple-tinted border. Money in success green
@@ -38,7 +39,7 @@ export default function EarningsHero({
     <Wrapper
       onPress={onPress}
       accessibilityRole={onPress ? 'button' : undefined}
-      accessibilityLabel={onPress ? (accessibilityLabel || `This week ${amount}`) : undefined}
+      accessibilityLabel={onPress ? (accessibilityLabel || `${i18n.t('dashboard.thisWeek')} ${amount}`) : undefined}
       // View does not accept a function style, so only the Pressable branch
       // gets one.
       style={onPress
@@ -70,7 +71,7 @@ export default function EarningsHero({
                 (padding + gap only), so nothing here needs a ceiling; it
                 just grows the card. */}
             <Text style={styles.eyebrow}>
-              THIS WEEK
+              {i18n.t('dashboard.thisWeek')}
             </Text>
             <Text style={styles.amount}>
               {amount}
@@ -91,7 +92,7 @@ export default function EarningsHero({
                 <Text
                   style={[styles.delta, !deltaUp && { color: colors.danger }]}
                 >
-                  {`${deltaUp ? '+' : ''}${deltaPct}% vs last week`}
+                  {`${deltaUp ? '+' : ''}${deltaPct}% ${i18n.t('dashboard.vsLastWeek')}`}
                 </Text>
               </View>
             )}
@@ -106,7 +107,7 @@ export default function EarningsHero({
 
         {onPress ? (
           <View style={styles.affordance} pointerEvents="none">
-            <Text style={styles.affordanceText}>See analytics</Text>
+            <Text style={styles.affordanceText}>{i18n.t('dashboard.seeAnalytics')}</Text>
             <Feather name="chevron-right" size={14} strokeWidth={2} color={colors.accentSoft} />
           </View>
         ) : null}

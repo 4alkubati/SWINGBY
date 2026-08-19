@@ -1,6 +1,6 @@
 # Phone retest — 2026-08-19
 
-Build under test: _______________   ledger @ `5021c6d`
+Build under test: _______________   ledger @ `140ed84`
 
 Walk the app once. For each check write **PASS** (behaves correctly) or
 **FAIL** (still wrong), and for a FAIL add one line on what you actually saw.
@@ -8,11 +8,17 @@ Photograph anything that fails into `~/brain/inbox/debugging/`.
 
 ---
 
-## A. Confirm the fixes actually landed (1)
+## A. Confirm the fixes actually landed (2)
 
 These are marked fixed in code but **not yet confirmed on a device**.
 A FAIL here is the most valuable result in the sheet — it means a fix
 did not survive the trip to the phone, which has now happened once.
+
+### SB-0007 — Business dashboard renders hardcoded English literals in every locale
+
+- **do** Open the business Dashboard with the language badge reading EN. Section headers render as 'НАСТУПНА РОБОТА', 'Немає запланованих робіт', 'переказано вам', 'ГРОШІ В РУСІ', 'На депонуванні', 'Переказано', while 'Good evening', 'THIS WEEK', 'TODAY', 'RATING' and the tab bar stay English.
+- **PASS if** 17 new dashboard.* keys translated into en/fr-CA/ar/uk, and every literal call site routed through i18n.t()
+- [ ] PASS  [ ] FAIL → what you saw: ______________________
 
 ### SB-0008 — Language badge reads EN while Ukrainian is the checked selection
 
@@ -22,14 +28,7 @@ did not survive the trip to the phone, which has now happened once.
 
 ---
 
-## B. Does it still reproduce? (9)
-
-### BLOCKER
-
-**SB-0007 — Business dashboard renders Ukrainian strings in an English session**
-
-- **do** Open the business Dashboard with the language badge reading EN. Section headers render as 'НАСТУПНА РОБОТА', 'Немає запланованих робіт', 'переказано вам', 'ГРОШІ В РУСІ', 'На депонуванні', 'Переказано', while 'Good evening', 'THIS WEEK', 'TODAY', 'RATING' and the tab bar stay English.
-- [ ] still broken  [ ] looks fixed now  → note: ______________
+## B. Does it still reproduce? (8)
 
 ### BROKEN
 
