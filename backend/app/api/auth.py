@@ -7,15 +7,15 @@ T17  Rate limiting via slowapi:
      - /signup  : 5 requests / minute per IP
      - /login   : 5 requests / minute per IP (combined with T18 lockout below)
 
-T18  Brute-force lockout on /login:
-     - Failed login attempts are tracked in an in-memory dict keyed by
-       (email, remote_ip).  After 5 failures within a 15-minute window the
-       endpoint returns 429 "Too many attempts; try again in N minutes."
-     - A successful login clears the counter for that (email, ip) pair.
-     - NOTE: This in-memory store is appropriate for an MVP single-instance
-       deployment.  For production with multiple workers / replicas, migrate
-       this to a shared Redis store (e.g. via slowapi's redis backend or a
-       custom middleware).
+T18  Brute-force lockout on /login — see services/login_guard.py:
+     - Failures are persisted in `login_attempts`, so the counter is shared
+       across workers and survives a restart. The old in-memory dict was
+       defeated by an IP rotation, a deploy, or a second worker.
+     - Two rolling budgets in a 15-minute window: 5 failures per ACCOUNT
+       (the one an IP rotation cannot walk around) and 30 per source IP
+       (password spraying across many accounts).
+     - A successful login clears that account's failures.
+     - Every failure and every lockout is logged; that trail is checklist #19.
 """
 
 import base64
@@ -23,10 +23,8 @@ import hashlib
 import os
 import re
 import secrets
-import time
-from collections import defaultdict
 from datetime import datetime, timedelta, timezone
-from typing import Dict, List, Tuple
+from typing import Dict, Tuple
 from urllib.parse import urlencode
 
 import httpx
@@ -40,65 +38,60 @@ from app.supabase_client import supabase, supabase_auth
 from app.deps import get_current_user
 from app.limiter import limiter  # shared limiter — see app/limiter.py
 from app.config import settings
-from app.services import session_security, url_safety
+from app.services import login_guard, session_security, url_safety
+from app.services.client_ip import client_ip
 
 logger = structlog.get_logger(__name__)
 
 router = APIRouter()
 
 # ---------------------------------------------------------------------------
-# T18 — Brute-force lockout state
+# T18 — Brute-force lockout
 # ---------------------------------------------------------------------------
-_LOCKOUT_WINDOW_SECONDS: int = 15 * 60  # 15 minutes
-_MAX_FAILURES: int = 5
-
-# Maps (email, remote_ip) -> list of epoch timestamps for each failure
-_login_failures: Dict[Tuple[str, str], List[float]] = defaultdict(list)
+# The in-memory `(email, ip)` dict that used to live here is gone. It was
+# walkable by rotating IPs, reset by every deploy, and per-worker; it also
+# logged nothing at all. State now lives in Postgres and the counting is done
+# per-account as well as per-IP — see services/login_guard.py for the full
+# reasoning. The window and the per-email threshold are unchanged (15 min, 5).
 
 # T24 — E.164 phone pattern
 _E164_RE = re.compile(r"^\+[1-9]\d{6,14}$")
 
 
 def _remote_ip(request: Request) -> str:
-    """Best-effort extraction of the real client IP."""
-    forwarded_for = request.headers.get("X-Forwarded-For")
-    if forwarded_for:
-        return forwarded_for.split(",")[0].strip()
-    if request.client:
-        return request.client.host
-    return "unknown"
+    """
+    The caller's address, from hops our own infrastructure appended.
+
+    This used to return the FIRST entry of `X-Forwarded-For`, which is the one
+    the caller writes (SB-0017). Thirty failed logins carrying
+    `X-Forwarded-For: <someone else's address>` locked every genuine user
+    behind that address out for 15 minutes, and any text at all landed in
+    `login_attempts.ip`.
+
+    Now it delegates to the same derivation the rate limiter keys on, so the
+    two controls cannot disagree about who is calling. Non-addresses collapse
+    to "unknown", which `login_guard` deliberately skips.
+    """
+    return client_ip(request)
 
 
 def _check_lockout(email: str, ip: str) -> None:
     """
-    Raises HTTP 429 if this (email, ip) pair has exceeded the failure
-    threshold within the rolling window.
+    Raises HTTP 429 if this account (or this source address) has exceeded its
+    failure budget within the rolling window.
+
+    The 429 body no longer states how long the block lasts. That number was
+    derived from the oldest recorded failure, which made it a readout of
+    whether we had seen this account before — a quiet enumeration channel on
+    the one endpoint most carefully written to avoid one.
     """
-    key = (email.lower(), ip)
-    now = time.monotonic()
-    # Prune stale entries outside the window
-    _login_failures[key] = [
-        ts for ts in _login_failures[key] if now - ts < _LOCKOUT_WINDOW_SECONDS
-    ]
-    if len(_login_failures[key]) >= _MAX_FAILURES:
-        oldest = min(_login_failures[key])
-        retry_in = int(_LOCKOUT_WINDOW_SECONDS - (now - oldest)) // 60 + 1
-        # Generic message — do not reveal that the account exists or the
-        # exact reason for the block (avoids username-enumeration signal).
+    reason = login_guard.check_lockout(email, ip)
+    if reason:
+        login_guard.record_lockout(email, ip, reason)
         raise HTTPException(
             status_code=429,
-            detail=f"Too many attempts; try again in {retry_in} minute(s).",
+            detail="Too many attempts. Try again later.",
         )
-
-
-def _record_failure(email: str, ip: str) -> None:
-    key = (email.lower(), ip)
-    _login_failures[key].append(time.monotonic())
-
-
-def _clear_failures(email: str, ip: str) -> None:
-    key = (email.lower(), ip)
-    _login_failures.pop(key, None)
 
 
 def _validate_phone(v: Optional[str]) -> Optional[str]:
@@ -301,9 +294,21 @@ def signup(request: Request, data: SignupRequest):
             }
         )
         if not res.user:
+            # Checklist #5 — this used to say "check if email is already in
+            # use", which is a free account-existence oracle: POST an address,
+            # read the message, learn whether that person has a SwingBy
+            # account. /login and /forgot-password were both written to avoid
+            # exactly that and this endpoint gave it away anyway.
+            #
+            # Supabase's own behaviour is what makes the generic message
+            # honest rather than merely vague: with email confirmation on,
+            # signing up an existing address returns a user object and sends a
+            # notice to the real owner, so a genuine duplicate does not land
+            # here at all. Someone who owns the address still finds out — by
+            # email, which is the channel that proves ownership.
             raise HTTPException(
                 status_code=400,
-                detail="Signup failed — check if email is already in use",
+                detail="Could not create account",
             )
 
         user_id = res.user.id
@@ -409,11 +414,11 @@ def login(request: Request, data: LoginRequest):
         )
         if not res.session:
             # Treat missing session as a credential failure
-            _record_failure(email, ip)
+            login_guard.record_failure(email, ip, reason="no_session")
             raise HTTPException(status_code=401, detail="Invalid credentials")
 
         # Success — clear any accumulated failure count
-        _clear_failures(email, ip)
+        login_guard.clear_failures(email)
 
         user_id = res.user.id
 
@@ -482,7 +487,7 @@ def login(request: Request, data: LoginRequest):
     except Exception:
         # Any exception from Supabase auth (wrong password, user not found, etc.)
         # is counted as a failure to prevent enumeration through timing.
-        _record_failure(email, ip)
+        login_guard.record_failure(email, ip)
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
 
@@ -645,7 +650,15 @@ def forgot_password(request: Request, data: ForgotPasswordRequest):
             options={"redirect_to": redirect_to},
         )
     except Exception:
-        logger.warning("auth.forgot_password failed (non-fatal)", email=data.email)
+        # Checklist #20 — the address itself used to be in this line. A reset
+        # failure is worth a log entry; a plaintext email address in the log
+        # store is PII we then have to defend, and it is not what makes the
+        # entry useful. The keyed digest is enough to correlate repeated
+        # failures for one account without recording who that account is.
+        logger.warning(
+            "auth.forgot_password failed (non-fatal)",
+            email_hash=login_guard.hash_email(str(data.email))[:16],
+        )
     return {"message": "If that email exists, a reset link has been sent"}
 
 

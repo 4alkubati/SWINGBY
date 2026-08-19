@@ -17,4 +17,9 @@ COPY . .
 
 EXPOSE 8000
 
-CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
+# --forwarded-allow-ips is pinned rather than left to uvicorn's implicit
+# 127.0.0.1 default (SB-0011). The app derives the caller from the raw
+# X-Forwarded-For itself — see app/services/client_ip.py — so this only
+# governs whether uvicorn additionally rewrites scope["client"]. Set
+# FORWARDED_ALLOW_IPS to the real proxy CIDR to opt back in.
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --forwarded-allow-ips \"${FORWARDED_ALLOW_IPS:-}\""]
