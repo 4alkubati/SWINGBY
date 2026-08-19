@@ -773,10 +773,42 @@ _SOCIAL_PROVIDERS = ("google", "apple")
 _DEFAULT_REDIRECT_PREFIXES = ("swingby://", "https://swingbyy.com/")
 
 
+def _is_scheme_only(prefix: str) -> bool:
+    """`exp://` yes, `exp://10.0.0.168:8081/--/` no."""
+    scheme, sep, rest = prefix.partition("://")
+    return bool(sep) and not rest.strip("/")
+
+
 def _allowed_redirect_prefixes() -> Tuple[str, ...]:
+    """The allowlist, with scheme-only entries refused (SB-0020).
+
+    The match at the call site is a PREFIX test, so a configured value of
+    `exp://` accepts every host under that scheme — which is pentest M-01's
+    auth-code harvesting, reachable again through an attacker-chosen Expo host.
+    The two committed defaults are safe for their own reasons (`swingby://` is
+    a custom scheme the OS routes to the installed app; `https://swingbyy.com/`
+    carries a trailing slash, so `https://swingbyy.com.evil.tld/` fails), which
+    is exactly why the gap was only ever in what an operator could add.
+
+    Refused in PRODUCTION only, and that distinction is the whole design.
+    Expo Go's URL carries a per-machine host and port, so a bare `exp://` is
+    the only prefix a developer can usefully configure — test_pentest_mediums
+    pins that as a regression guard and it is right to. On a dev box there is
+    no attacker to hand an auth code to. In production there is, and the full
+    prefix (`exp://10.0.0.168:8081/--/`) is the correct way to say it.
+    """
     extra = os.getenv("SOCIAL_AUTH_REDIRECT_PREFIXES", "")
-    parsed = tuple(p.strip() for p in extra.split(",") if p.strip())
-    return _DEFAULT_REDIRECT_PREFIXES + parsed
+    parsed = []
+    for candidate in (p.strip() for p in extra.split(",") if p.strip()):
+        if _is_scheme_only(candidate) and settings.IS_PRODUCTION:
+            logger.error(
+                "auth.redirect_prefix_rejected",
+                prefix=candidate,
+                reason="scheme_only_matches_every_host",
+            )
+            continue
+        parsed.append(candidate)
+    return _DEFAULT_REDIRECT_PREFIXES + tuple(parsed)
 
 
 # D7.5 (pentest M-01) — the only callback the app ever constructs.

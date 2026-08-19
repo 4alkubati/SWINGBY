@@ -1,4 +1,5 @@
 import os
+from typing import Optional
 import httpx
 from supabase import create_client
 from dotenv import load_dotenv
@@ -112,10 +113,47 @@ def _use_http1(client):
 # service_role. Use `supabase_auth` below for those calls.
 supabase = _use_http1(create_client(_url, _service_key))
 
+
 # Session-creating auth operations go through this separate client so the
 # service-role client above never adopts a user session. Its own PostgREST
 # state is irrelevant — no .table() calls are ever made on it.
 # Same HTTP/1.1 treatment: /auth/login and /auth/refresh run on this client and
 # are exactly the calls a burst of app launches hits at once.
-_anon_key = os.getenv("SUPABASE_KEY") or _service_key
+def resolve_anon_key(anon: Optional[str], publishable: Optional[str]) -> str:
+    """The PUBLIC key for session-creating auth calls — never the service key.
+
+    SB-0024. This used to fall through to the service key whenever the public
+    key was unset, so the RLS-bypassing service-role key was sent as the
+    apikey/Authorization header on every signup, login, refresh and OAuth
+    exchange — silently, with no startup error. The most privileged key in the
+    system, on the least-authenticated endpoints.
+
+    It also quietly broke the anti-enumeration design documented at
+    auth.py:289: that reasoning depends on GoTrue's NON-admin signup behaviour
+    ("signing up an existing address returns a user object and sends a notice
+    to the real owner"). Admin-key signups do not behave that way.
+
+    Both names are resolved HERE rather than leaning on config.py's alias,
+    because scripts import this module without importing config at all
+    (tools/backfill_geocode.py). Empty counts as unset — this project's .env
+    carries `SUPABASE_KEY=` with no value.
+
+    Fails loudly. A missing public key is a misconfiguration, and the previous
+    behaviour — carry on using the admin key — is the one outcome that must not
+    be available.
+    """
+    for candidate in (anon, publishable):
+        value = (candidate or "").strip()
+        if value:
+            return value
+    raise RuntimeError(
+        "No Supabase public key. Set SUPABASE_KEY (or SUPABASE_PUBLISHABLE_KEY). "
+        "Refusing to fall back to the service-role key for auth calls — see "
+        "resolve_anon_key in app/supabase_client.py."
+    )
+
+
+_anon_key = resolve_anon_key(
+    os.getenv("SUPABASE_KEY"), os.getenv("SUPABASE_PUBLISHABLE_KEY")
+)
 supabase_auth = _use_http1(create_client(_url, _anon_key))

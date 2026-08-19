@@ -168,6 +168,41 @@ def sweep_approval_releases(
     return summary
 
 
+@router.post("/sweeps/login-attempts")
+@limiter.limit("12/hour")
+def sweep_login_attempts(
+    request: Request,
+    current_user: dict = Depends(require_admin),
+):
+    """Delete `login_attempts` rows past the retention horizon (SB-0071).
+
+    `login_guard.prune_attempts()` existed and had no caller anywhere, while
+    the migration's own COMMENT promises a 7-day retention sweep. A function
+    nobody calls does not implement a promise: the table grew without bound and
+    the claim in the schema was simply false.
+
+    Manual rather than scheduled for the same reason as the two sweeps below —
+    this deployment has no scheduler. Safe to call repeatedly; it deletes by
+    timestamp, not by a flag.
+    """
+    from app.services import login_guard
+
+    removed = login_guard.prune_attempts()
+    if removed:
+        logger.info(
+            "admin.sweep_login_attempts",
+            admin_id=current_user["id"],
+            removed=removed,
+        )
+        record_audit(
+            actor_id=current_user["id"],
+            action="admin.sweep_login_attempts",
+            metadata={"removed": removed},
+            request=request,
+        )
+    return {"removed": removed}
+
+
 @router.post("/sweeps/post-expiry")
 @limiter.limit("12/hour")
 def sweep_post_expiry(
