@@ -41,7 +41,7 @@ const HOW_IT_WORKS = {
       {
         num: '03',
         title: 'Get it done',
-        desc: 'Chat in-app from the quote onward, confirm the booking, and pay securely through SwingBy.',
+        desc: 'Chat in-app from the quote onward, confirm the booking, and pay securely through SwingByy.',
       },
     ],
     browse: [
@@ -77,7 +77,7 @@ const HOW_IT_WORKS = {
       {
         num: '03',
         title: 'Win & get paid',
-        desc: 'Client confirms, you do the work, payment is released securely to your account.',
+        desc: 'Client accepts your price, you do the work, and they confirm it is done.',
       },
     ],
     discover: [
@@ -102,27 +102,27 @@ const HOW_IT_WORKS = {
 
 const FAQ_ITEMS = [
   {
-    question: 'How does SwingBy work?',
+    question: 'How does SwingByy work?',
     answer:
-      'SwingBy connects you with local service businesses in minutes. Post a job describing what you need — plumbing fix, house cleaning, lawn care, etc. — and set your preferred date. Nearby businesses will send you quotes. You review them side-by-side and accept the best one. Payment is handled securely through the app: it is taken when you accept a quote and held by SwingBy, then released to the business once you approve the finished work — or automatically 24 hours after they mark it done.',
+      'SwingByy connects you with local service businesses. Post a job describing what you need — plumbing fix, house cleaning, lawn care, snow clearing — and set your preferred date. Nearby businesses send you a price. You review them side by side and accept the one you want. Your budget stays private: businesses price the work, not the number you typed.',
   },
   {
     question: 'How do quotes get accepted?',
     answer:
-      'After posting a job, you\'ll receive quotes from interested businesses in the Quotes tab. Each quote shows the business name, star rating, jobs completed, and their price. Tap "Select" on the one you want. A booking is created instantly, and both you and the business receive a confirmation. You can message a business on its quote thread before you accept, and that same conversation carries over into the booking.',
+      'After posting a job, you\'ll receive quotes from interested businesses in the Quotes tab. Each quote shows the business name and their price. Tap "Select" on the one you want. A booking is created instantly, and both you and the business receive a confirmation. You can message a business on its quote thread before you accept, and that same conversation carries over into the booking.',
   },
   {
-    question: 'When does payment happen?',
+    question: 'What does it cost to post a job?',
     answer:
-      'When you accept a quote, SwingBy charges the full job amount and holds it in escrow. None of it reaches the business until you approve the finished work — or 24 hours after they mark it done, if you go quiet. At that point it is released, minus our 10% platform fee. If something goes wrong, you can report a problem and our team will review the case.',
+      'Posting a job is free, and nothing is charged for asking. You only pay for the work itself, and you see the exact price on the quote before you accept it — there is no surprise total at the end.',
   },
   {
     question: 'What if a job goes wrong?',
     answer:
-      'If there\'s an issue with a job, tap "Report a problem" on the booking screen. Our support team will review the case, including messages and photos submitted by both parties. Any portion of the payment not yet released can be held during the investigation. We aim to resolve disputes within 48 hours. You can also reach us directly at 4alkubati@gmail.com.',
+      'If there\'s an issue with a job, tap "Report a problem" on the booking screen. Our support team will review the case, including messages and photos submitted by both parties. We aim to resolve disputes within 48 hours. You can also reach us directly at 4alkubati@gmail.com.',
   },
   {
-    question: 'How do I become a business on SwingBy?',
+    question: 'How do I become a business on SwingByy?',
     answer:
       'Sign up and select "I offer services" on the onboarding screen. You\'ll be asked for your business name, category, and service area. Once your profile is set up, you can start responding to job posts from clients in your area. For verified status (the green badge), submit your business license — our team reviews it manually within 1–2 business days.',
   },
@@ -197,7 +197,7 @@ export default function ComingSoon() {
 
       {/* ── Nav ── */}
       <nav className={styles.nav}>
-        <span className={styles.logo}>SwingBy</span>
+        <span className={styles.logo}>SwingByy</span>
         <div className={styles.navRight}>
           <span className={styles.navBadge}>Calgary, AB</span>
           <Link to="/login" className={styles.navLoginBtn}>Log in</Link>
@@ -220,7 +220,7 @@ export default function ComingSoon() {
         </h1>
 
         <p className={styles.sub}>
-          SwingBy connects you with trusted local service providers — or helps your business
+          SwingByy connects you with trusted local service providers — or helps your business
           find clients. No middlemen. No hassle. Just results.
         </p>
 
@@ -257,7 +257,7 @@ export default function ComingSoon() {
             <div className={styles.success}>
               <div className={styles.successIcon}>✓</div>
               <h3>You're on the list.</h3>
-              <p>We'll reach out as soon as SwingBy launches in your area.</p>
+              <p>We'll reach out as soon as SwingByy launches in your area.</p>
             </div>
           ) : (
             <>
@@ -375,7 +375,7 @@ export default function ComingSoon() {
 
       {/* ── How it works ── */}
       <section className={styles.howSection}>
-        <h2 className={styles.sectionTitle}>How SwingBy works</h2>
+        <h2 className={styles.sectionTitle}>How SwingByy works</h2>
 
         <div className={styles.toggleWrap}>
           {/* Level 1 — role toggle */}

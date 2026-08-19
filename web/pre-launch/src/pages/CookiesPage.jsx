@@ -10,7 +10,7 @@ const SECTIONS = [
   {
     id: 'what-are-cookies',
     title: 'What are cookies?',
-    body: 'Cookies are small text files stored on your device when you visit a website. They help the site remember your preferences and understand how you use it. SwingBy uses cookies to provide a better, more personalized experience.',
+    body: 'Cookies are small text files stored on your device when you visit a website. They help the site remember your preferences and understand how you use it. SwingByy uses cookies to provide a better, more personalized experience.',
   },
   {
     id: 'cookies-we-use',
@@ -20,7 +20,7 @@ const SECTIONS = [
 • Essential cookies — Required for the site to function. These handle authentication, security, and basic features. You cannot opt out of essential cookies.
 • Analytics — Helps us understand how visitors use our site. We use PostHog, configured to store its identifier in localStorage rather than in cookies. To opt out, visit posthog.com/privacy or email privacy@swingbyy.com.
 • Preference cookies — Remember your settings like language and theme preferences.
-• Marketing cookies — Currently, SwingBy does not use marketing or advertising cookies.`,
+• Marketing cookies — Currently, SwingByy does not use marketing or advertising cookies.`,
   },
   {
     id: 'third-party',
@@ -30,7 +30,7 @@ const SECTIONS = [
   {
     id: 'managing-cookies',
     title: 'Managing cookies',
-    body: 'You can control cookies through your browser settings. Most browsers allow you to block or delete cookies. However, blocking essential cookies may prevent you from using certain features of SwingBy. You can also manage your cookie preferences using our cookie banner.',
+    body: 'You can control cookies through your browser settings. Most browsers allow you to block or delete cookies. However, blocking essential cookies may prevent you from using certain features of SwingByy. You can also manage your cookie preferences using our cookie banner.',
   },
   {
     id: 'updates',
@@ -44,10 +44,10 @@ export default function CookiesPage() {
 
   return (
     <>
-      <SEO title={`${t('legal.cookiesTitle')} — SwingBy`} />
+      <SEO title={`${t('legal.cookiesTitle')} — SwingByy`} />
       <motion.div className={l.page} {...fadeUp}>
         <nav className={l.nav}>
-          <Link to="/" className={l.logo}>SwingBy</Link>
+          <Link to="/" className={l.logo}>SwingByy</Link>
         </nav>
         <div className={l.contentWrapper}>
           <aside className={l.toc}>
@@ -60,7 +60,7 @@ export default function CookiesPage() {
             <h1 className={l.docTitle}>{t('legal.cookiesTitle')}</h1>
             <p className={l.docMeta}>Last updated: June 1, 2026</p>
             <p className={l.docIntro}>
-              This cookie policy explains how SwingBy uses cookies and similar technologies when you visit our website.
+              This cookie policy explains how SwingByy uses cookies and similar technologies when you visit our website.
             </p>
             {SECTIONS.map((section) => (
               <section key={section.id} id={section.id} className={l.section}>
