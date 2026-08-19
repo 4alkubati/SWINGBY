@@ -26,6 +26,7 @@ import {
 } from '../../services/biometrics';
 import LanguageSelector from '../../components/LanguageSelector';
 import i18n, { onLocaleChange } from '../../i18n';
+import { localeChipLabel } from '../../i18n-locales';
 import { colors, spacing, radius } from '../../theme/tokens';
 import Text from '../../components/Text';
 import ScreenHeader from '../../components/ScreenHeader';
@@ -203,7 +204,7 @@ export default function SettingsScreen() {
     try {
       const result = await api.get('/me/export');
       const content = typeof result === 'object' ? JSON.stringify(result, null, 2) : String(result);
-      await Share.share({ message: content, title: 'My Swingbyy Data' });
+      await Share.share({ message: content, title: 'My SwingByy Data' });
     } catch (err) {
       showToast({ type: 'error', text1: 'Export failed', text2: err.message });
     } finally {
@@ -293,7 +294,7 @@ export default function SettingsScreen() {
   const localeChip = (
     <View style={styles.localeChip}>
       <Text variant="caption" style={styles.localeChipText}>
-        {currentLocale === 'fr-CA' ? 'FR' : 'EN'}
+        {localeChipLabel(currentLocale)}
       </Text>
     </View>
   );
@@ -329,7 +330,7 @@ export default function SettingsScreen() {
           This screen used to also print the signed-in name/email under the
           title; ScreenHeader has no subtitle slot (spec §12) so that line is
           dropped here — it isn't shown anywhere else on this screen. */}
-      <ScreenHeader title="Settings" onBack={() => navigation.goBack()} />
+      <ScreenHeader title={i18n.t('ui.settings')} onBack={() => navigation.goBack()} />
 
       <ScrollView
         style={styles.scroll}
@@ -345,14 +346,14 @@ export default function SettingsScreen() {
             <Stack spacing={0}>
               <ListItem
                 left={<Feather name="user" size={24} color={colors.textSecondary} />}
-                title="Edit profile"
+                title={i18n.t('ui.editProfile')}
                 onPress={() => navigation.navigate('ProfileEdit')}
                 style={styles.listItemFlush}
               />
               <View style={styles.divider} />
               <ListItem
                 left={<Feather name="globe" size={24} color={colors.textSecondary} />}
-                title="Language"
+                title={i18n.t('ui.language')}
                 onPress={() => setLangVisible(true)}
                 right={localeChip}
                 showChevron={false}
@@ -361,7 +362,7 @@ export default function SettingsScreen() {
               <View style={styles.divider} />
               <ListItem
                 left={<Feather name="bell" size={24} color={colors.textSecondary} />}
-                title="Notifications"
+                title={i18n.t('ui.notifications')}
                 right={notifSwitch}
                 showChevron={false}
                 style={styles.listItemFlush}
@@ -407,14 +408,14 @@ export default function SettingsScreen() {
             <Stack spacing={0}>
               <ListItem
                 left={<Feather name="shield" size={24} color={colors.textSecondary} />}
-                title="Privacy Policy"
+                title={i18n.t('ui.privacyPolicy')}
                 onPress={() => navigation.navigate('PrivacyPolicy')}
                 style={styles.listItemFlush}
               />
               <View style={styles.divider} />
               <ListItem
                 left={<Feather name="file-text" size={24} color={colors.textSecondary} />}
-                title="Terms of Service"
+                title={i18n.t('ui.termsOfService')}
                 onPress={() => navigation.navigate('TermsOfService')}
                 style={styles.listItemFlush}
               />
@@ -467,7 +468,7 @@ export default function SettingsScreen() {
               <View style={styles.divider} />
               <ListItem
                 left={<Feather name="download" size={24} color={colors.textSecondary} />}
-                title="Export my data"
+                title={i18n.t('ui.exportMyData')}
                 onPress={exportLoading ? undefined : handleExportData}
                 right={
                   exportLoading
@@ -502,14 +503,14 @@ export default function SettingsScreen() {
             <Stack spacing={0}>
               <ListItem
                 left={<Feather name="help-circle" size={24} color={colors.textSecondary} />}
-                title="Help & FAQ"
+                title={i18n.t('ui.helpFaq')}
                 onPress={() => navigation.navigate('HelpFAQ')}
                 style={styles.listItemFlush}
               />
               <View style={styles.divider} />
               <ListItem
                 left={<Feather name="mail" size={24} color={colors.textSecondary} />}
-                title="Contact us"
+                title={i18n.t('ui.contactUs')}
                 onPress={handleContactUs}
                 style={styles.listItemFlush}
               />
@@ -519,14 +520,14 @@ export default function SettingsScreen() {
           {/* ── Sign out ── */}
           <Button
             variant="danger"
-            label="Sign Out"
+            label={i18n.t('ui.signOut')}
             onPress={handleSignOut}
             icon={<Feather name="log-out" size={16} color={colors.textPrimary} />}
           />
 
           {/* Version footer */}
           <Text variant="caption" color="secondary" style={styles.versionText}>
-            Swingbyy v{APP_VERSION}
+            SwingByy v{APP_VERSION}
           </Text>
         </Stack>
       </ScrollView>

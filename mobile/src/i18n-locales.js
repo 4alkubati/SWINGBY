@@ -1,4 +1,4 @@
-// The locales SwingBy ships, defined once.
+// The locales SwingByy ships, defined once.
 //
 // This existed in two places that disagreed. i18n.js's device detection knew
 // about `ar`; LanguageSelector's list did not. The result: Arabic was fully
@@ -167,6 +167,25 @@ export const RTL_CODES = LOCALES.filter((l) => l.rtl).map((l) => l.code);
 export function isRTL(code) {
   const base = String(code || '').split('-')[0];
   return RTL_CODES.some((rtl) => rtl.split('-')[0] === base);
+}
+
+/**
+ * Two-letter chip shown next to the Language row in Settings.
+ *
+ * Derived from the registry rather than written out, because the hardcoded
+ * version of this was a two-way ternary — `code === 'fr-CA' ? 'FR' : 'EN'` —
+ * and there are FOUR ready locales. Arabic and Ukrainian both fell to the else
+ * branch and displayed "EN", so the one control that tells a user what language
+ * they are in asserted English while the app rendered Cyrillic. That is how a
+ * user gets pinned to a language they cannot name and cannot find their way out
+ * of (D-W1, and still live in the 2026-08-15 preview build after the first fix
+ * addressed only the staleness half of it).
+ *
+ * Deriving it means a locale promoted to 'ready' can never again be added to
+ * the picker and forgotten here.
+ */
+export function localeChipLabel(code) {
+  return String(code || 'en').split('-')[0].toUpperCase();
 }
 
 /**
