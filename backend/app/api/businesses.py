@@ -84,6 +84,68 @@ def _with_logo_key(row):
     return row
 
 
+# SB-0014 — a business row is not a public document.
+#
+# Four read paths (nearby, list, get-by-id, work-history search) each did
+# `select("*")` and returned the row spread verbatim, so any signed-up client
+# could page `GET /businesses/?limit=100` and harvest every business's Stripe
+# Connect account id, Stripe customer id, subscription id / status / price id /
+# period end, `connect_requirements_due` — which spells out what Stripe is
+# still missing from that business — and its licence number.
+#
+# This is an ALLOWLIST on purpose. A blocklist ("drop the stripe_ ones") passes
+# today and leaks the next sensitive column somebody adds; this table went from
+# 10 columns to 33 without anyone revisiting these responses. Anything not named
+# here is dropped, so a new column is private until someone decides otherwise.
+#
+# GET /businesses/me is deliberately NOT projected — that is an owner reading
+# their own row, and the payout/subscription fields are what that screen renders.
+PUBLIC_BUSINESS_FIELDS = frozenset(
+    {
+        "id",
+        "owner_id",
+        "business_name",
+        "category",
+        "custom_category",
+        "description",
+        "license_status",
+        "lat",
+        "lng",
+        "service_radius_km",
+        "avg_rating",
+        "review_count",
+        "address",
+        "logo_url",
+        "created_at",
+    }
+)
+
+# Values the routes compute and attach AFTER reading the row. They are not
+# columns, so the allowlist would otherwise strip them back off.
+_COMPUTED_EXTRAS = frozenset(
+    {
+        "distance_km",
+        "completed_bookings",
+        "is_employee",
+        "match_score",
+        "match_reason",
+    }
+)
+
+
+def _public_business(row):
+    """Keep only what a client legitimately needs to render a business."""
+    if not isinstance(row, dict):
+        return row
+    kept = {
+        k: v
+        for k, v in row.items()
+        if k in PUBLIC_BUSINESS_FIELDS or k in _COMPUTED_EXTRAS
+    }
+    # Preserve the logo_url shape guarantee — see _with_logo_key.
+    return _with_logo_key(kept)
+
+
 def _haversine_km(lat1: float, lng1: float, lat2: float, lng2: float) -> float:
     """Great-circle distance in km between two lat/lng points."""
     R = 6371.0
@@ -265,7 +327,7 @@ def get_nearby_businesses(
                 continue
             biz_radius = float(biz.get("service_radius_km") or 25.0)
             if dist <= min(radius_km, biz_radius):
-                nearby.append({**biz, "distance_km": round(dist, 2)})
+                nearby.append(_public_business({**biz, "distance_km": round(dist, 2)}))
 
         # Sort closest first
         nearby.sort(key=lambda b: b["distance_km"])
@@ -659,7 +721,7 @@ def _search_by_work(
     items = _attach_distance(items, lat, lng, radius_km)
 
     # Paginate AFTER filtering so a page is never silently short.
-    page = items[offset : offset + limit]
+    page = [_public_business(b) for b in items[offset : offset + limit]]
     next_offset = offset + limit if len(items) > offset + limit else None
     return {
         "items": page,
@@ -734,6 +796,7 @@ def list_businesses(
             items = [b for b in items if b.get("owner_id") not in hidden_owners]
 
         items = _attach_distance(items, lat, lng, None)
+        items = [_public_business(b) for b in items]
 
         next_offset = offset + limit if len(res.data or []) == limit else None
         return {
@@ -792,7 +855,7 @@ def get_business(business_id: str, current_user: dict = Depends(get_current_user
         )
         if not res.data:
             raise HTTPException(status_code=404, detail="Business not found")
-        return _with_logo_key(
+        return _public_business(
             {**res.data, "completed_bookings": _completed_bookings(business_id)}
         )
     except HTTPException:
