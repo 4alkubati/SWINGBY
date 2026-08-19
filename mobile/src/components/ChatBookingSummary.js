@@ -39,6 +39,27 @@ function formatTime(iso) {
   } catch { return null; }
 }
 
+// SB-0001 — this card read "pending payment · $180" directly above an accepted
+// quote card reading "$180 paid", for one booking on one screen.
+//
+// Two things were wrong and only one of them is here.
+//
+// 1. THE LABEL (fixed here). `pending_payment` had no case, so it fell to the
+//    old default, which was `status.replace(/_/g, ' ')` — the raw database
+//    enum, lowercased, shown to a user. That is where the odd "pending payment"
+//    came from, and the same default would have shown any future enum value
+//    the same way. A user must never be shown a column value; the default now
+//    returns a neutral label and unknown states stop leaking through.
+//
+// 2. THE STATE (not fixed here, and deliberately so). The booking's
+//    payment_status is mirrored to 'held' at accept time by
+//    backend/app/api/interests.py, but that mirror is BEST-EFFORT: it is
+//    skipped when the capture is not backed, and its failure is a logged
+//    warning rather than an error. So a booking whose money really did move can
+//    still be sitting on the insert-time 'pending_payment'. Making that write
+//    mandatory would mean failing an accept — after the card has been charged —
+//    because a mirror column did not update, which is worse. It needs the
+//    e2e smoke run against a live backend to say which case the screenshot was.
 function paymentLabel(status) {
   switch ((status || '').toLowerCase()) {
     case 'fully_released':    return 'Paid';
@@ -46,7 +67,10 @@ function paymentLabel(status) {
     case 'held':              return 'Held in escrow';
     case 'refunded':          return 'Refunded';
     case 'paid_off_platform': return 'Paid (off-platform)';
-    default:                  return status ? status.replace(/_/g, ' ') : 'Pending';
+    case 'pending_payment':   return 'Payment pending';
+    case 'awaiting_approval': return 'Awaiting your approval';
+    case 'failed':            return 'Payment failed';
+    default:                  return 'Pending';
   }
 }
 

@@ -37,10 +37,27 @@ export function jobDate(booking) {
 
 /**
  * Why a 'confirmed' booking is sitting in Needs Action, most-blocking first.
- * Returns one of: 'unassigned' | 'proposeDate' | 'awaitingDate'.
+ * Returns 'unassigned' | 'proposeDate' | 'awaitingDate', or null when nothing
+ * is actually blocked on the owner.
+ *
+ * SB-0006 — this used to ask only about `proposed_date_1`. When the client
+ * gives a time at posting, interests.py copies it straight to `confirmed_date`
+ * and the propose/confirm handshake never happens, so `proposed_date_1` is
+ * null and this returned 'proposeDate'. The owner was told to schedule a job
+ * the client's own screen already showed as CONFIRMED — the two screens
+ * disagreeing about one booking.
+ *
+ * The lifecycle comment at the top of this file was corrected on 2026-08-14 to
+ * record exactly that path, and warns that a stale comment here "makes the next
+ * person write a wrong guard". This guard was written before the correction.
+ * `confirmed_date` is the field the client's CONFIRMED badge reads, so it is
+ * the field this must read too.
  */
 export function needsActionReason(booking) {
   if (!booking.employee_id) return 'unassigned';
+  // The date is settled — however it got settled. Nothing to propose, and
+  // nobody to wait for.
+  if (booking.confirmed_date) return null;
   if (!booking.proposed_date_1) return 'proposeDate';
   return 'awaitingDate';
 }
@@ -53,7 +70,19 @@ export function bucketBooking(booking, now = new Date()) {
   if (!booking) return null;
   if (booking.status === 'completed') return 'past';
   if (booking.status === 'cancelled') return 'past';
-  if (booking.status === 'confirmed') return 'needsAction';
+  if (booking.status === 'confirmed') {
+    // SB-0006 — a 'confirmed' booking is only Needs Action while something is
+    // genuinely blocked on the owner. One that arrived with the client's own
+    // time AND has someone assigned is simply scheduled; leaving it here is how
+    // a "Needs action" list fills with rows that need no action and stops being
+    // read at all.
+    if (needsActionReason(booking) === null) {
+      const d = jobDate(booking);
+      if (!d) return 'needsAction';
+      return isSameLocalDay(d, now) || d < now ? 'today' : 'upcoming';
+    }
+    return 'needsAction';
+  }
   if (booking.status === 'in_progress') {
     const d = jobDate(booking);
     // Defensive — the backend contract guarantees confirmed_date is set

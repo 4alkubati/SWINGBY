@@ -1087,14 +1087,19 @@ function JobRow({ booking, showDate, onPress }) {
 // assigned yet, or a date handshake that hasn't closed).
 function ActionBookingRow({ booking, onPress }) {
   const service = booking.service_posts?.title || booking.service_category || 'Service';
-  const reasonKey = NEEDS_ACTION_REASON_KEY[needsActionReason(booking)];
+  // SB-0006 — needsActionReason returns null when nothing is blocked on the
+  // owner (assigned, and the client's time already confirmed at posting).
+  // bucketBooking keeps those out of this list, so reaching here with null
+  // means a row slipped through; render no chip rather than `i18n.t(undefined)`,
+  // which would print a raw key at the user.
+  const reasonKey = NEEDS_ACTION_REASON_KEY[needsActionReason(booking)] || null;
 
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.8}>
       <Surface elevation="subtle" rounded="card" padding="base">
         <Inline justify="space-between" style={{ marginBottom: spacing.xs }}>
           <Text variant="smallMedium" numberOfLines={1} style={{ flex: 1 }}>{jobClientName(booking)}</Text>
-          <StatusChip label={i18n.t(reasonKey)} color={colors.warning} />
+          {!!reasonKey && <StatusChip label={i18n.t(reasonKey)} color={colors.warning} />}
         </Inline>
         <Text variant="small" color="secondary" numberOfLines={1}>{service}</Text>
       </Surface>
