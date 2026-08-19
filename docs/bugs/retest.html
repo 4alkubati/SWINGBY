@@ -363,16 +363,16 @@
   <section>
     <div class="sec-head">
       <h2>A · Did the fix survive?</h2>
-      <span class="n">1 check</span>
+      <span class="n">2 checks</span>
     </div>
-    <p class="sec-note">Fixed in code, <strong>not yet confirmed on a device</strong>. A FAIL here is the most valuable result on this sheet — it means a fix didn't survive the trip to the phone. That has already happened once: the language chip was fixed on Aug 13, and the bug was still in the Aug 15 preview build because the fix addressed only half the mechanism.</p>
+    <p class="sec-note">Fixed in code, <strong>not yet confirmed on a device</strong>. A FAIL here is the most valuable result on this sheet — it means a fix didn't survive the trip to the phone. That has already happened once, to both of these: the Aug 13 fix addressed only half of each mechanism, so both were still in the Aug 15 preview build you walked.</p>
     <div id="secA"></div>
   </section>
 
   <section>
     <div class="sec-head">
       <h2>B · Does it still reproduce?</h2>
-      <span class="n">9 checks</span>
+      <span class="n">8 checks</span>
     </div>
     <p class="sec-note">Filed from the last walkthrough, none re-checked on a device. Expect some to be <strong>already fixed</strong> — marking those is how the backlog shrinks.</p>
     <div id="secB"></div>
@@ -406,14 +406,15 @@ const CHECKS = {
       title: "Language chip read EN in every language but French",
       doIt: "Settings → Language. Set Ukrainian, back out, read the chip on the Language row. Then Arabic. Then English. Force-quit and relaunch, check once more.",
       passIf: "The chip reads UK, AR, EN, FR — always matching the checkmark inside the sheet, and still matching after the relaunch."
+    },
+    {
+      id: "SB-0007", sev: "blocker",
+      title: "Dashboard rendered English literals in every language",
+      doIt: "Set the language to Ukrainian, then open the business Dashboard. Read every line: the greeting, THIS WEEK, the caption under it, See analytics, the TODAY and RATING cards and their subtitles, the empty state. Then repeat in Arabic and check the layout flipped right-to-left.",
+      passIf: "No English anywhere on the screen — greeting, THIS WEEK, See analytics, the booking and review counters included."
     }
   ],
   B: [
-    {
-      id: "SB-0007", sev: "blocker",
-      title: "Business dashboard renders Ukrainian in an English session",
-      doIt: "Set the language to English. Open the business Dashboard and read every section header."
-    },
     {
       id: "SB-0001", sev: "broken",
       title: "Thread header says 'pending payment' beside a card saying 'paid'",
@@ -457,7 +458,7 @@ const CHECKS = {
   ]
 };
 
-const KEY = "swingby-retest-v1";
+const KEY = "swingby-retest-v2";
 let state = {};
 try { state = JSON.parse(localStorage.getItem(KEY) || "{}"); } catch (e) { state = {}; }
 
