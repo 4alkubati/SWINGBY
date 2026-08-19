@@ -262,9 +262,29 @@ class ProfileUpdate(BaseModel):
 @router.post("/signup")
 @limiter.limit("5/minute")
 def signup(request: Request, data: SignupRequest):
-    # T75 — hCaptcha guard (placeholder: skipped when HCAPTCHA_SECRET unset)
-    if settings.HCAPTCHA_SECRET and not data.hcaptcha_token:
+    # T75 — hCaptcha guard. Verification runs whenever a token IS supplied and
+    # a secret is configured; a MISSING token only refuses the signup once
+    # HCAPTCHA_ENFORCE is also set (SB-0046).
+    #
+    # Setting the secret alone used to be a one-way switch that refused 100% of
+    # signups, because no client sends `hcaptcha_token` — not the mobile app,
+    # not either web app. Whoever first set HCAPTCHA_SECRET in the dashboard
+    # would have taken signup down with no error that named the cause.
+    if (
+        settings.HCAPTCHA_SECRET
+        and settings.HCAPTCHA_ENFORCE
+        and not data.hcaptcha_token
+    ):
         raise HTTPException(status_code=429, detail="Captcha required")
+    if (
+        settings.HCAPTCHA_SECRET
+        and not settings.HCAPTCHA_ENFORCE
+        and not data.hcaptcha_token
+    ):
+        logger.warning(
+            "auth.captcha_configured_but_not_enforced",
+            reason="no client sends hcaptcha_token yet",
+        )
     if settings.HCAPTCHA_SECRET and data.hcaptcha_token:
         try:
             captcha_resp = httpx.post(

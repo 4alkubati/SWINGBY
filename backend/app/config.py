@@ -97,6 +97,7 @@ _OPTIONAL = [
     "SENTRY_DSN",
     "HCAPTCHA_SECRET",
     "HCAPTCHA_SITEKEY",
+    "HCAPTCHA_ENFORCE",  # SB-0046: enforcement is a SECOND, deliberate switch
     "RESEND_API_KEY",  # Resend transactional email — set after domain verified
     "RESEND_FROM_EMAIL",  # e.g. "SwingBy <hello@swingbyy.com>"
     "PASSWORD_RESET_REDIRECT_URL",  # override where Supabase reset emails redirect (defaults to web)
@@ -369,6 +370,22 @@ class _Settings:
     @property
     def HCAPTCHA_SECRET(self) -> str:
         return os.getenv("HCAPTCHA_SECRET", "")
+
+    @property
+    def HCAPTCHA_ENFORCE(self) -> bool:
+        """Should a MISSING captcha token refuse the signup? (SB-0046)
+
+        Setting HCAPTCHA_SECRET alone used to flip this on, and it is a one-way
+        switch that refuses 100% of signups: no client sends `hcaptcha_token` —
+        not the mobile app, not either web app — so the moment the secret
+        appears in the Render dashboard every signup 429s. The verification
+        code was correct; what was missing was any way to configure the secret
+        WITHOUT immediately breaking the product.
+
+        Two steps now. Set the secret to enable verification of tokens that ARE
+        sent, then set HCAPTCHA_ENFORCE=1 once a client actually sends them.
+        """
+        return os.getenv("HCAPTCHA_ENFORCE", "").strip() in ("1", "true", "True", "yes")
 
     @property
     def HCAPTCHA_SITEKEY(self) -> str:

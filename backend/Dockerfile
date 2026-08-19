@@ -1,4 +1,9 @@
-FROM python:3.11-slim
+# SB-0049 — 3.14, matching the venv every test run uses and the version
+# CLAUDE.md names. Production ran 3.11 while the 1343-test suite ran 3.14, so
+# three minor versions of behaviour difference sat between "tests pass" and
+# "it works in production" — the gap where a passing suite stops being evidence.
+# Every dependency is pinned (requirements.txt) and demonstrably runs on 3.14.
+FROM python:3.14-slim
 
 WORKDIR /app
 

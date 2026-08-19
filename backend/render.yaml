@@ -101,12 +101,16 @@ services:
       - key: CONTACT_INBOX_EMAIL
         sync: false
 
-      # Captcha. NOTE: setting HCAPTCHA_SECRET is a ONE-WAY SWITCH today — the
-      # backend starts requiring a token that no client sends yet (SB-0046).
-      # Leave both unset until the clients send one.
+      # Captcha — TWO switches, deliberately (SB-0046). Setting the secret
+      # enables verification of tokens that are sent; HCAPTCHA_ENFORCE=1 is what
+      # starts REFUSING signups that carry no token. No client sends one yet, so
+      # enforcing today would refuse 100% of signups. Set the secret whenever;
+      # set enforcement only after a client sends the token.
       - key: HCAPTCHA_SECRET
         sync: false
       - key: HCAPTCHA_SITEKEY
+        sync: false
+      - key: HCAPTCHA_ENFORCE
         sync: false
 
       # Observability

@@ -142,3 +142,41 @@ class TestHealthzCanActuallyFail:
         src = inspect.getsource(main_module.healthz)
         for leak in ("str(exc", "repr(", "traceback", "SUPABASE_URL"):
             assert leak not in src, f"/healthz leaks internals via {leak}"
+
+
+class TestCaptchaIsNotAOneWaySwitch:
+    """
+    SB-0046 — setting HCAPTCHA_SECRET alone used to refuse 100% of signups.
+
+    No client sends `hcaptcha_token` — not the mobile app, not either web app —
+    so the first person to paste the secret into the Render dashboard would
+    have taken signup down, with a 429 that names a captcha nobody rendered.
+    """
+
+    def test_secret_alone_does_not_refuse_signups(self, monkeypatch):
+        import app.config as config_module
+
+        monkeypatch.setenv("HCAPTCHA_SECRET", "0x-secret")
+        monkeypatch.delenv("HCAPTCHA_ENFORCE", raising=False)
+        assert config_module.settings.HCAPTCHA_SECRET
+        assert (
+            not config_module.settings.HCAPTCHA_ENFORCE
+        ), "configuring the secret must not by itself start refusing signups"
+
+    def test_enforcement_is_a_second_deliberate_switch(self, monkeypatch):
+        import app.config as config_module
+
+        monkeypatch.setenv("HCAPTCHA_SECRET", "0x-secret")
+        monkeypatch.setenv("HCAPTCHA_ENFORCE", "1")
+        assert config_module.settings.HCAPTCHA_ENFORCE
+
+    def test_the_guard_reads_both(self):
+        """Both conditions must appear together, or the trap is back."""
+        import inspect
+
+        from app.api import auth
+
+        src = inspect.getsource(auth.signup)
+        assert (
+            "HCAPTCHA_ENFORCE" in src
+        ), "signup refuses on HCAPTCHA_SECRET alone again (SB-0046)"
