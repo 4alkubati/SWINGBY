@@ -21,7 +21,7 @@ export default function CitiesIndex() {
     <>
       <SEO
         title="Available Cities"
-        description="SwingBy is live in Calgary with plans to expand across Canada. See where we operate."
+        description="SwingByy is live in Calgary with plans to expand across Canada. See where we operate."
         og={{ url: 'https://swingbyy.com/cities' }}
       />
 

@@ -10,7 +10,7 @@ export default function NotFoundPage() {
 
       {/* ── Nav ── */}
       <nav className={styles.nav}>
-        <Link to="/" className={styles.logo}>SwingBy</Link>
+        <Link to="/" className={styles.logo}>SwingByy</Link>
       </nav>
 
       {/* ── Main content ── */}

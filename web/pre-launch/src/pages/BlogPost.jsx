@@ -38,7 +38,7 @@ export default function BlogPost() {
   return (
     <>
       <SEO
-        title={`${post.title} — SwingBy Blog`}
+        title={`${post.title} — SwingByy Blog`}
         description={post.excerpt}
         jsonLd={{
           '@context': 'https://schema.org',

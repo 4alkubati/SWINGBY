@@ -49,9 +49,9 @@
   },
   "auth": {
     "loginTitle": "Welcome back",
-    "loginSubtitle": "Sign in to your SwingBy account",
+    "loginSubtitle": "Sign in to your SwingByy account",
     "signupTitle": "Create your account",
-    "signupSubtitle": "Join SwingBy as a client or business",
+    "signupSubtitle": "Join SwingByy as a client or business",
     "email": "Email address",
     "password": "Password",
     "confirmPassword": "Confirm password",
@@ -93,7 +93,7 @@
     "handyman": "Handyman"
   },
   "howItWorks": {
-    "title": "How SwingBy Works",
+    "title": "How SwingByy Works",
     "forClients": "For Clients",
     "forBusinesses": "For Businesses",
     "clientStep1": "Post your job",
@@ -144,7 +144,7 @@
     "faq2Q": "Are there any hidden fees?",
     "faq2A": "None. The 10% platform fee is the only charge. No monthly subscriptions, no listing fees, no surprise costs.",
     "faq3Q": "Can I cancel anytime?",
-    "faq3A": "Yes. There's no contract or commitment. You can stop using SwingBy at any time with no cancellation fees.",
+    "faq3A": "Yes. There's no contract or commitment. You can stop using SwingByy at any time with no cancellation fees.",
     "faq4Q": "How does payment processing work?",
     "faq4A": "Payments are held in escrow when a job is booked. The business receives their payment minus the 10% fee once the job is completed."
   },
@@ -153,7 +153,7 @@
     "heroSubtitle": "Find trusted local pros, compare quotes, and book with confidence — all in one app.",
     "ctaDownload": "Download the App",
     "ctaHowItWorks": "See How It Works",
-    "valuePropsTitle": "Why clients love SwingBy",
+    "valuePropsTitle": "Why clients love SwingByy",
     "valueProp1Title": "Verified professionals",
     "valueProp1Desc": "Every business is background-checked, licensed, and reviewed by real customers. No guesswork.",
     "valueProp2Title": "Competitive quotes",
@@ -162,7 +162,7 @@
     "valueProp3Desc": "Your money is held until you approve the finished work — or 24 hours after the job is marked done. Dispute resolution included.",
     "useCasesTitle": "Real problems, real solutions",
     "useCase1Title": "Emergency plumbing at midnight",
-    "useCase1Desc": "Sarah's pipe burst at 11 PM. She posted a job on SwingBy and had a licensed plumber at her door within the hour.",
+    "useCase1Desc": "Sarah's pipe burst at 11 PM. She posted a job on SwingByy and had a licensed plumber at her door within the hour.",
     "useCase2Title": "Last-minute move-out cleaning",
     "useCase2Desc": "James needed his apartment spotless for inspection in 48 hours. Three cleaning pros quoted within minutes.",
     "useCase3Title": "Finding a reliable handyman",
@@ -170,10 +170,10 @@
     "screenshotsTitle": "A better way to book",
     "screenshotsPlaceholder": "App screenshots coming soon",
     "finalCtaTitle": "Ready to find your next pro?",
-    "finalCtaSubtitle": "Download SwingBy and post your first job in under a minute."
+    "finalCtaSubtitle": "Download SwingByy and post your first job in under a minute."
   },
   "forBusinesses": {
-    "heroTitle": "Grow your business with SwingBy",
+    "heroTitle": "Grow your business with SwingByy",
     "heroSubtitle": "Get discovered by local clients, win more jobs, and build your reputation — with zero upfront cost.",
     "ctaSignup": "Sign Up Free",
     "ctaLearnMore": "Learn More",
@@ -189,7 +189,7 @@
     "pricingCta": "See Full Pricing",
     "storiesTitle": "Success stories",
     "story1Name": "Mike's Plumbing Co.",
-    "story1Quote": "SwingBy doubled our monthly bookings in the first 60 days. The lead quality is way better than other platforms.",
+    "story1Quote": "SwingByy doubled our monthly bookings in the first 60 days. The lead quality is way better than other platforms.",
     "story1Role": "Mike R., Owner",
     "story2Name": "Sparkle Clean YYC",
     "story2Quote": "We went from 3 recurring clients to 25 in under 3 months. The quoting system makes it effortless.",
@@ -198,7 +198,7 @@
     "story3Quote": "Best part? No upfront cost. We only pay when we actually earn. That's how it should be.",
     "story3Role": "Dave L., Operations Manager",
     "finalCtaTitle": "Start growing today",
-    "finalCtaSubtitle": "Join hundreds of Calgary businesses already winning on SwingBy."
+    "finalCtaSubtitle": "Join hundreds of Calgary businesses already winning on SwingByy."
   },
   "categoriesIndex": {
     "heroTitle": "Browse all categories",
@@ -215,13 +215,13 @@
   },
   "citiesIndex": {
     "heroTitle": "Available cities",
-    "heroSubtitle": "SwingBy is growing city by city. See where we're live.",
+    "heroSubtitle": "SwingByy is growing city by city. See where we're live.",
     "calgaryDesc": "Our launch city. 500+ verified businesses and growing.",
     "moreCitiesTitle": "More cities coming soon",
-    "moreCitiesDesc": "We're expanding across Canada. Want SwingBy in your city?"
+    "moreCitiesDesc": "We're expanding across Canada. Want SwingByy in your city?"
   },
   "calgary": {
-    "heroTitle": "SwingBy in Calgary",
+    "heroTitle": "SwingByy in Calgary",
     "heroSubtitle": "Calgary's go-to marketplace for local home services. Verified businesses, transparent pricing, and fast bookings.",
     "neighborhoodsTitle": "Neighborhoods we serve",
     "neighborhoods": "Downtown,Beltline,Kensington,Bridgeland,Inglewood,Mission,Marda Loop,Bowness,Mount Royal,Hillhurst,Bankview,Sunalta,Ramsay,Altadore,Killarney,Varsity,Brentwood,Dalhousie,Signal Hill,Panorama Hills",
@@ -231,11 +231,11 @@
     "statRating": "Average Rating",
     "statResponse": "Avg Response Time",
     "ctaTitle": "Join Calgary's fastest-growing home services marketplace",
-    "ctaSubtitle": "Whether you're looking for help or offering services, SwingBy connects you with your community."
+    "ctaSubtitle": "Whether you're looking for help or offering services, SwingByy connects you with your community."
   },
   "safety": {
     "heroTitle": "Your safety is our priority",
-    "heroSubtitle": "We've built trust and security into every step of the SwingBy experience.",
+    "heroSubtitle": "We've built trust and security into every step of the SwingByy experience.",
     "verificationTitle": "How we verify businesses",
     "verifyStep1Title": "Identity verification",
     "verifyStep1Desc": "Every business owner provides government-issued ID and undergoes identity verification before joining the platform.",
@@ -244,7 +244,7 @@
     "verifyStep3Title": "Ongoing monitoring",
     "verifyStep3Desc": "Businesses are continuously monitored through client reviews, complaint tracking, and periodic re-verification.",
     "insuranceTitle": "Insurance",
-    "insuranceDesc": "SwingBy does not provide liability insurance and does not verify individual businesses' insurance policies. Businesses are independent operators — we recommend confirming coverage directly with your provider before booking a job.",
+    "insuranceDesc": "SwingByy does not provide liability insurance and does not verify individual businesses' insurance policies. Businesses are independent operators — we recommend confirming coverage directly with your provider before booking a job.",
     "disputeTitle": "Dispute resolution",
     "disputeDesc": "If something goes wrong, our dedicated support team steps in. We offer mediation, refund review, and escalation paths to ensure fair outcomes for both clients and businesses.",
     "contactTitle": "Report a safety concern",
@@ -252,12 +252,12 @@
     "contactCta": "Contact Support"
   },
   "about": {
-    "heroTitle": "About SwingBy",
+    "heroTitle": "About SwingByy",
     "heroSubtitle": "We're building the future of local services — starting in Calgary.",
     "missionTitle": "Our mission",
     "missionDesc": "To make finding and booking local home services as simple as ordering a ride. Transparent pricing, verified professionals, and a seamless experience for everyone.",
     "storyTitle": "Our story",
-    "storyP1": "SwingBy started with a simple frustration: finding a reliable local service provider shouldn't require a dozen phone calls and guesswork.",
+    "storyP1": "SwingByy started with a simple frustration: finding a reliable local service provider shouldn't require a dozen phone calls and guesswork.",
     "storyP2": "We built a marketplace that connects Calgary homeowners with verified local businesses. One post, multiple quotes, easy booking. That's it.",
     "teamTitle": "The team",
     "member1Name": "Amr Basem",
@@ -274,7 +274,7 @@
   },
   "press": {
     "heroTitle": "Newsroom",
-    "heroSubtitle": "The latest news and updates from SwingBy.",
+    "heroSubtitle": "The latest news and updates from SwingByy.",
     "releasesTitle": "Press releases",
     "emptyTitle": "Check back soon",
     "emptyDesc": "We're preparing some exciting announcements. Stay tuned.",
@@ -286,7 +286,7 @@
     "mediaEmail": "press@swingbyy.com"
   },
   "careers": {
-    "heroTitle": "Join SwingBy",
+    "heroTitle": "Join SwingByy",
     "heroSubtitle": "We're building the future of local services — and we'd love your help.",
     "emptyTitle": "We're not hiring yet",
     "emptyDesc": "We're a small but mighty team. When we grow, this is where open roles will appear.",
@@ -338,7 +338,7 @@
     "resources": "Resources",
     "legal": "Legal",
     "social": "Social",
-    "copyright": "SwingBy Inc. All rights reserved.",
+    "copyright": "SwingByy Inc. All rights reserved.",
     "language": "Language"
   },
   "legal": {
@@ -367,7 +367,7 @@
     "relatedPosts": "Related Posts"
   },
   "onboarding": {
-    "welcomeTitle": "Welcome to SwingBy",
+    "welcomeTitle": "Welcome to SwingByy",
     "welcomeSubtitle": "Let's get you set up in a few quick steps.",
     "locationTitle": "Where are you?",
     "locationSubtitle": "We'll show you services in your area.",

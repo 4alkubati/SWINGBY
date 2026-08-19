@@ -22,7 +22,7 @@ export default function BusinessProfile() {
 
   return (
     <DashboardLayout>
-      <SEO title="Business Profile — SwingBy" />
+      <SEO title="Business Profile — SwingByy" />
       <motion.div {...fadeUp}>
         <div className={d.header}>
           <h1 className={d.title}>Business Profile</h1>

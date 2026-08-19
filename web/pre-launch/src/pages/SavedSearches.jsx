@@ -18,7 +18,7 @@ export default function SavedSearches() {
 
   return (
     <DashboardLayout>
-      <SEO title="Saved Searches — SwingBy" />
+      <SEO title="Saved Searches — SwingByy" />
       <motion.div {...fadeUp}>
         <div className={d.header}>
           <h1 className={d.title}>Saved Searches</h1>

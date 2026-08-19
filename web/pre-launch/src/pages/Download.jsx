@@ -66,7 +66,7 @@ export default function Download() {
     <>
       <SEO
         title={t('common.downloadApp', 'Download the App')}
-        description="Download SwingBy on iOS and Android. Find and book verified local service providers in Calgary."
+        description="Download SwingByy on iOS and Android. Find and book verified local service providers in Calgary."
       />
 
       <div className={styles.page}>
@@ -78,7 +78,7 @@ export default function Download() {
               {t('common.comingSoon', 'Coming Soon')}
             </span>
             <h1 className={pageStyles.heroTitle}>
-              {t('download.heroTitle', 'Get SwingBy on your phone')}
+              {t('download.heroTitle', 'Get SwingByy on your phone')}
             </h1>
             <p className={pageStyles.heroSubtitle}>
               {t(
@@ -165,7 +165,7 @@ export default function Download() {
         {/* Features */}
         <section className={styles.features}>
           <motion.h2 className={pageStyles.sectionTitle} {...fadeUp}>
-            {t('download.featuresTitle', 'Why download SwingBy?')}
+            {t('download.featuresTitle', 'Why download SwingByy?')}
           </motion.h2>
           <div className={styles.featureGrid}>
             {FEATURES.map((feat, i) => {

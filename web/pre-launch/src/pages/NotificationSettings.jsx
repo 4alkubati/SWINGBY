@@ -34,14 +34,14 @@ export default function NotificationSettings() {
     { key: 'bookingUpdates', label: 'Booking updates', desc: 'Get notified about booking confirmations, changes, and reminders' },
     { key: 'messages', label: 'New messages', desc: 'Receive alerts when a service provider messages you' },
     { key: 'promotions', label: 'Promotions & offers', desc: 'Special deals and discounts from service providers' },
-    { key: 'newsletter', label: 'SwingBy newsletter', desc: 'Monthly updates on new features, tips, and community stories' },
+    { key: 'newsletter', label: 'SwingByy newsletter', desc: 'Monthly updates on new features, tips, and community stories' },
     { key: 'pushNotifications', label: 'Push notifications', desc: 'Real-time alerts on your device' },
     { key: 'smsAlerts', label: 'SMS alerts', desc: 'Text message notifications for urgent updates' },
   ]
 
   return (
     <DashboardLayout>
-      <SEO title="Notification Settings — SwingBy" />
+      <SEO title="Notification Settings — SwingByy" />
       <motion.div {...fadeUp}>
         <div className={d.header}>
           <h1 className={d.title}>Notifications</h1>

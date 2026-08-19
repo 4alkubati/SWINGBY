@@ -36,7 +36,7 @@ export default function CookieBanner() {
     >
       <p id="cookie-banner-desc" className={styles.text}>
         <span className={styles.cookieIcon} aria-hidden="true">🍪</span>
-        We use cookies to make SwingBy work and to learn what&apos;s useful. Read more in our{' '}
+        We use cookies to make SwingByy work and to learn what&apos;s useful. Read more in our{' '}
         <a href="/privacy" className={styles.link}>Privacy Policy</a>.
       </p>
       <div className={styles.actions}>

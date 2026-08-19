@@ -31,7 +31,7 @@ export default function AuthCallback() {
 
   return (
     <>
-      <SEO title="Authenticating — SwingBy" />
+      <SEO title="Authenticating — SwingByy" />
       <div className={s.page}>
         <div className={s.orb1} />
         <div className={s.orb2} />

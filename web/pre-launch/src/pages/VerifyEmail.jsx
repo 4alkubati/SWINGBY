@@ -43,12 +43,12 @@ export default function VerifyEmail() {
 
   return (
     <>
-      <SEO title={`${t('auth.verifyEmailTitle')} — SwingBy`} />
+      <SEO title={`${t('auth.verifyEmailTitle')} — SwingByy`} />
       <div className={s.page}>
         <div className={s.orb1} />
         <div className={s.orb2} />
         <nav className={s.nav}>
-          <Link to="/" className={s.logo}>SwingBy</Link>
+          <Link to="/" className={s.logo}>SwingByy</Link>
         </nav>
         <div className={s.container}>
           <motion.div className={s.card} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>

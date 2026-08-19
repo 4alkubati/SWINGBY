@@ -24,8 +24,8 @@ export default function About() {
   return (
     <>
       <SEO
-        title="About SwingBy"
-        description="Learn about SwingBy's mission, story, and the team building the future of local services in Calgary."
+        title="About SwingByy"
+        description="Learn about SwingByy's mission, story, and the team building the future of local services in Calgary."
         og={{ url: 'https://swingbyy.com/about' }}
       />
 

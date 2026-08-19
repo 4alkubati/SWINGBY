@@ -61,10 +61,10 @@ export default function Login() {
     <div className={styles.page}>
       {/* ── Left panel: brand/visual ── */}
       <aside className={styles.leftPanel} aria-hidden="true">
-        <Link to="/" className={styles.leftLogo} tabIndex={-1}>SwingBy</Link>
+        <Link to="/" className={styles.leftLogo} tabIndex={-1}>SwingByy</Link>
 
         <div className={styles.leftContent}>
-          <h1 className={styles.leftHeadline}>Welcome back to SwingBy</h1>
+          <h1 className={styles.leftHeadline}>Welcome back to SwingByy</h1>
           <p className={styles.leftSubtitle}>Your local services marketplace</p>
 
           <div className={styles.featurePills}>
@@ -85,7 +85,7 @@ export default function Login() {
 
         <blockquote className={styles.testimonial}>
           <p className={styles.testimonialQuote}>
-            "SwingBy made finding a cleaner so simple. Booked in 10 minutes."
+            "SwingByy made finding a cleaner so simple. Booked in 10 minutes."
           </p>
           <footer className={styles.testimonialAuthor}>— Sarah M., Calgary</footer>
         </blockquote>

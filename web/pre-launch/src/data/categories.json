@@ -20,8 +20,8 @@
     "description": "Licensed plumbers for repairs, installations, and emergency services. Available for residential and commercial properties.",
     "averagePrice": "$80 - $350",
     "faqItems": [
-      { "question": "Do you handle emergency plumbing?", "answer": "Many plumbers on SwingBy offer same-day emergency services." },
-      { "question": "Are plumbers licensed and insured?", "answer": "Yes, all plumbing businesses on SwingBy must hold valid licenses for Calgary." },
+      { "question": "Do you handle emergency plumbing?", "answer": "Many plumbers on SwingByy offer same-day emergency services." },
+      { "question": "Are plumbers licensed and insured?", "answer": "Yes, all plumbing businesses on SwingByy must hold valid licenses for Calgary." },
       { "question": "What's included in a plumbing estimate?", "answer": "Estimates include labor, parts, and any applicable call-out fees." }
     ]
   },
@@ -34,7 +34,7 @@
     "averagePrice": "$100 - $400",
     "faqItems": [
       { "question": "Do I need a permit for electrical work?", "answer": "Many electrical jobs in Calgary require permits. Your electrician will advise on what's needed." },
-      { "question": "Can you install EV chargers?", "answer": "Yes, several electricians on SwingBy specialize in EV charger installation." },
+      { "question": "Can you install EV chargers?", "answer": "Yes, several electricians on SwingByy specialize in EV charger installation." },
       { "question": "How quickly can I get an electrician?", "answer": "Most electricians can schedule within 1-3 business days, with emergency services available." }
     ]
   },
@@ -72,7 +72,7 @@
     "description": "Skilled carpenters for furniture building, cabinet installation, deck construction, and wood repairs.",
     "averagePrice": "$150 - $600",
     "faqItems": [
-      { "question": "Can you build custom furniture?", "answer": "Yes, many carpenters on SwingBy create custom pieces to your specifications." },
+      { "question": "Can you build custom furniture?", "answer": "Yes, many carpenters on SwingByy create custom pieces to your specifications." },
       { "question": "Do you handle deck construction?", "answer": "Several businesses specialize in deck building, from design through completion." },
       { "question": "What types of wood do you work with?", "answer": "Carpenters work with a range of woods from pine and cedar to hardwoods like oak and walnut." }
     ]

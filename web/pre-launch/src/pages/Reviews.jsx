@@ -17,7 +17,7 @@ export default function Reviews() {
 
   return (
     <DashboardLayout>
-      <SEO title="Reviews — SwingBy" />
+      <SEO title="Reviews — SwingByy" />
       <motion.div {...fadeUp}>
         <div className={d.header}>
           <h1 className={d.title}>My Reviews</h1>

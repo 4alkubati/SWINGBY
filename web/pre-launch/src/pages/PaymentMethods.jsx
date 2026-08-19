@@ -18,7 +18,7 @@ export default function PaymentMethods() {
 
   return (
     <DashboardLayout>
-      <SEO title="Payment Methods — SwingBy" />
+      <SEO title="Payment Methods — SwingByy" />
       <motion.div {...fadeUp}>
         <div className={d.header}>
           <h1 className={d.title}>Payment Methods</h1>
@@ -29,7 +29,7 @@ export default function PaymentMethods() {
           <div className={d.emptyIcon}><CreditCard size={24} /></div>
           <h2 className={d.emptyTitle}>No payment methods</h2>
           <p className={d.emptyDesc}>
-            Add a payment method to book services on SwingBy. We accept all major credit and debit cards.
+            Add a payment method to book services on SwingByy. We accept all major credit and debit cards.
           </p>
         </div>
       </motion.div>
