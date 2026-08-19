@@ -20,4 +20,9 @@ from slowapi import Limiter
 
 from app.services.client_ip import client_ip
 
-limiter = Limiter(key_func=client_ip, default_limits=["100/minute"])
+# No `default_limits` here. It used to declare "100/minute", which reads like a
+# global ceiling — but slowapi only applies default_limits to undecorated routes
+# when SlowAPIMiddleware is registered, and it never was (SB-0012). A limit that
+# enforces nothing is worse than no limit, because the next reader trusts it.
+# Routes that need a limit declare one; see app/api/uploads.py.
+limiter = Limiter(key_func=client_ip)
