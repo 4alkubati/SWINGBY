@@ -125,10 +125,14 @@ jobs:
       # the two apps that had no coverage.
       - name: Scan for leaked secrets
         run: |
-          if grep -rE "(SUPABASE_SERVICE_KEY|eyJhbGci[A-Za-z0-9+/]{20,}|sk_live_[A-Za-z0-9]+)" \
+          # Same pattern as web-launch-ci.yml — see SB-0057 there for why the
+          # bare variable NAME is not matched: a file that names the variable it
+          # reads is not a file that leaked it.
+          PATTERN='(eyJhbGciOi[A-Za-z0-9_-]{20,}|sb_secret_[A-Za-z0-9]{16,}|sk_live_[A-Za-z0-9]{16,}|(SUPABASE_SERVICE_KEY|SUPABASE_SECRET_KEY|STRIPE_SECRET_KEY)[[:space:]]*[:=][[:space:]]*["'"'"']?[A-Za-z0-9_-]{16,})'
+          if grep -rEn "$PATTERN" \
                web/pre-launch/src web/admin/src \
                --include="*.js" --include="*.jsx" --include="*.ts" --include="*.tsx" 2>/dev/null; then
-            echo "::error::Potential secret found in web/pre-launch or web/admin"
+            echo "::error::Potential secret VALUE found in web/pre-launch or web/admin"
             exit 1
           fi
           echo "No secrets found."

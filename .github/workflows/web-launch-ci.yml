@@ -105,8 +105,23 @@ jobs:
 
       - name: Scan for leaked secrets
         run: |
-          if grep -rE "(SUPABASE_SERVICE_KEY|eyJhbGci[A-Za-z0-9+/]{20,}|sk_live_[A-Za-z0-9]+)" web/launch/ backend/app/ --include="*.js" --include="*.jsx" --include="*.ts" --include="*.tsx" --include="*.py" 2>/dev/null; then
-            echo "::error::Potential secret found in source files"
+          # SB-0057 — match VALUES, not identifiers.
+          #
+          # This pattern used to include the bare name `SUPABASE_SERVICE_KEY`,
+          # which app/config.py necessarily contains: naming the environment
+          # variables it reads is that module's entire job. So the scan matched
+          # a config file doing the right thing, and web-launch CI has been red
+          # on main since 2026-08-05 with three merges landing on top of a
+          # standing failure. A gate that is always red is a gate nobody reads.
+          #
+          # What a leaked secret actually looks like: a service_role JWT
+          # (`eyJhbGci…`), a new-style Supabase secret (`sb_secret_…`), a live
+          # Stripe key (`sk_live_…`), or one of those names ASSIGNED a value
+          # rather than merely mentioned.
+          PATTERN='(eyJhbGciOi[A-Za-z0-9_-]{20,}|sb_secret_[A-Za-z0-9]{16,}|sk_live_[A-Za-z0-9]{16,}|(SUPABASE_SERVICE_KEY|SUPABASE_SECRET_KEY|STRIPE_SECRET_KEY)[[:space:]]*[:=][[:space:]]*["'"'"']?[A-Za-z0-9_-]{16,})'
+          if grep -rEn "$PATTERN" web/launch/ backend/app/ \
+               --include="*.js" --include="*.jsx" --include="*.ts" --include="*.tsx" --include="*.py" 2>/dev/null; then
+            echo "::error::Potential secret VALUE found in source files (see matches above)"
             exit 1
           fi
           echo "No secrets found."
