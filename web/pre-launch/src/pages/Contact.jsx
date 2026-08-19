@@ -83,7 +83,7 @@ export default function Contact() {
     <>
       <SEO
         title={t('contact.title')}
-        description="Have a question or feedback? Contact the SwingBy team. We'd love to hear from you."
+        description="Have a question or feedback? Contact the SwingByy team. We'd love to hear from you."
         og={{ url: 'https://swingbyy.com/contact' }}
       />
 

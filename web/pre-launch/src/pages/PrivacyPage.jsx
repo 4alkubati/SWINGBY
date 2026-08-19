@@ -8,20 +8,20 @@ const SECTIONS = [
   {
     id: 'information-we-collect',
     title: '1. Information We Collect',
-    body: `When you use SwingBy, we collect information you provide directly to us, such as when you create an account, post a job, send a message, or contact support.
+    body: `When you use SwingByy, we collect information you provide directly to us, such as when you create an account, post a job, send a message, or contact support.
 
 This includes: name, email address, phone number, location data (for matching you with nearby service providers), payment information (processed securely via our payment partner), and photos you upload as part of a job post or proof of work.
 
 We also automatically collect certain usage data, including device identifiers, app interaction logs, and IP address.
 
-SwingBy complies with the Personal Information Protection and Electronic Documents Act (PIPEDA) and Alberta's Personal Information Protection Act (PIPA).`,
+SwingByy complies with the Personal Information Protection and Electronic Documents Act (PIPEDA) and Alberta's Personal Information Protection Act (PIPA).`,
   },
   {
     id: 'how-we-use-information',
     title: '2. How We Use Your Information',
     body: `We use the information we collect to:
 
-• Operate and improve the SwingBy platform
+• Operate and improve the SwingByy platform
 • Match clients with service providers in their area
 • Process payments and protect both parties through escrow
 • Send you booking confirmations, status updates, and service notifications
@@ -85,7 +85,7 @@ export default function PrivacyPage() {
   return (
     <div className={styles.page} id="top">
       <nav className={styles.nav}>
-        <Link to="/" className={styles.logo}>SwingBy</Link>
+        <Link to="/" className={styles.logo}>SwingByy</Link>
       </nav>
 
       <div className={styles.contentWrapper}>
@@ -107,7 +107,7 @@ export default function PrivacyPage() {
           <h1 className={styles.docTitle}>Privacy Policy</h1>
           <p className={styles.docMeta}>Last updated: {LAST_UPDATED}</p>
           <p className={styles.docIntro}>
-            SwingBy ("we", "us", "our") is committed to protecting your privacy. This policy explains how we collect, use, and protect your personal information when you use our app or website.
+            SwingByy ("we", "us", "our") is committed to protecting your privacy. This policy explains how we collect, use, and protect your personal information when you use our app or website.
           </p>
 
           {SECTIONS.map((section) => (
