@@ -192,8 +192,33 @@ any path, so status codes prove nothing about this site. Assert on content.
 
 **Sites:**
 - `web/launch/` → `swingbyy.com` — **built and CI-green, never deployed**
-- `web/pre-launch/` → currently what `swingbyy.com` serves, from a stale build
-- `web/admin/` → admin dashboard — not deployed, and has no CI workflow
+- `web/pre-launch/` → currently what `swingbyy.com` serves
+- `web/admin/` → admin dashboard — not deployed
+
+**CI inventory — corrected 2026-08-19 (SB-0064).** This section said web/admin
+"has no CI workflow", which stopped being true when `web-ci.yml` was added; the
+line then sat here reading as a live gap.
+
+| Workflow | Covers | Triggers on | Gates |
+|---|---|---|---|
+| `backend.yml` | `backend/**` | PR + push to main | ruff, black, then pytest (`test: needs: lint`, so a red lint SKIPS the suite) |
+| `web-ci.yml` | `web/pre-launch`, `web/admin` | PR + push to main | build, `npm audit --audit-level=high`, secret scan; lint/test `--if-present` |
+| `web-launch-ci.yml` | `web/launch`, `backend/**` | PR + push to main | lint, test, build, npm audit, secret scan |
+| `web-prelaunch-deploy.yml` | `web/pre-launch` | push to main | builds and deploys to Cloudflare Pages, then verifies live content |
+| `web-launch-deploy.yml` | `web/launch` | manual | not wired to a live site |
+| `mobile.yml` | `mobile/**` | PR + push to main | install, lint, jest |
+| `e2e-smoke.yml` | booking loop | manual only | `tools/e2e_smoke.py` against a chosen base URL (SB-0063) |
+
+Three things that are true of this table and were not obvious before:
+
+- `web-launch-ci.yml` also scans `backend/app/` for secrets. Until 2026-08-19 it
+  only ran when `web/launch/**` changed, so it never fired on the backend
+  commits it was meant to protect (SB-0056).
+- Every `npm audit` gate is `--audit-level=high`. Moderate advisories are
+  visible and non-blocking, by choice.
+- No web app had a single test until 2026-08-19; `web/launch`'s `test` script
+  was `echo "No tests configured yet"`, which exits 0 and made CI report a green
+  Test step for a suite that did not exist (SB-0060).
 
 ### Deploy to Cloudflare Pages
 
