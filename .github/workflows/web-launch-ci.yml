@@ -1,13 +1,33 @@
 name: web-launch CI
 
 on:
+  workflow_dispatch:
+  # SB-0061 — `push` had no branch filter, so every push to every branch ran
+  # this in addition to the pull_request run: two identical runs per PR commit,
+  # doubling queue time and CI spend for no extra signal.
   push:
+    branches:
+      - main
     paths:
       - 'web/launch/**'
+      - 'backend/**'
       - '.github/workflows/web-launch-ci.yml'
   pull_request:
     paths:
       - 'web/launch/**'
+      - 'backend/**'
+      - '.github/workflows/web-launch-ci.yml'
+
+# SB-0061 — without this, pushing three commits in a minute leaves three full
+# runs racing; the oldest can report last and win the branch's status.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# SB-0062 — least privilege. An unset `permissions:` inherits the repository
+# default, which is often write-all; nothing in this workflow writes anything.
+permissions:
+  contents: read
 
 defaults:
   run:
@@ -23,7 +43,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v7
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
           cache-dependency-path: web/launch/package-lock.json
 
@@ -58,7 +78,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v7
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
           cache-dependency-path: web/launch/package-lock.json
 
@@ -70,6 +90,11 @@ jobs:
       - name: Audit dependencies
         run: npm audit --audit-level=high
 
+  # SB-0056 — this job scans backend/app/ but lived in a workflow triggered
+  # ONLY by web/launch/** changes, so it did not run for the 19-file security
+  # commit it was meant to protect. A scan that cannot fire on the code it
+  # covers is not a control. The trigger below now includes backend/** and the
+  # workflow itself; the scan is unchanged.
   secret-scan:
     name: Secret Scan
     runs-on: ubuntu-latest

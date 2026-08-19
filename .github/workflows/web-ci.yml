@@ -37,6 +37,16 @@ on:
       - 'web/admin/**'
       - '.github/workflows/web-ci.yml'
 
+# SB-0061 — one run per ref; a superseded push should not keep burning a runner
+# or, worse, report last and win the branch status.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# SB-0062 — least privilege; nothing here writes to the repository.
+permissions:
+  contents: read
+
 jobs:
   build:
     name: Build (${{ matrix.app }})
@@ -56,7 +66,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v7
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
           cache-dependency-path: web/${{ matrix.app }}/package-lock.json
 
@@ -73,17 +83,35 @@ jobs:
       - name: Test
         run: npm run test --if-present
 
+      # SB-0059 — no `env:` block, deliberately, and it must stay that way.
+      #
+      # This step used to pin VITE_API_URL=https://swingbyy-api.onrender.com
+      # while the DEPLOYED bundle reads web/pre-launch/.env.production, which
+      # says https://api.swingbyy.com (the Worker, not the Render backend). So a
+      # green run here proved a configuration that never ships.
+      #
+      # The three `${{ secrets.* }}` lines were worse than useless: this repo
+      # has no Actions secrets configured, an unset secret expands to an EMPTY
+      # STRING, and an empty env var OVERRIDES the .env.production value instead
+      # of falling back to it. CI was building a bundle with its config blanked
+      # and calling it verified. web-prelaunch-deploy.yml already documents this
+      # trap at length; the CI build now matches the deploy build exactly.
       - name: Build
-        env:
-          # swingbyy.com — the double-y domain is the one we actually own.
-          VITE_API_URL: https://swingbyy-api.onrender.com
-          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
-          VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
         run: npm run build
 
       - name: Check bundle size
         run: du -sh dist/
+
+      # SB-0033 / SB-0053 — `npm audit` ran in exactly ONE workflow, and it was
+      # web/launch: the app that is never deployed. web/pre-launch IS
+      # swingbyy.com and had 6 HIGH advisories with no gate at all. The audit
+      # gate existing only on the unreachable app is worse than none, because
+      # the repo looks audited.
+      #
+      # high+ matches web-launch-ci.yml so the two do not disagree about what
+      # "clean" means. Moderate transitive issues stay visible without blocking.
+      - name: Audit dependencies
+        run: npm audit --audit-level=high
 
   secret-scan:
     name: Secret Scan (web)

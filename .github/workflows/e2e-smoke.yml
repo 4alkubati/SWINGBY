@@ -1,0 +1,56 @@
+# SB-0063 — tools/e2e_smoke.py is called MANDATORY by DISPATCH_GATE Layer 6
+# ("mandatory before accepting any change to the booking loop") and ran in no
+# workflow at all. A gate that exists only in a document is a gate that gets
+# skipped the first time someone is in a hurry.
+#
+# WHY THIS IS workflow_dispatch AND NOT A PR GATE
+# -----------------------------------------------
+# The smoke test drives the real post -> quote -> accept -> booking -> complete
+# journey against a RUNNING backend using the seeded test accounts. That needs
+# a live Supabase project and real credentials — it writes rows. Running it on
+# every PR would either need production credentials in CI (no) or a seeded
+# ephemeral environment that does not exist yet.
+#
+# So this makes it one click from the Actions tab against a chosen base URL,
+# instead of a paragraph in CLAUDE.md that assumes someone remembers. When a
+# seeded staging environment exists, add a `pull_request` trigger pointed at it
+# and delete this comment.
+
+name: E2E booking-loop smoke
+
+on:
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: 'Backend base URL to drive (must have the seeded test accounts)'
+        required: true
+        default: 'https://swingbyy-api.onrender.com'
+
+permissions:
+  contents: read
+
+concurrency:
+  # Two concurrent runs would race each other's bookings.
+  group: e2e-smoke
+  cancel-in-progress: false
+
+jobs:
+  smoke:
+    name: post -> quote -> accept -> book -> complete
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install requests
+        run: pip install --quiet requests
+
+      - name: Run the booking-loop smoke test
+        env:
+          SMOKE_TIMEOUT: '60'
+        run: python tools/e2e_smoke.py "${{ inputs.base_url }}"
