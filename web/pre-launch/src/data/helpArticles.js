@@ -39,15 +39,15 @@ export const HELP_CATEGORIES = [
 export const HELP_ARTICLES = [
   {
     slug: 'how-to-create-account',
-    title: 'How to create a SwingBy account',
+    title: 'How to create a SwingByy account',
     category: 'getting-started',
     popular: true,
-    content: `## How to create a SwingBy account
+    content: `## How to create a SwingByy account
 
-Creating a SwingBy account is quick and easy. Follow these steps to get started:
+Creating a SwingByy account is quick and easy. Follow these steps to get started:
 
 ### Step 1: Visit the signup page
-Go to [swingbyy.com/signup](/signup) or download the SwingBy app from the App Store or Google Play.
+Go to [swingbyy.com/signup](/signup) or download the SwingByy app from the App Store or Google Play.
 
 ### Step 2: Choose your role
 Select whether you want to **find services** (Client) or **offer services** (Business).
@@ -75,7 +75,7 @@ Need help? [Contact our support team](/contact).`,
     popular: true,
     content: `## How to post your first job
 
-Posting a job on SwingBy takes less than 2 minutes. Here's how:
+Posting a job on SwingByy takes less than 2 minutes. Here's how:
 
 ### 1. Tap "Post a Job"
 From your dashboard, tap the **Post a Job** button.
@@ -107,7 +107,7 @@ Once submitted, verified local businesses will start sending you quotes. You'll 
     popular: true,
     content: `## Understanding quotes and pricing
 
-When you post a job on SwingBy, businesses send you quotes. Here's what you need to know:
+When you post a job on SwingByy, businesses send you quotes. Here's what you need to know:
 
 ### What's included in a quote?
 Each quote includes:
@@ -173,7 +173,7 @@ Need to reschedule? You can do so up to 24 hours before the appointment.`,
     popular: true,
     content: `## Adding and managing payment methods
 
-SwingBy supports multiple payment methods for your convenience.
+SwingByy supports multiple payment methods for your convenience.
 
 ### Supported methods
 - **Credit/debit cards** — Visa, Mastercard, American Express
@@ -191,11 +191,11 @@ SwingBy supports multiple payment methods for your convenience.
 - **Remove a method** — tap the three dots and select "Remove"
 
 ### Security
-All payment information is encrypted and processed through Stripe. SwingBy never stores your full card number.
+All payment information is encrypted and processed through Stripe. SwingByy never stores your full card number.
 
 ---
 
-*Payment methods can also be managed from the SwingBy mobile app.*`,
+*Payment methods can also be managed from the SwingByy mobile app.*`,
     relatedSlugs: ['understanding-quotes', 'refund-policy', 'cancellation-policy'],
   },
   {
@@ -205,7 +205,7 @@ All payment information is encrypted and processed through Stripe. SwingBy never
     popular: true,
     content: `## Cancellation and refund policy
 
-We understand plans change. Here's how cancellations work on SwingBy:
+We understand plans change. Here's how cancellations work on SwingByy:
 
 ### Client cancellations
 | Timing | Refund |
@@ -241,7 +241,7 @@ If you have an issue with a completed job, you can open a dispute within 48 hour
     popular: false,
     content: `## Account verification for businesses
 
-To ensure quality and safety on SwingBy, all businesses go through a verification process.
+To ensure quality and safety on SwingByy, all businesses go through a verification process.
 
 ### What we verify
 - **Identity** — government-issued ID check
@@ -299,10 +299,10 @@ A complete profile helps you get more bookings (for businesses) or better servic
   },
   {
     slug: 'safety-features',
-    title: 'Safety features on SwingBy',
+    title: 'Safety features on SwingByy',
     category: 'safety',
     popular: false,
-    content: `## Safety features on SwingBy
+    content: `## Safety features on SwingByy
 
 Your safety is our top priority. Here's what we do to keep you protected:
 

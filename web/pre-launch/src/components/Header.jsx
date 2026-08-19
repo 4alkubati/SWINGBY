@@ -34,8 +34,8 @@ export default function Header() {
     <>
       <header className={`${styles.header} ${scrolled ? styles.scrolled : ''}`}>
         <div className={styles.inner}>
-          <Link to="/" className={styles.logo} aria-label="SwingBy home">
-            SwingBy
+          <Link to="/" className={styles.logo} aria-label="SwingByy home">
+            SwingByy
           </Link>
 
           <nav className={styles.nav} aria-label="Main navigation">

@@ -7,7 +7,7 @@ const TESTIMONIALS = [
     role: 'Calgary',
   },
   {
-    quote: "I'm a one-person shop. SwingBy fills my calendar without me lifting a finger.",
+    quote: "I'm a one-person shop. SwingByy fills my calendar without me lifting a finger.",
     name: 'Ahmed K.',
     role: 'Painter',
   },

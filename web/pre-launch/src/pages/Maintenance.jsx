@@ -10,7 +10,7 @@ export default function Maintenance() {
 
   return (
     <>
-      <SEO title="Maintenance — SwingBy" />
+      <SEO title="Maintenance — SwingByy" />
       <motion.div {...fadeUp} style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 'var(--space-2xl) var(--space-lg)', textAlign: 'center', background: 'var(--color-bg)' }}>
         <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'var(--color-accent-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 'var(--space-lg)', color: 'var(--color-accent-text)' }}>
           <Wrench size={36} weight="regular" />
@@ -19,7 +19,7 @@ export default function Maintenance() {
           We'll be right back
         </h1>
         <p style={{ fontSize: '16px', color: 'var(--color-text-secondary)', maxWidth: 460, lineHeight: 1.6, marginBottom: 'var(--space-xl)' }}>
-          SwingBy is currently undergoing scheduled maintenance. We're working hard to improve your experience and will be back shortly.
+          SwingByy is currently undergoing scheduled maintenance. We're working hard to improve your experience and will be back shortly.
         </p>
         <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', padding: 'var(--space-lg)', maxWidth: 360, width: '100%' }}>
           <p style={{ fontSize: '14px', color: 'var(--color-text-secondary)', lineHeight: 1.6 }}>

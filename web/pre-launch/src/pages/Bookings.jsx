@@ -22,7 +22,7 @@ export default function Bookings() {
 
   return (
     <DashboardLayout>
-      <SEO title="Bookings — SwingBy" />
+      <SEO title="Bookings — SwingByy" />
       <motion.div {...fadeUp}>
         <div className={d.header}>
           <h1 className={d.title}>{t('dashboard.activeBookings')}</h1>

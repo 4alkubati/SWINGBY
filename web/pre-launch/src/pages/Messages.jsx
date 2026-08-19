@@ -17,7 +17,7 @@ export default function Messages() {
 
   return (
     <DashboardLayout>
-      <SEO title="Messages — SwingBy" />
+      <SEO title="Messages — SwingByy" />
       <motion.div {...fadeUp}>
         <div className={d.header}>
           <h1 className={d.title}>Messages</h1>

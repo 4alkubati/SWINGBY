@@ -88,7 +88,7 @@ export default function Dashboard() {
 
       {/* ── Nav ── */}
       <nav className={styles.nav}>
-        <Link to="/" className={styles.logo}>SwingBy</Link>
+        <Link to="/" className={styles.logo}>SwingByy</Link>
 
         <div className={styles.navRight}>
           <div className={styles.navUser}>
@@ -110,7 +110,7 @@ export default function Dashboard() {
         {/* 1. Welcome header */}
         <header className={`${styles.welcomeHeader} ${styles.section0}`}>
           <h1 className={styles.welcomeTitle}>Welcome back, {firstName}</h1>
-          <p className={styles.welcomeSubtitle}>Your SwingBy dashboard</p>
+          <p className={styles.welcomeSubtitle}>Your SwingByy dashboard</p>
         </header>
 
         {/* 2. KPI row */}
@@ -180,7 +180,7 @@ export default function Dashboard() {
         <div className={`${styles.ctaCard} ${styles.section3}`}>
           <span className={styles.ctaIcon}>📱</span>
           <div className={styles.ctaContent}>
-            <h2 className={styles.ctaTitle}>Get the SwingBy app</h2>
+            <h2 className={styles.ctaTitle}>Get the SwingByy app</h2>
             <p className={styles.ctaSubtitle}>
               Book services on the go. Available for iOS and Android.
             </p>
@@ -198,7 +198,7 @@ export default function Dashboard() {
             <span className={styles.emptyIcon}>📋</span>
             <p className={styles.emptyTitle}>No activity yet</p>
             <p className={styles.emptyText}>
-              Your bookings and messages will appear here once SwingBy launches.
+              Your bookings and messages will appear here once SwingByy launches.
             </p>
           </div>
         </div>

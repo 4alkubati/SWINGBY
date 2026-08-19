@@ -18,7 +18,7 @@ export default function Favorites() {
 
   return (
     <DashboardLayout>
-      <SEO title="Favorites — SwingBy" />
+      <SEO title="Favorites — SwingByy" />
       <motion.div {...fadeUp}>
         <div className={d.header}>
           <h1 className={d.title}>Favorites</h1>

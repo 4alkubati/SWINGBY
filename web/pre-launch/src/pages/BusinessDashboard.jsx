@@ -19,12 +19,12 @@ export default function BusinessDashboard() {
 
   return (
     <DashboardLayout>
-      <SEO title="Business Dashboard — SwingBy" />
+      <SEO title="Business Dashboard — SwingByy" />
       <motion.div {...fadeUp}>
         <div className={d.header}>
           <div>
             <h1 className={d.title}>{t('dashboard.welcome', { name })}</h1>
-            <p className={d.subtitle}>Manage your business on SwingBy</p>
+            <p className={d.subtitle}>Manage your business on SwingByy</p>
           </div>
         </div>
 

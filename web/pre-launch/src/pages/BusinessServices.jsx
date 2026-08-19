@@ -18,7 +18,7 @@ export default function BusinessServices() {
 
   return (
     <DashboardLayout>
-      <SEO title="Services — SwingBy" />
+      <SEO title="Services — SwingByy" />
       <motion.div {...fadeUp}>
         <div className={d.header}>
           <h1 className={d.title}>Services</h1>

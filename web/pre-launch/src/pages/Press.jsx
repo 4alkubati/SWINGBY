@@ -20,7 +20,7 @@ export default function Press() {
     <>
       <SEO
         title="Newsroom"
-        description="The latest news, press releases, and media resources from SwingBy."
+        description="The latest news, press releases, and media resources from SwingByy."
         og={{ url: 'https://swingbyy.com/press' }}
       />
 

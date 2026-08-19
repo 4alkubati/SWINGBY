@@ -35,7 +35,7 @@ export default function HowItWorks() {
 
   return (
     <>
-      <SEO title={t('howItWorks.title')} description="Learn how SwingBy connects clients with local service providers in just a few simple steps." />
+      <SEO title={t('howItWorks.title')} description="Learn how SwingByy connects clients with local service providers in just a few simple steps." />
       <div className={styles.heroSection}>
         <h1 className={styles.heroTitle}>{t('howItWorks.title')}</h1>
         <p className={styles.heroSubtitle}>Two sides, one simple process. See how it works for you.</p>

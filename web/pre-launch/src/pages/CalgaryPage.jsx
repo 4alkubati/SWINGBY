@@ -22,7 +22,7 @@ export default function CalgaryPage() {
   return (
     <>
       <SEO
-        title="SwingBy in Calgary"
+        title="SwingByy in Calgary"
         description="Calgary's go-to marketplace for local home services. Find verified businesses for cleaning, plumbing, electrical, and more."
         og={{ url: 'https://swingbyy.com/cities/calgary' }}
       />

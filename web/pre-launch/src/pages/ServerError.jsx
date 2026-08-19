@@ -12,7 +12,7 @@ export default function ServerError() {
 
   return (
     <>
-      <SEO title={`${t('errors.serverError')} — SwingBy`} />
+      <SEO title={`${t('errors.serverError')} — SwingByy`} />
       <motion.div {...fadeUp} style={{ minHeight: 'calc(100vh - 64px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 'var(--space-2xl) var(--space-lg)', textAlign: 'center' }}>
         <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'rgba(255,92,92,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 'var(--space-lg)', color: 'var(--color-danger)' }}>
           <WarningCircle size={36} weight="regular" />

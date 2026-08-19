@@ -28,16 +28,16 @@ const STEPS = [
 
 const TESTIMONIALS = [
   { name: 'Sarah M.', role: 'Homeowner', text: 'Found an amazing cleaner in under an hour. The quoting process made it so easy to compare.' },
-  { name: 'James K.', role: 'Business Owner', text: 'SwingBy helped me double my bookings in the first month. The platform just works.' },
+  { name: 'James K.', role: 'Business Owner', text: 'SwingByy helped me double my bookings in the first month. The platform just works.' },
   { name: 'Priya R.', role: 'Renter', text: 'No more calling around for plumbers. Posted a job, got 3 quotes, and booked by lunch.' },
 ]
 
 const FAQ_ITEMS = [
-  { question: 'How does SwingBy work?', answer: 'Post a job describing what you need, receive competitive quotes from verified local businesses, compare ratings and prices, then book the best fit — all in one place.' },
-  { question: 'Is SwingBy free for clients?', answer: 'Yes, posting jobs and receiving quotes is completely free. You only pay when you book a service.' },
+  { question: 'How does SwingByy work?', answer: 'Post a job describing what you need, receive competitive quotes from verified local businesses, compare ratings and prices, then book the best fit — all in one place.' },
+  { question: 'Is SwingByy free for clients?', answer: 'Yes, posting jobs and receiving quotes is completely free. You only pay when you book a service.' },
   { question: 'How are businesses verified?', answer: 'Every business goes through a verification process including license checks, identity verification, and ongoing review monitoring.' },
-  { question: 'What cities is SwingBy available in?', answer: 'We are currently launching in Calgary, Alberta with plans to expand across Canada.' },
-  { question: 'How does payment work?', answer: 'Payments are held in escrow when you accept a quote. The money is released to the business when you approve the finished work — or automatically 24 hours after they mark it done. SwingBy keeps 10%.' },
+  { question: 'What cities is SwingByy available in?', answer: 'We are currently launching in Calgary, Alberta with plans to expand across Canada.' },
+  { question: 'How does payment work?', answer: 'Payments are held in escrow when you accept a quote. The money is released to the business when you approve the finished work — or automatically 24 hours after they mark it done. SwingByy keeps 10%.' },
 ]
 
 const fadeUp = {
@@ -59,7 +59,7 @@ export default function Home() {
         jsonLd={{
           '@context': 'https://schema.org',
           '@type': 'Organization',
-          name: 'SwingBy',
+          name: 'SwingByy',
           url: 'https://swingbyy.com',
           description: 'Local services marketplace connecting clients with verified businesses in Calgary.',
         }}

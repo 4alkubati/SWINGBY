@@ -20,7 +20,7 @@ export default function BookingDetail() {
 
   return (
     <DashboardLayout>
-      <SEO title={`Booking #${id} — SwingBy`} />
+      <SEO title={`Booking #${id} — SwingByy`} />
       <motion.div {...fadeUp}>
         <Link to="/bookings" style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--space-xs)', fontSize: '13px', color: 'var(--color-text-secondary)', marginBottom: 'var(--space-lg)', textDecoration: 'none' }}>
           <ArrowLeft size={16} /> Back to Bookings

@@ -34,13 +34,13 @@ export default function PrivacySettings() {
     { key: 'profileVisible', label: 'Profile visibility', desc: 'Allow service providers to view your profile when you post a job' },
     { key: 'showLocation', label: 'Show location', desc: 'Display your general area on your profile' },
     { key: 'showReviews', label: 'Public reviews', desc: 'Allow your reviews to be visible to other users' },
-    { key: 'analyticsTracking', label: 'Usage analytics', desc: 'Help us improve SwingBy by sharing anonymous usage data' },
+    { key: 'analyticsTracking', label: 'Usage analytics', desc: 'Help us improve SwingByy by sharing anonymous usage data' },
     { key: 'personalizedAds', label: 'Personalized recommendations', desc: 'Receive service recommendations based on your activity' },
   ]
 
   return (
     <DashboardLayout>
-      <SEO title="Privacy Settings — SwingBy" />
+      <SEO title="Privacy Settings — SwingByy" />
       <motion.div {...fadeUp}>
         <div className={d.header}>
           <h1 className={d.title}>Privacy & Data</h1>

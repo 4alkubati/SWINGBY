@@ -18,7 +18,7 @@ export default function BusinessEmployees() {
 
   return (
     <DashboardLayout>
-      <SEO title="Employees — SwingBy" />
+      <SEO title="Employees — SwingByy" />
       <motion.div {...fadeUp}>
         <div className={d.header}>
           <h1 className={d.title}>Team Members</h1>

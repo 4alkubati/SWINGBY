@@ -93,16 +93,16 @@ export default function Signup() {
         <div className={styles.leftOrb} />
         <div className={styles.leftOrb2} />
 
-        <Link to="/" className={styles.leftLogo}>SwingBy</Link>
+        <Link to="/" className={styles.leftLogo}>SwingByy</Link>
 
         <div className={styles.leftContent}>
-          <h1 className={styles.leftHeadline}>Join SwingBy</h1>
+          <h1 className={styles.leftHeadline}>Join SwingByy</h1>
           <p className={styles.leftSubtitle}>Be first when we launch in your city.</p>
         </div>
 
         <div className={styles.leftTestimonial}>
           <p className={styles.testimonialQuote}>
-            "I'm a one-person shop. SwingBy fills my calendar without me lifting a finger."
+            "I'm a one-person shop. SwingByy fills my calendar without me lifting a finger."
           </p>
           <p className={styles.testimonialAuthor}>— Ahmed K., Painter</p>
         </div>

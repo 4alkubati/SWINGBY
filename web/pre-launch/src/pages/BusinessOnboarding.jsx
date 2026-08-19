@@ -184,7 +184,7 @@ export default function BusinessOnboarding() {
 
   return (
     <>
-      <SEO title="Business Onboarding — SwingBy" />
+      <SEO title="Business Onboarding — SwingByy" />
       <div className={s.page}>
         <div className={s.card}>
           {!isComplete && (
@@ -200,7 +200,7 @@ export default function BusinessOnboarding() {
               <motion.div key="welcome" custom={dir} variants={slideVariants} initial="enter" animate="center" exit="exit" transition={{ duration: 0.3 }}>
                 <div className={s.stepLabel}>Step 1 of 6</div>
                 <h2 className={s.stepTitle}>{t('onboarding.welcomeTitle')}</h2>
-                <p className={s.stepSubtitle}>Let's get your business set up on SwingBy. This takes about 5 minutes.</p>
+                <p className={s.stepSubtitle}>Let's get your business set up on SwingByy. This takes about 5 minutes.</p>
                 <div className={s.actions}>
                   <Button variant="primary" size="lg" onClick={next}>{t('common.getStarted')}</Button>
                 </div>
@@ -337,7 +337,7 @@ export default function BusinessOnboarding() {
                 </div>
                 <h2 className={s.completeTitle}>{t('onboarding.complete')}</h2>
                 <p className={s.completeDesc}>
-                  {bizName ? `${bizName} is` : 'Your business is'} ready to start receiving job requests on SwingBy.
+                  {bizName ? `${bizName} is` : 'Your business is'} ready to start receiving job requests on SwingByy.
                 </p>
                 <div className={s.completeCtas}>
                   <Button variant="primary" size="lg" onClick={() => navigate('/business/dashboard')}>Go to Dashboard</Button>

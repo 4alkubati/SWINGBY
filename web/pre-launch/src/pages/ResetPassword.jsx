@@ -36,12 +36,12 @@ export default function ResetPassword() {
 
   return (
     <>
-      <SEO title={`${t('auth.newPassword')} — SwingBy`} />
+      <SEO title={`${t('auth.newPassword')} — SwingByy`} />
       <div className={s.page}>
         <div className={s.orb1} />
         <div className={s.orb2} />
         <nav className={s.nav}>
-          <Link to="/" className={s.logo}>SwingBy</Link>
+          <Link to="/" className={s.logo}>SwingByy</Link>
         </nav>
         <div className={s.container}>
           <motion.div className={s.card} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>

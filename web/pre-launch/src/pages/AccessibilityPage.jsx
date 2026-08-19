@@ -10,7 +10,7 @@ const SECTIONS = [
   {
     id: 'commitment',
     title: 'Our commitment',
-    body: 'SwingBy is committed to ensuring digital accessibility for people with disabilities. We continually improve the user experience for everyone and apply the relevant accessibility standards to ensure we provide equal access to all users.',
+    body: 'SwingByy is committed to ensuring digital accessibility for people with disabilities. We continually improve the user experience for everyone and apply the relevant accessibility standards to ensure we provide equal access to all users.',
   },
   {
     id: 'standards',
@@ -25,7 +25,7 @@ const SECTIONS = [
   {
     id: 'features',
     title: 'Accessibility features',
-    body: `SwingBy includes the following accessibility features:
+    body: `SwingByy includes the following accessibility features:
 
 • Keyboard navigation — All interactive elements are accessible via keyboard
 • Screen reader support — Proper ARIA labels and semantic HTML throughout
@@ -44,7 +44,7 @@ const SECTIONS = [
   {
     id: 'feedback',
     title: 'Feedback',
-    body: 'We welcome your feedback on the accessibility of SwingBy. If you experience any difficulty accessing any part of our website, or have suggestions for improvement, please contact us. We take accessibility feedback seriously and will respond within 5 business days.',
+    body: 'We welcome your feedback on the accessibility of SwingByy. If you experience any difficulty accessing any part of our website, or have suggestions for improvement, please contact us. We take accessibility feedback seriously and will respond within 5 business days.',
   },
 ]
 
@@ -53,10 +53,10 @@ export default function AccessibilityPage() {
 
   return (
     <>
-      <SEO title={`${t('legal.accessibilityTitle')} — SwingBy`} />
+      <SEO title={`${t('legal.accessibilityTitle')} — SwingByy`} />
       <motion.div className={l.page} {...fadeUp}>
         <nav className={l.nav}>
-          <Link to="/" className={l.logo}>SwingBy</Link>
+          <Link to="/" className={l.logo}>SwingByy</Link>
         </nav>
         <div className={l.contentWrapper}>
           <aside className={l.toc}>
@@ -69,7 +69,7 @@ export default function AccessibilityPage() {
             <h1 className={l.docTitle}>{t('legal.accessibilityTitle')}</h1>
             <p className={l.docMeta}>Last updated: June 1, 2026</p>
             <p className={l.docIntro}>
-              SwingBy is committed to making our platform accessible to everyone.
+              SwingByy is committed to making our platform accessible to everyone.
             </p>
             {SECTIONS.map((section) => (
               <section key={section.id} id={section.id} className={l.section}>

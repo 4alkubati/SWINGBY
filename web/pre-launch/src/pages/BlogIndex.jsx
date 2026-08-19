@@ -50,7 +50,7 @@ export default function BlogIndex() {
     <>
       <SEO
         title={t('blog.title', 'Blog')}
-        description="Read the latest news, tips, and updates from SwingBy. Learn about local services, safety, and growing your business."
+        description="Read the latest news, tips, and updates from SwingByy. Learn about local services, safety, and growing your business."
       />
 
       <div className={styles.page}>
@@ -60,7 +60,7 @@ export default function BlogIndex() {
           <p className={pageStyles.heroSubtitle}>
             {t(
               'blog.subtitle',
-              'News, tips, and stories from the SwingBy community.'
+              'News, tips, and stories from the SwingByy community.'
             )}
           </p>
         </motion.section>
