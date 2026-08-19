@@ -106,7 +106,25 @@ if not _docs_enabled:
 
 # T17 — Attach limiter to app state before any routers are included
 app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+
+def _rate_limited(request: Request, exc: RateLimitExceeded):
+    """SB-0022 — a 429 must look like every other error on this API.
+
+    slowapi's stock handler answers {"error": "Rate limit exceeded: 10 per 1
+    minute"}. Every other error here is {"detail": ...}, so a client reading
+    `err.response.data.detail` rendered an empty message at exactly the moment
+    the user most needs to be told what happened — and the stock body also
+    echoes the configured limit back to the caller, which is free reconnaissance
+    on how hard they may push before being noticed.
+    """
+    return JSONResponse(
+        status_code=429,
+        content={"detail": "Too many requests. Try again in a moment."},
+    )
+
+
+app.add_exception_handler(RateLimitExceeded, _rate_limited)
 
 
 # Bug 9 (walkthrough) — unknown paths under a mounted router were surfacing as
@@ -179,26 +197,43 @@ app.add_middleware(SecurityHeadersMiddleware)
 # route, or Pydantic) has had a chance to buffer it.
 app.add_middleware(BodySizeLimitMiddleware, max_bytes=settings.MAX_REQUEST_BYTES)
 
-_default_origins = ["http://localhost:5173", "http://localhost:3000"]
+# SB-0021 — the two localhost defaults are DEV-ONLY.
+#
+# They used to be unconditional, combined with allow_credentials=True, which
+# granted credentialed cross-origin reads to anything served from localhost on
+# a user's machine: any local dev server, Electron app, or locally-installed
+# tool. The docs and /health gating a few lines above is guarded on
+# IS_PRODUCTION; these never were. Same guard, same reason.
+_DEV_ONLY_ORIGINS = ["http://localhost:5173", "http://localhost:3000"]
+
+
+def build_allowed_origins() -> list[str]:
+    """The CORS allowlist, as a function so it is testable and gated."""
+    origins = [] if settings.IS_PRODUCTION else list(_DEV_ONLY_ORIGINS)
+    extra = [
+        o.strip() for o in settings.SWINGBY_ALLOWED_ORIGINS.split(",") if o.strip()
+    ]
+
+    # Checklist #8 — a wildcard in SWINGBY_ALLOWED_ORIGINS is dropped, loudly.
+    #
+    # This list is combined with allow_credentials=True. Starlette treats "*"
+    # specially in that combination: it stops sending a literal `*` and starts
+    # REFLECTING whatever Origin the caller sent, with credentials allowed —
+    # which is every origin on the internet reading authenticated responses.
+    # Nothing validated this env var, so one over-broad value in the Render
+    # dashboard was all it would have taken. Filtering here rather than trusting
+    # the operator is the point; the log line exists so the drop is not silent.
+    wildcards = [o for o in extra if "*" in o]
+    if wildcards:
+        _log.error("cors.wildcard_origin_rejected", origins=wildcards)
+    return origins + [o for o in extra if "*" not in o]
+
+
 _extra_origins = [
     o.strip() for o in settings.SWINGBY_ALLOWED_ORIGINS.split(",") if o.strip()
 ]
 
-# Checklist #8 — a wildcard in SWINGBY_ALLOWED_ORIGINS is dropped, loudly.
-#
-# This list is combined with allow_credentials=True. Starlette treats "*"
-# specially in that combination: it stops sending a literal `*` and starts
-# REFLECTING whatever Origin the caller sent, with credentials allowed — which
-# is every origin on the internet reading authenticated responses. Nothing
-# validated this env var, so one over-broad value in the Render dashboard was
-# all it would have taken. Filtering here rather than trusting the operator is
-# the point; the log line exists so the drop is not silent.
-_wildcards = [o for o in _extra_origins if "*" in o]
-if _wildcards:
-    _log.error("cors.wildcard_origin_rejected", origins=_wildcards)
-_extra_origins = [o for o in _extra_origins if "*" not in o]
-
-_allowed_origins = _default_origins + _extra_origins
+_allowed_origins = build_allowed_origins()
 
 app.add_middleware(
     CORSMiddleware,
@@ -441,5 +476,25 @@ def health_check(request: Request):
 
 @app.get("/healthz")
 def healthz():
-    """Lightweight liveness probe for Render — no database call."""
+    """Readiness probe for Render's healthCheckPath — SB-0045.
+
+    This used to be `return {"status": "ok"}` with no dependency check at all.
+    Render promotes a deploy when this path answers 200, so a release with
+    broken Supabase credentials was promoted as healthy and the gate was
+    decoration. Pointing Render at /health instead would not have helped:
+    that endpoint answers 200 whether the probe succeeded or not, by design,
+    because it is a human-readable diagnostic rather than a gate.
+
+    One cheap indexed read through the client the endpoints actually use — the
+    same probe /health runs. It answers up or down and NOTHING else: this is
+    unauthenticated, so no exception text, host name or key state may ride out
+    on it.
+    """
+    try:
+        from app.supabase_client import supabase
+
+        supabase.table("users").select("id").limit(1).execute()
+    except Exception:
+        _log.exception("healthz: supabase probe failed")
+        return JSONResponse(status_code=503, content={"status": "unavailable"})
     return {"status": "ok"}
