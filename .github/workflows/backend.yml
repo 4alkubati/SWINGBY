@@ -59,7 +59,10 @@ jobs:
           cache-dependency-path: backend/requirements.txt
 
       - name: Install dependencies
-        run: pip install -r backend/requirements.txt pytest pytest-asyncio httpx sqlparse
+        # SB-0036 — the test extras were unpinned while requirements.txt is now
+        # fully pinned, so CI could still drift on the tooling side. sqlparse in
+        # particular carried four advisories at an unpinned floor.
+        run: pip install -r backend/requirements.txt pytest==9.1.1 pytest-asyncio==1.4.0 httpx==0.28.1 sqlparse==0.6.0
 
       - name: Run tests
         run: pytest backend/tests -q
