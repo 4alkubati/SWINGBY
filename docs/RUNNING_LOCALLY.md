@@ -65,7 +65,8 @@ VITE_SUPABASE_URL=https://ulnxapnsenzyddddldjt.supabase.co
 VITE_SUPABASE_ANON_KEY=<anon key>
 VITE_API_BASE_URL=http://127.0.0.1:8000
 VITE_SENTRY_DSN=          # leave empty locally
-VITE_PLAUSIBLE_DOMAIN=    # leave empty locally
+# VITE_PLAUSIBLE_DOMAIN=  # DEAD (SB-0040) — analytics moved to PostHog 2026-08-15.
+#                          Nothing reads this; use VITE_POSTHOG_KEY / VITE_POSTHOG_HOST.
 VITE_MAINTENANCE_MODE=false
 ```
 

@@ -240,7 +240,7 @@ Three things that are true of this table and were not obvious before:
 | `VITE_SUPABASE_ANON_KEY` | Supabase anon key (never the service key) |
 | `VITE_API_URL` | Render backend URL — `https://swingbyy-api.onrender.com` |
 | `VITE_SENTRY_DSN` | Sentry DSN (optional) |
-| `VITE_PLAUSIBLE_DOMAIN` | `swingbyy.com` |
+| ~~`VITE_PLAUSIBLE_DOMAIN`~~ | **DEAD — do not set (SB-0040).** Analytics moved to PostHog on 2026-08-15; nothing reads this. Setting it configures a product the app no longer loads. Use `VITE_POSTHOG_KEY` / `VITE_POSTHOG_HOST`. |
 | `VITE_MAINTENANCE_MODE` | `false` |
 
 ### CSP and security headers
