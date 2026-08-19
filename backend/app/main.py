@@ -57,7 +57,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 # T17 — Rate limiting (limiter defined in app/limiter.py to avoid circular import)
-from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
 # Bug 9 (walkthrough) — postgrest's APIError, for the invalid-UUID-cast handler

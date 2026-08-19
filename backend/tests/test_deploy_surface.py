@@ -22,7 +22,6 @@ probe the database, but it answers 200 either way, so pointing Render at it
 instead would not have helped.
 """
 
-import os
 from unittest.mock import patch
 
 import pytest
