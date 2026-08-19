@@ -6,7 +6,24 @@ from dotenv import load_dotenv
 load_dotenv()
 
 _url = os.getenv("SUPABASE_URL")
-_service_key = os.getenv("SUPABASE_SERVICE_KEY")
+
+# Either name, and an EMPTY value counts as unset.
+#
+# Legacy Supabase projects name this SUPABASE_SERVICE_KEY (a service_role JWT);
+# newer ones issue SUPABASE_SECRET_KEY. scripts/seed_demo.py has accepted both
+# since it was written, and this module accepted only the old one — so with a
+# newer project every script that imports this failed at import time while the
+# seed scripts worked, which reads as "the key is missing" when it is present
+# under the other name.
+#
+# `or ""` then `.strip()` matters as much as the fallback: this project's .env
+# carried the line `SUPABASE_SERVICE_KEY=` with no value, and a bare getenv
+# returns "" for that — falsy here, but it would shadow the good key if the
+# fallback were written as a plain `os.getenv(a) or os.getenv(b)` over raw
+# values that might be whitespace.
+_service_key = (os.getenv("SUPABASE_SERVICE_KEY") or "").strip() or (
+    os.getenv("SUPABASE_SECRET_KEY") or ""
+).strip()
 
 # ── Hard fail at startup if critical env vars are missing ─────────────────────
 # The service_role key MUST be set — it is never exposed to the frontend.
@@ -18,7 +35,8 @@ if not _url:
 
 if not _service_key:
     raise RuntimeError(
-        "SUPABASE_SERVICE_KEY is not set. "
+        "Neither SUPABASE_SERVICE_KEY nor SUPABASE_SECRET_KEY is set "
+        "(an empty value counts as unset). "
         "Get it from Supabase Dashboard → Settings → API → service_role key. "
         "Add it to backend/.env and restart. "
         "NEVER put this key in any frontend code or commit it to git."

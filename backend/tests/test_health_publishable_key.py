@@ -79,11 +79,46 @@ class TestHealthEndpoint:
 
     def test_health_states_which_environment_it_thinks_it_is(self, monkeypatch, client):
         monkeypatch.delenv("ENV", raising=False)
+        monkeypatch.delenv("HEALTH_DIAGNOSTICS_TOKEN", raising=False)
         # Unset ENV is exactly Render's situation: prod calling itself dev.
         assert _get(client)["environment"] == "development"
 
+    def test_the_environment_name_is_not_public_in_production(
+        self, monkeypatch, client
+    ):
+        """PASS 3 #10 — the diagnostics moved behind a token.
+
+        This field exists because Render was tagging production errors
+        "development" and nothing surfaced the mislabelling. That is worth
+        keeping, but it is operator information: telling an anonymous caller how
+        the deployment is wired (and, via stripe_detail, which of its secrets is
+        currently broken) is reconnaissance we were handing out for free.
+
+        The STATE fields a monitor polls (`status`, `database`, `stripe`) stay
+        public — see the next test.
+        """
         monkeypatch.setenv("ENV", "production")
-        assert _get(client)["environment"] == "production"
+        monkeypatch.delenv("HEALTH_DIAGNOSTICS_TOKEN", raising=False)
+        body = _get(client)
+        assert "environment" not in body
+        assert "stripe_detail" not in body
+        # Still answers the question a health check is for.
+        assert body["status"] in ("ok", "error")
+        assert body["stripe"] in ("ok", "not_configured", "malformed")
+
+    def test_the_token_unlocks_the_diagnostics_again(self, monkeypatch, client):
+        """An operator with the secret gets the full picture back — otherwise
+        the fix just deletes a debugging tool instead of protecting it."""
+        monkeypatch.setenv("ENV", "production")
+        monkeypatch.setenv("HEALTH_DIAGNOSTICS_TOKEN", "s3cret-health-token")
+
+        assert "environment" not in client.get("/health").json()
+
+        with_token = client.get("/health?token=s3cret-health-token").json()
+        assert with_token["environment"] == "production"
+
+        # A wrong token is exactly as blind as no token.
+        assert "environment" not in client.get("/health?token=wrong").json()
 
     def test_health_never_leaks_either_key(self, monkeypatch, client):
         monkeypatch.setenv("STRIPE_PUBLISHABLE_KEY", "pk_test_51PublishableSecret")

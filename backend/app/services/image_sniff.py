@@ -42,15 +42,41 @@ _SIGNATURES = (
     (b"GIF89a", "image/gif"),
 )
 
+# HEIC/HEIF — the iPhone default. ISO base media format like MP4: bytes 4-8 are
+# `ftyp` and the four after that are the brand, so this does NOT match at offset
+# 0. The brand list is what Apple actually emits (`heic` single image, `heix`
+# 10-bit, `mif1` for the HEIF still profile, `msf1`/`hevc`/`hevx` for sequences).
+_HEIF_BRANDS = {
+    b"heic",
+    b"heix",
+    b"heim",
+    b"heis",
+    b"hevc",
+    b"hevx",
+    b"hevm",
+    b"hevs",
+    b"mif1",
+    b"msf1",
+}
+
 # Content types the endpoint accepts, mapped to the sniffed types that satisfy
 # them. Kept explicit rather than derived so that adding a declared type without
 # thinking about its bytes is not possible.
+#
+# HEIC/HEIF were MISSING here while `uploads.ALLOWED_CONTENT_TYPES` accepted
+# them, which meant the declared-type gate let an iPhone photo through and this
+# table then rejected it — a 400 on every iOS upload, and the exact failure the
+# `image/heic` entry over there was added to prevent. Found while auditing the
+# audio path (checklist #12); the two tables have to agree or one of them is
+# decoration.
 _DECLARED_TO_SNIFFED = {
     "image/jpeg": {"image/jpeg"},
     "image/jpg": {"image/jpeg"},
     "image/png": {"image/png"},
     "image/gif": {"image/gif"},
     "image/webp": {"image/webp"},
+    "image/heic": {"image/heic"},
+    "image/heif": {"image/heic"},
 }
 
 
@@ -70,6 +96,14 @@ def sniff(contents: bytes) -> Optional[str]:
     # WebP: 'RIFF' <4-byte little-endian size> 'WEBP'
     if len(contents) >= 12 and contents[:4] == b"RIFF" and contents[8:12] == b"WEBP":
         return "image/webp"
+
+    # HEIC/HEIF: <4-byte box length> 'ftyp' <brand>
+    if (
+        len(contents) >= 12
+        and contents[4:8] == b"ftyp"
+        and contents[8:12] in _HEIF_BRANDS
+    ):
+        return "image/heic"
 
     return None
 

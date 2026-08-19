@@ -1,4 +1,5 @@
 import os
+import secrets
 
 from dotenv import load_dotenv
 
@@ -70,10 +71,38 @@ from app.database import engine
 # T12 — Request-ID middleware
 from app.middleware.request_id import RequestIDMiddleware
 
+# Checklist #7 / #11 — response hardening and the global body-size ceiling
+from app.middleware.body_limit import BodySizeLimitMiddleware
+from app.middleware.security_headers import SecurityHeadersMiddleware
+
 # T17 — Import the shared limiter instance
 from app.limiter import limiter
 
-app = FastAPI(title="SwingBy API", version="1.0.0")
+# Checklist #10 — the interactive docs are OFF in production.
+#
+# `/docs`, `/redoc` and `/openapi.json` were served unauthenticated on the
+# deployed API, which published the complete route inventory — every
+# `/admin/*` and `/analytics/*` path included — to anyone who asked. That is
+# the map an attacker uses to find everything else, handed over on the first
+# request with no credential.
+#
+# Gated on settings.API_ENABLE_DOCS (see config.py): off when ENV=production,
+# on everywhere else, and forceable with API_ENABLE_DOCS=1. Passing None to
+# these three arguments is what actually removes the routes — FastAPI does not
+# register them at all, so they 404 rather than 401, and nothing is left to
+# probe.
+_docs_enabled = settings.API_ENABLE_DOCS
+
+app = FastAPI(
+    title="SwingBy API",
+    version="1.0.0",
+    docs_url="/docs" if _docs_enabled else None,
+    redoc_url="/redoc" if _docs_enabled else None,
+    openapi_url="/openapi.json" if _docs_enabled else None,
+)
+
+if not _docs_enabled:
+    _log.info("api.docs_disabled", env=settings.ENV)
 
 # T17 — Attach limiter to app state before any routers are included
 app.state.limiter = limiter
@@ -141,18 +170,45 @@ async def _postgrest_bad_identifier_to_404(request: Request, exc: PostgrestAPIEr
 # T12 — Request-ID middleware (register before CORS so every response gets it)
 app.add_middleware(RequestIDMiddleware)
 
+# Checklist #7 — HSTS and friends on every API response. See the module
+# docstring for why the set here is shorter than the one the web properties get.
+app.add_middleware(SecurityHeadersMiddleware)
+
+# Checklist #11 — global request-body ceiling. Registered LAST so it runs
+# FIRST: an oversized body must be refused before any other middleware (or the
+# route, or Pydantic) has had a chance to buffer it.
+app.add_middleware(BodySizeLimitMiddleware, max_bytes=settings.MAX_REQUEST_BYTES)
+
 _default_origins = ["http://localhost:5173", "http://localhost:3000"]
 _extra_origins = [
     o.strip() for o in settings.SWINGBY_ALLOWED_ORIGINS.split(",") if o.strip()
 ]
+
+# Checklist #8 — a wildcard in SWINGBY_ALLOWED_ORIGINS is dropped, loudly.
+#
+# This list is combined with allow_credentials=True. Starlette treats "*"
+# specially in that combination: it stops sending a literal `*` and starts
+# REFLECTING whatever Origin the caller sent, with credentials allowed — which
+# is every origin on the internet reading authenticated responses. Nothing
+# validated this env var, so one over-broad value in the Render dashboard was
+# all it would have taken. Filtering here rather than trusting the operator is
+# the point; the log line exists so the drop is not silent.
+_wildcards = [o for o in _extra_origins if "*" in o]
+if _wildcards:
+    _log.error("cors.wildcard_origin_rejected", origins=_wildcards)
+_extra_origins = [o for o in _extra_origins if "*" not in o]
+
 _allowed_origins = _default_origins + _extra_origins
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_allowed_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    # Narrowed from ["*"]. These are the verbs and headers the mobile and web
+    # clients actually send; a wildcard here is not itself an exploit, but it
+    # widens what a successful origin bypass would be worth.
+    allow_methods=["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "X-Request-ID"],
 )
 
 from app.api.auth import router as auth_router
@@ -295,7 +351,7 @@ app.include_router(
 
 
 @app.get("/health")
-def health_check():
+def health_check(request: Request):
     # `stripe` reports the SHAPE of the configured key, never the key. It exists
     # so a malformed key is provable from outside the box with one curl:
     # SEN-1 shipped a truncated key to Render and the only evidence was a
@@ -351,11 +407,35 @@ def health_check():
     body["direct_sql"] = "configured" if engine is not None else "not_configured"
 
     body["stripe_publishable"] = pub_state
-    body["environment"] = env_name
-    if stripe_detail:
-        body["stripe_detail"] = stripe_detail
-    if pub_detail:
-        body["stripe_publishable_detail"] = pub_detail
+
+    # Checklist #10 — the DIAGNOSTIC half of this endpoint is no longer public.
+    #
+    # The states above ("ok" / "not_configured" / "malformed") stay open: they
+    # are what a monitor polls and they name no internals. What moves behind a
+    # token is the environment name and the key-shape detail — the fields that
+    # tell an unauthenticated caller how this deployment is wired and which of
+    # its secrets is currently broken.
+    #
+    # HEALTH_DIAGNOSTICS_TOKEN unset keeps the old behaviour verbatim, so a dev
+    # box and every existing runbook are untouched; setting it in production is
+    # what closes the leak. Compared with secrets.compare_digest because this is
+    # a shared secret in a query string and a naive == is a timing oracle.
+    expected = settings.HEALTH_DIAGNOSTICS_TOKEN
+    if expected:
+        supplied = request.query_params.get("token") or request.headers.get(
+            "X-Health-Token", ""
+        )
+        show_detail = secrets.compare_digest(str(supplied), expected)
+    else:
+        show_detail = not settings.IS_PRODUCTION
+
+    if show_detail:
+        body["environment"] = env_name
+        if stripe_detail:
+            body["stripe_detail"] = stripe_detail
+        if pub_detail:
+            body["stripe_publishable_detail"] = pub_detail
+
     return body
 
 

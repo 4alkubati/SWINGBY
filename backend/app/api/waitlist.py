@@ -1,8 +1,11 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, EmailStr, Field, field_validator
 from typing import Optional
+import logging
 import os
 from notion_client import Client
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -70,7 +73,19 @@ def join_waitlist(data: WaitlistEntry):
 
         return {"message": "You're on the list! We'll be in touch."}
 
-    except RuntimeError as e:
-        raise HTTPException(status_code=500, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    # Checklist #5 / #20 — these two handlers used to return `str(e)` straight
+    # to the caller on a PUBLIC, unauthenticated endpoint. Whatever the Notion
+    # client raised went out verbatim: database ids, API error bodies, and —
+    # for a duplicate address — a message that confirms the address is already
+    # on the list, which is an enumeration oracle on the one endpoint anybody
+    # can reach without an account. The detail is logged, not served.
+    except RuntimeError:
+        logger.exception("waitlist.join failed — configuration error")
+        raise HTTPException(
+            status_code=500, detail="Could not join the waitlist right now"
+        )
+    except Exception:
+        logger.exception("waitlist.join failed")
+        raise HTTPException(
+            status_code=400, detail="Could not join the waitlist right now"
+        )
