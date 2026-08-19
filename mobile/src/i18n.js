@@ -671,7 +671,7 @@ const translations = {
     'jobManagement.sentQuotesMoved': 'Les devis envoyés se trouvent dans Messages, derrière la bulle Devis. Un travail arrive ici à l’acceptation.',
   },
 
-  // ── Arabic (RTL) — skeleton keys, translator TODO ──────────────────────
+  // ── Arabic (RTL) — COMPLETE: 270/270 keys, verified 2026-08-19 (SB-0072) ──
   ar: {
     // Auth
     'auth.signin': 'تسجيل الدخول',
@@ -1001,8 +1001,13 @@ const translations = {
 // ─── Lane 3 (payments + flow-breakers) ───────────────────────────────────────
 // APPENDED, never merged into the blocks above — several lanes append to this
 // file in parallel and a hunk in the middle of `translations` conflicts with
-// all of them. English only: i18n.enableFallback is on below, so fr-CA and ar
-// resolve these through the en fallback until they are translated.
+// all of them.
+//
+// SB-0072: this used to say "English only ... until they are translated", which
+// stopped being true and then stayed on the page. fr-CA and ar are both at
+// 270/270 — full parity with en, asserted by
+// src/__tests__/i18n-coverage.test.js. enableFallback is still on below, but as
+// a safety net for a key added in a hurry, not as the normal path.
 const lane3 = {
   // Pay sheet — design/handoff-jet-pulse/PAYMENTS.md
   'pay.titleHold': 'Hold payment',
