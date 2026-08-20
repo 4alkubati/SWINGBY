@@ -154,9 +154,15 @@ def create_dispute(body: DisputeCreate, current_user: dict = Depends(get_current
                 "note": f"[{body.issue_type}] {body.description[:200]}",
             }
         ).execute()
-    except Exception as e:
-        logger.warning(
-            "booking_event write failed for dispute %s: %s", dispute.get("id"), e
+    except Exception:
+        # Best-effort by design — a timeline row must never fail opening a
+        # dispute. But logger.exception, not warning: this write silently
+        # violated the event_type CHECK from 2026-07 until the sweep on
+        # 2026-08-15 found it, because a warning is not something anybody
+        # watches. If it fails again, it should page.
+        logger.exception(
+            "booking_event write failed for dispute %s (event_type=dispute_opened)",
+            dispute.get("id"),
         )
 
     return dispute
@@ -496,9 +502,11 @@ def resolve_dispute(
                 "note": body.resolution[:200],
             }
         ).execute()
-    except Exception as e:
-        logger.warning(
-            "booking_event write failed for dispute resolve %s: %s", dispute_id, e
+    except Exception:
+        logger.exception(
+            "booking_event write failed for dispute resolve %s "
+            "(event_type=dispute_resolved)",
+            dispute_id,
         )
 
     record_audit(

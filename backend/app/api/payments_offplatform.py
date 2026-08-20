@@ -143,8 +143,13 @@ def mark_paid_offplatform(
                 }
             ).execute()
         except Exception:
-            logger.warning(
-                "Could not append booking_events for offplatform pay %s", booking_id
+            # Best-effort, but loud: this write silently violated the
+            # event_type CHECK until the 2026-08-15 sweep, so an off-platform
+            # payment never reached the timeline and nothing said so.
+            logger.exception(
+                "Could not append booking_events for offplatform pay %s "
+                "(event_type=paid_offplatform)",
+                booking_id,
             )
 
         return {"payment": (pay_res.data or [{}])[0]}
