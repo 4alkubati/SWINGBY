@@ -45,7 +45,7 @@
     "citiesTitle": "Available Cities",
     "faqTitle": "Frequently Asked Questions",
     "finalCtaTitle": "Ready to get started?",
-    "finalCtaSubtitle": "Join thousands of Calgarians finding better local services."
+    "finalCtaSubtitle": "Post a job and local Calgary businesses send you a price."
   },
   "auth": {
     "loginTitle": "Welcome back",
@@ -179,7 +179,7 @@
     "ctaLearnMore": "Learn More",
     "valuePropsTitle": "Built for businesses like yours",
     "valueProp1Title": "More bookings",
-    "valueProp1Desc": "Reach thousands of clients actively looking for your services. No advertising spend required.",
+    "valueProp1Desc": "Clients post the job and you send a price. No advertising spend, and no paying for a lead before you know what it is.",
     "valueProp2Title": "Less admin",
     "valueProp2Desc": "Manage quotes, bookings, and payments from one dashboard. Spend time on jobs, not paperwork.",
     "valueProp3Title": "Grow your reputation",
@@ -198,7 +198,7 @@
     "story3Quote": "Best part? No upfront cost. We only pay when we actually earn. That's how it should be.",
     "story3Role": "Dave L., Operations Manager",
     "finalCtaTitle": "Start growing today",
-    "finalCtaSubtitle": "Join hundreds of Calgary businesses already winning on SwingByy."
+    "finalCtaSubtitle": "Be there when Calgary clients start posting jobs."
   },
   "categoriesIndex": {
     "heroTitle": "Browse all categories",

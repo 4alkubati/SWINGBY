@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "vite",
     "build": "vite build",
+    "dev": "vite",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest"
@@ -39,5 +39,8 @@
     "jsdom": "^25.0.1",
     "vite": "^6.4.3",
     "vitest": "^4.1.11"
+  },
+  "allowScripts": {
+    "esbuild@0.21.5": true
   }
 }

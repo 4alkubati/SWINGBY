@@ -83,12 +83,6 @@ export default function Login() {
           </div>
         </div>
 
-        <blockquote className={styles.testimonial}>
-          <p className={styles.testimonialQuote}>
-            "SwingByy made finding a cleaner so simple. Booked in 10 minutes."
-          </p>
-          <footer className={styles.testimonialAuthor}>— Sarah M., Calgary</footer>
-        </blockquote>
       </aside>
 
       {/* ── Right panel: form ── */}
