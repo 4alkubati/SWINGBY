@@ -34,7 +34,7 @@ slowapi==0.1.10
 # hid the staleness rather than managing it. Pinned exact at the tested version;
 # the major upgrade is its own change, with the payment tests as the gate,
 # because Stripe majors move API surface that this repo's escrow logic sits on.
-stripe==11.6.0
+stripe==15.5.0
 
 reportlab==5.0.0
 
