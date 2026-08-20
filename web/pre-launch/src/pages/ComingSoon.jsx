@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom'
 import axios from 'axios'
 import styles from './ComingSoon.module.css'
 import HeroLottie from '../components/HeroLottie'
-import Testimonials from '../components/Testimonials'
 import Footer from '../components/Footer'
 
 const API = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000'
@@ -450,8 +449,6 @@ export default function ComingSoon() {
         </div>
       </section>
 
-      {/* ── Testimonials ── */}
-      <Testimonials />
 
       {/* ── FAQ Accordion ── */}
       <section className={styles.faqSection}>

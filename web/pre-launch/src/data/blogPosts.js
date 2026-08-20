@@ -229,7 +229,7 @@ Keep your calendar up to date. Clients prefer businesses that show real-time ava
 Businesses that respond to quotes within 1 hour are **5x more likely** to win the job.
 
 ### 7. Earn great reviews
-After every job, ask your client to leave a review. Consistent 5-star reviews put you at the top of search results.
+After every job, ask your client to leave a review. Being easy to deal with is what gets you asked back.
 
 ---
 

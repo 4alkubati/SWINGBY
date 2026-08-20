@@ -4,7 +4,6 @@ import { motion } from 'framer-motion'
 import { ArrowRight, Broom, Wrench, Lightning, Plant, PaintBrush, Hammer, Toolbox } from '@phosphor-icons/react'
 import SEO from '../components/SEO'
 import Button from '../components/Button'
-import StatsBlock from '../components/StatsBlock'
 import { FAQSection } from '../components/FAQItem'
 import styles from './Home.module.css'
 
@@ -26,11 +25,6 @@ const STEPS = [
   { num: '03', titleKey: 'home.step3Title', descKey: 'home.step3Desc' },
 ]
 
-const TESTIMONIALS = [
-  { name: 'Sarah M.', role: 'Homeowner', text: 'Found an amazing cleaner in under an hour. The quoting process made it so easy to compare.' },
-  { name: 'James K.', role: 'Business Owner', text: 'SwingByy helped me double my bookings in the first month. The platform just works.' },
-  { name: 'Priya R.', role: 'Renter', text: 'No more calling around for plumbers. Posted a job, got 3 quotes, and booked by lunch.' },
-]
 
 const FAQ_ITEMS = [
   { question: 'How does SwingByy work?', answer: 'Post a job describing what you need, receive competitive quotes from verified local businesses, compare ratings and prices, then book the best fit — all in one place.' },
@@ -120,35 +114,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Stats */}
-      <section className={styles.section}>
-        <motion.div {...fadeUp}>
-          <StatsBlock stats={[
-            { value: 500, suffix: '+', label: 'Verified Businesses' },
-            { value: 12000, suffix: '+', label: 'Jobs Completed' },
-            { value: 4.8, suffix: '/5', label: 'Average Rating' },
-            { value: 30, suffix: 'min', label: 'Average Response Time' },
-          ]} />
-        </motion.div>
-      </section>
 
-      {/* Testimonials */}
-      <section className={styles.section}>
-        <motion.h2 className={styles.sectionTitle} {...fadeUp}>
-          {t('home.testimonialsTitle')}
-        </motion.h2>
-        <div className={styles.testimonialGrid}>
-          {TESTIMONIALS.map((t, i) => (
-            <motion.div key={i} className={styles.testimonialCard} {...fadeUp} transition={{ ...fadeUp.transition, delay: i * 0.1 }}>
-              <p className={styles.testimonialText}>"{t.text}"</p>
-              <div className={styles.testimonialAuthor}>
-                <span className={styles.testimonialName}>{t.name}</span>
-                <span className={styles.testimonialRole}>{t.role}</span>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      </section>
 
       {/* Cities */}
       <section className={styles.section}>
