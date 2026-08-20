@@ -1,15 +1,11 @@
-import { useState, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import {
   ArrowRight,
   ChartLineUp,
   ClipboardText,
   Star,
-  Quotes,
-  CaretLeft,
-  CaretRight,
 } from '@phosphor-icons/react'
 import SEO from '../components/SEO'
 import Button from '../components/Button'
@@ -29,29 +25,12 @@ const VALUE_PROPS = [
   { icon: Star, titleKey: 'forBusinesses.valueProp3Title', descKey: 'forBusinesses.valueProp3Desc' },
 ]
 
-const STORIES = [
-  { nameKey: 'forBusinesses.story1Name', quoteKey: 'forBusinesses.story1Quote', roleKey: 'forBusinesses.story1Role' },
-  { nameKey: 'forBusinesses.story2Name', quoteKey: 'forBusinesses.story2Quote', roleKey: 'forBusinesses.story2Role' },
-  { nameKey: 'forBusinesses.story3Name', quoteKey: 'forBusinesses.story3Quote', roleKey: 'forBusinesses.story3Role' },
-]
+// Success stories removed: all three businesses were invented, quoting
+// outcomes ("doubled our monthly bookings in the first 60 days") that no
+// customer ever reported. Nothing replaces them until a real one exists.
 
 export default function ForBusinesses() {
   const { t } = useTranslation()
-  const [activeStory, setActiveStory] = useState(0)
-
-  const nextStory = useCallback(() => {
-    setActiveStory((prev) => (prev + 1) % STORIES.length)
-  }, [])
-
-  const prevStory = useCallback(() => {
-    setActiveStory((prev) => (prev - 1 + STORIES.length) % STORIES.length)
-  }, [])
-
-  useEffect(() => {
-    const timer = setInterval(nextStory, 5000)
-    return () => clearInterval(timer)
-  }, [nextStory])
-
   return (
     <>
       <SEO
@@ -122,58 +101,6 @@ export default function ForBusinesses() {
             <span className={s.pricingLabel}>{t('pricing.platformFee')}</span>
           </div>
         </motion.div>
-      </section>
-
-      {/* Success Stories Carousel */}
-      <section className={s.section}>
-        <motion.h2 className={s.sectionTitle} {...fadeUp}>
-          {t('forBusinesses.storiesTitle')}
-        </motion.h2>
-        <motion.div className={s.carousel} {...fadeUp}>
-          <button
-            className={s.carouselBtn}
-            onClick={prevStory}
-            aria-label="Previous story"
-          >
-            <CaretLeft size={20} weight="bold" />
-          </button>
-          <div className={s.carouselTrack}>
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={activeStory}
-                className={s.storyCard}
-                initial={{ opacity: 0, x: 30 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -30 }}
-                transition={{ duration: 0.3, ease: [0, 0, 0.2, 1] }}
-              >
-                <Quotes size={32} weight="bold" className={s.storyQuoteIcon} />
-                <p className={s.storyQuote}>{t(STORIES[activeStory].quoteKey)}</p>
-                <div className={s.storyAuthor}>
-                  <span className={s.storyName}>{t(STORIES[activeStory].nameKey)}</span>
-                  <span className={s.storyRole}>{t(STORIES[activeStory].roleKey)}</span>
-                </div>
-              </motion.div>
-            </AnimatePresence>
-          </div>
-          <button
-            className={s.carouselBtn}
-            onClick={nextStory}
-            aria-label="Next story"
-          >
-            <CaretRight size={20} weight="bold" />
-          </button>
-        </motion.div>
-        <div className={s.carouselDots}>
-          {STORIES.map((_, i) => (
-            <button
-              key={i}
-              className={`${s.dot} ${i === activeStory ? s.dotActive : ''}`}
-              onClick={() => setActiveStory(i)}
-              aria-label={`Go to story ${i + 1}`}
-            />
-          ))}
-        </div>
       </section>
 
       {/* Final CTA */}
