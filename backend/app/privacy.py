@@ -58,6 +58,8 @@ WHY ONE MODULE
 
 from typing import Optional
 
+from app.services import area
+
 # What a business sees where a client's name would otherwise be. Never a real
 # name, never derived from one.
 MASKED_CLIENT_LABEL = "Client"
@@ -154,6 +156,25 @@ def mask_service_post_row(post: dict) -> dict:
     masked = dict(post)
 
     if "address" in masked:
+        # The quadrant is read from the FULL address, before truncation, and
+        # emitted as its own field.
+        #
+        # mask_address_to_locality keeps everything after the first comma, and
+        # in Canadian addressing the quadrant sits before it — "3823 16 St SW,
+        # Calgary, AB" masks to "Calgary, AB". So the one piece of geography a
+        # business needs to decide whether to quote was the piece being thrown
+        # away, and every post in the feed looked equally far away.
+        #
+        # A quadrant is a quarter of the city. It identifies no home, which is
+        # the whole point of this function, and it is what a tradesperson in
+        # Bowness uses to tell a ten-minute job from a thirty-minute one.
+        #
+        # It survives the fail-closed path too: "143 Citadel Meadow Gardens NW"
+        # has no comma, so the address masks to None — correctly — but the
+        # client still gets their quadrant shown, which is what gets them
+        # quotes. See services/area.py for why this reads the address text and
+        # never the coordinates.
+        masked["area"] = area.area_label(masked.get("address"))
         masked["address"] = mask_address_to_locality(masked.get("address"))
     if "lat" in masked:
         masked["lat"] = coarsen_coordinate(masked.get("lat"))
