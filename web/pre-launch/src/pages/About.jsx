@@ -12,10 +12,19 @@ const fadeUp = {
   transition: { duration: 0.5, ease: [0, 0, 0.2, 1] },
 }
 
+// SB-0089 — one entry, because there is one person.
+//
+// This listed "Jordan Li, Head of Engineering" and "Maya Patel, Head of
+// Operations" alongside the founder. Neither exists; confirmed by the owner on
+// 2026-08-20. Same shape as the invented testimonials and use-case customers
+// removed earlier, and by then they had been translated into French and Arabic
+// too, so the fiction was shipping in three languages.
+//
+// A team page that says one person is not a weakness. A team page with two
+// people who do not exist is the same credibility problem as a fake review,
+// and it is the kind a journalist or an investor checks first.
 const TEAM = [
   { nameKey: 'about.member1Name', roleKey: 'about.member1Role', bioKey: 'about.member1Bio' },
-  { nameKey: 'about.member2Name', roleKey: 'about.member2Role', bioKey: 'about.member2Bio' },
-  { nameKey: 'about.member3Name', roleKey: 'about.member3Role', bioKey: 'about.member3Bio' },
 ]
 
 export default function About() {
