@@ -137,3 +137,71 @@ class TestRatingAggregation:
         avg = sum(ratings) / len(ratings)
 
         assert avg == 4.2
+
+
+class TestSelfReviewIsRefused:
+    """
+    SB-0005 — a business appeared on its own public profile with a 5-star review
+    from its own owner, and `avg_rating` is the number geo-browse ranks on.
+
+    The route in: `businesses.owner_id` does NOT require `role ==
+    'business_owner'`. A user whose role is 'client' can own a business, book
+    it, and take the client branch of this endpoint — which writes a
+    business-targeted review of the business they own. Both role checks pass,
+    because neither asks the question that matters.
+    """
+
+    def _tables(self, insert_ok=True):
+        return {
+            "bookings": SupabaseTableStub(
+                select_data={
+                    "id": "bk-self",
+                    "status": "completed",
+                    "client_id": "user-123",
+                    "business_id": "biz-owned-by-me",
+                }
+            ),
+            "businesses": SupabaseTableStub(
+                select_data={"id": "biz-owned-by-me", "owner_id": "user-123"},
+                update_data=[],
+            ),
+            "reviews": SupabaseTableStub(
+                select_data=[],
+                insert_data=[{"id": "review-self"}] if insert_ok else [],
+            ),
+            "employees": SupabaseTableStub(select_data=[]),
+        }
+
+    def test_owner_cannot_review_their_own_business(self, test_client, as_client):
+        tables = self._tables()
+        with patch("app.api.reviews.supabase") as mock_supabase:
+            mock_supabase.table.side_effect = lambda name: tables[name]
+            response = test_client.post(
+                "/reviews/",
+                json={
+                    "booking_id": "bk-self",
+                    "rating": 5,
+                    "comment": "Really loved their services.",
+                },
+                headers={"Authorization": "Bearer test-token"},
+            )
+        assert response.status_code == 403, (
+            "a business owner rated their own business, inflating the avg_rating "
+            "that geo-browse ranks on (SB-0005)"
+        )
+
+    def test_a_genuine_client_review_still_works(self, test_client, as_client):
+        """The guard must not cost an honest review — that is the whole product."""
+        tables = self._tables()
+        tables["businesses"] = SupabaseTableStub(
+            select_data={"id": "biz-owned-by-me", "owner_id": "someone-else"},
+            update_data=[],
+        )
+        with patch("app.api.reviews.supabase") as mock_supabase:
+            mock_supabase.table.side_effect = lambda name: tables[name]
+            response = test_client.post(
+                "/reviews/",
+                json={"booking_id": "bk-self", "rating": 5, "comment": "Great!"},
+                headers={"Authorization": "Bearer test-token"},
+            )
+        assert response.status_code in (200, 201)

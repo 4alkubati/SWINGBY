@@ -216,14 +216,37 @@ class TestLogin:
             assert response.status_code == 401
             assert "Invalid credentials" in response.json().get("detail", "")
 
-    def test_login_5_failures_then_lockout_on_6th(self, test_client):
+    def test_login_5_failures_then_lockout_on_6th(self, test_client, monkeypatch):
         """
         T81.6: After 5 failed login attempts (within 15 min window),
         the 6th attempt should return 429 (Too Many Requests).
+
+        PASS 3 #4 — the counter moved out of an in-memory dict and into
+        `login_attempts` in Postgres, because the dict was defeated by rotating
+        the source IP, by any deploy, and by a second worker. The threshold and
+        the window are unchanged; what changed is where the state lives, so this
+        test now stands an in-memory store in for the table rather than relying
+        on module-level state that no longer exists.
         """
         # The limiter is keyed by client IP ("testclient" for every test), so
         # earlier login tests consume the 5/minute budget. Reset for determinism.
         app.state.limiter.reset()
+
+        from app.services import login_guard
+
+        store: list[str] = []
+        monkeypatch.setattr(
+            login_guard,
+            "_count",
+            lambda column, value: (store.count(value) if column == "email_hash" else 0),
+        )
+        monkeypatch.setattr(
+            login_guard,
+            "record_failure",
+            lambda email, ip, reason="invalid_credentials": store.append(
+                login_guard.hash_email(email)
+            ),
+        )
 
         with patch("app.api.auth.supabase_auth") as mock_supabase_auth:
             # Mock failed login
@@ -262,9 +285,14 @@ class TestLogin:
             # — and the assertion that was supposedly testing it failed.
             #
             # Both are 429. This one is the account-level control: 5 failures
-            # per (email, ip) in 15 minutes, and it is what actually stops
-            # password guessing. Assert on it by its own message.
-            assert "Too many attempts" in response.json().get("detail", "")
+            # per ACCOUNT in 15 minutes, and it is what actually stops password
+            # guessing. Assert on it by its own message.
+            detail = response.json().get("detail", "")
+            assert "Too many attempts" in detail
+            # PASS 3 #5 — and it must NOT say how long the block lasts. That
+            # number came from the oldest recorded failure, which made it a
+            # readout of whether this account had been seen before.
+            assert "minute" not in detail
 
 
 class TestGetMe:

@@ -4,7 +4,6 @@ import { motion } from 'framer-motion'
 import { MapPin } from '@phosphor-icons/react'
 import SEO from '../components/SEO'
 import Button from '../components/Button'
-import StatsBlock from '../components/StatsBlock'
 import shared from './page.module.css'
 import s from './CalgaryPage.module.css'
 
@@ -44,20 +43,6 @@ export default function CalgaryPage() {
         </motion.div>
       </section>
 
-      {/* Stats */}
-      <section className={s.section}>
-        <motion.h2 className={s.sectionTitle} {...fadeUp}>
-          {t('calgary.statsTitle')}
-        </motion.h2>
-        <motion.div {...fadeUp}>
-          <StatsBlock stats={[
-            { value: 500, suffix: '+', label: t('calgary.statBusinesses') },
-            { value: 12000, suffix: '+', label: t('calgary.statJobs') },
-            { value: 4.8, suffix: '/5', label: t('calgary.statRating') },
-            { value: 30, suffix: 'min', label: t('calgary.statResponse') },
-          ]} />
-        </motion.div>
-      </section>
 
       {/* Neighborhoods */}
       <section className={s.section}>

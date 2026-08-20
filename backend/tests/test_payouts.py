@@ -810,7 +810,7 @@ class TestCashOut:
 
 
 class TestSettleOnRead:
-    """There is no scheduler (STATUS.md §2), so a standard payout's multi-day
+    """There is no APPLICATION scheduler (STATUS.md §2), so a standard payout's multi-day
     in_transit -> paid transition has to be observed on a read or nowhere."""
 
     def test_an_in_transit_payout_is_refreshed_when_the_wallet_opens(self, as_owner):

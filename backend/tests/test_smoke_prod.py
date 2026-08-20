@@ -53,13 +53,23 @@ class TestSmokeDeployedAPI:
             assert "status" in data
             assert "database" in data
 
-    def test_swagger_docs_available(self):
+    def test_swagger_docs_are_NOT_public(self):
         """
-        T86.3: GET /docs should return 200 (FastAPI Swagger UI).
+        Inverted on 2026-08-19 (SB-0065). This used to assert /docs returns 200
+        in production, which fought the docs lockdown landed in f26408d: that
+        change removes /docs, /redoc and /openapi.json when ENV=production
+        because serving them unauthenticated published the complete route
+        inventory — "the map an attacker uses to find everything else".
+
+        Left as-is, this test would start failing the moment the lockdown
+        deployed, and the quickest way to make it green again is to revert the
+        security fix. A test that punishes the correct behaviour is worse than
+        no test.
         """
         with httpx.Client(timeout=30) as client:
             response = client.get(f"{BASE_URL}/docs")
 
-            assert response.status_code == 200
-            # Check it's HTML (not JSON error)
-            assert "text/html" in response.headers.get("content-type", "")
+            assert response.status_code != 200, (
+                "production is serving Swagger UI publicly — API_ENABLE_DOCS is "
+                "set, or ENV is not 'production' on the deployed service"
+            )

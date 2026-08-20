@@ -21,6 +21,7 @@ import * as Clipboard from 'expo-clipboard';
 import { Linking, Share } from 'react-native';
 import { api } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+import { formatLoggedAt } from '../../utils/eventTime';
 import i18n from '../../i18n';
 import * as toast from '../../services/toast';
 import * as haptics from '../../services/haptics';
@@ -454,8 +455,15 @@ function LiveStatusCard({ events, status, onRetry }) {
                 {ev.note ? (
                   <Text variant="caption">{humaniseNote(ev.note)}</Text>
                 ) : null}
+                {/* SB-0010 — see utils/eventTime.js. The date appears only
+                    when the row above does not already establish it. */}
                 <Text variant="caption" color="secondary">
-                  {i18n.t('booking.eventLoggedAt', { time: formatTime(ev.created_at) })}
+                  {i18n.t('booking.eventLoggedAt', {
+                    time: formatLoggedAt(
+                      ev.created_at,
+                      i > 0 ? events[i - 1]?.created_at : null,
+                    ),
+                  })}
                 </Text>
               </Stack>
             </Inline>

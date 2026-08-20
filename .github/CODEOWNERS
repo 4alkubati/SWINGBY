@@ -1,0 +1,33 @@
+# CODEOWNERS — SB-0062
+#
+# There was none, so no review was ever requested automatically and nothing
+# distinguished a change to the escrow maths from a change to a marketing page.
+# GitHub requests review from the owner of every touched path on each PR.
+#
+# This is advisory until `main` is protected (SB-0052) — a ruleset with
+# "require review from Code Owners" is what gives it teeth.
+
+# Default owner for anything not matched below.
+*                           @4alkubati
+
+# Money. Every figure here is user-facing and legally load-bearing; the
+# cancellation ladder in escrow.py must stay in step with the Terms copy the
+# client agreed to.
+/backend/app/services/escrow.py      @4alkubati
+/backend/app/api/payments*.py        @4alkubati
+/backend/app/api/payouts.py          @4alkubati
+
+# Auth, session handling and the moderation surface (App Store Guideline 1.2).
+/backend/app/api/auth.py             @4alkubati
+/backend/app/deps.py                 @4alkubati
+/backend/app/services/login_guard.py @4alkubati
+/backend/app/services/client_ip.py   @4alkubati
+/backend/app/api/moderation.py       @4alkubati
+
+# Schema. Migrations are one-way in production.
+/supabase/migrations/                @4alkubati
+
+# Anything that changes how the app is built, deployed or gated.
+/.github/workflows/                  @4alkubati
+/backend/render.yaml                 @4alkubati
+/backend/Dockerfile                  @4alkubati

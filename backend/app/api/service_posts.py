@@ -295,7 +295,7 @@ def list_my_posts(
 
     # Settle this client's expired posts before listing them.
     #
-    # `expiry_sweep` existed for weeks with no caller (there is no scheduler in
+    # `expiry_sweep` existed for weeks with no caller (no APPLICATION scheduler in
     # this deployment — see services/approvals.py), so an expired post kept
     # saying "open" forever and any escrow against it was never returned. This
     # is the same self-healing-on-read shape the 24h escrow release uses, and

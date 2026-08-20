@@ -17,6 +17,34 @@ updates:
       - dependency-name: react
       - dependency-name: expo*
 
+  # SB-0055 — Dependabot covered pip, /mobile and github-actions, and NO web app
+  # at all. web/pre-launch IS swingbyy.com: it had 6 HIGH advisories and had
+  # never received a single dependency-update PR, because nothing was watching
+  # it. The other two are here so the same blind spot cannot reopen on whichever
+  # app ships next.
+  #
+  # NOTE: config alone is not enough. Dependabot SECURITY alerts are disabled
+  # repo-wide (Settings -> Code security -> Dependabot alerts), so these entries
+  # produce routine version bumps but no vulnerability PRs until that toggle is
+  # on. That toggle is dashboard-only and still needs a human — see SB-0055.
+  - package-ecosystem: npm
+    directory: /web/pre-launch
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: npm
+    directory: /web/admin
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: npm
+    directory: /web/launch
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+
   - package-ecosystem: github-actions
     directory: /
     schedule:

@@ -117,11 +117,24 @@ export default {
     });
 
     if (!notionRes.ok) {
+      // SB-0041 — the raw Notion error body used to be returned verbatim to the
+      // caller, on a PUBLIC endpoint with Access-Control-Allow-Origin: *. That
+      // body carries Notion database ids, property names and API diagnostics:
+      // free reconnaissance on the CRM behind the form, handed to anyone who
+      // could make the request fail.
+      //
+      // Its FastAPI twin (backend/app/api/waitlist.py) documents having fixed
+      // exactly this and returning a generic message; that fix never reached
+      // the copy actually serving api.swingbyy.com.
+      //
+      // The detail still goes to the Worker log, where an operator can read it
+      // and the public cannot.
       const errText = await notionRes.text();
-      return new Response(JSON.stringify({ detail: errText }), {
-        status: 400,
-        headers: CORS_HEADERS,
-      });
+      console.error("waitlist: notion rejected the insert", notionRes.status, errText);
+      return new Response(
+        JSON.stringify({ detail: "Could not join the waitlist. Please try again." }),
+        { status: 502, headers: CORS_HEADERS }
+      );
     }
 
     return new Response(

@@ -59,7 +59,7 @@ const translations = {
     // plan changes, a URL that (per docs/DEPLOY.md) has no billing page
     // behind it. Replaced with a real support.contactUs mailto action.
     'subscription.managedByTeam': 'Plans are managed by our team.',
-    'subscription.autoBiddingPlan': 'Auto-bidding is part of a Swingbyy plan.',
+    'subscription.autoBiddingPlan': 'Auto-bidding is part of a SwingByy plan.',
 
     // Profile
     'profile.title': 'Edit Profile',
@@ -84,15 +84,15 @@ const translations = {
     'onboarding.slide3Sub': 'Photo proof on job complete. Escrow protects your payment.',
 
     // Referral
-    'referral.title': 'Share Swingbyy, get $10 credit',
+    'referral.title': 'Share SwingByy, get $10 credit',
     'referral.body': 'When your friend completes their first booking, you both get $10 off your next job.',
-    'referral.shareText': 'Join me on Swingbyy! Code: %{code} — https://swingbyy.com',
+    'referral.shareText': 'Join me on SwingByy! Code: %{code} — https://swingbyy.com',
     'referral.shareCTA': 'Share my code',
     'referral.stats': '%{friends} friends joined • $%{earned} earned',
 
     // FAQ
     'faq.title': 'Help & FAQ',
-    'faq.q1': 'How does Swingbyy work?',
+    'faq.q1': 'How does SwingByy work?',
     'faq.q2': 'How do quotes get accepted?',
     'faq.q3': 'When does payment happen?',
     'faq.q4': 'What if a job goes wrong?',
@@ -169,12 +169,12 @@ const translations = {
     'profile.photoUploading': 'Uploading photo…',
     'profile.photoUpdated': 'Photo updated',
     'profile.photoUploadError': 'Could not upload photo',
-    'profile.photoPermission': 'Allow Swingbyy to access your photos to set a profile picture.',
+    'profile.photoPermission': 'Allow SwingByy to access your photos to set a profile picture.',
 
     // Dispute photo upload (GAP-AUDIT #12)
     'dispute.photoUploading': 'Uploading…',
     'dispute.photoUploadError': 'Could not upload photo',
-    'dispute.photoPermission': 'Allow Swingbyy to access your photos to attach evidence.',
+    'dispute.photoPermission': 'Allow SwingByy to access your photos to attach evidence.',
     'dispute.addPhoto': 'Add photo',
     'dispute.photosOptional': 'Optional — add up to 3 photos as evidence.',
 
@@ -238,12 +238,12 @@ const translations = {
     'dashboard.moneyUnavailable': 'Could not load payment totals',
 
     // Biometric app-lock (CARD-24)
-    'biometric.lockedTitle': 'Unlock Swingbyy',
+    'biometric.lockedTitle': 'Unlock SwingByy',
     'biometric.lockedBody': 'Use Face ID, Touch ID, or your fingerprint to continue.',
     'biometric.unlockCta': 'Unlock',
     'biometric.declinedHint': "Didn't work? Try again or sign in differently.",
     'biometric.useDifferentAccount': 'Sign in differently',
-    'biometric.prompt': 'Unlock Swingbyy',
+    'biometric.prompt': 'Unlock SwingByy',
 
     // Settings — biometric toggle (CARD-24)
     'settings.biometricUnlock': 'Face ID / Fingerprint Unlock',
@@ -392,7 +392,7 @@ const translations = {
     'settings.signOut': 'Se déconnecter',
     'settings.version': 'Version',
     'subscription.managedByTeam': 'Les forfaits sont gérés par notre équipe.',
-    'subscription.autoBiddingPlan': 'Les offres automatiques font partie d\'un forfait Swingbyy.',
+    'subscription.autoBiddingPlan': 'Les offres automatiques font partie d\'un forfait SwingByy.',
 
     // Profile
     'profile.title': 'Modifier le profil',
@@ -417,15 +417,15 @@ const translations = {
     'onboarding.slide3Sub': "Preuve photo à la fin du travail. L'entiercement protège votre paiement.",
 
     // Referral
-    'referral.title': 'Partagez Swingbyy, obtenez 10$ de crédit',
+    'referral.title': 'Partagez SwingByy, obtenez 10$ de crédit',
     'referral.body': 'Quand votre ami complète sa première réservation, vous recevez tous les deux 10$ de rabais.',
-    'referral.shareText': 'Rejoignez-moi sur Swingbyy! Code: %{code} — https://swingbyy.com',
+    'referral.shareText': 'Rejoignez-moi sur SwingByy! Code: %{code} — https://swingbyy.com',
     'referral.shareCTA': 'Partager mon code',
     'referral.stats': '%{friends} amis inscrits • %{earned}$ gagnés',
 
     // FAQ
     'faq.title': 'Aide et FAQ',
-    'faq.q1': 'Comment fonctionne Swingbyy?',
+    'faq.q1': 'Comment fonctionne SwingByy?',
     'faq.q2': 'Comment les devis sont-ils acceptés?',
     'faq.q3': "Quand le paiement a-t-il lieu?",
     'faq.q4': "Que se passe-t-il si un travail tourne mal?",
@@ -497,12 +497,12 @@ const translations = {
     'profile.photoUploading': 'Téléchargement de la photo…',
     'profile.photoUpdated': 'Photo mise à jour',
     'profile.photoUploadError': 'Impossible de télécharger la photo',
-    'profile.photoPermission': 'Autorisez Swingbyy à accéder à vos photos pour définir une photo de profil.',
+    'profile.photoPermission': 'Autorisez SwingByy à accéder à vos photos pour définir une photo de profil.',
 
     // Dispute photo upload (GAP-AUDIT #12)
     'dispute.photoUploading': 'Téléchargement…',
     'dispute.photoUploadError': 'Impossible de télécharger la photo',
-    'dispute.photoPermission': 'Autorisez Swingbyy à accéder à vos photos pour joindre des preuves.',
+    'dispute.photoPermission': 'Autorisez SwingByy à accéder à vos photos pour joindre des preuves.',
     'dispute.addPhoto': 'Ajouter une photo',
     'dispute.photosOptional': 'Facultatif — ajoutez jusqu\'à 3 photos comme preuve.',
 
@@ -565,12 +565,12 @@ const translations = {
     'dashboard.moneyUnavailable': 'Impossible de charger les totaux de paiement',
 
     // Biometric app-lock (CARD-24)
-    'biometric.lockedTitle': 'Déverrouiller Swingbyy',
+    'biometric.lockedTitle': 'Déverrouiller SwingByy',
     'biometric.lockedBody': 'Utilisez Face ID, Touch ID ou votre empreinte digitale pour continuer.',
     'biometric.unlockCta': 'Déverrouiller',
     'biometric.declinedHint': "Ça n'a pas fonctionné? Réessayez ou connectez-vous autrement.",
     'biometric.useDifferentAccount': 'Se connecter autrement',
-    'biometric.prompt': 'Déverrouiller Swingbyy',
+    'biometric.prompt': 'Déverrouiller SwingByy',
 
     // Settings — biometric toggle (CARD-24)
     'settings.biometricUnlock': 'Déverrouillage par Face ID / empreinte',
@@ -671,7 +671,7 @@ const translations = {
     'jobManagement.sentQuotesMoved': 'Les devis envoyés se trouvent dans Messages, derrière la bulle Devis. Un travail arrive ici à l’acceptation.',
   },
 
-  // ── Arabic (RTL) — skeleton keys, translator TODO ──────────────────────
+  // ── Arabic (RTL) — COMPLETE: 270/270 keys, verified 2026-08-19 (SB-0072) ──
   ar: {
     // Auth
     'auth.signin': 'تسجيل الدخول',
@@ -718,7 +718,7 @@ const translations = {
     'settings.signOut': 'تسجيل الخروج',
     'settings.version': 'الإصدار',
     'subscription.managedByTeam': 'تتم إدارة الخطط من قبل فريقنا.',
-    'subscription.autoBiddingPlan': 'المزايدة التلقائية جزء من خطة Swingbyy.',
+    'subscription.autoBiddingPlan': 'المزايدة التلقائية جزء من خطة SwingByy.',
 
     // Profile
     'profile.title': 'تعديل الملف الشخصي',
@@ -743,15 +743,15 @@ const translations = {
     'onboarding.slide3Sub': 'دليل صوري عند اكتمال العمل. الضمان يحمي دفعتك.',
 
     // Referral
-    'referral.title': 'شارك Swingbyy واحصل على 10 دولار رصيد',
+    'referral.title': 'شارك SwingByy واحصل على 10 دولار رصيد',
     'referral.body': 'عندما يُكمل صديقك حجزه الأول، تحصلان معاً على 10 دولار خصماً.',
-    'referral.shareText': 'انضم إليّ على Swingbyy! الكود: %{code} — https://swingbyy.com',
+    'referral.shareText': 'انضم إليّ على SwingByy! الكود: %{code} — https://swingbyy.com',
     'referral.shareCTA': 'شارك كودي',
     'referral.stats': '%{friends} أصدقاء انضموا • %{earned}$ مكسبة',
 
     // FAQ
     'faq.title': 'المساعدة والأسئلة الشائعة',
-    'faq.q1': 'كيف يعمل Swingbyy؟',
+    'faq.q1': 'كيف يعمل SwingByy؟',
     'faq.q2': 'كيف تُقبَل العروض؟',
     'faq.q3': 'متى يتم الدفع؟',
     'faq.q4': 'ماذا يحدث إذا ساءت الأمور؟',
@@ -823,12 +823,12 @@ const translations = {
     'profile.photoUploading': 'جارٍ رفع الصورة…',
     'profile.photoUpdated': 'تم تحديث الصورة',
     'profile.photoUploadError': 'تعذر رفع الصورة',
-    'profile.photoPermission': 'اسمح لـ Swingbyy بالوصول إلى صورك لتعيين صورة الملف الشخصي.',
+    'profile.photoPermission': 'اسمح لـ SwingByy بالوصول إلى صورك لتعيين صورة الملف الشخصي.',
 
     // Dispute photo upload (GAP-AUDIT #12)
     'dispute.photoUploading': 'جارٍ الرفع…',
     'dispute.photoUploadError': 'تعذر رفع الصورة',
-    'dispute.photoPermission': 'اسمح لـ Swingbyy بالوصول إلى صورك لإرفاق الأدلة.',
+    'dispute.photoPermission': 'اسمح لـ SwingByy بالوصول إلى صورك لإرفاق الأدلة.',
     'dispute.addPhoto': 'إضافة صورة',
     'dispute.photosOptional': 'اختياري — أضف حتى 3 صور كدليل.',
 
@@ -891,12 +891,12 @@ const translations = {
     'dashboard.moneyUnavailable': 'تعذر تحميل إجماليات الدفع',
 
     // Biometric app-lock (CARD-24)
-    'biometric.lockedTitle': 'افتح قفل Swingbyy',
+    'biometric.lockedTitle': 'افتح قفل SwingByy',
     'biometric.lockedBody': 'استخدم بصمة الوجه أو بصمة الإصبع لمتابعة الدخول.',
     'biometric.unlockCta': 'فتح القفل',
     'biometric.declinedHint': 'لم ينجح؟ حاول مرة أخرى أو سجّل الدخول بطريقة مختلفة.',
     'biometric.useDifferentAccount': 'تسجيل الدخول بطريقة مختلفة',
-    'biometric.prompt': 'افتح قفل Swingbyy',
+    'biometric.prompt': 'افتح قفل SwingByy',
 
     // Settings — biometric toggle (CARD-24)
     'settings.biometricUnlock': 'فتح القفل ببصمة الوجه / الإصبع',
@@ -1001,8 +1001,13 @@ const translations = {
 // ─── Lane 3 (payments + flow-breakers) ───────────────────────────────────────
 // APPENDED, never merged into the blocks above — several lanes append to this
 // file in parallel and a hunk in the middle of `translations` conflicts with
-// all of them. English only: i18n.enableFallback is on below, so fr-CA and ar
-// resolve these through the en fallback until they are translated.
+// all of them.
+//
+// SB-0072: this used to say "English only ... until they are translated", which
+// stopped being true and then stayed on the page. fr-CA and ar are both at
+// 270/270 — full parity with en, asserted by
+// src/__tests__/i18n-coverage.test.js. enableFallback is still on below, but as
+// a safety net for a key added in a hurry, not as the normal path.
 const lane3 = {
   // Pay sheet — design/handoff-jet-pulse/PAYMENTS.md
   'pay.titleHold': 'Hold payment',
@@ -1024,8 +1029,8 @@ const lane3 = {
   // Two different promises, deliberately. 'native' = Stripe's Payment Sheet
   // opens right here (M9). 'Sub' (hosted Checkout fallback) has to warn that a
   // browser is about to open, or the client thinks the app broke.
-  'pay.methodCardSub': 'Opens a secure Stripe page. Saved for next time — Swingbyy never sees your card number.',
-  'pay.methodCardSubNative': 'Entered securely via Stripe and saved for next time — Swingbyy never sees your card number.',
+  'pay.methodCardSub': 'Opens a secure Stripe page. Saved for next time — SwingByy never sees your card number.',
+  'pay.methodCardSubNative': 'Entered securely via Stripe and saved for next time — SwingByy never sees your card number.',
   'pay.addMethod': 'Add a payment method',
   'pay.noMethodHint': 'Add a card to continue. Nothing is charged until you confirm.',
   'pay.escrow':
@@ -1203,24 +1208,24 @@ for (const key of [
 Object.assign(translations.en, {
   'language.restartTitle': 'Restart needed',
   'language.restartBody':
-    'Swingbyy needs to restart to switch the layout for %{language}.',
+    'SwingByy needs to restart to switch the layout for %{language}.',
   'language.restartNow': 'Restart now',
-  'language.restartManual': 'Please close and reopen Swingbyy to finish switching.',
+  'language.restartManual': 'Please close and reopen SwingByy to finish switching.',
 });
 Object.assign(translations['fr-CA'], {
   'language.restartTitle': 'Redémarrage nécessaire',
   'language.restartBody':
-    'Swingbyy doit redémarrer pour adapter la mise en page à %{language}.',
+    'SwingByy doit redémarrer pour adapter la mise en page à %{language}.',
   'language.restartNow': 'Redémarrer maintenant',
   'language.restartManual':
-    'Veuillez fermer puis rouvrir Swingbyy pour terminer le changement.',
+    'Veuillez fermer puis rouvrir SwingByy pour terminer le changement.',
 });
 Object.assign(translations.ar, {
   'language.restartTitle': 'يلزم إعادة التشغيل',
   'language.restartBody':
-    'يحتاج Swingbyy إلى إعادة التشغيل لتغيير اتجاه الواجهة إلى %{language}.',
+    'يحتاج SwingByy إلى إعادة التشغيل لتغيير اتجاه الواجهة إلى %{language}.',
   'language.restartNow': 'إعادة التشغيل الآن',
-  'language.restartManual': 'يرجى إغلاق Swingbyy وفتحه مرة أخرى لإكمال التغيير.',
+  'language.restartManual': 'يرجى إغلاق SwingByy وفتحه مرة أخرى لإكمال التغيير.',
 });
 
 // ── Report + block (App Store Guideline 1.2) — 2026-07-31 ───────────────────
@@ -1254,7 +1259,7 @@ const moderationEn = {
   'moderation.reasonSexualContent': 'Sexual content',
   'moderation.reasonViolence': 'Violence or threats',
   'moderation.reasonScam': 'Scam or fraud',
-  'moderation.reasonOffPlatform': 'Trying to take the job off Swingbyy',
+  'moderation.reasonOffPlatform': 'Trying to take the job off SwingByy',
   'moderation.reasonSpam': 'Spam',
   'moderation.reasonOther': 'Something else',
   'moderation.detailsLabel': 'Anything else? (optional)',
@@ -1294,7 +1299,7 @@ const moderationEn = {
   'moderation.threadBlockedBody':
     'One of you blocked the other. Unblock in Settings → Safety to start talking again.',
   'moderation.messageRefused':
-    'That message can’t be sent. Swingbyy doesn’t allow hate speech, sexual solicitation, or threats.',
+    'That message can’t be sent. SwingByy doesn’t allow hate speech, sexual solicitation, or threats.',
 
   // Admin review queue
   'moderation.queueTitle': 'Reports',
@@ -1332,7 +1337,7 @@ Object.assign(translations['fr-CA'], {
   'moderation.reasonSexualContent': 'Contenu sexuel',
   'moderation.reasonViolence': 'Violence ou menaces',
   'moderation.reasonScam': 'Arnaque ou fraude',
-  'moderation.reasonOffPlatform': 'Tentative de contourner Swingbyy',
+  'moderation.reasonOffPlatform': 'Tentative de contourner SwingByy',
   'moderation.reasonSpam': 'Pourriel',
   'moderation.reasonOther': 'Autre chose',
   'moderation.detailsLabel': 'Autre chose? (facultatif)',
@@ -1370,7 +1375,7 @@ Object.assign(translations['fr-CA'], {
   'moderation.threadBlockedBody':
     'L’un de vous a bloqué l’autre. Débloquez dans Réglages → Sécurité pour reprendre la conversation.',
   'moderation.messageRefused':
-    'Ce message ne peut pas être envoyé. Swingbyy n’autorise ni les propos haineux, ni la sollicitation sexuelle, ni les menaces.',
+    'Ce message ne peut pas être envoyé. SwingByy n’autorise ni les propos haineux, ni la sollicitation sexuelle, ni les menaces.',
 
   'moderation.queueTitle': 'Signalements',
   'moderation.queueEmptyTitle': 'Rien à examiner',
@@ -1405,7 +1410,7 @@ Object.assign(translations.ar, {
   'moderation.reasonSexualContent': 'محتوى جنسي',
   'moderation.reasonViolence': 'عنف أو تهديد',
   'moderation.reasonScam': 'احتيال أو نصب',
-  'moderation.reasonOffPlatform': 'محاولة إتمام العمل خارج Swingbyy',
+  'moderation.reasonOffPlatform': 'محاولة إتمام العمل خارج SwingByy',
   'moderation.reasonSpam': 'محتوى مزعج',
   'moderation.reasonOther': 'شيء آخر',
   'moderation.detailsLabel': 'أي تفاصيل أخرى؟ (اختياري)',
@@ -1441,7 +1446,7 @@ Object.assign(translations.ar, {
   'moderation.threadBlockedBody':
     'أحدكما حظر الآخر. ألغِ الحظر من الإعدادات ← الأمان لمتابعة المحادثة.',
   'moderation.messageRefused':
-    'تعذّر إرسال هذه الرسالة. لا يسمح Swingbyy بخطاب الكراهية أو الطلبات الجنسية أو التهديدات.',
+    'تعذّر إرسال هذه الرسالة. لا يسمح SwingByy بخطاب الكراهية أو الطلبات الجنسية أو التهديدات.',
 
   'moderation.queueTitle': 'البلاغات',
   'moderation.queueEmptyTitle': 'لا شيء للمراجعة',
@@ -1464,7 +1469,7 @@ Object.assign(translations.ar, {
 Object.assign(translations.en, {
   'settings.deleteAccountTitle': 'Delete my account',
   'settings.deleteAccountBody':
-    'Your profile disappears from Swingbyy and you’re signed out. Bookings, payments and invoices are kept for 6 years — Canadian tax law requires it — but they’re no longer linked to your name.',
+    'Your profile disappears from SwingByy and you’re signed out. Bookings, payments and invoices are kept for 6 years — Canadian tax law requires it — but they’re no longer linked to your name.',
   'settings.deleteAccountPasswordLabel': 'Your password',
   'settings.deleteAccountPasswordHint': 'Enter it to confirm this is you.',
   'settings.deleteAccountConfirm': 'Delete account',
@@ -1477,7 +1482,7 @@ Object.assign(translations.en, {
 Object.assign(translations['fr-CA'], {
   'settings.deleteAccountTitle': 'Supprimer mon compte',
   'settings.deleteAccountBody':
-    'Votre profil disparaît de Swingbyy et vous êtes déconnecté. Les réservations, paiements et factures sont conservés 6 ans — la loi fiscale canadienne l’exige — mais ils ne sont plus liés à votre nom.',
+    'Votre profil disparaît de SwingByy et vous êtes déconnecté. Les réservations, paiements et factures sont conservés 6 ans — la loi fiscale canadienne l’exige — mais ils ne sont plus liés à votre nom.',
   'settings.deleteAccountPasswordLabel': 'Votre mot de passe',
   'settings.deleteAccountPasswordHint': 'Saisissez-le pour confirmer que c’est bien vous.',
   'settings.deleteAccountConfirm': 'Supprimer le compte',
@@ -1491,7 +1496,7 @@ Object.assign(translations['fr-CA'], {
 Object.assign(translations.ar, {
   'settings.deleteAccountTitle': 'حذف حسابي',
   'settings.deleteAccountBody':
-    'سيختفي ملفك الشخصي من Swingbyy وسيتم تسجيل خروجك. تُحفظ الحجوزات والمدفوعات والفواتير لمدة 6 سنوات — كما يقتضي القانون الضريبي الكندي — لكنها لن تكون مرتبطة باسمك.',
+    'سيختفي ملفك الشخصي من SwingByy وسيتم تسجيل خروجك. تُحفظ الحجوزات والمدفوعات والفواتير لمدة 6 سنوات — كما يقتضي القانون الضريبي الكندي — لكنها لن تكون مرتبطة باسمك.',
   'settings.deleteAccountPasswordLabel': 'كلمة المرور',
   'settings.deleteAccountPasswordHint': 'أدخلها لتأكيد هويتك.',
   'settings.deleteAccountConfirm': 'حذف الحساب',
@@ -1597,7 +1602,7 @@ Object.assign(translations.ar, {
 // no way out. All three locales: this is the first screen a new account sees,
 // and answering it wrong is expensive to undo.
 Object.assign(translations.en, {
-  'rolePicker.title': 'How will you use Swingbyy?',
+  'rolePicker.title': 'How will you use SwingByy?',
   'rolePicker.body': 'Pick one — you can only choose this once.',
   'rolePicker.clientTitle': "I'm hiring",
   'rolePicker.clientBody': 'Post jobs and book local pros.',
@@ -1618,7 +1623,7 @@ Object.assign(translations.en, {
   'auth.agreeNotice': 'By continuing you agree to our',
 });
 Object.assign(translations['fr-CA'], {
-  'rolePicker.title': 'Comment allez-vous utiliser Swingbyy?',
+  'rolePicker.title': 'Comment allez-vous utiliser SwingByy?',
   'rolePicker.body': 'Choisissez — ce choix ne se fait qu’une fois.',
   'rolePicker.clientTitle': 'Je cherche un pro',
   'rolePicker.clientBody': 'Publiez des travaux et réservez des pros locaux.',
@@ -1636,7 +1641,7 @@ Object.assign(translations['fr-CA'], {
   'auth.agreeNotice': 'En continuant, vous acceptez nos',
 });
 Object.assign(translations.ar, {
-  'rolePicker.title': 'كيف ستستخدم Swingbyy؟',
+  'rolePicker.title': 'كيف ستستخدم SwingByy؟',
   'rolePicker.body': 'اختر — يمكنك الاختيار مرة واحدة فقط.',
   'rolePicker.clientTitle': 'أبحث عن محترف',
   'rolePicker.clientBody': 'انشر طلبات العمل واحجز محترفين قريبين.',
@@ -1674,7 +1679,7 @@ Object.assign(translations.en, {
   'settings.ghostOn': "You're hidden",
   'settings.ghostOff': "You're visible again",
   'settings.ghostFailed': "Couldn't change ghost mode",
-  'settings.credit': 'Swingbyy credit',
+  'settings.credit': 'SwingByy credit',
   'settings.creditHint': 'Contact us when you book and we\u2019ll apply it.',
 });
 Object.assign(translations['fr-CA'], {
@@ -1684,7 +1689,7 @@ Object.assign(translations['fr-CA'], {
   'settings.ghostOn': 'Vous \u00eates masqu\u00e9',
   'settings.ghostOff': 'Vous \u00eates de nouveau visible',
   'settings.ghostFailed': 'Impossible de changer le mode fant\u00f4me',
-  'settings.credit': 'Cr\u00e9dit Swingbyy',
+  'settings.credit': 'Cr\u00e9dit SwingByy',
   'settings.creditHint': 'Contactez-nous lors de votre r\u00e9servation et nous l\u2019appliquerons.',
 });
 Object.assign(translations.ar, {
@@ -1694,7 +1699,7 @@ Object.assign(translations.ar, {
   'settings.ghostOn': '\u0623\u0646\u062a \u0645\u062e\u0641\u064a \u0627\u0644\u0622\u0646',
   'settings.ghostOff': '\u0623\u0635\u0628\u062d\u062a \u0645\u0631\u0626\u064a\u064b\u0627 \u0645\u062c\u062f\u062f\u064b\u0627',
   'settings.ghostFailed': '\u062a\u0639\u0630\u0651\u0631 \u062a\u063a\u064a\u064a\u0631 \u0648\u0636\u0639 \u0627\u0644\u0625\u062e\u0641\u0627\u0621',
-  'settings.credit': '\u0631\u0635\u064a\u062f Swingbyy',
+  'settings.credit': '\u0631\u0635\u064a\u062f SwingByy',
   'settings.creditHint': '\u062a\u0648\u0627\u0635\u0644 \u0645\u0639\u0646\u0627 \u0639\u0646\u062f \u0627\u0644\u062d\u062c\u0632 \u0648\u0633\u0646\u0637\u0628\u0651\u0642\u0647.',
 });
 
@@ -1731,9 +1736,9 @@ Object.assign(translations['fr-CA'], {
   'pay.savedCard': 'Carte enregistrée',
   'pay.methodCard': 'Carte',
   'pay.methodCardSub':
-    'Ouvre une page Stripe sécurisée. Carte conservée pour la prochaine fois — Swingbyy ne voit jamais son numéro.',
+    'Ouvre une page Stripe sécurisée. Carte conservée pour la prochaine fois — SwingByy ne voit jamais son numéro.',
   'pay.methodCardSubNative':
-    'Saisie de façon sécurisée via Stripe et conservée pour la prochaine fois — Swingbyy ne voit jamais son numéro.',
+    'Saisie de façon sécurisée via Stripe et conservée pour la prochaine fois — SwingByy ne voit jamais son numéro.',
   'pay.addMethod': 'Ajouter un moyen de paiement',
   'pay.noMethodHint':
     'Ajoutez une carte pour continuer. Rien n’est débité avant votre confirmation.',
@@ -1852,8 +1857,8 @@ Object.assign(translations.ar, {
   'pay.expires': 'ينتهي في %{date}',
   'pay.savedCard': 'بطاقة محفوظة',
   'pay.methodCard': 'بطاقة',
-  'pay.methodCardSub': 'يفتح صفحة Stripe آمنة. تُحفظ بطاقتك للمرة القادمة — ولا ترى Swingbyy رقم بطاقتك أبدًا.',
-  'pay.methodCardSubNative': 'تُدخَل بأمان عبر Stripe وتُحفظ للمرة القادمة — ولا ترى Swingbyy رقم بطاقتك أبدًا.',
+  'pay.methodCardSub': 'يفتح صفحة Stripe آمنة. تُحفظ بطاقتك للمرة القادمة — ولا ترى SwingByy رقم بطاقتك أبدًا.',
+  'pay.methodCardSubNative': 'تُدخَل بأمان عبر Stripe وتُحفظ للمرة القادمة — ولا ترى SwingByy رقم بطاقتك أبدًا.',
   'pay.addMethod': 'أضف طريقة دفع',
   'pay.noMethodHint': 'أضف بطاقة للمتابعة. لن يُخصم أي مبلغ حتى تؤكّد.',
   'pay.escrow':
@@ -1996,7 +2001,7 @@ Object.assign(translations.uk, {
   'settings.signOut': 'Вийти',
   'settings.version': 'Версія',
   'subscription.managedByTeam': 'Тарифи керуються нашою командою.',
-  'subscription.autoBiddingPlan': 'Автоставки входять до тарифу Swingbyy.',
+  'subscription.autoBiddingPlan': 'Автоставки входять до тарифу SwingByy.',
   'profile.title': 'Редагувати профіль',
   'profile.firstName': 'Ім’я',
   'profile.lastName': 'Прізвище',
@@ -2015,13 +2020,13 @@ Object.assign(translations.uk, {
   'onboarding.slide2Sub': 'Опублікуйте один раз. Порівняйте пропозиції. Оберіть найкращу.',
   'onboarding.slide3Title': 'Перевірені виконавці щоразу',
   'onboarding.slide3Sub': 'Фотопідтвердження після завершення. Депонування захищає ваш платіж.',
-  'referral.title': 'Поділіться Swingbyy — отримайте $10',
+  'referral.title': 'Поділіться SwingByy — отримайте $10',
   'referral.body': 'Коли ваш друг завершить перше бронювання, ви обидва отримаєте $10 знижки на наступну роботу.',
-  'referral.shareText': 'Приєднуйтесь до мене у Swingbyy! Код: %{code} — https://swingbyy.com',
+  'referral.shareText': 'Приєднуйтесь до мене у SwingByy! Код: %{code} — https://swingbyy.com',
   'referral.shareCTA': 'Поділитися кодом',
   'referral.stats': '%{friends} друзів приєдналося • $%{earned} зароблено',
   'faq.title': 'Довідка та FAQ',
-  'faq.q1': 'Як працює Swingbyy?',
+  'faq.q1': 'Як працює SwingByy?',
   'faq.q2': 'Як приймають пропозиції?',
   'faq.q3': 'Коли відбувається оплата?',
   'faq.q4': 'Що робити, якщо щось пішло не так?',
@@ -2077,10 +2082,10 @@ Object.assign(translations.uk, {
   'profile.photoUploading': 'Завантаження фото…',
   'profile.photoUpdated': 'Фото оновлено',
   'profile.photoUploadError': 'Не вдалося завантажити фото',
-  'profile.photoPermission': 'Дозвольте Swingbyy доступ до фото, щоб встановити зображення профілю.',
+  'profile.photoPermission': 'Дозвольте SwingByy доступ до фото, щоб встановити зображення профілю.',
   'dispute.photoUploading': 'Завантаження…',
   'dispute.photoUploadError': 'Не вдалося завантажити фото',
-  'dispute.photoPermission': 'Дозвольте Swingbyy доступ до фото, щоб додати докази.',
+  'dispute.photoPermission': 'Дозвольте SwingByy доступ до фото, щоб додати докази.',
   'dispute.addPhoto': 'Додати фото',
   'dispute.photosOptional': 'Необов’язково — до 3 фото як доказ.',
   'businessProfile.distanceAway': '%{km} км від вас',
@@ -2131,12 +2136,12 @@ Object.assign(translations.uk, {
   'dashboard.moneyCleared': 'Переказано',
   'dashboard.heroCaption': 'переказано вам',
   'dashboard.moneyUnavailable': 'Не вдалося завантажити суми платежів',
-  'biometric.lockedTitle': 'Розблокувати Swingbyy',
+  'biometric.lockedTitle': 'Розблокувати SwingByy',
   'biometric.lockedBody': 'Скористайтеся Face ID, Touch ID або відбитком, щоб продовжити.',
   'biometric.unlockCta': 'Розблокувати',
   'biometric.declinedHint': 'Не спрацювало? Спробуйте ще раз або увійдіть інакше.',
   'biometric.useDifferentAccount': 'Увійти інакше',
-  'biometric.prompt': 'Розблокувати Swingbyy',
+  'biometric.prompt': 'Розблокувати SwingByy',
   'settings.biometricUnlock': 'Розблокування Face ID / відбитком',
   'settings.biometricUnavailableHint': 'Не налаштовано на цьому пристрої',
   'settings.biometricUnavailableTitle': 'Недоступно',
@@ -2242,8 +2247,8 @@ Object.assign(translations.uk, {
   'pay.expires': 'Спливає %{date}',
   'pay.savedCard': 'Збережена картка',
   'pay.methodCard': 'Картка',
-  'pay.methodCardSub': 'Відкриє захищену сторінку Stripe. Картку збережено на наступний раз — Swingbyy ніколи не бачить її номер.',
-  'pay.methodCardSubNative': 'Вводиться безпечно через Stripe і зберігається на наступний раз — Swingbyy ніколи не бачить її номер.',
+  'pay.methodCardSub': 'Відкриє захищену сторінку Stripe. Картку збережено на наступний раз — SwingByy ніколи не бачить її номер.',
+  'pay.methodCardSubNative': 'Вводиться безпечно через Stripe і зберігається на наступний раз — SwingByy ніколи не бачить її номер.',
   'pay.addMethod': 'Додати спосіб оплати',
   'pay.noMethodHint': 'Додайте картку, щоб продовжити. Нічого не спишеться, доки ви не підтвердите.',
   'pay.escrow': 'На депонуванні — переказується лише після того, як ви схвалите роботу. Безкоштовне скасування за 48 год.',
@@ -2325,9 +2330,9 @@ Object.assign(translations.uk, {
   'pay.escrowHold': 'Зараз нічого не списується. Ви платите, коли приймаєте пропозицію, а невикористаний бюджет ніколи не стягується.',
   'businessProfile.jobsDone': '%{count} виконаних робіт',
   'language.restartTitle': 'Потрібен перезапуск',
-  'language.restartBody': 'Swingbyy потрібно перезапустити, щоб змінити напрям інтерфейсу для мови %{language}.',
+  'language.restartBody': 'SwingByy потрібно перезапустити, щоб змінити напрям інтерфейсу для мови %{language}.',
   'language.restartNow': 'Перезапустити зараз',
-  'language.restartManual': 'Закрийте та відкрийте Swingbyy, щоб завершити перемикання.',
+  'language.restartManual': 'Закрийте та відкрийте SwingByy, щоб завершити перемикання.',
   'moderation.report': 'Поскаржитись',
   'moderation.reportMessage': 'Поскаржитись на це повідомлення',
   'moderation.reportReview': 'Поскаржитись на цей відгук',
@@ -2344,7 +2349,7 @@ Object.assign(translations.uk, {
   'moderation.reasonSexualContent': 'Сексуальний вміст',
   'moderation.reasonViolence': 'Насильство або погрози',
   'moderation.reasonScam': 'Шахрайство або обман',
-  'moderation.reasonOffPlatform': 'Спроба вивести роботу за межі Swingbyy',
+  'moderation.reasonOffPlatform': 'Спроба вивести роботу за межі SwingByy',
   'moderation.reasonSpam': 'Спам',
   'moderation.reasonOther': 'Щось інше',
   'moderation.detailsLabel': 'Щось іще? (необов’язково)',
@@ -2373,7 +2378,7 @@ Object.assign(translations.uk, {
   'moderation.blockedOn': 'Заблоковано %{date}',
   'moderation.threadBlockedTitle': 'Тут не можна відповідати',
   'moderation.threadBlockedBody': 'Хтось із вас заблокував іншого. Розблокуйте в Налаштування → Безпека, щоб продовжити спілкування.',
-  'moderation.messageRefused': 'Це повідомлення не можна надіслати. Swingbyy не допускає мови ворожнечі, сексуальних домагань і погроз.',
+  'moderation.messageRefused': 'Це повідомлення не можна надіслати. SwingByy не допускає мови ворожнечі, сексуальних домагань і погроз.',
   'moderation.queueTitle': 'Скарги',
   'moderation.queueEmptyTitle': 'Немає що розглядати',
   'moderation.queueEmptyBody': 'Нові скарги з’являтимуться тут.',
@@ -2388,7 +2393,7 @@ Object.assign(translations.uk, {
   'moderation.resolved': 'Вирішено',
   'moderation.resolveFailed': 'Не вдалося вирішити цю скаргу. Спробуйте ще раз.',
   'settings.deleteAccountTitle': 'Видалити акаунт',
-  'settings.deleteAccountBody': 'Ваш профіль зникне зі Swingbyy, і вас буде виведено з системи. Бронювання, платежі та рахунки зберігаються 6 років — цього вимагає податкове законодавство Канади — але вони більше не пов’язані з вашим іменем.',
+  'settings.deleteAccountBody': 'Ваш профіль зникне зі SwingByy, і вас буде виведено з системи. Бронювання, платежі та рахунки зберігаються 6 років — цього вимагає податкове законодавство Канади — але вони більше не пов’язані з вашим іменем.',
   'settings.deleteAccountPasswordLabel': 'Ваш пароль',
   'settings.deleteAccountPasswordHint': 'Введіть його, щоб підтвердити, що це ви.',
   'settings.deleteAccountConfirm': 'Видалити акаунт',
@@ -2409,7 +2414,7 @@ Object.assign(translations.uk, {
   'approval.businessWaitingTitle': 'Очікує клієнта',
   'approval.businessWaitingBody': 'Ви позначили роботу завершеною. У клієнта є 24 години на схвалення — після цього оплата переказується вам автоматично.',
   'approval.autoReleased': 'Переказано автоматично — клієнт не відповів протягом 24 годин.',
-  'rolePicker.title': 'Як ви користуватиметеся Swingbyy?',
+  'rolePicker.title': 'Як ви користуватиметеся SwingByy?',
   'rolePicker.body': 'Оберіть одне — вибір робиться лише раз.',
   'rolePicker.clientTitle': 'Я шукаю майстра',
   'rolePicker.clientBody': 'Публікуйте заявки та бронюйте місцевих майстрів.',
@@ -2429,7 +2434,7 @@ Object.assign(translations.uk, {
   'settings.ghostOn': 'Вас приховано',
   'settings.ghostOff': 'Вас знову видно',
   'settings.ghostFailed': 'Не вдалося змінити режим невидимості',
-  'settings.credit': 'Кредит Swingbyy',
+  'settings.credit': 'Кредит SwingByy',
   'settings.creditHint': 'Напишіть нам під час бронювання — і ми його зарахуємо.',
 });
 
@@ -2441,17 +2446,17 @@ Object.assign(translations.uk, {
 //     backend (grep: no invite/referral expiry column, job or check). Printing a
 //     deadline we do not enforce is the same class of error as the 50/50 payment
 //     claim that had to be pulled from the store listing.
-//   * "SwingBy Inc." — there is no such company. The legal entity is `4alkubati`
+//   * "SwingByy Inc." — there is no such company. The legal entity is `4alkubati`
 //     (Kira, 2026-08-03). A copyright line naming a non-existent corporation is a
 //     false legal statement on the first screen a stranger sees.
 const inviteEn = {
   'invite.badge': 'BETA',
-  'invite.hero': 'You’re invited to shape Swingbyy',
-  'invite.inviter': 'The Swingbyy Team',
+  'invite.hero': 'You’re invited to shape SwingByy',
+  'invite.inviter': 'The SwingByy Team',
   'invite.inviterRole': 'invited you to join the beta',
   'invite.subhead': 'Be among the first to experience Calgary’s new service marketplace.',
   'invite.body1':
-    'Swingbyy connects people who need services with skilled local businesses — from home repairs to personal training, all in one place.',
+    'SwingByy connects people who need services with skilled local businesses — from home repairs to personal training, all in one place.',
   'invite.body2':
     'As a beta tester, your feedback directly shapes the app. Share what works, what doesn’t, and what you wish existed.',
   'invite.codeLabel': 'Your invite code',
@@ -2462,7 +2467,7 @@ const inviteEn = {
   'invite.haveAccount': 'Already have an account?',
   'invite.signIn': 'Sign in',
   'invite.finePrint': 'This invite is personal to you. Please don’t share it.',
-  'invite.copyright': '© 2026 Swingbyy',
+  'invite.copyright': '© 2026 SwingByy',
   'invite.noCodeTitle': 'This invite link is incomplete',
   'invite.noCodeBody':
     'The link didn’t carry an invite code. Open the original link again, or sign up without one — you can add a code later.',
@@ -2472,12 +2477,12 @@ Object.assign(translations.en, inviteEn);
 
 Object.assign(translations['fr-CA'], {
   'invite.badge': 'BÊTA',
-  'invite.hero': 'Vous êtes invité à façonner Swingbyy',
-  'invite.inviter': 'L’équipe Swingbyy',
+  'invite.hero': 'Vous êtes invité à façonner SwingByy',
+  'invite.inviter': 'L’équipe SwingByy',
   'invite.inviterRole': 'vous a invité à rejoindre la bêta',
   'invite.subhead': 'Soyez parmi les premiers à découvrir le nouveau marché de services de Calgary.',
   'invite.body1':
-    'Swingbyy met en relation les personnes qui cherchent un service avec des entreprises locales qualifiées — des réparations à domicile à l’entraînement personnel, au même endroit.',
+    'SwingByy met en relation les personnes qui cherchent un service avec des entreprises locales qualifiées — des réparations à domicile à l’entraînement personnel, au même endroit.',
   'invite.body2':
     'En tant que testeur bêta, vos commentaires façonnent directement l’application. Dites-nous ce qui fonctionne, ce qui ne fonctionne pas et ce que vous aimeriez y trouver.',
   'invite.codeLabel': 'Votre code d’invitation',
@@ -2488,7 +2493,7 @@ Object.assign(translations['fr-CA'], {
   'invite.haveAccount': 'Vous avez déjà un compte?',
   'invite.signIn': 'Se connecter',
   'invite.finePrint': 'Cette invitation vous est personnelle. Merci de ne pas la partager.',
-  'invite.copyright': '© 2026 Swingbyy',
+  'invite.copyright': '© 2026 SwingByy',
   'invite.noCodeTitle': 'Ce lien d’invitation est incomplet',
   'invite.noCodeBody':
     'Le lien ne contenait pas de code d’invitation. Ouvrez de nouveau le lien d’origine, ou inscrivez-vous sans code — vous pourrez en ajouter un plus tard.',
@@ -2497,12 +2502,12 @@ Object.assign(translations['fr-CA'], {
 
 Object.assign(translations.ar, {
   'invite.badge': 'نسخة تجريبية',
-  'invite.hero': 'أنت مدعو للمساهمة في تشكيل Swingbyy',
-  'invite.inviter': 'فريق Swingbyy',
+  'invite.hero': 'أنت مدعو للمساهمة في تشكيل SwingByy',
+  'invite.inviter': 'فريق SwingByy',
   'invite.inviterRole': 'دعاك للانضمام إلى النسخة التجريبية',
   'invite.subhead': 'كن من أوائل من يجرب سوق الخدمات الجديد في كالغاري.',
   'invite.body1':
-    'يربط Swingbyy الأشخاص الذين يحتاجون إلى خدمات بأنشطة تجارية محلية ماهرة — من إصلاحات المنزل إلى التدريب الشخصي، في مكان واحد.',
+    'يربط SwingByy الأشخاص الذين يحتاجون إلى خدمات بأنشطة تجارية محلية ماهرة — من إصلاحات المنزل إلى التدريب الشخصي، في مكان واحد.',
   'invite.body2':
     'بصفتك مختبرًا للنسخة التجريبية، تسهم ملاحظاتك مباشرة في تطوير التطبيق. أخبرنا بما ينجح، وما لا ينجح، وما تتمنى وجوده.',
   'invite.codeLabel': 'رمز الدعوة الخاص بك',
@@ -2513,7 +2518,7 @@ Object.assign(translations.ar, {
   'invite.haveAccount': 'هل لديك حساب بالفعل؟',
   'invite.signIn': 'تسجيل الدخول',
   'invite.finePrint': 'هذه الدعوة شخصية لك. نرجو عدم مشاركتها.',
-  'invite.copyright': '© 2026 Swingbyy',
+  'invite.copyright': '© 2026 SwingByy',
   'invite.noCodeTitle': 'رابط الدعوة غير مكتمل',
   'invite.noCodeBody':
     'لم يتضمن الرابط رمز دعوة. افتح الرابط الأصلي مرة أخرى، أو سجّل بدون رمز — يمكنك إضافته لاحقًا.',
@@ -2522,12 +2527,12 @@ Object.assign(translations.ar, {
 
 Object.assign(translations.uk, {
   'invite.badge': 'БЕТА',
-  'invite.hero': 'Вас запрошено формувати Swingbyy',
-  'invite.inviter': 'Команда Swingbyy',
+  'invite.hero': 'Вас запрошено формувати SwingByy',
+  'invite.inviter': 'Команда SwingByy',
   'invite.inviterRole': 'запросила вас до бета-версії',
   'invite.subhead': 'Станьте одним із перших, хто скористається новим сервісним маркетплейсом Калгарі.',
   'invite.body1':
-    'Swingbyy поєднує людей, яким потрібні послуги, з кваліфікованими місцевими підприємствами — від ремонту вдома до персональних тренувань, усе в одному місці.',
+    'SwingByy поєднує людей, яким потрібні послуги, з кваліфікованими місцевими підприємствами — від ремонту вдома до персональних тренувань, усе в одному місці.',
   'invite.body2':
     'Як бета-тестувальник ви безпосередньо впливаєте на застосунок. Розкажіть, що працює, що ні та чого вам бракує.',
   'invite.codeLabel': 'Ваш код запрошення',
@@ -2538,7 +2543,7 @@ Object.assign(translations.uk, {
   'invite.haveAccount': 'Уже маєте обліковий запис?',
   'invite.signIn': 'Увійти',
   'invite.finePrint': 'Це запрошення персональне. Будь ласка, не діліться ним.',
-  'invite.copyright': '© 2026 Swingbyy',
+  'invite.copyright': '© 2026 SwingByy',
   'invite.noCodeTitle': 'Це посилання-запрошення неповне',
   'invite.noCodeBody':
     'Посилання не містило коду запрошення. Відкрийте початкове посилання ще раз або зареєструйтеся без коду — додати його можна пізніше.',
@@ -2559,12 +2564,12 @@ Object.assign(translations.uk, {
 //     server's own `method` field. Every other path says bank transfer.
 //   · Arrival times are characterised, not promised: Stripe publishes ~30
 //     minutes for instant payouts, and a standard payout depends on the
-//     receiving bank. Neither is a SwingBy SLA and neither is written as one.
+//     receiving bank. Neither is a SwingByy SLA and neither is written as one.
 const walletEn = {
   'wallet.title': 'Wallet',
   'wallet.availableLabel': 'Available to cash out',
   'wallet.availableCaption':
-    'Money released to you from finished jobs, after Swingbyy’s 10% fee, minus anything you’ve already cashed out.',
+    'Money released to you from finished jobs, after SwingByy’s 10% fee, minus anything you’ve already cashed out.',
   'wallet.lifetimeEarned': 'Earned all time',
   'wallet.alreadyPaidOut': 'Already cashed out',
 
@@ -2592,7 +2597,7 @@ const walletEn = {
   // (and to getByText).
   'wallet.setupTitle': 'Get paid for your work',
   'wallet.setupBody':
-    'Add your details and a debit card or bank account so your earnings can reach you. Stripe handles this and Swingbyy never sees your card number.',
+    'Add your details and a debit card or bank account so your earnings can reach you. Stripe handles this and SwingByy never sees your card number.',
   'wallet.setupCta': 'Set up payouts',
   'wallet.setupFailedTitle': 'Could not start setup',
 
@@ -2632,7 +2637,7 @@ Object.assign(translations['fr-CA'], {
   'wallet.title': 'Portefeuille',
   'wallet.availableLabel': 'Disponible pour retrait',
   'wallet.availableCaption':
-    'L’argent qui vous a été versé pour des travaux terminés, après les frais de 10 % de Swingbyy, moins ce que vous avez déjà retiré.',
+    'L’argent qui vous a été versé pour des travaux terminés, après les frais de 10 % de SwingByy, moins ce que vous avez déjà retiré.',
   'wallet.lifetimeEarned': 'Gagné depuis le début',
   'wallet.alreadyPaidOut': 'Déjà retiré',
 
@@ -2657,7 +2662,7 @@ Object.assign(translations['fr-CA'], {
 
   'wallet.setupTitle': 'Faites-vous payer pour votre travail',
   'wallet.setupBody':
-    'Ajoutez vos renseignements et une carte de débit ou un compte bancaire pour recevoir vos gains. Stripe s’en occupe et Swingbyy ne voit jamais votre numéro de carte.',
+    'Ajoutez vos renseignements et une carte de débit ou un compte bancaire pour recevoir vos gains. Stripe s’en occupe et SwingByy ne voit jamais votre numéro de carte.',
   'wallet.setupCta': 'Configurer les versements',
   'wallet.setupFailedTitle': 'Impossible de lancer la configuration',
 
@@ -2696,7 +2701,7 @@ Object.assign(translations.ar, {
   'wallet.title': 'المحفظة',
   'wallet.availableLabel': 'المتاح للسحب',
   'wallet.availableCaption':
-    'الأموال التي حُوّلت إليك من الأعمال المنتهية، بعد رسوم Swingbyy البالغة 10%، ناقص ما سحبته سابقًا.',
+    'الأموال التي حُوّلت إليك من الأعمال المنتهية، بعد رسوم SwingByy البالغة 10%، ناقص ما سحبته سابقًا.',
   'wallet.lifetimeEarned': 'إجمالي الأرباح',
   'wallet.alreadyPaidOut': 'تم سحبه سابقًا',
 
@@ -2721,7 +2726,7 @@ Object.assign(translations.ar, {
 
   'wallet.setupTitle': 'احصل على أجر عملك',
   'wallet.setupBody':
-    'أضف بياناتك وبطاقة خصم أو حسابًا مصرفيًا حتى تصلك أرباحك. تتولى Stripe ذلك، ولا يرى Swingbyy رقم بطاقتك أبدًا.',
+    'أضف بياناتك وبطاقة خصم أو حسابًا مصرفيًا حتى تصلك أرباحك. تتولى Stripe ذلك، ولا يرى SwingByy رقم بطاقتك أبدًا.',
   'wallet.setupCta': 'إعداد التحويلات',
   'wallet.setupFailedTitle': 'تعذّر بدء الإعداد',
 
@@ -2760,7 +2765,7 @@ Object.assign(translations.uk, {
   'wallet.title': 'Гаманець',
   'wallet.availableLabel': 'Доступно до виведення',
   'wallet.availableCaption':
-    'Кошти, перераховані вам за завершені роботи, після комісії Swingbyy 10%, мінус те, що ви вже вивели.',
+    'Кошти, перераховані вам за завершені роботи, після комісії SwingByy 10%, мінус те, що ви вже вивели.',
   'wallet.lifetimeEarned': 'Зароблено за весь час',
   'wallet.alreadyPaidOut': 'Уже виведено',
 
@@ -2785,7 +2790,7 @@ Object.assign(translations.uk, {
 
   'wallet.setupTitle': 'Отримуйте гроші за свою роботу',
   'wallet.setupBody':
-    'Додайте свої дані та дебетову картку або банківський рахунок, щоб отримувати зароблене. Цим займається Stripe, і Swingbyy ніколи не бачить номер вашої картки.',
+    'Додайте свої дані та дебетову картку або банківський рахунок, щоб отримувати зароблене. Цим займається Stripe, і SwingByy ніколи не бачить номер вашої картки.',
   'wallet.setupCta': 'Налаштувати виплати',
   'wallet.setupFailedTitle': 'Не вдалося розпочати налаштування',
 
@@ -3122,6 +3127,921 @@ Object.assign(translations.ar, {
 });
 Object.assign(translations.uk, {
   'requestSent.subNoHistory': '\u0412\u0430\u0448 \u0437\u0430\u043f\u0438\u0442 \u043d\u0430\u0434\u0456\u0441\u043b\u0430\u043d\u043e \u0434\u043e %{business}.',
+});
+
+// ── Shared UI strings (2026-08-16) ───────────────────────────────────────────
+//
+// The rest of the hardcoded-English sweep: 178 literals across 48 files, folded
+// into 126 keys. They were `title="..."`, `label="..."` and `placeholder="..."`
+// props — never catalogue keys — so `i18n-coverage` reported full translation
+// while a French, Arabic or Ukrainian user read English on almost every screen.
+// A French device screenshot of Booking Details (2026-08-16) is what started
+// this; `no-hardcoded-strings.test.js` is what keeps it closed.
+//
+// Deduped deliberately: "First Name"/"First name" and "Cancel Booking"/"Cancel
+// booking" were the same label with two casings in different files, so they
+// share one key and the screens stopped disagreeing as a side effect. "RATING"
+// (a stat caption) and "Rating" (a field label) stayed separate, because they
+// are not the same string doing the same job.
+//
+// Five literals already had a home in `common.*` (Retry, Back, Edit, Done,
+// Delete) and were pointed at it rather than duplicated.
+Object.assign(translations.en, {
+  "ui.addACard": "Add a card",
+  "ui.addAnAddressOptional": "Add an address (optional)",
+  "ui.addDetailsOptional": "Add details (optional)",
+  "ui.after": "AFTER",
+  "ui.allCaughtUp": "All caught up",
+  "ui.analytics": "Analytics",
+  "ui.approveWork": "Approve work",
+  "ui.autoBidding": "Auto-bidding",
+  "ui.avgJobValue": "Avg Job Value",
+  "ui.awaitingDecision": "Awaiting decision",
+  "ui.backToLogin": "Back to login",
+  "ui.before": "BEFORE",
+  "ui.browseServices": "Browse services",
+  "ui.budget": "Budget *",
+  "ui.businessName": "Business name",
+  "ui.businessTools": "BUSINESS TOOLS",
+  "ui.cancelBooking": "Cancel booking",
+  "ui.clientSOwnPhotos": "CLIENT'S OWN PHOTOS",
+  "ui.commentOptional": "Comment (optional)",
+  "ui.completedJobs": "Completed Jobs",
+  "ui.contactUs": "Contact us",
+  "ui.content": "Content",
+  "ui.continue": "Continue",
+  "ui.couldNotLoadJobs": "Could not load jobs",
+  "ui.couldNotLoadQuotes": "Could not load quotes",
+  "ui.couldNotLoadTheQueue": "Could not load the queue",
+  "ui.couldnTLoadFavorites": "Couldn't load favorites",
+  "ui.createAccount": "Create Account",
+  "ui.decline": "Decline",
+  "ui.describeWhatHappenedWhenItHappenedAndWhatYou": "Describe what happened, when it happened, and what you expected…",
+  "ui.details": "Details",
+  "ui.disconnect": "Disconnect",
+  "ui.downloadPdf": "Download PDF",
+  "ui.earnings": "Earnings",
+  "ui.editDetails": "Edit details",
+  "ui.editProfile": "Edit profile",
+  "ui.email": "Email",
+  "ui.exportMyData": "Export my data",
+  "ui.favorites": "Favorites",
+  "ui.finishJob": "Finish job",
+  "ui.firstName": "First Name",
+  "ui.getStarted": "Get Started",
+  "ui.helpFaq": "Help & FAQ",
+  "ui.inviteFriends": "Invite friends",
+  "ui.invoices": "Invoices",
+  "ui.jobAddress": "Job address",
+  "ui.jobs": "Jobs",
+  "ui.language": "Language",
+  "ui.lastName": "Last Name",
+  "ui.leaveAReview": "Leave a Review",
+  "ui.leaveAnOptionalComment": "Leave an optional comment…",
+  "ui.logIn": "Log in",
+  "ui.logOut": "Log out",
+  "ui.maxBidsPerDay": "Max bids per day",
+  "ui.message": "Message",
+  "ui.myRate": "My rate",
+  "ui.nearby": "NEARBY",
+  "ui.neverBidBelow": "Never bid below",
+  "ui.newOpportunities": "New opportunities",
+  "ui.noBusinessesNearby": "No businesses nearby",
+  "ui.noFavoritesYet": "No favorites yet",
+  "ui.noNotificationsYet": "No notifications yet",
+  "ui.noQuotesSentYet": "No quotes sent yet",
+  "ui.nothingWaiting": "Nothing waiting",
+  "ui.notifications": "Notifications",
+  "ui.onlyWhenACrewIsFree": "Only when a crew is free",
+  "ui.openADispute": "Open a dispute",
+  "ui.openReports": "Open reports",
+  "ui.openSettings": "Open settings",
+  "ui.openWebAdmin": "Open web admin",
+  "ui.pass": "Pass",
+  "ui.password": "Password",
+  "ui.payments": "Payments",
+  "ui.pendingPayouts": "Pending Payouts",
+  "ui.phone": "Phone",
+  "ui.platformFees": "Platform Fees",
+  "ui.pleaseDescribe": "Please describe…",
+  "ui.postAJob": "Post a job",
+  "ui.privacyPolicy": "Privacy Policy",
+  "ui.profile": "Profile",
+  "ui.profileViews": "Profile Views",
+  "ui.quote": "Quote",
+  "ui.quoteToBooking": "Quote-to-Booking",
+  "ui.rating": "Rating",
+  "ui.ratingCaps": "RATING",
+  "ui.reason": "Reason",
+  "ui.receipt": "Receipt",
+  "ui.referrals": "Referrals",
+  "ui.repeatCustomers": "Repeat Customers",
+  "ui.reportedBy": "Reported by",
+  "ui.resume": "Resume",
+  "ui.review": "Review",
+  "ui.searchByName": "Search by name…",
+  "ui.sendQuote": "Send quote",
+  "ui.sendResetLink": "Send reset link",
+  "ui.service": "Service",
+  "ui.serviceAddress": "Service address",
+  "ui.settings": "Settings",
+  "ui.shareMyCode": "Share my code",
+  "ui.signOut": "Sign Out",
+  "ui.since": "Since",
+  "ui.stopSharing": "Stop sharing",
+  "ui.submitReview": "Submit Review",
+  "ui.team": "Team",
+  "ui.tellClientsWhatMakesYouStandOutOptional": "Tell clients what makes you stand out (optional)",
+  "ui.temporaryPassword": "Temporary password",
+  "ui.termsOfService": "Terms of Service",
+  "ui.theWordingNoLongerMatchesWhatWasSignedAskFor": "The wording no longer matches what was signed. Ask for it to be sent again.",
+  "ui.thisRecordCanTBeVerified": "This record can't be verified",
+  "ui.today": "TODAY",
+  "ui.topRatedNearYou": "TOP RATED NEAR YOU",
+  "ui.total": "Total",
+  "ui.tryAgain": "Try again",
+  "ui.typeAMessage": "Type a message…",
+  "ui.upcoming": "UPCOMING",
+  "ui.view": "View",
+  "ui.viewBooking": "View booking",
+  "ui.whatDoYouNeed": "What do you need? *",
+  "ui.whatDoYouNeedDone": "What do you need done?",
+  "ui.whatTheProofShowedAndWhy": "What the proof showed, and why.",
+  "ui.whatThisJobCovers": "What this job covers",
+  "ui.where": "Where",
+  "ui.whereAreYouBased": "Where are you based?",
+  "ui.withdrawnBeforeItWasAgreed": "Withdrawn before it was agreed",
+  "ui.within": "Within",
+  "ui.yourProvider": "Your provider",
+});
+
+Object.assign(translations['fr-CA'], {
+  "ui.addACard": "Ajouter une carte",
+  "ui.addAnAddressOptional": "Ajouter une adresse (optionnel)",
+  "ui.addDetailsOptional": "Ajouter des détails (optionnel)",
+  "ui.after": "APRÈS",
+  "ui.allCaughtUp": "Tout est à jour",
+  "ui.analytics": "Statistiques",
+  "ui.approveWork": "Approuver le travail",
+  "ui.autoBidding": "Soumissions automatiques",
+  "ui.avgJobValue": "Valeur moyenne",
+  "ui.awaitingDecision": "En attente d'une décision",
+  "ui.backToLogin": "Retour à la connexion",
+  "ui.before": "AVANT",
+  "ui.browseServices": "Parcourir les services",
+  "ui.budget": "Budget *",
+  "ui.businessName": "Nom de l'entreprise",
+  "ui.businessTools": "OUTILS D'ENTREPRISE",
+  "ui.cancelBooking": "Annuler la réservation",
+  "ui.clientSOwnPhotos": "PHOTOS DU CLIENT",
+  "ui.commentOptional": "Commentaire (optionnel)",
+  "ui.completedJobs": "Travaux terminés",
+  "ui.contactUs": "Nous joindre",
+  "ui.content": "Contenu",
+  "ui.continue": "Continuer",
+  "ui.couldNotLoadJobs": "Impossible de charger les travaux",
+  "ui.couldNotLoadQuotes": "Impossible de charger les soumissions",
+  "ui.couldNotLoadTheQueue": "Impossible de charger la file",
+  "ui.couldnTLoadFavorites": "Impossible de charger les favoris",
+  "ui.createAccount": "Créer un compte",
+  "ui.decline": "Refuser",
+  "ui.describeWhatHappenedWhenItHappenedAndWhatYou": "Décrivez ce qui est arrivé, quand, et ce que vous attendiez…",
+  "ui.details": "Détails",
+  "ui.disconnect": "Déconnecter",
+  "ui.downloadPdf": "Télécharger le PDF",
+  "ui.earnings": "Revenus",
+  "ui.editDetails": "Modifier les détails",
+  "ui.editProfile": "Modifier le profil",
+  "ui.email": "Courriel",
+  "ui.exportMyData": "Exporter mes données",
+  "ui.favorites": "Favoris",
+  "ui.finishJob": "Terminer le travail",
+  "ui.firstName": "Prénom",
+  "ui.getStarted": "Commencer",
+  "ui.helpFaq": "Aide et FAQ",
+  "ui.inviteFriends": "Inviter des amis",
+  "ui.invoices": "Factures",
+  "ui.jobAddress": "Adresse du travail",
+  "ui.jobs": "Travaux",
+  "ui.language": "Langue",
+  "ui.lastName": "Nom",
+  "ui.leaveAReview": "Laisser un avis",
+  "ui.leaveAnOptionalComment": "Laisser un commentaire (optionnel)…",
+  "ui.logIn": "Se connecter",
+  "ui.logOut": "Se déconnecter",
+  "ui.maxBidsPerDay": "Soumissions max par jour",
+  "ui.message": "Message",
+  "ui.myRate": "Mon tarif",
+  "ui.nearby": "À PROXIMITÉ",
+  "ui.neverBidBelow": "Ne jamais soumissionner sous",
+  "ui.newOpportunities": "Nouvelles occasions",
+  "ui.noBusinessesNearby": "Aucune entreprise à proximité",
+  "ui.noFavoritesYet": "Aucun favori pour l'instant",
+  "ui.noNotificationsYet": "Aucune notification pour l'instant",
+  "ui.noQuotesSentYet": "Aucune soumission envoyée",
+  "ui.nothingWaiting": "Rien en attente",
+  "ui.notifications": "Notifications",
+  "ui.onlyWhenACrewIsFree": "Seulement quand une équipe est libre",
+  "ui.openADispute": "Ouvrir un litige",
+  "ui.openReports": "Signalements ouverts",
+  "ui.openSettings": "Ouvrir les paramètres",
+  "ui.openWebAdmin": "Ouvrir l'admin web",
+  "ui.pass": "Passer",
+  "ui.password": "Mot de passe",
+  "ui.payments": "Paiements",
+  "ui.pendingPayouts": "Versements en attente",
+  "ui.phone": "Téléphone",
+  "ui.platformFees": "Frais de la plateforme",
+  "ui.pleaseDescribe": "Veuillez décrire…",
+  "ui.postAJob": "Publier un travail",
+  "ui.privacyPolicy": "Politique de confidentialité",
+  "ui.profile": "Profil",
+  "ui.profileViews": "Vues du profil",
+  "ui.quote": "Soumission",
+  "ui.quoteToBooking": "Soumission à réservation",
+  "ui.rating": "Évaluation",
+  "ui.ratingCaps": "ÉVALUATION",
+  "ui.reason": "Motif",
+  "ui.receipt": "Reçu",
+  "ui.referrals": "Références",
+  "ui.repeatCustomers": "Clients fidèles",
+  "ui.reportedBy": "Signalé par",
+  "ui.resume": "Reprendre",
+  "ui.review": "Avis",
+  "ui.searchByName": "Rechercher par nom…",
+  "ui.sendQuote": "Envoyer la soumission",
+  "ui.sendResetLink": "Envoyer le lien de réinitialisation",
+  "ui.service": "Service",
+  "ui.serviceAddress": "Adresse du service",
+  "ui.settings": "Paramètres",
+  "ui.shareMyCode": "Partager mon code",
+  "ui.signOut": "Se déconnecter",
+  "ui.since": "Depuis",
+  "ui.stopSharing": "Arrêter le partage",
+  "ui.submitReview": "Envoyer l'avis",
+  "ui.team": "Équipe",
+  "ui.tellClientsWhatMakesYouStandOutOptional": "Dites aux clients ce qui vous distingue (optionnel)",
+  "ui.temporaryPassword": "Mot de passe temporaire",
+  "ui.termsOfService": "Conditions d'utilisation",
+  "ui.theWordingNoLongerMatchesWhatWasSignedAskFor": "Le libellé ne correspond plus à ce qui a été signé. Demandez qu'il soit renvoyé.",
+  "ui.thisRecordCanTBeVerified": "Ce document ne peut pas être vérifié",
+  "ui.today": "AUJOURD'HUI",
+  "ui.topRatedNearYou": "LES MIEUX NOTÉS PRÈS DE VOUS",
+  "ui.total": "Total",
+  "ui.tryAgain": "Réessayer",
+  "ui.typeAMessage": "Écrire un message…",
+  "ui.upcoming": "À VENIR",
+  "ui.view": "Voir",
+  "ui.viewBooking": "Voir la réservation",
+  "ui.whatDoYouNeed": "De quoi avez-vous besoin? *",
+  "ui.whatDoYouNeedDone": "Qu'avez-vous besoin de faire faire?",
+  "ui.whatTheProofShowedAndWhy": "Ce que la preuve montrait, et pourquoi.",
+  "ui.whatThisJobCovers": "Ce que ce travail comprend",
+  "ui.where": "Où",
+  "ui.whereAreYouBased": "Où êtes-vous situé?",
+  "ui.withdrawnBeforeItWasAgreed": "Retirée avant d'être acceptée",
+  "ui.within": "D'ici",
+  "ui.yourProvider": "Votre prestataire",
+});
+
+Object.assign(translations.ar, {
+  "ui.addACard": "إضافة بطاقة",
+  "ui.addAnAddressOptional": "إضافة عنوان (اختياري)",
+  "ui.addDetailsOptional": "إضافة تفاصيل (اختياري)",
+  "ui.after": "بعد",
+  "ui.allCaughtUp": "لا يوجد جديد",
+  "ui.analytics": "التحليلات",
+  "ui.approveWork": "الموافقة على العمل",
+  "ui.autoBidding": "العروض التلقائية",
+  "ui.avgJobValue": "متوسط قيمة العمل",
+  "ui.awaitingDecision": "في انتظار القرار",
+  "ui.backToLogin": "العودة لتسجيل الدخول",
+  "ui.before": "قبل",
+  "ui.browseServices": "استعراض الخدمات",
+  "ui.budget": "الميزانية *",
+  "ui.businessName": "اسم النشاط",
+  "ui.businessTools": "أدوات النشاط",
+  "ui.cancelBooking": "إلغاء الحجز",
+  "ui.clientSOwnPhotos": "صور العميل",
+  "ui.commentOptional": "تعليق (اختياري)",
+  "ui.completedJobs": "الأعمال المكتملة",
+  "ui.contactUs": "اتصل بنا",
+  "ui.content": "المحتوى",
+  "ui.continue": "متابعة",
+  "ui.couldNotLoadJobs": "تعذر تحميل الأعمال",
+  "ui.couldNotLoadQuotes": "تعذر تحميل العروض",
+  "ui.couldNotLoadTheQueue": "تعذر تحميل القائمة",
+  "ui.couldnTLoadFavorites": "تعذر تحميل المفضلة",
+  "ui.createAccount": "إنشاء حساب",
+  "ui.decline": "رفض",
+  "ui.describeWhatHappenedWhenItHappenedAndWhatYou": "اذكر ما حدث، ومتى حدث، وما كنت تتوقعه…",
+  "ui.details": "التفاصيل",
+  "ui.disconnect": "قطع الاتصال",
+  "ui.downloadPdf": "تنزيل PDF",
+  "ui.earnings": "الأرباح",
+  "ui.editDetails": "تعديل التفاصيل",
+  "ui.editProfile": "تعديل الملف",
+  "ui.email": "البريد الإلكتروني",
+  "ui.exportMyData": "تصدير بياناتي",
+  "ui.favorites": "المفضلة",
+  "ui.finishJob": "إنهاء العمل",
+  "ui.firstName": "الاسم الأول",
+  "ui.getStarted": "ابدأ",
+  "ui.helpFaq": "المساعدة والأسئلة الشائعة",
+  "ui.inviteFriends": "دعوة الأصدقاء",
+  "ui.invoices": "الفواتير",
+  "ui.jobAddress": "عنوان العمل",
+  "ui.jobs": "الأعمال",
+  "ui.language": "اللغة",
+  "ui.lastName": "اسم العائلة",
+  "ui.leaveAReview": "اكتب تقييمًا",
+  "ui.leaveAnOptionalComment": "اكتب تعليقًا (اختياري)…",
+  "ui.logIn": "تسجيل الدخول",
+  "ui.logOut": "تسجيل الخروج",
+  "ui.maxBidsPerDay": "أقصى عدد عروض يوميًا",
+  "ui.message": "رسالة",
+  "ui.myRate": "سعري",
+  "ui.nearby": "قريب منك",
+  "ui.neverBidBelow": "لا تقدم عرضًا أقل من",
+  "ui.newOpportunities": "فرص جديدة",
+  "ui.noBusinessesNearby": "لا توجد أنشطة قريبة",
+  "ui.noFavoritesYet": "لا توجد مفضلة بعد",
+  "ui.noNotificationsYet": "لا توجد إشعارات بعد",
+  "ui.noQuotesSentYet": "لم تُرسل عروض بعد",
+  "ui.nothingWaiting": "لا شيء في الانتظار",
+  "ui.notifications": "الإشعارات",
+  "ui.onlyWhenACrewIsFree": "فقط عند توفر فريق",
+  "ui.openADispute": "فتح نزاع",
+  "ui.openReports": "التقارير المفتوحة",
+  "ui.openSettings": "فتح الإعدادات",
+  "ui.openWebAdmin": "فتح لوحة الإدارة",
+  "ui.pass": "تجاهل",
+  "ui.password": "كلمة المرور",
+  "ui.payments": "المدفوعات",
+  "ui.pendingPayouts": "تحويلات معلّقة",
+  "ui.phone": "الهاتف",
+  "ui.platformFees": "رسوم المنصة",
+  "ui.pleaseDescribe": "يرجى الوصف…",
+  "ui.postAJob": "انشر عملًا",
+  "ui.privacyPolicy": "سياسة الخصوصية",
+  "ui.profile": "الملف الشخصي",
+  "ui.profileViews": "مشاهدات الملف",
+  "ui.quote": "عرض سعر",
+  "ui.quoteToBooking": "من عرض إلى حجز",
+  "ui.rating": "التقييم",
+  "ui.ratingCaps": "التقييم",
+  "ui.reason": "السبب",
+  "ui.receipt": "الإيصال",
+  "ui.referrals": "الإحالات",
+  "ui.repeatCustomers": "عملاء متكررون",
+  "ui.reportedBy": "أبلغ عنه",
+  "ui.resume": "استئناف",
+  "ui.review": "تقييم",
+  "ui.searchByName": "البحث بالاسم…",
+  "ui.sendQuote": "إرسال العرض",
+  "ui.sendResetLink": "إرسال رابط الاستعادة",
+  "ui.service": "الخدمة",
+  "ui.serviceAddress": "عنوان الخدمة",
+  "ui.settings": "الإعدادات",
+  "ui.shareMyCode": "شارك رمزي",
+  "ui.signOut": "تسجيل الخروج",
+  "ui.since": "منذ",
+  "ui.stopSharing": "إيقاف المشاركة",
+  "ui.submitReview": "إرسال التقييم",
+  "ui.team": "الفريق",
+  "ui.tellClientsWhatMakesYouStandOutOptional": "أخبر العملاء بما يميزك (اختياري)",
+  "ui.temporaryPassword": "كلمة مرور مؤقتة",
+  "ui.termsOfService": "شروط الخدمة",
+  "ui.theWordingNoLongerMatchesWhatWasSignedAskFor": "النص لم يعد مطابقًا لما تم الاتفاق عليه. اطلب إرساله مرة أخرى.",
+  "ui.thisRecordCanTBeVerified": "لا يمكن التحقق من هذا السجل",
+  "ui.today": "اليوم",
+  "ui.topRatedNearYou": "الأعلى تقييمًا قريبًا منك",
+  "ui.total": "الإجمالي",
+  "ui.tryAgain": "حاول مرة أخرى",
+  "ui.typeAMessage": "اكتب رسالة…",
+  "ui.upcoming": "القادمة",
+  "ui.view": "عرض",
+  "ui.viewBooking": "عرض الحجز",
+  "ui.whatDoYouNeed": "ما الذي تحتاجه؟ *",
+  "ui.whatDoYouNeedDone": "ما الذي تريد إنجازه؟",
+  "ui.whatTheProofShowedAndWhy": "ما أظهره الإثبات، والسبب.",
+  "ui.whatThisJobCovers": "ما يشمله هذا العمل",
+  "ui.where": "المكان",
+  "ui.whereAreYouBased": "أين تقع؟",
+  "ui.withdrawnBeforeItWasAgreed": "سُحب قبل الموافقة عليه",
+  "ui.within": "خلال",
+  "ui.yourProvider": "مقدّم الخدمة",
+});
+
+Object.assign(translations.uk, {
+  "ui.addACard": "Додати картку",
+  "ui.addAnAddressOptional": "Додати адресу (необов'язково)",
+  "ui.addDetailsOptional": "Додати деталі (необов'язково)",
+  "ui.after": "ПІСЛЯ",
+  "ui.allCaughtUp": "Усе переглянуто",
+  "ui.analytics": "Аналітика",
+  "ui.approveWork": "Підтвердити роботу",
+  "ui.autoBidding": "Автоматичні пропозиції",
+  "ui.avgJobValue": "Середня вартість",
+  "ui.awaitingDecision": "Очікує рішення",
+  "ui.backToLogin": "Назад до входу",
+  "ui.before": "ДО",
+  "ui.browseServices": "Огляд послуг",
+  "ui.budget": "Бюджет *",
+  "ui.businessName": "Назва бізнесу",
+  "ui.businessTools": "ІНСТРУМЕНТИ БІЗНЕСУ",
+  "ui.cancelBooking": "Скасувати бронювання",
+  "ui.clientSOwnPhotos": "ФОТО КЛІЄНТА",
+  "ui.commentOptional": "Комментар (необов'язково)",
+  "ui.completedJobs": "Завершені роботи",
+  "ui.contactUs": "Звʼязатися з нами",
+  "ui.content": "Вміст",
+  "ui.continue": "Продовжити",
+  "ui.couldNotLoadJobs": "Не вдалося завантажити роботи",
+  "ui.couldNotLoadQuotes": "Не вдалося завантажити пропозиції",
+  "ui.couldNotLoadTheQueue": "Не вдалося завантажити чергу",
+  "ui.couldnTLoadFavorites": "Не вдалося завантажити улюблене",
+  "ui.createAccount": "Створити акаунт",
+  "ui.decline": "Відхилити",
+  "ui.describeWhatHappenedWhenItHappenedAndWhatYou": "Опишіть, що сталося, коли це сталося і чого ви очікували…",
+  "ui.details": "Деталі",
+  "ui.disconnect": "Відʼєднати",
+  "ui.downloadPdf": "Завантажити PDF",
+  "ui.earnings": "Заробіток",
+  "ui.editDetails": "Редагувати деталі",
+  "ui.editProfile": "Редагувати профіль",
+  "ui.email": "Електронна пошта",
+  "ui.exportMyData": "Експортувати мої дані",
+  "ui.favorites": "Улюблене",
+  "ui.finishJob": "Завершити роботу",
+  "ui.firstName": "Імʼя",
+  "ui.getStarted": "Почати",
+  "ui.helpFaq": "Допомога та FAQ",
+  "ui.inviteFriends": "Запросити друзів",
+  "ui.invoices": "Рахунки",
+  "ui.jobAddress": "Адреса роботи",
+  "ui.jobs": "Роботи",
+  "ui.language": "Мова",
+  "ui.lastName": "Прізвище",
+  "ui.leaveAReview": "Залишити відгук",
+  "ui.leaveAnOptionalComment": "Залишити комментар (необов'язково)…",
+  "ui.logIn": "Увійти",
+  "ui.logOut": "Вийти",
+  "ui.maxBidsPerDay": "Максимум пропозицій на день",
+  "ui.message": "Повідомлення",
+  "ui.myRate": "Мій тариф",
+  "ui.nearby": "ПОБЛИЗУ",
+  "ui.neverBidBelow": "Не пропонувати менше ніж",
+  "ui.newOpportunities": "Нові можливості",
+  "ui.noBusinessesNearby": "Поблизу немає бізнесів",
+  "ui.noFavoritesYet": "Ще немає улюблених",
+  "ui.noNotificationsYet": "Ще немає сповіщень",
+  "ui.noQuotesSentYet": "Пропозицій ще не надіслано",
+  "ui.nothingWaiting": "Нічого не очікує",
+  "ui.notifications": "Сповіщення",
+  "ui.onlyWhenACrewIsFree": "Лише коли команда вільна",
+  "ui.openADispute": "Відкрити спір",
+  "ui.openReports": "Відкриті скарги",
+  "ui.openSettings": "Відкрити налаштування",
+  "ui.openWebAdmin": "Відкрити вебадмін",
+  "ui.pass": "Пропустити",
+  "ui.password": "Пароль",
+  "ui.payments": "Платежі",
+  "ui.pendingPayouts": "Виплати в очікуванні",
+  "ui.phone": "Телефон",
+  "ui.platformFees": "Комісія платформи",
+  "ui.pleaseDescribe": "Будь ласка, опишіть…",
+  "ui.postAJob": "Опублікувати роботу",
+  "ui.privacyPolicy": "Політика конфіденційності",
+  "ui.profile": "Профіль",
+  "ui.profileViews": "Перегляди профілю",
+  "ui.quote": "Пропозиція",
+  "ui.quoteToBooking": "Від пропозиції до бронювання",
+  "ui.rating": "Рейтинг",
+  "ui.ratingCaps": "РЕЙТИНГ",
+  "ui.reason": "Причина",
+  "ui.receipt": "Чек",
+  "ui.referrals": "Запрошення",
+  "ui.repeatCustomers": "Постійні клієнти",
+  "ui.reportedBy": "Повідомив",
+  "ui.resume": "Продовжити",
+  "ui.review": "Відгук",
+  "ui.searchByName": "Пошук за назвою…",
+  "ui.sendQuote": "Надіслати пропозицію",
+  "ui.sendResetLink": "Надіслати посилання для скидання",
+  "ui.service": "Послуга",
+  "ui.serviceAddress": "Адреса послуги",
+  "ui.settings": "Налаштування",
+  "ui.shareMyCode": "Поділитися кодом",
+  "ui.signOut": "Вийти",
+  "ui.since": "З",
+  "ui.stopSharing": "Припинити надсилання",
+  "ui.submitReview": "Надіслати відгук",
+  "ui.team": "Команда",
+  "ui.tellClientsWhatMakesYouStandOutOptional": "Розкажіть клієнтам, що вас вирізняє (необов'язково)",
+  "ui.temporaryPassword": "Тимчасовий пароль",
+  "ui.termsOfService": "Умови користування",
+  "ui.theWordingNoLongerMatchesWhatWasSignedAskFor": "Формулювання більше не відповідає узгодженому. Попросіть надіслати ще раз.",
+  "ui.thisRecordCanTBeVerified": "Цей запис неможливо підтвердити",
+  "ui.today": "СЬОГОДНІ",
+  "ui.topRatedNearYou": "НАЙВИЩЕ ОЦІНЕНІ ПОБЛИЗУ",
+  "ui.total": "Усього",
+  "ui.tryAgain": "Спробувати ще раз",
+  "ui.typeAMessage": "Напишіть повідомлення…",
+  "ui.upcoming": "МАЙБУТНІ",
+  "ui.view": "Переглянути",
+  "ui.viewBooking": "Переглянути бронювання",
+  "ui.whatDoYouNeed": "Що вам потрібно? *",
+  "ui.whatDoYouNeedDone": "Що потрібно зробити?",
+  "ui.whatTheProofShowedAndWhy": "Що показало підтвердження і чому.",
+  "ui.whatThisJobCovers": "Що включає ця робота",
+  "ui.where": "Де",
+  "ui.whereAreYouBased": "Де ви розташовані?",
+  "ui.withdrawnBeforeItWasAgreed": "Відкликано до погодження",
+  "ui.within": "Протягом",
+  "ui.yourProvider": "Ваш виконавець",
+});
+
+// ── Job management (2026-08-16) ──────────────────────────────────────────────
+//
+// Third screen of the hardcoded-English sweep, and the one in the annotated
+// screenshot: every ACTIONS row a business owner taps on a live job was an
+// English literal. `jobMgmt.cancelSub` is the long one that truncated to
+// "...a penalt..." on device — the string is kept intact here and the clipping
+// is a layout fix, not a copy fix. It states a real consequence and must not be
+// shortened into something vaguer.
+Object.assign(translations.en, {
+  'jobMgmt.messageClient': 'Message client',
+  'jobMgmt.messageClientSub': 'Open the chat',
+  'jobMgmt.sendProofTitle': 'Send proof to client',
+  'jobMgmt.sendProofSub': 'Before/after photos and a voice note',
+  'jobMgmt.receiptTitle': 'View receipt',
+  'jobMgmt.receiptSub': 'See the invoice + download PDF',
+  'jobMgmt.reviewTitle': 'Review client',
+  'jobMgmt.reviewSub': 'Rate how this job went',
+  'jobMgmt.reportTitle': 'Report a problem',
+  'jobMgmt.reportSub': 'Open a dispute for this booking',
+  'jobMgmt.cancelTitle': 'Cancel this job',
+  'jobMgmt.cancelSub': 'The client is refunded in full; a late cancellation is recorded against your standing',
+  'jobMgmt.assignToMe': 'Assign to me',
+});
+
+Object.assign(translations['fr-CA'], {
+  'jobMgmt.messageClient': 'Écrire au client',
+  'jobMgmt.messageClientSub': 'Ouvrir la conversation',
+  'jobMgmt.sendProofTitle': 'Envoyer la preuve au client',
+  'jobMgmt.sendProofSub': 'Photos avant/après et une note vocale',
+  'jobMgmt.receiptTitle': 'Voir le reçu',
+  'jobMgmt.receiptSub': 'Voir la facture + télécharger le PDF',
+  'jobMgmt.reviewTitle': 'Évaluer le client',
+  'jobMgmt.reviewSub': "Noter comment s'est passé ce travail",
+  'jobMgmt.reportTitle': 'Signaler un problème',
+  'jobMgmt.reportSub': 'Ouvrir un litige pour cette réservation',
+  'jobMgmt.cancelTitle': 'Annuler ce travail',
+  'jobMgmt.cancelSub': "Le client est remboursé en totalité; une annulation tardive est inscrite à votre dossier",
+  'jobMgmt.assignToMe': 'Me l’assigner',
+});
+
+Object.assign(translations.ar, {
+  'jobMgmt.messageClient': 'مراسلة العميل',
+  'jobMgmt.messageClientSub': 'فتح المحادثة',
+  'jobMgmt.sendProofTitle': 'إرسال الإثبات إلى العميل',
+  'jobMgmt.sendProofSub': 'صور قبل/بعد وملاحظة صوتية',
+  'jobMgmt.receiptTitle': 'عرض الإيصال',
+  'jobMgmt.receiptSub': 'عرض الفاتورة + تنزيل PDF',
+  'jobMgmt.reviewTitle': 'تقييم العميل',
+  'jobMgmt.reviewSub': 'قيّم كيف سار هذا العمل',
+  'jobMgmt.reportTitle': 'الإبلاغ عن مشكلة',
+  'jobMgmt.reportSub': 'فتح نزاع بشأن هذا الحجز',
+  'jobMgmt.cancelTitle': 'إلغاء هذا العمل',
+  'jobMgmt.cancelSub': 'يُرد للعميل المبلغ كاملًا، ويُسجَّل الإلغاء المتأخر في سجلك',
+  'jobMgmt.assignToMe': 'إسناده لي',
+});
+
+Object.assign(translations.uk, {
+  'jobMgmt.messageClient': 'Написати клієнту',
+  'jobMgmt.messageClientSub': 'Відкрити чат',
+  'jobMgmt.sendProofTitle': 'Надіслати підтвердження клієнту',
+  'jobMgmt.sendProofSub': 'Фото до/після та голосова нотатка',
+  'jobMgmt.receiptTitle': 'Переглянути чек',
+  'jobMgmt.receiptSub': 'Переглянути рахунок + завантажити PDF',
+  'jobMgmt.reviewTitle': 'Оцінити клієнта',
+  'jobMgmt.reviewSub': 'Оцініть, як пройшла робота',
+  'jobMgmt.reportTitle': 'Повідомити про проблему',
+  'jobMgmt.reportSub': 'Відкрити спір щодо цього бронювання',
+  'jobMgmt.cancelTitle': 'Скасувати цю роботу',
+  'jobMgmt.cancelSub': 'Клієнт отримує повне повернення; пізнє скасування записується у вашу історію',
+  'jobMgmt.assignToMe': 'Призначити мені',
+});
+
+// ── Business profile (2026-08-16) ────────────────────────────────────────────
+//
+// Second screen of the hardcoded-English sweep — 23 literals, the worst single
+// offender in the app. Same defect as Booking Details: an owner running the
+// business in French got English row labels for their own subscription,
+// invoices and service area. See no-hardcoded-strings.test.js.
+Object.assign(translations.en, {
+  'bizProfile.rowNameCategory': 'Business name & category',
+  'bizProfile.rowLogo': 'Logo',
+  'bizProfile.rowTeam': 'Team & employees',
+  'bizProfile.rowServiceArea': 'Service area',
+  'bizProfile.rowInvoices': 'Invoices',
+  'bizProfile.rowSubscription': 'Manage subscription',
+  'bizProfile.rowAutoBidding': 'Auto-bidding',
+  'bizProfile.rowNotifications': 'Notifications',
+  'bizProfile.rowSettings': 'Settings',
+  'bizProfile.rowHelp': 'Help & FAQ',
+  'bizProfile.rowPrivacy': 'Privacy Policy',
+  'bizProfile.rowTerms': 'Terms of Service',
+  'bizProfile.phBusinessName': 'Business name',
+  'bizProfile.phDescription': "What you do, what makes you different, anything a client should know.",
+  'bizProfile.sectionServices': 'Services',
+  'bizProfile.sectionPhotos': 'Photos',
+  'bizProfile.sectionReviews': 'SwingByy reviews',
+  'bizProfile.saveChanges': 'Save changes',
+  'bizProfile.bookNow': 'Book now',
+});
+
+Object.assign(translations['fr-CA'], {
+  'bizProfile.rowNameCategory': "Nom de l'entreprise et catégorie",
+  'bizProfile.rowLogo': 'Logo',
+  'bizProfile.rowTeam': 'Équipe et employés',
+  'bizProfile.rowServiceArea': 'Zone de service',
+  'bizProfile.rowInvoices': 'Factures',
+  'bizProfile.rowSubscription': "Gérer l'abonnement",
+  'bizProfile.rowAutoBidding': 'Soumissions automatiques',
+  'bizProfile.rowNotifications': 'Notifications',
+  'bizProfile.rowSettings': 'Paramètres',
+  'bizProfile.rowHelp': 'Aide et FAQ',
+  'bizProfile.rowPrivacy': 'Politique de confidentialité',
+  'bizProfile.rowTerms': "Conditions d'utilisation",
+  'bizProfile.phBusinessName': "Nom de l'entreprise",
+  'bizProfile.phDescription': "Ce que vous faites, ce qui vous distingue, tout ce qu'un client devrait savoir.",
+  'bizProfile.sectionServices': 'Services',
+  'bizProfile.sectionPhotos': 'Photos',
+  'bizProfile.sectionReviews': 'Avis SwingByy',
+  'bizProfile.saveChanges': 'Enregistrer',
+  'bizProfile.bookNow': 'Réserver',
+});
+
+Object.assign(translations.ar, {
+  'bizProfile.rowNameCategory': 'اسم النشاط والفئة',
+  'bizProfile.rowLogo': 'الشعار',
+  'bizProfile.rowTeam': 'الفريق والموظفون',
+  'bizProfile.rowServiceArea': 'نطاق الخدمة',
+  'bizProfile.rowInvoices': 'الفواتير',
+  'bizProfile.rowSubscription': 'إدارة الاشتراك',
+  'bizProfile.rowAutoBidding': 'العروض التلقائية',
+  'bizProfile.rowNotifications': 'الإشعارات',
+  'bizProfile.rowSettings': 'الإعدادات',
+  'bizProfile.rowHelp': 'المساعدة والأسئلة الشائعة',
+  'bizProfile.rowPrivacy': 'سياسة الخصوصية',
+  'bizProfile.rowTerms': 'شروط الخدمة',
+  'bizProfile.phBusinessName': 'اسم النشاط',
+  'bizProfile.phDescription': 'ما الذي تقدمه، وما الذي يميزك، وأي شيء يجب أن يعرفه العميل.',
+  'bizProfile.sectionServices': 'الخدمات',
+  'bizProfile.sectionPhotos': 'الصور',
+  'bizProfile.sectionReviews': 'تقييمات SwingByy',
+  'bizProfile.saveChanges': 'حفظ التغييرات',
+  'bizProfile.bookNow': 'احجز الآن',
+});
+
+Object.assign(translations.uk, {
+  'bizProfile.rowNameCategory': 'Назва бізнесу та категорія',
+  'bizProfile.rowLogo': 'Логотип',
+  'bizProfile.rowTeam': 'Команда та працівники',
+  'bizProfile.rowServiceArea': 'Зона обслуговування',
+  'bizProfile.rowInvoices': 'Рахунки',
+  'bizProfile.rowSubscription': 'Керувати підпискою',
+  'bizProfile.rowAutoBidding': 'Автоматичні пропозиції',
+  'bizProfile.rowNotifications': 'Сповіщення',
+  'bizProfile.rowSettings': 'Налаштування',
+  'bizProfile.rowHelp': 'Допомога та поширені запитання',
+  'bizProfile.rowPrivacy': 'Політика конфіденційності',
+  'bizProfile.rowTerms': 'Умови користування',
+  'bizProfile.phBusinessName': 'Назва бізнесу',
+  'bizProfile.phDescription': 'Чим ви займаєтесь, що вас вирізняє, і все, що варто знати клієнту.',
+  'bizProfile.sectionServices': 'Послуги',
+  'bizProfile.sectionPhotos': 'Фото',
+  'bizProfile.sectionReviews': 'Відгуки SwingByy',
+  'bizProfile.saveChanges': 'Зберегти зміни',
+  'bizProfile.bookNow': 'Забронювати',
+});
+
+// ── Booking Details (2026-08-16) ─────────────────────────────────────────────
+//
+// This screen was HALF translated, and a screenshot from a French device is why
+// it is being fixed: "PROTECTION DU PAIEMENT" and "Payer maintenant" came from
+// this catalogue, while "Booking Details", "Service", "Scheduled", "Price" and
+// the PENDING pill were English literals hardcoded in the JSX. One screen, two
+// languages, in front of a client looking at a $180 charge.
+//
+// The i18n-coverage test could never have caught it: it compares catalogues to
+// each other, so a string that never became a key is invisible to it. See
+// no-hardcoded-strings.test.js, added alongside this, which measures the other
+// direction.
+Object.assign(translations.en, {
+  'bookingDetails.title': 'Booking Details',
+  'bookingDetails.shareA11y': 'Share booking link',
+  'bookingDetails.deletedTitle': 'Booking no longer exists',
+  'bookingDetails.deletedBody': 'This booking may have been cancelled or removed.',
+  'bookingDetails.errorTitle': 'Could not load booking',
+  'bookingDetails.errorBody': 'Check your connection and try again.',
+  'bookingDetails.jobDetails': 'Job Details',
+  'bookingDetails.rowService': 'Service',
+  'bookingDetails.rowScheduled': 'Scheduled',
+  'bookingDetails.rowAddress': 'Address',
+  'bookingDetails.rowPrice': 'Price',
+  'bookingDetails.offPayTitle': 'How was it paid?',
+  'bookingDetails.offPayBody': "Recording only — SwingByy doesn't touch the money.",
+  'bookingDetails.offPayCash': 'Cash',
+  'bookingDetails.offPayETransfer': 'E-transfer',
+  'bookingDetails.offPayOther': 'Other',
+  // Payment pill. These describe the state of real money, so each one is
+  // translated as the STATE, never loosened into a friendlier word.
+  'payPill.paid': 'PAID',
+  'payPill.inProgress': 'IN PROGRESS',
+  'payPill.held': 'HELD',
+  'payPill.refunded': 'REFUNDED',
+  'payPill.paidOffPlatform': 'PAID (OFF-PLATFORM)',
+  'payPill.pending': 'PENDING',
+  'payPill.failed': 'PAYMENT FAILED',
+});
+
+Object.assign(translations['fr-CA'], {
+  'bookingDetails.title': 'Détails de la réservation',
+  'bookingDetails.shareA11y': 'Partager le lien de la réservation',
+  'bookingDetails.deletedTitle': "Cette réservation n'existe plus",
+  'bookingDetails.deletedBody': 'Elle a peut-être été annulée ou supprimée.',
+  'bookingDetails.errorTitle': 'Impossible de charger la réservation',
+  'bookingDetails.errorBody': 'Vérifiez votre connexion et réessayez.',
+  'bookingDetails.jobDetails': 'Détails du travail',
+  'bookingDetails.rowService': 'Service',
+  'bookingDetails.rowScheduled': 'Prévu',
+  'bookingDetails.rowAddress': 'Adresse',
+  'bookingDetails.rowPrice': 'Prix',
+  'bookingDetails.offPayTitle': 'Comment a-t-il été payé?',
+  'bookingDetails.offPayBody': "Enregistrement seulement — SwingByy ne touche pas à l'argent.",
+  'bookingDetails.offPayCash': 'Comptant',
+  'bookingDetails.offPayETransfer': 'Virement Interac',
+  'bookingDetails.offPayOther': 'Autre',
+  'payPill.paid': 'PAYÉ',
+  'payPill.inProgress': 'EN COURS',
+  'payPill.held': 'RETENU',
+  'payPill.refunded': 'REMBOURSÉ',
+  'payPill.paidOffPlatform': 'PAYÉ (HORS PLATEFORME)',
+  'payPill.pending': 'EN ATTENTE',
+  'payPill.failed': 'PAIEMENT REFUSÉ',
+});
+
+Object.assign(translations.ar, {
+  'bookingDetails.title': 'تفاصيل الحجز',
+  'bookingDetails.shareA11y': 'مشاركة رابط الحجز',
+  'bookingDetails.deletedTitle': 'لم يعد هذا الحجز موجودًا',
+  'bookingDetails.deletedBody': 'ربما تم إلغاؤه أو حذفه.',
+  'bookingDetails.errorTitle': 'تعذر تحميل الحجز',
+  'bookingDetails.errorBody': 'تحقق من اتصالك وحاول مرة أخرى.',
+  'bookingDetails.jobDetails': 'تفاصيل العمل',
+  'bookingDetails.rowService': 'الخدمة',
+  'bookingDetails.rowScheduled': 'الموعد',
+  'bookingDetails.rowAddress': 'العنوان',
+  'bookingDetails.rowPrice': 'السعر',
+  'bookingDetails.offPayTitle': 'كيف تم الدفع؟',
+  'bookingDetails.offPayBody': 'للتسجيل فقط — SwingByy لا تتعامل مع المبلغ.',
+  'bookingDetails.offPayCash': 'نقدًا',
+  'bookingDetails.offPayETransfer': 'تحويل إلكتروني',
+  'bookingDetails.offPayOther': 'أخرى',
+  'payPill.paid': 'مدفوع',
+  'payPill.inProgress': 'قيد التنفيذ',
+  'payPill.held': 'محتجز',
+  'payPill.refunded': 'مسترد',
+  'payPill.paidOffPlatform': 'مدفوع (خارج المنصة)',
+  'payPill.pending': 'قيد الانتظار',
+  'payPill.failed': 'فشل الدفع',
+});
+
+Object.assign(translations.uk, {
+  'bookingDetails.title': 'Деталі бронювання',
+  'bookingDetails.shareA11y': 'Поділитися посиланням на бронювання',
+  'bookingDetails.deletedTitle': 'Це бронювання більше не існує',
+  'bookingDetails.deletedBody': 'Можливо, його скасували або видалили.',
+  'bookingDetails.errorTitle': 'Не вдалося завантажити бронювання',
+  'bookingDetails.errorBody': "Перевірте з'єднання та спробуйте ще раз.",
+  'bookingDetails.jobDetails': 'Деталі роботи',
+  'bookingDetails.rowService': 'Послуга',
+  'bookingDetails.rowScheduled': 'Заплановано',
+  'bookingDetails.rowAddress': 'Адреса',
+  'bookingDetails.rowPrice': 'Ціна',
+  'bookingDetails.offPayTitle': 'Як було оплачено?',
+  'bookingDetails.offPayBody': 'Лише запис — SwingByy не торкається грошей.',
+  'bookingDetails.offPayCash': 'Готівка',
+  'bookingDetails.offPayETransfer': 'Переказ',
+  'bookingDetails.offPayOther': 'Інше',
+  'payPill.paid': 'ОПЛАЧЕНО',
+  'payPill.inProgress': 'У ПРОЦЕСІ',
+  'payPill.held': 'УТРИМАНО',
+  'payPill.refunded': 'ПОВЕРНЕНО',
+  'payPill.paidOffPlatform': 'ОПЛАЧЕНО (ПОЗА ПЛАТФОРМОЮ)',
+  'payPill.pending': 'В ОЧІКУВАННІ',
+  'payPill.failed': 'ПЛАТІЖ НЕ ПРОЙШОВ',
+});
+
+// ── Business dashboard (SB-0007) ─────────────────────────────────────────────
+//
+// Every one of these rendered in English no matter the locale, because they
+// were written as literals in the JSX and never reached i18n at all. 911fd92
+// closed the dictionary gap that caused the rest of the mixed screen — uk went
+// 468 -> 763 keys, and all four locales are now 763/763 — so what survived into
+// the 2026-08-15 preview build was purely the hardcoded half.
+//
+// That is why the dashboard in the walkthrough read "Good evening" and
+// "THIS WEEK" in English directly above "НАСТУПНА РОБОТА" and "ГРОШІ В РУСІ":
+// the Cyrillic came from i18n, the English came from string literals sitting
+// beside it. A missing translation and an untranslatable literal look identical
+// on the screen and are opposite bugs — the first is a dictionary gap, the
+// second is a call site that never asks.
+//
+// Counts are separate keys rather than i18n-js pluralization because the flat
+// dotted keys here use a NUL separator (see defaultSeparator below), which the
+// pluralizer does not traverse.
+Object.assign(translations.en, {
+  'dashboard.greetingMorning': 'Good morning',
+  'dashboard.greetingAfternoon': 'Good afternoon',
+  'dashboard.greetingEvening': 'Good evening',
+  'dashboard.thisWeek': 'THIS WEEK',
+  'dashboard.seeAnalytics': 'See analytics',
+  'dashboard.vsLastWeek': 'vs last week',
+  'dashboard.loadFailed': 'Failed to load dashboard',
+  'dashboard.loadFailedBody': 'Check your connection and try again.',
+  'dashboard.noOpenJobs': 'No open jobs right now',
+  'dashboard.noOpenJobsBody': 'Check back soon for new opportunities.',
+  'dashboard.bookingOne': 'booking',
+  'dashboard.bookingOther': 'bookings',
+  'dashboard.leadOne': 'new lead',
+  'dashboard.leadOther': 'new leads',
+  'dashboard.reviewsOne': 'review',
+  'dashboard.reviewsOther': 'reviews',
+  'dashboard.noReviewsYet': 'no reviews yet',
+});
+
+Object.assign(translations['fr-CA'], {
+  'dashboard.greetingMorning': 'Bonjour',
+  'dashboard.greetingAfternoon': 'Bon après-midi',
+  'dashboard.greetingEvening': 'Bonsoir',
+  'dashboard.thisWeek': 'CETTE SEMAINE',
+  'dashboard.seeAnalytics': 'Voir les statistiques',
+  'dashboard.vsLastWeek': 'par rapport à la semaine dernière',
+  'dashboard.loadFailed': 'Échec du chargement du tableau de bord',
+  'dashboard.loadFailedBody': 'Vérifiez votre connexion et réessayez.',
+  'dashboard.noOpenJobs': 'Aucun travail disponible pour le moment',
+  'dashboard.noOpenJobsBody': 'Revenez bientôt pour de nouvelles occasions.',
+  'dashboard.bookingOne': 'réservation',
+  'dashboard.bookingOther': 'réservations',
+  'dashboard.leadOne': 'nouvelle occasion',
+  'dashboard.leadOther': 'nouvelles occasions',
+  'dashboard.reviewsOne': 'avis',
+  'dashboard.reviewsOther': 'avis',
+  'dashboard.noReviewsYet': 'aucun avis pour le moment',
+});
+
+Object.assign(translations.ar, {
+  'dashboard.greetingMorning': 'صباح الخير',
+  'dashboard.greetingAfternoon': 'طاب يومك',
+  'dashboard.greetingEvening': 'مساء الخير',
+  'dashboard.thisWeek': 'هذا الأسبوع',
+  'dashboard.seeAnalytics': 'عرض التحليلات',
+  'dashboard.vsLastWeek': 'مقارنة بالأسبوع الماضي',
+  'dashboard.loadFailed': 'تعذّر تحميل لوحة التحكم',
+  'dashboard.loadFailedBody': 'تحقّق من اتصالك وحاول مرة أخرى.',
+  'dashboard.noOpenJobs': 'لا توجد أعمال متاحة حالياً',
+  'dashboard.noOpenJobsBody': 'عد قريباً لفرص جديدة.',
+  'dashboard.bookingOne': 'حجز',
+  'dashboard.bookingOther': 'حجوزات',
+  'dashboard.leadOne': 'فرصة جديدة',
+  'dashboard.leadOther': 'فرص جديدة',
+  'dashboard.reviewsOne': 'تقييم',
+  'dashboard.reviewsOther': 'تقييمات',
+  'dashboard.noReviewsYet': 'لا توجد تقييمات بعد',
+});
+
+Object.assign(translations.uk, {
+  'dashboard.greetingMorning': 'Доброго ранку',
+  'dashboard.greetingAfternoon': 'Доброго дня',
+  'dashboard.greetingEvening': 'Доброго вечора',
+  'dashboard.thisWeek': 'ЦЬОГО ТИЖНЯ',
+  'dashboard.seeAnalytics': 'Переглянути аналітику',
+  'dashboard.vsLastWeek': 'порівняно з минулим тижнем',
+  'dashboard.loadFailed': 'Не вдалося завантажити панель',
+  'dashboard.loadFailedBody': "Перевірте з'єднання та спробуйте ще раз.",
+  'dashboard.noOpenJobs': 'Зараз немає відкритих робіт',
+  'dashboard.noOpenJobsBody': 'Заходьте пізніше — з’являться нові можливості.',
+  'dashboard.bookingOne': 'бронювання',
+  'dashboard.bookingOther': 'бронювань',
+  'dashboard.leadOne': 'нова заявка',
+  'dashboard.leadOther': 'нових заявок',
+  'dashboard.reviewsOne': 'відгук',
+  'dashboard.reviewsOther': 'відгуків',
+  'dashboard.noReviewsYet': 'відгуків ще немає',
 });
 
 const i18n = new I18n(translations);

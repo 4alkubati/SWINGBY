@@ -125,3 +125,20 @@ def validate_public_https_url(value: Optional[str]) -> Optional[str]:
         raise UnsafeUrl("Image URL must point at a public address")
 
     return value
+
+
+def as_stored_image_url(value: Optional[str]) -> Optional[str]:
+    """
+    Pydantic-friendly wrapper: same check, but raising `ValueError` so it can be
+    dropped straight into a `field_validator`.
+
+    Exists because the D7.8 fix (pentest M-04) was written inline on ONE of the
+    three sinks that store an image URL, and the other two — `businesses.logo_url`
+    and `employees.avatar_url` — kept their own weaker checks or none at all
+    (SB-0015, SB-0016). Every sink calls this now, so adding a fourth means
+    calling it too rather than reinventing a scheme test.
+    """
+    try:
+        return validate_public_https_url(value)
+    except UnsafeUrl as exc:
+        raise ValueError(str(exc)) from exc

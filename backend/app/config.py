@@ -97,6 +97,7 @@ _OPTIONAL = [
     "SENTRY_DSN",
     "HCAPTCHA_SECRET",
     "HCAPTCHA_SITEKEY",
+    "HCAPTCHA_ENFORCE",  # SB-0046: enforcement is a SECOND, deliberate switch
     "RESEND_API_KEY",  # Resend transactional email — set after domain verified
     "RESEND_FROM_EMAIL",  # e.g. "SwingBy <hello@swingbyy.com>"
     "PASSWORD_RESET_REDIRECT_URL",  # override where Supabase reset emails redirect (defaults to web)
@@ -107,6 +108,10 @@ _OPTIONAL = [
     "STRIPE_CANCEL_URL",  # browser landing after Checkout cancel  (defaults to web)
     "STRIPE_CONNECT_RETURN_URL",  # D5 — where Express onboarding returns to
     "STRIPE_CONNECT_REFRESH_URL",  # D5 — where an EXPIRED onboarding link lands
+    "ENV",  # "production" hides /docs and the /health diagnostics. Anything else = dev.
+    "API_ENABLE_DOCS",  # explicit override: "1" re-opens /docs even in production
+    "MAX_REQUEST_BYTES",  # global request-body ceiling (default 12 MB)
+    "HEALTH_DIAGNOSTICS_TOKEN",  # when set, /health returns detail only to this token
 ]
 
 
@@ -367,6 +372,53 @@ class _Settings:
     def SWINGBY_ALLOWED_ORIGINS(self) -> str:
         return os.getenv("SWINGBY_ALLOWED_ORIGINS", "")
 
+    # ── Deployment posture ────────────────────────────────────────────────
+    #
+    # ENV is read in several places (Sentry's environment tag, /health) and now
+    # decides whether the interactive API docs exist at all. Note the default:
+    # "development". Render has historically had no ENV set, which is why
+    # /health reports this value back — see the comment there.
+    @property
+    def ENV(self) -> str:
+        return os.getenv("ENV", "development")
+
+    @property
+    def IS_PRODUCTION(self) -> bool:
+        return self.ENV.strip().lower() in ("production", "prod")
+
+    @property
+    def API_ENABLE_DOCS(self) -> bool:
+        """Should /docs, /redoc and /openapi.json be served?
+
+        Off in production, on everywhere else, and API_ENABLE_DOCS=1 forces them
+        back on for the case where someone genuinely needs the schema against a
+        deployed environment. Defaulting to "off in prod" rather than "off
+        unless asked" is the whole point: the failure mode we are fixing is that
+        nobody thought about it.
+        """
+        override = os.getenv("API_ENABLE_DOCS", "").strip()
+        if override:
+            return override not in ("0", "false", "False", "no")
+        return not self.IS_PRODUCTION
+
+    @property
+    def MAX_REQUEST_BYTES(self) -> int:
+        """Global ceiling on a request body, in bytes.
+
+        12 MB, deliberately ABOVE the 10 MB image cap in api/uploads.py so this
+        never becomes the thing that rejects a legitimate photo — the endpoint
+        keeps its own tighter, better-worded limit. This is the backstop for
+        every OTHER route, none of which had one.
+        """
+        raw = os.getenv("MAX_REQUEST_BYTES", "").strip()
+        if raw.isdigit() and int(raw) > 0:
+            return int(raw)
+        return 12 * 1024 * 1024
+
+    @property
+    def HEALTH_DIAGNOSTICS_TOKEN(self) -> str:
+        return os.getenv("HEALTH_DIAGNOSTICS_TOKEN", "")
+
     @property
     def NOTION_TOKEN(self) -> str:
         return os.getenv("NOTION_TOKEN", "")
@@ -378,6 +430,22 @@ class _Settings:
     @property
     def HCAPTCHA_SECRET(self) -> str:
         return os.getenv("HCAPTCHA_SECRET", "")
+
+    @property
+    def HCAPTCHA_ENFORCE(self) -> bool:
+        """Should a MISSING captcha token refuse the signup? (SB-0046)
+
+        Setting HCAPTCHA_SECRET alone used to flip this on, and it is a one-way
+        switch that refuses 100% of signups: no client sends `hcaptcha_token` —
+        not the mobile app, not either web app — so the moment the secret
+        appears in the Render dashboard every signup 429s. The verification
+        code was correct; what was missing was any way to configure the secret
+        WITHOUT immediately breaking the product.
+
+        Two steps now. Set the secret to enable verification of tokens that ARE
+        sent, then set HCAPTCHA_ENFORCE=1 once a client actually sends them.
+        """
+        return os.getenv("HCAPTCHA_ENFORCE", "").strip() in ("1", "true", "True", "yes")
 
     @property
     def HCAPTCHA_SITEKEY(self) -> str:

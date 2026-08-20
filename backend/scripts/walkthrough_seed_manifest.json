@@ -1,0 +1,17 @@
+{
+  "seed_tag": "swingby-walkthrough-v1",
+  "seed_domain": "demo.swingbyy.com",
+  "generated_at": "2026-08-19T00:02:57+00:00",
+  "ids": {
+    "service_posts": [
+      "33dbdef5-3760-55c4-85e9-b712341ab4ab",
+      "96fdc44c-19f3-5138-8a27-94b2545452e6",
+      "61182915-9bb5-5607-985a-514a03592d36"
+    ],
+    "interests": [
+      "8f6f8f65-2de7-58f1-8281-38fe583461fa",
+      "1da517e3-b9b6-5966-a9c7-0c8a655cafa9",
+      "915e5d00-5a6e-5bd2-b03e-8ef6abf5ce9e"
+    ]
+  }
+}

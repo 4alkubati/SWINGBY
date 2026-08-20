@@ -8,7 +8,7 @@ const absolute = (p) =>
   !p || /^https?:\/\//.test(p) ? p : `${SITE_URL}${p.startsWith('/') ? p : `/${p}`}`
 
 export default function SEO({ title, description, og, twitter, jsonLd, canonical }) {
-  const siteTitle = 'SwingByy'  // §0: two y's, capital B. 'SwingByy' is the dead name.
+  const siteTitle = 'SwingByy'  // §0: two y's, capital B. 'SwingBy' is the dead name.
   const fullTitle = title ? `${title} — ${siteTitle}` : siteTitle
   const ogImage = absolute(og?.image)
   const twImage = absolute(twitter?.image) || ogImage

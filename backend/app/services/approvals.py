@@ -16,9 +16,13 @@ drift apart about it.
 
 WHY SETTLEMENT IS LAZY, NOT SCHEDULED
 -------------------------------------
-There is no scheduler in this deployment. `expiry_sweep.sweep_once` has existed
-for weeks and is referenced by nothing but its own tests — no cron service in
-render.yaml, no APScheduler, no worker. A 24-hour timer implemented the obvious
+There is no APPLICATION scheduler in this deployment. `expiry_sweep.sweep_once`
+has existed for weeks and is referenced by nothing but its own tests — no cron
+service in render.yaml, no APScheduler, no worker.
+
+(Database-level pg_cron DOES exist and runs two SQL jobs; it cannot call this
+module. See services/expiry_sweep.py for the full note — reading "no scheduler"
+as "nothing changes underneath us" caused SB-0074.) A 24-hour timer implemented the obvious
 way would therefore never fire, and money would sit held forever. That is a
 worse failure than the bug being fixed, because it is silent.
 
@@ -129,6 +133,32 @@ def needs_approval_window(booking_id: str) -> bool:
     )
 
 
+def _has_business_proof(booking_id: str) -> bool:
+    """Did the BUSINESS record any proof photo for this booking? (SB-0009)
+
+    Client-supplied photos from the job post are excluded, matching
+    `proof_of_work.counts()`: the point of proof-of-work is what the business
+    recorded on site, so counting the client's own "here is my messy garage"
+    photo as evidence of work done would defeat it.
+
+    Best-effort. If the read fails we do NOT claim the job was undocumented —
+    a false "no proof was recorded" on a job that has proof is its own harm,
+    and it would arrive at the moment a client is deciding whether to dispute.
+    """
+    try:
+        res = (
+            supabase.table("booking_photos")
+            .select("phase, source")
+            .eq("booking_id", booking_id)
+            .execute()
+        )
+    except Exception:
+        logger.exception("approvals: proof probe failed for booking %s", booking_id)
+        return True
+    rows = res.data or []
+    return any((row.get("source") or "business") == "business" for row in rows)
+
+
 def start_approval_window(booking_id: str, actor_id: str | None) -> str | None:
     """The business says the work is done. Money does NOT move.
 
@@ -156,12 +186,23 @@ def start_approval_window(booking_id: str, actor_id: str | None) -> str | None:
         }
     ).eq("id", booking_id).execute()
 
-    _event(
-        booking_id,
-        actor_id,
-        "completed",
-        "Work marked done. Waiting for the client to approve; releases automatically after 24h.",
-    )
+    note = "Work marked done. Waiting for the client to approve; releases automatically after 24h."
+    if not _has_business_proof(booking_id):
+        # SB-0009 — say it, at the moment it matters.
+        #
+        # Completion is deliberately NOT blocked on a photo: proof_of_work's
+        # 2+2 minimum governs submitting a proof bundle, and applying it here
+        # would strand every job whose evidence is not visual — a consultation,
+        # a quote visit, a callout that needed no work. Refusing to complete
+        # those would be a worse bug than this one, and it would push
+        # businesses to photograph something irrelevant to get past the gate.
+        #
+        # What was wrong was the SILENCE: the client got "releases
+        # automatically after 24h" with nothing on record to justify it, and
+        # after 24h of not opening the app the money moved anyway. This is the
+        # one event they read while deciding whether to approve.
+        note += " No proof photos were recorded for this job."
+    _event(booking_id, actor_id, "completed", note)
     return deadline
 
 

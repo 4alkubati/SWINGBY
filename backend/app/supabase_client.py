@@ -1,4 +1,5 @@
 import os
+from typing import Optional
 import httpx
 from supabase import create_client
 from dotenv import load_dotenv
@@ -6,7 +7,24 @@ from dotenv import load_dotenv
 load_dotenv()
 
 _url = os.getenv("SUPABASE_URL")
-_service_key = os.getenv("SUPABASE_SERVICE_KEY")
+
+# Either name, and an EMPTY value counts as unset.
+#
+# Legacy Supabase projects name this SUPABASE_SERVICE_KEY (a service_role JWT);
+# newer ones issue SUPABASE_SECRET_KEY. scripts/seed_demo.py has accepted both
+# since it was written, and this module accepted only the old one — so with a
+# newer project every script that imports this failed at import time while the
+# seed scripts worked, which reads as "the key is missing" when it is present
+# under the other name.
+#
+# `or ""` then `.strip()` matters as much as the fallback: this project's .env
+# carried the line `SUPABASE_SERVICE_KEY=` with no value, and a bare getenv
+# returns "" for that — falsy here, but it would shadow the good key if the
+# fallback were written as a plain `os.getenv(a) or os.getenv(b)` over raw
+# values that might be whitespace.
+_service_key = (os.getenv("SUPABASE_SERVICE_KEY") or "").strip() or (
+    os.getenv("SUPABASE_SECRET_KEY") or ""
+).strip()
 
 # ── Hard fail at startup if critical env vars are missing ─────────────────────
 # The service_role key MUST be set — it is never exposed to the frontend.
@@ -18,7 +36,8 @@ if not _url:
 
 if not _service_key:
     raise RuntimeError(
-        "SUPABASE_SERVICE_KEY is not set. "
+        "Neither SUPABASE_SERVICE_KEY nor SUPABASE_SECRET_KEY is set "
+        "(an empty value counts as unset). "
         "Get it from Supabase Dashboard → Settings → API → service_role key. "
         "Add it to backend/.env and restart. "
         "NEVER put this key in any frontend code or commit it to git."
@@ -94,10 +113,47 @@ def _use_http1(client):
 # service_role. Use `supabase_auth` below for those calls.
 supabase = _use_http1(create_client(_url, _service_key))
 
+
 # Session-creating auth operations go through this separate client so the
 # service-role client above never adopts a user session. Its own PostgREST
 # state is irrelevant — no .table() calls are ever made on it.
 # Same HTTP/1.1 treatment: /auth/login and /auth/refresh run on this client and
 # are exactly the calls a burst of app launches hits at once.
-_anon_key = os.getenv("SUPABASE_KEY") or _service_key
+def resolve_anon_key(anon: Optional[str], publishable: Optional[str]) -> str:
+    """The PUBLIC key for session-creating auth calls — never the service key.
+
+    SB-0024. This used to fall through to the service key whenever the public
+    key was unset, so the RLS-bypassing service-role key was sent as the
+    apikey/Authorization header on every signup, login, refresh and OAuth
+    exchange — silently, with no startup error. The most privileged key in the
+    system, on the least-authenticated endpoints.
+
+    It also quietly broke the anti-enumeration design documented at
+    auth.py:289: that reasoning depends on GoTrue's NON-admin signup behaviour
+    ("signing up an existing address returns a user object and sends a notice
+    to the real owner"). Admin-key signups do not behave that way.
+
+    Both names are resolved HERE rather than leaning on config.py's alias,
+    because scripts import this module without importing config at all
+    (tools/backfill_geocode.py). Empty counts as unset — this project's .env
+    carries `SUPABASE_KEY=` with no value.
+
+    Fails loudly. A missing public key is a misconfiguration, and the previous
+    behaviour — carry on using the admin key — is the one outcome that must not
+    be available.
+    """
+    for candidate in (anon, publishable):
+        value = (candidate or "").strip()
+        if value:
+            return value
+    raise RuntimeError(
+        "No Supabase public key. Set SUPABASE_KEY (or SUPABASE_PUBLISHABLE_KEY). "
+        "Refusing to fall back to the service-role key for auth calls — see "
+        "resolve_anon_key in app/supabase_client.py."
+    )
+
+
+_anon_key = resolve_anon_key(
+    os.getenv("SUPABASE_KEY"), os.getenv("SUPABASE_PUBLISHABLE_KEY")
+)
 supabase_auth = _use_http1(create_client(_url, _anon_key))

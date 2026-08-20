@@ -13,7 +13,16 @@ export default defineConfig(({ mode }) => ({
   ].filter(Boolean),
   build: {
     outDir: 'dist',
-    sourcemap: true,
+    // SB-0070 — `true` emits .map files WITH the full original source
+    // embedded, and the whole dist/ directory is uploaded to Cloudflare Pages
+    // verbatim, so every component, comment and TODO was publicly fetchable.
+    //
+    // 'hidden' still GENERATES the maps (so they can be uploaded to Sentry for
+    // readable stack traces) but omits the //# sourceMappingURL comment, so
+    // browsers and crawlers do not go looking for them. If the maps are not
+    // being uploaded anywhere, set this to false outright — the only reason to
+    // build them at all is a symbolicator that consumes them.
+    sourcemap: "hidden",
   },
   server: {
     port: 5174,

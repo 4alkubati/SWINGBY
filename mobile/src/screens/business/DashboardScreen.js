@@ -33,9 +33,9 @@ import i18n from '../../i18n';
 
 function getGreeting() {
   const h = new Date().getHours();
-  if (h < 12) return 'Good morning';
-  if (h < 17) return 'Good afternoon';
-  return 'Good evening';
+  if (h < 12) return i18n.t('dashboard.greetingMorning');
+  if (h < 17) return i18n.t('dashboard.greetingAfternoon');
+  return i18n.t('dashboard.greetingEvening');
 }
 
 function toInitials(name) {
@@ -245,7 +245,11 @@ export default function DashboardScreen({ navigation }) {
     visiblePosts.length > 0 && {
       key: 'leads',
       icon: 'zap',
-      label: `${visiblePosts.length} new ${visiblePosts.length === 1 ? 'lead' : 'leads'}`,
+      label: `${visiblePosts.length} ${
+        visiblePosts.length === 1
+          ? i18n.t('dashboard.leadOne')
+          : i18n.t('dashboard.leadOther')
+      }`,
       onPress: () => navigation.navigate('Jobs', { filter: 'needsAction' }),
     },
     unreadTotal > 0 && {
@@ -333,14 +337,14 @@ export default function DashboardScreen({ navigation }) {
         <View style={styles.centeredState}>
           <Surface padding="lg" rounded="card" style={{ alignItems: 'center', gap: spacing.base }}>
             <Text variant="h1" style={{ textAlign: 'center' }}>
-              Failed to load dashboard
+              {i18n.t('dashboard.loadFailed')}
             </Text>
             <Text variant="small" color="secondary" style={{ textAlign: 'center' }}>
-              Check your connection and try again.
+              {i18n.t('dashboard.loadFailedBody')}
             </Text>
             <Button
               variant="primary"
-              label="Retry"
+              label={i18n.t('common.retry')}
               onPress={() => {
                 setLoading(true);
                 load();
@@ -473,23 +477,35 @@ export default function DashboardScreen({ navigation }) {
           data={hasSparkData ? sparkData : undefined}
           // B18 — "this week $150" was not tappable. It opens analytics.
           onPress={() => navigation.navigate('BusinessAnalytics')}
-          accessibilityLabel={`This week ${payments ? `$${Math.round(weekEarnings)}` : 'unavailable'}, ${i18n.t('dashboard.heroCaption')}, open analytics`}
+          accessibilityLabel={`${i18n.t('dashboard.thisWeek')} ${payments ? `$${Math.round(weekEarnings)}` : '—'}, ${i18n.t('dashboard.heroCaption')}, ${i18n.t('dashboard.seeAnalytics')}`}
         />
 
         {/* KPI row (Today / Rating) */}
         <View style={styles.kpiRow}>
           <KpiCard
             index={0}
-            label="TODAY"
+            label={i18n.t('ui.today')}
             value={String(todayBookings.length)}
-            sub={todayBookings.length === 1 ? 'booking' : 'bookings'}
+            sub={
+              todayBookings.length === 1
+                ? i18n.t('dashboard.bookingOne')
+                : i18n.t('dashboard.bookingOther')
+            }
             onPress={() => navigation.navigate('Jobs', { filter: 'today' })}
           />
           <KpiCard
             index={1}
-            label="RATING"
+            label={i18n.t('ui.ratingCaps')}
             value={avgRating ?? '—'}
-            sub={reviewCount ? `${reviewCount} reviews` : 'no reviews yet'}
+            sub={
+              reviewCount
+                ? `${reviewCount} ${
+                    reviewCount === 1
+                      ? i18n.t('dashboard.reviewsOne')
+                      : i18n.t('dashboard.reviewsOther')
+                  }`
+                : i18n.t('dashboard.noReviewsYet')
+            }
           />
         </View>
 
@@ -531,7 +547,7 @@ export default function DashboardScreen({ navigation }) {
         <View style={styles.sectionHeader}>
           <SectionHeader
             variant="heading"
-            title="New opportunities"
+            title={i18n.t('ui.newOpportunities')}
             actionLabel={visiblePosts.length > 0 ? 'See all' : null}
             onAction={() => navigation.navigate('Jobs')}
             count={visiblePosts.length}
@@ -542,10 +558,10 @@ export default function DashboardScreen({ navigation }) {
           <Surface padding="lg" rounded="card" style={styles.emptyCard}>
             <Stack spacing="xs" style={{ alignItems: 'center' }}>
               <Text variant="bodyMedium" style={{ textAlign: 'center' }}>
-                No open jobs right now
+                {i18n.t('dashboard.noOpenJobs')}
               </Text>
               <Text variant="small" color="secondary" style={{ textAlign: 'center' }}>
-                Check back soon for new opportunities.
+                {i18n.t('dashboard.noOpenJobsBody')}
               </Text>
             </Stack>
           </Surface>
@@ -582,7 +598,7 @@ export default function DashboardScreen({ navigation }) {
         {/* Business tools row */}
         <View style={styles.sectionHeader}>
           <SectionHeader
-            title="BUSINESS TOOLS"
+            title={i18n.t('ui.businessTools')}
           />
         </View>
         <View style={styles.toolsRow}>

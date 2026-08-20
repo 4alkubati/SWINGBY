@@ -1,21 +1,46 @@
-fastapi
-uvicorn[standard]
-sqlalchemy
-psycopg2-binary
-python-dotenv
-supabase
-python-multipart
-email-validator
-notion-client
-httpx
-structlog>=24.0
-sentry-sdk[fastapi]>=2.66.1
-slowapi>=0.1.10
-stripe>=10.0,<12
-reportlab>=4.0
+# Backend runtime dependencies — PINNED.
+#
+# SB-0034 / SB-0047: 10 of 15 lines here carried no version at all, there is no
+# lockfile, and the Dockerfile resolves them at IMAGE BUILD TIME with
+# `autoDeploy: true` on Render. So the deployed dependency set was whatever
+# PyPI happened to serve at the moment of a build, and two deploys of the SAME
+# commit could ship different code. A dependency that floats is a deploy that
+# cannot be reproduced or rolled back with any confidence.
+#
+# These versions are the ones the 1337-test suite actually runs against, read
+# from the working venv on 2026-08-19. Exact pins (==) rather than ranges,
+# because the point is reproducibility: a range reintroduces the same drift
+# more slowly. Dependabot (.github/dependabot.yml) proposes the bumps, and CI
+# is what decides whether they land.
+#
+# Upgrading: change the pin, run the suite, commit both together.
+
+fastapi==0.141.1
+uvicorn[standard]==0.52.1
+sqlalchemy==2.0.51
+psycopg2-binary==2.9.12
+python-dotenv==1.2.2
+supabase==2.31.0
+python-multipart==0.0.32
+email-validator==2.3.0
+notion-client==3.1.0
+httpx==0.28.1
+structlog==26.1.0
+sentry-sdk[fastapi]==2.66.1
+slowapi==0.1.10
+
+# SB-0037: this was `stripe>=10.0,<12`, four majors behind current (15.x), and
+# the upper bound meant Dependabot could not even PROPOSE the move — the ceiling
+# hid the staleness rather than managing it. Pinned exact at the tested version;
+# the major upgrade is its own change, with the payment tests as the gate,
+# because Stripe majors move API surface that this repo's escrow logic sits on.
+stripe==11.6.0
+
+reportlab==5.0.0
+
 # D7.4 — app/deps.py reads the `iat` claim off an already-validated access
 # token to enforce the session revocation watermark. PyJWT was already present
 # transitively (via supabase/gotrue); pinned explicitly because we now import
 # it directly, and a transitive dep that disappears in a future supabase
 # release would break authentication on every route at once.
-pyjwt>=2.8
+pyjwt==2.13.0

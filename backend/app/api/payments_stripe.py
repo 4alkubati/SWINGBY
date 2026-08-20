@@ -359,52 +359,15 @@ def create_checkout(
     return CheckoutResponse(session_id=session["id"], url=session["url"])
 
 
-@router.post("/webhook")
-async def webhook(request: Request):
-    payload_bytes = await request.body()
-    sig_header = request.headers.get("stripe-signature")
+def _dispatch_webhook_event(etype, data_object) -> None:
+    """Apply the side effects for one verified, freshly-claimed Stripe event.
 
-    event = stripe_service.verify_webhook(payload_bytes, sig_header)
-
-    # stripe.Webhook.construct_event returns a stripe.Event (StripeObject),
-    # which is NOT a dict but DOES support [] subscript and dict-style .get on
-    # nested fields. Use try/except so we handle both the real Stripe shape and
-    # a plain dict (used by tests). isinstance(event, dict) was False in prod,
-    # so the previous version silently dropped every completed event.
-    try:
-        etype = event["type"]
-    except (KeyError, TypeError):
-        etype = getattr(event, "type", None)
-
-    try:
-        event_id = event["id"]
-    except (KeyError, TypeError):
-        event_id = getattr(event, "id", None)
-
-    try:
-        data_object = event["data"]["object"]
-    except (KeyError, TypeError):
-        data_object = None
-
-    # fix E: idempotency. A replayed event must not re-run side effects (e.g.
-    # regress a fully_released payment back to paid_full). If we've already
-    # recorded this Stripe event id, ack and stop.
-    if event_id:
-        try:
-            seen = (
-                supabase.table("stripe_events")
-                .select("event_id")
-                .eq("event_id", event_id)
-                .execute()
-            )
-            if seen.data:
-                logger.info("Stripe webhook duplicate ignored: %s", event_id)
-                return {"received": True, "duplicate": True, "type": etype}
-        except Exception:
-            # If the dedupe table is unreachable, fall through — _mark_payment_paid
-            # is itself status-guarded so a double-apply is still safe.
-            logger.warning("stripe_events dedupe check failed for %s", event_id)
-
+    Extracted from the webhook body so the caller can wrap it: the event id is
+    claimed BEFORE this runs (that is what makes replay handling atomic), which
+    means a failure in here would otherwise leave a claim behind for an event
+    that was never actually applied, and Stripe's retry would be swallowed as a
+    duplicate. The caller releases the claim if this raises.
+    """
     if etype == "checkout.session.completed" and data_object is not None:
         metadata = {}
         try:
@@ -512,19 +475,178 @@ async def webhook(request: Request):
         and data_object is not None
     ):
         _sync_subscription(data_object)
-    elif etype == "invoice.payment_failed" and data_object is not None:
-        _mark_past_due(data_object)
+    elif etype == "account.updated" and data_object is not None:
+        _sync_connect_account(data_object)
     else:
         logger.info("Stripe webhook event ignored: %s", etype)
 
-    # fix E: record the event id so a Stripe retry/replay is deduped above.
+
+def _sync_connect_account(account_obj) -> None:
+    """Mirror a Connect account's state when Stripe says it changed (SB-0080).
+
+    DEC-5 recorded that account.updated, payout.* and transfer.* were subscribed
+    but unhandled. What saved it is reconcile-on-read: every gate in payouts.py
+    re-reads Stripe and calls `_mirror_account_state`, so the cached columns are
+    refreshed whenever the owner opens their wallet.
+
+    That is a real mitigation and it is why this is not urgent — but it means
+    the mirror is only as fresh as the last time somebody looked. A business
+    whose payouts Stripe just disabled keeps showing "payouts enabled" until
+    they next open the screen, which is precisely when they would rather have
+    been told. Handling this event closes the lag without changing where truth
+    lives: Stripe stays authoritative, this only updates the cache sooner.
+
+    payout.* and transfer.* stay unhandled on purpose. They report the movement
+    of money that this system has already recorded in `payments`, and writing a
+    second, differently-shaped record of the same event is how two ledgers start
+    disagreeing. Reconciling them needs a decision about which one wins, which
+    is a design question, not a missing handler.
+    """
+    account_id = _obj_get(account_obj, "id")
+    if not account_id:
+        logger.warning("account.updated with no account id; ignoring")
+        return
+    try:
+        res = (
+            supabase.table("businesses")
+            .select("id")
+            .eq("stripe_connect_account_id", account_id)
+            .limit(1)
+            .execute()
+        )
+        rows = res.data or []
+        if not rows:
+            # A Connect account we do not know about. Normal in a shared Stripe
+            # test account; not an error.
+            logger.info("account.updated for unknown Connect account")
+            return
+        from app.api.payouts import _mirror_account_state
+
+        _mirror_account_state(
+            rows[0]["id"],
+            {
+                "payouts_enabled": _obj_get(account_obj, "payouts_enabled"),
+                "charges_enabled": _obj_get(account_obj, "charges_enabled"),
+                "details_submitted": _obj_get(account_obj, "details_submitted"),
+                "disabled_reason": (
+                    _obj_get(
+                        _obj_get(account_obj, "requirements") or {}, "disabled_reason"
+                    )
+                ),
+                "requirements_due": (
+                    _obj_get(
+                        _obj_get(account_obj, "requirements") or {}, "currently_due"
+                    )
+                    or []
+                ),
+            },
+        )
+    except Exception:
+        # Never fail the webhook over a cache refresh — reconcile-on-read is
+        # still there, and raising here would make Stripe retry an event whose
+        # only job was to save someone a round-trip.
+        logger.warning("could not sync Connect account state", exc_info=True)
+
+
+def _release_event_claim(event_id) -> None:
+    """Undo the idempotency claim so a Stripe retry is processed, not skipped.
+
+    Called only when dispatch raised. Best-effort: if this delete fails we have
+    a claim for an unapplied event, which is the pre-existing failure mode and
+    is visible in the logs either way — but we must not mask the ORIGINAL
+    exception with a second one, so nothing here is allowed to propagate.
+    """
+    if not event_id:
+        return
+    try:
+        supabase.table("stripe_events").delete().eq("event_id", event_id).execute()
+        logger.warning("stripe_events claim released after failure: %s", event_id)
+    except Exception:
+        logger.exception("Could not release stripe_events claim %s", event_id)
+
+
+@router.post("/webhook")
+async def webhook(request: Request):
+    payload_bytes = await request.body()
+    sig_header = request.headers.get("stripe-signature")
+
+    event = stripe_service.verify_webhook(payload_bytes, sig_header)
+
+    # stripe.Webhook.construct_event returns a stripe.Event (StripeObject),
+    # which is NOT a dict but DOES support [] subscript and dict-style .get on
+    # nested fields. Use try/except so we handle both the real Stripe shape and
+    # a plain dict (used by tests). isinstance(event, dict) was False in prod,
+    # so the previous version silently dropped every completed event.
+    try:
+        etype = event["type"]
+    except (KeyError, TypeError):
+        etype = getattr(event, "type", None)
+
+    try:
+        event_id = event["id"]
+    except (KeyError, TypeError):
+        event_id = getattr(event, "id", None)
+
+    try:
+        data_object = event["data"]["object"]
+    except (KeyError, TypeError):
+        data_object = None
+
+    # fix E: idempotency. A replayed event must not re-run side effects (e.g.
+    # regress a fully_released payment back to paid_full).
+    #
+    # CLAIM-FIRST, and that ordering is the whole control (checklist #15). This
+    # was a SELECT here plus an INSERT at the end of the handler, which left two
+    # holes:
+    #
+    #   * A RACE. Stripe retries aggressively and delivers concurrently. Two
+    #     copies of one event could both run the SELECT before either reached
+    #     the INSERT, both see nothing, and both apply the side effects. The
+    #     window was the entire body of this function — every network call to
+    #     Stripe and Supabase in it.
+    #   * A FAIL-OPEN. An unreachable dedupe table logged a warning and carried
+    #     on, so the moment the safety net was most likely to be needed (a
+    #     database wobble, which is also when retries pile up) was exactly when
+    #     it was not there.
+    #
+    # Inserting FIRST turns the primary key on `stripe_events.event_id` into the
+    # lock: whichever delivery inserts wins, and the loser gets a duplicate-key
+    # error and stops. No application-level window exists because the database
+    # decides, atomically.
+    #
+    # Now fail-CLOSED. If the claim cannot be written we return 500, Stripe
+    # retries (it does so for up to three days), and we would rather process an
+    # event late than twice — this handler moves money.
     if event_id:
         try:
             supabase.table("stripe_events").insert(
                 {"event_id": event_id, "event_type": etype}
             ).execute()
-        except Exception:
-            logger.warning("Could not record processed stripe event %s", event_id)
+        except Exception as exc:
+            # 23505 = unique_violation. supabase-py surfaces the PostgREST error
+            # rather than a typed exception, so match on the code in the message
+            # — narrowly, because every OTHER error here must 500, not ack.
+            message = str(exc)
+            if "23505" in message or "duplicate key" in message.lower():
+                logger.info("Stripe webhook duplicate ignored: %s", event_id)
+                return {"received": True, "duplicate": True, "type": etype}
+            logger.exception("stripe_events claim failed for %s", event_id)
+            raise HTTPException(
+                status_code=500, detail="Could not record webhook event"
+            )
+
+    # Side effects run only after the claim above succeeded. If any of them
+    # raise, the claim is released so Stripe's retry gets a real second attempt
+    # rather than being acked as a duplicate.
+    try:
+        _dispatch_webhook_event(etype, data_object)
+    except Exception:
+        _release_event_claim(event_id)
+        raise
+
+    # The event id was claimed at the TOP of this handler, before any side
+    # effect ran — see the comment there. Recording it here as well is what
+    # left the race open, so there is deliberately nothing to do at this point.
 
     return {"received": True, "type": etype}
 

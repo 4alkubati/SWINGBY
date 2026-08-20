@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field, EmailStr, field_validator
 from typing import Optional
 from app.deps import get_current_user
 from app.supabase_client import supabase
+from app.services import url_safety
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +27,20 @@ class EmployeeCreate(BaseModel):
     phone: Optional[str] = Field(None, max_length=20)
     role_title: Optional[str] = Field(None, max_length=120)
     avatar_url: Optional[str] = Field(None, max_length=2048)
+
+    @field_validator("avatar_url", mode="before")
+    @classmethod
+    def validate_avatar_url(cls, v):
+        """SB-0016 — this field had no validator of any kind.
+
+        That made it strictly weaker than the PRE-fix state of
+        `users.avatar_url`, which at least reached a scheme check: it accepted
+        `javascript:alert(1)`, `file:///etc/passwd` and the cloud metadata IP,
+        and POST /employees/ writes it straight through. Employee avatars are
+        rendered on the business team card and in booking payloads, so the
+        value reaches other users' clients.
+        """
+        return url_safety.as_stored_image_url(v)
 
     @field_validator("first_name", "last_name", mode="before")
     @classmethod

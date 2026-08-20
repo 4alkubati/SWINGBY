@@ -15,7 +15,7 @@ test_escrow_ledger.py — Money-path correctness for the escrow ledger fixes
 """
 
 from datetime import datetime, timezone
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -599,13 +599,21 @@ class TestOffPlatformMarkPaid:
 
 
 class TestWebhookIdempotency:
-    def test_duplicate_event_is_skipped(self, test_client):
-        # stripe_events select returns a row → duplicate.
-        stub = SupabaseTableStub(select_data=[{"event_id": "evt_1"}])
-        patcher = patch("app.api.payments_stripe.supabase")
-        m = patcher.start()
-        m.table.side_effect = lambda name: stub
-        verify = patch(
+    """PASS 3 #15 — dedupe is a CLAIM-FIRST insert, not a select-then-insert.
+
+    The old shape read `stripe_events` at the top and wrote it at the bottom,
+    which left the whole handler body as a race window: two concurrent
+    deliveries of one event (Stripe retries aggressively) could both read
+    nothing and both apply the side effects. It also fell through on a database
+    error, so the guard was absent exactly when retries were most likely.
+
+    Now the primary key on `stripe_events.event_id` IS the lock — these tests
+    simulate what Postgres actually returns in each case.
+    """
+
+    @staticmethod
+    def _webhook_event():
+        return patch(
             "app.services.stripe_service.verify_webhook",
             return_value={
                 "id": "evt_1",
@@ -613,6 +621,18 @@ class TestWebhookIdempotency:
                 "data": {"object": {"id": "cs_1", "metadata": {"booking_id": "b1"}}},
             },
         )
+
+    def test_duplicate_event_is_skipped(self, test_client):
+        """The second delivery loses the insert race and stops."""
+        table = MagicMock()
+        table.insert.return_value.execute.side_effect = Exception(
+            '{"code":"23505","message":"duplicate key value violates unique '
+            'constraint \\"stripe_events_pkey\\""}'
+        )
+        patcher = patch("app.api.payments_stripe.supabase")
+        m = patcher.start()
+        m.table.side_effect = lambda name: table
+        verify = self._webhook_event()
         verify.start()
         try:
             resp = test_client.post(
@@ -625,6 +645,68 @@ class TestWebhookIdempotency:
             verify.stop()
         assert resp.status_code == 200
         assert resp.json().get("duplicate") is True
+
+    def test_an_unclaimable_event_fails_closed(self, test_client):
+        """A database error that is NOT a duplicate must 500 so Stripe retries.
+
+        The old code logged a warning and processed the event anyway. This
+        handler moves money: processing late is recoverable, processing twice
+        is not.
+        """
+        table = MagicMock()
+        table.insert.return_value.execute.side_effect = Exception("connection refused")
+        patcher = patch("app.api.payments_stripe.supabase")
+        m = patcher.start()
+        m.table.side_effect = lambda name: table
+        verify = self._webhook_event()
+        verify.start()
+        try:
+            resp = test_client.post(
+                "/payments/stripe/webhook",
+                data=b"{}",
+                headers={"stripe-signature": "sig"},
+            )
+        finally:
+            patcher.stop()
+            verify.stop()
+        assert resp.status_code == 500
+
+    def test_a_failed_dispatch_releases_the_claim(self, test_client):
+        """The risk claiming-first introduces, and the reason for the release.
+
+        If the side effects blow up after the id is claimed, Stripe's retry
+        would be acked as a duplicate and the event would never be applied. The
+        claim has to come back off.
+        """
+        table = MagicMock()
+        deleted = []
+        table.delete.return_value.eq.side_effect = (
+            lambda col, val: deleted.append(val) or MagicMock()
+        )
+
+        patcher = patch("app.api.payments_stripe.supabase")
+        m = patcher.start()
+        m.table.side_effect = lambda name: table
+        verify = self._webhook_event()
+        verify.start()
+        dispatch = patch(
+            "app.api.payments_stripe._dispatch_webhook_event",
+            side_effect=RuntimeError("boom"),
+        )
+        dispatch.start()
+        try:
+            with pytest.raises(RuntimeError):
+                test_client.post(
+                    "/payments/stripe/webhook",
+                    data=b"{}",
+                    headers={"stripe-signature": "sig"},
+                )
+        finally:
+            patcher.stop()
+            verify.stop()
+            dispatch.stop()
+
+        assert deleted == ["evt_1"]
 
     def test_amount_mismatch_does_not_mark_paid(self):
         from app.api import payments_stripe

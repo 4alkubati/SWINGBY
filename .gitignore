@@ -97,6 +97,16 @@ backend/skills-lock.json
 .env.*.local
 .env.development
 .env.test
+# SB-0026 — the deployment-flavoured names were NOT covered. `.env` and
+# `.env.local` were, but a backend/.env.production written during a deploy
+# would have been committed silently, and it is the file most likely to hold a
+# live service_role key. `.env*` with an exception for the examples is the
+# rule that cannot be outgrown by a new suffix.
+.env.production
+.env.staging
+.env.preview
+!.env.example
+!**/.env.example
 
 # ── Signing material — NEVER commit ──────────────────────────────────────────
 # Preventive, and deliberately added BEFORE it is needed: the Apple Developer

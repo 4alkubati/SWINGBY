@@ -360,6 +360,17 @@ export default function BusinessProfileScreen({ navigation, route }) {
   // can see exactly what a client sees. Local UI state only: same screen, same
   // fetch, same route.
   const [previewPublic, setPreviewPublic] = useState(false);
+
+  // SB-0004 — while previewing, "Done" is the ONLY exit.
+  //
+  // The purple preview banner carries a Done action, and the navigator's own
+  // back arrow rendered directly beneath it: two affordances stacked, with
+  // nothing to say whether they do the same thing. They do not — Done returns
+  // to the management view of this same screen, while back leaves the screen
+  // entirely, stranding the owner outside a mode they never explicitly left.
+  useEffect(() => {
+    navigation.setOptions({ headerLeft: previewPublic ? () => null : undefined });
+  }, [navigation, previewPublic]);
   const isOwner = user?.role === 'business_owner' && isOwnProfile && !previewPublic;
 
   // CARD-12 — Favorites. FavoritesScreen + useFavorites (AsyncStorage,
@@ -605,7 +616,23 @@ export default function BusinessProfileScreen({ navigation, route }) {
   //     remain fieldless, and they are still not faked.
   if (isOwner && !editMode && !loading && !error) {
     const { pct, tip } = computeProfileCompleteness(business || {});
-    const services = Array.isArray(business?.services) ? business.services : [];
+    // SB-0003 — a business with a category showed "No services listed yet"
+    // under a subtitle promising "The trades you picked during setup show here."
+    //
+    // There is no `services` column on `businesses`. The table carries
+    // `category`, `custom_category` and `service_radius_km`; onboarding
+    // (BusinessSetupScreen) writes exactly one `category`. So this read was
+    // always undefined, the list was always empty, and the empty state
+    // contradicted the trade printed in the header two rows above it.
+    //
+    // Read what onboarding actually writes. The array branch is kept for the
+    // day a real per-service pricing table exists — that is the feature the
+    // copy was describing before it was built.
+    const explicitServices = Array.isArray(business?.services) ? business.services : [];
+    const pickedTrade = business?.custom_category || business?.category;
+    const services = explicitServices.length
+      ? explicitServices
+      : [pickedTrade].filter(Boolean);
     const locality = business?.address || null;
     const subLine = [business?.category, locality].filter(Boolean).join(' · ');
 
@@ -702,7 +729,16 @@ export default function BusinessProfileScreen({ navigation, route }) {
               <Text variant="caption" color="secondary">
                 {i18n.t('businessProfile.completenessLabel')}
               </Text>
-              <Text variant="smallMedium" numberOfLines={1}>
+              {/* SB-0002 — this was numberOfLines={1}, which clipped the hint
+                  mid-word: "80% — Add a description t…". The percentage is the
+                  decoration and the tip is the instruction, so the clip removed
+                  the only actionable half and left no way to read it — no
+                  expand, no tap-through, nothing.
+
+                  Two lines is enough for every tip in
+                  businessProfile.completenessTip*, and the card grows rather
+                  than truncating if a translation runs longer. */}
+              <Text variant="smallMedium" numberOfLines={2}>
                 {tip ? `${pct}% — ${tip}` : `${pct}% complete`}
               </Text>
             </View>
@@ -731,7 +767,13 @@ export default function BusinessProfileScreen({ navigation, route }) {
                 <View style={{ flex: 1, gap: 2 }}>
                   <Text variant="smallMedium">No services listed yet</Text>
                   <Text variant="caption" color="secondary">
-                    The trades you picked during setup show here.
+                    {/* SB-0003 — only reachable now when no category is set at
+                        all, which onboarding does not allow. The old copy
+                        promised setup trades would appear here while the code
+                        read a column that does not exist, so it contradicted
+                        the header on every categorised business. */}
+                    Pick a category in Business name &amp; category and it will
+                    show here.
                   </Text>
                 </View>
               </View>

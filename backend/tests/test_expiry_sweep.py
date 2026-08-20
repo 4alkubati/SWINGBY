@@ -232,19 +232,36 @@ class TestIdempotence:
 
 
 class TestScope:
-    def test_only_open_posts_are_swept(self):
+    def test_only_unsettled_posts_are_swept(self):
+        """What must NOT be swept, and why — rather than the exact tuple.
+
+        This asserted `SWEEPABLE_STATUSES == ("open",)`. The intent underneath
+        it is the line below: 'matched' has a booking behind it, so that money
+        belongs to the job. Freezing the whole tuple also froze the exclusion of
+        'expired', which was a bug rather than a decision (SB-0074) — the hourly
+        pg_cron sets that status and moves no money, so a post it expired could
+        never be refunded. Pin the property, not the literal.
+        """
         # 'matched' has a booking behind it — that money belongs to the job.
-        assert expiry_sweep.SWEEPABLE_STATUSES == ("open",)
         assert "matched" not in expiry_sweep.SWEEPABLE_STATUSES
+        # 'cancelled' was settled by the cancellation ladder on its way out.
+        assert "cancelled" not in expiry_sweep.SWEEPABLE_STATUSES
+        # Both routes a post can reach "nobody quoted this" by:
+        assert "open" in expiry_sweep.SWEEPABLE_STATUSES
+        assert "expired" in expiry_sweep.SWEEPABLE_STATUSES
 
 
 class TestTheSweepIsActuallyReachable:
     """The whole point of this round of work.
 
     `sweep_once` was written weeks before 2026-07-31 and called by nothing but
-    the tests above it. There is no scheduler in this deployment — no cron
-    service, no worker, no APScheduler — so every guarantee in the module
-    docstring was true of code that never ran. Expired posts stayed 'open'
+    the tests above it. There is no APPLICATION scheduler in this deployment —
+    no cron service, no worker, no APScheduler — so every guarantee in the
+    module docstring was true of code that never ran.
+
+    Database-level pg_cron is a different matter and this docstring used to
+    deny it outright: `expire-service-posts` runs hourly and moves posts to
+    'expired' without settling them (SB-0074). Verified against cron.job. Expired posts stayed 'open'
     forever and any escrow against them was never returned.
 
     These tests pin the wiring, not the refund logic: that a real request path

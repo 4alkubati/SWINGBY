@@ -217,7 +217,7 @@ export default function Download() {
           <p className={styles.ctaDesc}>
             {t(
               'download.ctaDesc',
-              'Join thousands of Calgarians finding better local services.'
+              'Post a job and local Calgary businesses send you a price.'
             )}
           </p>
           <Button variant="primary" size="lg" as="a" href="/signup">

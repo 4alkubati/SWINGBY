@@ -160,7 +160,8 @@ def _attach_payment_state(bookings: list[dict]) -> list[dict]:
     # otherwise the caller is told "held" about money that just became theirs.
     #
     # This is where the 24-hour auto-release actually happens. It is deliberately
-    # lazy rather than scheduled: there is no scheduler in this deployment (see
+    # lazy rather than scheduled: there is no APPLICATION scheduler in this
+    # deployment — pg_cron exists but cannot call Python (SB-0068). (see
     # services/approvals.py — expiry_sweep.sweep_once has existed for weeks and
     # is called by nothing but its own tests), so a timer would never fire and
     # the money would sit held forever. Settling on read means the answer is

@@ -100,12 +100,6 @@ export default function Signup() {
           <p className={styles.leftSubtitle}>Be first when we launch in your city.</p>
         </div>
 
-        <div className={styles.leftTestimonial}>
-          <p className={styles.testimonialQuote}>
-            "I'm a one-person shop. SwingByy fills my calendar without me lifting a finger."
-          </p>
-          <p className={styles.testimonialAuthor}>— Ahmed K., Painter</p>
-        </div>
       </div>
 
       {/* ── Right panel ── */}

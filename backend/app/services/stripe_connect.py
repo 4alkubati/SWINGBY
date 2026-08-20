@@ -399,7 +399,8 @@ def create_payout(
 def retrieve_payout(*, account_id: str, payout_id: str) -> dict[str, Any]:
     """Re-read a payout so a stale row can be settled on read.
 
-    There is no scheduler on this deployment (Roadmap/STATUS.md §2), so a
+    There is no APPLICATION scheduler on this deployment (Roadmap/STATUS.md §2;
+    pg_cron exists but runs SQL only, and cannot call this), so a
     standard payout's days-long ``in_transit`` -> ``paid`` transition is picked
     up the next time the owner opens their wallet, not by a cron job.
     """

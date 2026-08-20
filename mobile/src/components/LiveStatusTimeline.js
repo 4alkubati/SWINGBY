@@ -5,6 +5,7 @@ import { Feather } from '@expo/vector-icons';
 import Text from './Text';
 import Stack from './Stack';
 import Inline from './Inline';
+import { formatLoggedAt } from '../utils/eventTime';
 import i18n from '../i18n';
 import { colors, spacing } from '../theme/tokens';
 
@@ -61,18 +62,6 @@ function humaniseEventType(t) {
   return String(t || '')
     .replace(/_/g, ' ')
     .replace(/^./, (c) => c.toUpperCase());
-}
-
-function formatTime(iso) {
-  if (!iso) return '';
-  try {
-    return new Date(iso).toLocaleTimeString('en-CA', {
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  } catch {
-    return '';
-  }
 }
 
 /**
@@ -142,8 +131,18 @@ export default function LiveStatusTimeline({ events = [], status = 'ready' }) {
                 {ev.note ? (
                   <Text variant="caption">{humaniseNote(ev.note)}</Text>
                 ) : null}
+                {/* SB-0010 — carry the date when it is not already obvious
+                    from the row above. A bare wall-clock time next to a
+                    scheduled service time that DOES have a date made the
+                    timeline read as if the job was confirmed after it
+                    finished. */}
                 <Text variant="caption" color="secondary">
-                  {i18n.t('booking.eventLoggedAt', { time: formatTime(ev.created_at) })}
+                  {i18n.t('booking.eventLoggedAt', {
+                    time: formatLoggedAt(
+                      ev.created_at,
+                      i > 0 ? events[i - 1]?.created_at : null,
+                    ),
+                  })}
                 </Text>
               </Stack>
             </View>

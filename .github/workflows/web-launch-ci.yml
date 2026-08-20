@@ -1,13 +1,33 @@
 name: web-launch CI
 
 on:
+  workflow_dispatch:
+  # SB-0061 — `push` had no branch filter, so every push to every branch ran
+  # this in addition to the pull_request run: two identical runs per PR commit,
+  # doubling queue time and CI spend for no extra signal.
   push:
+    branches:
+      - main
     paths:
       - 'web/launch/**'
+      - 'backend/**'
       - '.github/workflows/web-launch-ci.yml'
   pull_request:
     paths:
       - 'web/launch/**'
+      - 'backend/**'
+      - '.github/workflows/web-launch-ci.yml'
+
+# SB-0061 — without this, pushing three commits in a minute leaves three full
+# runs racing; the oldest can report last and win the branch's status.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# SB-0062 — least privilege. An unset `permissions:` inherits the repository
+# default, which is often write-all; nothing in this workflow writes anything.
+permissions:
+  contents: read
 
 defaults:
   run:
@@ -23,7 +43,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v7
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
           cache-dependency-path: web/launch/package-lock.json
 
@@ -58,7 +78,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v7
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
           cache-dependency-path: web/launch/package-lock.json
 
@@ -70,6 +90,11 @@ jobs:
       - name: Audit dependencies
         run: npm audit --audit-level=high
 
+  # SB-0056 — this job scans backend/app/ but lived in a workflow triggered
+  # ONLY by web/launch/** changes, so it did not run for the 19-file security
+  # commit it was meant to protect. A scan that cannot fire on the code it
+  # covers is not a control. The trigger below now includes backend/** and the
+  # workflow itself; the scan is unchanged.
   secret-scan:
     name: Secret Scan
     runs-on: ubuntu-latest
@@ -80,8 +105,23 @@ jobs:
 
       - name: Scan for leaked secrets
         run: |
-          if grep -rE "(SUPABASE_SERVICE_KEY|eyJhbGci[A-Za-z0-9+/]{20,}|sk_live_[A-Za-z0-9]+)" web/launch/ backend/app/ --include="*.js" --include="*.jsx" --include="*.ts" --include="*.tsx" --include="*.py" 2>/dev/null; then
-            echo "::error::Potential secret found in source files"
+          # SB-0057 — match VALUES, not identifiers.
+          #
+          # This pattern used to include the bare name `SUPABASE_SERVICE_KEY`,
+          # which app/config.py necessarily contains: naming the environment
+          # variables it reads is that module's entire job. So the scan matched
+          # a config file doing the right thing, and web-launch CI has been red
+          # on main since 2026-08-05 with three merges landing on top of a
+          # standing failure. A gate that is always red is a gate nobody reads.
+          #
+          # What a leaked secret actually looks like: a service_role JWT
+          # (`eyJhbGci…`), a new-style Supabase secret (`sb_secret_…`), a live
+          # Stripe key (`sk_live_…`), or one of those names ASSIGNED a value
+          # rather than merely mentioned.
+          PATTERN='(eyJhbGciOi[A-Za-z0-9_-]{20,}|sb_secret_[A-Za-z0-9]{16,}|sk_live_[A-Za-z0-9]{16,}|(SUPABASE_SERVICE_KEY|SUPABASE_SECRET_KEY|STRIPE_SECRET_KEY)[[:space:]]*[:=][[:space:]]*["'"'"']?[A-Za-z0-9_-]{16,})'
+          if grep -rEn "$PATTERN" web/launch/ backend/app/ \
+               --include="*.js" --include="*.jsx" --include="*.ts" --include="*.tsx" --include="*.py" 2>/dev/null; then
+            echo "::error::Potential secret VALUE found in source files (see matches above)"
             exit 1
           fi
           echo "No secrets found."

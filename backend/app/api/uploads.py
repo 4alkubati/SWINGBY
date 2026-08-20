@@ -1,9 +1,10 @@
 import uuid
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile, File
 from app.deps import get_current_user
-from app.services import image_sniff
+from app.limiter import limiter
+from app.services import audio_sniff, image_sniff
 from app.supabase_client import supabase
 
 logger = logging.getLogger(__name__)
@@ -55,8 +56,17 @@ MAX_AUDIO_BYTES = 8 * 1024 * 1024
 AUDIO_URL_TTL_SECONDS = 60 * 60  # 1 h — long enough to review, short enough to expire
 
 
+# SB-0012 — these two routes are a metered, billable write path into Supabase
+# Storage and carried no limit at all. limiter.py declared default_limits, but
+# slowapi only applies that with SlowAPIMiddleware registered, which it never
+# was, so every undecorated route was unlimited. The limit is declared here
+# rather than globally: a blanket default would also land on the list views the
+# mobile app polls, and guessing that number for a live app is the bigger risk.
+# `request` must stay in the signature — slowapi no-ops silently without it.
 @router.post("/image")
+@limiter.limit("30/minute")
 async def upload_image(
+    request: Request,
     file: UploadFile = File(...),
     current_user: dict = Depends(get_current_user),
 ):
@@ -117,7 +127,9 @@ async def upload_image(
 
 
 @router.post("/audio")
+@limiter.limit("30/minute")
 async def upload_audio(
+    request: Request,
     file: UploadFile = File(...),
     current_user: dict = Depends(get_current_user),
 ):
@@ -138,6 +150,26 @@ async def upload_audio(
         raise HTTPException(status_code=400, detail="The recording was empty")
     if len(contents) > MAX_AUDIO_BYTES:
         raise HTTPException(status_code=400, detail="Recording must be under 8 MB")
+
+    # Checklist #12 — the same rule /uploads/image got in D7.9, applied here.
+    # The content-type check above reads what the CLIENT declared; this one
+    # reads what was actually sent. Without it any bytes at all could be stored
+    # in `voice-notes` under an attacker-chosen content type and served back to
+    # a real person through a signed URL. Same 400 and same wording as the
+    # declared-type check, so a prober cannot tell which half they tripped.
+    if not audio_sniff.matches_declared(contents, file.content_type):
+        logger.warning(
+            "uploads.audio rejected — content did not match declared type",
+            extra={
+                "user_id": current_user["id"],
+                "declared": file.content_type,
+                "sniffed": audio_sniff.sniff(contents),
+            },
+        )
+        raise HTTPException(
+            status_code=400,
+            detail="Only m4a, aac, mp3 and wav audio is allowed",
+        )
 
     ext = "m4a"
     if file.filename and "." in file.filename:

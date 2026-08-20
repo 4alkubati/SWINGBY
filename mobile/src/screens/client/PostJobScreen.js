@@ -61,10 +61,25 @@ const OTHER_CATEGORY = 'General';
 //      height inside a ScrollView's auto-height content container, leaving the
 //      results list no room to draw. flex:0 + an explicit listView surface
 //      fixes that, and elevation/zIndex keep it above the fields beneath it.
-const GOOGLE_PLACES_KEY =
-  process.env.EXPO_PUBLIC_GOOGLE_PLACES_KEY ||
-  process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY ||
-  '';
+// SB-0029 — ONE name, and it is not the Maps key.
+//
+// This used to fall back to `EXPO_PUBLIC_GOOGLE_MAPS_API_KEY`, which is a trap
+// rather than a convenience. app.config.js goes out of its way to read the
+// native Maps key as `GOOGLE_MAPS_API_KEY` WITHOUT the EXPO_PUBLIC_ prefix,
+// precisely so it is never inlined into the JS bundle — it is consumed natively
+// (AndroidManifest meta-data + iOS GMSServices).
+//
+// The fallback undid that. Anyone debugging dead address autocomplete sets the
+// obvious-looking `EXPO_PUBLIC_GOOGLE_MAPS_API_KEY`, autocomplete starts
+// working, and the Maps key is now shipped in plaintext inside every published
+// bundle — with no error and nothing to notice. Given a key from this project
+// already sat in public git history unrotated (SB-0023), a second route to
+// publishing it is not one to leave lying around.
+//
+// Places needs its OWN restricted key: EXPO_PUBLIC_GOOGLE_PLACES_KEY, scoped to
+// the Places API and nothing else. Empty simply disables autocomplete; the
+// address field still accepts free text.
+const GOOGLE_PLACES_KEY = process.env.EXPO_PUBLIC_GOOGLE_PLACES_KEY || '';
 
 const MAX_PHOTOS = 5;
 
