@@ -154,9 +154,20 @@ export default function JobOpportunityCard({
             <Text variant="smallMedium" numberOfLines={1}>
               {client}
             </Text>
-            {post.address ? (
+            {/* Locality AND quadrant. The backend masks "3823 16 St SW,
+                Calgary, AB" down to "Calgary, AB" — it keeps everything after
+                the first comma, and in Canadian addressing the quadrant sits
+                before it. So the one thing a business needs to judge the drive
+                was the thing being dropped, and every job in the feed looked
+                equally far away.
+
+                `area` is emitted separately by privacy.py for exactly this, and
+                it survives the case where the address masks to null (a
+                free-typed address with no comma fails closed). So a job can
+                legitimately show "SW" and nothing else. */}
+            {(post.address || post.area) ? (
               <Text variant="caption" color="secondary" numberOfLines={1}>
-                {post.address}
+                {[post.address, post.area].filter(Boolean).join(' · ')}
               </Text>
             ) : null}
           </View>
