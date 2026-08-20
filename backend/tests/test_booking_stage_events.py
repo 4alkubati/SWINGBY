@@ -141,8 +141,18 @@ class TestCompleteWritesItsEvent:
         helper = inspect.getsource(approvals._event)
         before, after = helper.split('supabase.table("booking_events")', 1)
         assert before.rstrip().endswith("try:")
+        handler = after.split("except Exception:", 1)[1]
         assert "except Exception:" in after
-        assert "logger.warning" in after.split("except Exception:", 1)[1][:200]
+
+        # Swallowed, never re-raised — that is the actual invariant here.
+        assert "raise" not in handler
+
+        # ...and LOUD. This assertion used to pin `logger.warning`, which is
+        # how the bug hid: `payment_released` violated the event_type CHECK
+        # from the day it shipped until the 2026-08-15 sweep, and the only
+        # trace was a warning nobody reads. The level is part of the contract
+        # now — see migration 20260815000200.
+        assert "logger.exception" in handler[:400]
 
     def test_complete_booking_no_longer_releases_money(self):
         """The regression this whole change exists to prevent.

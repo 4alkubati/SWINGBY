@@ -157,3 +157,102 @@ def test_replay_outranks_revocation():
 def test_unreadable_consumed_at_does_not_revoke_anyone(bad):
     row = {"issued_at": iso(NOW - timedelta(hours=1)), "consumed_at": bad}
     assert ss.classify_refresh(row, None, now=NOW) == "ok"
+
+
+# ── the bookkeeping that the decision table above depends on ─────────────────
+#
+# 2026-08-15 sweep: every test above this line exercises `classify_refresh`,
+# which is pure and was always correct. The bug was one layer down, in what got
+# WRITTEN to the row it reads. `record_issued` upserted an explicit
+# `"consumed_at": None`, so on the `/auth/refresh` path — `record_consumed(old)`
+# immediately followed by `record_issued(new)` — a Supabase response that
+# returned the SAME refresh token (GoTrue does this inside its reuse interval)
+# collided on `token_hash` and erased the `consumed_at` written one line
+# earlier. The row looked unspent for ever and `classify_refresh` answered "ok"
+# to every subsequent replay.
+#
+# A detector that overwrites its own evidence passes every test of its decision
+# table. These tests are on the write path for that reason.
+
+
+class _FakeTable:
+    """Upsert with real Postgres semantics: only supplied columns are written."""
+
+    def __init__(self, store):
+        self.store = store
+
+    def upsert(self, payload, on_conflict=None):
+        row = self.store.setdefault(
+            payload["token_hash"],
+            {
+                "token_hash": payload["token_hash"],
+                "issued_at": None,
+                "consumed_at": None,
+            },
+        )
+        row.update(payload)
+        return self
+
+    def execute(self):
+        return type("Res", (), {"data": []})()
+
+
+@pytest.fixture
+def store(monkeypatch):
+    rows: dict = {}
+    monkeypatch.setattr(
+        ss, "supabase", type("C", (), {"table": lambda self, n: _FakeTable(rows)})()
+    )
+    return rows
+
+
+def test_record_issued_never_writes_consumed_at(store):
+    """The one-key regression, stated directly."""
+    ss.record_issued("hash-a", "user-1")
+    ss.record_consumed("hash-a", "user-1")
+    ss.record_issued("hash-a", "user-1")
+
+    assert store["hash-a"]["consumed_at"] is not None, (
+        "record_issued erased consumed_at — a spent token now reads as unspent "
+        "and every replay of it will classify as 'ok'"
+    )
+
+
+def test_a_replayed_token_is_still_caught_after_a_same_token_refresh(store):
+    """End to end: the stolen-token path the erasure reopened."""
+    h = ss.hash_refresh_token("token-supabase-handed-back-unchanged")
+    ss.record_issued(h, "user-1")
+    ss.record_consumed(h, "user-1")
+    ss.record_issued(h, "user-1")  # same hash — the collision that did the damage
+
+    row = store[h]
+    spent_at = ss._parse_ts(row["consumed_at"])
+    assert (
+        ss.classify_refresh(row, None, now=spent_at + timedelta(minutes=10)) == "replay"
+    )
+
+
+def test_the_lost_response_retry_still_survives_that_refresh(store):
+    """The fix must not buy replay detection with a signed-out real user."""
+    h = ss.hash_refresh_token("token-supabase-handed-back-unchanged")
+    ss.record_issued(h, "user-1")
+    ss.record_consumed(h, "user-1")
+    ss.record_issued(h, "user-1")
+
+    row = store[h]
+    spent_at = ss._parse_ts(row["consumed_at"])
+    assert ss.classify_refresh(row, None, now=spent_at + timedelta(seconds=5)) == "ok"
+
+
+def test_a_genuinely_rotated_token_starts_unspent(store):
+    """The normal path: a new hash gets its own row with a NULL consumed_at."""
+    old = ss.hash_refresh_token("old-token")
+    new = ss.hash_refresh_token("rotated-token")
+    ss.record_issued(old, "user-1")
+    ss.record_consumed(old, "user-1")
+    ss.record_issued(new, "user-1")
+
+    assert store[new]["consumed_at"] is None
+    assert store[new]["issued_at"] is not None
+    assert store[old]["consumed_at"] is not None
+    assert ss.classify_refresh(store[new], None, now=NOW) == "ok"

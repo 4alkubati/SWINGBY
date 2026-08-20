@@ -1,3 +1,19 @@
+-- ⚠️  DO NOT APPLY THIS FILE. SUPERSEDED 2026-08-15.
+--
+-- Use supabase/migrations/20260815000200_booking_events_event_type_complete.sql.
+--
+-- This file adds THREE values. The backend writes SIX that the CHECK rejects.
+-- The three it misses — `payment_requested`, `payment_requested_failed` and
+-- `payment_released` — are written through indirection
+-- (services/approvals.py::_event, services/payment_triggers.py::_record_event)
+-- rather than as literals at the insert site, so the grep behind this file
+-- never saw them. Applying this would fix half the problem and leave the other
+-- half failing exactly as silently, including the row that records escrow
+-- moving to the business.
+--
+-- Kept for history only. See supabase/migrations/APPLY-STATE.md.
+--
+-- ---------------------------------------------------------------------------
 -- CARD-02 — extend booking_events.event_type CHECK for dispute + off-platform events.
 -- NOT YET APPLIED to the live project — local/test verification only so far
 -- (backend/tests/test_booking_events_check.py). Apply via Supabase MCP

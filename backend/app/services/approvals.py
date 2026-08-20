@@ -74,7 +74,14 @@ def _event(booking_id: str, actor_id: str | None, event_type: str, note: str) ->
             }
         ).execute()
     except Exception:
-        logger.warning("approval event write failed for %s", booking_id, exc_info=True)
+        # Never blocks a payout — but never silent either. `payment_released`
+        # is the row recording that escrow moved to the business, and it
+        # violated the event_type CHECK (unnoticed) until 2026-08-15.
+        logger.exception(
+            "approval event write failed for %s (event_type=%s)",
+            booking_id,
+            event_type,
+        )
 
 
 def assert_releasable(booking_id: str) -> None:

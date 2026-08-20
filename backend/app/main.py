@@ -404,6 +404,15 @@ def health_check(request: Request):
     pub_state = pub_info.pop("state")
     pub_detail = pub_info if pub_state == "malformed" else None
 
+    # The THIRD key, and the only one whose absence loses money instead of
+    # blocking it. With this unreported, /health called Stripe healthy on two of
+    # three keys while a missing webhook secret let charges succeed and every
+    # confirming webhook be rejected — card debited, capture never recorded,
+    # escrow never released. See config.stripe_webhook_diagnosis.
+    hook_info = config_module.stripe_webhook_diagnosis()
+    hook_state = hook_info.pop("state")
+    hook_detail = hook_info if hook_state == "malformed" else None
+
     # What Sentry stamps on every issue from this process. Render has no ENV
     # var set, so production has been tagging its errors "development" — which
     # makes a prod incident indistinguishable from a laptop. Surfacing it here
@@ -441,6 +450,9 @@ def health_check(request: Request):
     body["direct_sql"] = "configured" if engine is not None else "not_configured"
 
     body["stripe_publishable"] = pub_state
+    # `stripe_webhook` joins `stripe` and `stripe_publishable` as a PUBLIC state
+    # (from #159): "ok" / "not_configured" / "malformed" names no internals and
+    # is what a monitor polls. Its DETAIL goes behind the gate with the others.
 
     # Checklist #10 — the DIAGNOSTIC half of this endpoint is no longer public.
     #
@@ -454,6 +466,8 @@ def health_check(request: Request):
     # box and every existing runbook are untouched; setting it in production is
     # what closes the leak. Compared with secrets.compare_digest because this is
     # a shared secret in a query string and a naive == is a timing oracle.
+    body["stripe_webhook"] = hook_state
+
     expected = settings.HEALTH_DIAGNOSTICS_TOKEN
     if expected:
         supplied = request.query_params.get("token") or request.headers.get(
@@ -469,7 +483,8 @@ def health_check(request: Request):
             body["stripe_detail"] = stripe_detail
         if pub_detail:
             body["stripe_publishable_detail"] = pub_detail
-
+        if hook_detail:
+            body["stripe_webhook_detail"] = hook_detail
     return body
 
 
