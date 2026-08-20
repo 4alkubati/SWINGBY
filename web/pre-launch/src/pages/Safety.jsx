@@ -35,7 +35,7 @@ export default function Safety() {
     <>
       <SEO
         title="Trust & Safety"
-        description="Learn how SwingBy verifies businesses, protects clients, and resolves disputes. Your safety is our priority."
+        description="Learn how SwingByy verifies businesses, protects clients, and resolves disputes. Your safety is our priority."
         og={{ url: 'https://swingbyy.com/safety' }}
       />
 

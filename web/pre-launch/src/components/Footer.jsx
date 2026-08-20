@@ -57,7 +57,7 @@ export default function Footer() {
     <footer className={styles.footer}>
       <div className={styles.inner}>
         <div className={styles.brand}>
-          <Link to="/" className={styles.logo}>SwingBy</Link>
+          <Link to="/" className={styles.logo}>SwingByy</Link>
           <p className={styles.tagline}>
             {t('home.heroSubtitle')}
           </p>

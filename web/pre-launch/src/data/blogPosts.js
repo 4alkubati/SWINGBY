@@ -1,21 +1,21 @@
 export const BLOG_POSTS = [
   {
     slug: 'swingby-launches-in-calgary',
-    title: 'SwingBy launches in Calgary: A new way to find local services',
-    excerpt: 'We are thrilled to announce that SwingBy is officially live in Calgary. Here is what you need to know about the platform and how it works.',
+    title: 'SwingByy launches in Calgary: A new way to find local services',
+    excerpt: 'We are thrilled to announce that SwingByy is officially live in Calgary. Here is what you need to know about the platform and how it works.',
     category: 'Announcements',
     author: { name: 'Amr Basem', role: 'Founder & CEO' },
     publishedAt: '2025-11-15',
     readTime: 5,
     featured: true,
     coverImage: null,
-    content: `## SwingBy launches in Calgary
+    content: `## SwingByy launches in Calgary
 
-We are thrilled to announce that SwingBy is officially live in Calgary, Alberta. After months of development, testing, and feedback from our beta community, we are ready to change how Calgarians find and book local services.
+We are thrilled to announce that SwingByy is officially live in Calgary, Alberta. After months of development, testing, and feedback from our beta community, we are ready to change how Calgarians find and book local services.
 
 ### The problem we are solving
 
-Finding reliable local service providers has always been a frustrating experience. You call around, wait for callbacks, compare quotes on scraps of paper, and hope for the best. We built SwingBy to fix that.
+Finding reliable local service providers has always been a frustrating experience. You call around, wait for callbacks, compare quotes on scraps of paper, and hope for the best. We built SwingByy to fix that.
 
 ### How it works
 
@@ -52,12 +52,12 @@ In the coming months, we will be:
 
 ---
 
-*Ready to try SwingBy? [Sign up for free](/signup) and post your first job today.*`,
+*Ready to try SwingByy? [Sign up for free](/signup) and post your first job today.*`,
     relatedSlugs: ['how-we-verify-businesses', 'tips-for-hiring-local-pros'],
   },
   {
     slug: 'how-we-verify-businesses',
-    title: 'How we verify every business on SwingBy',
+    title: 'How we verify every business on SwingByy',
     excerpt: 'Trust is the foundation of our platform. Learn about our multi-step verification process that keeps clients safe and businesses accountable.',
     category: 'Trust & Safety',
     author: { name: 'Sarah Chen', role: 'Head of Trust & Safety' },
@@ -65,9 +65,9 @@ In the coming months, we will be:
     readTime: 4,
     featured: false,
     coverImage: null,
-    content: `## How we verify every business on SwingBy
+    content: `## How we verify every business on SwingByy
 
-At SwingBy, trust is not optional — it is foundational. Every business on our platform goes through a rigorous verification process before they can accept their first job.
+At SwingByy, trust is not optional — it is foundational. Every business on our platform goes through a rigorous verification process before they can accept their first job.
 
 ### Our verification process
 
@@ -143,13 +143,13 @@ Good communication before and during the job prevents misunderstandings and lead
 
 ---
 
-*Ready to find your next pro? [Post a job on SwingBy](/signup).*`,
+*Ready to find your next pro? [Post a job on SwingByy](/signup).*`,
     relatedSlugs: ['swingby-launches-in-calgary', 'how-we-verify-businesses'],
   },
   {
     slug: 'safety-tips-for-clients',
     title: 'Staying safe when booking services online',
-    excerpt: 'Online service marketplaces make life easier, but safety should always come first. Here are our top tips for staying safe on SwingBy.',
+    excerpt: 'Online service marketplaces make life easier, but safety should always come first. Here are our top tips for staying safe on SwingByy.',
     category: 'Trust & Safety',
     author: { name: 'Sarah Chen', role: 'Head of Trust & Safety' },
     publishedAt: '2025-12-10',
@@ -158,7 +158,7 @@ Good communication before and during the job prevents misunderstandings and lead
     coverImage: null,
     content: `## Staying safe when booking services online
 
-Your safety is our priority. Here are practical tips to stay safe when using SwingBy or any online service marketplace.
+Your safety is our priority. Here are practical tips to stay safe when using SwingByy or any online service marketplace.
 
 ### Before booking
 
@@ -185,7 +185,7 @@ If you ever feel unsafe:
 1. Leave the situation if possible
 2. Call emergency services (911)
 3. Use the in-app emergency button
-4. Report the incident to SwingBy
+4. Report the incident to SwingByy
 
 ---
 
@@ -194,7 +194,7 @@ If you ever feel unsafe:
   },
   {
     slug: 'building-your-business-profile',
-    title: 'How to build a winning business profile on SwingBy',
+    title: 'How to build a winning business profile on SwingByy',
     excerpt: 'Your profile is your storefront. Learn how to create a business profile that attracts clients and wins more bookings.',
     category: 'For Businesses',
     author: { name: 'Amr Basem', role: 'Founder & CEO' },
@@ -202,9 +202,9 @@ If you ever feel unsafe:
     readTime: 5,
     featured: false,
     coverImage: null,
-    content: `## How to build a winning business profile on SwingBy
+    content: `## How to build a winning business profile on SwingByy
 
-Your SwingBy profile is the first thing potential clients see. Here is how to make it count.
+Your SwingByy profile is the first thing potential clients see. Here is how to make it count.
 
 ### 1. Use a professional photo
 Profiles with a high-quality photo get **3x more engagement**. Use a clear headshot or your team photo.
@@ -239,7 +239,7 @@ After every job, ask your client to leave a review. Consistent 5-star reviews pu
   {
     slug: 'introducing-escrow-payments',
     title: 'Introducing escrow payments: How we protect your money',
-    excerpt: 'Payments on SwingBy are held from the moment you accept a quote until you approve the finished work. Learn how this system works and why it matters.',
+    excerpt: 'Payments on SwingByy are held from the moment you accept a quote until you approve the finished work. Learn how this system works and why it matters.',
     category: 'Product Updates',
     author: { name: 'Amr Basem', role: 'Founder & CEO' },
     publishedAt: '2026-01-05',
@@ -252,7 +252,7 @@ One of the most common concerns when hiring someone online is: "What if they tak
 
 ### How it works
 
-1. **You accept a quote** — the full job amount is charged and held by SwingBy
+1. **You accept a quote** — the full job amount is charged and held by SwingByy
 2. **The work happens** — none of it has reached the business yet; it is still held
 3. **Released on approval** — the full amount, less our 10% platform fee, goes to the business when you approve the work (or 24 hours after they mark it done)
 4. **Dispute protection** — if there is an issue, the unreleased balance is held while we investigate

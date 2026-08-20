@@ -19,7 +19,7 @@ export default function BusinessEarnings() {
 
   return (
     <DashboardLayout>
-      <SEO title="Earnings — SwingBy" />
+      <SEO title="Earnings — SwingByy" />
       <motion.div {...fadeUp}>
         <div className={d.header}>
           <h1 className={d.title}>Earnings</h1>

@@ -73,7 +73,7 @@ export default function HelpArticle() {
     <>
       <SEO
         title={article.title}
-        description={`Help article: ${article.title}. Learn more about ${article.category} on SwingBy.`}
+        description={`Help article: ${article.title}. Learn more about ${article.category} on SwingByy.`}
       />
 
       <div className={styles.page}>

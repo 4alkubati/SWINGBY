@@ -53,7 +53,7 @@ export default function AccountSettings() {
 
   return (
     <DashboardLayout>
-      <SEO title="Settings — SwingBy" />
+      <SEO title="Settings — SwingByy" />
       <motion.div {...fadeUp}>
         <div className={d.header}>
           <h1 className={d.title}>Account Settings</h1>

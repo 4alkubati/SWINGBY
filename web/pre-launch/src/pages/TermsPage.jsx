@@ -8,33 +8,33 @@ const SECTIONS = [
   {
     id: 'use-of-platform',
     title: '1. Use of the Platform',
-    body: `By creating an account on SwingBy, you agree to use the platform only for lawful purposes. You must be at least 18 years old to create an account.
+    body: `By creating an account on SwingByy, you agree to use the platform only for lawful purposes. You must be at least 18 years old to create an account.
 
 Clients ("users") may post service requests and accept quotes from service providers. Service providers ("businesses") may submit quotes and complete booked jobs through the platform.
 
 You agree not to: misrepresent your identity or credentials, post fraudulent job listings or quotes, attempt to circumvent the platform's payment system, or engage in harassment or abusive behaviour toward other users.
 
-SwingBy reserves the right to suspend or terminate accounts that violate these terms.`,
+SwingByy reserves the right to suspend or terminate accounts that violate these terms.`,
   },
   {
     id: 'payments-escrow-refunds',
     title: '2. Payments, Escrow & Refunds',
-    body: `All payments on SwingBy are processed through our payment partner. When a client accepts a quote, the job amount is charged and held by SwingBy. It is released to the service provider — less the SwingBy platform fee — when the client approves the completed work, or automatically 24 hours after the provider marks the job complete.
+    body: `All payments on SwingByy are processed through our payment partner. When a client accepts a quote, the job amount is charged and held by SwingByy. It is released to the service provider — less the SwingByy platform fee — when the client approves the completed work, or automatically 24 hours after the provider marks the job complete.
 
-In cases of dispute, SwingBy may hold any portion of the payment not yet released pending investigation. Disputes are reviewed and resolved by the SwingBy team.
+In cases of dispute, SwingByy may hold any portion of the payment not yet released pending investigation. Disputes are reviewed and resolved by the SwingByy team.
 
-Refunds: cancellation fees depend on timing. A client who cancels more than 48 hours before the scheduled date is refunded in full, with no fee. Within 48 hours of the scheduled date, 75% is refunded and the provider keeps 25%. After the scheduled time has passed, the refund is 50%. If the provider cancels, at any time, the client is refunded in full. If a dispute arises after work has started, SwingBy will review submitted evidence (photos, messages) and make a final determination, including any refund amount.
+Refunds: cancellation fees depend on timing. A client who cancels more than 48 hours before the scheduled date is refunded in full, with no fee. Within 48 hours of the scheduled date, 75% is refunded and the provider keeps 25%. After the scheduled time has passed, the refund is 50%. If the provider cancels, at any time, the client is refunded in full. If a dispute arises after work has started, SwingByy will review submitted evidence (photos, messages) and make a final determination, including any refund amount.
 
-SwingBy charges a platform fee on each completed transaction. This fee is disclosed at the time of booking.`,
+SwingByy charges a platform fee on each completed transaction. This fee is disclosed at the time of booking.`,
   },
   {
     id: 'disclaimers-liability',
     title: '3. Disclaimers & Limitation of Liability',
-    body: `SwingBy is a marketplace that connects clients with independent service providers. We do not employ service providers, and we are not responsible for the quality, safety, legality, or completion of services performed.
+    body: `SwingByy is a marketplace that connects clients with independent service providers. We do not employ service providers, and we are not responsible for the quality, safety, legality, or completion of services performed.
 
 We verify business licenses where indicated by a "Verified" badge, but verification does not constitute an endorsement or guarantee of service quality.
 
-To the maximum extent permitted by law, SwingBy's liability for any claim arising from your use of the platform is limited to the amount you paid for the relevant transaction.
+To the maximum extent permitted by law, SwingByy's liability for any claim arising from your use of the platform is limited to the amount you paid for the relevant transaction.
 
 These terms are governed by the laws of Alberta, Canada, consistent with the Alberta Consumer Protection Act and applicable federal law. For questions, contact legal@swingbyy.com`,
   },
@@ -82,7 +82,7 @@ export default function TermsPage() {
   return (
     <div className={styles.page} id="top">
       <nav className={styles.nav}>
-        <Link to="/" className={styles.logo}>SwingBy</Link>
+        <Link to="/" className={styles.logo}>SwingByy</Link>
       </nav>
 
       <div className={styles.contentWrapper}>
@@ -104,7 +104,7 @@ export default function TermsPage() {
           <h1 className={styles.docTitle}>Terms of Service</h1>
           <p className={styles.docMeta}>Last updated: {LAST_UPDATED}</p>
           <p className={styles.docIntro}>
-            Please read these Terms of Service carefully before using SwingBy. By accessing or using our platform, you agree to be bound by these terms.
+            Please read these Terms of Service carefully before using SwingByy. By accessing or using our platform, you agree to be bound by these terms.
           </p>
 
           {SECTIONS.map((section) => (

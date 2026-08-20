@@ -41,7 +41,7 @@ export default function Careers() {
   return (
     <>
       <SEO
-        title="Careers at SwingBy"
+        title="Careers at SwingByy"
         description="Join the team building the future of local services. See our culture, perks, and open positions."
         og={{ url: 'https://swingbyy.com/careers' }}
       />

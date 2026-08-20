@@ -162,7 +162,7 @@ export default function Profile() {
 
   return (
     <DashboardLayout>
-      <SEO title="Profile — SwingBy" />
+      <SEO title="Profile — SwingByy" />
       <motion.div {...fadeUp}>
         <div className={d.header}>
           <h1 className={d.title}>My Profile</h1>

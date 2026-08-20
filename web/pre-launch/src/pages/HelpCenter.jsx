@@ -62,7 +62,7 @@ export default function HelpCenter() {
     <>
       <SEO
         title={t('help.title', 'Help Center')}
-        description="Find answers to common questions about SwingBy. Browse help articles on bookings, payments, account settings, and more."
+        description="Find answers to common questions about SwingByy. Browse help articles on bookings, payments, account settings, and more."
       />
 
       <div className={styles.page}>

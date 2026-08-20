@@ -20,7 +20,7 @@ export default function MessageThread() {
 
   return (
     <DashboardLayout>
-      <SEO title="Conversation — SwingBy" />
+      <SEO title="Conversation — SwingByy" />
       <motion.div {...fadeUp}>
         <Link to="/messages" style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--space-xs)', fontSize: '13px', color: 'var(--color-text-secondary)', marginBottom: 'var(--space-lg)', textDecoration: 'none' }}>
           <ArrowLeft size={16} /> Back to Messages

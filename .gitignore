@@ -15,6 +15,12 @@ __pycache__/
 
 # Node
 node_modules/
+# No trailing slash as well: `node_modules/` matches a DIRECTORY, so a
+# node_modules SYMLINK slips past it. Two did — web/admin and web/pre-launch
+# were committed as links pointing at their own absolute paths, so every
+# checkout recreated a self-referencing loop and every local build died with
+# no output at all. CI never noticed because `npm ci` deletes the path first.
+node_modules
 dist/
 
 # Expo / React Native

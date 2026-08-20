@@ -59,7 +59,7 @@ export default function Pricing() {
     <>
       <SEO
         title={t('pricing.title')}
-        description="SwingBy pricing: free for clients, 10% platform fee for businesses. No monthly fees, no hidden costs."
+        description="SwingByy pricing: free for clients, 10% platform fee for businesses. No monthly fees, no hidden costs."
         og={{ url: 'https://swingbyy.com/pricing' }}
       />
 

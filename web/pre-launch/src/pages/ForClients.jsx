@@ -42,7 +42,7 @@ export default function ForClients() {
     <>
       <SEO
         title="For Clients"
-        description="Find trusted local professionals, compare quotes, and book with confidence. SwingBy makes home services simple."
+        description="Find trusted local professionals, compare quotes, and book with confidence. SwingByy makes home services simple."
         og={{ url: 'https://swingbyy.com/for-clients' }}
       />
 

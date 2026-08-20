@@ -56,7 +56,7 @@ export default function ForBusinesses() {
     <>
       <SEO
         title="For Businesses"
-        description="Grow your business with SwingBy. Get discovered by local clients, win more jobs, and build your reputation."
+        description="Grow your business with SwingByy. Get discovered by local clients, win more jobs, and build your reputation."
         og={{ url: 'https://swingbyy.com/for-businesses' }}
       />
 

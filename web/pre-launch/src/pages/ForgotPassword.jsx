@@ -33,12 +33,12 @@ export default function ForgotPassword() {
 
   return (
     <>
-      <SEO title={`${t('auth.resetPasswordTitle')} — SwingBy`} />
+      <SEO title={`${t('auth.resetPasswordTitle')} — SwingByy`} />
       <div className={s.page}>
         <div className={s.orb1} />
         <div className={s.orb2} />
         <nav className={s.nav}>
-          <Link to="/" className={s.logo}>SwingBy</Link>
+          <Link to="/" className={s.logo}>SwingByy</Link>
           <Link to="/login" className={s.navLink}>{t('common.login')}</Link>
         </nav>
         <div className={s.container}>
