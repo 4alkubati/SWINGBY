@@ -34,7 +34,7 @@
     "react-i18next": "^17.0.8",
     "react-router-dom": "^6.30.4",
     "recharts": "^2.12.0",
-    "zod": "^3.23.8"
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@sentry/vite-plugin": "^2.0.0",
