@@ -13,7 +13,7 @@
     "@hookform/resolvers": "^5.4.0",
     "@phosphor-icons/react": "^2.1.10",
     "@supabase/supabase-js": "^2.106.1",
-    "axios": "^1.7.7",
+    "axios": "^1.18.0",
     "date-fns": "^4.4.0",
     "framer-motion": "^11.18.2",
     "i18next": "^26.3.1",
