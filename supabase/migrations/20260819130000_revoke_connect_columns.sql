@@ -1,72 +1,93 @@
 -- 20260819130000_revoke_connect_columns.sql
 --
--- SB-0042 — extend the 2026-07-20 column lockdown to the columns added after it.
+-- SB-0042 — narrow what `authenticated` and `anon` can read from `businesses`.
 --
--- `20260720000000_s1_column_lockdown_and_unique_constraints.sql` revoked
--- SELECT on businesses.license_number, stripe_customer_id, subscription_id and
--- subscription_current_period_end from `authenticated`, because
--- `businesses_select_authenticated` is `using (true)` — every signed-in user
--- can read every business row, so column grants are the only thing narrowing
--- it.
+-- `businesses_select_authenticated` is `using (true)`, so every signed-in user
+-- can read every business row. Column grants are the only thing that narrows
+-- it, and the row carries Stripe Connect ids, the full subscription shape, and
+-- the licence number.
 --
--- Stripe Connect landed on 2026-08-03 and added seven more columns of exactly
--- the same kind. Nobody went back to the REVOKE, so `stripe_connect_account_id`
--- and its siblings have been readable by any authenticated Supabase JWT ever
--- since — including `connect_requirements_due`, which spells out precisely what
--- Stripe is still missing from that business.
 --
--- This is a different layer from SB-0014. That one stopped the API handing
--- these columns back in `GET /businesses/*` responses. This one stops a client
--- going directly to PostgREST with its own JWT and asking for them, which the
--- API fix does nothing about.
+-- WHY THE OBVIOUS VERSION OF THIS MIGRATION DOES NOTHING
+-- ------------------------------------------------------
+-- Two earlier attempts used `revoke select (col, col, ...) on businesses from
+-- authenticated`. Both were no-ops, and it took reading the live grant table to
+-- see why:
 --
--- The backend is unaffected: every read of these columns goes through the
--- service_role client in payments_stripe.py / payouts.py, and service_role
--- bypasses grants.
+--     select grantee, privilege_type from information_schema.role_table_grants
+--     where table_name = 'businesses';
+--     -- authenticated | SELECT      <-- TABLE-level
+--     -- anon          | SELECT      <-- TABLE-level
 --
--- Also revoked: subscription_tier, subscription_status, subscription_price_id,
--- subscription_started_at, subscription_cancel_at. The 2026-07-20 pass took the
--- id and the period end but left the rest of the billing shape, which together
--- still describes what a competitor is paying and when they are up for renewal.
+-- In Postgres, a column-level REVOKE against a role that holds the TABLE-level
+-- privilege changes nothing: the table grant continues to cover every column,
+-- including ones added later. So:
+--
+--   * `20260720000000_s1_column_lockdown_and_unique_constraints` was ineffective
+--     by construction — it would have protected nothing on the day it was
+--     written. It was also never applied, which is how nobody found out.
+--   * The first version of THIS migration ran successfully against production
+--     and also protected nothing. `{"success": true}` meant the statements were
+--     valid, not that the columns were private.
+--
+-- The only thing that narrows a table grant is removing it and granting back
+-- the columns you actually want readable. Deny-by-default, so a column added
+-- next month is private until someone says otherwise — which is the property
+-- the column-REVOKE approach never had, even in principle.
+--
+--
+-- WHY THIS IS SAFE
+-- ----------------
+-- No client reads this table directly. The Supabase JS client is used for AUTH
+-- only in both web apps (login, auth callback, account settings) — nothing
+-- anywhere calls `.from('businesses')`. The backend reads it through the
+-- service_role client, which bypasses grants entirely. And the public discovery
+-- columns are granted straight back, so even a direct reader nobody remembered
+-- keeps working for everything a client legitimately needs.
 
-revoke select (
-    -- Stripe Connect (added 2026-08-03)
-    stripe_connect_account_id,
-    payouts_enabled,
-    connect_charges_enabled,
-    connect_details_submitted,
-    connect_disabled_reason,
-    connect_requirements_due,
-    connect_synced_at,
-    -- Billing shape the first pass left behind
-    subscription_tier,
-    subscription_status,
-    subscription_price_id,
-    subscription_started_at,
-    subscription_cancel_at
-) on businesses from authenticated;
+revoke select on public.businesses from authenticated;
+revoke select on public.businesses from anon;
 
--- anon has no business reading any of it either. Harmless if already absent.
-revoke select (
-    stripe_connect_account_id,
-    payouts_enabled,
-    connect_charges_enabled,
-    connect_details_submitted,
-    connect_disabled_reason,
-    connect_requirements_due,
-    connect_synced_at,
-    subscription_tier,
-    subscription_status,
-    subscription_price_id,
-    subscription_started_at,
-    subscription_cancel_at,
-    license_number,
-    stripe_customer_id,
-    subscription_id,
-    subscription_current_period_end
-) on businesses from anon;
+-- The public shape of a business: enough to render a card, a profile or a map
+-- pin. Anything absent from this list is private, including every column added
+-- after today.
+grant select (
+    id,
+    owner_id,
+    business_name,
+    category,
+    custom_category,
+    description,
+    license_status,
+    lat,
+    lng,
+    service_radius_km,
+    avg_rating,
+    review_count,
+    address,
+    logo_url,
+    created_at
+) on public.businesses to authenticated;
+
+grant select (
+    id,
+    owner_id,
+    business_name,
+    category,
+    custom_category,
+    description,
+    license_status,
+    lat,
+    lng,
+    service_radius_km,
+    avg_rating,
+    review_count,
+    address,
+    logo_url,
+    created_at
+) on public.businesses to anon;
 
 comment on column public.businesses.connect_requirements_due is
     'Stripe onboarding requirements still outstanding. NOT readable by '
-    'authenticated (SB-0042) — it describes what a competitor has failed to '
-    'provide to Stripe. Backend reads it via service_role only.';
+    'authenticated or anon (SB-0042) — it describes what a competitor has '
+    'failed to provide to Stripe. Backend reads it via service_role only.';

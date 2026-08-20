@@ -35,7 +35,20 @@ def register_push_token(
                     "token": data.token,
                     "platform": data.platform,
                 },
-                on_conflict="user_id,token",
+                # SB-0087 — conflict on TOKEN, not (user_id, token).
+                #
+                # This used to be "user_id,token", which dedupes per PAIR: the
+                # same physical device accumulated one row per account that had
+                # ever logged in on it. Production had one token registered to
+                # four different users over three weeks, so a push addressed to
+                # any of them reached whoever was holding the device.
+                #
+                # A device has exactly one current owner. Re-registering
+                # REASSIGNS it, which is also what makes the unique index on
+                # push_tokens.token holdable. The unregister-on-logout path
+                # stays as defence in depth — it just is no longer the only
+                # thing standing between accounts.
+                on_conflict="token",
             )
             .execute()
         )

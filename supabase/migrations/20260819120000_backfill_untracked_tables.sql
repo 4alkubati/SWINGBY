@@ -37,9 +37,29 @@ create table if not exists public.push_tokens (
     updated_at  timestamptz default now()
 );
 
--- One row per device token. Re-registering the same token must update the
--- owner rather than accumulate duplicates, which is what the register endpoint
--- relies on.
+-- SB-0087 — one row per DEVICE token, not per (user, token) pair.
+--
+-- Adding this index failed on first attempt against production:
+--
+--   ERROR 23505: could not create unique index "push_tokens_token_key"
+--   DETAIL: Key (token)=(ExponentPushToken[Qglc...]) is duplicated.
+--
+-- One physical device had accumulated FOUR rows for four different users
+-- between 2026-07-31 and 2026-08-18, because register_push_token upserted on
+-- (user_id, token). A push addressed to any one of those users was delivered
+-- to whoever happened to be holding that device.
+--
+-- So the duplicates are removed first, keeping the most recent registration —
+-- the device's current owner is the last person who logged in on it. The
+-- losers stop receiving push until they next open the app, which re-registers
+-- them; that is the correct outcome, because they were receiving someone
+-- else's notifications.
+delete from public.push_tokens p
+using public.push_tokens q
+where p.token = q.token
+  and (p.created_at < q.created_at
+       or (p.created_at = q.created_at and p.id < q.id));
+
 create unique index if not exists push_tokens_token_key
     on public.push_tokens (token);
 
