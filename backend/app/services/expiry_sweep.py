@@ -17,12 +17,29 @@ HOW IT ACTUALLY RUNS (2026-07-31)
 --------------------------------
 For weeks it did not. This module was written, reviewed and merged, and then
 called by nothing but its own tests — no cron service, no worker, no scheduler
-anywhere in the deployment. Every guarantee in the docstring above was true of
+anywhere in the deployment.
+
+⚠ PRECISION, added 2026-08-19 after this claim caused a real bug (SB-0068 /
+SB-0074). "No scheduler" is true of APPLICATION code and false of the database.
+`pg_cron` IS installed on project ulnxapnsenzyddddldjt with two ACTIVE jobs,
+verified by querying `cron.job`:
+
+    expire-service-posts          0 * * * *    select expire_old_service_posts();
+    refresh-business-work-index   17 4 * * *   select public.refresh_business_work_index();
+
+Nothing runs this module, or any other Python, on a timer — that part stands.
+But `expire_old_service_posts()` flips service_posts.status from 'open' to
+'expired' every hour and moves NO money, so a post can leave the state this
+sweep looks for without anyone settling it. Reading "no scheduler" as "nothing
+changes underneath us" is what left `SWEEPABLE_STATUSES = ("open",)` looking
+correct for weeks.
+
+ Every guarantee in the docstring above was true of
 code that never executed. Kira named this the recurring SwingBy failure, and it
 is why `Roadmap/STATUS.md` now defines "done" as *reachable by a user*.
 
 It is wired the same way the 24-hour escrow release is (`services/approvals.py`),
-and for the same reason — there is still no scheduler, so anything that must
+and for the same reason — there is still no APPLICATION scheduler, so anything that must
 happen "eventually" has to settle when someone looks:
 
 * **`sweep_for_client`** runs on `GET /service-posts/my`. The client opening

@@ -182,7 +182,7 @@ def sweep_login_attempts(
     the claim in the schema was simply false.
 
     Manual rather than scheduled for the same reason as the two sweeps below —
-    this deployment has no scheduler. Safe to call repeatedly; it deletes by
+    this deployment has no APPLICATION scheduler. Safe to call repeatedly; it deletes by
     timestamp, not by a flag.
     """
     from app.services import login_guard
@@ -214,7 +214,7 @@ def sweep_post_expiry(
     Same shape, and the same reasoning, as the approval-release sweep above:
     the PRIMARY mechanism is lazy (`GET /service-posts/my` sweeps the client's
     own posts, and the business feed hides expired ones), because this
-    deployment has no scheduler. This is for the case where the client never
+    deployment has no APPLICATION scheduler. This is for the case where the client never
     opens the app again — which, for someone owed a refund on a job that never
     happened, is the likeliest case of all.
 

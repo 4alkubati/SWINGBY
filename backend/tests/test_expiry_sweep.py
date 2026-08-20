@@ -255,9 +255,13 @@ class TestTheSweepIsActuallyReachable:
     """The whole point of this round of work.
 
     `sweep_once` was written weeks before 2026-07-31 and called by nothing but
-    the tests above it. There is no scheduler in this deployment — no cron
-    service, no worker, no APScheduler — so every guarantee in the module
-    docstring was true of code that never ran. Expired posts stayed 'open'
+    the tests above it. There is no APPLICATION scheduler in this deployment —
+    no cron service, no worker, no APScheduler — so every guarantee in the
+    module docstring was true of code that never ran.
+
+    Database-level pg_cron is a different matter and this docstring used to
+    deny it outright: `expire-service-posts` runs hourly and moves posts to
+    'expired' without settling them (SB-0074). Verified against cron.job. Expired posts stayed 'open'
     forever and any escrow against them was never returned.
 
     These tests pin the wiring, not the refund logic: that a real request path

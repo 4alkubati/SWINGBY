@@ -16,9 +16,13 @@ drift apart about it.
 
 WHY SETTLEMENT IS LAZY, NOT SCHEDULED
 -------------------------------------
-There is no scheduler in this deployment. `expiry_sweep.sweep_once` has existed
-for weeks and is referenced by nothing but its own tests — no cron service in
-render.yaml, no APScheduler, no worker. A 24-hour timer implemented the obvious
+There is no APPLICATION scheduler in this deployment. `expiry_sweep.sweep_once`
+has existed for weeks and is referenced by nothing but its own tests — no cron
+service in render.yaml, no APScheduler, no worker.
+
+(Database-level pg_cron DOES exist and runs two SQL jobs; it cannot call this
+module. See services/expiry_sweep.py for the full note — reading "no scheduler"
+as "nothing changes underneath us" caused SB-0074.) A 24-hour timer implemented the obvious
 way would therefore never fire, and money would sit held forever. That is a
 worse failure than the bug being fixed, because it is silent.
 

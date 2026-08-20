@@ -319,7 +319,7 @@ def _settle_payout_rows(rows: list[dict], account_id: str | None) -> list[dict]:
     """Re-read non-terminal payouts from Stripe and persist any movement.
 
     This is the "settles lazily on read" pattern STATUS.md §2 requires — there
-    is no scheduler on this deployment, so a standard payout's multi-day
+    is no APPLICATION scheduler on this deployment, so a standard payout's multi-day
     ``in_transit`` -> ``paid`` transition is observed here, when the owner
     opens their wallet, or nowhere.
 
