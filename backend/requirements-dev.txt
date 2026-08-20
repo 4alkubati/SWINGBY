@@ -10,7 +10,7 @@ httpx>=0.24.0
 respx>=0.20.0
 
 # SQL validation (for migration tests)
-sqlparse>=0.5.5
+sqlparse>=0.6.0
 
 # Load testing via k6 (install separately: https://k6.io/docs/getting-started/installation/)
 # k6 is a binary, not a Python package
