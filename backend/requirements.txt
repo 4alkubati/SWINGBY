@@ -26,7 +26,7 @@ email-validator==2.3.0
 notion-client==3.1.0
 httpx==0.28.1
 structlog==26.1.0
-sentry-sdk[fastapi]==2.66.1
+sentry-sdk[fastapi]==2.68.0
 slowapi==0.1.10
 
 # SB-0037: this was `stripe>=10.0,<12`, four majors behind current (15.x), and
