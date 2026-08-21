@@ -831,9 +831,7 @@ class TestItemsAreMarkedPerRow:
 
     _mine = TestReportingLiterals._mine
 
-    def test_a_phantom_released_row_is_marked_unverified(
-        self, test_client, as_client
-    ):
+    def test_a_phantom_released_row_is_marked_unverified(self, test_client, as_client):
         items = [
             {
                 "released_to_business": 4675.50,
