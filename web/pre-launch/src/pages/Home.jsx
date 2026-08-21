@@ -125,7 +125,7 @@ export default function Home() {
           <Link to="/cities/calgary" className={styles.cityCard}>
             <div className={styles.cityInfo}>
               <h3 className={styles.cityName}>Calgary, AB</h3>
-              <p className={styles.cityDesc}>Our launch city. 500+ verified businesses and growing.</p>
+              <p className={styles.cityDesc}>{t('citiesIndex.calgaryDesc')}</p>
             </div>
             <ArrowRight size={20} />
           </Link>
