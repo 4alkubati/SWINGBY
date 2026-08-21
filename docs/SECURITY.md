@@ -1,5 +1,12 @@
 # SwingBy — Security Checklist
 
+> **Showing this to someone outside the team?** Start at
+> [`privacy-and-security/pentest-remediation-2026-08.md`](../privacy-and-security/pentest-remediation-2026-08.md)
+> — the 2026-08 engagement's 10 findings (1 Critical, 5 Medium, 4 Low), each
+> mapped to the file that fixes it and the literal command that proves it, plus
+> the items only Amr can close. This page is the running internal state; that
+> page is the evidence-backed answer.
+
 | Item | Status |
 |---|---|
 | RLS on every public table | ✅ **32/32 enabled**, verified against the live schema 2026-08-19. This row said "all 10 tables" and had been outgrown three times over (SB-0078) — the count is not the point, the coverage is. Re-check with `list_tables` rather than trusting the number here. |

@@ -28,6 +28,11 @@ At the end, compile a summary of all `[!]` items and create action items in your
 - [ ] **All admin accounts (Supabase, Stripe, hosting, GitHub) have MFA enabled** — verify by logging into each console
 - [ ] **JWT expiry is set to ≤ 3600s** — verify in Supabase Auth settings
 - [ ] **Backend API returns 401 (not 403 or 200) on unauthenticated requests to protected routes** — test manually with no token
+- [ ] **Refresh-token rotation and reuse detection are enforced BY US, not assumed from Supabase** (L-04) — the 2026-08 engagement proved Supabase's own reuse interval does not reject a replay: log in, refresh with `R0`, wait 65s, refresh with `R0` again, and it succeeded. Detection is ours. Verify all three:
+  1. `cd backend && pytest tests/test_session_security.py -q` — 23 tests, must pass.
+  2. The spend table exists in the live database, not just in a migration file — `refresh_token_usage` must be queryable on the Supabase project (a filed-but-unapplied migration has bitten this repo before).
+  3. Live replay: log in → refresh with `R0` (rotates) → wait 65s → refresh with `R0` again → **must be rejected**.
+  Policy and retention are documented in `docs/SECURITY.md` § "Refresh-token rotation policy". See also `privacy-and-security/pentest-remediation-2026-08.md`.
 
 ---
 
