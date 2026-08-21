@@ -816,3 +816,63 @@ class TestReportingLiterals:
         body = self._mine(test_client, items)
         assert body["total_pending"] == 40.0
         assert body["unverified_pending"] == 150.0
+
+
+class TestItemsAreMarkedPerRow:
+    """SB-0099 — `items` must say which rows are real, not just the totals.
+
+    The totals on this endpoint already exclude unverified rows. `items` did
+    not, and EarningsScreen re-summed items to get a date-RANGE figure the
+    whole-account totals cannot give it — putting the 24 'fully_released' rows
+    with no PaymentIntent behind them ($4,675.50 nobody ever paid) straight back
+    into the business's headline earnings. Marking each row is what lets a range
+    subtotal use the same rule as the total.
+    """
+
+    _mine = TestReportingLiterals._mine
+
+    def test_a_phantom_released_row_is_marked_unverified(
+        self, test_client, as_client
+    ):
+        items = [
+            {
+                "released_to_business": 4675.50,
+                "escrow_held": 0,
+                "platform_cut": 0,
+                "status": "fully_released",
+                "stripe_payment_intent_id": None,  # nothing ever captured
+            }
+        ]
+        body = self._mine(test_client, items)
+        row = body["items"][0]
+        assert row["was_ever_captured"] is False
+        assert row["is_capture_backed"] is False
+        # The row is still returned — it is real history for the admin trail.
+        assert row["released_to_business"] == 4675.50
+
+    def test_a_real_released_row_is_marked_captured(self, test_client, as_client):
+        items = [
+            {
+                "released_to_business": 90.0,
+                "escrow_held": 0,
+                "platform_cut": 10.0,
+                "status": "fully_released",
+                "stripe_payment_intent_id": "pi_real",
+            }
+        ]
+        body = self._mine(test_client, items)
+        assert body["items"][0]["was_ever_captured"] is True
+
+    def test_an_accept_time_row_is_not_capture_backed(self, test_client, as_client):
+        """A payments row exists from the moment a quote is accepted."""
+        items = [
+            {
+                "released_to_business": 0,
+                "escrow_held": 150.0,
+                "platform_cut": 0,
+                "status": "pending_payment",
+                "stripe_payment_intent_id": None,
+            }
+        ]
+        body = self._mine(test_client, items)
+        assert body["items"][0]["is_capture_backed"] is False

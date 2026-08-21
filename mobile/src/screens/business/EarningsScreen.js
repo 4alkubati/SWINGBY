@@ -39,20 +39,47 @@ function rangeDays(range) {
   }
 }
 
-// Real numbers from the payments table — released money, held escrow, platform cut.
-function aggregateStats(payments) {
+// Statuses that mean "money is held and not yet released" — mirrors
+// escrow.HELD_NOT_RELEASED on the backend. 'pending_payment' is deliberately
+// NOT here: it is an accept-time row for money nobody has been charged yet.
+const HELD_NOT_RELEASED = ['held', 'paid_full', 'partial', 'partial_released'];
+
+// SB-0099 — real numbers from the payments table, PHANTOM ROWS EXCLUDED.
+//
+// This used to sum every row it was handed. GET /payments/mine deliberately
+// keeps unverified rows out of its own totals — 24 production rows read
+// 'fully_released' with no Stripe charge behind them, $4,675.50 of payouts
+// nobody ever paid — and re-summing the raw items put every one of them back
+// into the business's headline earnings.
+//
+// The totals the endpoint returns cover the whole account, and this screen
+// shows a date RANGE, so they cannot simply be displayed. Instead the endpoint
+// now marks each row (`was_ever_captured`, `is_capture_backed`) and the filters
+// below turn on those flags, so a range subtotal uses the same rule as the
+// whole-account total. Rows from an older backend that lack the flags are
+// treated as unverified: understating earnings is recoverable, inventing them
+// is not.
+export function aggregateStats(payments) {
   if (!payments.length) return { total: 0, count: 0, avg: 0, pending: 0, fees: 0 };
-  const total = payments.reduce((s, p) => s + (parseFloat(p.released_to_business) || 0), 0);
-  const count = payments.length;
+
+  const released = payments.filter((p) => p.was_ever_captured === true);
+  const total = released.reduce((s, p) => s + (parseFloat(p.released_to_business) || 0), 0);
+
+  // "Completed Jobs" means completed, not "has a payments row". A row is
+  // created the moment a quote is accepted (interests.py), so counting rows
+  // counted every job still in progress as finished. Escrow reaching
+  // 'fully_released' is what completion/approval actually does to the ledger.
+  const count = released.filter((p) => p.status === 'fully_released').length;
   const avg = count ? total / count : 0;
+
   const pending = payments.reduce(
     (s, p) =>
-      s + (['held', 'partial', 'partial_released'].includes(p.status)
+      s + (HELD_NOT_RELEASED.includes(p.status) && p.is_capture_backed === true
         ? (parseFloat(p.escrow_held) || 0)
         : 0),
     0
   );
-  const fees = payments.reduce((s, p) => s + (parseFloat(p.platform_cut) || 0), 0);
+  const fees = released.reduce((s, p) => s + (parseFloat(p.platform_cut) || 0), 0);
   return { total, count, avg, pending, fees };
 }
 

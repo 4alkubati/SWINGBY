@@ -850,12 +850,47 @@ def _mark_payment_paid(
     # not exist in the repo or in the live migration list. The value is correct;
     # the justification was invented.)
     update["status"] = "held"
-    if payment_intent_id:
-        update["stripe_payment_intent_id"] = payment_intent_id
-    elif stripe_session_id:
-        # No PaymentIntent on the event — fall back to the session id so the
-        # capture is still traceable in a real column (not `notes`).
-        update["stripe_payment_intent_id"] = stripe_session_id
+    # SB-0094 — DO NOT overwrite an id that is already there.
+    #
+    # This write used to be unconditional, which quietly destroyed money. On a
+    # top-up (the branch above: client accepted above budget, so Stripe captured
+    # the delta as a SECOND PaymentIntent) `total_charged` correctly grows to
+    # first + delta, and then this line replaced the FIRST capture's intent id
+    # with the delta's. `stripe_payment_intent_id` is the only Stripe reference
+    # column on `payments` — every other site reads it (escrow.is_capture_backed,
+    # payouts, invoices, analytics_export) and only this function writes it — so
+    # the larger, original charge became unrecoverable from the database.
+    #
+    # What that cost: bookings.py:1586 reads this column and refunds the FULL
+    # client_refund against it. Against a $50 delta intent standing in for a
+    # $200 total, Stripe rejects the call, the except at bookings.py:1596
+    # swallows it, and the log says "LEDGER SAYS REFUNDED, STRIPE DID NOT" while
+    # the client is never actually paid back.
+    #
+    # Keeping the FIRST id is the right way round: it names the larger capture,
+    # and it is the one that existed nowhere else.
+    incoming_ref = payment_intent_id or stripe_session_id
+    existing_ref = payment.get("stripe_payment_intent_id")
+    if incoming_ref and not existing_ref:
+        # First capture on this row — nothing to lose.
+        update["stripe_payment_intent_id"] = incoming_ref
+    elif incoming_ref and incoming_ref != existing_ref:
+        # A second capture against a row that already names one. The column
+        # cannot hold both and there is nowhere else in this schema to put it,
+        # so the id is preserved in the log rather than silently dropped. A
+        # refund spanning both captures still needs the per-capture amounts
+        # this table does not record — filed as its own finding, because a
+        # comment is not a backlog.
+        logger.error(
+            "payments %s (booking %s): SECOND CAPTURE %s recorded on a row "
+            "already bound to %s. Keeping the original id — it names the larger "
+            "charge. The second capture is NOT refundable through this row and "
+            "must be reconciled by hand in Stripe.",
+            payment["id"],
+            booking_id,
+            incoming_ref,
+            existing_ref,
+        )
     # Record HOW the money arrived. Without this the ledger cannot tell an
     # on-platform card capture from a row that was never paid, which is half of
     # what FINDING C's guard has to reason about.
