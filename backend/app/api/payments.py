@@ -134,6 +134,29 @@ def list_my_payments(current_user: dict = Depends(get_current_user)):
     )
     unverified_released_c = total_released_c - verified_released_c
 
+    # SB-0099 — tell the caller which rows are real, per row.
+    #
+    # Everything above walls the phantom rows out of the TOTALS, but `items` went
+    # out as raw ledger rows with no marking, and EarningsScreen re-summed them
+    # itself to get a date-RANGE figure the whole-account totals cannot give it.
+    # Recomputing from raw rows silently re-included the 24 'fully_released' rows
+    # with no PaymentIntent behind them — $4,675.50 of payouts nobody ever paid —
+    # which is the exact number this endpoint exists to keep out of a headline.
+    #
+    # The fix is not to delete the rows (they are real history and the admin
+    # trail needs them) and not to make the client re-implement escrow.py. It is
+    # to answer the question here, once, where the predicates live: each item now
+    # carries the two booleans the aggregation actually turns on. A client that
+    # filters on these gets the same answer the totals above give.
+    items = [
+        {
+            **p,
+            "is_capture_backed": escrow.is_capture_backed(p),
+            "was_ever_captured": escrow.was_ever_captured(p),
+        }
+        for p in items
+    ]
+
     return {
         "items": items,
         "total_released": escrow.to_dollars(total_released_c),

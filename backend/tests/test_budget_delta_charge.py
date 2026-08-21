@@ -199,3 +199,56 @@ class TestRecordingTheTopUp:
         assert update["escrow_held_cents"] == 20000
         # The ordinary path does not rewrite total_charged.
         assert "total_charged_cents" not in update
+
+
+class TestTheFirstCapturesIntentIdSurvivesTheTopUp:
+    """SB-0094 — a top-up must not overwrite the id of the charge before it.
+
+    `payments.stripe_payment_intent_id` is the ONLY Stripe reference column on
+    the row. Everything else reads it (escrow.is_capture_backed, payouts,
+    invoices, analytics_export) and only `_mark_payment_paid` writes it. When
+    that write was unconditional, the delta capture's id replaced the budget
+    capture's, and the larger charge became unrecoverable from the database —
+    after which bookings.py refunded the FULL amount against an intent that had
+    only ever captured the delta, Stripe refused, and the except logged
+    "LEDGER SAYS REFUNDED, STRIPE DID NOT" while the client got nothing back.
+    """
+
+    _run = TestRecordingTheTopUp._run
+
+    def test_the_budget_captures_id_is_not_replaced_by_the_delta(self):
+        update = self._run(_captured_budget(), 5000)
+
+        assert update is not None, "the top-up was rejected as an amount mismatch"
+        # The money half must still be right — this is a guard, not a rollback.
+        assert update["total_charged_cents"] == 20000
+        # ...and the first capture's id must survive it. Either the key is
+        # absent (nothing rewritten) or it still names the original charge.
+        assert update.get("stripe_payment_intent_id", "pi_budget_1") == "pi_budget_1"
+
+    def test_a_first_capture_still_records_its_id(self):
+        """The guard must not stop the id being set the FIRST time."""
+        unpaid = {
+            "id": "pay-1",
+            "booking_id": "bk-1",
+            "status": "pending_payment",
+            "stripe_payment_intent_id": None,
+            "total_charged_cents": 20000,
+            "escrow_held_cents": 0,
+            "released_to_business_cents": 0,
+            "refunded_cents": 0,
+        }
+        update = self._run(unpaid, 20000)
+
+        assert update is not None
+        assert update["stripe_payment_intent_id"] == "pi_2"
+
+    def test_replaying_the_same_capture_is_not_treated_as_a_second_one(self):
+        """Stripe retries webhooks. The same id arriving twice is not a top-up
+        collision and must not log a reconciliation error."""
+        same = _captured_budget()
+        same["stripe_payment_intent_id"] = "pi_2"
+        update = self._run(same, 5000)
+
+        assert update is not None
+        assert update.get("stripe_payment_intent_id", "pi_2") == "pi_2"
