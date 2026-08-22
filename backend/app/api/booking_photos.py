@@ -177,7 +177,18 @@ def list_photos(
         raise HTTPException(status_code=403, detail="Access denied")
 
     try:
-        q = supabase.table("booking_photos").select("*").eq("booking_id", booking_id)
+        # SB-0206 — the soft hide has to be honoured on every read path.
+        # `hidden_at` is set when a moderator hides a reported photo (migration
+        # 20260731090000). The row survives for the admin trail; it must not be
+        # served. Without this filter a hidden proof-of-work photo kept being
+        # returned to both parties, which is the Guideline 1.2 failure the
+        # moderation work exists to prevent.
+        q = (
+            supabase.table("booking_photos")
+            .select("*")
+            .eq("booking_id", booking_id)
+            .is_("hidden_at", "null")
+        )
         if phase:
             q = q.eq("phase", phase)
         res = q.order("created_at", desc=False).limit(limit).execute()

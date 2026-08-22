@@ -80,9 +80,14 @@ def mark_paid_offplatform(
     # Exactly one payments row per booking (accept inserts it; the rest of the
     # codebase reads it with .single()). UPDATE it in place — inserting a second
     # row here was fix B's duplicate-row bug that broke every .single() reader.
+    from app.services import escrow
+
+    # SB-0214 — `method` and `stripe_payment_intent_id` are selected because
+    # escrow.is_capture_backed() reads both. Selecting only id+status is what
+    # made the guard below impossible to write correctly before.
     existing = (
         supabase.table("payments")
-        .select("id, status")
+        .select("id, status, method, stripe_payment_intent_id")
         .eq("booking_id", booking_id)
         .execute()
     )
@@ -90,8 +95,29 @@ def mark_paid_offplatform(
     for row in rows:
         if row.get("status") in ("paid_off_platform", "fully_released", "refunded"):
             raise HTTPException(status_code=400, detail="Booking is already settled")
-
-    from app.services import escrow
+        # SB-0214 — a terminal STATUS is not the only way money can already be
+        # here. A row reading 'held' with a stripe_payment_intent_id behind it
+        # is a real card capture sitting in escrow, and it passed the check
+        # above. Marking it paid off-platform then overwrote the ledger with
+        # escrow_held=0, released_to_business=0, platform_cut=0 and
+        # method='cash' — zeroing a live escrow balance and relabelling a
+        # Stripe charge as cash, while stripe_payment_intent_id stayed on the
+        # row still naming a charge nobody reversed.
+        #
+        # is_capture_backed is exactly the right question here (unlike the
+        # historical readers in SB-0188): "is there real money in escrow RIGHT
+        # NOW". If there is, this endpoint is the wrong tool — the money came
+        # in through Stripe and has to leave through Stripe.
+        if escrow.is_capture_backed(row):
+            raise HTTPException(
+                status_code=409,
+                detail=(
+                    "This booking already has a card payment captured through "
+                    "Stripe. Marking it paid off-platform would erase that "
+                    "escrow balance. Complete or refund it through the normal "
+                    "payment flow instead."
+                ),
+            )
 
     # Integer cents are authoritative (migration 20260723120000).
     total_c = (

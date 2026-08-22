@@ -478,7 +478,28 @@ def get_my_analytics(
                 # $4,675.50 nobody paid. Those legacy rows are NOT counted as
                 # real earnings; they are surfaced separately so the headline
                 # figure is honest instead of inflated by phantom payouts.
-                if escrow.is_capture_backed(p):
+                # SB-0188 — this MUST be was_ever_captured, not is_capture_backed.
+                #
+                # `is_capture_backed` asks "is there real money in escrow RIGHT
+                # NOW", and deliberately excludes 'fully_released' — nothing is
+                # held once escrow is released. But the loop above has already
+                # filtered to `status == 'fully_released'`, so asking that
+                # question here can only ever answer False for an on-platform
+                # card payment. total_earnings was therefore ALWAYS 0.00 and
+                # every genuine payout was reported as unverified — the exact
+                # inversion of what this split is for, and visible to every
+                # owner, because BusinessAnalytics.jsx renders
+                # `analytics?.total_earnings`.
+                #
+                # `was_ever_captured` is the historical question ("did money
+                # ever arrive for this booking"), which is the one a released
+                # row needs. It still rejects a 'fully_released' row with no
+                # PaymentIntent behind it, so FINDING C's phantom payouts stay
+                # in the unverified bucket where they belong.
+                #
+                # payments.list_my_payments hit this identical bug and fixed it
+                # the same way on 2026-08-03 (D5). This call site was missed.
+                if escrow.was_ever_captured(p):
                     total_earnings_c += cents
                 else:
                     unverified_earnings_c += cents
