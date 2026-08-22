@@ -1,0 +1,16 @@
+{
+  "generated": "run `npm run collect` to regenerate",
+  "note": "Each entry binds a capture to a scene in src/timeline.ts. A scene whose file is absent renders its own placeholder, so the reel always composes.",
+  "anchors": [
+    "Client Home",
+    "Active Booking",
+    "Business Dashboard"
+  ],
+  "missingAnchors": [
+    "Client Home",
+    "Active Booking",
+    "Business Dashboard"
+  ],
+  "duplicates": [],
+  "screens": []
+}

@@ -115,6 +115,7 @@ PUBLIC_PREFIXES = (
     "marketing/support/",
     "marketing/campaigns/",
     "marketing/social-assets/",
+    "marketing/video/",
     "web/",
     "mobile/src/",
 )

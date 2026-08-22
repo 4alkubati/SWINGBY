@@ -1,0 +1,20 @@
+# Rendered output is a build artifact — regenerate with `npm run render:reel`.
+# catalog.json describes whatever that machine happens to have rendered, so it
+# is per-machine too. The directory itself is kept so out/ exists on a clone.
+out/*
+!out/.gitkeep
+
+# Captures are NOT committed by default.
+#
+# This repo is PUBLIC, and these are screenshots of a real app carrying seeded
+# demo data — the kind of thing that put a real address into the inbox capture
+# set. They are also regenerable: `npm run collect`. If a curated capture set
+# should ship (marketing/social-assets/ does that), un-ignore it deliberately
+# rather than by accident.
+public/screens/*
+!public/screens/.gitkeep
+
+# src/screens/manifest.json IS committed on purpose: available.ts imports it at
+# build time, and without it the placeholder fallback cannot resolve.
+
+node_modules/
