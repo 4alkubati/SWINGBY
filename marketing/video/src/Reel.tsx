@@ -51,6 +51,7 @@ const BeatView: React.FC<{beat: Beat}> = ({beat}) => {
       return (
         <Scene
           screen={beat.screen}
+          startFrom={beat.startFrom}
           placeholder={beat.placeholder}
           caption={beat.caption}
           camera={beat.camera}

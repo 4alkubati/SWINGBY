@@ -1,0 +1,35 @@
+# Usage:
+#   docker compose up studio      -> the motion editor on :3000
+#   docker compose run --rm render  -> render reel-9x16 into out/
+#
+# src, public and out are bind-mounted so edits on the host show up live and
+# rendered files land on the host. node_modules deliberately stays inside the
+# image — mounting the whole project over it would shadow the install.
+services:
+  studio:
+    build: .
+    image: swingbyy-video:latest
+    ports:
+      # 0.0.0.0 on purpose: this is what lets the phone open the timeline over
+      # Tailscale. On an untrusted network, bind 127.0.0.1:3000 instead.
+      - "3000:3000"
+    volumes:
+      - ./src:/app/src
+      - ./public:/app/public
+      - ./out:/app/out
+    stdin_open: true
+    tty: true
+
+  render:
+    build: .
+    image: swingbyy-video:latest
+    volumes:
+      - ./src:/app/src
+      - ./public:/app/public
+      - ./out:/app/out
+    # Chromium needs more than the default 64MB of shared memory or it crashes
+    # part-way through a render with no useful message.
+    shm_size: "1gb"
+    command: >
+      npx remotion render reel-9x16
+      out/cinematic-glide__9x16__waitlist.mp4 --concurrency=50%

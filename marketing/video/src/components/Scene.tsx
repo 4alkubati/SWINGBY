@@ -25,6 +25,7 @@ export const MAX_BEAT = 210; // 7s at 30fps
 
 export type SceneProps = {
   screen?: string;
+  startFrom?: number;
   placeholder: string;
   caption?: CaptionData;
   camera?: CameraSpec;
@@ -35,6 +36,7 @@ export type SceneProps = {
 
 export const Scene: React.FC<SceneProps> = ({
   screen,
+  startFrom,
   placeholder,
   caption,
   camera = {preset: 'still'},
@@ -60,6 +62,7 @@ export const Scene: React.FC<SceneProps> = ({
   const stage = (
     <PhoneFrame
       screen={screen}
+      startFrom={startFrom}
       placeholder={placeholder}
       camera={resolveCamera(camera, frame, durationInFrames)}
       height={phoneHeight}

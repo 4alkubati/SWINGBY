@@ -1,5 +1,5 @@
 import React from 'react';
-import {AbsoluteFill, Img, staticFile} from 'remotion';
+import {AbsoluteFill, Img, OffthreadVideo, staticFile} from 'remotion';
 import {color, radius, font} from '../theme';
 import {toTransform, type Camera, STILL} from '../camera';
 import {hasScreen} from '../screens/available';
@@ -23,9 +23,19 @@ import {hasScreen} from '../screens/available';
  * The seam is deliberate: everything above the Camera type stays identical.
  */
 
+/** iOS Screen Recording lands as .MOV; everything else we shoot is .mp4. */
+const VIDEO_RE = /\.(mp4|mov|m4v|webm)$/i;
+
 export type PhoneFrameProps = {
-  /** Path under public/screens, e.g. "client-home.png". Omit for the placeholder. */
+  /**
+   * Path under public/screens. A still (.png/.jpg) or a screen RECORDING
+   * (.mov/.mp4) — recordings are what make the phone actually move, and iOS
+   * Screen Recording is the only way to capture the real app from an iPhone on
+   * Windows (see scripts/pull-iphone.ps1). Omit for the placeholder.
+   */
   screen?: string;
+  /** Seconds into a recording to start. A recording always opens with a fumble. */
+  startFrom?: number;
   /** Label drawn on the placeholder when `screen` is missing. */
   placeholder: string;
   camera?: Camera;
@@ -39,11 +49,13 @@ const BEZEL = 18;
 
 export const PhoneFrame: React.FC<PhoneFrameProps> = ({
   screen,
+  startFrom = 0,
   placeholder,
   camera = STILL,
   height = 1450,
   opacity = 1,
 }) => {
+  const isVideo = VIDEO_RE.test(screen ?? '');
   // iPhone-ish 19.5:9 aspect. The screen inside the bezel keeps the app's own
   // 20px card radius scaled up, so the device reads as the product, not a stock mock.
   const width = Math.round((height * 9) / 19.5);
@@ -77,10 +89,23 @@ export const PhoneFrame: React.FC<PhoneFrameProps> = ({
           {/* hasScreen(), not `screen`: a filename that has not been captured yet
               would otherwise render a 404 as a black screen — see screens/available.ts. */}
           {hasScreen(screen) ? (
-            <Img
-              src={staticFile(`screens/${screen}`)}
-              style={{width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top'}}
-            />
+            isVideo ? (
+              // OffthreadVideo, not <Video>: it pulls exact frames through ffmpeg
+              // instead of relying on a <video> element seeking correctly, which
+              // is the difference between a deterministic render and one that
+              // drops or repeats frames under load.
+              <OffthreadVideo
+                src={staticFile(`screens/${screen}`)}
+                startFrom={Math.round(startFrom * 30)}
+                muted
+                style={{width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top'}}
+              />
+            ) : (
+              <Img
+                src={staticFile(`screens/${screen}`)}
+                style={{width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top'}}
+              />
+            )
           ) : (
             <ScreenPlaceholder label={placeholder} />
           )}

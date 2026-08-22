@@ -1,0 +1,8 @@
+node_modules
+out
+ingest
+public/screens/*
+!public/screens/.gitkeep
+.git
+*.tgz
+*.bundle

@@ -18,3 +18,8 @@ public/screens/*
 # build time, and without it the placeholder fallback cannot resolve.
 
 node_modules/
+
+# Pulled off the phone by scripts/pull-iphone.ps1. Raw camera-roll media -
+# personal by default, and this repo is PUBLIC. Nothing here is ever committed;
+# move a vetted capture into public/screens/ deliberately.
+ingest/

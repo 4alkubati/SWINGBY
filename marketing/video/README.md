@@ -100,6 +100,67 @@ before a single real capture exists.
 
 ---
 
+## Real app footage from the iPhone
+
+**Live screen mirroring from Windows does not exist.** No QuickTime (Mac only),
+no `libimobiledevice` Developer Disk Image mount, no iOS equivalent of `scrcpy`.
+Verified on this laptop 2026-08-21. So the phone is not a live source.
+
+What does work, and is the supported path:
+
+1. On the iPhone, record the app with **iOS Screen Recording** (Control Centre).
+2. Plug the phone into the laptop and unlock it.
+3. Pull the file:
+
+```powershell
+powershell -File scripts/pull-iphone.ps1 -List
+powershell -File scripts/pull-iphone.ps1 -Name IMG_1234.MOV -Dest .\ingest
+```
+
+4. Move it to `public/screens/`, run `npm run collect`, and point a beat at it:
+
+```ts
+{...BEAT.confirm(), screen: 'active-booking.mov', startFrom: 2.5}
+```
+
+`PhoneFrame` renders `.mov`/`.mp4` through `<OffthreadVideo>` and stills through
+`<Img>` — same prop, detected by extension. `startFrom` is in seconds and exists
+because a screen recording always opens with a fumble for the record button.
+
+iOS exposes the camera roll over MTP, not as a drive letter, which is why the
+puller uses `Shell.Application.CopyHere` and then waits for the file to settle
+rather than trusting the call to be synchronous.
+
+**Shoot as the demo account** (`nadia-whitfield@demo.swingbyy.com`), not your
+own. A personal capture carries real booking names, and the status bar carries
+your battery and notifications.
+
+---
+
+## Docker
+
+```bash
+docker compose up studio          # motion editor on :3000
+docker compose run --rm render    # render reel-9x16 into out/
+```
+
+`src/`, `public/` and `out/` are bind-mounted, so edits on the host appear live
+and rendered files land on the host. `node_modules` stays inside the image.
+
+**Studio already binds every interface** — it prints a `Network:` URL on start.
+With the laptop on Tailscale you can open the timeline from your phone's browser
+at `http://<tailscale-ip>:3000` and retime scenes there. On an untrusted network,
+change the port mapping to `127.0.0.1:3000:3000`.
+
+Remotion cannot run *on* an Android phone: rendering needs a headless Chromium
+and there is no dependable one for Termux. The phone is the screen, the laptop
+is the engine.
+
+On Windows the Docker Desktop engine must be started from the desktop session
+first — it cannot be brought up over SSH.
+
+---
+
 ## Rendering
 
 ```bash

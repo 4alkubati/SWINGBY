@@ -122,7 +122,7 @@ async function indexAndDedupe() {
   await mkdir(dirname(MANIFEST), {recursive: true});
 
   const files = (await readdir(SCREENS)).filter((f) =>
-    ['.png', '.jpg', '.jpeg', '.webp'].includes(extname(f).toLowerCase()),
+    ['.png', '.jpg', '.jpeg', '.webp', '.mp4', '.mov', '.m4v'].includes(extname(f).toLowerCase()),
   );
 
   const byHash = new Map();

@@ -23,8 +23,10 @@ export type Beat =
       kind: 'scene';
       id: string;
       durationInFrames: number;
-      /** Filename under public/screens. Omit to use the scene's placeholder. */
+      /** Filename under public/screens — a still, or a .mov/.mp4 screen recording. */
       screen?: string;
+      /** Seconds into a recording to start. Ignored for stills. */
+      startFrom?: number;
       placeholder: string;
       caption?: CaptionData;
       camera?: CameraSpec;
