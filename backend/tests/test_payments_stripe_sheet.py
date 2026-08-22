@@ -71,7 +71,7 @@ SHEET_PAYLOAD = {
     "publishable_key": "pk_test_abc",
     "amount_cents": 20000,
     "currency": "cad",
-    "merchant_display_name": "Swingbyy",
+    "merchant_display_name": "SwingByy",
 }
 
 
@@ -192,8 +192,8 @@ class TestPaymentIntentHappyPath:
         assert body["ephemeral_key"] == "ek_test_abc"
         assert body["customer_id"] == "cus_test_abc"
         assert body["publishable_key"] == "pk_test_abc"
-        # Branding: the native sheet must say Swingbyy, not "Stripe".
-        assert body["merchant_display_name"] == "Swingbyy"
+        # Branding: the native sheet must say SwingByy, not "Stripe".
+        assert body["merchant_display_name"] == "SwingByy"
         assert body["currency"] == "cad"
 
     def test_charges_the_booking_total_in_cents(
@@ -592,3 +592,44 @@ class TestCreatePaymentSheet:
 
         assert cid == "cus_saved"
         fake_stripe.Customer.create.assert_not_called()
+
+
+class TestTheMerchantNameIsTheRealWordmark:
+    """SB-0191, second occurrence — the guard the lint could not be.
+
+    `MERCHANT_DISPLAY_NAME` is sent to the client as `merchant_display_name` and
+    is what the NATIVE STRIPE SHEET renders at the top of the screen while a
+    person is deciding to pay. It is the highest-trust string in the app.
+
+    It was invisible to every check we had. `claim_lint` did not scan `.py` at
+    all, and the ledger recorded SB-0191 as fixed FROM the dead one-y "SwingBy"
+    — it landed on the banned lowercase-b "Swingbyy" instead, so the rename was
+    marked done while the wrong mark went on rendering at checkout.
+
+    Marking the module public in claim_lint was tried and rejected: those rules
+    read whole lines, so they fire on the file's Apple Pay and history comments,
+    which are prose about the code rather than copy. This test asserts the one
+    value a user actually sees.
+    """
+
+    def test_it_is_the_capital_b_two_y_wordmark(self):
+        from app.services.stripe_payment_sheet import MERCHANT_DISPLAY_NAME
+
+        assert MERCHANT_DISPLAY_NAME == "SwingByy"
+
+    def test_it_is_neither_retired_spelling(self):
+        """Named separately so a failure says WHICH wrong mark came back."""
+        from app.services.stripe_payment_sheet import MERCHANT_DISPLAY_NAME
+
+        assert MERCHANT_DISPLAY_NAME != "Swingbyy", "banned lowercase-b is back"
+        assert MERCHANT_DISPLAY_NAME != "SwingBy", "the dead one-y name is back"
+
+    def test_the_sheet_and_the_setup_intent_both_send_it(self):
+        """Two call sites. A fix that reached only one would be invisible on
+        whichever flow the person happened to use."""
+        from pathlib import Path
+
+        from app.services import stripe_payment_sheet
+
+        src = Path(stripe_payment_sheet.__file__).read_text(encoding="utf-8")
+        assert src.count('"merchant_display_name": MERCHANT_DISPLAY_NAME') == 2

@@ -207,7 +207,7 @@ export function isConnectionError(error) {
 }
 
 export const CONNECTION_ERROR_MESSAGE =
-  "Couldn't reach SwingBy. Check your connection and try again.";
+  "Couldn't reach SwingByy. Check your connection and try again.";
 
 export function extractMessage(error) {
   if (!error) return 'Something went wrong';
