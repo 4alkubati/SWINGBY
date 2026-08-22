@@ -15,6 +15,7 @@ Covers the four things the 2026-07-23 money-path investigation found:
 Nothing here talks to Stripe or a real database.
 """
 
+import pathlib
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -269,13 +270,63 @@ class TestChargeAtPostTrigger:
         assert res["triggered"] is False
         assert res["reason"] == "charge_at_post_disabled"
 
-    def test_even_when_enabled_it_cannot_capture_without_card_on_file(
-        self, monkeypatch
-    ):
+    def test_enabled_but_this_client_has_no_saved_card(self, monkeypatch):
+        """Was `no_card_on_file_mechanism` — a claim about the REPO.
+
+        That reason was hard-coded and therefore could not stop being true when
+        card-on-file shipped (DEC-4, PR #83). It is now a per-client lookup, so
+        the answer changes the moment this client saves a card.
+        """
         monkeypatch.setenv("CHARGE_AT_POST", "1")
-        with patch.object(payment_triggers, "supabase", MagicMock()):
+        with patch.object(payment_triggers, "saved_card_id", return_value=None):
             res = payment_triggers.trigger_on_post(
                 post={"id": "p1", "budget": 100.0}, client={"id": "c1"}
             )
         assert res["triggered"] is False
-        assert res["reason"] == "no_card_on_file_mechanism"
+        assert res["reason"] == "no_card_on_file"
+        assert res["amount_cents"] == 10000
+
+    def test_enabled_with_a_saved_card_names_OUR_gap_not_a_missing_platform(
+        self, monkeypatch
+    ):
+        """The whole point of the rewrite.
+
+        When the client CAN be charged, refusing is a gap in our
+        implementation. The old code reported that as missing infrastructure,
+        which is how a paid-off debt went on blocking a built pipeline for a
+        month.
+        """
+        monkeypatch.setenv("CHARGE_AT_POST", "1")
+        with patch.object(payment_triggers, "saved_card_id", return_value="pm_123"):
+            res = payment_triggers.trigger_on_post(
+                post={"id": "p1", "budget": 100.0}, client={"id": "c1"}
+            )
+        assert res["triggered"] is False
+        assert res["reason"] == "capture_not_implemented"
+
+    def test_the_retired_claims_never_come_back(self):
+        """THE GUARD THIS MODULE DID NOT HAVE.
+
+        Two statements were asserted in code as permanent facts, both stopped
+        being true, and nothing failed. A comment cannot fail a build; this can.
+
+        If off-session capture is implemented, delete the third assertion —
+        deliberately, in the same commit that makes it false.
+        """
+        src = pathlib.Path(payment_triggers.__file__).read_text(encoding="utf-8")
+        assert (
+            "no_card_on_file_mechanism" not in src
+        ), "the reason that asserted card-on-file does not exist is back"
+        assert "does not exist in this repo" not in src, (
+            "payment_triggers again claims infrastructure is missing; "
+            "card-on-file shipped in PR #83 and payments.post_id in migration "
+            "20260727000000"
+        )
+        # Reality checks: if either of these fails, the claim above became true
+        # again and the docstring needs revisiting, not silencing.
+        from app.api import payments_stripe
+
+        assert hasattr(payments_stripe, "create_setup_intent")
+        assert (
+            "capture_not_implemented" in src
+        ), "the honest remaining gap must stay named until capture lands"

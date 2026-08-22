@@ -94,8 +94,8 @@ export default function ReferralScreen() {
     if (!referralCode) return;
     try {
       await Share.share({
-        message: `Join me on Swingbyy! Code: ${referralCode} — https://swingbyy.com`,
-        title: 'Swingbyy Referral',
+        message: `Join me on SwingByy! Code: ${referralCode} — https://swingbyy.com`,
+        title: 'SwingByy Referral',
       });
     } catch { /* user cancelled */ }
   }
@@ -154,7 +154,7 @@ export default function ReferralScreen() {
             variant="display3"
             style={{ textAlign: 'center', lineHeight: 32 }}
           >
-            Share Swingbyy, get $10 credit
+            Share SwingByy, get $10 credit
           </Text>
 
           <Text

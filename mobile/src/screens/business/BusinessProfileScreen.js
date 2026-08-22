@@ -1287,11 +1287,11 @@ export default function BusinessProfileScreen({ navigation, route }) {
           )}
 
           {/* ── Reviews section ──
-              "Swingbyy reviews" rather than the old bare "Reviews": once a
+              "SwingByy reviews" rather than the old bare "Reviews": once a
               second, differently-earned kind of review can appear on this page,
               an unqualified heading is the ambiguity. These are the ones left
-              on jobs booked and completed through Swingbyy. */}
-          <SectionHeader title="Swingbyy reviews" style={styles.sectionHeader} />
+              on jobs booked and completed through SwingByy. */}
+          <SectionHeader title="SwingByy reviews" style={styles.sectionHeader} />
           {reviews.length === 0 ? (
             <View style={styles.hPad}>
               <NoReviews />
