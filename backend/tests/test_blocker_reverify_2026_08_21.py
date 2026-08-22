@@ -5,6 +5,7 @@ been fixed on main and the sentinel was reading a stale tree. These four were
 real. Each test below pins the specific mechanism, not a paraphrase of it.
 """
 
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -13,6 +14,15 @@ from app.api import subscriptions
 from app.services import escrow
 
 from .conftest import SupabaseTableStub
+
+# Resolved from THIS FILE, not the cwd: CI runs `pytest backend/tests` from the
+# repo root while a local run is usually from backend/, and a cwd-relative open()
+# passes in one and raises FileNotFoundError in the other.
+BACKEND = Path(__file__).resolve().parents[1]
+
+
+def _src(rel: str) -> str:
+    return (BACKEND / rel).read_text(encoding="utf-8")
 
 # ── SB-0188 — verified earnings could never be non-zero ──────────────────────
 
@@ -53,7 +63,7 @@ class TestReleasedEarningsAreCountedAsReal:
     def test_both_readers_use_the_historical_predicate(self, path):
         """The defect was choosing the wrong predicate, so the predicate choice
         is what has to be pinned."""
-        src = open(path, encoding="utf-8").read()
+        src = _src(path)
         assert "was_ever_captured" in src, f"{path} lost the SB-0188 fix"
 
 
@@ -84,7 +94,7 @@ class TestHiddenPhotosAreNotServed:
     def test_the_list_route_filters_hidden_photos(self):
         """Asserted at the source, because the route body is wrapped in auth
         and a party check that would dominate the test."""
-        src = open("app/api/booking_photos.py", encoding="utf-8").read()
+        src = _src("app/api/booking_photos.py")
         assert '.is_("hidden_at", "null")' in src
 
 
@@ -154,7 +164,7 @@ class TestOffPlatformCannotOverwriteACapture:
         assert escrow.is_capture_backed(row) is False
 
     def test_the_endpoint_guards_on_it_and_selects_what_it_needs(self):
-        src = open("app/api/payments_offplatform.py", encoding="utf-8").read()
+        src = _src("app/api/payments_offplatform.py")
         assert "escrow.is_capture_backed(row)" in src, "SB-0214 guard is gone"
         # The guard is unwritable without these columns — selecting only
         # id+status is what made the bug possible in the first place.
