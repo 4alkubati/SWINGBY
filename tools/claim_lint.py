@@ -93,7 +93,14 @@ REPO = Path(__file__).resolve().parent.parent
 
 DEFAULT_ROOTS = ["marketing", "web", "mobile/src", "docs"]
 
-SCAN_SUFFIXES = {".md", ".txt", ".html", ".js", ".jsx", ".ts", ".tsx", ".json"}
+SCAN_SUFFIXES = {
+    ".md", ".txt", ".html", ".js", ".jsx", ".ts", ".tsx", ".json",
+    # .py added 2026-08-22. Without it the backend was invisible to this tool,
+    # which is how MERCHANT_DISPLAY_NAME — the string the NATIVE STRIPE SHEET
+    # renders at checkout — sat on the banned lowercase-b spelling through
+    # every green run. Scanning .py alone is not enough; see PUBLIC_PREFIXES.
+    ".py",
+}
 
 # Files that are allowed to contain every banned string, because documenting
 # them is their job.
@@ -119,6 +126,24 @@ PUBLIC_PREFIXES = (
     "web/",
     "mobile/src/",
 )
+
+# NOT LISTED ABOVE, deliberately: backend/app/services/stripe_payment_sheet.py.
+#
+# It holds MERCHANT_DISPLAY_NAME, which the native Stripe sheet renders at
+# checkout — genuinely public copy, and it sat on the banned lowercase-b
+# spelling through every green run because .py was not scanned at all.
+#
+# Marking the FILE public was tried and is the wrong instrument: these rules
+# read whole lines, so they fire on implementation comments too. That file
+# discusses Apple Pay and the old one-y name in its docstrings, and every one
+# of those is prose about the code, not copy shown to a person. A rule that
+# cries wolf on comments is one people learn to skip.
+#
+# The guard for that constant is a TEST instead —
+# tests/test_payments_stripe_sheet.py::TestTheMerchantNameIsTheRealWordmark —
+# which asserts the value a user actually sees and ignores everything around
+# it. `.py` stays in SCAN_SUFFIXES so `claim_lint backend/...` can still be
+# pointed at the backend by hand.
 
 SUPPRESS = re.compile(r"<!--\s*lint-ok\s*-->")
 

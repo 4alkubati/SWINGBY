@@ -40,12 +40,17 @@ from app.supabase_client import supabase
 logger = logging.getLogger(__name__)
 
 # The name shown at the top of the native sheet. Branding, per
-# design/handoff-jet-pulse/PAYMENTS.md — the sheet must read as Swingbyy, not
+# design/handoff-jet-pulse/PAYMENTS.md — the sheet must read as SwingByy, not
 # as "some Stripe page". F100: the mobile-copy rename (#108) swept every
 # user-facing string under mobile/ but was scoped there deliberately and never
 # reached this backend constant, which a client reads on screen at checkout
 # the same as any renamed mobile string.
-MERCHANT_DISPLAY_NAME = "Swingbyy"
+# SB-0191, second occurrence. The ledger records this being fixed FROM the dead
+# one-y "SwingBy" — and it landed on the banned lowercase-b instead, so the
+# rename was recorded as done while the wrong mark went on rendering. FACTS §0:
+# the B is capital. This is the highest-trust string in the app: it is what the
+# NATIVE Stripe sheet shows the client at the moment they pay.
+MERCHANT_DISPLAY_NAME = "SwingByy"
 
 # Apple Pay's merchant id, served to the device rather than baked into the app.
 #
