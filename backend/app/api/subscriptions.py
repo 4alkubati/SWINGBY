@@ -37,15 +37,33 @@ def _get_owner_business(owner_id: str) -> dict:
     return res.data
 
 
-def _resolve_tier_and_price(business_id: str) -> tuple[str, str | None]:
-    """Auto-derive tier from employees count."""
-    emp_res = (
+def _resolve_tier_and_price(
+    business_id: str, owner_user_id: str | None = None
+) -> tuple[str, str | None]:
+    """Auto-derive tier from STAFF count — the owner does not count as staff.
+
+    SB-0223. This used to count every active `employees` row, which sounds
+    right and is not: `bookings._ensure_owner_employee` inserts the OWNER'S OWN
+    row (role_title 'Owner', is_active True) the first time a solo operator is
+    assigned to a job — that is the solo-owner auto-assign path, and it is the
+    normal way a one-person business completes work. So the first job they
+    assign themselves took the count from 0 to 1 and moved them to team pricing
+    permanently. `solo` was unreachable for anyone who had ever done a job,
+    which is every business that matters.
+
+    Excluding by `user_id == owner_id` rather than by `role_title`: role_title
+    is display text an owner can edit, so matching on it would silently break
+    the moment someone renamed themselves.
+    """
+    q = (
         supabase.table("employees")
         .select("id", count="exact")
         .eq("business_id", business_id)
         .eq("is_active", True)
-        .execute()
     )
+    if owner_user_id:
+        q = q.neq("user_id", owner_user_id)
+    emp_res = q.execute()
     count = emp_res.count or 0
     if count == 0:
         return "solo", os.getenv("STRIPE_PRICE_SOLO")
@@ -60,7 +78,7 @@ def subscribe(current_user: dict = Depends(get_current_user)):
         )
 
     business = _get_owner_business(current_user["id"])
-    tier, price_id = _resolve_tier_and_price(business["id"])
+    tier, price_id = _resolve_tier_and_price(business["id"], business.get("owner_id"))
 
     # D13 — a misconfigured price id degrades to the beta posture instead of 500ing.
     #

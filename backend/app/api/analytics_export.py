@@ -19,8 +19,10 @@ now DB-enforced:
 so ``refunded_cents`` is exported on every row and folded out of the
 headline revenue figure, which mirrors ``GET /businesses/me/analytics``
 exactly: ``total_revenue`` = sum of ``released_to_business`` across rows that
-are BOTH ``status == 'fully_released'`` AND capture-backed
-(``escrow.is_capture_backed``) — the same split that screen calls
+are BOTH ``status == 'fully_released'`` AND backed by a real capture
+(``escrow.was_ever_captured`` — the HISTORICAL question; ``is_capture_backed``
+excludes ``fully_released`` and made this total always zero, SB-0188) — the
+same split that screen calls
 ``total_earnings`` / ``unverified_earnings`` (FINDING C, money audit
 2026-07-23). An export that used ``total_charged`` as "revenue" would
 overstate it by the refunded and still-escrowed portions; an export that
@@ -227,7 +229,15 @@ def _load_rows(biz_id: str, date_from: datetime, date_to: datetime) -> list[dict
         cut_c = escrow.money_cents(p, "platform_cut")
         released_c = escrow.money_cents(p, "released_to_business")
         held_c = escrow.money_cents(p, "escrow_held")
-        verified = escrow.is_capture_backed(p)
+        # SB-0188 — was_ever_captured, NOT is_capture_backed.
+        #
+        # `is_capture_backed` means "money is in escrow right now" and excludes
+        # 'fully_released' by design. total_revenue_c below counts only rows
+        # that are BOTH fully_released AND verified, so with the narrow
+        # predicate that intersection is empty and the export reported $0.00
+        # revenue for every genuinely paid, completed booking. The historical
+        # question is the right one here — this is an export of what happened.
+        verified = escrow.was_ever_captured(p)
 
         rows.append(
             {

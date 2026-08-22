@@ -204,10 +204,14 @@ def _upsert_proof(booking_id: str, patch: dict) -> dict:
 
 
 def _photos(booking_id: str) -> list[dict]:
+    # SB-0206 — same soft-hide filter as booking_photos.py's list route. This
+    # is the second read path over the same table and it was missed; a photo a
+    # moderator had hidden still came back in the proof payload.
     res = (
         supabase.table("booking_photos")
         .select("*")
         .eq("booking_id", booking_id)
+        .is_("hidden_at", "null")
         .order("created_at", desc=False)
         .execute()
     )
