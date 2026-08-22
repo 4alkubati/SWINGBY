@@ -8,6 +8,7 @@ from app.privacy import mask_service_post_row
 from app.supabase_client import supabase
 from app.services.push import send_push_to_user
 from app.services.visibility import blocked_pair_ids
+from app.services import staffing
 
 logger = logging.getLogger(__name__)
 
@@ -324,7 +325,9 @@ def accept_interest(interest_id: str, current_user: dict = Depends(get_current_u
     # 'trialing'), so this only rejects businesses actively past_due / canceled.
     biz_sub = (
         supabase.table("businesses")
-        .select("subscription_status")
+        # owner_id rides along for the solo-owner auto-assign below — same row,
+        # same round trip.
+        .select("subscription_status, owner_id")
         .eq("id", interest["business_id"])
         .single()
         .execute()
@@ -378,6 +381,18 @@ def accept_interest(interest_id: str, current_user: dict = Depends(get_current_u
             # escrow figure here, so every unpaid booking read as fully funded.
             "status": "confirmed",
             "payment_status": "pending_payment",
+            # A one-person business has nobody to assign but the owner, and no
+            # assign screen to do it on. Leaving employee_id NULL until
+            # /complete back-fills it meant that for the entire life of the job
+            # — live tracking, the job screens, the assignee list — the booking
+            # described work nobody was doing. Assign it now; see
+            # services/staffing.solo_owner_assignee_id for why None is returned
+            # (and the field left NULL) whenever the answer is not certain.
+            "employee_id": staffing.solo_owner_assignee_id(
+                interest["business_id"],
+                (biz_sub.data or {}).get("owner_id"),
+                supabase,
+            ),
         }
         if preferred_date:
             # Time was already given at posting — skip the propose/accept
