@@ -22,17 +22,39 @@ against. :func:`trigger_on_accept` creates the Stripe Checkout Session as part
 of the accept response, so the client is handed a payment URL automatically
 instead of being offered a button they may ignore.
 
-**POST is structurally in place but cannot capture money yet, and this module
-does not pretend otherwise.** At post time there is no business, no agreed
-price (only a client-stated ``budget``), and no ``bookings`` row — and
-``payments.booking_id`` is NOT NULL, so there is nowhere to record a charge.
-Capturing at post requires card-on-file: a Stripe SetupIntent at post that
-saves a payment method, then an off-session PaymentIntent at accept. That
-infrastructure does not exist in this repo (it was attempted in PR #23, which
-never landed). :func:`trigger_on_post` therefore runs the *enforceable* half —
-it records the intent to charge and reports whether the client can actually be
-charged — and is gated OFF by default until card-on-file exists. See
-``CHARGE_AT_POST_ENABLED``.
+**POST does not capture money, and the reason is now a RUNTIME FACT rather
+than a belief.** This distinction is the whole point of the 2026-08-22 rewrite
+and is worth stating plainly, because the previous version of this docstring
+was wrong for roughly a month.
+
+It used to claim that capturing at post requires card-on-file which the repo
+lacked, and that ``payments.booking_id`` is NOT NULL so there is nowhere to
+record a charge. **Both statements are false today** (they are paraphrased
+rather than quoted here on purpose — ``test_the_retired_claims_never_come_back``
+greps this file for the original wording):
+
+* Card-on-file landed (DEC-4, PR #83). ``POST /payments/stripe/setup-intent``,
+  ``GET /payments/stripe/payment-methods``, ``users.default_payment_method_id``
+  and ``mobile/src/services/cards.js`` are all live, with a reachable screen at
+  ``PaymentMethodScreen.js``.
+* Migration ``20260727000000_charge_at_post.sql`` ran
+  ``alter column booking_id drop not null`` and added ``payments.post_id`` with
+  an index. It is applied — ``post_id`` is queryable on the live project.
+
+Nothing re-evaluated the refusal when its preconditions were satisfied, because
+the refusal was a comment and a ``return`` rather than a check. So an entire
+built, tested and live downstream — ``refunds.load_post_payment``,
+``budget_settlement.settle_on_accept``, ``expiry_sweep.sweep_once``,
+``payments.post_id`` — sat with its only producer switched off by a stale
+belief, and the user-facing Terms went on describing a charge the backend
+structurally refused to make.
+
+:func:`trigger_on_post` now *looks*: it asks whether this client actually has a
+saved card and reports what it finds. The remaining gap is honest and narrow —
+**no off-session capture call is implemented yet** — and it is reported as
+``capture_not_implemented`` at runtime instead of being asserted as missing
+infrastructure. See :func:`charge_at_post_enabled` for why the flag is still
+off by default.
 
 The other half of charge-before-service
 ---------------------------------------
@@ -69,11 +91,44 @@ def charge_at_accept_enabled() -> bool:
 def charge_at_post_enabled() -> bool:
     """Trigger 1 — charge when the client posts a job. OFF by default.
 
-    Stays off until card-on-file (SetupIntent at post → off-session
-    PaymentIntent at accept) exists. See the module docstring; turning this on
-    without card-on-file cannot capture money, it can only block posting.
+    It is off for THREE reasons, and only the third is still technical:
+
+    1. **Product/legal.** Charging before a price is agreed — against a
+       client-stated budget, with no business matched — is a decision for the
+       product owner, not a default. It also has to match the Terms.
+    2. **The refund safety net is scheduler-shaped.** The live pg_cron job
+       ``expire-service-posts`` only flips ``status``; it moves no money.
+       ``expiry_sweep`` does refund, but it runs lazily on read. While nothing
+       is charged at post, ``escrow_held`` is always 0 and that is harmless.
+       The day this flag goes on, a client's money would sit against an expired
+       post until somebody happened to open a screen. **Close that first.**
+    3. **No off-session capture is implemented.** :func:`trigger_on_post` now
+       verifies the card at runtime, but nothing calls
+       ``stripe.PaymentIntent.create(confirm=True, off_session=True)`` yet.
+
+    What is NO LONGER a reason: "card-on-file does not exist" and
+    "payments.booking_id is NOT NULL". Both were true once and neither is now —
+    see the module docstring. Do not re-add them here.
     """
     return _flag("CHARGE_AT_POST", "0")
+
+
+def saved_card_id(user_id: str) -> Optional[str]:
+    """The client's default saved card, or None. A QUESTION, not an assumption.
+
+    This function exists so that "can we charge this client off-session?" is
+    answered by looking, every time. The bug it replaces was a hard-coded
+    ``return triggered=False`` that could not notice card-on-file shipping.
+    """
+    if not user_id:
+        return None
+    try:
+        from app.services import stripe_payment_sheet
+
+        return stripe_payment_sheet._default_payment_method_id(user_id)
+    except Exception:
+        logger.warning("saved-card lookup failed for user %s", user_id, exc_info=True)
+        return None
 
 
 class ChargeTriggerResult(dict):
@@ -248,53 +303,82 @@ def trigger_on_accept(
 def trigger_on_post(*, post: dict, client: dict) -> ChargeTriggerResult:
     """TRIGGER 1 — charge the client the moment they post a job.
 
-    **Not capable of capturing money in the current schema, and says so.**
+    **Still does not capture money — but it now finds that out by looking.**
 
-    At post time:
-      * no business has been matched, so no price is agreed — only the client's
-        own ``budget``;
-      * there is no ``bookings`` row, and ``payments.booking_id`` is NOT NULL,
-        so a charge has nowhere to be recorded;
-      * the client has no saved payment method, so nothing can be charged
-        off-session.
+    The previous version returned ``triggered=False`` unconditionally, with a
+    ``detail`` asserting that card-on-file and a nullable ``payments.booking_id``
+    did not exist. Both had shipped. Because the refusal was hard-coded rather
+    than checked, ``CHARGE_AT_POST=1`` was a phantom switch: turning it on
+    changed nothing except emitting a warning, and no test could fail when the
+    stated blockers were removed.
 
-    Closing this properly needs card-on-file: a Stripe SetupIntent at post that
-    saves the client's card, then an off-session PaymentIntent at accept. Until
-    that exists, this returns ``triggered=False`` with the reason, so the caller
-    (and anyone reading the response) sees an honest "not charged" rather than a
-    silent no-op that looks like success.
+    Every ``reason`` below is now a fact established at call time:
+
+    ``charge_at_post_disabled``   the flag is off (the default; see
+                                  :func:`charge_at_post_enabled`)
+    ``no_card_on_file``           this client has no saved payment method —
+                                  a real per-client answer, not a claim about
+                                  the repo
+    ``capture_not_implemented``   the client CAN be charged and we are not yet
+                                  doing it. This is the honest remaining gap,
+                                  and it is loud on purpose.
     """
     if not charge_at_post_enabled():
         return ChargeTriggerResult(
             triggered=False,
             reason="charge_at_post_disabled",
             detail=(
-                "Charging at post requires card-on-file (Stripe SetupIntent at "
-                "post, off-session PaymentIntent at accept). That infrastructure "
-                "does not exist yet. Set CHARGE_AT_POST=1 only after it does."
+                "Charge-at-post is switched off. This is a product decision "
+                "plus one open technical item (off-session capture), NOT "
+                "missing card-on-file — see charge_at_post_enabled()."
             ),
         )
 
-    budget_c = 0
     from app.services import escrow
 
-    if post.get("budget") is not None:
-        budget_c = escrow.to_cents(post.get("budget"))
+    budget_c = (
+        escrow.to_cents(post.get("budget")) if post.get("budget") is not None else 0
+    )
+    client_id = client.get("id")
+    card_id = saved_card_id(client_id)
 
-    logger.warning(
-        "trigger_on_post: CHARGE_AT_POST is on but no card-on-file mechanism "
-        "exists — post %s by client %s for %d cents was NOT charged.",
+    if not card_id:
+        # A per-client fact. This client can add a card on PaymentMethodScreen
+        # and the answer changes — which is exactly what the old hard-coded
+        # refusal could never express.
+        return ChargeTriggerResult(
+            triggered=False,
+            reason="no_card_on_file",
+            amount_cents=budget_c,
+            detail=(
+                "This client has no saved payment method. They can add one in "
+                "Profile → Payment methods; the charge can then be taken "
+                "off-session."
+            ),
+        )
+
+    # The client IS chargeable. Refusing here is a gap in OUR implementation,
+    # and it must not be reported as though the client or the platform were
+    # missing something.
+    logger.error(
+        "trigger_on_post: CHARGE_AT_POST is on and client %s HAS a saved card "
+        "(%s), but off-session capture is not implemented — post %s for %d "
+        "cents was NOT charged. Implement the capture or turn the flag off.",
+        client_id,
+        card_id,
         post.get("id"),
-        client.get("id"),
         budget_c,
     )
     return ChargeTriggerResult(
         triggered=False,
-        reason="no_card_on_file_mechanism",
+        reason="capture_not_implemented",
         amount_cents=budget_c,
         detail=(
-            "No saved payment method and no bookings row to charge against. "
-            "Implement Stripe SetupIntent card-on-file before enabling this."
+            "The client has a saved card and the schema can record a post-bound "
+            "charge (payments.post_id, booking_id nullable). What is missing is "
+            "the off-session PaymentIntent call itself. Do not enable this flag "
+            "in production until that exists AND the expiry refund sweep is "
+            "driven by something other than a page view."
         ),
     )
 

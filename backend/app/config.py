@@ -112,6 +112,7 @@ _OPTIONAL = [
     "API_ENABLE_DOCS",  # explicit override: "1" re-opens /docs even in production
     "MAX_REQUEST_BYTES",  # global request-body ceiling (default 12 MB)
     "HEALTH_DIAGNOSTICS_TOKEN",  # when set, /health returns detail only to this token
+    "TICK_TOKEN",  # when set, enables POST /internal/tick for an external ticker
 ]
 
 
@@ -418,6 +419,23 @@ class _Settings:
     @property
     def HEALTH_DIAGNOSTICS_TOKEN(self) -> str:
         return os.getenv("HEALTH_DIAGNOSTICS_TOKEN", "")
+
+    @property
+    def TICK_TOKEN(self) -> str:
+        """Shared secret for POST /internal/tick. UNSET = the route 404s.
+
+        This deployment has no application scheduler, so every time-based
+        settlement (the 24h approval auto-release, the expired-post refund)
+        runs lazily when somebody happens to load a screen. That is correct but
+        it is not a guarantee: a business whose client goes quiet is not paid
+        until someone opens the booking.
+
+        The tick endpoint lets an EXTERNAL ticker drive those sweeps. There is
+        already one on Kira's box — the `sb.keepwarm` cron pings /health every
+        10 minutes — so this needs no new infrastructure, only a secret.
+        Defaults to empty so nothing changes until it is deliberately set.
+        """
+        return os.getenv("TICK_TOKEN", "")
 
     @property
     def NOTION_TOKEN(self) -> str:

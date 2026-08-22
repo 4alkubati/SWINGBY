@@ -247,6 +247,11 @@ app.add_middleware(
 
 from app.api.auth import router as auth_router
 
+from app.api.internal import router as internal_router
+
+# POST /internal/tick — 404s unless TICK_TOKEN is set. See app/api/internal.py
+# for why this exists (no application scheduler; settlement is lazy).
+app.include_router(internal_router, prefix="/internal", tags=["internal"])
 app.include_router(auth_router, prefix="/auth", tags=["auth"])
 
 from app.api.businesses import router as businesses_router

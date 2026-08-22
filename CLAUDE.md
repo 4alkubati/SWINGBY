@@ -100,14 +100,31 @@ No platform cut is taken on a cancellation — a retained penalty goes entirely 
 the business.
 
 **Nothing is charged when a client posts a job.** The charge-at-post trigger
-(TRIGGER 1) is wired but **gated OFF** in `api/service_posts.py` — it cannot
-capture in this schema (no matched business, so no agreed price; no `bookings`
-row for the NOT NULL `payments.booking_id`; no card on file). `payment_started`
-on the create response is therefore always `false`. Money is collected at
-**accept**, via `mobile/src/services/acceptAndPay.js`. Turning post-time capture
-on needs Stripe SetupIntent / card-on-file, which does not exist in this repo.
-Do not write client-facing copy that says otherwise — that claim shipped once
-and had to be pulled (2026-07-29).
+(TRIGGER 1) is wired but **gated OFF** in `api/service_posts.py`, so
+`payment_started` on the create response is always `false`. Money is collected
+at **accept**, via `mobile/src/services/acceptAndPay.js`. Do not write
+client-facing copy that says otherwise — that claim shipped once and had to be
+pulled (2026-07-29).
+
+> ⚠ Corrected 2026-08-22. This paragraph used to say post-time capture "cannot
+> capture in this schema" and "needs Stripe SetupIntent / card-on-file, which
+> does not exist in this repo". **Both were true once and neither is now**, and
+> because the claim was repeated in code as a hard-coded refusal rather than a
+> check, nothing noticed when it stopped being true:
+>
+> * **Card-on-file shipped** (DEC-4, PR #83) — `POST /payments/stripe/setup-intent`,
+>   `GET /payments/stripe/payment-methods`, `users.default_payment_method_id`,
+>   `mobile/src/services/cards.js`, and a reachable `PaymentMethodScreen.js`.
+> * **`payments.booking_id` is nullable and `payments.post_id` exists** —
+>   migration `20260727000000_charge_at_post.sql`, applied (verified against the
+>   live project).
+>
+> So the reasons TRIGGER 1 is still off are now: it is a product/legal decision
+> (charging before a price is agreed), the expired-post refund sweep is still
+> driven by page views rather than a scheduler, and no off-session capture call
+> is implemented. `payment_triggers.trigger_on_post` reports which of these
+> applies **at runtime** and `test_the_retired_claims_never_come_back` fails if
+> the retired wording returns. See `charge_at_post_enabled()`.
 
 **Post expiry** (`services/expiry_sweep.py`): if a post expires with no accepted
 quote, any escrow held against it is **refunded immediately** — not held. Today
