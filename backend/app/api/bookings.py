@@ -6,7 +6,7 @@ from typing import Optional
 from datetime import datetime, timezone
 from app.deps import get_current_user
 from app.supabase_client import supabase
-from app.services import approvals
+from app.services import approvals, staffing
 from app.services.push import send_push_to_user
 
 logger = logging.getLogger(__name__)
@@ -229,62 +229,12 @@ def _rows(res) -> list[dict]:
 def _ensure_owner_employee(business_id: str, owner_user_id: str) -> Optional[dict]:
     """The owner's own `employees` row, created on first use.
 
-    Returns None only if the read AND the write both fail — callers treat that
-    as "no roster" rather than raising, so a Supabase hiccup degrades the
-    picker instead of 500ing the screen.
+    Delegates to services/staffing.py, which now owns the solo-owner rules so
+    that booking creation (interests.accept_interest) and this module cannot
+    drift apart on who counts as staff. Kept as a module-level name because
+    three call sites and the tests reference it.
     """
-    if not business_id or not owner_user_id:
-        return None
-    try:
-        existing = _rows(
-            supabase.table("employees")
-            .select(_EMPLOYEE_COLUMNS)
-            .eq("business_id", business_id)
-            .eq("user_id", owner_user_id)
-            .limit(1)
-            .execute()
-        )
-        if existing:
-            return existing[0]
-    except Exception:
-        logger.warning(
-            "owner employee lookup failed for business %s", business_id, exc_info=True
-        )
-        return None
-
-    try:
-        supabase.table("employees").insert(
-            {
-                "business_id": business_id,
-                "user_id": owner_user_id,
-                "role_title": OWNER_ROLE_TITLE,
-                "is_active": True,
-            }
-        ).execute()
-    except Exception:
-        # A concurrent request may have won the race against the unique index
-        # added by migration 20260725220000 — fall through and re-read.
-        logger.warning(
-            "owner employee insert failed for business %s", business_id, exc_info=True
-        )
-
-    try:
-        return (
-            _rows(
-                supabase.table("employees")
-                .select(_EMPLOYEE_COLUMNS)
-                .eq("business_id", business_id)
-                .eq("user_id", owner_user_id)
-                .limit(1)
-                .execute()
-            )
-            or [None]
-        )[0]
-    except Exception:
-        logger.warning(
-            "owner employee re-read failed for business %s", business_id, exc_info=True
-        )
-        return None
+    return staffing.ensure_owner_employee(business_id, owner_user_id, supabase)
 
 
 def _completed_job_counts(employee_ids: list[str]) -> Optional[dict]:
@@ -1227,17 +1177,9 @@ def complete_booking(booking_id: str, current_user: dict = Depends(get_current_u
         # with the money stuck behind the very guard meant to protect it.
         if owner_business_id and not booking.get("employee_id"):
             try:
-                other_staff = [
-                    e
-                    for e in _rows(
-                        supabase.table("employees")
-                        .select("id, user_id, is_active")
-                        .eq("business_id", owner_business_id)
-                        .execute()
-                    )
-                    if e.get("is_active", True)
-                    and e.get("user_id") != current_user["id"]
-                ]
+                other_staff = staffing.other_active_staff(
+                    owner_business_id, current_user["id"], supabase
+                )
             except Exception:
                 # Money path — fail closed rather than guessing "solo" when we
                 # cannot see the roster.
