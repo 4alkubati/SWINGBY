@@ -77,7 +77,7 @@ function AutoBidHero({ enabled, locked, onToggle }) {
           </Text>
           <Text style={styles.heroSub} numberOfLines={2}>
             {locked
-              ? 'Part of a Swingbyy subscription'
+              ? 'Part of a SwingByy subscription'
               : 'Quotes send themselves in ~30 s'}
           </Text>
         </View>
@@ -453,7 +453,7 @@ export default function AutoBiddingScreen({ navigation }) {
           <View style={styles.upgradeCard}>
             <Text style={styles.upgradeTitle}>Quote while you work</Text>
             <Text style={styles.upgradeBody}>
-              Set your rate once and Swingbyy sends the quote for you, usually inside
+              Set your rate once and SwingByy sends the quote for you, usually inside
               30 seconds of a job being posted. Your rules decide the price — never
               the client's budget, which you never see.
             </Text>

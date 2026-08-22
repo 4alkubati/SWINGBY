@@ -227,7 +227,7 @@ export default function SignupScreen({ navigation, route }) {
             <Text style={styles.confirmBody}>
               We sent a verification link to{' '}
               <Text style={styles.confirmEmail}>{emailForConfirm}</Text>.
-              {'\n'}Tap it to activate your Swingbyy account.
+              {'\n'}Tap it to activate your SwingByy account.
             </Text>
             <View style={styles.confirmActions}>
               <Button
@@ -267,7 +267,7 @@ export default function SignupScreen({ navigation, route }) {
             <Text style={styles.title} accessibilityRole="header">
               Create Account
             </Text>
-            <Text style={styles.subtitle}>Join Swingbyy today</Text>
+            <Text style={styles.subtitle}>Join SwingByy today</Text>
           </Animated.View>
 
           {/* Step indicator */}

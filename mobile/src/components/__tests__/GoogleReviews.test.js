@@ -96,7 +96,7 @@ describe('ImportedReviewsSection — provenance is always visible', () => {
       external_review_id: 'ext-1',
       author_name: 'A. Reviewer',
       rating: 5,
-      comment: 'Left on Google, not on Swingbyy.',
+      comment: 'Left on Google, not on SwingByy.',
       verified: true,
     },
     {
@@ -120,10 +120,10 @@ describe('ImportedReviewsSection — provenance is always visible', () => {
     // came from.
     expect(getAllByText('Google · Verified')).toHaveLength(2);
     // And the caption states the part a client actually needs to know.
-    expect(getByText(/not counted in its Swingbyy rating/i)).toBeTruthy();
+    expect(getByText(/not counted in its SwingByy rating/i)).toBeTruthy();
   });
 
-  it('shows the imported average separately from the Swingbyy rating', () => {
+  it('shows the imported average separately from the SwingByy rating', () => {
     const { getByText } = render(
       <ImportedReviewsSection reviews={rows} summary={{ count: 2, average_rating: 3.5 }} />,
     );

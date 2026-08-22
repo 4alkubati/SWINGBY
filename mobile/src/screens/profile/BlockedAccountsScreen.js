@@ -24,7 +24,7 @@ import i18n from '../../i18n';
 import { colors, spacing, radius } from '../../theme/tokens';
 
 function fullName(u) {
-  return [u?.first_name, u?.last_name].filter(Boolean).join(' ') || 'Swingbyy user';
+  return [u?.first_name, u?.last_name].filter(Boolean).join(' ') || 'SwingByy user';
 }
 
 export default function BlockedAccountsScreen() {

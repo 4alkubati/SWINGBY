@@ -209,7 +209,7 @@ export async function payForBookingNatively({ bookingId, email } = {}) {
 
   // 3 · Build the sheet.
   const initResult = await stripe.initPaymentSheet({
-    merchantDisplayName: sheet.merchant_display_name || 'Swingbyy',
+    merchantDisplayName: sheet.merchant_display_name || 'SwingByy',
     paymentIntentClientSecret: sheet.client_secret,
     customerId: sheet.customer_id || undefined,
     customerEphemeralKeySecret: sheet.ephemeral_key || undefined,

@@ -497,7 +497,7 @@ export default function HomeScreen({ navigation }) {
           variant="h1"
           style={styles.logo}
           accessibilityRole="header"
-          accessibilityLabel="Swingbyy"
+          accessibilityLabel="SwingByy"
         >
           Swing
           <Text variant="h1" style={{ color: colors.accentText }}>
