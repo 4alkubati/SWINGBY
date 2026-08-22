@@ -2,7 +2,7 @@
   "name": "swingbyy-video",
   "version": "1.0.0",
   "private": true,
-  "description": "Remotion video engine for Swingbyy marketing reels. Vertical 9:16 primary.",
+  "description": "Remotion video engine for SwingByy marketing reels. Vertical 9:16 primary.",
   "scripts": {
     "studio": "remotion studio",
     "render:reel": "remotion render reel-9x16 out/reel-9x16.mp4 --concurrency=50%",

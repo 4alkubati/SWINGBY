@@ -254,6 +254,17 @@ LINE_EXEMPTIONS = [
 
 WORDMARK = re.compile(r"\bSwingBy(?![a-z])")
 
+# The OTHER wrong spelling, and the one that actually shipped. FACTS §0 was
+# corrected on 2026-08-08 to "the B is capital" — the mark draws a capital B —
+# but the rule above only ever looked for the dead one-y name, so lowercase-b
+# `Swingbyy` sailed through. marketing/video rendered it into every frame of
+# every reel until 2026-08-22 with a green lint the whole time.
+#
+# Case-sensitive on purpose, and `S` must be capital: the domain `swingbyy.com`
+# and the handles `@swingbyy` / `@swingbyyy` are addresses, are correctly
+# lowercase, and §0 exempts them explicitly.
+WORDMARK_LOWER_B = re.compile(r"\bSwingbyy?\b")
+
 COMPILED = [(label, section, scope, re.compile(pat, re.I))
             for label, section, scope, pat in RULES]
 EXEMPT_LINE = [re.compile(p, re.I) for p in LINE_EXEMPTIONS]
@@ -338,6 +349,9 @@ def scan(path: Path, check_wordmark: bool):
 
         if check_wordmark and WORDMARK.search(line):
             yield severity, n, "dead one-y wordmark", "§0", line.strip()
+
+        if check_wordmark and WORDMARK_LOWER_B.search(line):
+            yield severity, n, "lowercase-b wordmark (write SwingByy)", "§0", line.strip()
 
 
 def main() -> int:

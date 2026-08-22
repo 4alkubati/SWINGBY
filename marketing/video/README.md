@@ -1,4 +1,4 @@
-# Swingbyy video engine
+# SwingByy video engine
 
 Remotion + TypeScript. Collects real app screens and produces branded,
 muted-safe demo videos. **Vertical 9:16 is primary.**
@@ -180,7 +180,7 @@ takes every core, and the laptop also hosts the 36B crew model.
 
 ## The rules this project enforces in code
 
-1. **The wordmark is `Swingbyy`** — capital S, two y's. It lives in `theme.ts`
+1. **The wordmark is `SwingByy`** — capital S, two y's. It lives in `theme.ts`
    as `WORDMARK` and is never inlined. `marketing/social-assets/post.html`
    hardcodes the dead one-y name on every frame it renders; `claim_lint` fails
    the build on it.

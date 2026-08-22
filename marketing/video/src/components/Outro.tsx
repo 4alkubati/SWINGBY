@@ -1,6 +1,7 @@
 import React from 'react';
 import {AbsoluteFill, useCurrentFrame, useVideoConfig} from 'remotion';
-import {color, type as T, WORDMARK, radius, space} from '../theme';
+import {color, type as T, radius, space} from '../theme';
+import {Wordmark} from './Wordmark';
 import {fadeIn, slideUp, scaleIn} from '../motion';
 import {CTA_COPY, type CtaKey} from '../cta';
 import {CITY} from '../captions';
@@ -34,17 +35,8 @@ export const Outro: React.FC<{cta: CtaKey}> = ({cta}) => {
         }}
       />
       <div style={{opacity, transform: `translateY(${y}px) scale(${s})`, textAlign: 'center', padding: space.xl}}>
-        <div
-          style={{
-            fontFamily: T.wordmark.family,
-            fontSize: 72,
-            fontWeight: 700,
-            letterSpacing: -2.6,
-            color: color.textPrimary,
-            marginBottom: space.xl,
-          }}
-        >
-          {WORDMARK}
+        <div style={{marginBottom: space.xl}}>
+          <Wordmark size={72} />
         </div>
 
         {/* Square-ish button, 12px radius — design/tokens.md rule 6. Never a pill. */}

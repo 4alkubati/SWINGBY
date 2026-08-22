@@ -72,12 +72,56 @@ export const type = {
 } as const;
 
 /**
- * THE WORDMARK. Capital S, two y's. FACTS.md section 0.
- * marketing/social-assets/post.html ships the dead one-y spelling on every
- * frame it renders — that is the specific bug this constant exists to prevent.
- * Never inline the brand name as a string literal anywhere else in this project.
+ * THE WORDMARK: `SwingByy` — capital S, **capital B**, two y's.
+ *
+ * FACTS.md section 0, corrected 2026-08-08 ("the B is capital"). Lowercase-b
+ * `SwingByy` is a BANNED spelling, and it is the one this project shipped in
+ * every rendered frame until 2026-08-22 — claim_lint did not catch it because
+ * its wordmark rule only looked for the dead one-y `SwingBy`. Both are now
+ * caught.
+ *
+ * Use WORDMARK for prose and alt text. To DRAW it, use <Wordmark> — the mark is
+ * three spans with an overlap, not a string (see below and components/Wordmark).
+ *
+ * The domain and handles stay lowercase (`swingbyy.com`, `@swingbyy`). They are
+ * addresses, not the wordmark, and section 0 exempts them explicitly.
  */
-export const WORDMARK = 'Swingbyy' as const;
+export const WORDMARK = 'SwingByy' as const;
+
+/**
+ * The mark, per design/handoff-logo/README.md — turn 4b, the approved direction.
+ *
+ * Three spans, and the OVERLAPPING PAIR IS THE MARK: the trailing snow `y` sits
+ * back over the purple `y` so the two nearly merge while the purple tail still
+ * reads underneath. Setting that trailing y in purple, or writing `Byy` as one
+ * span, destroys it — that was the documented 2026-08-08 error, which also
+ * produced a flattened icon and a graphic arguing the real logo was broken.
+ *
+ * Do not redraw, re-kern, un-overlap or "clean up" the mark. If it looks wrong
+ * at small size, that is the design (FACTS section 0.1). The handoff also says
+ * to REBUILD the lockup in the target environment rather than import a PNG,
+ * which is why this is spans and CSS rather than an <Img>.
+ *
+ * Proportions are from the 112px reference and scale with font size:
+ *   letter-spacing  -5px/112px  = -0.0446em
+ *   overlap        -30px/112px  = -0.268em  (applied to the last glyph)
+ */
+export const MARK = {
+  swing: 'Swing',
+  by: 'By',
+  y: 'y',
+  letterSpacingEm: -0.0446,
+  overlapEm: -0.268,
+} as const;
+
+/**
+ * Logo Pulse — the wordmark and icon tile ONLY.
+ * Distinct from `color.accent` (#6E56F7), the UI accent used for CTAs and live
+ * dots. FACTS section 0.1: two different purples, never substitute one for the
+ * other, and the UI accent never appears in the logo.
+ */
+export const LOGO_PULSE = '#8878F9' as const;
+export const LOGO_SNOW = '#F4F6FA' as const;
 
 /** Canvas sizes. reel-9x16 is primary; the other two are derived cuts. */
 export const canvas = {

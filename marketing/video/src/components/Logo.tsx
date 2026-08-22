@@ -1,13 +1,14 @@
 import React from 'react';
 import {AbsoluteFill, useCurrentFrame, useVideoConfig} from 'remotion';
-import {color, type as T, WORDMARK, space} from '../theme';
+import {color, type as T, space} from '../theme';
+import {Wordmark} from './Wordmark';
 import {fadeIn, fadeOut, scaleIn, springValue} from '../motion';
 
 /**
  * The wordmark card.
  *
  * WORDMARK comes from theme.ts and is never inlined as a literal. FACTS section 0:
- * the name is Swingbyy — capital S, two y's. marketing/social-assets/post.html
+ * the name is SwingByy — capital S, two y's. marketing/social-assets/post.html
  * hardcodes the dead one-y spelling on every frame it renders; that is the exact
  * mistake this indirection prevents, and claim_lint fails the build on it.
  *
@@ -33,28 +34,11 @@ export const Logo: React.FC<{sub?: string}> = ({sub}) => {
         }}
       />
       <div style={{opacity, transform: `scale(${s})`, textAlign: 'center'}}>
-        <div style={{display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: 10}}>
-          <span
-            style={{
-              fontFamily: T.wordmark.family,
-              fontSize: T.wordmark.size,
-              fontWeight: T.wordmark.weight,
-              letterSpacing: T.wordmark.letterSpacing,
-              color: color.textPrimary,
-            }}
-          >
-            {WORDMARK}
-          </span>
-          <span
-            style={{
-              width: 18,
-              height: 18,
-              borderRadius: 999,
-              background: color.accent,
-              transform: `scale(${dot})`,
-              display: 'inline-block',
-            }}
-          />
+        {/* The lockup carries the brand on its own. The old version set a UI-accent
+            dot beside a flat string, which both misspelled the mark (lowercase b)
+            and put the wrong purple next to it. */}
+        <div style={{display: 'flex', justifyContent: 'center', transform: `scale(${dot})`}}>
+          <Wordmark size={T.wordmark.size} />
         </div>
         {sub ? (
           <div
