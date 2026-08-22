@@ -24,6 +24,7 @@ BACKEND = Path(__file__).resolve().parents[1]
 def _src(rel: str) -> str:
     return (BACKEND / rel).read_text(encoding="utf-8")
 
+
 # ── SB-0188 — verified earnings could never be non-zero ──────────────────────
 
 
