@@ -3,6 +3,8 @@ import {AbsoluteFill, useCurrentFrame, useVideoConfig} from 'remotion';
 import {color, type as T, space} from '../theme';
 import {fadeIn, slideUp, fadeOut, scaleIn} from '../motion';
 import {assertCaption, type Caption as CaptionData, CITY} from '../captions';
+import {Toon} from './Toon';
+import type {ToonSpec} from '../toon';
 
 /**
  * THE HOOK — the first ~1.5s.
@@ -14,7 +16,11 @@ import {assertCaption, type Caption as CaptionData, CITY} from '../captions';
  * The line itself is a Caption from captions.ts and is FACTS-cited like any other.
  */
 
-export const Hook: React.FC<{data: CaptionData; city?: string}> = ({data, city = CITY}) => {
+export const Hook: React.FC<{data: CaptionData; city?: string; toon?: ToonSpec}> = ({
+  data,
+  city = CITY,
+  toon,
+}) => {
   const c = assertCaption(data);
   const frame = useCurrentFrame();
   const {fps, durationInFrames} = useVideoConfig();
@@ -80,6 +86,9 @@ export const Hook: React.FC<{data: CaptionData; city?: string}> = ({data, city =
           </div>
         ) : null}
       </div>
+      {/* The cartoon sits ON TOP of the type: the character reacts to the line,
+          it does not compete with it for the first second. */}
+      {toon ? <Toon spec={toon} /> : null}
     </AbsoluteFill>
   );
 };

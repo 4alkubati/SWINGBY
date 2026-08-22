@@ -2,6 +2,7 @@ import {CAPTIONS} from './captions';
 import {CTA, type CtaKey} from './cta';
 import type {CameraSpec} from './camera';
 import type {Caption as CaptionData} from './captions';
+import type {ToonSpec} from './toon';
 
 /**
  * THE TIMELINE, as data.
@@ -16,7 +17,7 @@ import type {Caption as CaptionData} from './captions';
  */
 
 export type Beat =
-  | {kind: 'hook'; id: string; durationInFrames: number; caption: CaptionData}
+  | {kind: 'hook'; id: string; durationInFrames: number; caption: CaptionData; toon?: ToonSpec}
   | {kind: 'logo'; id: string; durationInFrames: number; sub?: string}
   | {kind: 'outro'; id: string; durationInFrames: number; cta: CtaKey}
   | {
@@ -103,8 +104,11 @@ export const BEAT = {
 export const HOOK_BEAT = (): Beat => ({
   kind: 'hook',
   id: 'hook',
-  durationInFrames: S(1.8),
+  durationInFrames: S(2.4),
   caption: CAPTIONS.hook,
+  // Noor, slumped, bottom-right — reacting to the six voicemails. Bounce is
+  // allowed on the cartoon and nowhere else (FORMAT.md section 4).
+  toon: {char: {who: 'noor', pose: 'slump', at: [800, 1620], scale: 0.72}},
 });
 
 export const LOGO_BEAT = (sub?: string): Beat => ({

@@ -42,7 +42,7 @@ export const Reel: React.FC<{beats: Beat[]}> = ({beats}) => {
 const BeatView: React.FC<{beat: Beat}> = ({beat}) => {
   switch (beat.kind) {
     case 'hook':
-      return <Hook data={beat.caption} />;
+      return <Hook data={beat.caption} toon={beat.toon} />;
     case 'logo':
       return <Logo sub={beat.sub} />;
     case 'outro':
